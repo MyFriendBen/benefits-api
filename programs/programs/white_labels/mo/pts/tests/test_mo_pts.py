@@ -19,7 +19,7 @@ ineligible rather than "eligible, $0" — see ``spec.md`` Scenario 19.
 
 import datetime
 
-from programs.framework.tests.integration_test_helpers import (
+from programs.programs.testing.pe_integration import (
     PeIntegrationTestCase,
     add_income,
     add_member,

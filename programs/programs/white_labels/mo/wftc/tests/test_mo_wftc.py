@@ -10,7 +10,7 @@ Scenario 15 is the one place PolicyEngine and Missouri's own test diverge, and i
 expectation deliberately encodes PolicyEngine's answer — see ``spec.md`` criterion 5.
 """
 
-from programs.framework.tests.integration_test_helpers import (
+from programs.programs.testing.pe_integration import (
     PeIntegrationTestCase,
     add_income,
     add_member,

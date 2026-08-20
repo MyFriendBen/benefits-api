@@ -1,6 +1,9 @@
-# Illinois-only: every consumer of both mixins lives in programs/programs/il/.
-# Relocates to that white label in MFB-1676; framework/ holds only what every
-# calculator needs regardless of white label or engine.
+"""Shared FPL income check for Illinois Medicaid-adjacent programs.
+
+All Kids, Moms and Babies, Family Care and ACA Adults apply the same percent-of-FPL
+test against the same household income, so the check lives once here rather than in
+four calculators."""
+
 from programs.framework.base import Eligibility, MemberEligibility
 import programs.framework.eligibility_messages as messages
 
@@ -32,28 +35,3 @@ class IlMedicaidFplIncomeCheckMixin:
 
         # Add eligibility condition
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
-
-
-class IlTransportationMixin:
-    dependencies = [
-        "age",
-        "visually_impaired",
-        "disabled",
-    ]
-    minimum_age = 65
-    minimum_age_with_disability = 16
-
-    def member_eligible(self, e: MemberEligibility):
-        member = e.member
-
-        age_eligible = member.age >= self.minimum_age
-
-        has_minimum_age_with_disability = member.age >= self.minimum_age_with_disability
-        has_eligible_disability = member.visually_impaired or member.disabled
-        disability_eligible = has_minimum_age_with_disability and has_eligible_disability
-
-        e.condition(age_eligible or disability_eligible)
-
-    def member_value(self, member):
-        # Default to positive value to enable manual "Varies" override
-        return 1

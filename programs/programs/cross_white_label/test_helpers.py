@@ -1,19 +1,29 @@
-"""Helpers for asserting a family's contract across its registered subclasses."""
+"""Assertions over every registered subclass of a family's base.
+
+A family declares its contract once on the base, and each white label's subclass is
+expected to add only its own state's inputs. The subclass set is resolved from the
+registry rather than a hand-listed tuple, so a newly registered white label is
+covered without editing the test.
+"""
 
 from programs.framework.pe_dependencies.household import StateCode
-from integrations.clients.policyengine.registry import all_calculators
 
 
-def _registered_subclasses(base: type) -> dict[str, type]:
+def registered_subclasses(base: type) -> dict[str, type]:
     """Every calculator registered under a program slug that subclasses ``base``."""
+    # Imported here, not at module scope: this module sits under programs.programs,
+    # which the registry builds by walking, so a module-level import would have the
+    # registry import itself.
+    from integrations.clients.policyengine.registry import all_calculators
+
     return {slug: calc for slug, calc in all_calculators.items() if isinstance(calc, type) and issubclass(calc, base)}
 
 
-def _state_codes(calculator: type) -> list[type]:
+def state_codes(calculator: type) -> list[type]:
     return [dep for dep in calculator.pe_inputs if isinstance(dep, type) and issubclass(dep, StateCode)]
 
 
-def _distinct_state_codes(calculator: type) -> set[type]:
+def distinct_state_codes(calculator: type) -> set[type]:
     """
     The distinct state codes a calculator sends.
 

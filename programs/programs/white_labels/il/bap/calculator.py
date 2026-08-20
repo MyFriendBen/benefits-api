@@ -1,5 +1,5 @@
 from programs.framework.base import ProgramCalculator, Eligibility
-from programs.framework.mixins import IlTransportationMixin
+from programs.programs.white_labels.il.transportation_mixin import IlTransportationMixin
 import programs.framework.eligibility_messages as messages
 
 

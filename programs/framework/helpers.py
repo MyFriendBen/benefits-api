@@ -1,6 +1,11 @@
-# Medicaid-specific: the only consumer group is the state Medicaid calculators.
-# Relocates alongside the Medicaid family in MFB-1676; framework/ holds only what
-# every calculator needs regardless of white label or engine.
+# medicaid_eligible() answers "is this household already Medicaid-eligible?", which a
+# program reads to decide whether to surface itself. Sixteen callers across four
+# families and three white labels, so it belongs to no single one.
+#
+# STATE_MEDICAID_OPTIONS is also spliced into screener/views.py's calculation order,
+# so Medicaid resolves before the programs that gate on it. A state's Medicaid program
+# must be listed here, or that gate reads False for it and the ordering reserves it
+# no slot — both silent.
 from programs.framework.base import Eligibility
 
 STATE_MEDICAID_OPTIONS = ("co_medicaid", "nc_medicaid", "il_medicaid", "ks_medicaid")

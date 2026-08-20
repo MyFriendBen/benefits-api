@@ -5,7 +5,7 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import irs_gross_income, member, receipt_contract, spm
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
-from programs.framework.tests.family_test_helpers import _registered_subclasses, _state_codes
+from programs.programs.cross_white_label.test_helpers import registered_subclasses, state_codes
 
 
 class TestFederalEarlyHeadStart(TestCase):
@@ -44,7 +44,7 @@ class TestFederalEarlyHeadStart(TestCase):
             self.assertIn(income_input, EarlyHeadStart.pe_inputs)
 
     def test_federal_class_carries_no_state_code(self):
-        self.assertEqual(_state_codes(EarlyHeadStart), [])
+        self.assertEqual(state_codes(EarlyHeadStart), [])
 
     def test_pregnancy_is_not_sent_by_plain_head_start(self):
         """Only EHS serves pregnant women; sending pregnancy to ``head_start`` would

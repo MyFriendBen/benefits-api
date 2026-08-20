@@ -6,7 +6,7 @@ from programs.framework.pe_dependencies import irs_gross_income, member, receipt
 from integrations.clients.policyengine.registry import all_calculators
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
-from programs.framework.tests.family_test_helpers import _registered_subclasses, _state_codes
+from programs.programs.cross_white_label.test_helpers import registered_subclasses, state_codes
 
 
 class TestFederalHeadStart(TestCase):
@@ -56,7 +56,7 @@ class TestFederalHeadStart(TestCase):
 
     def test_federal_class_carries_no_state_code(self):
         """The base is state-agnostic; subclasses add exactly one state code."""
-        self.assertEqual(_state_codes(HeadStart), [])
+        self.assertEqual(state_codes(HeadStart), [])
 
     def test_is_not_registered_directly(self):
         """States register their own subclass, never the shared base — registering the
@@ -79,8 +79,8 @@ class TestRegisteredHeadStartSubclassContract(TestCase):
     """
 
     def setUp(self):
-        self.head_start = _registered_subclasses(HeadStart)
-        self.early_head_start = _registered_subclasses(EarlyHeadStart)
+        self.head_start = registered_subclasses(HeadStart)
+        self.early_head_start = registered_subclasses(EarlyHeadStart)
         # EarlyHeadStart is a sibling of HeadStart, not a subclass, so the two
         # groups are disjoint; assert that rather than assuming it.
         self.assertFalse(set(self.head_start) & set(self.early_head_start))
@@ -141,7 +141,7 @@ class TestRegisteredHeadStartSubclassContract(TestCase):
         none leaves the value unresolved; sending two is ambiguous."""
         for slug, calc in self.all.items():
             with self.subTest(slug=slug):
-                self.assertEqual(len(_state_codes(calc)), 1, f"{slug} state codes: {_state_codes(calc)}")
+                self.assertEqual(len(state_codes(calc)), 1, f"{slug} state codes: {state_codes(calc)}")
 
     def test_state_code_matches_the_slug(self):
         """Guards the copy-paste failure this pattern invites: a new state cloned from
@@ -149,7 +149,7 @@ class TestRegisteredHeadStartSubclassContract(TestCase):
         state's per-child value while looking correctly registered."""
         for slug, calc in self.all.items():
             with self.subTest(slug=slug):
-                self.assertEqual(_state_codes(calc)[0].state.lower(), slug.split("_", 1)[0])
+                self.assertEqual(state_codes(calc)[0].state.lower(), slug.split("_", 1)[0])
 
     def test_adds_nothing_beyond_the_state_code(self):
         """A subclass's inputs are exactly the federal set plus its state code. An
@@ -161,11 +161,11 @@ class TestRegisteredHeadStartSubclassContract(TestCase):
         """
         for slug, calc in self.head_start.items():
             with self.subTest(slug=slug):
-                extra = set(calc.pe_inputs) - set(HeadStart.pe_inputs) - set(_state_codes(calc))
+                extra = set(calc.pe_inputs) - set(HeadStart.pe_inputs) - set(state_codes(calc))
                 self.assertEqual(extra, set(), f"{slug} adds {[d.__name__ for d in extra]}")
         for slug, calc in self.early_head_start.items():
             with self.subTest(slug=slug):
-                extra = set(calc.pe_inputs) - set(EarlyHeadStart.pe_inputs) - set(_state_codes(calc))
+                extra = set(calc.pe_inputs) - set(EarlyHeadStart.pe_inputs) - set(state_codes(calc))
                 self.assertEqual(extra, set(), f"{slug} adds {[d.__name__ for d in extra]}")
 
     def test_no_subclass_overrides_member_value(self):

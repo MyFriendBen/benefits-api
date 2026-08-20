@@ -1,5 +1,5 @@
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.mixins import IlTransportationMixin
+from programs.programs.white_labels.il.transportation_mixin import IlTransportationMixin
 
 
 class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):

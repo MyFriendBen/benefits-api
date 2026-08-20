@@ -13,7 +13,10 @@ from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from programs.framework.pe_dependencies import household
 from integrations.clients.policyengine.policy_engine import pe_input
-from programs.framework.tests.family_test_helpers import _distinct_state_codes as _state_codes, _registered_subclasses
+from programs.programs.cross_white_label.test_helpers import (
+    distinct_state_codes as state_codes,
+    registered_subclasses,
+)
 
 
 class TestFederalMsp(TestCase):
@@ -49,7 +52,7 @@ class TestFederalMsp(TestCase):
 
     def test_federal_class_carries_no_state_code(self):
         """The base is state-agnostic; the code is each subclass's contribution."""
-        self.assertEqual(_state_codes(Msp), set())
+        self.assertEqual(state_codes(Msp), set())
 
     def test_is_not_registered_directly(self):
         """Unlike Ctc/Eitc, MSP is never registered bare — the asset test needs a state."""
@@ -65,7 +68,7 @@ class TestRegisteredMspSubclassContract(TestCase):
     """
 
     def setUp(self):
-        self.subclasses = _registered_subclasses(Msp)
+        self.subclasses = registered_subclasses(Msp)
 
     def test_states_are_registered(self):
         """
@@ -135,7 +138,7 @@ class TestRegisteredMspSubclassContract(TestCase):
         leaves it unresolved; naming two states is ambiguous."""
         for slug, calc in self.subclasses.items():
             with self.subTest(slug=slug):
-                codes = _state_codes(calc)
+                codes = state_codes(calc)
                 self.assertEqual(len(codes), 1, f"{slug} state codes: {sorted(c.__name__ for c in codes)}")
 
     def test_state_code_matches_the_slug(self):
@@ -144,7 +147,7 @@ class TestRegisteredMspSubclassContract(TestCase):
         state's asset-test parameter while looking correctly registered."""
         for slug, calc in self.subclasses.items():
             with self.subTest(slug=slug):
-                self.assertEqual(next(iter(_state_codes(calc))).state.lower(), slug.split("_", 1)[0])
+                self.assertEqual(next(iter(state_codes(calc))).state.lower(), slug.split("_", 1)[0])
 
     def test_adds_nothing_beyond_the_state_code_and_medicaid_inputs(self):
         """
@@ -157,7 +160,7 @@ class TestRegisteredMspSubclassContract(TestCase):
         """
         for slug, calc in self.subclasses.items():
             with self.subTest(slug=slug):
-                extra = set(calc.pe_inputs) - set(Msp.pe_inputs) - set(Medicaid.pe_inputs) - _state_codes(calc)
+                extra = set(calc.pe_inputs) - set(Msp.pe_inputs) - set(Medicaid.pe_inputs) - state_codes(calc)
                 self.assertEqual(extra, set(), f"{slug} adds {sorted(d.__name__ for d in extra)}")
 
     def test_no_subclass_overrides_member_value(self):
@@ -205,8 +208,8 @@ class TestRegisteredMspPayloadContract(TestCase):
         return pe_input(screen, [calculator(screen, program, screen.missing_fields())])
 
     def _each_state(self):
-        for slug, calc in _registered_subclasses(Msp).items():
-            state = next(iter(_state_codes(calc))).state
+        for slug, calc in registered_subclasses(Msp).items():
+            state = next(iter(state_codes(calc))).state
             screen, head = self._screen_for(state)
             yield slug, calc, state, screen, head
 
