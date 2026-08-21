@@ -12,11 +12,11 @@ class MaTafdc(PolicyEngineSpmCalulator):
     federal chain the base supplies, so inheriting it would send inert fields. Inputs the
     base would have carried are therefore listed here.
 
-    ``InSecondarySchoolDependency`` changes two outcomes, because the PE variable it feeds had
-    no default and so read False for everyone. ``ma_tafdc_age_limit`` now uses the student
-    dependent limit, and ``ma_tafdc_pregnancy_eligible``'s teen branch becomes reachable — a
-    pregnant 14-to-18-year-old qualifies from pregnancy month 1 rather than month 5. Both
-    widen eligibility; neither has a scenario in this suite.
+    ``InSecondarySchoolDependency`` changes ``ma_tafdc_age_limit``, which had been reading the
+    PE variable's absent default of False and so applied the non-student dependent limit to
+    everyone. It does not affect ``ma_tafdc_pregnancy_eligible``, whose formula reads the same
+    variable but is overridden by ``MaTafdcPregnancyEligibleDependency`` sending the output
+    directly. No scenario in this suite covers the age-limit change.
     """
 
     program_code = "ma_tafdc"

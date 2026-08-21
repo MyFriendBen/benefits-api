@@ -113,7 +113,7 @@ interactions:
         {"model_version": "1.794.2", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
       - '3939'
       access-control-allow-origin:
@@ -121,15 +121,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 19:05:31 GMT
+      - Fri, 21 Aug 2026 19:22:07 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-66b02e51226e5ffb93d94bd54df7b252-3a94df1474b9c2ef-00
+      - 00-6b85771efe0aec402be5354532f536d2-60336aa04f1765c5-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 66b02e51226e5ffb93d94bd54df7b252
+      - 6b85771efe0aec402be5354532f536d2
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -137,7 +137,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 1ddd221a-fb73-481d-8ea4-cfe6b6def7d1
+      - a88bdfdc-766f-4655-98d7-6dd860bf1cc6
       x-policyengine-route-channel:
       - current
     status:

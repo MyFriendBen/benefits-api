@@ -30,8 +30,6 @@ and PolicyEngine's caretaker test requires a dependent child in the *same* tax u
 is shared screener logic, not a MoTanf concern — see the skip reason.
 """
 
-import datetime
-
 import pytest
 
 from programs.programs.cross_white_label.tanf.mo import MoTanf
@@ -84,13 +82,21 @@ class MoTanfScenarioTestCase(PeIntegrationTestCase):
         return screen
 
     def add_person(self, screen, offset, relationship, birth_year, birth_month=1, **kwargs):
-        """A member identified by birth month/year, as every scenario states them."""
+        """A member identified by the birth year the scenario states, as a fixed age.
+
+        The age is derived once, against the spec's own reference year rather than today:
+        ``birth_year_month`` would make every age a function of ``timezone.now()``, and VCR
+        matches on the exact request body, so the whole suite would break on a calendar
+        boundary — Scenario 33's November birth month first, then the rest each new year.
+        ``birth_month`` is accepted so scenarios read as the spec states them, but it does not
+        change the age: the spec evaluates every age against year 2026.
+        """
+        age = int(YEAR) - birth_year
         return add_member(
             screen,
             self.screen_id * 100 + offset,
             relationship,
-            int(YEAR) - birth_year,
-            birth_year_month=datetime.date(birth_year, birth_month, 1),
+            age,
             **kwargs,
         )
 

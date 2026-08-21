@@ -69,11 +69,12 @@ wic_income = [
     spm.Tanf,
 ]
 
-# The TANF income sources the screener collects beyond the taxable set.
-# `irs_gross_income` is the taxable contract: child support received and alimony are not
-# taxable, so they are correctly absent from it. TANF counts them anyway
+# The TANF income sources the screener collects beyond the taxable set: child support
+# received, alimony, and gifts (PE's `miscellaneous_income`). None are taxable, so
+# `irs_gross_income` — the taxable contract — correctly omits all three. TANF counts them
 # (`gov.hhs.tanf.cash.income.sources.unearned`), so a state TANF calculator sending only
-# `irs_gross_income` drops them from every gate. Same shape as `wic_income` below.
+# `irs_gross_income` drops them from every gate. Same shape as `wic_income` above, which
+# carries the same three.
 #
 # Alimony is here on the strength of that source list rather than a scenario: no state spec
 # exercises it yet. Every field reaches PE the same way, so leaving one out keeps the same
