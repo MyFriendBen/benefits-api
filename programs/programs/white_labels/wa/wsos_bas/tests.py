@@ -1,14 +1,11 @@
-from unittest.mock import Mock
-
-from django.test import TestCase
-
+from programs.framework.pe_dependencies import member
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.wa.wsos_bas.calculator import WaWsosBas
 from programs.util import Dependencies
-from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
-from programs.framework.pe_dependencies import member
+from screener.models import HouseholdMember, IncomeStream
 
 
-class TestWaWsosBas(TestCase):
+class TestWaWsosBas(CustomCalculatorTestCase):
     """
     Unit tests for the WA WSOS Baccalaureate (BaS) Scholarship calculator.
 
@@ -23,43 +20,25 @@ class TestWaWsosBas(TestCase):
     and 3 against the live screener layer.
     """
 
-    def setUp(self):
-        """Create a WA white label and a mock Program for each test."""
-        self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
-        self.mock_program = Mock()
+    calculator_class = WaWsosBas
+    program_code = "wa_wsos_bas"
+    white_label_code = "wa"
+    state_code = "WA"
 
     def _make_screen(self, household_size=1, zipcode="98101", county="King"):
-        """Build an in-memory `Screen` for the WA white label with the given size."""
-        return Screen.objects.create(
-            white_label=self.white_label,
-            agree_to_tos=True,
-            zipcode=zipcode,
-            county=county,
-            household_size=household_size,
-            completed=False,
+        return self.make_screen(
+            "wa", "WA", household_size=household_size, zipcode=zipcode, county=county, agree_to_tos=True
         )
 
     def _add_member(self, screen, *, age=20, relationship="headOfHousehold", student=False, monthly_wages=0):
-        """Add a `HouseholdMember` (and optional monthly wages) to the screen."""
-        member = HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
-            student=student,
-        )
+        """Add a member, and wages when the scenario states them."""
+        household_member = self.add_member(screen, relationship, age, student=student)
         if monthly_wages:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type="wages",
-                amount=monthly_wages,
-                frequency="monthly",
-            )
-        return member
+            add_income(household_member, monthly_wages)
+        return household_member
 
     def _calc(self, screen):
-        """Construct a `WaWsosBas` calculator bound to the given screen."""
-        return WaWsosBas(screen, self.mock_program, {}, Dependencies())
+        return WaWsosBas(screen, self.program, {}, Dependencies())
 
     # --- Class wiring --------------------------------------------------------
 
