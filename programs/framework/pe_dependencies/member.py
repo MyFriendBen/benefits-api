@@ -1076,19 +1076,16 @@ class InSecondarySchoolDependency(Member):
     vocational or technical training.
 
     The variable has no formula and no default, so PolicyEngine reads False for everyone
-    unless it is sent. Its consumers all use it the same way, as
+    unless it is sent. Its consumers all use it as
     ``where(is_in_secondary_school, student_age_limit, non_student_age_limit)``, so an
-    unsent input silently applies the lower limit — under the federal TANF definition
-    (45 CFR 260.30) that drops the minor-child age limit from 19 to 18.
+    unsent input silently applies the lower limit.
 
-    Secondary school means high school, or equivalent vocational or technical training —
-    45 CFR 260.30, which is the definition the TANF consumers cite. Distinct from
-    PolicyEngine's ``is_in_k12_school``, which covers all of K-12 and imputes ages 5–17.
+    Means high school or equivalent vocational training — distinct from PolicyEngine's
+    ``is_in_k12_school``, which covers all of K-12 and imputes ages 5–17.
 
     The screener has no secondary-enrollment field: ``student`` and ``student_full_time``
-    ask about college, university or community college, and a False there does not disprove
-    high-school attendance. So this is an imputation from age over the years a dependent is
-    plausibly in high school.
+    ask about college, and a False there does not disprove high-school attendance. So this
+    is an imputation from age over the years a dependent is plausibly in high school.
     """
 
     field = "is_in_secondary_school"

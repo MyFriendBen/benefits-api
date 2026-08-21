@@ -20,9 +20,8 @@ class MoTanf(Tanf):
     ``Tanf``.)
 
     ``CashAssetsExcludingSsiHouseholdsDependency`` reports no countable figure when the
-    household includes an SSI recipient, whose resources Missouri excludes
-    (13 CSR 40-2.310(1)(F)) but whose share of the single reported total we cannot isolate.
-    Deliberately inclusive, per Criterion 4; MFB-1696 covers counting the remaining members'
+    household includes an SSI recipient, whose share of the single reported total we cannot
+    isolate. See specs/mo.md Criterion 7; MFB-1696 covers counting the remaining members'
     assets exactly.
 
     ``tanf_income`` rather than ``irs_gross_income``, so child support reaches the gates.

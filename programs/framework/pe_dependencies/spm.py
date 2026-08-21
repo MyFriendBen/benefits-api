@@ -601,17 +601,16 @@ class CashAssetsExcludingSsiHouseholdsDependency(CashAssetsDependency):
     The household's liquid assets, or nothing when a member's resources are excluded from
     the program's resource test.
 
-    Programs that exclude an SSI recipient's resources (TANF, per 13 CSR 40-2.310(1)(F) and
-    the equivalent state rules) need to know which share of the household's assets belongs
-    to that member. ``Screen.household_assets`` is a single figure with no ownership
+    Programs that exclude an SSI recipient's resources need to know which share of the
+    household's assets belongs to that member. ``Screen.household_assets`` is a single figure with no ownership
     breakdown, so that share is unknowable — and attributing it per person only invents the
     answer. Reporting no countable figure says what is true: for this household we cannot
     establish countable resources, so the test should not be the thing that denies them.
 
-    That is the treatment the specs commit to — do not deny on the aggregate alone when a
-    member's resources are excluded — and it is deliberately inclusive: a household with an
-    excluded member passes the resource test whatever the reported total. Counting the
-    remaining members' assets exactly needs an input PolicyEngine does not offer (MFB-1696).
+    That is the treatment each program's spec commits to, and it is deliberately inclusive:
+    a household with an excluded member passes the resource test whatever the reported
+    total. Counting the remaining members' assets exactly needs an input PolicyEngine does
+    not offer (MFB-1696).
 
     Receipt is read from both signals the screener carries, since either establishes that
     somebody's resources are excluded even when neither identifies whose: a per-member SSI

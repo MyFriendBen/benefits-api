@@ -11,11 +11,8 @@ class Tanf(PolicyEngineSpmCalulator):
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.member.FullTimeCollegeStudentDependency,
-        # is_person_demographic_tanf_eligible reads is_in_secondary_school to pick the
-        # minor-child age limit (45 CFR 260.30: 19 for a secondary student, else 18). The
-        # PE variable has no default, so leaving it unsent applies the lower limit to
-        # everyone and an 18-year-old student stops being a minor child. Sent here rather
-        # than per state because that demographic test is in every state's chain.
+        # Sent here rather than per state: every state's chain reads it, and the PE variable
+        # has no default, so an unsent input silently narrows the minor-child age limit.
         dependency.member.InSecondarySchoolDependency,
         *dependency.receipt_contract,
     ]
