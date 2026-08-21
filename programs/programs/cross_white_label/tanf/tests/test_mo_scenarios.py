@@ -12,11 +12,12 @@ storage convention as ``specs/ks.md``. So a spec expectation of $292/month is as
 $3,505 — PolicyEngine's exact $292.09 × 12, truncated the way the API truncates it. The
 cents are why these are not always exactly monthly × 12.
 
-Three scenarios are documented PE divergences the spec accepts as-is (AC 30/31): 8 and 20
-return "eligible, $0" where strict Missouri regulation would deny, and 32 passes a Gate 1
-boundary Missouri would fail. A $0 value means the frontend filters the program out, so
-the practical outcome matches; the tests pin PolicyEngine's actual answer rather than the
-regulation's, per the spec.
+Three scenarios are documented PE divergences the spec accepts as-is (AC 30/31). In 8 and 20
+PolicyEngine computes a $0 grant where strict Missouri regulation denies on the merits;
+``PolicyEngineCalulator.eligible()`` sets ``eligible = value > 0``, so both are reported not
+eligible and the household's outcome matches the denial. In 32 PolicyEngine passes a Gate 1
+boundary Missouri would fail, and the household is eligible for a grant. The tests pin
+PolicyEngine's actual answer rather than the regulation's, per the spec.
 
 Scenarios 11, 12 and 34 assert PolicyEngine's answer for a needy non-parent caretaker
 household, which is the *inclusion* branch. Missouri also grants such a caretaker an
