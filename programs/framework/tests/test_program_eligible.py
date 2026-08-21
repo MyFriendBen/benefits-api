@@ -108,6 +108,28 @@ class TestMemberProgramEligible(SimpleTestCase):
         with self.assertRaises(DependencyError):
             calc.member_program_eligible("chp", member(1))
 
+    def test_reads_the_member_verdict_not_the_household_result(self):
+        """A household can fail the upstream's own household test while a member still
+        qualifies — CHP+ works exactly that way — so this must not consult
+        `Eligibility.eligible`. Reading the household flag would waive cfhc's per-member
+        CHP+ exclusion for every member of such a household."""
+        upstream = household_with_members({1: True})
+        upstream.condition(False)  # the upstream's household test failed
+        self.assertFalse(upstream.eligible)
+
+        calc = make_calculator({"chp": upstream})
+        self.assertTrue(calc.member_program_eligible("chp", member(1)))
+
+    def test_a_member_is_not_eligible_just_because_the_household_is(self):
+        """The mirror: an upstream whose household result is eligible does not make a member
+        it judged ineligible eligible."""
+        upstream = household_with_members({1: False, 2: True})
+        self.assertTrue(upstream.eligible, "sanity: an eligible member makes the household eligible")
+
+        calc = make_calculator({"chp": upstream})
+        self.assertFalse(calc.member_program_eligible("chp", member(1)))
+        self.assertTrue(calc.member_program_eligible("chp", member(2)))
+
     def test_another_programs_result_does_not_satisfy_the_gate(self):
         calc = make_calculator({"co_medicaid": household_with_members({1: True})})
         with self.assertRaises(DependencyError):
