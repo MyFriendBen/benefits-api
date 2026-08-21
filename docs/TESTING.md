@@ -50,10 +50,13 @@ Controlled by the `VCR_MODE` environment variable:
 
 | Environment | VCR_MODE | Behavior | API Calls |
 |------------|----------|----------|-----------|
-| **PRs** | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
-| **Push to main** | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. | ✅ Yes (overwrites everything) |
+| **PRs** (`pr-validation`) | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
+| **Push to main** (`deploy-staging`) | `new_episodes` | Same as PRs. | ✅ Yes (only for new HTTP requests) |
+| **Release** (`deploy-production`) | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. PolicyEngine spec-scenario tests skip (see below). | ✅ Yes (every non-skipped test hits the live API) |
 | **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** | Only if entire cassette file missing |
 | **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
+
+Re-recording in CI is never committed — no workflow commits cassettes — so a CI run in `new_episodes` or `all` mode does not refresh what's in the repo. It only changes what that run tests against.
 
 ### Running Integration Tests Locally
 
@@ -85,19 +88,99 @@ pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHud
 
 ---
 
+## PolicyEngine Spec-Scenario Tests
+
+Every program calculator gets tests that mirror its `spec.md` **Test Scenarios** 1:1 — one test per scenario, asserting eligibility *and* benefit value. Custom (MFB) calculators get plain unit tests, because the rules and amounts are our code. PolicyEngine calculators get the same assertions wrapped as VCR integration tests: the answer comes from PolicyEngine, so we record it once and replay it forever after.
+
+Helpers live in `programs/programs/testing_fixtures/pe_integration.py`; the harness itself is covered by `programs/framework/tests/test_pe_integration_harness.py`. Nothing in the helpers is coupled to `spec.md` — they run a calculator and hand back an `Eligibility`; mirroring Test Scenarios is a convention of the callers.
+
+The harness sits in `framework/` rather than with the PolicyEngine client because it builds `Screen`s and runs calculators. `integrations/clients/policyengine/` is the wire layer only — the POST, the token cache, version resolution — and holds no cassettes.
+
+**A program's own tests and cassettes live next to the program**, not here: `programs/programs/{state}/{program}/tests/` with a `cassettes/` directory beside them. `conftest.py` derives `cassette_library_dir` from each test file's own directory, so a test and its cassettes always travel together.
+
+### Writing one
+
+```python
+import pytest
+from programs.framework.tests.integration_test_helpers import (
+    PeIntegrationTestCase, add_income, add_member, calc_pe_program, make_program, make_screen,
+    screener_value,
+)
+
+@pytest.mark.integration          # applies VCR (the base class carries this too)
+class TestTxHeadStart(PeIntegrationTestCase):
+    pe_version = "1.779.3"        # version the cassettes were recorded at
+
+    def test_scenario_1_single_parent_child_age_3_under_income_limit(self):
+        screen = make_screen(screen_id=1, white_label_code="tx", state_code="TX",
+                             household_size=2, zipcode="78701", county="Travis County")
+        parent = add_member(screen, member_id=1, relationship="headOfHousehold", age=34)
+        add_income(parent, amount=1_496)
+        add_member(screen, member_id=2, relationship="child", age=3)
+        program = make_program("tx", "tx_head_start", year="2025")
+
+        eligibility = calc_pe_program(screen, TxHeadStart, program)
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(screener_value(eligibility), 12_076)
+```
+
+Three rules make a PolicyEngine cassette replayable — the helpers enforce them, don't work around them:
+
+1. **Assign explicit primary keys.** The request keys `household.people` by member id and the *response* is keyed the same way, so a cassette recorded under different auto-increment pks can neither be matched nor read.
+2. **Pin the model version** via `pe_version`. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
+3. **Assert the truncated value** with `screener_value(...)`. PolicyEngine returns fractional dollars; the API truncates before serving, so whole dollars are what the spec and the user see.
+
+### Recording and verifying
+
+Run these with `pytest`, **not** `manage.py test` — VCR is a pytest fixture, so under the Django runner these tests would hit PolicyEngine live on every run.
+
+```bash
+# 1. Record (needs POLICY_ENGINE_CLIENT_ID / POLICY_ENGINE_CLIENT_SECRET)
+PE_RECORD=1 VCR_MODE=once venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -v
+
+# 2. Prove it replays with no network
+VCR_MODE=none venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -q
+
+# 3. Commit the cassettes with the tests
+git add programs/programs/white_labels/mo/pts/tests/
+```
+
+`PE_RECORD=1` is what allows the live auth0 token exchange. Without it every run seeds a placeholder token and touches no network, so an ordinary `pytest` never authenticates even on a machine with PolicyEngine credentials in `.env`.
+
+The pinned version must be one PolicyEngine currently serves — it rejects exact versions other than what `current`/`frontier` resolve to:
+
+```bash
+curl -s https://household.api.policyengine.org/versions/us
+```
+
+### Refreshing after PolicyEngine moves
+
+A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: update `pe_version`, delete the affected cassettes, re-run step 1, and review the value diff. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
+
+Re-recording and adopting a new PolicyEngine version are always the same act: PolicyEngine serves only what `current`/`frontier` currently resolve to, and returns `422 unsupported_version` for anything else. A cassette can never be refreshed at its original pin.
+
+Because of that, these tests **skip under `VCR_MODE=all`** (which never replays and would re-run every scenario against a version PolicyEngine may no longer serve). Live drift detection belongs in a scheduled job that bumps the pin deliberately, not in a deploy.
+
+Anything a *failing* test records is discarded on teardown — the cassette is restored, or removed if the test created it — so a bad recording can't leave an error response behind to replay forever. If a recording attempt fails, fix the cause and re-run. (Note that VCR's own `record_on_exception` cannot do this from inside a fixture: pytest never throws a test failure into a fixture generator, so `Cassette.__exit__` sees a clean exit. `conftest.py` tracks the outcome itself via `pytest_runtest_makereport`.)
+
+---
+
 ## Cassette Management
 
 ### Cassette Storage
 
-Cassettes are stored in `cassettes/` directories next to test files:
+Cassettes are stored in `cassettes/` directories next to test files, named `<TestClass>.<test_name>.yaml`:
 ```
 integrations/clients/hud_income_limits/tests/
 ├── test_integration.py
 └── cassettes/
-    ├── test_real_api_call_cook_county_il.yaml
-    ├── test_real_api_call_denver_county_co.yaml
+    ├── TestHudIntegrationMTSP.test_real_api_call_cook_county_il.yaml
+    ├── TestHudIntegrationMTSP.test_real_api_call_denver_county_co.yaml
     └── ...
 ```
+
+The class prefix matters: without it, two identically-named methods in different classes in the same module share one cassette and silently replay each other's recording.
 
 ### When to Update Cassettes
 
@@ -144,7 +227,11 @@ git diff integrations/**/cassettes/*.yaml
 
 **If new tests added**: New cassettes will be recorded automatically in CI.
 
-### Push to Main (VCR_MODE=all)
+### Push to Main (VCR_MODE=new_episodes)
+
+`deploy-staging` runs the same mode as PR validation — it does not re-record everything.
+
+### Release / Production Deploy (VCR_MODE=all)
 ```yaml
 - Re-records ALL cassettes
 - Makes real API calls for every test
@@ -153,7 +240,9 @@ git diff integrations/**/cassettes/*.yaml
 - Requires HUD_API_TOKEN secret
 ```
 
-**Purpose**: Catch API breaking changes and verify cassettes are up-to-date before merging to main.
+**Purpose**: Catch API breaking changes before a production release.
+
+**PolicyEngine spec-scenario tests skip in this mode.** `all` never replays, and these cassettes pin an exact model version that PolicyEngine stops serving as soon as it promotes past it (`422 unsupported_version`) — so re-recording them on a release could only ever fail, and it would make a production deploy depend on live PolicyEngine with no drift report besides. Live PE re-runs belong in a scheduled, non-blocking drift job that bumps the pin deliberately (see MFB-1565). HUD cassettes still re-record here as before.
 
 ---
 

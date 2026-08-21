@@ -1,0 +1,97 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_tax"
+  },
+  "program": {
+    "name_abbreviated": "mo_pts",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Missouri Property Tax Credit (PTC)",
+    "description": "The Missouri Property Tax Credit (PTC) gives you money back for rent or property taxes on a home in Missouri. It is also called the Circuit Breaker.\n\nHow much you may get depends on your income and how much you paid in rent or property taxes.\n\nIf you qualify because of your age, you usually need to have lived in Missouri all year. If you qualify as a veteran, you must be 100% disabled because of your military service. If you did not own and live in your home all year, different income rules apply.\n\nSelect “File Now” to see how to file for the credit.",
+    "description_short": "Tax credit for seniors and disabled homeowners or renters",
+    "learn_more_link": "https://dor.mo.gov/taxation/individual/tax-types/property-tax-credit/",
+    "apply_button_link": "https://dor.mo.gov/taxation/individual/tax-types/property-tax-credit/filing-options.html",
+    "apply_button_description": "File Now",
+    "estimated_application_time": "45 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "tax_credit",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Tax credit for seniors and disabled homeowners or renters"
+  },
+  "documents": [
+    {
+      "external_name": "mo_earned_income",
+      "text": "Proof of earned income (ex: W-2 forms, 1099 forms, pay stubs)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_unearned_income",
+      "text": "Proof of other income (ex: Social Security, pension, unemployment, or child support)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_property_tax_receipt",
+      "text": "Paid real estate tax receipt, if you own your home",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ptc_form_948",
+      "text": "Form 948 – Assessor Certification, if your home is on more than five acres",
+      "link_url": "https://dor.mo.gov/forms/948.pdf",
+      "link_text": "Form 948"
+    },
+    {
+      "external_name": "mo_ptc_form_crp",
+      "text": "Form MO-CRP – Certification of Rent Paid, if renting",
+      "link_url": "https://dor.mo.gov/forms/index.php?formName=MO-CRP",
+      "link_text": "Form MO-CRP"
+    },
+    {
+      "external_name": "mo_ptc_rent_proof",
+      "text": "Proof of rent paid, if renting (ex: rent receipts, Form 5674, or a signed statement from your landlord)",
+      "link_url": "https://dor.mo.gov/forms/5674.pdf",
+      "link_text": "Form 5674"
+    },
+    {
+      "external_name": "mo_disability_proof",
+      "text": "Proof of disability, if applicable (ex: Social Security or VA letter)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_motax_vita",
+      "name": "MoTax: Missouri Taxpayer Education Initiative",
+      "phone_number": "",
+      "email": "",
+      "assistance_link": "https://extension.missouri.edu/programs/motax-missouri-taxpayer-education-initiative",
+      "description": "MoTax offers free help with federal and Missouri tax returns. Volunteers can also help with the Missouri Property Tax Credit."
+    },
+    {
+      "external_name": "mo_aarp_tax_aide",
+      "name": "AARP Foundation Tax-Aide",
+      "phone_number": "+18882277669",
+      "email": "taxaide@aarp.org",
+      "assistance_link": "https://www.aarp.org/money/taxes/aarp-taxaide/",
+      "description": "AARP Foundation Tax-Aide offers free help with taxes. It helps people age 50 and older and people with lower incomes. You do not need to be an AARP member."
+    }
+  ]
+}

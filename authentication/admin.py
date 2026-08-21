@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from django.contrib.auth.admin import GroupAdmin
+from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.core.exceptions import PermissionDenied
 from rest_framework.authtoken.models import TokenProxy
 from rest_framework.authtoken.admin import TokenAdmin
@@ -106,12 +106,42 @@ class SecureAdmin(ModelAdmin):
         return request.user.is_superuser
 
 
-class CustomUserAdmin(SecureAdmin):
-    search_fields = ("email",)
-    ordering = ("email_or_cell", "email")
+# UserAdmin supplies the password-hashing forms (UserCreationForm/UserChangeForm) and
+# renders the stored hash as a read-only field with a link to the change-password view.
+# Without it the password renders as a plain editable CharField and whatever is submitted
+# is saved unhashed, locking the account out.
+class CustomUserAdmin(SecureAdmin, UserAdmin):
+    search_fields = ("email_or_cell", "email", "first_name", "last_name")
+    ordering = ("email_or_cell",)
     filter_horizontal = ["white_labels", "user_permissions"]
 
     list_display = ("email_or_cell", "is_staff")
+
+    # UserAdmin's default fieldsets reference the "username" field, which this model
+    # replaces with email_or_cell, so they are declared explicitly.
+    fieldsets = (
+        (None, {"fields": ("email_or_cell", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "email", "cell", "language_code")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "white_labels",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        ("Contact preferences", {"fields": ("tcpa_consent", "explicit_tcpa_consent", "send_offers", "send_updates")}),
+        # external_id is the HubSpot contact ID, used when debugging CRM sync.
+        ("Integrations", {"fields": ("external_id",)}),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+    )
+
+    add_fieldsets = ((None, {"classes": ("wide",), "fields": ("email_or_cell", "password1", "password2")}),)
 
 
 class CustomGroupAdmin(SecureAdmin, GroupAdmin):

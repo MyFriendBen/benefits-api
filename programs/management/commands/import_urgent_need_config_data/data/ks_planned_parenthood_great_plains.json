@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_planned_parenthood_great_plains",
+    "category_type": {
+      "external_name": "ks_family_planning",
+      "name": "Family planning",
+      "icon": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "Planned Parenthood Great Plains",
+      "description": "Planned Parenthood offers birth control, pregnancy care, STI testing, and other health services. You can get care with or without insurance. Kansas City-area health centers include Overland Park and Kansas City, Kansas. Costs depend on the service, your insurance, and your income.",
+      "link": "https://www.plannedparenthood.org/planned-parenthood-great-plains",
+      "warning": "",
+      "website_description": "Find birth control, pregnancy care, STI care, and more.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Wyandotte County",
+      "Johnson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

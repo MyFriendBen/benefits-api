@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_comcare_sedgwick_county",
+    "category_type": {
+      "external_name": "ks_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "COMCARE of Sedgwick County",
+      "description": "COMCARE helps children and adults with mental health and addiction problems. Some services have their own rules. Fees depend on income, and people can get services even if they cannot pay. Call 316-660-7540 for a first appointment or 316-660-7500 for 24-hour crisis help.",
+      "link": "https://www.sedgwickcounty.org/comcare/",
+      "warning": "",
+      "website_description": "Find mental health, addiction, and crisis services in Sedgwick County.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

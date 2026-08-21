@@ -1,0 +1,84 @@
+{
+    "white_label": {
+        "code": "il"
+    },
+    "program_category": {
+        "external_name": "il_housing",
+        "name": "Housing and Utilities",
+        "icon": "housing"
+    },
+    "program": {
+        "name_abbreviated": "lifeline",
+        "year": "2026",
+        "legal_status_required": [
+            "citizen",
+            "non_citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission"
+        ],
+        "name": "Lifeline",
+        "description": "Lifeline is a federal program that helps you pay for your phone or internet service. It gives you a monthly discount that can be used for a cell phone, home phone, or home internet plan. You may not get a discount on both phone and internet unless you have a bundled service. If you live on qualifying Tribal lands, you can get an additional discount each month to help lower your costs.\n\nTo get this benefit, choose an approved company in your state and sign up for service. The company will then apply the discount directly to your bill every month.\n\nOnly one Lifeline benefit is allowed per household, and you may not get Lifeline from more than one company. A household is a group of people who live together and share money. This might be different from how other programs count your household.\n\nYou may qualify based on your household income, or if anyone in your household gets SNAP, Medicaid, SSI, Federal Public Housing Assistance, or Veterans Pension and Survivors Benefit. You may also qualify through certain Tribal programs.\n\nOnce you are in the program, you must show you are still eligible once a year. You also need to use your service at least once every 30 days to keep your discount active.",
+        "description_short": "Discount on monthly phone or internet service",
+        "learn_more_link": "https://www.lifelinesupport.org/how-to-qualify/",
+        "apply_button_link": "https://www.lifelinesupport.org/how-to-apply/",
+        "apply_button_description": "",
+        "estimated_application_time": "10 minutes",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "website_description": "Discount on monthly phone or internet service",
+        "base_program": "lifeline",
+        "value_format": null,
+        "show_on_current_benefits": true,
+        "has_calculator": true,
+        "show_in_has_benefits_step": false,
+        "external_name": "il_lifeline"
+    },
+    "documents": [
+        {
+            "external_name": "lifeline_program_participation",
+            "text": "Proof of participation in a qualifying program, if requested (ex: SNAP, Medicaid, SSI, or Federal Public Housing Assistance award letter)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "lifeline_income_proof",
+            "text": "Proof of household income, if requested (ex: pay stubs, prior-year tax return, or a Social Security, unemployment, or benefits statement)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "lifeline_id_proof",
+            "text": "Proof of identity, if requested (ex: driver's license, state ID, passport, or Tribal ID)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "lifeline_home",
+            "text": "Proof of home address, if requested (ex: lease, utility bill, or mortgage statement)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "lifeline_support_center",
+            "name": "Universal Service Administrative Co - Lifeline Support Center",
+            "description": "Federal funding that provides support for the Lifeline program, including assistance with applications and eligibility questions.",
+            "phone_number": "+18002349473",
+            "email": "LifelineSupport@usac.org",
+            "assistance_link": "https://www.lifelinesupport.org/"
+        },
+        {
+            "external_name": "mana_a_mana"
+        }
+    ],
+    "warning_messages": [
+        {
+            "external_name": "lifeline_snap_enrollment",
+            "calculator": "_show",
+            "message": "If your screener results indicate you are eligible for SNAP, you should enroll in SNAP before applying for Lifeline."
+        }
+    ]
+}

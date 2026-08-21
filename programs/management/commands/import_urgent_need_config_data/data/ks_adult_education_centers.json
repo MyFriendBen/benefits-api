@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_adult_education_centers",
+    "category_type": {
+      "external_name": "ks_education_resources",
+      "name": "Education and literacy",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Kansas Adult Education Centers (GED)",
+      "description": "Kansas Adult Education Centers help people get a GED or learn new skills. For a GED, you must be age 16 or older and not enrolled in high school. If you are 16 or 17, extra rules apply. Some programs also let you work toward a GED and job training at the same time. Find a center near you or call 785-430-4289.",
+      "link": "https://www.kansasregents.gov/workforce_development/adult-education/adult-education-centers",
+      "warning": "",
+      "website_description": "Find Kansas adult education centers for GED and English classes.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

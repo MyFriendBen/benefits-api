@@ -231,16 +231,24 @@ Optional:
 - `name_abbreviated` - Short unique identifier for the program
 
 **IMPORTANT - Calculator Naming Convention**:
-The `name_abbreviated` field **must match** the calculator key defined in `programs/programs/{white_label_code}/__init__.py`.
+`name_abbreviated` is how a program finds its calculator. At request time the
+lookup runs against the **database row**, not this file:
 
-For example, if your white label is `il` and you're creating a CSFP program:
-- The calculator dictionary in `programs/programs/il/__init__.py` has: `"il_csfp": IlCommoditySupplementalFoodProgram`
-- Your program's `name_abbreviated` must be: `"il_csfp"`
-
-This linkage is critical for the eligibility calculator to work. The system looks up calculators using the pattern:
 ```python
-calculators[program.name_abbreviated]  # Must find the calculator class
+calculators[program.name_abbreviated]  # resolved from the Program row
 ```
+
+So the calculator's `program_code` must equal the `name_abbreviated` on the row in
+the database. This config seeds that row, which is why the two are written to
+match — but a config edited without being reimported will disagree with the row,
+and the row is what wins.
+
+For example, for a CSFP program on the `il` white label:
+- `programs/programs/cross_white_label/csfp/il.py` declares `program_code = "il_csfp"`
+- This config sets `name_abbreviated` to `"il_csfp"`, seeding a row with that value
+
+A mismatch means the program resolves to no calculator. Nothing catches that at
+import; it surfaces as the program returning no value.
 
 Naming pattern: `{white_label_code}_{program_short_name}`
 - Illinois CSFP: `il_csfp`
@@ -336,23 +344,33 @@ Optional:
 Before importing a program, you need to create the eligibility calculator:
 
 1. **Create calculator directory**: `programs/programs/{white_label}/program_name/`
-2. **Create calculator.py**: Implement your eligibility logic
-3. **Register in __init__.py**: Add to `{white_label}_calculators` dict
+2. **Create calculator.py**: Implement your eligibility logic, declaring the
+   `Program` row the calculator backs
 
 Example for IL CSFP:
 ```python
-# programs/programs/il/__init__.py
-il_calculators: dict[str, type[ProgramCalculator]] = {
-    "il_csfp": IlCommoditySupplementalFoodProgram,  # Key must match name_abbreviated
-    # ... other calculators
-}
+# programs/programs/cross_white_label/csfp/il.py
+class IlCommoditySupplementalFoodProgram(ProgramCalculator):
+    program_code = "il_csfp"  # the Program row's name_abbreviated
+```
+
+That is the only registration step. `programs.framework.registry` finds the
+calculator by walking the package, so there is no dict to add it to. A class that
+declares neither `program_code` nor `abstract=True` raises at import rather than
+going unregistered.
+
+A base class that exists only to be subclassed declares itself instead:
+
+```python
+class HeadStart(PolicyEngineMembersCalculator, abstract=True):
+    ...
 ```
 
 ### Step 2: Create the JSON Config File
 
 1. Copy an existing config file from `data/` as a template
 2. Update all required fields:
-   - **Critical**: `name_abbreviated` must match your calculator key
+   - **Critical**: `name_abbreviated` must equal the calculator's `program_code`, since it seeds the row the lookup resolves against
    - Update all translatable text (name, description, etc.)
    - Set year, legal statuses, and other config
    - Add documents and navigators as needed

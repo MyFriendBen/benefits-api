@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_unclaimed_property",
+    "category_type": {
+      "external_name": "mo_savings",
+      "name": "Savings to improve financial stability",
+      "icon": "savings"
+    },
+    "type_short": [
+      "savings"
+    ],
+    "translations": {
+      "name": "Missouri Unclaimed Property (State Treasurer)",
+      "description": "About 1 in 10 Missourians has unclaimed money or property. The average return is about $300. Searching is free, and there is no deadline. Anyone can search, but only the owner or a legal heir can claim the property. Type in your name to see if the state is holding money for you.",
+      "link": "https://treasurer.mo.gov/UnclaimedProperty/en/",
+      "warning": "",
+      "website_description": "Missouri State Treasurer's free search and claim site for unclaimed money and property",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

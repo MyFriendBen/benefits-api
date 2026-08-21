@@ -1,0 +1,37 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_child_start",
+    "category_type": {
+      "external_name": "ks_child_development",
+      "name": "Child's development",
+      "icon": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Child Start",
+      "description": "Child Start helps families find child care and support for young children. The child care search is free. Eligibility for help paying for care and other programs varies. Call 316-682-1853 or use the website to find help.",
+      "link": "https://childstart.org/",
+      "warning": "",
+      "website_description": "Help finding child care and support for families in South-Central Kansas",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County",
+      "Butler County",
+      "Harvey County",
+      "Sumner County",
+      "Kingman County",
+      "Cowley County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

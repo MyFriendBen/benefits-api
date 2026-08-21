@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_workforce_partnership",
+    "category_type": {
+      "external_name": "ks_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Workforce Partnership",
+      "description": "Workforce Partnership helps people find jobs and build job skills. You can visit a career center for job search help, workshops, and other support. Some people may also qualify for help paying for job training. Visit the website to find the phone number for your county.",
+      "link": "https://workforcepartnership.com/",
+      "warning": "",
+      "website_description": "Find job help, workshops, and training support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Wyandotte County",
+      "Johnson County",
+      "Leavenworth County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_community_care_network_clinics",
+    "category_type": {
+      "external_name": "ks_free_low_cost_medical_care",
+      "name": "Free or lower cost health care",
+      "icon": "free_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Community Care Network of Kansas - Find a Clinic",
+      "description": "These clinics offer health care across Kansas. Some offer medical, dental, or behavioral health care. Costs and eligibility vary by clinic. Use the search tool to find a clinic near you.",
+      "link": "https://communitycareks.org/page/find-a-clinic",
+      "warning": "",
+      "website_description": "Find a clinic near you for health, dental, or mental health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

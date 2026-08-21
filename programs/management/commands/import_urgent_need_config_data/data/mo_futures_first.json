@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_futures_first",
+    "category_type": {
+      "external_name": "mo_child_development",
+      "name": "Child's development",
+      "icon": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Futures First (formerly The Family Conservancy)",
+      "description": "Futures First helps families find child care and offers parenting support and counseling. They also connect families to early learning programs. Eligibility and cost vary by service. Call 913-342-1110 to get started.",
+      "link": "https://futuresfirstkc.org/",
+      "warning": "",
+      "website_description": "Help with child care, parenting, counseling, and early learning",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Jackson County",
+      "Clay County",
+      "Platte County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -104,6 +104,13 @@ class ConfigurationData:
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "medicalExpensesAndDebt": {
+            "icon": {"_icon": "Medical_expenses_and_debt", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.medicalExpensesAndDebt",
+                "_default_message": "Medical Expenses & Debt",
+            },
+        },
     }
 
     # Consent options on sign-up page
@@ -468,12 +475,14 @@ class ConfigurationData:
 
     # Links to consent/terms pages, keyed by language code.
     consent_to_contact = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/terms-and-conditions/",
+        "es": "https://www.myfriendben.org/terminos-condiciones/",
     }
 
     # Links to privacy policy, keyed by language code.
     privacy_policy = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/privacy-policy/",
+        "es": "https://www.myfriendben.org/privacidad/",
     }
 
     # Configuration for branding, logos, steps, and UI options

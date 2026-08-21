@@ -22,13 +22,63 @@ class MoConfigurationData(ConfigurationData):
                     "_default_message": "Missouri 211 (United Way)",
                     "_label": "moreHelp.211.name.mo",
                 },
-                "link": "https://www.211.org/",
+                "link": "https://search.211helps.org/",
                 "phone": {
                     "_default_message": "Dial 2-1-1",
                     "_label": "moreHelp.211.phone.mo",
                 },
             },
+            {
+                "name": {
+                    "_default_message": "United Way 211 (Greater St. Louis)",
+                    "_label": "moreHelp.211.name.mo.stLouis",
+                },
+                "description": {
+                    "_default_message": "Serving the St. Louis region and southern Illinois.",
+                    "_label": "moreHelp.211.description.mo.stLouis",
+                },
+                "link": "https://helpingpeople.org/united-way-2-1-1/",
+                "phone": {
+                    "_default_message": "Dial 2-1-1",
+                    "_label": "moreHelp.211.phone.mo.stLouis",
+                },
+            },
         ]
+    }
+
+    # ==========================================================================================
+    # IMMEDIATE NEED OPTIONS
+    # Base options plus three tiles the base set doesn't offer:
+    #   freeLowCostMedicalCare - base only has dental care, leaving community health centers
+    #                            with nowhere to surface
+    #   savings                - reuses Screen.needs_college_savings (as CO does), but labelled
+    #                            broadly rather than CO's college-specific wording
+    #   transportation         - new Screen.needs_transportation field
+    # ==========================================================================================
+
+    acute_condition_options = {
+        **ConfigurationData.acute_condition_options,
+        "freeLowCostMedicalCare": {
+            "icon": {"_icon": "Health_care", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.freeLowCostMedicalCare",
+                "_default_message": "Free or lower cost health care",
+            },
+        },
+        "savings": {
+            "icon": {"_icon": "Savings", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.savings.mo",
+                "_default_message": "Savings",
+            },
+        },
+        "transportation": {
+            "icon": {"_icon": "Transportation", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.transportation",
+                "_default_message": "Transportation",
+            },
+        },
     }
 
     # ==========================================================================================

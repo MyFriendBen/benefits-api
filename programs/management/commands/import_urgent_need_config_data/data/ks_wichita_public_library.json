@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_wichita_public_library",
+    "category_type": {
+      "external_name": "ks_education_resources",
+      "name": "Education and literacy",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Wichita Public Library",
+      "description": "The library has free reading programs, homework help, and educational tablets for children. Adults can use computers and find help with jobs and learning a language. Anyone can get a free library account. People under 18 need an adult to sign for their account.",
+      "link": "https://www.wichitalibrary.org/",
+      "warning": "",
+      "website_description": "Find books, learning programs, homework help, computers, and other library services.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

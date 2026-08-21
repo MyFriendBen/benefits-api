@@ -1,0 +1,37 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_united_methodist_open_door",
+    "category_type": {
+      "external_name": "ks_managing_housing_costs",
+      "name": "Managing housing costs",
+      "icon": "managing_housing"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "United Methodist Open Door",
+      "description": "Open Door helps Wichita families with food, clothing, and housing. They also help families without housing find stable housing. They have a place where people without housing can get help during the day.",
+      "link": "https://umopendoor.org/",
+      "warning": "",
+      "website_description": "Find food, clothing, shelter, and housing help in Wichita.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County",
+      "Butler County",
+      "Harvey County",
+      "Sumner County",
+      "Kingman County",
+      "Cowley County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

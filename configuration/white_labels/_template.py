@@ -231,91 +231,23 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # TODO: Add your state's zip code to county mappings
     counties_by_zipcode = {}
 
-    # ==========================================================================================
-    # CATEGORY BENEFITS - Always customized
-    # ==========================================================================================
-    # Shown in "Additional Resources" step when users indicate they already receive benefits.
-    # Selected benefits are filtered from results.
-    #
-    # CRITICAL NAMING CONVENTION - THE DICTIONARY KEY MUST MATCH THE PROGRAM name_abbreviated:
-    #
-    # The benefit key (e.g., "snap", "leap", "tanf") determines:
-    #   1. Frontend field: formData.benefits.{key}
-    #   2. Backend write: updateScreen.ts sends current_benefits: [array of keys]
-    #   3. Database write: serializer stores a CurrentBenefit row per key
-    #      (screener_current_benefits join table: screen_id + program_id)
-    #   4. Backend read: Screen.has_benefit(name_abbreviated) checks screen.current_benefits
-    #
-    # WORKFLOW EXAMPLE FOR "SNAP":
-    #   1. Config key: "snap" (this file)
-    #   2. User checks "SNAP" checkbox in "Additional Resources" step
-    #   3. Frontend stores: formData.benefits.snap = true
-    #   4. updateScreen.ts sends: current_benefits: ["snap"]
-    #   5. Serializer creates: CurrentBenefit(screen=screen, program=Program(name_abbreviated="snap"))
-    #   6. Program registered with name_abbreviated = "snap" (or "co_snap", etc.)
-    #   7. has_benefit("snap") checks screen.current_benefits for a matching name_abbreviated
-    #   8. Results serialization: "already_has": True
-    #   9. Frontend filters: SNAP program hidden from results
-    #
-    # IMPORTANT - MULTIPLE PROGRAMS, SAME BENEFIT:
-    #   Multiple programs can check the same benefit. For example:
-    #   - Regular screener program: name_abbreviated = "snap"
-    #   - State variant program: name_abbreviated = "co_snap"
-    #
-    #   Each is looked up independently by has_benefit() — no mapping needed.
-    #   A user who selected "snap" will have a CurrentBenefit row for the snap
-    #   program; has_benefit("co_snap") checks for co_snap separately.
-    #
-    # STEPS TO ADD A NEW BENEFIT:
-    #   1. Add benefit key here matching the program's name_abbreviated (e.g., "my_benefit")
-    #   2. Add mapping in updateScreen.ts: include "my_benefit" in the current_benefits array
-    #   3. Ensure the Program row exists with name_abbreviated = "my_benefit"
-    #   4. Screen.has_benefit("my_benefit") works automatically via the CurrentBenefit relation
-    #
-    # Structure:
-    #   {
-    #       "categoryKey": {                          # Arbitrary category identifier
-    #           "category_name": { ... },             # Category display name
-    #           "benefits": {
-    #               "benefit_key": {                  # ← THIS KEY IS CRITICAL!
-    #                   "name": { ... },              # Benefit display name
-    #                   "description": { ... }        # Brief description
-    #               }
-    #           }
-    #       }
-    #   }
-    #
-    # See existing white labels for examples:
-    #   - co.py (lines ~1928-2265)
-    #   - il.py
-    # ==========================================================================================
-
-    # TODO: Add benefits available in your state, organized by category
-    category_benefits = {
-        "your_category_key": {
-            "benefits": {
-                "your_benefit_key": {  # ← This key is critical! Must match has_* field name
-                    "name": {"_label": "", "_default_message": ""},
-                    "description": {"_label": "", "_default_message": ""},
-                },
-            },
-            "category_name": {"_label": "", "_default_message": ""},
-        },
-    }
 
     # ==========================================================================================
-    # CONSENT & PRIVACY - Always needed for production
+    # CONSENT & PRIVACY - Usually inherited
     # ==========================================================================================
 
-    # TODO: Add consent/terms links for each language
-    consent_to_contact = {
-        "en-us": "",
-    }
-
-    # TODO: Add privacy policy links for each language
-    privacy_policy = {
-        "en-us": "",
-    }
+    # consent_to_contact and privacy_policy are inherited from base.py, which points at the
+    # generic MyFriendBen terms and privacy pages (en-us and es). Leave them out unless this
+    # white label has its own policy pages, then override with a key per translated page:
+    # consent_to_contact = {
+    #     "en-us": "https://example.org/terms-and-conditions/",
+    #     "es": "https://example.org/terminos-condiciones/",
+    # }
+    #
+    # privacy_policy = {
+    #     "en-us": "https://example.org/privacy-policy/",
+    #     "es": "https://example.org/privacidad/",
+    # }
 
     # ==========================================================================================
     # REFERRER DATA - Always customized

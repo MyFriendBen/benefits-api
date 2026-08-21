@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_family_planning_program",
+    "category_type": {
+      "external_name": "ks_family_planning",
+      "name": "Family planning",
+      "icon": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "Kansas Family Planning Program (Title X)",
+      "description": "Kansas Family Planning clinics offer birth control and other health services. These may include pregnancy tests, checkups, and STI testing and treatment. Services are voluntary and confidential. Your fee depends on your income. You can use the clinic locator to find a site near you.",
+      "link": "https://www.kdhe.ks.gov/657/Family-Planning-Reproductive-Health",
+      "warning": "",
+      "website_description": "Find a family planning clinic and learn about available services.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

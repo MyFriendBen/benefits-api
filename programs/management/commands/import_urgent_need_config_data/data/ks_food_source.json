@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_food_source",
+    "category_type": {
+      "external_name": "ks_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Kansas Food Source",
+      "description": "Find a free food pantry or mobile food distribution near you anywhere in Kansas. You can see locations and hours. Rules vary by pantry.",
+      "link": "https://kansasfoodsource.org/",
+      "warning": "",
+      "website_description": "Find food pantries and mobile food distributions across Kansas.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

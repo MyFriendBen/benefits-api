@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_wichita_transit_half_fare",
+    "category_type": {
+      "external_name": "ks_transportation",
+      "name": "Transportation",
+      "icon": "transportation"
+    },
+    "type_short": [
+      "transportation"
+    ],
+    "translations": {
+      "name": "Wichita Transit Half-Fare Program",
+      "description": "People who qualify can ride Wichita buses for 85 cents. You may qualify if you are 65 or older, have Medicare, or have a qualifying disability. Apply for a free Half-Fare ID card and show it when you board. Call 316-265-7221 with questions.",
+      "link": "https://www.wichita.gov/1505/Half-Fare-Program",
+      "warning": "",
+      "website_description": "Learn who can get a Half-Fare ID card and how to apply.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

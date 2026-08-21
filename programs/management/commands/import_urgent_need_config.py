@@ -14,7 +14,7 @@ from programs.models import (
     UrgentNeedFunction,
     UrgentNeedType,
 )
-from programs.programs.urgent_needs import urgent_need_functions
+from programs.urgent_needs import urgent_need_functions
 from screener.models import WhiteLabel
 from programs.management.commands._translation_utils import TranslationImportMixin
 from translations.models import Translation
@@ -104,9 +104,13 @@ class Command(TranslationImportMixin, BaseCommand):
 
         # --- REAL EXECUTION VALIDATION ---
         if existing_need and not override:
+            # Nothing in the config is applied on this path. Say so plainly rather than
+            # letting a skip read as a completed import.
             self.stdout.write(
                 self.style.WARNING(
-                    f"Urgent Need '{external_name}' already exists (ID: {existing_need.id}). "
+                    f"⊘ Skipped: Urgent Need '{external_name}' already exists (ID: {existing_need.id}). "
+                    f"Nothing in this config was applied — its counties, functions and translations "
+                    f"were not read.\n"
                     f"Use --override to delete and recreate it."
                 )
             )

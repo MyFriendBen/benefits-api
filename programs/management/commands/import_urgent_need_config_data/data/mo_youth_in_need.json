@@ -1,0 +1,37 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_youth_in_need",
+    "category_type": {
+      "external_name": "mo_child_development",
+      "name": "Child's development",
+      "icon": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Youth In Need",
+      "description": "Youth In Need helps children, teens, and families. They offer counseling, shelter, housing, early learning, and other help. Eligibility varies by program. Use the website to find a program that can help you.",
+      "link": "https://www.youthinneed.org/our-programs/",
+      "warning": "",
+      "website_description": "Help for children, teens, and families in eastern Missouri",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County",
+      "St. Charles County",
+      "Lincoln County",
+      "Warren County",
+      "Montgomery County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

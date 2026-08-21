@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_heat_up_st_louis",
+    "category_type": {
+      "external_name": "il_managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Heat Up St. Louis & Cool Down St. Louis",
+      "description": "Heat Up St. Louis and Cool Down St. Louis help households with low incomes pay energy bills. Other rules depend on where you live and the type of help you need. They also give air conditioners to some seniors and people with disabilities. You must not have a working air conditioner. Apply online based on where you live.",
+      "link": "https://heatupstlouis.org/",
+      "warning": "",
+      "website_description": "Heating and cooling bill help, applications, and air conditioner information",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Madison",
+      "St. Clair",
+      "Monroe"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

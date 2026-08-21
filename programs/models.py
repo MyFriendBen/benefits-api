@@ -5,10 +5,9 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
-from programs.programs import calculators
 from programs.util import Dependencies
 from typing import Optional, TypedDict, Union
-from programs.programs.translation_overrides import warning_calculators
+from programs.translation_overrides import warning_calculators
 
 _FPL_DEFAULTS = {
     "2023": {
@@ -779,6 +778,11 @@ class Program(models.Model):
     # contains the eligibility information and values for all currently
     # calculated benefits in the chain.
     def eligibility(self, screen, data, missing_dependencies: Dependencies):
+        # Imported here rather than at module scope: the registry is built by
+        # walking every calculator, and the PolicyEngine base imports Program
+        # from this module. At import time that cycle is unresolvable.
+        from programs.programs import calculators
+
         Calculator = calculators[self.name_abbreviated.lower()]
 
         calculator = Calculator(screen, self, data, missing_dependencies)
@@ -1944,6 +1948,13 @@ class ProgramConfigImport(models.Model):
     imported_at = models.DateTimeField(
         auto_now_add=True,
         help_text="When this configuration was imported",
+    )
+    content_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="SHA-256 of the config file when it was applied. A file whose hash no longer matches "
+        "is treated as pending again, so edits to a config are picked up on the next run.",
     )
 
     class Meta:

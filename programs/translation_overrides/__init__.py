@@ -1,0 +1,16 @@
+from programs.translation_overrides.dont_show import DontShow
+from programs.translation_overrides.energy import CesnRenter
+from programs.translation_overrides.ma import MaSeniorSnapApplication
+from .base import TranslationOverrideCalculator
+
+general_calculators: dict[str, type[TranslationOverrideCalculator]] = {
+    "_show": TranslationOverrideCalculator,
+    "_dont_show": DontShow,
+}
+
+specific_calculators: dict[str, type[TranslationOverrideCalculator]] = {
+    "ma_senior_snap_application": MaSeniorSnapApplication,
+    "cesn_renter": CesnRenter,
+}
+
+warning_calculators: dict[str, type[TranslationOverrideCalculator]] = {**general_calculators, **specific_calculators}

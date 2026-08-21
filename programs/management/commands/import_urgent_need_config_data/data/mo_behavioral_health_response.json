@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_behavioral_health_response",
+    "category_type": {
+      "external_name": "mo_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "Behavioral Health Response (BHR)",
+      "description": "Behavioral Health Response gives free, confidential mental health support by phone 24/7. They can help you find local care and other resources. Call or text 988 anytime, or call BHR at 314-819-8811.",
+      "link": "https://bhrstl.org/",
+      "warning": "",
+      "website_description": "24/7 phone support and mental health resources from BHR",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

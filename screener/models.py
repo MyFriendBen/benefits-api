@@ -114,6 +114,8 @@ class Screen(models.Model):
     needs_aging_resources = models.BooleanField(default=False, blank=True, null=True)
     needs_homeless_services = models.BooleanField(default=False, blank=True, null=True)
     needs_free_low_cost_medical_care = models.BooleanField(default=False, blank=True, null=True)
+    needs_transportation = models.BooleanField(default=False, blank=True, null=True)
+    needs_medical_expenses_and_debt = models.BooleanField(default=False, blank=True, null=True)
     utm_id = models.CharField(max_length=64, blank=True, null=True)
     utm_source = models.CharField(max_length=64, blank=True, null=True)
     utm_medium = models.CharField(max_length=64, blank=True, null=True)
@@ -313,6 +315,26 @@ class Screen(models.Model):
 
     def has_insurance_types(self, types, strict=True) -> bool:
         return any(member.has_insurance_types(types, strict) for member in self.household_members.all())
+
+    # Keys in Insurance.insurance_map() that describe a coverage *source* rather than a
+    # MyFriendBen program, so they never correspond to a Program row.
+    NON_PROGRAM_INSURANCE_KEYS = frozenset({"dont_know", "none", "employer", "private"})
+
+    def held_insurance_keys(self) -> set[str]:
+        """The `insurance_map()` keys any household member reports holding.
+
+        The member-level counterpart to `_current_benefit_names`. Enrollment lives in two
+        systems: `CurrentBenefit` (household-level, see `has_benefit`) and `Insurance`
+        (member-level), and medicaid / CHP / medicare / VA / emergency medicaid / family
+        planning only ever appear in the latter — deliberately, see
+        `serializers._derived_current_benefit_names`.
+
+        Derived from `insurance_map()`'s own keys so adding a variant there is picked up
+        automatically. Computed once per call rather than per program: callers used to
+        re-walk every member and rebuild the 16-key map for each program they tested.
+        """
+        candidates = set(Insurance.insurance_map(Insurance()).keys()) - self.NON_PROGRAM_INSURANCE_KEYS
+        return {key for key in candidates if self.has_insurance_types((key,), strict=False)}
 
     def has_benefit_from_list(self, names: list[str]):
         """True if the household receives any of `names`. Each entry may be an exact

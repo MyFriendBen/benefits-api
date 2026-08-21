@@ -97,6 +97,13 @@ class TxConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "medicalExpensesAndDebt": {
+            "icon": {"_icon": "Medical_expenses_and_debt", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.medicalExpensesAndDebt",
+                "_default_message": "Medical Expenses & Debt",
+            },
+        },
         "disabilityResources": {
             "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
             "text": {

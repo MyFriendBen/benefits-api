@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_infant_toddler_services",
+    "category_type": {
+      "external_name": "ks_child_development",
+      "name": "Child's development",
+      "icon": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Infant Toddler Services of Kansas (tiny-k)",
+      "description": "Worried about your baby or toddler’s development? tiny-k can help. Children under age 3 may qualify if they have a developmental delay or disability. Services are free for families. Parents and professionals can ask for an evaluation.",
+      "link": "https://www.itsofks.org/",
+      "warning": "",
+      "website_description": "Learn about early childhood services and find a local provider.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

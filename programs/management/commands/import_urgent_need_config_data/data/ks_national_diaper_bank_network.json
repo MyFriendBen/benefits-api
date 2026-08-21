@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_national_diaper_bank_network",
+    "category_type": {
+      "external_name": "ks_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "National Diaper Bank Network - Find a Diaper Bank",
+      "description": "Find a diaper bank near you, including locations in Kansas. Diaper banks give out free diapers and often wipes and other baby supplies. Eligibility and availability vary by diaper bank. You can also dial 211 to ask about diaper help near you.",
+      "link": "https://nationaldiaperbanknetwork.org/member-directory/",
+      "warning": "",
+      "website_description": "Find a diaper bank near you.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
