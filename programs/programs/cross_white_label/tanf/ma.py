@@ -17,8 +17,11 @@ class MaTafdc(PolicyEngineSpmCalulator):
         dependency.member.PregnancyDependency,
         dependency.member.MaTafdcPregnancyEligibleDependency,
         # ma_tafdc_age_limit and ma_tafdc_pregnancy_eligible both read
-        # is_in_secondary_school, which has no PE default. MaTafdc does not inherit
-        # Tanf.pe_inputs, so it is sent explicitly here.
+        # is_in_secondary_school, which has no PE default. Listed here rather than
+        # inherited: ma_tafdc is a self-contained MA model (adds ma_tafdc_if_claimed,
+        # defined_for ma_tafdc_exceeds_eaedc) that reads none of the federal chain the Tanf
+        # base supplies — not is_person_demographic_tanf_eligible, nor any of the
+        # SNAP/TANF receipt inputs — so subclassing it would send inert fields.
         dependency.member.InSecondarySchoolDependency,
         dependency.household.IsInPublicHousingDependency,
         dependency.household.MaStateCodeDependency,
