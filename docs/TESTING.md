@@ -230,6 +230,27 @@ class TestMyProgram(CustomCalculatorTestCase):
 
 Most existing custom tests are in this group — they stand up a `Mock()` program today.
 
+### When to use this fixture, and when to mock instead
+
+Two strategies coexist deliberately. Measured over ten identical tests:
+
+| | per test | when |
+| -- | -- | -- |
+| mock the `Screen` outright | ~1ms | the calculator reads a handful of attributes and no related rows |
+| this fixture, `needs_program_row = False` | ~3ms | the calculator walks `household_members`, income streams, or insurance |
+| this fixture with a real `Program` | ~33ms | the calculator reads `program.year` for an FPL or SMI limit |
+
+The cost is the `Program` row, not the fixture: it writes a `Translation` per translated
+field per language. Between the first two rows the difference is single-digit
+milliseconds, so prefer the fixture whenever a test would otherwise hand-assemble a
+`Screen` and its members — a real household that raises the way production raises is
+worth 2ms.
+
+Around 50 test modules mock the `Screen` and never touch the database. Those are correct
+as they stand: their calculators take a few scalars, and rewriting them against the
+database would make them slower without making them stronger. Migrate a file when it is
+already building a DB household by hand, not on principle.
+
 ### The builders
 
 | builder | what it makes |
