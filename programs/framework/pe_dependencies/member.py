@@ -1070,48 +1070,6 @@ class WaAppleHealthKidsEligible(Member):
     field = "wa_apple_health_kids_eligible"
 
 
-class NonSsiBankAccountAssetsDependency(Member):
-    """
-    The household's liquid assets, attributed only to members not reporting SSI — the
-    person-level half of PolicyEngine's ``spm_unit_cash_assets``.
-
-    Programs that exclude an SSI recipient's resources (e.g. ``mo_tanf``) subtract each
-    recipient's person-level asset components from the unit total, so a household sending
-    only the aggregate gives them nothing to subtract and the exclusion never fires.
-    ``Screen.household_assets`` has no per-member ownership, so attributing the whole
-    amount to the non-SSI members is the assumption the exclusion asks for. With nobody on
-    SSI this reproduces the aggregate exactly.
-
-    Send instead of ``spm.CashAssetsDependency``, never alongside it: the two write
-    different halves of the same total.
-
-    Single-consumer by circumstance, not design. ``mo_tanf`` is currently the only state
-    resource test in PolicyEngine that models the exclusion at all — KS, WA and TX apply a
-    flat aggregate limit despite their statutes excluding the same resources (MFB-1696), so
-    sending this to them today would change nothing. They should switch to it once PE lands
-    the exclusion.
-
-    The even split is an assumption: the screener collects one household figure with no
-    per-member ownership. It also assumes the three components above sum to
-    ``spm_unit_cash_assets``, which is what PolicyEngine's own formula depends on — if PE
-    adds a component to that variable's ``adds`` list, this under-subtracts until it is
-    updated to match.
-    """
-
-    field = "bank_account_assets"
-
-    def value(self):
-        if member_reports_ssi_amount(self.member):
-            return 0
-
-        assets = self.screen.household_assets or 0
-        non_ssi_members = [m for m in self.screen.household_members.all() if not member_reports_ssi_amount(m)]
-        if not non_ssi_members:
-            return 0
-
-        return int(assets) / len(non_ssi_members)
-
-
 class InSecondarySchoolDependency(Member):
     """
     PolicyEngine's ``is_in_secondary_school`` — secondary school, or an equivalent level of
