@@ -14,7 +14,7 @@ which fields are sent.
 
 from typing import List, Optional
 
-from screener.models import HouseholdMember, Screen
+from screener.models import Screen
 
 from programs.framework.pe_base import PolicyEngineCalulator
 from programs.framework.pe_dependencies.base import DependencyError, Member, TaxUnit
@@ -100,7 +100,7 @@ def pe_input(
     # in iteration order, and the cassette matcher compares request bodies exactly. Without
     # it Postgres picks the order, so the same household can serialize differently between
     # runs and a recorded cassette stops matching — the request then goes to the live API.
-    members: list[HouseholdMember] = screen.household_members.all().order_by("id")
+    members = screen.household_members.all().order_by("id")
     relationship_map = screen.relationship_map()
 
     main_tax_members = []
