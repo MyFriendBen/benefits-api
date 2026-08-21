@@ -12,7 +12,7 @@ interactions:
       {"2026": null}}, "1102": {"age": {"2026": 6}, "is_full_time_college_student":
       {"2026": false}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
       {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
-      true}, "is_in_secondary_school": {"2026": false}, "bank_account_assets": {"2026":
+      true}, "is_in_secondary_school": {"2026": true}, "bank_account_assets": {"2026":
       0.0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026": 0},
       "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
       {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
@@ -21,7 +21,7 @@ interactions:
       {"2026": null}}, "1103": {"age": {"2026": 8}, "is_full_time_college_student":
       {"2026": false}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
       {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
-      true}, "is_in_secondary_school": {"2026": false}, "bank_account_assets": {"2026":
+      true}, "is_in_secondary_school": {"2026": true}, "bank_account_assets": {"2026":
       0.0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026": 0},
       "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
       {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
@@ -43,7 +43,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '2951'
+      - '2949'
       Content-Type:
       - application/json
       User-Agent:
@@ -66,7 +66,7 @@ interactions:
         "1102": {"age": {"2026": 6}, "is_full_time_college_student": {"2026": false},
         "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
         {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
-        {"2026": true}, "is_in_secondary_school": {"2026": false}, "bank_account_assets":
+        {"2026": true}, "is_in_secondary_school": {"2026": true}, "bank_account_assets":
         {"2026": 0.0}, "employment_income": {"2026": 0}, "self_employment_income":
         {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
         0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
@@ -76,7 +76,7 @@ interactions:
         "1103": {"age": {"2026": 8}, "is_full_time_college_student": {"2026": false},
         "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
         {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
-        {"2026": true}, "is_in_secondary_school": {"2026": false}, "bank_account_assets":
+        {"2026": true}, "is_in_secondary_school": {"2026": true}, "bank_account_assets":
         {"2026": 0.0}, "employment_income": {"2026": 0}, "self_employment_income":
         {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
         0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
@@ -94,23 +94,23 @@ interactions:
         "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '3056'
+      - '3054'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 00:45:12 GMT
+      - Fri, 21 Aug 2026 01:35:44 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-c0a64d8b1a9dda20662c54572116fa27-12d9c285320f4b86-00
+      - 00-edec4121d366864396da08d36c10db89-49c8ea3246dcb2ae-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - c0a64d8b1a9dda20662c54572116fa27
+      - edec4121d366864396da08d36c10db89
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -118,7 +118,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 7877431a-f4a3-4775-86d6-708a606db925
+      - ba868fab-2d04-484f-bc34-a538f5955a1f
       x-policyengine-route-channel:
       - current
     status:

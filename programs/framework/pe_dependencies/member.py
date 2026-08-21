@@ -1102,20 +1102,34 @@ class NonSsiBankAccountAssetsDependency(Member):
 
 class InSecondarySchoolDependency(Member):
     """
-    PolicyEngine's ``is_in_secondary_school``, for a dependent child old enough that PE's
-    own tax-dependency inference would drop them.
+    PolicyEngine's ``is_in_secondary_school`` — secondary school, or an equivalent level of
+    vocational or technical training.
 
-    Set only at 18: under-18s already satisfy the dependent-child tests through
-    ``is_child``, and a 19-year-old is over the age limit whatever their enrollment. The
-    screener cannot confirm secondary attendance — ``student``/``student_full_time`` ask
-    about college — so this reports the inclusive default rather than a known fact.
+    The variable has no formula and no default, so PolicyEngine reads False for everyone
+    unless it is sent. Its consumers all use it the same way, as
+    ``where(is_in_secondary_school, student_age_limit, non_student_age_limit)``, so an
+    unsent input silently applies the lower limit — under the federal TANF definition
+    (45 CFR 260.30) that drops the minor-child age limit from 19 to 18.
+
+    The screener has no secondary-enrollment field: ``student`` and ``student_full_time``
+    ask about college, university or community college, and a False there does not disprove
+    secondary attendance. So this is an imputation from age, in the same spirit as
+    PolicyEngine's own ``is_in_k12_school`` (which assumes ages 5–17), extended to 18 to
+    cover the final year — the boundary the age-limit consumers turn on. Reported only for
+    dependents, since the consumers that matter test dependent children.
     """
 
     field = "is_in_secondary_school"
     dependencies = ("relationship", "age")
 
+    # Matches PolicyEngine's is_in_k12_school imputation at the lower bound; the upper bound
+    # is 18 rather than 17 because a student in their final year is exactly the case the
+    # 18-vs-19 age limits distinguish.
+    MIN_AGE = 5
+    MAX_AGE = 18
+
     def value(self):
         if not self.member.is_dependent():
             return None
 
-        return self.member.age == 18
+        return self.MIN_AGE <= self.member.age <= self.MAX_AGE

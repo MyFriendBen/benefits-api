@@ -12,7 +12,7 @@ interactions:
       "is_incapable_of_self_care": {"2026": null}}, "3002": {"age": {"2026": 6}, "is_full_time_college_student":
       {"2026": false}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
       {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
-      true}, "is_in_secondary_school": {"2026": false}, "bank_account_assets": {"2026":
+      true}, "is_in_secondary_school": {"2026": true}, "bank_account_assets": {"2026":
       0.0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026": 0},
       "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
       {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
@@ -34,7 +34,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '2139'
+      - '2138'
       Content-Type:
       - application/json
       User-Agent:
@@ -57,7 +57,7 @@ interactions:
         "3002": {"age": {"2026": 6}, "is_full_time_college_student": {"2026": false},
         "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
         {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
-        {"2026": true}, "is_in_secondary_school": {"2026": false}, "bank_account_assets":
+        {"2026": true}, "is_in_secondary_school": {"2026": true}, "bank_account_assets":
         {"2026": 0.0}, "employment_income": {"2026": 0}, "self_employment_income":
         {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
         0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
@@ -76,21 +76,21 @@ interactions:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '2250'
+      - '2249'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 00:45:39 GMT
+      - Fri, 21 Aug 2026 01:36:10 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-08ce72091bf185636bb53859217f10c7-01c3425b6af21f97-00
+      - 00-d1384fc1c70fdd6e123da7b063c27746-8420203e3930a960-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 08ce72091bf185636bb53859217f10c7
+      - d1384fc1c70fdd6e123da7b063c27746;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -98,7 +98,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - f873af80-9fb7-4c4a-b954-cb46400d7ab4
+      - 91f133cd-5541-4bdf-b4c5-ccd7de8629c8
       x-policyengine-route-channel:
       - current
     status:
