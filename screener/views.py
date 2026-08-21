@@ -8,9 +8,9 @@ from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from integrations.clients.policyengine import versions as pe_versions
 from programs.models import Referrer
-from programs.framework.helpers import STATE_MEDICAID_OPTIONS
 from integrations.clients.policyengine.registry import all_calculators
 from programs.urgent_needs.base import UrgentNeedFunction
+from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
 from screener.models import (
     Screen,
@@ -367,6 +367,53 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
+def medicaid_program_codes() -> tuple:
+    """Every program code backed by a `Medicaid` calculator, including the narrower members
+    of the family (`ma_mass_health_limited`, TX's four)."""
+
+    # __subclasses__() only sees imported classes. The `all_calculators` import at the top
+    # of this module builds the PolicyEngine registry eagerly, and building it walks every
+    # calculator package — so every Medicaid subclass is imported before this runs. That
+    # import is load-bearing for this function, not just for its own use below.
+    def subclasses(cls):
+        for subclass in cls.__subclasses__():
+            yield subclass
+            yield from subclasses(subclass)
+
+    return tuple(
+        sorted(
+            subclass.program_code
+            for subclass in subclasses(Medicaid)
+            if not subclass._abstract and getattr(subclass, "program_code", None)
+        )
+    )
+
+
+# The order programs are calculated in. A program that reads another program's result
+# out of `data` must be listed after it, because `data` holds only what has already been
+# calculated. Programs not listed here calculate last, in any order.
+#
+# The Medicaid programs are derived rather than listed, so each state's Medicaid
+# resolves before the programs gating on it through `ProgramCalculator.program_eligible`.
+# That gate raises rather than reading False when its key is absent, which makes this
+# ordering load-bearing; `screener/tests/test_calc_order.py` asserts it holds.
+CALC_ORDER = (
+    "nslp",
+    "chp",
+    *medicaid_program_codes(),
+    # Custom calculators that gate on Medicaid rather than subclassing `Medicaid`, and are
+    # themselves gated on by il_aca_adults — so they sit after the derived block and before
+    # their own dependent. A program that only gates on others needs no slot: unlisted
+    # sorts last, which is already after everything it reads.
+    "il_family_care",
+    "il_moms_and_babies",
+    "cesn_leap",
+    "cesn_eoc",
+    "cesn_cowap",
+    "cesn_care",
+)
+
+
 def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
@@ -438,26 +485,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     pe_programs = pe_calculators.keys()
 
     def sort_first(program):
-        calc_order = (
-            "tanf",
-            "ssi",
-            "nslp",
-            "leap",
-            "chp",
-            *STATE_MEDICAID_OPTIONS,
-            "emergency_medicaid",
-            "wic",
-            "andcs",
-            "cesn_leap",
-            "cesn_eoc",
-            "cesn_cowap",
-            "cesn_care",
-        )
+        if program.name_abbreviated not in CALC_ORDER:
+            return len(CALC_ORDER)
 
-        if program.name_abbreviated not in calc_order:
-            return len(calc_order)
-
-        return calc_order.index(program.name_abbreviated)
+        return CALC_ORDER.index(program.name_abbreviated)
 
     missing_programs = False
 

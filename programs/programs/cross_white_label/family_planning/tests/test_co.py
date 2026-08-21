@@ -150,8 +150,11 @@ class TestFamilyPlanningServicesMedicaidExclusion(TestCase):
     def test_non_medicaid_household_is_eligible(self):
         self.assertTrue(self._run(False))
 
-    def test_household_is_eligible_when_medicaid_was_not_calculated(self):
-        self.assertTrue(self._run(None))
+    def test_uncalculated_medicaid_raises_rather_than_reading_as_not_eligible(self):
+        """An absent key means "not calculated", which is a different answer from
+        "calculated, and not eligible" — so it must not quietly pass the exclusion."""
+        with self.assertRaises(DependencyError):
+            self._run(None)
 
 
 class TestFamilyPlanningServicesIncomeEligibility(TestCase):
