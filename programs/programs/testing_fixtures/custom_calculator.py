@@ -5,11 +5,16 @@ so its ids are explicit and its amounts are verbatim from a spec scenario. A cus
 calculator reads the same `Screen` but computes locally, so nothing here needs a fixed
 primary key and a test can let Django assign them.
 
-What a custom test does need, measured across the 25 files that hand-roll a household
-today: an income stream (19 of them), a `Program` row carrying an FPL year (10), and
-occasionally insurance or an expense. `CustomCalculatorTestCase` supplies all of it and
-runs the calculator, so a test reads as household → assertion.
+What a custom test needs, measured across the files that hand-roll a household today:
+a white label always, an income stream usually, and a `Program` row carrying an FPL year
+in the 13 files whose calculator reads one. The larger group — 76 files — stands up a
+`Mock` program instead, because their calculators never touch it; those set
+`needs_program_row = False` and skip the translation rows a real `Program` writes.
+`CustomCalculatorTestCase` supplies all of it and runs the calculator, so a test reads as
+household → assertion.
 """
+
+from unittest.mock import Mock
 
 from django.test import TestCase
 
@@ -41,6 +46,10 @@ def make_screen(
     `household_size` is what the calculator reads for FPL and SMI lookups, and it is
     not derived from the members added afterwards — a test that needs them to agree
     has to say so, because some scenarios deliberately disagree.
+
+    `is_test=True` marks the row the way the screener marks its own test traffic. Nothing
+    in the eligibility path reads it — only `set_screen_is_test`, the serializers, and the
+    view filters — so it is a labelling convenience rather than a behavioural switch.
     """
     return Screen.objects.create(
         white_label=make_white_label(white_label_code, state_code),
@@ -105,12 +114,13 @@ def add_expense(member: HouseholdMember, amount: int, expense_type: str = "rent"
 def add_insurance(member: HouseholdMember, **kwargs) -> Insurance:
     """Replace a member's insurance.
 
-    `add_member` already gave them an uninsured record, so this overwrites it. Name only
-    what the scenario needs — `medicaid=True, none=False` for a member already covered.
+    `add_member` already gave them an uninsured record, so this overwrites it in place.
+    Name only what the scenario needs — `medicaid=True, none=False` for a member already
+    covered.
     """
-    Insurance.objects.filter(household_member=member).delete()
+    insurance, _ = Insurance.objects.update_or_create(household_member=member, defaults=kwargs)
 
-    return Insurance.objects.create(household_member=member, **kwargs)
+    return insurance
 
 
 def make_program(
@@ -164,6 +174,11 @@ class CustomCalculatorTestCase(TestCase):
     state_code: str = "TS"
     fpl_year: str = "2025"
 
+    #: Set False when the calculator never reads `self.program` — no FPL or SMI lookup, no
+    #: `program.year`. `self.program` is then a `Mock`, which skips the ~10 translated
+    #: fields a real `Program` row writes per language.
+    needs_program_row: bool = True
+
     # convenience re-exports so a subclass needs one import
     make_screen = staticmethod(make_screen)
     add_member = staticmethod(add_member)
@@ -171,18 +186,40 @@ class CustomCalculatorTestCase(TestCase):
     add_expense = staticmethod(add_expense)
     add_insurance = staticmethod(add_insurance)
 
-    def setUp(self):
-        super().setUp()
-        self.white_label = make_white_label(self.white_label_code, self.state_code)
-        self.program = make_program(self.white_label_code, self.program_code, self.fpl_year, self.state_code)
+    @classmethod
+    def setUpTestData(cls):
+        """Create the white label and program once per class, not once per test.
 
-    def calculate(self, screen: Screen, data: dict[str, Eligibility] = None, missing=()) -> Eligibility:
-        """Run the calculator and return its `Eligibility`.
+        `Program.objects.new_program` writes a `Translation` row per translated field per
+        language, so building it per test method dominates the runtime of a small suite.
+        Neither row is mutated by a test, so one per class is enough.
+        """
+        super().setUpTestData()
+        cls.white_label = make_white_label(cls.white_label_code, cls.state_code)
+        if cls.needs_program_row:
+            cls.program = make_program(cls.white_label_code, cls.program_code, cls.fpl_year, cls.state_code)
+        else:
+            cls.program = Mock()
+
+    def make_calculator(self, screen: Screen, data: dict[str, Eligibility] = None, missing=()):
+        """Build the calculator without running it.
+
+        Use this to assert on one step rather than the whole result — `eligible()` for the
+        household and member rules alone, or a program-specific method such as an income
+        limit. `calculate()` covers the common case of wanting the final `Eligibility`.
 
         `data` is the results of programs already calculated, which a calculator gating on
         another program reads. `missing` names dependencies the screen does not supply, so
         a test can assert the program is skipped rather than valued wrongly.
         """
-        calculator = self.calculator_class(screen, self.program, data or {}, Dependencies(missing))
+        return self.calculator_class(screen, self.program, data or {}, Dependencies(missing))
 
-        return calculator.calc()
+    def calculate(self, screen: Screen, data: dict[str, Eligibility] = None, missing=()) -> Eligibility:
+        """Run the calculator end to end and return its `Eligibility`.
+
+        Returns the `Eligibility` alone. A few suites predate this base class and define a
+        local `calculate()` returning `(calculator, eligibility)` — `ma/bsp` is the one to
+        check against when migrating a file that has its own helper of the same name, since
+        unpacking the single return value fails loudly rather than silently.
+        """
+        return self.make_calculator(screen, data, missing).calc()

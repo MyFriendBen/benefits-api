@@ -12,8 +12,6 @@ from programs.programs.white_labels.il.nfp.calculator import IlNurseFamilyPartne
 from screener.models import HouseholdMember, IncomeStream
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
-from programs.models import Program, FederalPoveryLimit
-from programs.util import Dependencies
 
 
 class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
@@ -27,12 +25,6 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
     def setUp(self):
         super().setUp()
         self.screen = self.make_screen("il", "IL", household_size=1, zipcode="60601", county="Cook", agree_to_tos=True)
-
-    def create_calculator(self, screen):
-        """Helper method to create calculator instance."""
-        data = {}
-        missing_dependencies = Dependencies()
-        return IlNurseFamilyPartnership(screen, self.program, data, missing_dependencies)
 
     # Household Eligibility Tests
     def test_household_eligible_income_below_300_fpl(self):
@@ -52,7 +44,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -79,7 +71,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -102,7 +94,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertFalse(eligibility.eligible)
@@ -125,7 +117,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -149,7 +141,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
@@ -183,7 +175,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -193,13 +185,13 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
     # Value Tests
     def test_value_calculation(self):
         """Test that value is $6,000 / 2.5 years = $2,400/year."""
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         expected_value = 6_000 / 2.5
         self.assertEqual(calc.amount, expected_value)
 
     def test_fpl_percent_is_300(self):
         """Test that FPL threshold is 300%."""
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         self.assertEqual(calc.fpl_percent, 3)
 
     def test_zero_income_eligible(self):
@@ -212,7 +204,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
