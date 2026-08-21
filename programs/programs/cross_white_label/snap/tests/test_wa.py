@@ -51,7 +51,7 @@ class TestWaFap(TestCase):
         """
         Test that FAP resolves the same PolicyEngine variable as Basic Food.
 
-        FAP pays 100% of the SNAP benefit level, so it inherits pe_name rather
+        FAP pays the same amount as Basic Food, so it inherits pe_name rather
         than declaring its own.
         """
         self.assertEqual(WaFap.pe_name, WaSnap.pe_name)
@@ -73,9 +73,9 @@ class TestWaFap(TestCase):
         """
         Test that WaFap requests exactly the same PolicyEngine inputs as WaSnap.
 
-        FAP pays 100% of the SNAP benefit, so any divergence in inputs would
-        make the two programs return different dollar values for the same
-        household.
+        FAP pays the same amount as Basic Food, so any divergence in inputs
+        would make the two programs return different dollar values for the
+        same household.
         """
         self.assertEqual(WaFap.pe_inputs, WaSnap.pe_inputs)
 
