@@ -255,51 +255,56 @@ class TestScenario10KinshipCaretakerIncluded(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
+@pytest.mark.skip(
+    reason="Blocked on PolicyEngine: no NPCR concept, so a qualifying caretaker is always an "
+    "assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
+    "Missouri's expected grant; PolicyEngine currently returns the caretaker-included result "
+    "($192.09/month). Un-skip when PE models the election."
+)
 class TestScenario11NpcrWithIncome(MoTanfScenarioTestCase):
-    """A needy caretaker with $100/month unearned income.
+    """A needy caretaker with $100/month unearned income → $234/month.
 
-    The spec expects $234 via the *excluded* configuration, which is the NPCR election
-    AC 20 says MFB does not implement. PolicyEngine evaluates the household as reported —
-    caretaker included, size 3 — so the shipped answer is $292 − $100 = $192/month.
-
-    Pinned deliberately: this asserts what ships, not what the spec wants. If PolicyEngine
-    models the NPCR election (MFB-1696), the expected value becomes the spec's $234 (2_809
-    annual) and this test should fail loudly rather than silently keep passing.
+    No spouse in the home, so the NPCR is automatically needy and the election applies:
+    included is size 3 at $292 − $100 = $192, excluded is child-only size 2 at $234, and
+    Missouri takes the higher.
     """
 
     screen_id = 11
 
-    def test_caretaker_income_counts_against_the_included_unit(self):
+    def test_election_takes_the_higher_of_the_two_configurations(self):
         screen = self.build(3)
         head = self.add_person(screen, 1, "headOfHousehold", 1971)
         add_income(head, amount=100, income_type="unemployment")
         self.add_person(screen, 2, "grandChild", 2020)
         self.add_person(screen, 3, "grandChild", 2018)
-        self.assert_result(screen, True, 2_305)
+        self.assert_result(screen, True, 2_809)
 
 
 @pytest.mark.integration
+@pytest.mark.skip(
+    reason="Blocked on PolicyEngine: no NPCR concept, so a qualifying caretaker is always an "
+    "assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
+    "Missouri's expected grant; PolicyEngine currently returns the caretaker-included result "
+    "(ineligible). Un-skip when PE models the election."
+)
 class TestScenario12NpcrNotNeedy(MoTanfScenarioTestCase):
-    """Caretaker with $700/month and a co-resident spouse.
+    """Caretaker with $700/month and a co-resident spouse → $234/month.
 
-    The spec expects $234 via mandatory exclusion (AC 20, not implemented). PolicyEngine
-    evaluates the household as reported: size 4, $700 countable against a $341.81 payment
-    standard, so the deficit is negative and the household is denied.
-
-    Pinned deliberately, same as Scenario 11: if PolicyEngine models the NPCR election
-    (MFB-1696) this becomes eligible at the spec's $234 (2_809 annual).
+    The NPCR/spouse neediness group is size 2 against a $678 Standard of Need, so $700
+    fails it: exclusion is mandatory with no election, leaving the two grandchildren as a
+    size-2 unit.
     """
 
     screen_id = 12
 
-    def test_income_denies_the_included_unit(self):
+    def test_failing_neediness_excludes_the_caretaker(self):
         screen = self.build(4)
         head = self.add_person(screen, 1, "headOfHousehold", 1971)
         add_income(head, amount=700, income_type="unemployment")
         self.add_person(screen, 2, "spouse", 1973)
         self.add_person(screen, 3, "grandChild", 2020)
         self.add_person(screen, 4, "grandChild", 2018)
-        self.assert_result(screen, False, 0)
+        self.assert_result(screen, True, 2_809)
 
 
 @pytest.mark.integration
@@ -653,18 +658,13 @@ class TestScenario34NpcrSpouseOnSsi(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
-    """A reported `cashAssistance` amount reaches PolicyEngine as its ``tanf`` input, and
-    ``tanf`` is deliberately not one of PolicyEngine's TANF unearned-income sources
-    (``gov.hhs.tanf.cash.income.sources.unearned``) — a program's own benefit is excluded
-    from its own recalculation. So the household is treated as having no countable income
-    and receives the full size-2 grant, where the spec expects $34/month.
+    """Accepted PE limitation: a reported `cashAssistance` amount is not counted, so the
+    household receives the full size-2 grant rather than Criterion 8's $34/month.
 
-    Verified live at PE 1.794.2: sending ``tanf`` of $2,400/yr leaves
-    ``mo_tanf_gross_unearned_income`` at $0, while the same amount as
-    ``unemployment_compensation`` yields $200 and a $34.09 grant. There is no input that
-    makes PolicyEngine count it, so this is an accepted PE limitation of the same kind as
-    AC 22/23 rather than something to correct MFB-side. Scenario 31 (the same amount for a
-    household *on* mo_tanf) expects exactly this exclusion and passes.
+    MFB's ``cashAssistance`` is its TANF field, so the amount arrives as PolicyEngine's
+    ``tanf`` input, which is deliberately absent from the TANF unearned-income sources — the
+    exclusion Scenario 31 relies on. PolicyEngine cannot tell the two branches apart because
+    both arrive as the same input. See specs/mo.md Scenario 35.
     """
 
     screen_id = 35
