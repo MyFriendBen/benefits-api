@@ -166,6 +166,72 @@ Anything a *failing* test records is discarded on teardown — the cassette is r
 
 ---
 
+## Custom (MFB) Calculator Tests
+
+A custom calculator computes locally, so its tests need no cassette and no network — a
+household, a `Program` row, and an assertion. `programs/programs/testing_fixtures/custom_calculator.py`
+supplies the household builders and a base test case, paralleling `pe_integration.py` on
+the PolicyEngine side.
+
+### The base test case
+
+`CustomCalculatorTestCase` creates the white label, the FPL year and the `Program` row in
+`setUp`, so a test states only the household:
+
+```python
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
+from programs.programs.white_labels.co.myprogram.calculator import MyProgram
+
+
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    program_code = "co_my_program"
+    white_label_code = "co"
+    state_code = "CO"
+
+    def test_eligible_household(self):
+        screen = self.make_screen("co", "CO", household_size=2, county="Denver County")
+        add_income(self.add_member(screen), 1_500)
+
+        eligibility = self.calculate(screen)
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(eligibility.value, 1_200)
+```
+
+`calculate()` runs `calc()`, so it raises `DependencyError` when the calculator declares a
+dependency the screen does not supply — pass `missing=("income_amount",)` to assert that a
+program is skipped rather than valued wrongly.
+
+### The builders
+
+| builder | what it makes |
+| -- | -- |
+| `make_screen(white_label_code, state_code, household_size=…, zipcode=…, county=…)` | the household. `household_size` drives FPL and SMI lookups and is **not** derived from the members added afterwards |
+| `add_member(screen, relationship, age, **kwargs)` | a member, with an uninsured `Insurance` record — the relation is non-null, so a calculator reading `member.insurance` raises without it. Pass `birth_year_month` as well when a scenario turns on a birthday rather than a whole-year age |
+| `add_income(member, amount, income_type="wages", frequency="monthly")` | an income stream, stated as the scenario states it — `calc_gross_income` annualizes by frequency |
+| `add_expense(member, amount, expense_type="rent")` | an expense, for programs that net it out of income |
+| `add_insurance(member, medicaid=True, none=False)` | replaces the member's insurance. Name only what the scenario needs |
+| `make_program(white_label_code, name_abbreviated, year)` | the `Program` row. A calculator reading `self.program.year.period` fails on an unsaved one |
+
+### Gating on another program
+
+A calculator that reads another program's result calls `self.program_eligible("co_medicaid")`,
+which raises `DependencyError` when the upstream has not been calculated. Pass the upstream's
+verdict through `calculate()`:
+
+```python
+upstream = Eligibility()
+upstream.condition(True)
+
+eligibility = self.calculate(screen, data={"co_medicaid": upstream})
+```
+
+Omitting it asserts the other half of the contract — that an uncalculated upstream raises
+rather than resolving to "not eligible."
+
+---
+
 ## Cassette Management
 
 ### Cassette Storage

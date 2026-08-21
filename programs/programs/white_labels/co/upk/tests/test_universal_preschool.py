@@ -1,4 +1,4 @@
-from django.test import TestCase
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.co.upk.calculator import UniversalPreschool
 from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
 from programs.models import Program, FederalPoveryLimit
@@ -6,23 +6,13 @@ from programs.framework.base import Eligibility
 from programs.util import Dependencies
 
 
-class TestCoUniversalPreschool(TestCase):
+class TestCoUniversalPreschool(CustomCalculatorTestCase):
     """Test cases for Colorado Universal Preschool Program calculator"""
 
-    @classmethod
-    def setUpTestData(cls):
-        """Set up test data that doesn't change between tests"""
-        # Create white label for Colorado
-        cls.co_white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
-
-        # Create FPL year for testing
-        cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
-
-        # Create program using the manager method
-        cls.program = Program.objects.new_program(white_label="co", name_abbreviated="upk")
-        # Set the FPL year for the program
-        cls.program.year = cls.fpl_year
-        cls.program.save()
+    calculator_class = UniversalPreschool
+    program_code = "upk"
+    white_label_code = "co"
+    state_code = "CO"
 
     def create_calculator(self, screen):
         """Helper method to create calculator instance with required dependencies"""
@@ -38,7 +28,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=2,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 
@@ -80,7 +70,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=2,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 
@@ -122,7 +112,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=3,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 
@@ -171,7 +161,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=2,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 
@@ -213,7 +203,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=2,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 
@@ -254,7 +244,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=2,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 
@@ -292,7 +282,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=2,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 
@@ -321,7 +311,7 @@ class TestCoUniversalPreschool(TestCase):
             zipcode="80016",
             county="Elbert County",
             household_size=2,
-            white_label=self.co_white_label,
+            white_label=self.white_label,
             completed=False,
         )
 

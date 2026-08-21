@@ -6,7 +6,9 @@ for every program in every white label, and would surface as one program's test
 failing for reasons that look like that program's own bug.
 
 The calculators defined below are minimal stand-ins. They exist to exercise the
-base's orchestration, not to model any real benefit.
+orchestration, not to model any real benefit — so they need a real household, which is
+why these are `TestCase`. The cross-program gates on the same class read only
+`self.data` and are tested without a database in `test_program_eligible.py`.
 """
 
 import datetime
