@@ -27,14 +27,24 @@
     "website_description": "Monthly assistance to buy food",
     "show_in_has_benefits_step": true
   },
-  "warning_message": {
-    "external_name": "wa_snap_fap_instead",
-    "calculator": "_show",
-    "legal_statuses": [
-      "gc_under18_no5"
-    ],
-    "message": "You might qualify for the Food Assistance Program (FAP) instead of Basic Food. That can happen if you have applied for an immigration status but it has not been approved yet. Not sure which program applies to you? Contact DSHS or a caseworker for help."
-  },
+  "warning_messages": [
+    {
+      "external_name": "wa_snap_fap_instead",
+      "calculator": "_show",
+      "legal_statuses": [
+        "gc_under18_no5"
+      ],
+      "message": "You might qualify for the Food Assistance Program (FAP) instead of Basic Food. That can happen if you have applied for an immigration status but it has not been approved yet. Not sure which program applies to you? Contact DSHS or a caseworker for help."
+    },
+    {
+      "external_name": "wa_snap_five_year_clock",
+      "calculator": "_show",
+      "legal_statuses": [
+        "gc_5plus"
+      ],
+      "message": "Your five-year wait for Basic Food may have started earlier than the date on your green card. Time counts from when you first held a qualifying immigration status, which can include time as a parolee, conditional entrant, or battered immigrant. If you have had a qualifying status for less than five years, you might need the Food Assistance Program (FAP) instead. Not sure which program applies to you? Contact DSHS or a caseworker for help."
+    }
+  ],
   "documents": [
     {
       "external_name": "wa_id_proof",

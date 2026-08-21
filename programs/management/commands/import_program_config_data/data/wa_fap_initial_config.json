@@ -27,15 +27,25 @@
     "website_description": "Monthly assistance to buy food for legal immigrants",
     "show_in_has_benefits_step": true
   },
-  "warning_message": {
-    "external_name": "wa_fap_snap_instead",
-    "calculator": "_show",
-    "legal_statuses": [
-      "gc_18plus_no5",
-      "otherWithWorkPermission"
-    ],
-    "message": "You might qualify for Basic Food (SNAP) instead of FAP. Two things can make that true. First, you may qualify if you have 40 or more Social Security work credits — credits from a parent, earned while you were under 18, or from a spouse count toward your total. Second, you may qualify if a status like refugee, asylee, trafficking victim, special immigrant, or withholding of deportation has already been approved for you, rather than only applied for. Not sure which program applies to you? Contact DSHS or a caseworker for help."
-  },
+  "warning_messages": [
+    {
+      "external_name": "wa_fap_snap_instead",
+      "calculator": "_show",
+      "legal_statuses": [
+        "gc_18plus_no5",
+        "otherWithWorkPermission"
+      ],
+      "message": "You might qualify for Basic Food (SNAP) instead of FAP. Two things can make that true. First, you may qualify if you have 40 or more Social Security work credits — credits from a parent, earned while you were under 18, or from a spouse count toward your total. Second, you may qualify if a status like refugee, asylee, trafficking victim, special immigrant, or withholding of deportation has already been approved for you, rather than only applied for. Not sure which program applies to you? Contact DSHS or a caseworker for help."
+    },
+    {
+      "external_name": "wa_fap_refugee_adjusted_to_lpr",
+      "calculator": "_show",
+      "legal_statuses": [
+        "refugee"
+      ],
+      "message": "If you came to the U.S. as a refugee or asylee and have since received a green card, you might qualify for Basic Food (SNAP) instead of FAP. Green card holders can get Basic Food, and there is no five-year wait when your earlier status was refugee or asylee. Not sure which program applies to you? Contact DSHS or a caseworker for help."
+    }
+  ],
   "documents": [
     {
       "external_name": "wa_id_proof",
