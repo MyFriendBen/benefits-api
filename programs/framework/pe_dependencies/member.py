@@ -1068,3 +1068,43 @@ class SelfEmploymentIncomeBeforeLsrDependency(IncomeDependency):
 
 class WaAppleHealthKidsEligible(Member):
     field = "wa_apple_health_kids_eligible"
+
+
+class InSecondarySchoolDependency(Member):
+    """
+    PolicyEngine's ``is_in_secondary_school`` — secondary school, or an equivalent level of
+    vocational or technical training.
+
+    The variable has no formula and no default, so PolicyEngine reads False for everyone
+    unless it is sent. Its consumers all use it as
+    ``where(is_in_secondary_school, student_age_limit, non_student_age_limit)``, so an
+    unsent input silently applies the lower limit.
+
+    Means high school or equivalent vocational training — distinct from PolicyEngine's
+    ``is_in_k12_school``, which covers all of K-12 and imputes ages 5–17.
+
+    The screener has no secondary-enrollment field: ``student`` and ``student_full_time``
+    ask about college, and a False there does not disprove high-school attendance. So this
+    is an imputation from age alone.
+
+    Age alone, deliberately: attendance does not depend on tax-dependency status, and gating
+    on it would route this through ``HouseholdMember.is_dependent()``, whose support test
+    drops exactly the 18-year-olds this input exists to keep in the assistance unit
+    (MFB-1693).
+    """
+
+    field = "is_in_secondary_school"
+    dependencies = ("age",)
+
+    # US high school runs roughly ages 14-18. The upper bound is 18 rather than 17 because a
+    # student in their final year is exactly the case the 18-vs-19 age limits distinguish;
+    # the lower bound excludes younger K-8 children, for whom the variable is simply false.
+    MIN_AGE = 14
+    MAX_AGE = 18
+
+    def value(self):
+        # calc_age(), not the age column: AgeDependency sends the same reference-date age, and
+        # the two disagree by a year for any member with birth_year_month — on the 18/19
+        # boundary this input exists to control.
+        age = self.member.calc_age()
+        return self.MIN_AGE <= age <= self.MAX_AGE
