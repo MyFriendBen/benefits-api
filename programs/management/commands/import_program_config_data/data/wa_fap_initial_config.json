@@ -16,7 +16,7 @@
       "otherWithWorkPermission"
     ],
     "name": "Food Assistance Program (FAP) for Legal Immigrants",
-    "description": "The Food Assistance Program (FAP) helps you buy groceries each month if you are a legal immigrant who cannot get Basic Food (SNAP) because of your immigration status. You get a card that works like a debit card at most grocery stores.\n\nFAP pays the same amount as Basic Food. The amount you get depends on your household size and income. You may qualify if you have a green card but have not had it for 5 years yet, or if you are lawfully present in another way, such as having temporary protected status, being paroled into the U.S., or having a pending asylum application.\n\nYou must meet the same income and other rules as Basic Food. People without lawful immigration status cannot get FAP. You apply using the same application as Basic Food.",
+    "description": "The Food Assistance Program (FAP) helps you buy groceries each month if you are a legal immigrant who cannot get Basic Food (SNAP) because of your immigration status. You get a card that works like a debit card at most grocery stores.\n\nFAP pays the same amount as Basic Food. The amount you get depends on your household size and income. You may qualify if you have a green card but have not had it for 5 years yet, or if you are lawfully present in another way, such as having temporary protected status, being paroled into the U.S., or having a pending asylum application.\n\nYou must meet the same income and other rules as Basic Food. People without lawful immigration status cannot get FAP. Select 'Apply Online' to apply through Washington Connection — the same application as Basic Food.",
     "description_short": "Monthly help buying groceries for legal immigrants who cannot get Basic Food",
     "learn_more_link": "https://www.dshs.wa.gov/esa/program-summary/food-assistance-program-legal-immigrants-fap",
     "apply_button_link": "https://www.washingtonconnection.org/home/",
@@ -34,7 +34,7 @@
       "gc_18plus_no5",
       "otherWithWorkPermission"
     ],
-    "message": "You might qualify for Basic Food (SNAP) instead of FAP. This can happen if you have 40 or more Social Security work credits. Credits from a parent, earned while you were under 18, or from your spouse, count too. This can also happen if your immigration status has already been approved, not just applied for. This includes refugee, asylee, trafficking victim, special immigrant, and withholding of deportation status. Not sure which program applies to you? Contact DSHS or a caseworker for help."
+    "message": "You might qualify for Basic Food (SNAP) instead of FAP. Two things can make that true. First, you may qualify if you have 40 or more Social Security work credits — credits from a parent, earned while you were under 18, or from a spouse count toward your total. Second, you may qualify if a status like refugee, asylee, trafficking victim, special immigrant, or withholding of deportation has already been approved for you, rather than only applied for. Not sure which program applies to you? Contact DSHS or a caseworker for help."
   },
   "documents": [
     {
