@@ -1,3 +1,5 @@
+from screener.models import EARNED_INCOME_TYPES
+
 from .base import Member
 from .receipt import SSI_INCOME_TYPE, member_reports_ssi_amount, screen_reports_ssi_without_amount
 
@@ -522,8 +524,26 @@ class SnapChildSupportDependency(Member):
 
 
 class TotalHoursWorkedDependency(Member):
+    """
+    Weekly hours worked, taken from hourly income streams and approximated from the
+    rest at minimum wage.
+
+    Only *earned* income counts. The approximation branch divides income by a wage,
+    which is only meaningful for money paid for work: run over an unearned stream it
+    invents hours nobody worked, and PolicyEngine's SNAP/TANF work screens read this
+    field. A 45-year-old with $2,000/mo of SSDI would otherwise be credited ~69
+    "work" hours a week and clear every work requirement.
+
+    Subclasses override ``minimum_wage`` with their state's rate; the federal floor
+    is the conservative default, since a lower wage buys more approximated hours.
+    """
+
     field = "weekly_hours_worked_before_lsr"
-    dependencies = ("income_frequency",)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
 
     minimum_wage = 7.25
     work_weeks_in_month = 4
@@ -532,17 +552,37 @@ class TotalHoursWorkedDependency(Member):
         hours = 0
 
         for income in self.member.income_streams.all():
+            if income.type not in EARNED_INCOME_TYPES:
+                continue
+
             if income.frequency == "hourly":
+                # hours_worked is nullable and, unlike type/amount/frequency, is not
+                # reported by IncomeStream.missing_fields(), so can_calc() will not
+                # hold the request back when it is absent. An hourly stream's amount
+                # is a rate, so there is nothing to approximate hours from either.
+                # Contribute nothing rather than raising and failing the whole build.
+                if income.hours_worked is None:
+                    continue
+
                 hours += int(income.hours_worked)
                 continue
 
-            # aproximate weekly hours using the minimum wage in MA
+            # approximate weekly hours by valuing the income at minimum wage
             hours += int(income.monthly()) / self.minimum_wage / self.work_weeks_in_month
 
         return hours
 
 
 class MaTotalHoursWorkedDependency(TotalHoursWorkedDependency):
+    """
+    Massachusetts approximation, at the state minimum wage.
+
+    Every MA calculator sending this field must use this subclass. Two dependencies
+    writing different values to the same field and period raise ``DependencyError``
+    in ``update_unit``, so mixing this with the base class inside one MA screen
+    fails the request build.
+    """
+
     minimum_wage = 15
 
 
