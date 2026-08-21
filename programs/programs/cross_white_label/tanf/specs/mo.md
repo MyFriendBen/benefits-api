@@ -563,7 +563,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 ### Scenario 8: Gate 3 exact-equality boundary
 
 **What we're checking**: Failure of the Percentage of Need test (Gate 3) at the exact equality boundary, isolated from Gates 1 and 2 — countable income exactly equal to the payment standard is a deficit of $0, which fails the strict `<` comparator.
-**Expected**: Eligible — $0.00/month — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below).
+**Expected**: Not eligible — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below). PolicyEngine returns eligible with a $0.00 grant; a $0 value is reported as not eligible and the frontend does not display it, so the household's outcome matches the strict-regulation denial below.
 **Policy note (strict regulation):** Gate 1: $471 < $1,254 ✓ (size 2 Gross Max); Gate 2 (not-active participant, no disregard applies at this gate): $471 < $678 ✓ (size 2 Standard of Need); Gate 3: `R = 471 − 90 = 381`; countable `= (381 − 30) × 2/3 = 234`; `$234 ≥ $234` payment standard → deficit `= 0` → fails on the merits under strict Missouri regulation, `eligible: false`.
 **Steps**:
 * Household size: `2`
@@ -719,7 +719,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 ### Scenario 20: $10 floor, one dollar over the boundary
 
 **What we're checking**: That a deficit of $9.99 or less results in `eligible: false`, not a suppressed-but-still-eligible $0 payment.
-**Expected**: Eligible — $0.00/month — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below).
+**Expected**: Not eligible — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below). PolicyEngine returns eligible with a $0.00 grant; a $0 value is reported as not eligible and the frontend does not display it, so the household's outcome matches the strict-regulation denial below.
 **Policy note (Missouri's committed policy treatment):** `R = 457 − 90 = 367`; countable `= (367 − 30) × 2/3 = 224.67`; deficit `= 234 − 224.67 = 9.33` ≤ $9.99 → per 0210.020.00's explicit case-status conclusion (the regulation itself is silent on eligibility status below $10, see Benefit Value Step 10), this is `eligible: false`, not `eligible: true, value: $0`.
 **Steps**:
 * Same as Scenario 19, except wages: $457/month
