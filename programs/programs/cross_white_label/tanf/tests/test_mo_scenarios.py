@@ -261,6 +261,10 @@ class TestScenario11NpcrWithIncome(MoTanfScenarioTestCase):
     The spec expects $234 via the *excluded* configuration, which is the NPCR election
     AC 20 says MFB does not implement. PolicyEngine evaluates the household as reported —
     caretaker included, size 3 — so the shipped answer is $292 − $100 = $192/month.
+
+    Pinned deliberately: this asserts what ships, not what the spec wants. If PolicyEngine
+    models the NPCR election (MFB-1696), the expected value becomes the spec's $234 (2_809
+    annual) and this test should fail loudly rather than silently keep passing.
     """
 
     screen_id = 11
@@ -281,6 +285,9 @@ class TestScenario12NpcrNotNeedy(MoTanfScenarioTestCase):
     The spec expects $234 via mandatory exclusion (AC 20, not implemented). PolicyEngine
     evaluates the household as reported: size 4, $700 countable against a $341.81 payment
     standard, so the deficit is negative and the household is denied.
+
+    Pinned deliberately, same as Scenario 11: if PolicyEngine models the NPCR election
+    (MFB-1696) this becomes eligible at the spec's $234 (2_809 annual).
     """
 
     screen_id = 12
@@ -694,3 +701,28 @@ class TestSsiMemberWithAssetsOverTheLimit(MoTanfScenarioTestCase):
         # rule from the separate tax-unit defect in MFB-1693. The SSI child is excluded from
         # the unit, leaving parent + sibling at size 2, and $1,500 of assets does not deny.
         self.assert_result(screen, True, 1_369)
+
+
+@pytest.mark.integration
+@pytest.mark.skip(
+    reason="Blocked on PolicyEngine (MFB-1696): mo_tanf's resource_limit is a flat $1,000 "
+    "with no IEP tier to select into, so a current TA recipient with $4,000 in assets is "
+    "denied where 13 CSR 40-2.310(3) allows $5,000. PE already reads is_tanf_enrolled for "
+    "the disregard sequences and MFB already populates it via receives_tanf, so a tier keyed "
+    "on it needs no new input from us. Un-skip when PE ships the tier."
+)
+class TestFiveThousandIepResourceTier(MoTanfScenarioTestCase):
+    """A current TA recipient's resource limit is $5,000, not $1,000 (13 CSR 40-2.310(3)).
+
+    Not a numbered spec scenario — Criterion 7 records the tier as having no executable
+    scenario. Written here so the gap is covered the moment PolicyEngine closes it.
+    """
+
+    screen_id = 37
+
+    def test_current_recipient_passes_between_the_tiers(self):
+        screen = self.build(2, household_assets=4_000, on_tanf=True)
+        self.add_person(screen, 1, "headOfHousehold", 1996)
+        self.add_person(screen, 2, "child", 2020)
+        # Size-2 payment standard $234.09/month, no income.
+        self.assert_result(screen, True, 2_809)
