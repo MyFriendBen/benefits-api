@@ -10,7 +10,15 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, TransactionTestCase
 
-from programs.models import County, Navigator, Program, ProgramCategory, ProgramNavigator
+from programs.models import (
+    County,
+    LegalStatus,
+    Navigator,
+    Program,
+    ProgramCategory,
+    ProgramNavigator,
+    WarningMessage,
+)
 from screener.models import WhiteLabel
 from configuration.models import Configuration
 from translations.models import Translation
@@ -798,3 +806,114 @@ class ReconcileProgramConfigTestCase(TransactionTestCase):
         )
         self.assertTrue(ProgramNavigator.objects.filter(program=other_program, navigator=navigator).exists())
         self.assertIn("Keeping navigator", out.getvalue())
+
+
+class WarningMessageScopeTestCase(TransactionTestCase):
+    """Tests for the legal statuses and counties that narrow a warning's audience."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(code="test_wl", name="Test White Label")
+        self.base_config = {
+            "white_label": {"code": "test_wl"},
+            "program_category": {
+                "external_name": "test_category",
+                "icon": "test_icon",
+                "name": "Test Category",
+                "description": "Test category description",
+            },
+            "program": {
+                "name_abbreviated": "test_program",
+                "external_name": "test_program",
+                "name": "Test Program Name",
+                "description": "Test program description",
+                "active": True,
+            },
+        }
+
+        self.translate_patcher = patch("programs.management.commands.import_program_config.Translate")
+        mock_instance = self.translate_patcher.start().return_value
+        mock_instance.bulk_translate.side_effect = lambda langs, texts: {
+            text: {lang: f"{text} (translated to {lang})" for lang in langs} for text in texts
+        }
+
+    def tearDown(self):
+        self.translate_patcher.stop()
+
+    def _import(self, warning_config: dict) -> WarningMessage:
+        config = copy.deepcopy(self.base_config)
+        config["warning_message"] = warning_config
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            path = f.name
+        try:
+            call_command("import_program_config", path, stdout=StringIO())
+        finally:
+            Path(path).unlink()
+        return WarningMessage.objects.get(external_name=warning_config["external_name"])
+
+    def test_legal_statuses_are_applied(self):
+        """A warning declaring legal statuses is restricted to them."""
+        LegalStatus.objects.create(status="gc_18plus_no5")
+        LegalStatus.objects.create(status="otherWithWorkPermission")
+
+        warning = self._import(
+            {
+                "external_name": "scoped_warning",
+                "message": "Scoped message",
+                "legal_statuses": ["gc_18plus_no5", "otherWithWorkPermission"],
+            }
+        )
+
+        self.assertEqual(
+            {s.status for s in warning.legal_statuses.all()},
+            {"gc_18plus_no5", "otherWithWorkPermission"},
+        )
+
+    def test_omitted_legal_statuses_leave_the_warning_unrestricted(self):
+        """
+        A config without legal statuses produces a warning shown to everyone.
+
+        Empty means "no restriction" on the frontend, so omitting the field has to
+        stay equivalent to the behaviour before it was read.
+        """
+        warning = self._import({"external_name": "unscoped_warning", "message": "Unscoped message"})
+
+        self.assertEqual(warning.legal_statuses.count(), 0)
+
+    def test_unknown_legal_status_warns_without_failing_the_import(self):
+        """An unrecognised status is reported and skipped, matching program import."""
+        LegalStatus.objects.create(status="gc_18plus_no5")
+
+        config = copy.deepcopy(self.base_config)
+        config["warning_message"] = {
+            "external_name": "partially_scoped_warning",
+            "message": "Partially scoped message",
+            "legal_statuses": ["gc_18plus_no5", "not_a_real_status"],
+        }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            path = f.name
+
+        out = StringIO()
+        try:
+            call_command("import_program_config", path, stdout=out)
+        finally:
+            Path(path).unlink()
+
+        warning = WarningMessage.objects.get(external_name="partially_scoped_warning")
+        self.assertEqual([s.status for s in warning.legal_statuses.all()], ["gc_18plus_no5"])
+        self.assertIn("not_a_real_status", out.getvalue())
+
+    def test_counties_are_applied(self):
+        """A warning declaring counties is restricted to them."""
+        County.objects.create(name="King County", white_label=self.white_label)
+
+        warning = self._import(
+            {
+                "external_name": "county_scoped_warning",
+                "message": "County scoped message",
+                "counties": ["King County"],
+            }
+        )
+
+        self.assertEqual([c.name for c in warning.counties.all()], ["King County"])
