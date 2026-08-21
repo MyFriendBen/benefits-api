@@ -40,8 +40,15 @@ class TestKsTanfWiring(TestCase):
     def test_pe_inputs_includes_pregnancy(self):
         self.assertIn(dependency.member.PregnancyDependency, KsTanf.pe_inputs)
 
-    def test_pe_inputs_includes_cash_assets(self):
-        self.assertIn(dependency.spm.CashAssetsDependency, KsTanf.pe_inputs)
+    def test_pe_inputs_includes_ssi_aware_cash_assets(self):
+        """KEESM 2210 excludes an SSI recipient's resources, and their share of the single
+        reported household total cannot be isolated, so no countable figure is reported for
+        such a household."""
+        self.assertIn(dependency.spm.CashAssetsExcludingSsiHouseholdsDependency, KsTanf.pe_inputs)
+
+    def test_does_not_send_the_plain_aggregate(self):
+        """Both write spm_unit_cash_assets; the SSI-aware one must win."""
+        self.assertNotIn(dependency.spm.CashAssetsDependency, KsTanf.pe_inputs)
 
     def test_pe_inputs_includes_gross_income_streams(self):
         for income_dep in dependency.irs_gross_income:

@@ -1,6 +1,6 @@
 from screener.models import HouseholdMember
 from .base import SpmUnit
-from .receipt import TANF_INCOME_TYPE, screen_reports_snap, screen_reports_tanf
+from .receipt import TANF_INCOME_TYPE, screen_reports_snap, screen_reports_tanf, member_reports_ssi_amount, screen_reports_ssi_without_amount
 
 
 class ChildCareDependency(SpmUnit):
@@ -594,6 +594,45 @@ class CashAssetsDependency(SpmUnit):
     def value(self):
         assets = self.screen.household_assets or 0
         return int(assets)
+
+
+class CashAssetsExcludingSsiHouseholdsDependency(CashAssetsDependency):
+    """
+    The household's liquid assets, or nothing when a member's resources are excluded from
+    the program's resource test.
+
+    Programs that exclude an SSI recipient's resources (TANF, per 13 CSR 40-2.310(1)(F) and
+    the equivalent state rules) need to know which share of the household's assets belongs
+    to that member. ``Screen.household_assets`` is a single figure with no ownership
+    breakdown, so that share is unknowable — and attributing it per person only invents the
+    answer. Reporting no countable figure says what is true: for this household we cannot
+    establish countable resources, so the test should not be the thing that denies them.
+
+    That is the treatment the specs commit to — do not deny on the aggregate alone when a
+    member's resources are excluded — and it is deliberately inclusive: a household with an
+    excluded member passes the resource test whatever the reported total. Counting the
+    remaining members' assets exactly needs an input PolicyEngine does not offer (MFB-1696).
+
+    Receipt is read from both signals the screener carries, since either establishes that
+    somebody's resources are excluded even when neither identifies whose: a per-member SSI
+    amount, or the household-level SSI tile with no amount attached.
+    """
+
+    dependencies = (
+        "household_assets",
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        if screen_reports_ssi_without_amount(self.screen):
+            return 0
+
+        if any(member_reports_ssi_amount(m) for m in self.screen.household_members.all()):
+            return 0
+
+        return super().value()
 
 
 class IlLiheapIncomeEligible(SpmUnit):

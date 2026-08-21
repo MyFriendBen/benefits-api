@@ -29,8 +29,10 @@ class KsTanf(Tanf):
       eligible.
     - ``PregnancyDependency`` so a pregnant adult with no child still satisfies the
       demographic test (``is_person_demographic_tanf_eligible`` is age-OR-pregnant).
-    - ``CashAssetsDependency`` so the $3,000 resource test (``ks_tanf_resources_eligible``,
-      KEESM 5110) reads the household's reported assets instead of defaulting to 0.
+    - ``CashAssetsExcludingSsiHouseholdsDependency`` so the $3,000 resource test
+      (``ks_tanf_resources_eligible``, KEESM 5110) reads the household's reported assets —
+      except where KEESM 2210 excludes an SSI recipient's resources and the single reported
+      total cannot be split, in which case no countable figure is reported.
     - ``ChildCareDependency`` / ``PreSubsidyChildcareExpensesDependency`` so childcare and
       dependent-care expenses reach PE's care deduction (K.A.R. 30-4-111(b) / KEESM 7224);
       without them the deduction never applies and the benefit is understated.
@@ -47,7 +49,7 @@ class KsTanf(Tanf):
         # ks_tanf_is_assistance_unit_member excludes SSI recipients from the assistance
         # unit, which should follow reported receipt rather than simulated SSI.
         *dependency.receipt_contract,
-        dependency.spm.CashAssetsDependency,
+        dependency.spm.CashAssetsExcludingSsiHouseholdsDependency,
         dependency.spm.ChildCareDependency,
         dependency.spm.PreSubsidyChildcareExpensesDependency,
         *dependency.irs_gross_income,

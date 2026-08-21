@@ -19,11 +19,11 @@ class MoTanf(Tanf):
     a size band. (``is_in_secondary_school`` matters here too and is inherited from
     ``Tanf``.)
 
-    ``CashAssetsDependency`` sends the household's reported assets for the $1,000 resource
-    test. PE's SSI-resource exclusion in ``mo_tanf_countable_resources`` cannot fire on it —
-    that subtraction reads person-level asset components, and the screener collects one
-    household figure with no per-member ownership, so there is nothing truthful to attribute.
-    An SSI recipient's share therefore counts against the limit; see MFB-1696.
+    ``CashAssetsExcludingSsiHouseholdsDependency`` reports no countable figure when the
+    household includes an SSI recipient, whose resources Missouri excludes
+    (13 CSR 40-2.310(1)(F)) but whose share of the single reported total we cannot isolate.
+    Deliberately inclusive, per Criterion 4; MFB-1696 covers counting the remaining members'
+    assets exactly.
 
     ``tanf_income`` rather than ``irs_gross_income``, so child support reaches the gates.
     Income goes per person so PE can run each earner's disregard separately and apply the
@@ -38,7 +38,7 @@ class MoTanf(Tanf):
         dependency.household.MoStateCodeDependency,
         dependency.member.PregnancyDependency,
         dependency.member.TaxUnitDependentDependency,
-        dependency.spm.CashAssetsDependency,
+        dependency.spm.CashAssetsExcludingSsiHouseholdsDependency,
         *dependency.tanf_income,
         # mo_tanf_child_care_deduction reads the spm-level childcare total and person-level
         # care_expenses, capped per person; is_incapable_of_self_care selects the adult tier.

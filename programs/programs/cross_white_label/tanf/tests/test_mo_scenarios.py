@@ -668,3 +668,29 @@ class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
         add_income(head, amount=200, income_type="cashAssistance")
         self.add_person(screen, 2, "child", 2020)
         self.assert_result(screen, True, 2_809)
+
+
+@pytest.mark.integration
+class TestSsiMemberWithAssetsOverTheLimit(MoTanfScenarioTestCase):
+    """An SSI recipient's resources are excluded (13 CSR 40-2.310(1)(F)), and MFB cannot
+    isolate their share of the single reported total, so the resource test does not deny —
+    Criterion 4's committed treatment.
+
+    Not one of the numbered spec scenarios: Criterion 4 records this as committed handling
+    with no scenario. Pinned here because nothing else in the suite combines SSI receipt
+    with assets, which is how an earlier attempt at this rule shipped inert and unnoticed.
+    """
+
+    screen_id = 36
+
+    def test_assets_over_the_limit_do_not_deny_an_ssi_household(self):
+        screen = self.build(3, household_assets=1_500)
+        head = self.add_person(screen, 1, "headOfHousehold", 1986)
+        add_income(head, amount=300)
+        self.add_person(screen, 2, "child", 2020)
+        child = self.add_person(screen, 3, "child", 2016)
+        add_income(child, amount=750, income_type="sSI")
+        # The parent's earnings keep the SSI child a tax dependent, isolating the resource
+        # rule from the separate tax-unit defect in MFB-1693. The SSI child is excluded from
+        # the unit, leaving parent + sibling at size 2, and $1,500 of assets does not deny.
+        self.assert_result(screen, True, 1_369)
