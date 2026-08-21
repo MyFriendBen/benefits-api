@@ -214,7 +214,8 @@ class TestScenario07AssetsBetweenTiers(MoTanfScenarioTestCase):
 @pytest.mark.integration
 class TestScenario08Gate3EqualityBoundary(MoTanfScenarioTestCase):
     """Accepted PE divergence (AC 30): strict regulation denies at a $0 deficit;
-    PolicyEngine returns eligible with $0, which the frontend filters out anyway."""
+    The grant computes to $0, and PolicyEngineCalulator.eligible() sets eligible = value > 0,
+    so the household is reported not eligible — the same outcome strict regulation reaches."""
 
     screen_id = 8
 
@@ -419,7 +420,7 @@ class TestScenario19MinimumPaymentFloorBoundary(MoTanfScenarioTestCase):
 @pytest.mark.integration
 class TestScenario20MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
     """Accepted PE divergence (AC 31): a $9.33 deficit is below Missouri's $10 floor, so
-    PolicyEngine suppresses the payment to $0 and reports eligible rather than denying."""
+    PolicyEngine suppresses the payment to $0, which is reported as not eligible."""
 
     screen_id = 20
 
@@ -680,3 +681,21 @@ class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
         add_income(head, amount=200, income_type="cashAssistance")
         self.add_person(screen, 2, "child", 2020)
         self.assert_result(screen, True, 409)
+
+
+@pytest.mark.integration
+class TestScenario36AgeEighteenDependentChild(MoTanfScenarioTestCase):
+    """An 18-year-old dependent child and their caretaker are both in the unit → $234/month.
+
+    The only scenario that exercises the secondary-school assumption. Without it PolicyEngine
+    reads the child as a non-dependent, which drops the child *and* the caretaker — unit size
+    0, no grant.
+    """
+
+    screen_id = 36
+
+    def test_eighteen_year_old_keeps_the_caretaker_in_the_unit(self):
+        screen = self.build(2)
+        self.add_person(screen, 1, "headOfHousehold", 1996)
+        self.add_person(screen, 2, "child", 2008)
+        self.assert_result(screen, True, 2_809)

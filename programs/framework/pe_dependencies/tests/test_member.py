@@ -2094,14 +2094,29 @@ class TestInSecondarySchoolDependency(TestCase):
         self.assertEqual(member.AgeDependency(self.screen, m, {}).value(), m.calc_age())
         self.assertFalse(member.InSecondarySchoolDependency(self.screen, m, {}).value())
 
-    def test_true_at_the_boundary_when_birth_month_confirms_eighteen(self):
+    def test_true_at_eighteen_from_birth_month(self):
+        """Born eighteen years before the reference date, whatever the age column says."""
+        reference = self.screen.get_reference_date()
         m = HouseholdMember.objects.create(
             screen=self.screen,
             relationship="child",
             age=30,
-            birth_year_month=datetime.date(2008, 1, 1),
+            birth_year_month=datetime.date(reference.year - 18, 1, 1),
         )
-        self.assertEqual(member.InSecondarySchoolDependency(self.screen, m, {}).value(), 14 <= m.calc_age() <= 18)
+        self.assertEqual(m.calc_age(), 18)
+        self.assertTrue(member.InSecondarySchoolDependency(self.screen, m, {}).value())
+
+    def test_false_at_nineteen_from_birth_month(self):
+        """The boundary: one year older and the exclusion no longer applies."""
+        reference = self.screen.get_reference_date()
+        m = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=30,
+            birth_year_month=datetime.date(reference.year - 19, 1, 1),
+        )
+        self.assertEqual(m.calc_age(), 19)
+        self.assertFalse(member.InSecondarySchoolDependency(self.screen, m, {}).value())
 
     def test_true_for_a_teen_head_of_household(self):
         """A teen parent heading their own case is still plausibly in high school; gating on

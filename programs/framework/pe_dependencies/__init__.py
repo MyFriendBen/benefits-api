@@ -76,12 +76,16 @@ wic_income = [
 # `irs_gross_income` drops them from every gate. Same shape as `wic_income` below.
 #
 # Alimony is here on the strength of that source list rather than a scenario: no state spec
-# exercises it yet. Both fields reach PE the same way, so leaving it out would keep the same
-# silent-drop bug for alimony that including child support fixes.
+# exercises it yet. Every field reaches PE the same way, so leaving one out keeps the same
+# silent-drop bug for it that including the others fixes.
+#
+# Not here: workers' compensation. PolicyEngine's TANF source list does not name it, so
+# sending it would be inert — see each state's spec for the disclosed treatment.
 tanf_income = [
     *irs_gross_income,
     member.ChildSupportReceivedDependency,
     member.AlimonyIncomeDependency,
+    member.MiscellaneousIncomeDependency,
 ]
 
 # PolicyEngine's actual-receipt contract: countable income and categorical eligibility follow

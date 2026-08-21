@@ -112,14 +112,15 @@ The exclusion branch is constructed by submitting the NPCR's household with that
 
 | MFB `income_streams` type | Missouri treatment | Committed calculator behavior |
 |---|---|---|
-| `unemployment`, `pension`, `veteran`, `workersComp`, OASDI variants, `alimony` | Included, unearned | Count in full, no disregard, at every gate |
+| `unemployment`, `pension`, `veteran`, OASDI variants, `alimony` | Included, unearned | Count in full, no disregard, at every gate |
+| `workersComp` | Included, unearned | ⚠️ **Not counted.** PolicyEngine's TANF income source list does not name workers' compensation, so no input reaches the gates and a reported amount is ignored. Accepted limitation, MFB-1700 |
 | `sSI` | Recipient excluded from the assistance unit entirely | See Criterion 4 |
 | `gifts` | Included, unearned, unless a small non-recurring cash gift under the Percentage-of-Need standard | Every stream is modeled as recurring (see "Income measurement basis") and MFB's income UI has no one-time option, so a `gifts` entry is definitionally recurring and can't represent the non-recurring exception. **Count every reported amount as included unearned income** — not representable under MFB's recurring-income input model.¹ |
 | `investment` — dividend/royalty | Included, unearned | — |
 | `investment` — interest | Excluded | — |
 | `investment` — stock-sale/capital gain | No source states a distinct treatment | See combined-bucket rule below |
 | `investment` (MFB's combined field) | N/A — MFB reports interest, dividends, and stock-sale profit as one undifferentiated amount | **Exclude the entire reported `investment` amount** — cannot separate the components. Committed inclusive handling, no scenario |
-| `rental` | Earned only if the reporting member manages the property ≥20 hrs/week; otherwise unearned | No management-hours sub-field. **Treat as earned income** (favorable-to-household default). Committed inclusive handling, no scenario |
+| `rental` | Earned only if the reporting member manages the property ≥20 hrs/week; otherwise unearned | ⚠️ **Counted as unearned, not earned.** No management-hours sub-field, so the favorable default would be earned — but MFB sends `rental` as PolicyEngine's `rental_income`, which PE's TANF source list names as unearned, and that field is shared with several other programs. So rental gets no earned-income disregard: a household with $300/month rental is denied where the earned treatment would grant $114. Accepted limitation, MFB-1700 |
 | `childSupport` | Included, unearned, special pending/active-case budgeting rule | See below |
 | `cashAssistance` | Excluded when it's the household's own MO TA payment; otherwise included, unearned | See below |
 | `selfEmployment` | Net self-employment profit | See below |
@@ -466,11 +467,11 @@ TA is paid at regular monthly intervals.
 **Assistance-unit and household-composition outcomes**
 
 - [ ] 25. A non-dependent 18+ sibling excluded under Criterion 1 doesn't affect eligibility or benefit result (Scenario 15). A sibling's own excluded income doesn't count against the remaining unit either — committed inclusive default, no executable scenario.
-- [ ] 26. An 18-year-old dependent child qualifying under Criterion 1's inclusive default is included in the unit with their caretaker. Committed inclusive default, no executable scenario — MFB cannot establish secondary-school/equivalent attendance or marital history for an 18-year-old.
+- [ ] 26. An 18-year-old dependent child qualifying under Criterion 1's inclusive default is included in the unit with their caretaker (Scenario 36).
 - [ ] 27. The new-spouse income disregard is an accepted PE limitation (AC 23) — a new spouse's income is counted at every gate like any other member's; no data-gap default applies to it.
 - [ ] 28. A household passing the resource test under Criterion 7 isn't denied by a stricter flat resource check, when the new-spouse resource disregard (Step 7) or the SSI/SP/SAB aggregate-resource default (Criterion 4 / AC 24) is active. Committed inclusive default, no executable scenario — MFB cannot verify marriage timing or isolate the SSI member's share of the aggregate.
 - [ ] 29. NPCR election (AC 20) reaching the genuinely-elective case returns whichever configuration produces the higher eligible benefit — not resolved by a static rule (Scenarios 10, 11, 12).
-- [ ] 30. Income-source treatment matches Criterion 8's table: `rental` is earned income at every gate (committed inclusive default, no executable scenario — MFB cannot establish the ≥20-hrs/week management fact); `investment` doesn't affect eligibility or value (committed inclusive default, no executable scenario — MFB cannot separate interest/dividend/capital-gain components); `cashAssistance` representing the household's own `mo_tanf` grant doesn't affect its own recalculation (Scenario 31), otherwise it's counted as unearned income (Scenario 35).
+- [ ] 30. Income-source treatment matches Criterion 8's table, except `rental`, which is counted as unearned rather than earned — a disclosed limitation, see Criterion 8 and MFB-1700 (no executable scenario
 
 **Accepted PolicyEngine divergences**
 
@@ -563,7 +564,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 ### Scenario 8: Gate 3 exact-equality boundary
 
 **What we're checking**: Failure of the Percentage of Need test (Gate 3) at the exact equality boundary, isolated from Gates 1 and 2 — countable income exactly equal to the payment standard is a deficit of $0, which fails the strict `<` comparator.
-**Expected**: Not eligible — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below). PolicyEngine returns eligible with a $0.00 grant; a $0 value is reported as not eligible and the frontend does not display it, so the household's outcome matches the strict-regulation denial below.
+**Expected**: Not eligible — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below). PolicyEngine computes a $0.00 grant, and a $0 value is reported as not eligible, so the household's outcome matches the strict-regulation denial below.
 **Policy note (strict regulation):** Gate 1: $471 < $1,254 ✓ (size 2 Gross Max); Gate 2 (not-active participant, no disregard applies at this gate): $471 < $678 ✓ (size 2 Standard of Need); Gate 3: `R = 471 − 90 = 381`; countable `= (381 − 30) × 2/3 = 234`; `$234 ≥ $234` payment standard → deficit `= 0` → fails on the merits under strict Missouri regulation, `eligible: false`.
 **Steps**:
 * Household size: `2`
@@ -719,7 +720,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 ### Scenario 20: $10 floor, one dollar over the boundary
 
 **What we're checking**: That a deficit of $9.99 or less results in `eligible: false`, not a suppressed-but-still-eligible $0 payment.
-**Expected**: Not eligible — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below). PolicyEngine returns eligible with a $0.00 grant; a $0 value is reported as not eligible and the frontend does not display it, so the household's outcome matches the strict-regulation denial below.
+**Expected**: Not eligible — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below). PolicyEngine computes a $0.00 grant, and a $0 value is reported as not eligible, so the household's outcome matches the strict-regulation denial below.
 **Policy note (Missouri's committed policy treatment):** `R = 457 − 90 = 367`; countable `= (367 − 30) × 2/3 = 224.67`; deficit `= 234 − 224.67 = 9.33` ≤ $9.99 → per 0210.020.00's explicit case-status conclusion (the regulation itself is silent on eligibility status below $10, see Benefit Value Step 10), this is `eligible: false`, not `eligible: true, value: $0`.
 **Steps**:
 * Same as Scenario 19, except wages: $457/month
@@ -928,6 +929,18 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 **Why this matters**: Scenario 31 proves the self-exclusion branch when `cashAssistance` represents the household's own MO TA grant. This scenario proves the opposite branch — an implementation that excluded every reported `cashAssistance` amount regardless of `current_benefits` would incorrectly omit countable unearned income and overstate the household's grant ($234 instead of $34 here).
 
 **⚠️ Pending MFB-1697 — not yet the shipped result:** `cashAssistance` is the screener's TANF field, and `spm.Tanf` sends any reported amount as PolicyEngine's `tanf` input, which PolicyEngine excludes from TANF's own unearned-income sources. So a household reporting non-MO cash assistance currently has it excluded too, returning $234/month rather than the $34 above. Separating the two branches means revisiting the `cashAssistance` → TANF mapping across every PolicyEngine input that reads it — tracked in MFB-1697. The expected value above is what the calculator should return once that lands; this scenario's test is skipped in the meantime.
+
+### Scenario 36: Age-18 dependent child included with their caretaker
+
+**What we're checking**: Criterion 1's inclusive default for an 18-year-old — assumed enrolled and expected to graduate, since the screener has no secondary-enrollment field. The child and their caretaker are both in the unit.
+**Expected**: Eligible — $234/month (size-2 payment standard, no income).
+**Steps**:
+* Household size: `2`
+* Person 1: Birth month/year `January 1996` (age 30), `headOfHousehold`, no income
+* Person 2: Birth month/year `January 2008` (age 18), `child`, no income
+* `current_benefits` does not include `mo_tanf`
+
+**Why this matters**: An 18-year-old is the boundary the federal minor-child age limit turns on (19 for a secondary student, else 18). Without the enrollment assumption PolicyEngine treats the child as a non-dependent, which drops **both** the child and their caretaker from the assistance unit — unit size 0, no grant. This scenario is the only one that fails if that assumption is dropped.
 
 ### Data gaps with no executable scenario
 
