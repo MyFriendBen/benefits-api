@@ -1,6 +1,12 @@
 from screener.models import HouseholdMember
 from .base import SpmUnit
-from .receipt import TANF_INCOME_TYPE, screen_reports_snap, screen_reports_tanf, member_reports_ssi_amount, screen_reports_ssi_without_amount
+from .receipt import (
+    TANF_INCOME_TYPE,
+    screen_reports_snap,
+    screen_reports_tanf,
+    member_reports_ssi_amount,
+    screen_reports_ssi_without_amount,
+)
 
 
 class ChildCareDependency(SpmUnit):
