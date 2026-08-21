@@ -1,9 +1,6 @@
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.co.upk.calculator import UniversalPreschool
-from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
-from programs.models import Program, FederalPoveryLimit
-from programs.framework.base import Eligibility
-from programs.util import Dependencies
+from screener.models import Screen, HouseholdMember, IncomeStream
 
 
 class TestCoUniversalPreschool(CustomCalculatorTestCase):
@@ -13,12 +10,6 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     program_code = "upk"
     white_label_code = "co"
     state_code = "CO"
-
-    def create_calculator(self, screen):
-        """Helper method to create calculator instance with required dependencies"""
-        data = {}
-        missing_dependencies = Dependencies()
-        return UniversalPreschool(screen, self.program, data, missing_dependencies)
 
     def test_member_value_3yo_foster_child_income_270_fpl_returns_10_hours(self):
         """Test 3-year-old foster child with HH income 270% FPL or less returns 10 hours"""
@@ -56,7 +47,7 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         value = calc.member_value(child)
         self.assertTrue(eligibility.eligible)
@@ -98,7 +89,7 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         value = calc.member_value(child)
         self.assertTrue(eligibility.eligible)
@@ -147,7 +138,7 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         value = calc.member_value(child)
         self.assertTrue(eligibility.eligible)
@@ -189,7 +180,7 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         value = calc.member_value(child)
         self.assertTrue(eligibility.eligible)
@@ -230,7 +221,7 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         value = calc.member_value(child)
         self.assertTrue(eligibility.eligible)
@@ -270,7 +261,7 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         self.assertFalse(eligibility.eligible)
 
@@ -300,7 +291,7 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         self.assertFalse(eligibility.eligible)
 
@@ -329,6 +320,6 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         self.assertFalse(eligibility.eligible)
