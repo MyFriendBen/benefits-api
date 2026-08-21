@@ -27,6 +27,14 @@
     "website_description": "Monthly assistance to buy food",
     "show_in_has_benefits_step": true
   },
+  "warning_message": {
+    "external_name": "wa_snap_fap_instead",
+    "calculator": "_show",
+    "legal_statuses": [
+      "gc_under18_no5"
+    ],
+    "message": "You might qualify for the Food Assistance Program (FAP) instead of Basic Food. This can happen if your immigration status is still pending rather than already approved. Not sure which program applies to you? Contact DSHS or a caseworker for help."
+  },
   "documents": [
     {
       "external_name": "wa_id_proof",

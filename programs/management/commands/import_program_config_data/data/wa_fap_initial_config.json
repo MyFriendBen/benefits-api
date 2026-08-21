@@ -27,6 +27,15 @@
     "website_description": "Monthly assistance to buy food for legal immigrants",
     "show_in_has_benefits_step": true
   },
+  "warning_message": {
+    "external_name": "wa_fap_snap_instead",
+    "calculator": "_show",
+    "legal_statuses": [
+      "gc_18plus_no5",
+      "otherWithWorkPermission"
+    ],
+    "message": "You might qualify for Basic Food (SNAP) instead of FAP. This can happen if you have 40 or more Social Security work credits. Credits from a parent, earned while you were under 18, or from your spouse, count too. This can also happen if your immigration status has already been approved, not just applied for. This includes refugee, asylee, trafficking victim, special immigrant, and withholding of deportation status. Not sure which program applies to you? Contact DSHS or a caseworker for help."
+  },
   "documents": [
     {
       "external_name": "wa_id_proof",
