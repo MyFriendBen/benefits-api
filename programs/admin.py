@@ -511,39 +511,6 @@ class TranslationOverrideAdmin(SecureAdmin):
         """Prefetch counties so the list column is one query, not one per row."""
         return super().get_queryset(request).prefetch_related("counties")
 
-    def _override_white_label(self, request):
-        """The white label of the override being edited, or None on the add page."""
-        obj_id = request.resolver_match.kwargs.get("object_id") if request.resolver_match else None
-        if not obj_id:
-            return None
-        return TranslationOverride.objects.filter(pk=obj_id).values_list("white_label", flat=True).first()
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Offer only programs from this override's own white label.
-
-        The picker is otherwise every program in every tenant, where choosing the
-        wrong one silently points the override at another state's program.
-        """
-        if db_field.name == "program":
-            white_label = self._override_white_label(request)
-            if white_label is not None:
-                kwargs["queryset"] = Program.objects.filter(white_label=white_label).order_by("name_abbreviated")
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        """Offer only counties from this override's own white label.
-
-        County matching is exact string equality against `Screen.county`, and each
-        white label spells its counties differently — Illinois stores "Cook" while
-        CO, NC, and WA store "Cook County". A county picked from the wrong tenant
-        can never match a screen, and the override then does nothing at all.
-        """
-        if db_field.name == "counties":
-            white_label = self._override_white_label(request)
-            if white_label is not None:
-                kwargs["queryset"] = County.objects.filter(white_label=white_label).order_by("name")
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
-
     def get_counties(self, obj):
         """Show the county scope in the list so a mis-scoped override is visible."""
         names = [c.name for c in obj.counties.all()]
