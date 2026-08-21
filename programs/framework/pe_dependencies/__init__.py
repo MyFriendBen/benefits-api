@@ -69,6 +69,17 @@ wic_income = [
     spm.Tanf,
 ]
 
+# The TANF income sources the screener collects beyond the taxable set.
+# `irs_gross_income` is the taxable contract: child support received and alimony are not
+# taxable, so they are correctly absent from it. TANF counts them anyway
+# (`gov.hhs.tanf.cash.income.sources.unearned`), so a state TANF calculator sending only
+# `irs_gross_income` drops them from every gate. Same shape as `wic_income` below.
+tanf_income = [
+    *irs_gross_income,
+    member.ChildSupportReceivedDependency,
+    member.AlimonyIncomeDependency,
+]
+
 # PolicyEngine's actual-receipt contract: countable income and categorical eligibility follow
 # the benefits a household reports receiving, not the ones PolicyEngine simulates them as
 # eligible for. See dependencies/receipt.py.

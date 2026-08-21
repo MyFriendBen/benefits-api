@@ -20,22 +20,17 @@ class TestMoTanfWiring(TestCase):
         self.assertEqual(MoTanf.pe_outputs, [dependency.spm.MoTanf])
 
     def test_pe_inputs_includes_mo_state_code(self):
-        """Every mo_tanf variable is defined_for StateCode.MO, and pe_input() never sends
-        state_code on its own."""
+        """pe_input() never sends state_code on its own."""
         self.assertIn(dependency.household.MoStateCodeDependency, MoTanf.pe_inputs)
 
     # --- the resource test ---
 
     def test_sends_assets_per_member_not_as_spm_aggregate(self):
-        """PE's SSI-resource exclusion (mo_tanf_countable_resources) subtracts each SSI
-        recipient's *person-level* asset components from the unit total. A household that
-        sends only the spm_unit_cash_assets aggregate gives it nothing to subtract, so the
-        exclusion silently never applies."""
+        """The aggregate leaves PE's SSI-resource exclusion nothing to subtract."""
         self.assertIn(dependency.member.NonSsiBankAccountAssetsDependency, MoTanf.pe_inputs)
 
     def test_does_not_also_send_the_cash_assets_aggregate(self):
-        """The two write different halves of the same PolicyEngine total; sending both
-        would count the household's assets twice."""
+        """Both would count the same assets twice."""
         self.assertNotIn(dependency.spm.CashAssetsDependency, MoTanf.pe_inputs)
 
     # --- the care-cost deduction (13 CSR 40-2.310(9)(A)5) ---
@@ -44,8 +39,7 @@ class TestMoTanfWiring(TestCase):
         self.assertIn(dependency.spm.ChildCareDependency, MoTanf.pe_inputs)
 
     def test_pe_inputs_includes_care_expenses(self):
-        """mo_tanf_child_care_deduction reads person-level care_expenses for the
-        incapacitated-adult tier, separately from childcare_expenses."""
+        """The incapacitated-adult tier reads person-level care_expenses."""
         self.assertIn(dependency.member.CareExpensesDependency, MoTanf.pe_inputs)
 
     def test_pe_inputs_includes_incapable_of_self_care(self):
@@ -54,12 +48,14 @@ class TestMoTanfWiring(TestCase):
 
     # --- income ---
 
-    def test_pe_inputs_includes_gross_income_streams(self):
-        """Sent per person, not pre-aggregated: PE runs each earner's disregard sequence
-        separately (DSS Manual 0210.015.30.10) and applies the student-child and
-        teen-parent exclusions to the right member's earnings."""
-        for income_dep in dependency.irs_gross_income:
+    def test_pe_inputs_uses_the_tanf_income_group(self):
+        """Not irs_gross_income alone: that is the taxable contract and omits child support,
+        which TANF counts."""
+        for income_dep in dependency.tanf_income:
             self.assertIn(income_dep, MoTanf.pe_inputs)
+
+    def test_pe_inputs_includes_child_support(self):
+        self.assertIn(dependency.member.ChildSupportReceivedDependency, MoTanf.pe_inputs)
 
     def test_pe_inputs_includes_pregnancy(self):
         self.assertIn(dependency.member.PregnancyDependency, MoTanf.pe_inputs)
@@ -67,9 +63,7 @@ class TestMoTanfWiring(TestCase):
     # --- the active/not-active disregard branch ---
 
     def test_keeps_receipt_contract_for_the_disregard_branch(self):
-        """PE picks the earned-income disregard sequence off is_tanf_enrolled, which
-        defaults to receives_tanf. Without the receipt contract every household would be
-        treated as a new applicant."""
+        """is_tanf_enrolled defaults to receives_tanf, which selects the disregard sequence."""
         for receipt_dep in dependency.receipt_contract:
             self.assertIn(receipt_dep, MoTanf.pe_inputs)
 
@@ -81,16 +75,9 @@ class TestMoTanfWiring(TestCase):
         self.assertEqual(len(MoTanf.pe_inputs), len(set(MoTanf.pe_inputs)))
 
     def test_pe_inputs_includes_tax_unit_dependent(self):
-        """mo_tanf_dependent_child reads is_tax_unit_dependent, and the caretaker test
-        requires a dependent child in the tax unit. PolicyEngine's own inference returns
-        False for an 18-year-old child, dropping the child and the caretaker from the unit;
-        for a 19-year-old it returns them as a second caretaker, inflating the payment
-        standard. Both are settled by sending the screener's own answer."""
+        """PE's own inference is wrong at both 18 and 19; see MoTanf."""
         self.assertIn(dependency.member.TaxUnitDependentDependency, MoTanf.pe_inputs)
 
     def test_pe_inputs_includes_in_secondary_school(self):
-        """PolicyEngine infers is_tax_unit_dependent False for an 18-year-old child unless
-        secondary-school enrollment is asserted, which drops the child and the caretaker
-        from the unit and denies the household. Verified live: unit size 0 without it,
-        $234.09/month with it."""
+        """Without it an 18-year-old child and their caretaker both leave the unit."""
         self.assertIn(dependency.member.InSecondarySchoolDependency, MoTanf.pe_inputs)

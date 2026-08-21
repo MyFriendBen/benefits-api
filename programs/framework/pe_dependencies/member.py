@@ -1072,29 +1072,18 @@ class WaAppleHealthKidsEligible(Member):
 
 class NonSsiBankAccountAssetsDependency(Member):
     """
-    The household's reported liquid assets, attributed only to members who do not report
-    SSI — the person-level half of PolicyEngine's ``spm_unit_cash_assets``
-    (``adds = ["bank_account_assets", "stock_assets", "bond_assets"]``).
+    The household's liquid assets, attributed only to members not reporting SSI — the
+    person-level half of PolicyEngine's ``spm_unit_cash_assets``.
 
-    Missouri excludes an SSI recipient's resources from the TANF resource test
-    (13 CSR 40-2.310(1)(F); DSS Manual 0210.005.10 — "Exclude the expenses, income, and
-    resources of the SSI, SP, or SAB participants"). PolicyEngine implements that
-    exclusion in ``mo_tanf_countable_resources``, but it can only fire on assets
-    attributed to people: the formula subtracts each SSI recipient's person-level
-    components from the unit total. A household that sends only the
-    ``spm_unit_cash_assets`` aggregate has nothing to subtract, so the exclusion never
-    applies and the SSI member's share counts against the limit.
+    Programs that exclude an SSI recipient's resources (e.g. ``mo_tanf``) subtract each
+    recipient's person-level asset components from the unit total, so a household sending
+    only the aggregate gives them nothing to subtract and the exclusion never fires.
+    ``Screen.household_assets`` has no per-member ownership, so attributing the whole
+    amount to the non-SSI members is the assumption the exclusion asks for. With nobody on
+    SSI this reproduces the aggregate exactly.
 
-    ``Screen.household_assets`` is a single household figure with no per-member ownership,
-    so the split cannot be read from the screener. Attributing the whole amount to the
-    non-SSI members is the assumption the exclusion asks for — it treats none of the
-    aggregate as the excluded member's, which is what Missouri does with resources it has
-    identified as theirs. Where no member reports SSI this reproduces the aggregate
-    exactly, so it is a no-op for every household the exclusion does not concern.
-
-    Sent instead of ``spm.CashAssetsDependency``, never alongside it: the two write
-    different halves of the same PolicyEngine total, and sending both would count the
-    aggregate twice.
+    Send instead of ``spm.CashAssetsDependency``, never alongside it: the two write
+    different halves of the same total.
     """
 
     field = "bank_account_assets"
@@ -1113,23 +1102,13 @@ class NonSsiBankAccountAssetsDependency(Member):
 
 class InSecondarySchoolDependency(Member):
     """
-    PolicyEngine's ``is_in_secondary_school`` person input, for a dependent child old
-    enough that PolicyEngine's own tax-dependency inference would otherwise drop them.
+    PolicyEngine's ``is_in_secondary_school``, for a dependent child old enough that PE's
+    own tax-dependency inference would drop them.
 
-    ``is_tax_unit_dependent`` is what ``mo_tanf_dependent_child`` reads for anybody not
-    strictly under 18, and PolicyEngine infers it from student status: for an 18-year-old
-    child it comes back False, which removes the child *and* their caretaker from the
-    assistance unit (the caretaker test requires a dependent child in the tax unit), so
-    the household is denied outright.
-
-    The screener cannot confirm secondary-school attendance — ``student`` and
-    ``student_full_time`` ask about college, university or community college, a different
-    fact, and a ``False`` there does not disprove secondary enrollment. Missouri's
-    dependent-child rule covers a child under 19 in secondary school or equivalent
-    vocational training, so this reports the inclusive default the spec commits to for an
-    age-18 dependent child: assume the qualifying enrollment MFB has no field to rule out.
-    Under-18 children need nothing here — ``is_child`` already satisfies the test — so the
-    input is confined to the ages where it changes the answer.
+    Set only at 18: under-18s already satisfy the dependent-child tests through
+    ``is_child``, and a 19-year-old is over the age limit whatever their enrollment. The
+    screener cannot confirm secondary attendance — ``student``/``student_full_time`` ask
+    about college — so this reports the inclusive default rather than a known fact.
     """
 
     field = "is_in_secondary_school"
@@ -1139,6 +1118,4 @@ class InSecondarySchoolDependency(Member):
         if not self.member.is_dependent():
             return None
 
-        # 18 is the only age this changes: under-18s already pass on is_child, and a
-        # 19-year-old is over Missouri's limit whatever their enrollment.
         return self.member.age == 18
