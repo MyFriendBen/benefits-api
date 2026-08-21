@@ -74,6 +74,10 @@ wic_income = [
 # taxable, so they are correctly absent from it. TANF counts them anyway
 # (`gov.hhs.tanf.cash.income.sources.unearned`), so a state TANF calculator sending only
 # `irs_gross_income` drops them from every gate. Same shape as `wic_income` below.
+#
+# Alimony is here on the strength of that source list rather than a scenario: no state spec
+# exercises it yet. Both fields reach PE the same way, so leaving it out would keep the same
+# silent-drop bug for alimony that including child support fixes.
 tanf_income = [
     *irs_gross_income,
     member.ChildSupportReceivedDependency,
