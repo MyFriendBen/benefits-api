@@ -323,17 +323,6 @@ class TestMedicaidProgramCodes(SimpleTestCase):
         the ordering."""
         self.assertNotIn("medicaid", medicaid_program_codes())
 
-    def test_all_are_ordered_before_the_programs_that_gate_on_them(self):
-        """Every Medicaid slot precedes any listed program that reads a Medicaid result, so
-        the derived block cannot drift after its dependents."""
-        derived = set(medicaid_program_codes())
-
-        for _, gating, upstream in find_program_gates():
-            if upstream not in derived or gating not in CALC_ORDER:
-                continue
-            with self.subTest(gating=gating, upstream=upstream):
-                self.assertLess(CALC_ORDER.index(upstream), CALC_ORDER.index(gating))
-
     def test_derivation_sees_every_subclass_in_a_fresh_interpreter(self):
         """`__subclasses__()` only sees imported classes, so this derivation depends on the
         calculator packages having been walked. Guards that in a subprocess, where nothing

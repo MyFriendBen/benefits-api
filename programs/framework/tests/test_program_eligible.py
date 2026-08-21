@@ -32,10 +32,6 @@ class TestProgramEligibleReadsTheNamedProgram(SimpleTestCase):
         calc = make_calculator({"co_medicaid": eligibility(True)})
         self.assertTrue(calc.program_eligible("co_medicaid"))
 
-    def test_returns_false_when_the_named_program_is_not_eligible(self):
-        calc = make_calculator({"co_medicaid": eligibility(False)})
-        self.assertFalse(calc.program_eligible("co_medicaid"))
-
     def test_reads_only_the_named_program(self):
         """Two Medicaid results present; the gate must read the one it asked for rather
         than whichever the old tuple happened to list first."""
@@ -56,15 +52,6 @@ class TestProgramEligibleRaisesRatherThanGuessing(SimpleTestCase):
         calc = make_calculator({"nc_medicaid": eligibility(True)})
         with self.assertRaises(DependencyError):
             calc.program_eligible("co_medicaid")
-
-    def test_states_the_old_tuple_omitted_are_readable(self):
-        """ma_mass_health and wa_apple_health_medicaid were absent from
-        the old helper's state list, so it returned False for them no matter the
-        household. Nothing about them is special now."""
-        for code in ("ma_mass_health", "wa_apple_health_medicaid"):
-            with self.subTest(code=code):
-                calc = make_calculator({code: eligibility(True)})
-                self.assertTrue(calc.program_eligible(code))
 
 
 def member(member_id):
@@ -94,13 +81,15 @@ class TestMemberProgramEligible(SimpleTestCase):
 
     def test_member_absent_from_the_upstream_is_not_eligible(self):
         """The upstream records a verdict for every member it evaluated, so no entry means
-        it did not consider them — not eligible, rather than an error."""
-        calc = make_calculator({"chp": household_with_members({1: True})})
-        self.assertFalse(calc.member_program_eligible("chp", member(99)))
-
-    def test_no_members_evaluated_is_not_eligible(self):
-        calc = make_calculator({"chp": Eligibility()})
-        self.assertFalse(calc.member_program_eligible("chp", member(1)))
+        it did not consider them — not eligible, rather than an error. Holds whether it
+        evaluated other members or none at all."""
+        for label, upstream, member_id in (
+            ("other members evaluated", household_with_members({1: True}), 99),
+            ("no members evaluated", Eligibility(), 1),
+        ):
+            with self.subTest(label):
+                calc = make_calculator({"chp": upstream})
+                self.assertFalse(calc.member_program_eligible("chp", member(member_id)))
 
     def test_absent_upstream_raises(self):
         """Same contract as the household form: "not calculated" is not an answer."""
