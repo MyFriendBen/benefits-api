@@ -42,6 +42,9 @@ class KsTanf(Tanf):
 
     pe_name = "ks_tanf"
     pe_inputs = [
+        # Includes receipt_contract, which ks_tanf_is_assistance_unit_member needs: it
+        # excludes SSI recipients from the unit, and that should follow reported receipt
+        # rather than PE's simulated SSI.
         *Tanf.pe_inputs,
         dependency.household.KsStateCodeDependency,
         dependency.household.KsCountyDependency,
