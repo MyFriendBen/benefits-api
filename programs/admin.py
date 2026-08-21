@@ -498,14 +498,25 @@ class WebHookFunctionsAdmin(SecureAdmin):
 
 class TranslationOverrideAdmin(SecureAdmin):
     search_fields = ("external_name",)
-    list_display = ["get_str", "calculator", "active", "action_buttons"]
-    white_label_filter_horizontal = ("counties", "program")
+    list_display = ["get_str", "calculator", "field", "get_counties", "active", "action_buttons"]
+    list_filter = ["field", "active"]
     filter_horizontal = ("counties",)
     exclude = ["translation"]
     list_editable = ["active"]
 
     def has_add_permission(self, request):
         return False
+
+    def get_queryset(self, request):
+        """Prefetch counties so the list column is one query, not one per row."""
+        return super().get_queryset(request).prefetch_related("counties")
+
+    def get_counties(self, obj):
+        """Show the county scope in the list so a mis-scoped override is visible."""
+        names = [c.name for c in obj.counties.all()]
+        return ", ".join(names) if names else "All counties"
+
+    get_counties.short_description = "Counties"
 
     def get_str(self, obj):
         return str(obj)
