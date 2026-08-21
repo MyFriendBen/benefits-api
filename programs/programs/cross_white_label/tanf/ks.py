@@ -46,13 +46,9 @@ class KsTanf(Tanf):
         dependency.household.KsStateCodeDependency,
         dependency.household.KsCountyDependency,
         dependency.member.PregnancyDependency,
-        # ks_tanf_is_assistance_unit_member excludes SSI recipients from the assistance
-        # unit, which should follow reported receipt rather than simulated SSI.
-        *dependency.receipt_contract,
         dependency.spm.CashAssetsExcludingSsiHouseholdsDependency,
         dependency.spm.ChildCareDependency,
         dependency.spm.PreSubsidyChildcareExpensesDependency,
-        *dependency.irs_gross_income,
     ]
 
     pe_outputs = [dependency.spm.KsTanf]

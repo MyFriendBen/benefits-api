@@ -1,23 +1,23 @@
 interactions:
 - request:
     body: '{"household": {"people": {"3001": {"age": {"2026": 30}, "is_full_time_college_student":
-      {"2026": false}, "is_in_secondary_school": {"2026": null}, "ssi": {"2026": null},
-      "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
-      "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026": false}, "employment_income":
+      {"2026": false}, "is_in_secondary_school": {"2026": null}, "employment_income":
       {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
       0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
       {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
       {"2026": 0}, "child_support_received": {"2026": 372}, "alimony_income": {"2026":
-      0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": null}},
-      "3002": {"age": {"2026": 6}, "is_full_time_college_student": {"2026": false},
-      "is_in_secondary_school": {"2026": false}, "ssi": {"2026": null}, "receives_ssi":
-      {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false}, "is_pregnant":
-      {"2026": false}, "is_tax_unit_dependent": {"2026": true}, "employment_income":
-      {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
-      0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
-      {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
-      {"2026": 0}, "child_support_received": {"2026": 0}, "alimony_income": {"2026":
-      0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": null}}},
+      0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+      false}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026":
+      null}}, "3002": {"age": {"2026": 6}, "is_full_time_college_student": {"2026":
+      false}, "is_in_secondary_school": {"2026": false}, "employment_income": {"2026":
+      0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+      0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+      0}, "child_support_received": {"2026": 0}, "alimony_income": {"2026": 0}, "ssi":
+      {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+      true}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": null}}},
       "tax_units": {"main_tax_unit": {"members": ["3001", "3002"]}}, "families": {"family":
       {"members": ["3001", "3002"]}}, "households": {"household": {"members": ["3001",
       "3002"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
@@ -45,35 +45,35 @@ interactions:
     body:
       string: '{"status": "ok", "message": null, "result": {"people": {"3001": {"age":
         {"2026": 30}, "is_full_time_college_student": {"2026": false}, "is_in_secondary_school":
-        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
-        {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
         {"2026": false}, "employment_income": {"2026": 0}, "self_employment_income":
         {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
         0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
         0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
         0}, "child_support_received": {"2026": 372}, "alimony_income": {"2026": 0},
-        "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": false}},
-        "3002": {"age": {"2026": 6}, "is_full_time_college_student": {"2026": false},
-        "is_in_secondary_school": {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi":
-        {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false}, "is_pregnant":
-        {"2026": false}, "is_tax_unit_dependent": {"2026": true}, "employment_income":
+        "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
+        {"2026": false}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
+        {"2026": false}}, "3002": {"age": {"2026": 6}, "is_full_time_college_student":
+        {"2026": false}, "is_in_secondary_school": {"2026": false}, "employment_income":
         {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
         0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0},
         "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
         0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received": {"2026":
-        0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
-        {"2026": false}}}, "tax_units": {"main_tax_unit": {"members": ["3001", "3002"]}},
-        "families": {"family": {"members": ["3001", "3002"]}}, "households": {"household":
-        {"members": ["3001", "3002"], "state_code": {"2026": "MO"}}}, "spm_units":
-        {"spm_unit": {"members": ["3001", "3002"], "tanf": {"2026": 2437.0354}, "receives_tanf":
-        {"2026": true}, "takes_up_tanf_if_eligible": {"2026": true}, "receives_snap":
-        {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}, "spm_unit_cash_assets":
-        {"2026": 0}, "childcare_expenses": {"2026": 0.0}, "mo_tanf": {"2026": 2437.0354}}},
-        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.794.2",
-        "data_version": null, "dataset": null}}'
+        0}, "alimony_income": {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026":
+        false}, "takes_up_ssi_if_eligible": {"2026": false}, "is_pregnant": {"2026":
+        false}, "is_tax_unit_dependent": {"2026": true}, "care_expenses": {"2026":
+        0}, "is_incapable_of_self_care": {"2026": false}}}, "tax_units": {"main_tax_unit":
+        {"members": ["3001", "3002"]}}, "families": {"family": {"members": ["3001",
+        "3002"]}}, "households": {"household": {"members": ["3001", "3002"], "state_code":
+        {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["3001", "3002"],
+        "tanf": {"2026": 2437.0354}, "receives_tanf": {"2026": true}, "takes_up_tanf_if_eligible":
+        {"2026": true}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+        {"2026": false}, "spm_unit_cash_assets": {"2026": 0}, "childcare_expenses":
+        {"2026": 0.0}, "mo_tanf": {"2026": 2437.0354}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "1.794.2", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '2211'
       access-control-allow-origin:
@@ -81,15 +81,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 17:19:57 GMT
+      - Fri, 21 Aug 2026 17:41:22 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-6f65d98f756000611a9ded4346014fd3-f315400cb4511288-00
+      - 00-2a72705f5cf0da9c0114cec4e14dfe54-415172106cfbf586-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 6f65d98f756000611a9ded4346014fd3
+      - 2a72705f5cf0da9c0114cec4e14dfe54
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -97,7 +97,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 77bb83b6-181a-4672-9f74-6a7867395179
+      - b9f17523-7294-42b1-ac6b-4a754318ca70
       x-policyengine-route-channel:
       - current
     status:

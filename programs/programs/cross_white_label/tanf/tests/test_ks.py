@@ -51,7 +51,7 @@ class TestKsTanfWiring(TestCase):
         self.assertNotIn(dependency.spm.CashAssetsDependency, KsTanf.pe_inputs)
 
     def test_pe_inputs_includes_gross_income_streams(self):
-        for income_dep in dependency.irs_gross_income:
+        for income_dep in dependency.tanf_income:
             self.assertIn(income_dep, KsTanf.pe_inputs)
 
     def test_pe_inputs_keeps_inherited_demographic_inputs(self):

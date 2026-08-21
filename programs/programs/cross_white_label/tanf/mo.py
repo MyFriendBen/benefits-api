@@ -24,9 +24,8 @@ class MoTanf(Tanf):
     isolate. See specs/mo.md Criterion 7; MFB-1696 covers counting the remaining members'
     assets exactly.
 
-    ``tanf_income`` rather than ``irs_gross_income``, so child support reaches the gates.
-    Income goes per person so PE can run each earner's disregard separately and apply the
-    student exclusions to the right member.
+    Income goes per person (inherited ``tanf_income``) so PE can run each earner's disregard
+    separately and apply the student exclusions to the right member.
     """
 
     program_code = "mo_tanf"
@@ -38,7 +37,6 @@ class MoTanf(Tanf):
         dependency.member.PregnancyDependency,
         dependency.member.TaxUnitDependentDependency,
         dependency.spm.CashAssetsExcludingSsiHouseholdsDependency,
-        *dependency.tanf_income,
         # mo_tanf_child_care_deduction reads the spm-level childcare total and person-level
         # care_expenses, capped per person; is_incapable_of_self_care selects the adult tier.
         dependency.spm.ChildCareDependency,
