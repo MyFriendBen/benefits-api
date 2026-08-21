@@ -43,6 +43,12 @@ def make_member(member_id=1, **insurance_flags):
     return member
 
 
+#: `chp` is in CALC_ORDER, so it is always calculated before CFHC and the default fixture
+#: carries a real result. Pass `chp=ABSENT` to model it missing, which is the case the
+#: member-level gate raises on.
+ABSENT = object()
+
+
 def make_data(medicaid_eligible=False, chp=None):
     data = {}
 
@@ -51,11 +57,8 @@ def make_data(medicaid_eligible=False, chp=None):
         medicaid.eligible = medicaid_eligible
         data["co_medicaid"] = medicaid
 
-    # `chp` is in CALC_ORDER, so it is always calculated before CFHC. Absent means "not
-    # calculated", which raises rather than skipping the CHP+ exclusion — so the default
-    # is a real result recording no eligible members. Pass chp=None explicitly only to
-    # exercise that raise.
-    data["chp"] = chp if chp is not None else Eligibility()
+    if chp is not ABSENT:
+        data["chp"] = chp if chp is not None else Eligibility()
 
     return data
 
@@ -141,6 +144,14 @@ class TestConnectForHealthMedicaidExclusion(TestCase):
         "calculated, and not eligible" — so it must not quietly pass the exclusion."""
         with self.assertRaises(DependencyError):
             self._run(None)
+
+    def test_uncalculated_chp_raises_rather_than_waiving_the_member_exclusion(self):
+        """The member-scope gate has the same contract as the household one. Without this,
+        an uncalculated CHP+ would read as "no member qualifies" and offer CFHC to someone
+        CHP+ would cover."""
+        calc = make_calculator(household_income=10_000, chp=ABSENT, members=[make_member(none=True)])
+        with self.assertRaises(DependencyError):
+            calc.calc()
 
     def test_medicaid_eligible_household_gets_a_fail_message(self):
         e = self._run(True)
