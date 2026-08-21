@@ -23,7 +23,7 @@ from screener.models import Expense
 from programs.programs.white_labels.mo.wftc.calculator import MoWftc
 from programs.framework.pe_dependencies import member
 
-PE_VERSION = "1.786.5"
+PE_VERSION = "1.794.2"
 
 
 class MoWftcScenarioTestCase(PeIntegrationTestCase):
