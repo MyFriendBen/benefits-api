@@ -11,12 +11,13 @@ class MoTanf(Tanf):
     Eligibility and the grant are PolicyEngine's; see specs/mo.md for the rules and the
     three it does not model. Notes here cover only why each input is sent.
 
-    ``TaxUnitDependentDependency`` and ``InSecondarySchoolDependency`` are load-bearing
-    and easy to lose: ``mo_tanf_dependent_child`` reads ``is_tax_unit_dependent``, and
-    PolicyEngine's own inference gets it wrong at both ends of Missouri's age range. An
-    18-year-old comes back not-a-dependent, which drops the child *and* their caretaker
-    from the unit and denies the household; a 19-year-old comes back a second caretaker,
-    raising the payment standard a size band.
+    ``TaxUnitDependentDependency`` is load-bearing and easy to lose:
+    ``mo_tanf_dependent_child`` reads ``is_tax_unit_dependent``, and PolicyEngine's own
+    inference gets it wrong at both ends of Missouri's age range. An 18-year-old comes back
+    not-a-dependent, which drops the child *and* their caretaker from the unit and denies
+    the household; a 19-year-old comes back a second caretaker, raising the payment standard
+    a size band. (``is_in_secondary_school`` matters here too and is inherited from
+    ``Tanf``.)
 
     ``NonSsiBankAccountAssetsDependency`` replaces ``spm.CashAssetsDependency``: PE's
     SSI-resource exclusion subtracts person-level assets, so the unit aggregate leaves it
@@ -35,7 +36,6 @@ class MoTanf(Tanf):
         dependency.household.MoStateCodeDependency,
         dependency.member.PregnancyDependency,
         dependency.member.TaxUnitDependentDependency,
-        dependency.member.InSecondarySchoolDependency,
         dependency.member.NonSsiBankAccountAssetsDependency,
         *dependency.tanf_income,
         # mo_tanf_child_care_deduction reads the spm-level childcare total and person-level

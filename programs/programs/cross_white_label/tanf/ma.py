@@ -16,6 +16,10 @@ class MaTafdc(PolicyEngineSpmCalulator):
         dependency.member.AgeDependency,
         dependency.member.PregnancyDependency,
         dependency.member.MaTafdcPregnancyEligibleDependency,
+        # ma_tafdc_age_limit and ma_tafdc_pregnancy_eligible both read
+        # is_in_secondary_school, which has no PE default. MaTafdc does not inherit
+        # Tanf.pe_inputs, so it is sent explicitly here.
+        dependency.member.InSecondarySchoolDependency,
         dependency.household.IsInPublicHousingDependency,
         dependency.household.MaStateCodeDependency,
     ]

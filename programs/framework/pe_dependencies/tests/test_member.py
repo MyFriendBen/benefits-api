@@ -2123,16 +2123,18 @@ class TestInSecondarySchoolDependency(TestCase):
     def test_field_name(self):
         self.assertEqual(self._dep(16).field, "is_in_secondary_school")
 
-    def test_true_across_the_school_age_range(self):
-        for age in (5, 10, 16, 17):
+    def test_true_across_the_high_school_age_range(self):
+        for age in (14, 16, 17):
             self.assertTrue(self._dep(age).value(), f"age {age}")
 
     def test_true_at_eighteen(self):
         """The boundary the 18-vs-19 age limits turn on."""
         self.assertTrue(self._dep(18).value())
 
-    def test_false_below_school_age(self):
-        self.assertFalse(self._dep(4).value())
+    def test_false_below_high_school_age(self):
+        """K-8 children are in school but not secondary school — that is is_in_k12_school."""
+        for age in (4, 8, 13):
+            self.assertFalse(self._dep(age).value(), f"age {age}")
 
     def test_false_at_nineteen(self):
         """Over every consumer's student age limit regardless of enrollment."""

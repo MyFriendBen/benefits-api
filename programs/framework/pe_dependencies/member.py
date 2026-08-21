@@ -1123,21 +1123,23 @@ class InSecondarySchoolDependency(Member):
     unsent input silently applies the lower limit — under the federal TANF definition
     (45 CFR 260.30) that drops the minor-child age limit from 19 to 18.
 
+    Secondary school means high school, or equivalent vocational or technical training —
+    45 CFR 260.30, which is the definition the TANF consumers cite. Distinct from
+    PolicyEngine's ``is_in_k12_school``, which covers all of K-12 and imputes ages 5–17.
+
     The screener has no secondary-enrollment field: ``student`` and ``student_full_time``
     ask about college, university or community college, and a False there does not disprove
-    secondary attendance. So this is an imputation from age, in the same spirit as
-    PolicyEngine's own ``is_in_k12_school`` (which assumes ages 5–17), extended to 18 to
-    cover the final year — the boundary the age-limit consumers turn on. Reported only for
-    dependents, since the consumers that matter test dependent children.
+    high-school attendance. So this is an imputation from age over the years a dependent is
+    plausibly in high school.
     """
 
     field = "is_in_secondary_school"
     dependencies = ("relationship", "age")
 
-    # Matches PolicyEngine's is_in_k12_school imputation at the lower bound; the upper bound
-    # is 18 rather than 17 because a student in their final year is exactly the case the
-    # 18-vs-19 age limits distinguish.
-    MIN_AGE = 5
+    # US high school runs roughly ages 14-18. The upper bound is 18 rather than 17 because a
+    # student in their final year is exactly the case the 18-vs-19 age limits distinguish;
+    # the lower bound excludes younger K-8 children, for whom the variable is simply false.
+    MIN_AGE = 14
     MAX_AGE = 18
 
     def value(self):
