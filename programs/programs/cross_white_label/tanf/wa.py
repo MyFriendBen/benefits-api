@@ -36,7 +36,9 @@ class WaTanf(Tanf):
         dependency.member.PregnancyDependency,
         dependency.member.EmploymentIncomeBeforeLsrDependency,
         dependency.member.SelfEmploymentIncomeBeforeLsrDependency,
-        dependency.spm.CashAssetsExcludingSsiHouseholdsDependency,
+        dependency.member.SocialSecurityIncomeDependency,
+        dependency.member.UnemploymentIncomeDependency,
+        dependency.spm.CashAssetsDependency,
         dependency.spm.WaShowAllCashAssistanceProgramsDependency,
     ]
     pe_outputs = [dependency.spm.WaTanf]

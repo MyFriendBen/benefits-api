@@ -19,10 +19,10 @@ class MoTanf(Tanf):
     a size band. (``is_in_secondary_school`` matters here too and is inherited from
     ``Tanf``.)
 
-    ``CashAssetsExcludingSsiHouseholdsDependency`` reports no countable figure when the
-    household includes an SSI recipient, whose share of the single reported total we cannot
-    isolate. See specs/mo.md Criterion 7; MFB-1696 covers counting the remaining members'
-    assets exactly.
+    ``CashAssetsDependency`` sends the household's reported assets for the resource test. An
+    SSI recipient's resources are excluded from it, but their share of the single reported
+    total cannot be isolated and the input is shared with every other program on the screen,
+    so the exclusion is not applied — see specs/mo.md Criterion 7 and MFB-1696.
 
     Income goes per person (inherited ``tanf_income``) so PE can run each earner's disregard
     separately and apply the student exclusions to the right member.
@@ -36,12 +36,13 @@ class MoTanf(Tanf):
         dependency.household.MoStateCodeDependency,
         dependency.member.PregnancyDependency,
         dependency.member.TaxUnitDependentDependency,
-        dependency.spm.CashAssetsExcludingSsiHouseholdsDependency,
+        dependency.spm.CashAssetsDependency,
         # mo_tanf_child_care_deduction reads the spm-level childcare total and person-level
         # care_expenses, capped per person; is_incapable_of_self_care selects the adult tier.
         dependency.spm.ChildCareDependency,
         dependency.member.CareExpensesDependency,
         dependency.member.IsIncapableOfSelfCareDependency,
+        *dependency.tanf_income,
     ]
 
     pe_outputs = [dependency.spm.MoTanf]

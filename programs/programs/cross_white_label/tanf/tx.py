@@ -27,6 +27,7 @@ class TxTanf(Tanf):
         *Tanf.pe_inputs,
         dependency.household.TxStateCodeDependency,
         dependency.member.TaxUnitDependentDependency,
+        *dependency.irs_gross_income,
     ]
 
     pe_outputs = [dependency.spm.TxTanf]

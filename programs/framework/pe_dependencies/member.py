@@ -1085,11 +1085,16 @@ class InSecondarySchoolDependency(Member):
 
     The screener has no secondary-enrollment field: ``student`` and ``student_full_time``
     ask about college, and a False there does not disprove high-school attendance. So this
-    is an imputation from age over the years a dependent is plausibly in high school.
+    is an imputation from age alone.
+
+    Age alone, deliberately: attendance does not depend on tax-dependency status, and gating
+    on it would route this through ``HouseholdMember.is_dependent()``, whose support test
+    drops exactly the 18-year-olds this input exists to keep in the assistance unit
+    (MFB-1693).
     """
 
     field = "is_in_secondary_school"
-    dependencies = ("relationship", "age")
+    dependencies = ("age",)
 
     # US high school runs roughly ages 14-18. The upper bound is 18 rather than 17 because a
     # student in their final year is exactly the case the 18-vs-19 age limits distinguish;
@@ -1098,7 +1103,4 @@ class InSecondarySchoolDependency(Member):
     MAX_AGE = 18
 
     def value(self):
-        if not self.member.is_dependent():
-            return None
-
         return self.MIN_AGE <= self.member.age <= self.MAX_AGE

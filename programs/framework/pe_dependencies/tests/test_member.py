@@ -2076,5 +2076,11 @@ class TestInSecondarySchoolDependency(TestCase):
         """Over every consumer's student age limit regardless of enrollment."""
         self.assertFalse(self._dep(19).value())
 
-    def test_none_for_a_non_dependent(self):
-        self.assertIsNone(self._dep(40, relationship="headOfHousehold").value())
+    def test_false_for_an_adult_head(self):
+        """Imputed from age alone, so relationship is not consulted."""
+        self.assertFalse(self._dep(40, relationship="headOfHousehold").value())
+
+    def test_true_for_a_teen_head_of_household(self):
+        """A teen parent heading their own case is still plausibly in high school; gating on
+        tax dependency would route this through is_dependent() (MFB-1693)."""
+        self.assertTrue(self._dep(17, relationship="headOfHousehold").value())

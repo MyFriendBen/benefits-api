@@ -13,7 +13,6 @@ class Tanf(PolicyEngineSpmCalulator):
         dependency.member.FullTimeCollegeStudentDependency,
         # Unsent, this reads False for everyone and narrows the minor-child age limit.
         dependency.member.InSecondarySchoolDependency,
-        *dependency.tanf_income,
         *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.spm.TanfIfTakesUp]
