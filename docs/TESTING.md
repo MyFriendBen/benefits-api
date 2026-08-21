@@ -201,7 +201,34 @@ class TestMyProgram(CustomCalculatorTestCase):
 
 `calculate()` runs `calc()`, so it raises `DependencyError` when the calculator declares a
 dependency the screen does not supply — pass `missing=("income_amount",)` to assert that a
-program is skipped rather than valued wrongly.
+program is skipped rather than valued wrongly. It returns the `Eligibility` alone; a few
+older suites define a local `calculate()` returning `(calculator, eligibility)`, so check
+before migrating a file that has its own helper of the same name.
+
+To assert on one step instead of the final result, `make_calculator()` returns the
+calculator without running it — `eligible()` for the household and member rules alone, or a
+program-specific method:
+
+```python
+calculator = self.make_calculator(screen)
+
+self.assertTrue(calculator.eligible().eligible)
+self.assertEqual(calculator.income_limit_125(), 31_000)
+```
+
+### Skipping the program row
+
+`setUpTestData` builds a real `Program` row, because a calculator doing a percent-of-poverty
+test reads `self.program.year`. That row costs a `Translation` per translated field per
+language, so a calculator that never touches `self.program` should opt out:
+
+```python
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    needs_program_row = False        # self.program is a Mock
+```
+
+Most existing custom tests are in this group — they stand up a `Mock()` program today.
 
 ### The builders
 
