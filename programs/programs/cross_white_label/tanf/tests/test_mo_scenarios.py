@@ -658,20 +658,18 @@ class TestScenario34NpcrSpouseOnSsi(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
-    """Accepted PE limitation: a reported `cashAssistance` amount is not counted, so the
-    household receives the full size-2 grant rather than Criterion 8's $34/month.
+    """Cash assistance from a household not on mo_tanf is ordinary unearned income → $34.
 
-    MFB's ``cashAssistance`` is its TANF field, so the amount arrives as PolicyEngine's
-    ``tanf`` input, which is deliberately absent from the TANF unearned-income sources — the
-    exclusion Scenario 31 relies on. PolicyEngine cannot tell the two branches apart because
-    both arrive as the same input. See specs/mo.md Scenario 35.
+    The mirror of Scenario 31: without the TANF tile the amount is not the grant being
+    recalculated, so it is sent as ``miscellaneous_income`` rather than PolicyEngine's
+    ``tanf`` input and counts at every gate.
     """
 
     screen_id = 35
 
-    def test_cash_assistance_is_excluded_by_policyengine(self):
+    def test_cash_assistance_counts_when_not_on_tanf(self):
         screen = self.build(2)
         head = self.add_person(screen, 1, "headOfHousehold", 1996)
         add_income(head, amount=200, income_type="cashAssistance")
         self.add_person(screen, 2, "child", 2020)
-        self.assert_result(screen, True, 2_809)
+        self.assert_result(screen, True, 409)

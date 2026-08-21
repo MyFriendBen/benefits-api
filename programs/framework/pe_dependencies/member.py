@@ -1,5 +1,11 @@
 from .base import Member
-from .receipt import SSI_INCOME_TYPE, member_reports_ssi_amount, screen_reports_ssi_without_amount
+from .receipt import (
+    SSI_INCOME_TYPE,
+    TANF_INCOME_TYPE,
+    member_reports_ssi_amount,
+    screen_reports_ssi_without_amount,
+    screen_reports_tanf_benefit,
+)
 
 
 class AgeDependency(Member):
@@ -756,6 +762,37 @@ class InvestmentIncomeDependency(IncomeDependency):
 class MiscellaneousIncomeDependency(IncomeDependency):
     field = "miscellaneous_income"
     income_types = ["gifts"]
+
+
+class NonTanfCashAssistanceIncomeDependency(IncomeDependency):
+    """
+    Cash assistance the household reports without reporting TANF itself, sent as
+    ``miscellaneous_income`` so a TANF calculation counts it as unearned income.
+
+    ``cashAssistance`` is the screener's TANF field, so ``spm.Tanf`` sends any reported
+    amount as PolicyEngine's ``tanf`` input — which PolicyEngine deliberately excludes from
+    TANF's own unearned-income sources, since a program's own benefit is not income to
+    itself. That is correct for a household re-reporting the grant being recalculated, and
+    wrong for one reporting a different program's cash assistance: General Assistance,
+    another state's TANF, a local fund. Both arrive in the same field, so the amount alone
+    cannot tell them apart.
+
+    The Current Benefits tile can. When the household reports the state's TANF program,
+    ``spm.Tanf`` already carries the amount and this sends nothing. Otherwise the money is
+    some other program's, and it goes out under a source the TANF income tests read.
+
+    Send alongside ``spm.Tanf``, not instead of it — the two are exclusive by construction,
+    so a reported amount reaches exactly one of PolicyEngine's inputs.
+    """
+
+    field = "miscellaneous_income"
+    income_types = ["gifts", TANF_INCOME_TYPE]
+
+    def value(self):
+        if screen_reports_tanf_benefit(self.screen):
+            return int(self.member.calc_gross_income("yearly", ["gifts"]))
+
+        return int(self.member.calc_gross_income("yearly", self.income_types))
 
 
 class UnemploymentIncomeDependency(IncomeDependency):

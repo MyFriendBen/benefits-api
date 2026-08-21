@@ -915,21 +915,19 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the automatic-needy exception's SSI-receipt trigger is implemented as an independent path to needy status, not merely the spouse-absent trigger already covered by Scenario 11. An implementation that only checks spouse presence — without separately checking SSI receipt — would incorrectly run the full neediness budget, and might still reach the same benefit number here, masking the missing branch.
 
-### Scenario 35: Generic `cashAssistance` is excluded regardless of `mo_tanf` receipt ⚠️ *accepted PE limitation*
+### Scenario 35: Generic `cashAssistance` included when household is not currently on `mo_tanf`
 
 **What we're checking**: Criterion 8's committed cash-assistance treatment table — a reported `cashAssistance` amount is excluded *only* when `current_benefits` includes `mo_tanf` (Scenario 31); otherwise it is not assumed to represent the household's own MO TA grant, and is included as ordinary unearned income (e.g., cash assistance from another state or program).
-**Expected**: Eligible — $234/month, the full size-2 payment standard: the reported amount is not counted (see the divergence note below). Under Criterion 8's committed treatment it would be $34/month (countable income $200; deficit `= $234 − $200 = $34`).
+**Expected**: Eligible — $34/month (Gate 1: `$200 < $1,254` size-2 Gross Max ✓. Gate 2: `$200 < $678` size-2 Standard of Need ✓ — cash assistance receives no earned-income disregard at either gate. Gate 3: countable income `$200` (no disregard applies to unearned income); deficit `= $234 − $200 = $34`.)
 **Steps**:
 * Household size: `2`
 * Person 1: Birth month/year `January 1996` (age 30), `headOfHousehold`, income stream `cashAssistance`: $200/month
 * Person 2: Birth month/year `January 2020` (age 6), `child`, no income
 * `current_benefits` does not include `mo_tanf`
 
-**Why this matters**: Pins the shipped treatment of the non-recipient branch, and marks the boundary of Scenario 31's self-exclusion rule.
+**Why this matters**: Scenario 31 proves the self-exclusion branch when `cashAssistance` represents the household's own MO TA grant. This scenario proves the opposite branch — an implementation that excluded every reported `cashAssistance` amount regardless of `current_benefits` would incorrectly omit countable unearned income and overstate the household's grant ($234 instead of $34 here).
 
-**⚠️ Accepted PE limitation — no MFB-side override:** MFB's `cashAssistance` income type is its TANF field, so a reported amount reaches PolicyEngine as the `tanf` input. `tanf` is deliberately absent from PolicyEngine's TANF unearned-income sources (`gov.hhs.tanf.cash.income.sources.unearned`) — a program's own benefit is excluded from its own recalculation, which is what Scenario 31 relies on. PolicyEngine cannot distinguish the two branches, because both arrive as the same input; verified live at PE 1.794.2, sending `tanf` of $2,400/yr leaves `mo_tanf_gross_unearned_income` at $0, while the same amount as `unemployment_compensation` yields $200 and a $34.09 grant.
-
-Reaching Criterion 8's treatment would mean routing the amount to a different PolicyEngine field based on `current_benefits` — deciding what the field means on our side, and changing `spm.Tanf`, which every PE program shares through `receipt_contract`. Not pursued: the divergence errs generously (a larger grant, not a denial) and only affects households reporting cash assistance from a program other than MO TA.
+**Implementation note:** `cashAssistance` is the screener's TANF field, so `spm.Tanf` sends a reported amount as PolicyEngine's `tanf` input, which PolicyEngine excludes from TANF's own unearned-income sources — the exclusion Scenario 31 relies on. Both branches arrive in the same field, so the Current Benefits tile distinguishes them: without `mo_tanf` reported, the amount is sent as `miscellaneous_income` instead, a source the income tests read.
 
 ### Data gaps with no executable scenario
 

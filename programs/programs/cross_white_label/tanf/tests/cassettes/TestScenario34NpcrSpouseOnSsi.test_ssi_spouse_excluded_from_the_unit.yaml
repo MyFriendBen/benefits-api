@@ -1,25 +1,26 @@
 interactions:
 - request:
     body: '{"household": {"people": {"3401": {"age": {"2026": 55}, "is_full_time_college_student":
-      {"2026": false}, "is_in_secondary_school": {"2026": null}, "ssi": {"2026": null},
-      "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
-      "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026": false}, "employment_income":
-      {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
-      0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
-      {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
-      {"2026": 0}, "child_support_received": {"2026": 0}, "alimony_income": {"2026":
-      0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": null}},
-      "3402": {"age": {"2026": 53}, "is_full_time_college_student": {"2026": false},
-      "is_in_secondary_school": {"2026": null}, "ssi": {"2026": 9000.0}, "receives_ssi":
-      {"2026": true}, "takes_up_ssi_if_eligible": {"2026": true}, "is_pregnant": {"2026":
-      false}, "is_tax_unit_dependent": {"2026": false}, "employment_income": {"2026":
-      0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
-      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
-      0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
-      0}, "child_support_received": {"2026": 0}, "alimony_income": {"2026": 0}, "care_expenses":
-      {"2026": 0}, "is_incapable_of_self_care": {"2026": null}}, "3403": {"age": {"2026":
-      6}, "is_full_time_college_student": {"2026": false}, "is_in_secondary_school":
-      {"2026": false}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "is_in_secondary_school": {"2026": null}, "miscellaneous_income":
+      {"2026": 0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+      false}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+      0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received":
+      {"2026": 0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
+      {"2026": null}}, "3402": {"age": {"2026": 53}, "is_full_time_college_student":
+      {"2026": false}, "is_in_secondary_school": {"2026": null}, "miscellaneous_income":
+      {"2026": 0}, "ssi": {"2026": 9000.0}, "receives_ssi": {"2026": true}, "takes_up_ssi_if_eligible":
+      {"2026": true}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+      false}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+      0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received":
+      {"2026": 0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
+      {"2026": null}}, "3403": {"age": {"2026": 6}, "is_full_time_college_student":
+      {"2026": false}, "is_in_secondary_school": {"2026": false}, "miscellaneous_income":
+      {"2026": 0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
       {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
       true}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
       0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
@@ -27,14 +28,14 @@ interactions:
       {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received":
       {"2026": 0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
       {"2026": null}}, "3404": {"age": {"2026": 8}, "is_full_time_college_student":
-      {"2026": false}, "is_in_secondary_school": {"2026": false}, "ssi": {"2026":
-      null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026":
-      false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026": true},
-      "employment_income": {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income":
-      {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026":
-      0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
-      0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received": {"2026":
-      0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
+      {"2026": false}, "is_in_secondary_school": {"2026": false}, "miscellaneous_income":
+      {"2026": 0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+      true}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+      0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received":
+      {"2026": 0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
       {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["3401", "3402",
       "3403", "3404"]}}, "families": {"family": {"members": ["3401", "3402", "3403",
       "3404"]}}, "households": {"household": {"members": ["3401", "3402", "3403",
@@ -52,7 +53,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '3685'
+      - '3833'
       Content-Type:
       - application/json
       User-Agent:
@@ -63,35 +64,36 @@ interactions:
     body:
       string: '{"status": "ok", "message": null, "result": {"people": {"3401": {"age":
         {"2026": 55}, "is_full_time_college_student": {"2026": false}, "is_in_secondary_school":
-        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
-        {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
-        {"2026": false}, "employment_income": {"2026": 0}, "self_employment_income":
-        {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
-        0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
-        0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
-        0}, "child_support_received": {"2026": 0}, "alimony_income": {"2026": 0},
-        "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": false}},
-        "3402": {"age": {"2026": 53}, "is_full_time_college_student": {"2026": false},
-        "is_in_secondary_school": {"2026": false}, "ssi": {"2026": 9000.0}, "receives_ssi":
-        {"2026": true}, "takes_up_ssi_if_eligible": {"2026": true}, "is_pregnant":
-        {"2026": false}, "is_tax_unit_dependent": {"2026": false}, "employment_income":
+        {"2026": false}, "miscellaneous_income": {"2026": 0}, "ssi": {"2026": 0.0},
+        "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+        "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026": false},
+        "employment_income": {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income":
+        {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026":
+        0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
+        0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received": {"2026":
+        0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
+        {"2026": false}}, "3402": {"age": {"2026": 53}, "is_full_time_college_student":
+        {"2026": false}, "is_in_secondary_school": {"2026": false}, "miscellaneous_income":
+        {"2026": 0}, "ssi": {"2026": 9000.0}, "receives_ssi": {"2026": true}, "takes_up_ssi_if_eligible":
+        {"2026": true}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+        false}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+        0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+        {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received":
+        {"2026": 0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0},
+        "is_incapable_of_self_care": {"2026": false}}, "3403": {"age": {"2026": 6},
+        "is_full_time_college_student": {"2026": false}, "is_in_secondary_school":
+        {"2026": false}, "miscellaneous_income": {"2026": 0}, "ssi": {"2026": 0.0},
+        "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+        "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026": true}, "employment_income":
         {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
         0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0},
         "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
         0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received": {"2026":
         0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
-        {"2026": false}}, "3403": {"age": {"2026": 6}, "is_full_time_college_student":
-        {"2026": false}, "is_in_secondary_school": {"2026": false}, "ssi": {"2026":
-        0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026":
-        false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
-        true}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
-        0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
-        {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
-        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received":
-        {"2026": 0}, "alimony_income": {"2026": 0}, "care_expenses": {"2026": 0},
-        "is_incapable_of_self_care": {"2026": false}}, "3404": {"age": {"2026": 8},
-        "is_full_time_college_student": {"2026": false}, "is_in_secondary_school":
-        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}}, "3404": {"age": {"2026": 8}, "is_full_time_college_student":
+        {"2026": false}, "is_in_secondary_school": {"2026": false}, "miscellaneous_income":
+        {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
         {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
         {"2026": true}, "employment_income": {"2026": 0}, "self_employment_income":
         {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
@@ -111,23 +113,23 @@ interactions:
         "1.794.2", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '3791'
+      - '3939'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 14:06:54 GMT
+      - Fri, 21 Aug 2026 17:03:18 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-42a8cc3cf65c6c19d7db12fed299f28a-d95f1d27bb9f3263-01
+      - 00-e9bbbc9eaea45c30772cfd2199f8fdc7-5c5afbfb4fe2873c-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 42a8cc3cf65c6c19d7db12fed299f28a;o=1
+      - e9bbbc9eaea45c30772cfd2199f8fdc7
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -135,7 +137,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 8b84bde3-fe96-4100-84ef-b108f23fc5ea
+      - 3ba7910f-df1b-4202-8fa2-8b5fb6b2c124
       x-policyengine-route-channel:
       - current
     status:

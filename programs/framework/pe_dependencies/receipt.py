@@ -67,6 +67,20 @@ def screen_reports_tanf(screen: Screen) -> bool:
     return screen.has_base_benefit("tanf") or screen.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
 
 
+def screen_reports_tanf_benefit(screen: Screen) -> bool:
+    """
+    Whether the household reports the TANF *program*, from the Current Benefits tile alone.
+
+    Narrower than ``screen_reports_tanf``, which also counts a reported ``cashAssistance``
+    amount. That is the right read for categorical eligibility — better to over-grant SNAP
+    or Head Start than to miss a real recipient — but it cannot answer "is this money the
+    TANF grant we are recalculating, or a different program's cash assistance?", because
+    both arrive in the same field. The tile can: a household reporting the state's TANF
+    program is the one whose own grant should be excluded from its own income test.
+    """
+    return screen.has_base_benefit("tanf")
+
+
 def member_reports_ssi_amount(member: HouseholdMember) -> bool:
     """
     Whether this member reports an SSI dollar amount of their own — the only per-member SSI
