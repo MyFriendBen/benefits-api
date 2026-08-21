@@ -15,14 +15,11 @@ out of the branches they are meant to exercise.
 from datetime import date
 from unittest.mock import patch
 
-from django.test import TestCase
-
 from programs.models import Program
 from programs.framework.base import ProgramCalculator
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.ma.bsp.calculator import MaBabySteps
-from programs.util import Dependencies
-from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Screen, WhiteLabel
-from programs.framework.pe_dependencies import member
+from screener.models import CurrentBenefit, HouseholdMember, Screen
 
 FROZEN_DATE = date(2026, 7, 22)
 
@@ -44,28 +41,28 @@ RELATIONSHIP_CANDIDACY = {
 }
 
 
-class MaBabyStepsTestCase(TestCase):
-    """Shared fixtures: an MA white label, a program row, and a frozen reference date."""
+class MaBabyStepsTestCase(CustomCalculatorTestCase):
+    """The shared fixture, plus the two things BabySteps needs on top of it.
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma", state_code="MA")
-        cls.program = Program.objects.new_program(white_label="ma", name_abbreviated="ma_bsp")
+    Every scenario is evaluated as of a fixed date, and members are described by birth month
+    rather than whole-year age — `age` is derived from it so both agree.
+    """
+
+    calculator_class = MaBabySteps
+    program_code = "ma_bsp"
+    white_label_code = "ma"
+    state_code = "MA"
 
     def setUp(self):
+        super().setUp()
         patcher = patch.object(Screen, "get_reference_date", lambda _self: FROZEN_DATE)
         patcher.start()
         self.addCleanup(patcher.stop)
 
     def make_screen(self, zipcode="02101", county="Boston", household_size=2):
         # MA stores city name in the county field (see MFB-548).
-        return Screen.objects.create(
-            white_label=self.white_label,
-            agree_to_tos=True,
-            zipcode=zipcode,
-            county=county,
-            household_size=household_size,
-            completed=False,
+        return super().make_screen(
+            "ma", "MA", household_size=household_size, zipcode=zipcode, county=county, agree_to_tos=True
         )
 
     def make_member(self, screen, relationship, birth_year_month=None, monthly_income=0):
@@ -73,31 +70,20 @@ class MaBabyStepsTestCase(TestCase):
         if birth_year_month is not None:
             age = HouseholdMember.age_from_date(birth_year_month, FROZEN_DATE)
 
-        member = HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
-            birth_year_month=birth_year_month,
+        household_member = self.add_member(
+            screen, relationship=relationship, age=age, birth_year_month=birth_year_month
         )
 
         if monthly_income:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type="wages",
-                amount=monthly_income,
-                frequency="monthly",
-            )
+            add_income(household_member, monthly_income)
 
-        return member
+        return household_member
 
-    def make_calculator(self, screen):
-        return MaBabySteps(screen, self.program, {}, Dependencies())
-
-    def calculate(self, screen):
+    def calculate_with_calculator(self, screen):
+        """Both the calculator and its result, for assertions on post-`calc()` state."""
         calculator = self.make_calculator(screen)
-        eligibility = calculator.calc()
-        return calculator, eligibility
+
+        return calculator, calculator.calc()
 
 
 class TestMaBabyStepsClassAttributes(MaBabyStepsTestCase):
@@ -151,7 +137,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1994, 3, 1))
         self.make_member(screen, "child", date(2026, 2, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
@@ -163,7 +149,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "spouse", date(1992, 6, 1), monthly_income=5_417)
         self.make_member(screen, "child", date(2026, 2, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
@@ -179,7 +165,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "child", date(2025, 11, 1))
         self.make_member(screen, "child", date(2025, 11, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 100)
@@ -195,7 +181,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         older_sibling = self.make_member(screen, "child", date(2018, 9, 1))
         newborn = self.make_member(screen, "child", date(2026, 2, 1))
 
-        calculator, eligibility = self.calculate(screen)
+        calculator, eligibility = self.calculate_with_calculator(screen)
 
         self.assertTrue(eligibility.eligible)
         # $50, not $100 — the older sibling is past the cutoff.
@@ -209,7 +195,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         self.make_member(screen, "spouse", date(1991, 8, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertFalse(eligibility.eligible)
         self.assertEqual(eligibility.value, 0)
@@ -223,7 +209,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "child", date(2026, 2, 1))
         CurrentBenefit.objects.create(screen=screen, program=snap)
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertTrue(screen.has_benefit("ma_snap"))
         self.assertTrue(eligibility.eligible)
@@ -236,7 +222,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1968, 3, 1))
         self.make_member(screen, "grandChild", date(2026, 3, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
@@ -250,7 +236,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 5, 1))
         child = self.make_member(screen, "child", date(2025, 7, 1))
 
-        calculator, eligibility = self.calculate(screen)
+        calculator, eligibility = self.calculate_with_calculator(screen)
 
         self.assertTrue(calculator.birth_pathway_eligible(child))
         self.assertTrue(eligibility.eligible)
@@ -265,7 +251,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         child = self.make_member(screen, "child", date(2025, 6, 1))
 
-        calculator, eligibility = self.calculate(screen)
+        calculator, eligibility = self.calculate_with_calculator(screen)
 
         self.assertFalse(calculator.birth_pathway_eligible(child))
         self.assertFalse(eligibility.eligible)
@@ -343,7 +329,7 @@ class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         child = self.make_member(screen, "child", None)
 
-        calculator, eligibility = self.calculate(screen)
+        calculator, eligibility = self.calculate_with_calculator(screen)
 
         self.assertFalse(calculator.birth_pathway_eligible(child))
         self.assertFalse(eligibility.eligible)
@@ -369,7 +355,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
                 self.make_member(screen, "headOfHousehold", date(1985, 3, 1))
                 self.make_member(screen, relationship, date(2026, 2, 1))
 
-                _, eligibility = self.calculate(screen)
+                eligibility = self.calculate(screen)
 
                 self.assertTrue(eligibility.eligible)
                 self.assertEqual(eligibility.value, 50)
@@ -386,7 +372,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
                 screen = self.make_screen(household_size=1)
                 self.make_member(screen, relationship, date(2026, 2, 1))
 
-                _, eligibility = self.calculate(screen)
+                eligibility = self.calculate(screen)
 
                 self.assertFalse(eligibility.eligible)
                 self.assertEqual(eligibility.value, 0)
@@ -398,7 +384,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
         self.make_member(screen, "spouse", date(1991, 3, 1))
         self.make_member(screen, "child", date(2026, 2, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         valued = [m for m in eligibility.eligible_members if m.value > 0]
         self.assertEqual(len(valued), 1)
@@ -412,7 +398,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
         self.make_member(screen, "child", date(2025, 9, 1))
         self.make_member(screen, "grandChild", date(2026, 1, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 150)
@@ -423,7 +409,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         self.make_member(screen, "child", date(2026, 2, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertEqual(eligibility.household_value, 0)
 
@@ -433,7 +419,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         self.make_member(screen, "spouse", date(1991, 3, 1))
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertFalse(eligibility.eligible)
         self.assertEqual(eligibility.fail_messages, [])
@@ -456,7 +442,7 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         self.make_member(screen, "child", date(2026, 2, 1))
         CurrentBenefit.objects.create(screen=screen, program=self.program)
 
-        _, eligibility = self.calculate(screen)
+        eligibility = self.calculate(screen)
 
         self.assertTrue(screen.has_benefit("ma_bsp"))
         self.assertTrue(eligibility.eligible)
@@ -473,7 +459,7 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1975, 3, 1))
         teenager = self.make_member(screen, "child", date(2009, 5, 1))
 
-        calculator, eligibility = self.calculate(screen)
+        calculator, eligibility = self.calculate_with_calculator(screen)
 
         self.assertFalse(calculator.birth_pathway_eligible(teenager))
         self.assertFalse(eligibility.eligible)
@@ -488,7 +474,7 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         self.make_member(screen, "child", date(2026, 2, 1))
 
-        calculator, eligibility = self.calculate(screen)
+        calculator, eligibility = self.calculate_with_calculator(screen)
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(calculator.dependencies, ["relationship", "birth_year"])
