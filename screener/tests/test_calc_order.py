@@ -104,6 +104,32 @@ def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> list:
     return codes, unresolved
 
 
+def _all_calculator_classes() -> dict:
+    """Both engines' registries merged, so an upstream is found whichever backs it."""
+    from integrations.clients.policyengine.registry import all_calculators
+    from programs.programs import calculators
+
+    return {**calculators, **all_calculators}
+
+
+def _is_strict_gate(path, upstream_code: str) -> bool:
+    """Whether `upstream_code` is read through the raising accessor in this file, rather
+    than the tolerant `any_program_eligible`."""
+    source = path.read_text()
+    for node in ast.walk(ast.parse(source)):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in ("program_eligible", "member_program_eligible")
+            and node.args
+        ):
+            continue
+        argument = node.args[0]
+        if isinstance(argument, ast.Constant) and argument.value == upstream_code:
+            return True
+    return False
+
+
 def _program_code(class_node: ast.ClassDef) -> Optional[str]:
     """The `program_code` a calculator class declares, if it declares one."""
     for stmt in class_node.body:
@@ -244,6 +270,36 @@ class TestEveryEntryEarnsItsSlot(SimpleTestCase):
             "and the slot outlived it, or the program only gates on others — in which case "
             "it sorts last anyway and needs no slot.",
         )
+
+
+class TestStrictGatesDeclareTheirUpstreamsDependencies(SimpleTestCase):
+    """A strict gate raises when its upstream is absent from `data`, and a missing screener
+    field is one way an upstream gets there: `can_calc()` drops it before it can be
+    calculated. If the dependent needs fewer fields than the upstream, there are screens
+    where the dependent runs and the upstream did not — so the gate raises and the program
+    disappears for a household it could otherwise have answered for.
+
+    Declaring the upstream's dependencies makes the pair drop out together. Tolerant gates
+    are exempt: `any_program_eligible` reads an absent upstream as "no" and degrades instead
+    of vanishing.
+    """
+
+    def test_a_strict_gates_dependencies_cover_its_upstreams(self):
+        registries = _all_calculator_classes()
+        offenders = []
+
+        for path, gating, upstream in find_program_gates():
+            if not _is_strict_gate(path, upstream):
+                continue
+            dependent_cls = registries.get(gating)
+            upstream_cls = registries.get(upstream)
+            if dependent_cls is None or upstream_cls is None:
+                continue
+            uncovered = set(upstream_cls.dependencies) - set(dependent_cls.dependencies)
+            if uncovered:
+                offenders.append(f"{gating} gates on {upstream} but does not declare {sorted(uncovered)}")
+
+        self.assertEqual(offenders, [], "; ".join(offenders))
 
 
 class TestMedicaidProgramCodes(SimpleTestCase):

@@ -13,6 +13,7 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.framework.base import Eligibility
+from programs.programs.cross_white_label.liheap.cesn import EnergyCalculatorEnergyAssistance
 from programs.programs.white_labels.cesn.energy_ebt.calculator import EnergyCalculatorEnergyEbt
 from programs.util import DependencyError
 
@@ -68,3 +69,16 @@ class TestUncalculatedLeapRaises(TestCase):
         """
         with self.assertRaises(DependencyError):
             run(reports_leap=False, leap_eligible=None)
+
+
+class TestDependenciesCoverTheUpstream(TestCase):
+    def test_declares_everything_cesn_leap_needs(self):
+        """The LEAP exclusion reads cesn_leap's result, so this program must not be
+        calculable on a screen where cesn_leap is not. LEAP needs `county` and the income
+        test here does not, so without it a county-less screen would drop Energy EBT
+        entirely rather than answer for it."""
+        uncovered = set(EnergyCalculatorEnergyAssistance.dependencies) - set(EnergyCalculatorEnergyEbt.dependencies)
+        self.assertEqual(uncovered, set())
+
+    def test_county_is_declared(self):
+        self.assertIn("county", EnergyCalculatorEnergyEbt.dependencies)
