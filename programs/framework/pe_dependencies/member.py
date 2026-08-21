@@ -1103,4 +1103,8 @@ class InSecondarySchoolDependency(Member):
     MAX_AGE = 18
 
     def value(self):
-        return self.MIN_AGE <= self.member.age <= self.MAX_AGE
+        # calc_age(), not the age column: AgeDependency sends the same reference-date age, and
+        # the two disagree by a year for any member with birth_year_month — on the 18/19
+        # boundary this input exists to control.
+        age = self.member.calc_age()
+        return self.MIN_AGE <= age <= self.MAX_AGE

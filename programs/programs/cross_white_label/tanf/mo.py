@@ -24,8 +24,10 @@ class MoTanf(Tanf):
     total cannot be isolated and the input is shared with every other program on the screen,
     so the exclusion is not applied — see specs/mo.md Criterion 7 and MFB-1696.
 
-    Income goes per person (inherited ``tanf_income``) so PE can run each earner's disregard
-    separately and apply the student exclusions to the right member.
+    Income goes per person via ``tanf_income``, added here rather than on the base: CO, IL and
+    NC send pre-aggregated state countable-income variables and would double-count. Per person
+    so PE can run each earner's disregard separately and apply the student exclusions to the
+    right member.
     """
 
     program_code = "mo_tanf"

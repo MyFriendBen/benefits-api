@@ -5,6 +5,8 @@ These dependencies calculate individual member values used by PolicyEngine
 to determine TX SNAP and Lifeline eligibility and benefit amounts.
 """
 
+import datetime
+
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.models import Program
@@ -2079,6 +2081,27 @@ class TestInSecondarySchoolDependency(TestCase):
     def test_false_for_an_adult_head(self):
         """Imputed from age alone, so relationship is not consulted."""
         self.assertFalse(self._dep(40, relationship="headOfHousehold").value())
+
+    def test_reads_the_reference_date_age_not_the_stale_column(self):
+        """A member with birth_year_month is aged from it, matching AgeDependency. Reading the
+        age column instead would send age=20 alongside is_in_secondary_school=True."""
+        m = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=18,
+            birth_year_month=datetime.date(2006, 1, 1),
+        )
+        self.assertEqual(member.AgeDependency(self.screen, m, {}).value(), m.calc_age())
+        self.assertFalse(member.InSecondarySchoolDependency(self.screen, m, {}).value())
+
+    def test_true_at_the_boundary_when_birth_month_confirms_eighteen(self):
+        m = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=30,
+            birth_year_month=datetime.date(2008, 1, 1),
+        )
+        self.assertEqual(member.InSecondarySchoolDependency(self.screen, m, {}).value(), 14 <= m.calc_age() <= 18)
 
     def test_true_for_a_teen_head_of_household(self):
         """A teen parent heading their own case is still plausibly in high school; gating on
