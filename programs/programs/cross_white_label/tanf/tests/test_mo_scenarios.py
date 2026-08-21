@@ -256,8 +256,8 @@ class TestScenario10KinshipCaretakerIncluded(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 @pytest.mark.skip(
-    reason="Blocked on PolicyEngine: no NPCR concept, so a qualifying caretaker is always an "
-    "assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
+    reason="Blocked on PolicyEngine (MFB-1698): no NPCR concept, so a qualifying caretaker is "
+    "always an assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
     "Missouri's expected grant; PolicyEngine currently returns the caretaker-included result "
     "($192.09/month). Un-skip when PE models the election."
 )
@@ -282,8 +282,8 @@ class TestScenario11NpcrWithIncome(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 @pytest.mark.skip(
-    reason="Blocked on PolicyEngine: no NPCR concept, so a qualifying caretaker is always an "
-    "assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
+    reason="Blocked on PolicyEngine (MFB-1698): no NPCR concept, so a qualifying caretaker is "
+    "always an assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
     "Missouri's expected grant; PolicyEngine currently returns the caretaker-included result "
     "(ineligible). Un-skip when PE models the election."
 )
@@ -309,7 +309,7 @@ class TestScenario12NpcrNotNeedy(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 @pytest.mark.skip(
-    reason="Expected failure, not a MoTanf defect: the SSI child's income is the household's "
+    reason="Blocked on MFB-1693, not a MoTanf defect: the SSI child's income is the household's "
     "only income, so HouseholdMember.is_dependent()'s support test (child income <= household "
     "income / 2) can never pass and the child is placed in a separate tax unit. PolicyEngine's "
     "caretaker test requires a dependent child in the same tax unit, so the payee loses their "
@@ -433,7 +433,7 @@ class TestScenario20MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 @pytest.mark.skip(
-    reason="Expected failure, same shared-screener defect as Scenario 13, not a MoTanf issue: "
+    reason="Blocked on MFB-1693, same shared-screener defect as Scenario 13: "
     "the student child's $15,600/yr is more than half the household's income, so "
     "HouseholdMember.is_dependent() fails them on both the qualifying-child support test and "
     "the qualifying-relative threshold, and they are placed in a separate tax unit. The "
