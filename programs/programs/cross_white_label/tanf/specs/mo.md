@@ -927,7 +927,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Scenario 31 proves the self-exclusion branch when `cashAssistance` represents the household's own MO TA grant. This scenario proves the opposite branch — an implementation that excluded every reported `cashAssistance` amount regardless of `current_benefits` would incorrectly omit countable unearned income and overstate the household's grant ($234 instead of $34 here).
 
-**Implementation note:** `cashAssistance` is the screener's TANF field, so `spm.Tanf` sends a reported amount as PolicyEngine's `tanf` input, which PolicyEngine excludes from TANF's own unearned-income sources — the exclusion Scenario 31 relies on. Both branches arrive in the same field, so the Current Benefits tile distinguishes them: without `mo_tanf` reported, the amount is sent as `miscellaneous_income` instead, a source the income tests read.
+**⚠️ Pending MFB-1697 — not yet the shipped result:** `cashAssistance` is the screener's TANF field, and `spm.Tanf` sends any reported amount as PolicyEngine's `tanf` input, which PolicyEngine excludes from TANF's own unearned-income sources. So a household reporting non-MO cash assistance currently has it excluded too, returning $234/month rather than the $34 above. Separating the two branches means revisiting the `cashAssistance` → TANF mapping across every PolicyEngine input that reads it — tracked in MFB-1697. The expected value above is what the calculator should return once that lands; this scenario's test is skipped in the meantime.
 
 ### Data gaps with no executable scenario
 

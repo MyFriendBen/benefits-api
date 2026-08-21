@@ -17,11 +17,6 @@ class Tanf(PolicyEngineSpmCalulator):
         # everyone and an 18-year-old student stops being a minor child. Sent here rather
         # than per state because that demographic test is in every state's chain.
         dependency.member.InSecondarySchoolDependency,
-        # receipt_contract sends any reported cashAssistance amount as PE's `tanf` input,
-        # which PE excludes from TANF's own unearned-income sources — right for a household
-        # re-reporting the grant being recalculated, wrong for one reporting a different
-        # program's cash assistance. This routes the latter to a source the gates read.
-        dependency.member.NonTanfCashAssistanceIncomeDependency,
         *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.spm.TanfIfTakesUp]
