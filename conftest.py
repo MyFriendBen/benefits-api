@@ -16,7 +16,7 @@ All integration tests marked with @pytest.mark.integration automatically use VCR
 Two integrations use this harness:
 - HUD income limits (integrations/clients/hud_income_limits) — needs HUD_API_TOKEN to record
 - PolicyEngine program tests — see programs/framework/tests/
-  integration_test_helpers.py and docs/TESTING.md
+  programs/programs/testing_fixtures/pe_integration.py and docs/TESTING.md
 """
 
 import json
@@ -43,7 +43,7 @@ HUD_TEST_PATH_FRAGMENT = "hud_income_limits"
 # Hosts VCR passes straight through, never recording. PolicyEngine's OAuth exchange lives
 # here: its response body is a real bearer token, so it must not be written to a cassette.
 # Recording fetches a token live; replay pre-seeds a placeholder instead (see
-# programs/framework/tests/integration_test_helpers.py).
+# programs/programs/testing_fixtures/pe_integration.py).
 VCR_IGNORE_HOSTS = ["policyengine.uk.auth0.com"]
 
 # Record modes VCR_MODE may name. Anything else falls back to "once".

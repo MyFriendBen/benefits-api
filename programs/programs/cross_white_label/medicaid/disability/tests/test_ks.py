@@ -9,7 +9,7 @@ Working Healthy eligibility (KEESM §2664):
 - Countable resources <= $15,000 (flat)
 - Insurance none/employer/private; not an SSI recipient
 - Criterion-8 mutex: excluded if the household is eligible for regular KanCare Medicaid
-  (medicaid_eligible() reads the calculated `ks_medicaid` result). A low-income minor
+  (`program_eligible("ks_medicaid")` reads the calculated KanCare result). A low-income minor
   (children's Medicaid) or low-income disabled adult (ABD Medicaid) is excluded — see
   Sc 2/10 and the spec's mutex note.
 - KS residency handled by white-label routing (Scenario 17 not a calculator test)
