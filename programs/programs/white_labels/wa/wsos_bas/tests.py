@@ -1,7 +1,5 @@
-from programs.framework.pe_dependencies import member
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.wa.wsos_bas.calculator import WaWsosBas
-from programs.util import Dependencies
 from screener.models import HouseholdMember, IncomeStream
 
 
@@ -37,9 +35,6 @@ class TestWaWsosBas(CustomCalculatorTestCase):
             add_income(household_member, monthly_wages)
         return household_member
 
-    def _calc(self, screen):
-        return WaWsosBas(screen, self.program, {}, Dependencies())
-
     # --- Class wiring --------------------------------------------------------
 
     def test_amount_is_22500_lump_sum(self):
@@ -62,7 +57,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=2000)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -75,7 +70,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=8000)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -91,7 +86,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         self._add_member(screen, relationship="child", age=17, student=True)
         self._add_member(screen, relationship="child", age=13, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -106,7 +101,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         self._add_member(screen, relationship="child", age=17, student=True)
         self._add_member(screen, relationship="child", age=13, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -122,7 +117,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         self._add_member(screen, relationship="spouse", age=30, student=False)
         self._add_member(screen, relationship="child", age=4, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -137,7 +132,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         screen = self._make_screen()
         self._add_member(screen, age=46, student=False, monthly_wages=2000)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -163,7 +158,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
             frequency="monthly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -176,7 +171,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         screen = self._make_screen()
         self._add_member(screen, age=18, student=True)  # no income stream
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -193,7 +188,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
             frequency="yearly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -209,7 +204,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
             frequency="yearly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -220,7 +215,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=2000)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -231,7 +226,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=8000)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -247,7 +242,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         self._add_member(screen, student=True, monthly_wages=2000)
         self._add_member(screen, relationship="spouse", age=21, student=True)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -261,7 +256,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         """All 6 published table sizes return the documented 125% MFI value verbatim."""
         for size, expected in WaWsosBas.MFI_125_BY_SIZE.items():
             screen = self._make_screen(household_size=size)
-            self.assertEqual(self._calc(screen).income_limit_125(), expected)
+            self.assertEqual(self.make_calculator(screen).income_limit_125(), expected)
 
     def test_income_limit_extension_above_table(self):
         """
@@ -271,7 +266,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         """
         screen = self._make_screen(household_size=8)
         expected = WaWsosBas.MFI_125_BY_SIZE[6] + 2 * WaWsosBas.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
-        self.assertEqual(self._calc(screen).income_limit_125(), expected)
+        self.assertEqual(self.make_calculator(screen).income_limit_125(), expected)
 
     def test_mfi_table_values_match_spec(self):
         """
