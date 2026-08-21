@@ -96,7 +96,11 @@ def pe_input(
         version = pe_versions.determine_pe_version(pe_version)
         comparable_version = _resolve_comparable_version(programs, version)
 
-    members: list[HouseholdMember] = screen.household_members.all()
+    # order_by("id") is load-bearing, not tidiness: the payload lists every unit's members
+    # in iteration order, and the cassette matcher compares request bodies exactly. Without
+    # it Postgres picks the order, so the same household can serialize differently between
+    # runs and a recorded cassette stops matching — the request then goes to the live API.
+    members: list[HouseholdMember] = screen.household_members.all().order_by("id")
     relationship_map = screen.relationship_map()
 
     main_tax_members = []
