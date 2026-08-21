@@ -1084,6 +1084,18 @@ class NonSsiBankAccountAssetsDependency(Member):
 
     Send instead of ``spm.CashAssetsDependency``, never alongside it: the two write
     different halves of the same total.
+
+    Single-consumer by circumstance, not design. ``mo_tanf`` is currently the only state
+    resource test in PolicyEngine that models the exclusion at all — KS, WA and TX apply a
+    flat aggregate limit despite their statutes excluding the same resources (MFB-1696), so
+    sending this to them today would change nothing. They should switch to it once PE lands
+    the exclusion.
+
+    The even split is an assumption: the screener collects one household figure with no
+    per-member ownership. It also assumes the three components above sum to
+    ``spm_unit_cash_assets``, which is what PolicyEngine's own formula depends on — if PE
+    adds a component to that variable's ``adds`` list, this under-subtracts until it is
+    updated to match.
     """
 
     field = "bank_account_assets"
