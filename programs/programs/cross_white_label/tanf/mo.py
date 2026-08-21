@@ -75,6 +75,10 @@ class MoTanf(Tanf):
         dependency.member.TaxUnitDependentDependency,
         dependency.member.InSecondarySchoolDependency,
         *dependency.irs_gross_income,
+        # child_support_received is one of PE's TANF unearned-income sources
+        # (gov.hhs.tanf.cash.income.sources.unearned) and irs_gross_income does not carry
+        # it, so without this a reported childSupport amount never reaches any gate.
+        dependency.member.ChildSupportReceivedDependency,
         dependency.member.NonSsiBankAccountAssetsDependency,
         dependency.spm.ChildCareDependency,
         dependency.member.CareExpensesDependency,

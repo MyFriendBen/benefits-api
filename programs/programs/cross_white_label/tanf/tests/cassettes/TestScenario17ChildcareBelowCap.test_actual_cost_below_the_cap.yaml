@@ -1,0 +1,105 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"1701": {"age": {"2026": 30}, "is_full_time_college_student":
+      {"2026": false}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+      false}, "is_in_secondary_school": {"2026": null}, "employment_income": {"2026":
+      3600}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0},
+      "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
+      {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
+      {"2026": 0}, "child_support_received": {"2026": 0}, "bank_account_assets": {"2026":
+      0.0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": null}},
+      "1702": {"age": {"2026": 6}, "is_full_time_college_student": {"2026": false},
+      "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+      true}, "is_in_secondary_school": {"2026": false}, "employment_income": {"2026":
+      0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+      0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+      0}, "child_support_received": {"2026": 0}, "bank_account_assets": {"2026": 0.0},
+      "care_expenses": {"2026": 0}, "is_incapable_of_self_care": {"2026": null}}},
+      "tax_units": {"main_tax_unit": {"members": ["1701", "1702"]}}, "families": {"family":
+      {"members": ["1701", "1702"]}}, "households": {"household": {"members": ["1701",
+      "1702"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
+      ["1701", "1702"], "tanf": {"2026": null}, "receives_tanf": {"2026": false},
+      "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
+      "takes_up_snap_if_eligible": {"2026": false}, "childcare_expenses": {"2026":
+      1200.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version": "1.794.2"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2083'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"1701": {"age":
+        {"2026": 30}, "is_full_time_college_student": {"2026": false}, "ssi": {"2026":
+        0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026":
+        false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent": {"2026":
+        false}, "is_in_secondary_school": {"2026": false}, "employment_income": {"2026":
+        3600}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0},
+        "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
+        {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
+        {"2026": 0}, "child_support_received": {"2026": 0}, "bank_account_assets":
+        {"2026": 0.0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
+        {"2026": false}}, "1702": {"age": {"2026": 6}, "is_full_time_college_student":
+        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "is_pregnant": {"2026": false}, "is_tax_unit_dependent":
+        {"2026": true}, "is_in_secondary_school": {"2026": false}, "employment_income":
+        {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
+        0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0},
+        "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
+        0}, "taxable_ira_distributions": {"2026": 0}, "child_support_received": {"2026":
+        0}, "bank_account_assets": {"2026": 0.0}, "care_expenses": {"2026": 0}, "is_incapable_of_self_care":
+        {"2026": false}}}, "tax_units": {"main_tax_unit": {"members": ["1701", "1702"]}},
+        "families": {"family": {"members": ["1701", "1702"]}}, "households": {"household":
+        {"members": ["1701", "1702"], "state_code": {"2026": "MO"}}}, "spm_units":
+        {"spm_unit": {"members": ["1701", "1702"], "tanf": {"2026": 0.0}, "receives_tanf":
+        {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
+        {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}, "childcare_expenses":
+        {"2026": 1200.0}, "mo_tanf": {"2026": 2569.0352}}}, "marital_units": {}},
+        "policyengine_bundle": {"model_version": "1.794.2", "data_version": null,
+        "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '2188'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Fri, 21 Aug 2026 00:02:38 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-6595067a3ab4d74f2b2e45236813dd94-43c544036ae781bc-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 6595067a3ab4d74f2b2e45236813dd94
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 0c406655-91be-417c-924c-4c7e6d59be11
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1
