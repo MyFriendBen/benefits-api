@@ -11,7 +11,7 @@
     "name_abbreviated": "wa_fap",
     "year": "2026",
     "legal_status_required": [
-      "gc_5less",
+      "gc_18plus_no5",
       "refugee",
       "otherWithWorkPermission"
     ],
