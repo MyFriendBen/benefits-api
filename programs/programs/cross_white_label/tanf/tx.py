@@ -12,7 +12,7 @@ class TxTanf(Tanf):
     and benefit values. Inherits from federal TANF calculator and adds TX state
     code dependency and person-level income inputs.
 
-    Income is provided at the person level (via irs_gross_income) so PolicyEngine
+    Income is provided at the person level (via tanf_income) so PolicyEngine
     can compute tx_tanf_countable_earned_income correctly — applying the $120 work
     expense deduction and 1/3 earned income disregard per § 372.409. Passing gross
     income directly as tx_tanf_countable_earned_income (the previous approach) bypassed
@@ -27,7 +27,7 @@ class TxTanf(Tanf):
         *Tanf.pe_inputs,
         dependency.household.TxStateCodeDependency,
         dependency.member.TaxUnitDependentDependency,
-        *dependency.irs_gross_income,
+        *dependency.tanf_income,
     ]
 
     pe_outputs = [dependency.spm.TxTanf]

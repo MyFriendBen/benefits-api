@@ -36,8 +36,7 @@ class WaTanf(Tanf):
         dependency.member.PregnancyDependency,
         dependency.member.EmploymentIncomeBeforeLsrDependency,
         dependency.member.SelfEmploymentIncomeBeforeLsrDependency,
-        dependency.member.SocialSecurityIncomeDependency,
-        dependency.member.UnemploymentIncomeDependency,
+        *dependency.tanf_income,
         dependency.spm.CashAssetsDependency,
         dependency.spm.WaShowAllCashAssistanceProgramsDependency,
     ]
