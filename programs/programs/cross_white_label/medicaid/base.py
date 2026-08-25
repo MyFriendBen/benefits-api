@@ -71,4 +71,10 @@ class Medicaid(PolicyEngineMembersCalculator, abstract=True):
 
         medicaid_category = self.get_member_dependency_value(dependency.member.MedicaidCategory, member.id)
 
-        return self.medicaid_categories[medicaid_category] * 12
+        # .get rather than [] because medicaid_categories covers only the categories we price.
+        # PolicyEngine's enum is larger and grows: MEDICALLY_NEEDY, WORKING_DISABLED_BUY_IN,
+        # SECTION_1115_MEC_ADULT and SENIOR_OR_DISABLED have no key here, and a state whose
+        # covered-category list includes one of them would raise KeyError out of member_value -
+        # which fails the whole eligibility request, not just this program. Falling back to 0
+        # drops the program from results instead, the same as any other ineligible answer.
+        return self.medicaid_categories.get(medicaid_category, 0) * 12

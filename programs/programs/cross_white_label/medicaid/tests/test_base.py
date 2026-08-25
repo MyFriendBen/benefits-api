@@ -583,3 +583,51 @@ class TestMedicaidNoneCategory(TestCase):
         result = calculator.member_value(member)
 
         self.assertEqual(result, 0 * 12)
+
+
+class TestMedicaidUnknownCategory(TestCase):
+    """Tests for categories PolicyEngine can return that medicaid_categories does not price."""
+
+    def _create_calculator_with_mocks(self):
+        calculator = Medicaid(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+        calculator.get_member_variable = Mock()
+        calculator.get_member_dependency_value = Mock()
+        return calculator
+
+    def _create_member(self):
+        """A non-senior, non-disabled member, so member_value reaches the category lookup."""
+        member = Mock()
+        member.id = 1
+        member.age = 40
+        member.calc_age = Mock(return_value=40)
+        member.has_disability = Mock(return_value=False)
+        return member
+
+    def test_unpriced_category_returns_zero_instead_of_raising(self):
+        """An unrecognized category is worth 0, not a KeyError.
+
+        PolicyEngine's medicaid_category enum is larger than the set of categories we price
+        and it grows over time. A KeyError here propagates out of member_value and fails the
+        entire eligibility request rather than just this program, so an unknown category has
+        to degrade to "no value" the same way any other ineligible answer does.
+        """
+        calculator = self._create_calculator_with_mocks()
+        calculator.medicaid_categories = {"ADULT": 532}
+        calculator.get_member_variable.return_value = 12_559
+        calculator.get_member_dependency_value.return_value = "SECTION_1115_MEC_ADULT"
+
+        result = calculator.member_value(self._create_member())
+
+        self.assertEqual(result, 0)
+
+    def test_known_category_is_still_priced(self):
+        """The fallback doesn't swallow categories we do price."""
+        calculator = self._create_calculator_with_mocks()
+        calculator.medicaid_categories = {"ADULT": 532}
+        calculator.get_member_variable.return_value = 12_559
+        calculator.get_member_dependency_value.return_value = "ADULT"
+
+        result = calculator.member_value(self._create_member())
+
+        self.assertEqual(result, 532 * 12)
