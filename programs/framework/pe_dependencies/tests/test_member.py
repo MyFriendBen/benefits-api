@@ -2038,6 +2038,264 @@ class TestChildSupportReceivedDependency(TestCase):
         self.assertEqual(paid.value(), 3000)  # $500/month * 12 / household_size(2)
 
 
+class TestTotalHoursWorkedDependency(TestCase):
+    """Tests for TotalHoursWorkedDependency, which feeds PolicyEngine's
+    weekly_hours_worked_before_lsr — the input behind the SNAP general work and ABAWD
+    work requirements as well as MA TAFDC/EAEDC and TX CCS work screens (MFB-1638).
+
+    These cover ``reported_hours()``, the figure the screen evidences. ``value()`` floors
+    it at the assumed work-test hours — see ``TestTotalHoursWorkedWorkTestFloor``."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+
+    def _income(self, **kwargs):
+        return IncomeStream.objects.create(screen=self.screen, household_member=self.head, **kwargs)
+
+    def _dep(self):
+        return member.TotalHoursWorkedDependency(self.screen, self.head, {})
+
+    def test_field_name_matches_policyengine_variable(self):
+        self.assertEqual(member.TotalHoursWorkedDependency.field, "weekly_hours_worked_before_lsr")
+
+    def test_declares_the_income_fields_it_reads(self):
+        """value() branches on stream type and reads amounts, so a screen missing either
+        must gate the calculator rather than produce a wrong hours figure."""
+        self.assertEqual(
+            member.TotalHoursWorkedDependency.dependencies,
+            ("age", "income_type", "income_amount", "income_frequency"),
+        )
+
+    def test_no_income_is_zero_hours(self):
+        self.assertEqual(self._dep().reported_hours(), 0)
+
+    def test_hourly_wages_report_their_hours_directly(self):
+        self._income(type="wages", amount=20, frequency="hourly", hours_worked=30)
+
+        self.assertEqual(self._dep().reported_hours(), 30)
+
+    def test_non_hourly_wages_are_approximated_at_minimum_wage(self):
+        self._income(type="wages", amount=2000, frequency="monthly")
+
+        # $2,000/mo / $7.25 an hour / 4 weeks a month
+        self.assertAlmostEqual(self._dep().reported_hours(), 2000 / 7.25 / 4)
+
+    def test_self_employment_counts_as_earned(self):
+        self._income(type="selfEmployment", amount=1000, frequency="monthly")
+
+        self.assertAlmostEqual(self._dep().reported_hours(), 1000 / 7.25 / 4)
+
+    def test_hourly_and_non_hourly_earned_streams_sum(self):
+        self._income(type="wages", amount=20, frequency="hourly", hours_worked=10)
+        self._income(type="selfEmployment", amount=1000, frequency="monthly")
+
+        self.assertAlmostEqual(self._dep().reported_hours(), 10 + 1000 / 7.25 / 4)
+
+    # --- Bug 1: unearned income must not manufacture work hours (MFB-1638) ---
+
+    def test_unearned_income_alone_is_zero_hours(self):
+        """A disabled 45-year-old living on SSDI works no hours. Approximating hours
+        from unearned income credited ~69 hours/week and cleared every work screen."""
+        self._income(type="sSDisability", amount=2000, frequency="monthly")
+
+        self.assertEqual(self._dep().reported_hours(), 0)
+
+    def test_unearned_income_does_not_inflate_earned_hours(self):
+        self._income(type="pension", amount=2000, frequency="monthly")
+        self._income(type="wages", amount=1000, frequency="monthly")
+
+        self.assertAlmostEqual(self._dep().reported_hours(), 1000 / 7.25 / 4)
+
+    def test_every_unearned_type_the_screener_collects_is_ignored(self):
+        for income_type in ("sSI", "sSRetirement", "unemployment", "childSupport", "investment", "rental"):
+            with self.subTest(income_type=income_type):
+                IncomeStream.objects.all().delete()
+                self._income(type=income_type, amount=2000, frequency="monthly")
+
+                self.assertEqual(self._dep().reported_hours(), 0)
+
+    # --- Bug 2: a null hours_worked must not raise (MFB-1638) ---
+
+    def test_hourly_stream_without_hours_does_not_raise(self):
+        """hours_worked is nullable and is not covered by IncomeStream.missing_fields(),
+        so can_calc() cannot gate on it. int(None) used to raise TypeError out of
+        pe_input(), which runs outside calc_pe_eligibility's try/except and so failed
+        the entire PolicyEngine request build rather than one program."""
+        self._income(type="wages", amount=20, frequency="hourly", hours_worked=None)
+
+        self.assertEqual(self._dep().reported_hours(), 0)
+
+    def test_null_hours_does_not_discard_the_member_other_earned_streams(self):
+        self._income(type="wages", amount=20, frequency="hourly", hours_worked=None)
+        self._income(type="selfEmployment", amount=1000, frequency="monthly")
+
+        self.assertAlmostEqual(self._dep().reported_hours(), 1000 / 7.25 / 4)
+
+    # --- Other members' income belongs to those members ---
+
+    def test_only_counts_the_member_own_income(self):
+        spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=44)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=spouse, type="wages", amount=20, frequency="hourly", hours_worked=40
+        )
+        self._income(type="wages", amount=20, frequency="hourly", hours_worked=10)
+
+        self.assertEqual(self._dep().reported_hours(), 10)
+
+
+class TestMaTotalHoursWorkedDependency(TestCase):
+    """MA approximates at the state minimum wage rather than the federal floor, so it
+    credits fewer hours for the same income (MFB-1638)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma", state_code="MA")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="02101",
+            county="Suffolk County",
+            household_size=1,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+
+    def test_uses_the_ma_minimum_wage(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+        )
+
+        dep = member.MaTotalHoursWorkedDependency(self.screen, self.head, {})
+        self.assertAlmostEqual(dep.reported_hours(), 2000 / 15 / 4)
+
+    def test_shares_the_field_with_the_base_class(self):
+        """Same field and period as the base class, which is why an MA calculator that
+        sends both raises DependencyError."""
+        self.assertEqual(
+            member.MaTotalHoursWorkedDependency.field,
+            member.TotalHoursWorkedDependency.field,
+        )
+
+    def test_inherits_the_earned_income_filter(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSDisability", amount=2000, frequency="monthly"
+        )
+
+        dep = member.MaTotalHoursWorkedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.reported_hours(), 0)
+
+
+class TestTotalHoursWorkedWorkTestFloor(TestCase):
+    """The assumed-hours floor `value()` puts under reported hours (MFB-1637).
+
+    PolicyEngine dropped this field's 40-hour default in 1.815.1. Unsent or sent low, its
+    SNAP general work (30 hrs) and ABAWD (20 hrs) tests deny the entire SPM unit, so the
+    floor asserts the work test is met rather than denying on employment data the screener
+    never collects. Reported hours still win when they are higher."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+
+    def _member(self, age, relationship="headOfHousehold"):
+        return HouseholdMember.objects.create(screen=self.screen, relationship=relationship, age=age)
+
+    def _dep(self, member_obj):
+        return member.TotalHoursWorkedDependency(self.screen, member_obj, {})
+
+    def _income(self, member_obj, **kwargs):
+        return IncomeStream.objects.create(screen=self.screen, household_member=member_obj, **kwargs)
+
+    def test_floor_is_forty_hours(self):
+        """PolicyEngine's own removed default, so this reproduces pre-1.815.1 results."""
+        self.assertEqual(member.TotalHoursWorkedDependency.assumed_weekly_hours, 40)
+
+    def test_adult_with_no_income_reads_as_meeting_the_work_test(self):
+        """The false-denial case: no earned income is not evidence of not working, and an
+        adult at 0 hours fails both work tests and zeroes the household's SNAP."""
+        adult = self._member(45)
+
+        self.assertEqual(self._dep(adult).reported_hours(), 0)
+        self.assertEqual(self._dep(adult).value(), 40)
+
+    def test_part_time_earnings_are_floored_rather_than_denied(self):
+        """20 reported hours clears ABAWD but not the 30-hour general test. Part-time work
+        says nothing about work registration, which is what that test stands for."""
+        adult = self._member(45)
+        self._income(adult, type="wages", amount=20, frequency="hourly", hours_worked=20)
+
+        self.assertEqual(self._dep(adult).reported_hours(), 20)
+        self.assertEqual(self._dep(adult).value(), 40)
+
+    def test_reported_hours_above_the_floor_are_kept(self):
+        """The floor is a floor, not a fixed value: full-time hours still reach PolicyEngine,
+        which matters to the MA dependent-care brackets and the TX CCS hour totals."""
+        adult = self._member(45)
+        self._income(adult, type="wages", amount=20, frequency="hourly", hours_worked=50)
+
+        self.assertEqual(self._dep(adult).value(), 50)
+
+    def test_applies_at_the_youngest_age_a_work_test_reaches(self):
+        """16 is where PolicyEngine's general work requirement stops exempting on age."""
+        self.assertEqual(member.TotalHoursWorkedDependency.work_test_minimum_age, 16)
+        self.assertEqual(self._dep(self._member(16, relationship="child")).value(), 40)
+
+    def test_no_floor_for_children_below_that_age(self):
+        """Under 16 is exempt from the general test and under 18 from ABAWD, so a floor here
+        buys nothing and would put phantom hours in the payload — which the MA TAFDC/EAEDC
+        dependent-care deduction sums over every member, children included."""
+        child = self._member(10, relationship="child")
+
+        self.assertEqual(self._dep(child).value(), 0)
+
+    def test_a_working_child_still_reports_real_hours(self):
+        """No floor below the work-test age, but nothing is discarded either."""
+        child = self._member(15, relationship="child")
+        self._income(child, type="wages", amount=15, frequency="hourly", hours_worked=12)
+
+        self.assertEqual(self._dep(child).value(), 12)
+
+    def test_no_upper_age_bound(self):
+        """60+ is exempt from the general test but ABAWD ran to 64 before HR1 moved it to
+        65; a ceiling here would have to track that parameter or start denying seniors."""
+        self.assertEqual(self._dep(self._member(70)).value(), 40)
+
+    def test_ages_from_birth_month_like_the_age_input(self):
+        """The floor turns on the same age PolicyEngine is told, not the stored column."""
+        reference = self.screen.get_reference_date()
+        teen = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=30,
+            birth_year_month=datetime.date(reference.year - 15, 1, 1),
+        )
+
+        self.assertEqual(teen.calc_age(), 15)
+        self.assertEqual(self._dep(teen).value(), 0)
+
+    def test_ma_subclass_inherits_the_floor(self):
+        """MA has to send the same floored value SNAP does or pe_input() raises."""
+        adult = self._member(45)
+        self._income(adult, type="wages", amount=2000, frequency="monthly")
+
+        ma = member.MaTotalHoursWorkedDependency(self.screen, adult, {})
+
+        self.assertAlmostEqual(ma.reported_hours(), 2000 / 15 / 4)  # 33.3, under the floor
+        self.assertEqual(ma.value(), 40)
+
+
 class TestInSecondarySchoolDependency(TestCase):
     """Tests for InSecondarySchoolDependency, PolicyEngine's `is_in_secondary_school`.
     Imputed from age for dependents, since the screener's student fields ask about
