@@ -3,6 +3,10 @@
 from django.test import TestCase
 
 from programs.framework.pe_dependencies.household import MoStateCodeDependency
+from programs.framework.pe_dependencies.member import (
+    IsBlindDependency,
+    MeetsSsiDisabilityCriteriaDependency,
+)
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.medicaid.mo import MoHealthNet
 
@@ -31,9 +35,32 @@ class TestMoHealthNet(TestCase):
         for parent_input in Medicaid.pe_inputs:
             self.assertIn(parent_input, MoHealthNet.pe_inputs)
 
-    def test_pe_inputs_adds_exactly_one_input(self):
-        """Only MoStateCodeDependency is added beyond the parent inputs."""
-        self.assertEqual(len(MoHealthNet.pe_inputs), len(Medicaid.pe_inputs) + 1)
+    def test_pe_inputs_adds_only_state_code_and_disability_inputs(self):
+        """Exactly three inputs are added, all of them wiring rather than logic.
+
+        Pinning the count is what keeps this a wiring-only subclass: a new input here should be
+        a deliberate change with a reason, not something that accumulates.
+        """
+        added = [dep for dep in MoHealthNet.pe_inputs if dep not in Medicaid.pe_inputs]
+
+        self.assertEqual(
+            set(added),
+            {
+                MeetsSsiDisabilityCriteriaDependency,
+                IsBlindDependency,
+                MoStateCodeDependency,
+            },
+        )
+
+    def test_sends_ssi_disability_inputs_for_the_abd_pathway(self):
+        """MO declares the disability inputs instead of relying on mo_ssi to supply them.
+
+        PolicyEngine pools inputs per request, so a request without mo_ssi would resolve
+        is_optional_senior_or_disabled_for_medicaid to False and return $0 for a disabled
+        applicant who should qualify through MHABD.
+        """
+        self.assertIn(MeetsSsiDisabilityCriteriaDependency, MoHealthNet.pe_inputs)
+        self.assertIn(IsBlindDependency, MoHealthNet.pe_inputs)
 
     def test_pe_outputs_inherited_from_medicaid(self):
         """pe_outputs are unchanged from the federal parent."""

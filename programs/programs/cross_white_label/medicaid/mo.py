@@ -36,6 +36,14 @@ class MoHealthNet(Medicaid):
 
     pe_inputs = [
         *Medicaid.pe_inputs,
+        # PolicyEngine needs these to classify a member as SSI-disabled or blind, which is what
+        # gates the aged/disabled (MHABD) pathway. Declared here rather than relied on from a
+        # sibling program: PolicyEngine inputs are pooled per request, so while mo_ssi happens to
+        # send both today, a request without it would resolve
+        # is_optional_senior_or_disabled_for_medicaid to False and return $0 for a disabled
+        # applicant. Mirrors KsKanCare. Both only ever widen eligibility - they feed an OR.
+        dependency.member.MeetsSsiDisabilityCriteriaDependency,
+        dependency.member.IsBlindDependency,
         dependency.household.MoStateCodeDependency,
     ]
 

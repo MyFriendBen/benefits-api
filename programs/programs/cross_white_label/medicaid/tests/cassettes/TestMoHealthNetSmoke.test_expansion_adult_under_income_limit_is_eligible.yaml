@@ -7,6 +7,7 @@ interactions:
       {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
       {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "ssi": {"2026": null},
       "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+      "meets_ssi_disability_criteria": {"2026": null}, "is_blind": {"2026": false},
       "medicaid": {"2026": null}, "medicaid_category": {"2026": null}, "is_optional_senior_or_disabled_for_medicaid":
       {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families":
       {"family": {"members": ["1"]}}, "households": {"household": {"members": ["1"],
@@ -22,7 +23,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1138'
+      - '1216'
       Content-Type:
       - application/json
       User-Agent:
@@ -38,6 +39,7 @@ interactions:
         {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
         {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
         {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "meets_ssi_disability_criteria": {"2026": false}, "is_blind":
         {"2026": false}, "medicaid": {"2026": 12559.627}, "medicaid_category": {"2026":
         "ADULT"}, "is_optional_senior_or_disabled_for_medicaid": {"2026": false}}},
         "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families": {"family":
@@ -51,21 +53,21 @@ interactions:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1246'
+      - '1325'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 24 Aug 2026 20:24:10 GMT
+      - Tue, 25 Aug 2026 20:11:29 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-d0b3c1f25d9ffe1816ef3bdbe9a37c6b-6ccf0a1d0d1fc2fc-01
+      - 00-9321e0b7f7eea66423e243f434c1baf0-97cc7ee87dc99e0d-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - d0b3c1f25d9ffe1816ef3bdbe9a37c6b;o=1
+      - 9321e0b7f7eea66423e243f434c1baf0
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -73,7 +75,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 6fbc1513-dbac-439c-9371-a02a708837b9
+      - aa63fab8-c2c1-4e87-8568-59a5f1861c0e
       x-policyengine-route-channel:
       - current
     status:
