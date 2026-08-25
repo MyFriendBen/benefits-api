@@ -37,9 +37,35 @@ CHANGES = [
     ("tx_snap", ["gc_under18_no5"], []),
     ("nc_snap", ["gc_under18_no5"], []),
     # NC adopted the ICHIA option and folded CHIP into Medicaid, so lawfully residing children up
-    # to 21 and pregnant people are covered without the bar.
-    ("nc_medicaid", ["otherHealthCarePregnant", "otherHealthCareUnder21"], []),
+    # to 21 are covered without the bar. `otherHealthCareUnder21` is linked only to `gc_5less` and
+    # `otherWithWorkPermission`, both lawfully present, so it cannot widen the program beyond them.
+    #
+    # ICHIA covers pregnant people too, but `otherHealthCarePregnant` is not the label for it here:
+    # it is also linked to `non_citizen`, so it would make full-scope nc_medicaid visible to
+    # undocumented households with a pregnant member — the same overstatement this migration exists
+    # to remove — and nc_emergency_medicaid gates on `program_eligible("nc_medicaid")` with no
+    # `excludes_programs` on either side, so both cards would render and Medicaid would land twice
+    # in the household total. CO scopes its emergency program to
+    # `notPregnantOrUnder19ForEmergencyMedicaid` and so avoids this; NC's is bare `non_citizen`.
+    # Covering pregnancy needs a label that excludes `non_citizen`, which is a frontend change.
+    ("nc_medicaid", ["otherHealthCareUnder21"], []),
 ]
+
+
+def get_status(LegalStatus, status):
+    """
+    Look up a label, refusing to invent one.
+
+    `LegalStatus.status` has no unique constraint, so `get_or_create` on a typo inserts a row that
+    no program card and no frontend filter will ever match, and the migration still reports success.
+    The importer resolves labels with `.get()` and warns for the same reason. Every label named in
+    this migration already exists in every environment, so this raises only on a genuine mistake,
+    and a test asserts the names against the frontend's label set before it can reach a deploy.
+    """
+    try:
+        return LegalStatus.objects.get(status=status)
+    except LegalStatus.DoesNotExist:
+        raise RuntimeError(f"legal status '{status}' does not exist — check the label against citizenshipFilterConfig.tsx")
 
 
 def apply_changes(apps, schema_editor, reverse=False):
@@ -57,7 +83,7 @@ def apply_changes(apps, schema_editor, reverse=False):
 
         for program in programs:
             for status in to_add:
-                program.legal_status_required.add(LegalStatus.objects.get_or_create(status=status)[0])
+                program.legal_status_required.add(get_status(LegalStatus, status))
             for status in to_remove:
                 program.legal_status_required.remove(*LegalStatus.objects.filter(status=status))
 

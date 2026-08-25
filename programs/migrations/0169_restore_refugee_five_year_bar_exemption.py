@@ -5,9 +5,18 @@ from django.db import migrations
 # alike, so a bar-subject program that omits `refugee` understates eligibility for them.
 #
 # Every SNAP program except mo_snap omitted it, as did the TX cash and health programs and
-# nc_medicaid. Only wa_snap's omission had a stated rationale: it read the July 2025 federal
-# changes as removing refugees and asylees from SNAP entirely and routed them to state-funded FAP
-# instead. This restores the exemption across the board.
+# nc_medicaid. Two of those omissions were deliberate and recorded: wa_snap's, which routed refugees
+# to state-funded FAP, and ks_snap's, argued in snap/specs/ks.md. Both read the July 2025 federal
+# changes as removing refugees and asylees from SNAP entirely — a claim about whether refugee is
+# still a qualified alien, which is a prior question to the one the exemption table answers.
+#
+# The exemption table governs this change, so the exemption is restored across the board. ks.md is
+# updated in the same commit: specs source the test suite, so leaving it arguing the other way would
+# have the next KS pass drop `refugee` again.
+#
+# Reverse is exact only where a forward add was a real insert. None of the programs below held
+# `refugee` when this was written, so it round-trips today; on an environment where one already did,
+# reversing would strip a status this migration did not add.
 ADD_REFUGEE = [
     "co_snap",
     "il_snap",
@@ -33,7 +42,9 @@ def set_refugee(apps, add, remove):
     Program = apps.get_model("programs", "Program")
     LegalStatus = apps.get_model("programs", "LegalStatus")
 
-    refugee, _ = LegalStatus.objects.get_or_create(status="refugee")
+    # `.get()` rather than `get_or_create`: `status` has no unique constraint, so creating on a miss
+    # would insert a row no frontend filter matches while the migration still reported success.
+    refugee = LegalStatus.objects.get(status="refugee")
 
     for names, attach in ((add, True), (remove, False)):
         for name in names:

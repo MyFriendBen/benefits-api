@@ -8,6 +8,7 @@ modes are silent: the importer drops an unknown label with a warning nobody read
 sharing a PolicyEngine variable double-count if their status lists overlap.
 """
 
+import importlib.util
 import json
 from pathlib import Path
 
@@ -138,6 +139,63 @@ class WaFoodProgramsAreDisjointTest(SimpleTestCase):
         for name in ("wa_snap", "wa_fap"):
             with self.subTest(program=name):
                 self.assertNotIn("non_citizen", load_program(name)["program"]["legal_status_required"])
+
+
+class MigrationLabelsTest(SimpleTestCase):
+    """
+    The config guards above cannot see six of the programs this change touches — co_snap, il_snap,
+    ma_snap, nc_snap, mo_snap and nc_medicaid predate the config-import system and have no JSON file
+    at all. For those, the migrations are the only declaration, so the migrations are what to assert
+    against. This also catches a typo before deploy: `LegalStatus.status` has no unique constraint,
+    so a misspelled label would otherwise reach an environment as a lookup failure.
+    """
+
+    @staticmethod
+    def _migration(number, name):
+        path = Path(__file__).resolve().parents[3] / "migrations" / f"{number}_{name}.py"
+        spec = importlib.util.spec_from_file_location(f"m{number}", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.bar = cls._migration("0168", "fix_five_year_bar_legal_statuses")
+        cls.refugee = cls._migration("0169", "restore_refugee_five_year_bar_exemption")
+
+    def test_every_label_named_in_a_migration_is_known(self):
+        named = set()
+        for _, to_add, to_remove in self.bar.CHANGES:
+            named |= set(to_add) | set(to_remove)
+        named.add("refugee")
+
+        self.assertEqual(named - KNOWN_LABELS, set())
+
+    def test_config_less_programs_are_covered_by_a_migration(self):
+        """Without a config file, a program left out of the migrations gets no fix at all."""
+        touched = {name for name, _, _ in self.bar.CHANGES}
+        touched |= set(self.refugee.ADD_REFUGEE) | set(self.refugee.REMOVE_REFUGEE)
+
+        for name in ("co_snap", "il_snap", "ma_snap", "nc_snap", "nc_medicaid"):
+            with self.subTest(program=name):
+                self.assertIn(name, touched)
+
+    def test_no_migration_adds_a_label_linked_to_undocumented_to_a_full_scope_program(self):
+        """
+        `otherHealthCarePregnant` and `otherHealthCareUnder19` are linked to `non_citizen` in
+        citizenshipFilterConfig.tsx, so putting either on a full-scope Medicaid program makes it
+        visible to undocumented households. On NC that also double-counts, since
+        nc_emergency_medicaid gates on `program_eligible("nc_medicaid")` and neither program
+        declares `excludes_programs`.
+        """
+        linked_to_undocumented = {"otherHealthCarePregnant", "otherHealthCareUnder19"}
+        full_scope_medicaid = {"nc_medicaid", "wa_apple_health_medicaid", "il_medicaid"}
+
+        for name, to_add, _ in self.bar.CHANGES:
+            if name in full_scope_medicaid:
+                with self.subTest(program=name):
+                    self.assertEqual(set(to_add) & linked_to_undocumented, set())
 
 
 class WarningMessagesAreReachableTest(SimpleTestCase):
