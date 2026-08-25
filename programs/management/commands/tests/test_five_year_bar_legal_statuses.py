@@ -143,11 +143,15 @@ class WaFoodProgramsAreDisjointTest(SimpleTestCase):
 
 class MigrationLabelsTest(SimpleTestCase):
     """
-    The config guards above cannot see six of the programs this change touches — co_snap, il_snap,
-    ma_snap, nc_snap, mo_snap and nc_medicaid predate the config-import system and have no JSON file
-    at all. For those, the migrations are the only declaration, so the migrations are what to assert
-    against. This also catches a typo before deploy: `LegalStatus.status` has no unique constraint,
-    so a misspelled label would otherwise reach an environment as a lookup failure.
+    The config guards above cannot see the programs that predate the config-import system and have
+    no JSON file at all. Five of them need a change here — co_snap, il_snap, ma_snap, nc_snap and
+    nc_medicaid — and for those the migrations are the only declaration, so the migrations are what
+    to assert against. mo_snap is config-less too but is deliberately absent from both migrations:
+    it already declared `citizen, gc_5plus, gc_under18_no5, refugee`, the state everything else is
+    being moved to, so there is nothing to correct.
+
+    This also catches a typo before deploy: `LegalStatus.status` has no unique constraint, so a
+    misspelled label would otherwise reach an environment as a lookup failure.
     """
 
     @staticmethod
@@ -177,6 +181,8 @@ class MigrationLabelsTest(SimpleTestCase):
         touched = {name for name, _, _ in self.bar.CHANGES}
         touched |= set(self.refugee.ADD_REFUGEE) | set(self.refugee.REMOVE_REFUGEE)
 
+        # mo_snap is not in this list on purpose — see the class docstring. It is config-less and
+        # untouched because it was already correct, so asserting it here would fail.
         for name in ("co_snap", "il_snap", "ma_snap", "nc_snap", "nc_medicaid"):
             with self.subTest(program=name):
                 self.assertIn(name, touched)
