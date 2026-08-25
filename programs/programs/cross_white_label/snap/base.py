@@ -48,11 +48,9 @@ class Snap(PolicyEngineSpmCalulator):
         dependency.member.SnapJobTrainingStudentDependency,
     ]
     pe_outputs = [dependency.spm.SnapIfTakesUp]
+    # PolicyEngine defines snap monthly, so it is read monthly and annualized.
+    pe_monthly_outputs = [dependency.spm.SnapIfTakesUp]
     pe_period_month = "01"
 
-    @property
-    def pe_output_period(self):
-        return self.pe_period + "-" + self.pe_period_month
-
     def household_value(self):
-        return int(self.sim.value(self.pe_category, self.pe_sub_category, self.pe_name, self.pe_output_period)) * 12
+        return int(self.sim.value(self.pe_category, self.pe_sub_category, self.pe_name, self.pe_month_period)) * 12
