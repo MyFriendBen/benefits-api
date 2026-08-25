@@ -9,6 +9,11 @@ from django.db import migrations
 # Each entry is (name_abbreviated, statuses to add, statuses to remove). Config JSON files carry
 # the same lists, but the importer applies `legal_status_required` with `.add()` and skips programs
 # that already exist, so it cannot narrow a live program. This migration is what lands the change.
+#
+# Not every config edited alongside this migration needs an entry here. `wa_fap` loses `refugee` in
+# 0169, which has to own both sides of that move to keep wa_snap and wa_fap disjoint. `il_mpe` and
+# `tx_medicaid_for_pregnant_women` dropped `other` and `gc_under5`, labels with no LegalStatus row,
+# so they were never applied to a program and there is nothing in the database to correct.
 CHANGES = [
     # wa_snap was narrowed in the config file only. No migration ever carried it, and the
     # importer cannot narrow a live program, so the change reached staging by an out-of-band admin
