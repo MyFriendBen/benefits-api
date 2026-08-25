@@ -33,6 +33,10 @@ SNAP_BASE_INPUTS = [
     dependency.spm.HomeownersInsuranceExpenseDependency,
 ]
 
+# Kept out of SNAP_BASE_INPUTS so each variant states which hours class it sends. MA has
+# to swap in MaTotalHoursWorkedDependency rather than add it -- see MaSnap.
+SNAP_HOURS_INPUT = dependency.member.TotalHoursWorkedDependency
+
 
 class Snap(PolicyEngineSpmCalulator):
     program_code = "snap"
@@ -46,6 +50,12 @@ class Snap(PolicyEngineSpmCalulator):
         dependency.member.PartTimeCollegeStudentDependency,
         dependency.member.SnapWorkExceptionDependency,
         dependency.member.SnapJobTrainingStudentDependency,
+        # meets_snap_work_exception covers only PolicyEngine's student rules, so hours are
+        # the sole lever on the general work and ABAWD tests. Both are ANDed into
+        # is_snap_eligible for the whole SPM unit, and PolicyEngine stopped defaulting this
+        # field to 40 hours in 1.815.1 -- unsent, every adult reads as working zero hours
+        # and one of them zeroes out the household's SNAP (MFB-1637).
+        SNAP_HOURS_INPUT,
     ]
     pe_outputs = [dependency.spm.SnapIfTakesUp]
     pe_period_month = "01"

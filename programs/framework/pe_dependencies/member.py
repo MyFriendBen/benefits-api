@@ -536,10 +536,33 @@ class TotalHoursWorkedDependency(Member):
 
     Subclasses override ``minimum_wage`` with their state's rate; the federal floor
     is the conservative default, since a lower wage buys more approximated hours.
+
+    Reported hours are floored at ``assumed_weekly_hours`` for anyone old enough for a
+    SNAP work test to reach (``work_test_minimum_age``). PolicyEngine dropped this
+    field's 40-hour default in 1.815.1, and its SNAP work screens deny the *whole* SPM
+    unit when any member reads under 30 hours (20 for ABAWD) without an exemption --
+    ``meets_snap_work_requirements`` is ANDed into ``is_snap_eligible`` and categorical
+    eligibility does not override it. We collect income, not employment: an adult with
+    no earned income may be working unpaid, between jobs, or under a waiver or the
+    ABAWD grace period, and part-time earnings say nothing about work *registration*,
+    which is what the general requirement actually tests. Screening errs inclusive, so
+    the floor asserts the work test is met rather than denying on data we never asked
+    for -- the same result PolicyEngine's own default produced, now stated explicitly
+    (MFB-1637).
+
+    The floor reaches every consumer of this field on purpose. All programs in a screen
+    share one payload, so two dependencies writing different values to this field raise
+    ``DependencyError`` in ``update_unit`` -- from ``pe_input()``, outside
+    ``calc_pe_eligibility``'s try/except, so a 500 rather than a degraded result. That
+    makes one value per member per screen a hard constraint, and it costs accuracy on
+    the field's other readers: ``tx_ccs``'s work requirement and the MA TAFDC/EAEDC
+    dependent-care deductions both read hours and both get more generous. Accepted
+    deliberately; modelling the SNAP work test properly is follow-up work.
     """
 
     field = "weekly_hours_worked_before_lsr"
     dependencies = (
+        "age",
         "income_type",
         "income_amount",
         "income_frequency",
@@ -548,7 +571,24 @@ class TotalHoursWorkedDependency(Member):
     minimum_wage = 7.25
     work_weeks_in_month = 4
 
+    assumed_weekly_hours = 40
+    # PolicyEngine exempts under-16s from the general work requirement and under-18s
+    # from ABAWD, so no work test can reach a member below this age and the floor would
+    # only put phantom hours in the payload -- which the MA dependent-care deduction
+    # sums over every member, children included. No upper bound: the ABAWD exempt age
+    # has moved twice (50 -> 55 -> 65), and a stale ceiling here would read as a denial.
+    work_test_minimum_age = 16
+
     def value(self):
+        reported = self.reported_hours()
+
+        if self.member.calc_age() < self.work_test_minimum_age:
+            return reported
+
+        return max(reported, self.assumed_weekly_hours)
+
+    def reported_hours(self):
+        """Hours the screen actually evidences, before the work-test floor."""
         hours = 0
 
         for income in self.member.income_streams.all():
