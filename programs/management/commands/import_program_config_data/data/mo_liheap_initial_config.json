@@ -41,7 +41,12 @@
   },
   "navigators": [
     {
-      "external_name": "mo_211"
+      "external_name": "mo_211",
+      "name": "Missouri 211",
+      "email": "",
+      "description": "Missouri 211 connects residents to local services and can help you find utility and energy assistance in your area.",
+      "assistance_link": "https://www.211helps.org/",
+      "phone_number": "+18004274626"
     },
     {
       "external_name": "mo_liheap_fsd_help",
