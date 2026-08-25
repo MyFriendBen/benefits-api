@@ -8,7 +8,7 @@
     "program": {
         "name_abbreviated": "tx_chip",
         "year": "2025",
-        "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5", "refugee"],
+        "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
         "name": "Children's Health Insurance Program (CHIP)",
         "description_short": "Low-cost health insurance for children under 18 and pregnant women",
         "description": "Low-cost health insurance for children and pregnant women. If you do not have private health insurance but earn too much to get Medicaid, you may qualify for CHIP. This insurance covers children 18 and under. It may also cover pregnant women 19 years and older.\n\nCHIP helps pay for check-ups, doctor visits, and emergency care. It also covers immunizations, medicine, and dental care. Pregnant women get prenatal care, labor and delivery, and care for their newborn for the first few months of life. You may pay a small co-pay for some services. Co-pays vary based on income and the number of people in your family.\n\nTime to Apply is based on submitting an application in Your Texas Benefits. You may save time when you apply for several benefits with one application.\n\nOn average, it takes up to 45 days to get approved. Approval time may take up to 90 days if the insurance is for someone with a disability.",

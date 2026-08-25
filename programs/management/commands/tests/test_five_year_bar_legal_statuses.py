@@ -41,20 +41,27 @@ CALCULATED = {
 }
 KNOWN_LABELS = USER_SELECTED | CALCULATED
 
-# Programs subject to the five-year bar, with the statuses each should declare. Sourced from the
-# per-program exemption table reviewed for this change: refugees/asylees are exempt for all four
-# families; SNAP additionally exempts LPRs under 18 regardless of prior status; Medicaid/CHIP
-# additionally exempts pregnant people and children in states that adopted the ICHIA option.
+# Programs subject to the five-year bar, with the statuses each should declare.
+#
+# SNAP exempts LPRs under 18 from the bar regardless of the status they adjusted from, so
+# `gc_under18_no5` replaces bare `gc_5less`. TANF has no age-based exemption, so `gc_5less` simply
+# comes off. `refugee` is not a federal-SNAP status — eligibility runs to citizens, LPRs,
+# Cuban/Haitian entrants and COFA citizens — which is why it sits on state-funded wa_fap and on no
+# SNAP program. The bar's exemption for people who adjusted to LPR *from* refugee status is a
+# different thing: they hold a green card now, and expressing it needs a filter we do not have.
 BAR_SUBJECT_PROGRAMS = {
-    "wa_snap": {"citizen", "gc_5plus", "gc_under18_no5", "refugee"},
-    "wa_fap": {"gc_18plus_no5", "otherWithWorkPermission"},
-    "ks_snap": {"citizen", "gc_5plus", "gc_under18_no5", "refugee"},
-    "tx_snap": {"citizen", "gc_5plus", "gc_under18_no5", "refugee"},
+    "wa_snap": {"citizen", "gc_5plus", "gc_under18_no5"},
+    "wa_fap": {"gc_18plus_no5", "otherWithWorkPermission", "refugee"},
+    "ks_snap": {"citizen", "gc_5plus", "gc_under18_no5"},
+    "tx_snap": {"citizen", "gc_5plus", "gc_under18_no5"},
     "wa_tanf": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
     "mo_tanf": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
-    "tx_tanf": {"citizen", "gc_5plus", "refugee"},
-    "tx_ssi": {"citizen", "gc_5plus", "refugee"},
 }
+
+# Federal SNAP does not reach refugee or asylee status. Washington serves that group through
+# state-funded FAP instead, which is itself evidence federal SNAP does not: a state would not fund
+# a program for a population federal SNAP already covered.
+SNAP_PROGRAMS_WITHOUT_REFUGEE = ("wa_snap", "ks_snap", "tx_snap")
 
 
 def config_files():
@@ -113,6 +120,11 @@ class FiveYearBarProgramsTest(SimpleTestCase):
                 config = load_program(name)
                 self.assertEqual(set(config["program"]["legal_status_required"]), expected)
 
+    def test_no_snap_program_claims_refugee(self):
+        for name in SNAP_PROGRAMS_WITHOUT_REFUGEE:
+            with self.subTest(program=name):
+                self.assertNotIn("refugee", load_program(name)["program"]["legal_status_required"])
+
     def test_bare_gc_5less_is_not_claimed_by_a_bar_subject_program(self):
         """
         `gc_5less` on a bar-subject program claims every LPR under five years, which is the
@@ -144,11 +156,11 @@ class WaFoodProgramsAreDisjointTest(SimpleTestCase):
 class MigrationLabelsTest(SimpleTestCase):
     """
     The config guards above cannot see the programs that predate the config-import system and have
-    no JSON file at all. Five of them need a change here — co_snap, il_snap, ma_snap, nc_snap and
-    nc_medicaid — and for those the migrations are the only declaration, so the migrations are what
-    to assert against. mo_snap is config-less too but is deliberately absent from both migrations:
-    it already declared `citizen, gc_5plus, gc_under18_no5, refugee`, the state everything else is
-    being moved to, so there is nothing to correct.
+    no JSON file at all. Three of them need a change here — nc_snap, nc_medicaid and mo_snap — and
+    for those the migrations are the only declaration, so the migrations are what to assert against.
+    co_snap, il_snap and ma_snap are config-less too but are deliberately absent from the
+    migrations: each already declares `citizen, gc_5plus, gc_under18_no5`, the state the other SNAP
+    programs are being moved to, so there is nothing to correct.
 
     This also catches a typo before deploy: `LegalStatus.status` has no unique constraint, so a
     misspelled label would otherwise reach an environment as a lookup failure.
@@ -166,24 +178,21 @@ class MigrationLabelsTest(SimpleTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.bar = cls._migration("0168", "fix_five_year_bar_legal_statuses")
-        cls.refugee = cls._migration("0169", "restore_refugee_five_year_bar_exemption")
+        cls.mo_snap = cls._migration("0169", "drop_refugee_from_mo_snap")
 
     def test_every_label_named_in_a_migration_is_known(self):
-        named = set()
+        named = {self.mo_snap.STATUS}
         for _, to_add, to_remove in self.bar.CHANGES:
             named |= set(to_add) | set(to_remove)
-        named.add("refugee")
 
         self.assertEqual(named - KNOWN_LABELS, set())
 
     def test_config_less_programs_are_covered_by_a_migration(self):
         """Without a config file, a program left out of the migrations gets no fix at all."""
         touched = {name for name, _, _ in self.bar.CHANGES}
-        touched |= set(self.refugee.ADD_REFUGEE) | set(self.refugee.REMOVE_REFUGEE)
+        touched.add(self.mo_snap.PROGRAM)
 
-        # mo_snap is not in this list on purpose — see the class docstring. It is config-less and
-        # untouched because it was already correct, so asserting it here would fail.
-        for name in ("co_snap", "il_snap", "ma_snap", "nc_snap", "nc_medicaid"):
+        for name in ("nc_snap", "nc_medicaid", "mo_snap"):
             with self.subTest(program=name):
                 self.assertIn(name, touched)
 
