@@ -12,7 +12,8 @@
     "year": "2025",
     "legal_status_required": [
       "citizen",
-      "gc_5plus"
+      "gc_5plus",
+      "refugee"
     ],
     "name": "Temporary Assistance for Needy Families (TANF)",
     "description_short": "Cash assistance and support for families",

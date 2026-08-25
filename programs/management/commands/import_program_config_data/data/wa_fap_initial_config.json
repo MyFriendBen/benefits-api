@@ -12,7 +12,6 @@
     "year": "2026",
     "legal_status_required": [
       "gc_18plus_no5",
-      "refugee",
       "otherWithWorkPermission"
     ],
     "name": "Food Assistance Program (FAP) for Legal Immigrants",
@@ -36,14 +35,6 @@
         "otherWithWorkPermission"
       ],
       "message": "You might qualify for Basic Food (SNAP) instead of FAP. Two things can make that true. First, you may qualify if you have a green card and you have 40 or more Social Security work credits — credits from a parent, earned while you were under 18, or from a spouse count toward your total. Second, you may qualify if you are a citizen of the Marshall Islands, Micronesia, or Palau, or if you are from Cuba or Haiti and were paroled into the U.S., have a pending asylum application, or are in removal proceedings without a final order. Not sure which program applies to you? Contact DSHS or a caseworker for help."
-    },
-    {
-      "external_name": "wa_fap_refugee_adjusted_to_lpr",
-      "calculator": "_show",
-      "legal_statuses": [
-        "refugee"
-      ],
-      "message": "If you came to the U.S. as a refugee or asylee and have since received a green card, you might qualify for Basic Food (SNAP) instead of FAP. Green card holders can get Basic Food, and there is no five-year wait when your earlier status was refugee or asylee. Not sure which program applies to you? Contact DSHS or a caseworker for help."
     }
   ],
   "documents": [

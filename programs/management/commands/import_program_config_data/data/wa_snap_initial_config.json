@@ -13,7 +13,8 @@
     "legal_status_required": [
       "citizen",
       "gc_5plus",
-      "gc_under18_no5"
+      "gc_under18_no5",
+      "refugee"
     ],
     "name": "Basic Food - Supplemental Nutrition Assistance Program (SNAP)",
     "description": "Basic Food (also called SNAP or food stamps) helps you buy groceries each month. You get a card that works like a debit card at most grocery stores. The amount you get depends on your household size and income.\n\nMost people with low income can apply. Washington has higher income limits than many states. For most people, you do not need to meet an asset or savings test. If you get TANF (cash help) or SSI (disability benefits), you may qualify right away. College students may need to work at least 20 hours a week to qualify.",
