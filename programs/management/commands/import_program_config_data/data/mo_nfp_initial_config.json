@@ -9,6 +9,7 @@
   },
   "program": {
     "name_abbreviated": "mo_nfp",
+    "active": true,
     "year": "2026",
     "legal_status_required": [
       "citizen",
