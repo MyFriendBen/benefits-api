@@ -5,6 +5,8 @@ These dependencies calculate individual member values used by PolicyEngine
 to determine TX SNAP and Lifeline eligibility and benefit amounts.
 """
 
+import datetime
+
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.models import Program
@@ -2184,3 +2186,89 @@ class TestMaTotalHoursWorkedDependency(TestCase):
 
         dep = member.MaTotalHoursWorkedDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
+
+
+class TestInSecondarySchoolDependency(TestCase):
+    """Tests for InSecondarySchoolDependency, PolicyEngine's `is_in_secondary_school`.
+    Imputed from age for dependents, since the screener's student fields ask about
+    college."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+
+    def _dep(self, age, relationship="child"):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship=relationship, age=age)
+        return member.InSecondarySchoolDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep(16).field, "is_in_secondary_school")
+
+    def test_true_across_the_high_school_age_range(self):
+        for age in (14, 16, 17):
+            self.assertTrue(self._dep(age).value(), f"age {age}")
+
+    def test_true_at_eighteen(self):
+        """The boundary the 18-vs-19 age limits turn on."""
+        self.assertTrue(self._dep(18).value())
+
+    def test_false_below_high_school_age(self):
+        """K-8 children are in school but not secondary school — that is is_in_k12_school."""
+        for age in (4, 8, 13):
+            self.assertFalse(self._dep(age).value(), f"age {age}")
+
+    def test_false_at_nineteen(self):
+        """Over every consumer's student age limit regardless of enrollment."""
+        self.assertFalse(self._dep(19).value())
+
+    def test_false_for_an_adult_head(self):
+        """Imputed from age alone, so relationship is not consulted."""
+        self.assertFalse(self._dep(40, relationship="headOfHousehold").value())
+
+    def test_reads_the_reference_date_age_not_the_stale_column(self):
+        """A member with birth_year_month is aged from it, matching AgeDependency. Reading the
+        age column instead would send age=20 alongside is_in_secondary_school=True."""
+        m = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=18,
+            birth_year_month=datetime.date(2006, 1, 1),
+        )
+        self.assertEqual(member.AgeDependency(self.screen, m, {}).value(), m.calc_age())
+        self.assertFalse(member.InSecondarySchoolDependency(self.screen, m, {}).value())
+
+    def test_true_at_eighteen_from_birth_month(self):
+        """Born eighteen years before the reference date, whatever the age column says."""
+        reference = self.screen.get_reference_date()
+        m = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=30,
+            birth_year_month=datetime.date(reference.year - 18, 1, 1),
+        )
+        self.assertEqual(m.calc_age(), 18)
+        self.assertTrue(member.InSecondarySchoolDependency(self.screen, m, {}).value())
+
+    def test_false_at_nineteen_from_birth_month(self):
+        """The boundary: one year older and the exclusion no longer applies."""
+        reference = self.screen.get_reference_date()
+        m = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=30,
+            birth_year_month=datetime.date(reference.year - 19, 1, 1),
+        )
+        self.assertEqual(m.calc_age(), 19)
+        self.assertFalse(member.InSecondarySchoolDependency(self.screen, m, {}).value())
+
+    def test_true_for_a_teen_head_of_household(self):
+        """A teen parent heading their own case is still plausibly in high school; gating on
+        tax dependency would route this through is_dependent() (MFB-1693)."""
+        self.assertTrue(self._dep(17, relationship="headOfHousehold").value())

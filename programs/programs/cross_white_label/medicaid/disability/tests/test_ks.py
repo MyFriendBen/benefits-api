@@ -82,14 +82,13 @@ def make_calculator(members=None, household_assets=5_000, fpl_limit=FPL_1, medic
     mock_screen.household_assets = household_assets
     mock_screen.household_members.all = Mock(return_value=members)
 
-    # The Criterion-8 mutex reads the calculated regular-Medicaid result via
-    # medicaid_eligible(), which looks up the STATE_MEDICAID_OPTIONS keys — for KS
-    # that is "ks_medicaid" (NOT "medicaid"; keying it wrong makes the mutex a no-op).
-    data = {}
-    if medicaid_eligible_data:
-        med = Mock()
-        med.eligible = True
-        data["ks_medicaid"] = med
+    # The Criterion-8 mutex reads the calculated regular-Medicaid result under the key
+    # the calculator names — for KS that is "ks_medicaid" (NOT "medicaid"; keying it
+    # wrong raises DependencyError). The key is always present: an absent key means
+    # "not calculated", which raises rather than reading as not-eligible.
+    med = Mock()
+    med.eligible = medicaid_eligible_data
+    data = {"ks_medicaid": med}
 
     mock_missing_deps = Mock()
     mock_missing_deps.has.return_value = False
@@ -296,10 +295,10 @@ class TestSpecScenarios(TestCase):
 
     def test_medicaid_mutex_reads_ks_medicaid_key(self):
         # Structural coverage for the Criterion-8 mutex (household_eligible ->
-        # medicaid_eligible()). Take an otherwise fully-eligible adult and toggle only
-        # the regular-Medicaid result. This is the branch the QA gap exposed: the mutex
-        # keys off "ks_medicaid" (a STATE_MEDICAID_OPTIONS entry), so a household that
-        # qualifies for regular Medicaid is excluded from Working Healthy.
+        # self.program_eligible("ks_medicaid")). Take an otherwise fully-eligible adult
+        # and toggle only the regular-Medicaid result. This is the branch the QA gap
+        # exposed: a household that qualifies for regular Medicaid is excluded from
+        # Working Healthy.
         base = dict(age=40, monthly_earned=1_800)
 
         eligible_no_medicaid, _ = run(make_calculator([make_member(**base)], medicaid_eligible_data=False))

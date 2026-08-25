@@ -25,12 +25,7 @@ class EnergyCalculatorGasAffordabilityXcel(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # eligible for another program
-        has_another_program = False
-        for program in self.presumptive_eligibility:
-            entry = self.data.get(program)
-            if entry is not None and entry.eligible:
-                has_another_program = True
-        e.condition(has_another_program)
+        e.condition(self.any_program_eligible(self.presumptive_eligibility))
 
         # has gas provider
         e.condition(self.screen.energy_calculator.has_gas_provider(self.gas_providers))

@@ -1,5 +1,4 @@
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
-from programs.framework.helpers import medicaid_eligible
 import programs.framework.eligibility_messages as messages
 from integrations.services.sheets.cache import GoogleSheetsCache
 from screener.models import HouseholdMember
@@ -35,7 +34,7 @@ class ACASubsidiesNC(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Medicade eligibility
-        e.condition(not medicaid_eligible(self.data), messages.must_not_have_benefit("Medicaid"))
+        e.condition(not self.program_eligible("nc_medicaid"), messages.must_not_have_benefit("Medicaid"))
 
         # Income
         fpl = self.program.year.as_dict()

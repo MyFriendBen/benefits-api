@@ -12,7 +12,7 @@ interactions:
       {"members": ["82191"], "mo_property_tax_credit": {"2026": null}}}, "families":
       {"family": {"members": ["82191"]}}, "households": {"household": {"members":
       ["82191"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
-      ["82191"]}}, "marital_units": {}}, "version": "1.786.5"}'
+      ["82191"]}}, "marital_units": {}}, "version": "1.794.2"}'
     headers:
       Accept:
       - '*/*'
@@ -44,10 +44,10 @@ interactions:
         {"family": {"members": ["82191"]}}, "households": {"household": {"members":
         ["82191"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
         ["82191"]}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "1.786.5", "data_version": null, "dataset": null}}'
+        "1.794.2", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '1151'
       access-control-allow-origin:
@@ -55,15 +55,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 19 Aug 2026 18:13:32 GMT
+      - Fri, 21 Aug 2026 19:00:09 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-5a50d5e713b77a240efd15e308d9d9a5-66ff3d77e36b604c-00
+      - 00-d0e997818c6def2bcfcbb874a7e34d35-41137221b76ac9f8-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 5a50d5e713b77a240efd15e308d9d9a5
+      - d0e997818c6def2bcfcbb874a7e34d35
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -71,7 +71,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - e1620ab0-53ea-4d38-bdb5-7e967947bd0d
+      - 0fd39f75-bc7b-478a-a504-09da086db4e7
       x-policyengine-route-channel:
       - current
     status:

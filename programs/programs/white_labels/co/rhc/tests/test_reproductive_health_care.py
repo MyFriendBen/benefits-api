@@ -81,8 +81,16 @@ class TestReproductiveHealthCareHouseholdEligibility(TestCase):
     def test_medicaid_ineligible_household_is_ineligible(self):
         self.assertFalse(self._run(False).eligible)
 
-    def test_household_is_ineligible_when_medicaid_was_not_calculated(self):
-        self.assertFalse(self._run(None).eligible)
+    def test_uncalculated_medicaid_raises_rather_than_reading_as_not_eligible(self):
+        """An absent key means "not calculated", which is a different answer from
+        "calculated, and not eligible" — so it must not silently fail the gate."""
+        with self.assertRaises(DependencyError):
+            self._run(None)
+
+    def test_another_states_medicaid_does_not_satisfy_the_gate(self):
+        """The gate names co_medicaid; an nc_medicaid result is not a substitute for it."""
+        with self.assertRaises(DependencyError):
+            self._run(True, medicaid_key="nc_medicaid")
 
     def test_eligible_household_gets_a_pass_message(self):
         e = self._run(True)

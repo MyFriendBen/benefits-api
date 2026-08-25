@@ -1,5 +1,4 @@
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
-from programs.framework.helpers import medicaid_eligible
 
 
 class IlEmergencyMedicaid(ProgramCalculator):
@@ -12,7 +11,7 @@ class IlEmergencyMedicaid(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Must qualify for Medicaid
-        e.condition(medicaid_eligible(self.data))
+        e.condition(self.program_eligible("il_medicaid"))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member

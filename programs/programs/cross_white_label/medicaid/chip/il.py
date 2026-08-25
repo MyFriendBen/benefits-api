@@ -1,6 +1,4 @@
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
-from programs.framework.helpers import medicaid_eligible
-import programs.framework.eligibility_messages as messages
 from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIncomeCheckMixin
 
 

@@ -50,7 +50,13 @@ def make_calculator(income=None, household_size=1):
     screen.household_size = household_size
     screen.calc_gross_income = Mock(side_effect=calc_gross_income)
 
-    return MedicaidChildWithDisability(screen, program, {}, Dependencies())
+    # The Medicaid mutex reads "co_medicaid" out of `data`; an absent key raises rather
+    # than reading as not-eligible. These cases isolate the income rule, so the household
+    # is not Medicaid eligible.
+    not_medicaid_eligible = Mock()
+    not_medicaid_eligible.eligible = False
+
+    return MedicaidChildWithDisability(screen, program, {"co_medicaid": not_medicaid_eligible}, Dependencies())
 
 
 class TestChildWithDisabilityIncome(TestCase):

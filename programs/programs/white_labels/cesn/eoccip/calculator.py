@@ -10,9 +10,7 @@ class EnergyCalculatorEnergyOutreachCrisisIntervention(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # eligible for LEAP
-        cesn_leap = self.data.get("cesn_leap")
-        leap_eligible = cesn_leap is not None and cesn_leap.eligible
-        e.condition(leap_eligible)
+        e.condition(self.program_eligible("cesn_leap"))
 
         # heating is not working
         needs_heating = self.screen.energy_calculator.needs_hvac

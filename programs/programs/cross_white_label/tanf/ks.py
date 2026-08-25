@@ -18,7 +18,7 @@ class KsTanf(Tanf):
     - ``KsCountyDependency`` so the household's county reaches PE's ``ks_tanf_county_group``
       (KEESM T-2). Without it PE falls back to Group I (Rural) statewide, shorting every
       non-rural county by the tier premium.
-    - ``*irs_gross_income`` so person-level employment/self-employment and unearned
+    - ``*tanf_income`` so person-level employment/self-employment and unearned
       income flow into ``tanf_gross_earned_income`` / ``tanf_gross_unearned_income``.
       PE then computes ``ks_tanf_earned_income_after_deductions`` at the person level
       ($90 work expense + 60% disregard per K.A.R. 30-4-111 / KEESM 7211). Passing a
@@ -50,7 +50,7 @@ class KsTanf(Tanf):
         dependency.spm.CashAssetsDependency,
         dependency.spm.ChildCareDependency,
         dependency.spm.PreSubsidyChildcareExpensesDependency,
-        *dependency.irs_gross_income,
+        *dependency.tanf_income,
     ]
 
     pe_outputs = [dependency.spm.KsTanf]
