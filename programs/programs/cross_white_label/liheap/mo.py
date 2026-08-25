@@ -130,9 +130,10 @@ class MoLiheap(ProgramCalculator):
         largest_published = max(self.income_limits)
 
         if household_size >= largest_published:
-            return self.income_limits[largest_published] + (
-                household_size - largest_published
-            ) * self.income_limit_increment
+            return (
+                self.income_limits[largest_published]
+                + (household_size - largest_published) * self.income_limit_increment
+            )
 
         return self.income_limits.get(household_size, self.income_limits[1])
 
