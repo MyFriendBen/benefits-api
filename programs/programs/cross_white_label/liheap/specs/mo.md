@@ -1,10 +1,10 @@
 # Low Income Home Energy Assistance Program (LIHEAP) (MO) — Program Spec
 
-- **Program key**: `mo_liheap` (proposed — `programs/programs/cross_white_label/liheap/mo.py`, class `MoLiheap`)
+- **Program key**: `mo_liheap` (`programs/programs/cross_white_label/liheap/mo.py`, class `MoLiheap`)
 - **Base federal program**: LIHEAP (`base_program: "liheap"`)
 - **White label**: MO
 - **Engine**: MFB custom
-- **Added to MFB**: not implemented
+- **Added to MFB**: implemented
 - **Spec last updated**: 2026-08-21
 - **Sources verified as of**: 2026-08-21
 
