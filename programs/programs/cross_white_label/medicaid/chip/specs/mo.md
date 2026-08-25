@@ -261,30 +261,30 @@ Not independently re-confirmed by this review: the live production DB value of `
 
 ---
 
-### Scenario 5: Income One Cent Above the CHIP Ceiling – Family of 3, Child Should Be Ineligible
-**What we're checking**: Verifies that a child in a household with income exceeding Missouri's published Appendix A CHIP ceiling for household size 3 is correctly denied CHIP eligibility
+### Scenario 5: Income One Dollar Above the CHIP Ceiling – Family of 3, Child Should Be Ineligible
+**What we're checking**: Verifies that a child in a household with income exceeding Missouri's published Appendix A CHIP ceiling for household size 3 is correctly denied CHIP eligibility. **Amended for implementation:** the screener sends PolicyEngine `int(annual income)`, so a one-cent-per-month step — twelve cents a year — is truncated away and this household arrives identical to its boundary twin. The input below steps one dollar per month instead, the smallest step that survives the truncation; the side of the boundary, the premium tier and the expected value are unchanged.
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `63101`, Select county `St. Louis City`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `March 1990` (age 36), Relationship: `headOfHousehold`, Citizenship: `US Citizen`, Has income: `Yes`, Employment income entered at **monthly frequency**, `$6,944.01`/month exactly, Health insurance: `None`
+- **Person 1**: Birth month/year: `March 1990` (age 36), Relationship: `headOfHousehold`, Citizenship: `US Citizen`, Has income: `Yes`, Employment income entered at **monthly frequency**, `$6,945.00`/month exactly, Health insurance: `None`
 - **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `spouse`, Citizenship: `US Citizen`, Has income: `No`, Health insurance: `None`
 - **Person 3**: Birth month/year: `January 2018` (age 8), Relationship: `child`, Citizenship: `US Citizen`, Has income: `No`, Health insurance: `None`, Not currently receiving Medicaid
 - **Current Benefits**: Select no current benefits
 
-**Why this matters**: $6,944.00/month is Missouri's published Appendix A ceiling for a household of 3; one cent above it must be denied, confirming PE enforces the exact published boundary rather than a recomputed FPL percentage. PE's live output correctly denies this household — no divergence here (Scenarios 3, 4, and 15a's divergence, per Criterion 2's PE blocker, is now resolved too).
+**Why this matters**: $6,944.00/month is Missouri's published Appendix A ceiling for a household of 3; one dollar above it must be denied, confirming PE enforces the exact published boundary rather than a recomputed FPL percentage. PE's live output correctly denies this household — no divergence here (Scenarios 3, 4, and 15a's divergence, per Criterion 2's PE blocker, is now resolved too).
 - **Source**: DSS Manual MAGI Appendix A (HH3 ceiling, $6,944.00/mo).
 
 ---
 
-### Scenario 6: Newborn, Income One Cent Above the Published Infant Medicaid Ceiling – Genuine CHIP Case
-**What we're checking**: Income immediately above that same infant boundary must flip to CHIP-eligible — the mirror case to Scenario 3, one cent higher. A newborn satisfies the 'under age 19' criterion, and clearing the infant-specific ceiling (higher than the ages-1-18 ceiling) makes this a genuine CHIP case rather than Medicaid.
+### Scenario 6: Newborn, Income One Dollar Above the Published Infant Medicaid Ceiling – Genuine CHIP Case
+**What we're checking**: Income immediately above that same infant boundary must flip to CHIP-eligible — the mirror case to Scenario 3, one dollar higher. **Amended for implementation:** the screener sends PolicyEngine `int(annual income)`, so a one-cent-per-month step — twelve cents a year — is truncated away and this household arrives identical to its boundary twin. The input below steps one dollar per month instead, the smallest step that survives the truncation; the side of the boundary, the premium tier and the expected value are unchanged. A newborn satisfies the 'under age 19' criterion, and clearing the infant-specific ceiling (higher than the ages-1-18 ceiling) makes this a genuine CHIP case rather than Medicaid.
 **Expected**: Eligible, **$1,651.85/year**
 
-**Steps**: Identical to Scenario 3 except Person 1's employment income is entered at **monthly frequency**, `$4,577.01`/month — exactly one cent above the $4,577.00 boundary.
+**Steps**: Identical to Scenario 3 except Person 1's employment income is entered at **monthly frequency**, `$4,578.00`/month — one dollar above the $4,577.00 boundary.
 
-**Why this matters**: At $4,577.01/month — one cent above Missouri's published Appendix A infant ceiling for a household of 3 — this newborn sits just barely above the line, close enough that a boundary implementation error would misclassify them, but genuinely above the correct threshold, so the correct result is CHIP-eligible, not Medicaid. Falls in the 185–225% FPL premium tier for family size 3 ($105/mo). Net value = $2,911.85 − ($105 × 12 = $1,260) = **$1,651.85/year**.
+**Why this matters**: At $4,578.00/month — one dollar above Missouri's published Appendix A infant ceiling for a household of 3 — this newborn sits just above the line, close enough that a boundary implementation error would misclassify them, but genuinely above the correct threshold, so the correct result is CHIP-eligible, not Medicaid. Falls in the 185–225% FPL premium tier for family size 3 ($105/mo). Net value = $2,911.85 − ($105 × 12 = $1,260) = **$1,651.85/year**.
 - **Source**: DSS Manual MAGI Appendix A (HH3 under-age-1 row, $4,577.00/mo) and Appendix E, IM-4(PRM) (07-26) (HH3, >185–225% band, $105/mo).
 
 ---
@@ -415,13 +415,13 @@ Not independently re-confirmed by this review: the live production DB value of `
 
 ---
 
-### Scenario 15b: Income One Cent Above the Published Lower Routing Boundary — Genuine CHIP Case
-**What we're checking**: Income immediately above that same boundary must flip to CHIP-eligible — the mirror case to 15a, one cent higher.
+### Scenario 15b: Income One Dollar Above the Published Lower Routing Boundary — Genuine CHIP Case
+**What we're checking**: Income immediately above that same boundary must flip to CHIP-eligible — the mirror case to 15a, one dollar higher. **Amended for implementation:** the screener sends PolicyEngine `int(annual income)`, so a one-cent-per-month step — twelve cents a year — is truncated away and this household arrives identical to its boundary twin. The input below steps one dollar per month instead, the smallest step that survives the truncation; the side of the boundary, the premium tier and the expected value are unchanged.
 **Expected**: Eligible, **$2,527.85/year**
 
-**Steps**: Identical to 15a except Person 1's employment income is entered at **monthly frequency**, `$3,484.01`/month — exactly one cent above the $3,484.00 boundary.
+**Steps**: Identical to 15a except Person 1's employment income is entered at **monthly frequency**, `$3,485.00`/month — one dollar above the $3,484.00 boundary.
 
-**Why this matters**: At $3,484.01/month — one cent above Missouri's published Appendix A lower routing boundary for a household of 3 — this household sits just barely above the line, close enough that a boundary implementation error would misclassify it, but genuinely above the correct threshold, so the correct result is CHIP-eligible, not Medicaid. Falls in the first premium tier for family size 3 ($32/mo). Net value = $2,911.85 − ($32 × 12 = $384) = **$2,527.85/year** (matches Scenario 1's dollar figure because both share the same family size and premium tier — this scenario tests boundary proximity, not a unique dollar total).
+**Why this matters**: At $3,485.00/month — one dollar above Missouri's published Appendix A lower routing boundary for a household of 3 — this household sits just above the line, close enough that a boundary implementation error would misclassify it, but genuinely above the correct threshold, so the correct result is CHIP-eligible, not Medicaid. Falls in the first premium tier for family size 3 ($32/mo). Net value = $2,911.85 − ($32 × 12 = $384) = **$2,527.85/year** (matches Scenario 1's dollar figure because both share the same family size and premium tier — this scenario tests boundary proximity, not a unique dollar total).
 - **Source**: DSS Manual MAGI Appendix A (HH3 ages-1-18 lower boundary, $3,484.00/mo) and Appendix E, IM-4(PRM) (07-26) (HH3, >150–185% band, $32/mo).
 
 ---
@@ -464,13 +464,13 @@ Family sizes 9-12 have no test scenario: Missouri publishes rates for them, but 
 
 ---
 
-### Scenario 19: Premium Tier Boundary — Income One Cent Above Missouri's Published Tier 1/Tier 2 Cutoff (Enters Tier 2)
-**What we're checking**: Income one cent above Missouri's own published boundary correctly enters the second tier.
+### Scenario 19: Premium Tier Boundary — Income One Dollar Above Missouri's Published Tier 1/Tier 2 Cutoff (Enters Tier 2)
+**What we're checking**: Income one dollar above Missouri's own published boundary correctly enters the second tier. **Amended for implementation:** the screener sends PolicyEngine `int(annual income)`, so a one-cent-per-month step — twelve cents a year — is truncated away and this household arrives identical to its boundary twin. The input below steps one dollar per month instead, the smallest step that survives the truncation; the side of the boundary, the premium tier and the expected value are unchanged.
 **Expected**: Eligible, **$1,915.85/year**
 
-**Steps**: Identical to Scenario 18 except Person 1's employment income is entered at **monthly frequency**, `$3,337.01`/month — exactly the cent-value Missouri's Appendix E table lists as the start of the >185% band for family size 2.
+**Steps**: Identical to Scenario 18 except Person 1's employment income is entered at **monthly frequency**, `$3,338.00`/month — one dollar past the $3,337.00 end of the >150% band, so inside the >185% band Missouri's Appendix E table starts at `$3,337.01` for family size 2.
 
-**Why this matters**: $3,337.01/month is the exact published start of the >185% tier for family size 2 ($83/mo premium). This household must land in the 185–225% tier, not tier 1. Net value = $2,911.85 − ($83 × 12 = $996) = **$1,915.85/year**.
+**Why this matters**: $3,337.01/month is the exact published start of the >185% tier for family size 2 ($83/mo premium), and $3,338.00 is inside it. This household must land in the 185–225% tier, not tier 1. Net value = $2,911.85 − ($83 × 12 = $996) = **$1,915.85/year**.
 - **Source**: DSS Manual Appendix E, IM-4(PRM) (07-26) (HH2 row: ">185 $3,337.01 to $4,058.00 $83").
 
 ---
@@ -486,13 +486,13 @@ Family sizes 9-12 have no test scenario: Missouri publishes rates for them, but 
 
 ---
 
-### Scenario 21: Premium Tier Boundary — Income One Cent Above Missouri's Published Tier 2/Tier 3 Cutoff (Enters Top Tier)
-**What we're checking**: Income one cent above Missouri's own published boundary correctly enters the top premium tier.
+### Scenario 21: Premium Tier Boundary — Income One Dollar Above Missouri's Published Tier 2/Tier 3 Cutoff (Enters Top Tier)
+**What we're checking**: Income one dollar above Missouri's own published boundary correctly enters the top premium tier. **Amended for implementation:** the screener sends PolicyEngine `int(annual income)`, so a one-cent-per-month step — twelve cents a year — is truncated away and this household arrives identical to its boundary twin. The input below steps one dollar per month instead, the smallest step that survives the truncation; the side of the boundary, the premium tier and the expected value are unchanged.
 **Expected**: Eligible, **$475.85/year**
 
-**Steps**: Identical to Scenario 18 except Person 1's employment income is entered at **monthly frequency**, `$4,058.01`/month — exactly the cent-value Missouri's Appendix E table lists as the start of the >225% band for family size 2.
+**Steps**: Identical to Scenario 18 except Person 1's employment income is entered at **monthly frequency**, `$4,059.00`/month — one dollar past the $4,058.00 end of the >185% band, so inside the >225% band Missouri's Appendix E table starts at `$4,058.01` for family size 2.
 
-**Why this matters**: $4,058.01/month is the exact published start of the >225% tier for family size 2 ($203/mo premium). This household must land in the top 225–300% tier, not the middle tier. Net value = $2,911.85 − ($203 × 12 = $2,436) = **$475.85/year**. Appendix E's exact row for family size 2: `>225 | $4,058.01 to $5,410.00 | $203` — this scenario's income falls within that published range.
+**Why this matters**: $4,058.01/month is the exact published start of the >225% tier for family size 2 ($203/mo premium), and $4,059.00 is inside it. This household must land in the top 225–300% tier, not the middle tier. Net value = $2,911.85 − ($203 × 12 = $2,436) = **$475.85/year**. Appendix E's exact row for family size 2: `>225 | $4,058.01 to $5,410.00 | $203` — this scenario's income falls within that published range.
 - **Source**: DSS Manual Appendix E, IM-4(PRM) (07-26) (HH2 row: ">225 $4,058.01 to $5,410.00 $203").
 
 ---
