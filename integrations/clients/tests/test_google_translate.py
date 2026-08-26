@@ -225,3 +225,28 @@ class PerLanguageFailureTests(TranslateClientTestBase):
 
         translator.bulk_translate(["fr"], [self.SOURCE], strict=False)
         self.assertEqual(translator.last_integrity_failures, [])
+
+
+class FailureLogLifecycleTests(TranslateClientTestBase):
+    """
+    The failure log must always describe the most recent call. bulk_translate.py
+    reuses one Translate across batches, so a stale log would misattribute a
+    previous batch's failures to the current one.
+    """
+
+    ICU = "{count, plural, one {program} other {programs}}"
+
+    def test_refusal_clears_the_previous_calls_failures(self):
+        translator = self.make_translator(
+            lambda text, lang: f"{text} (__PH0__)" if "__PH0__" in text else text,
+        )
+
+        translator.bulk_translate(["es"], ["Are {subject} employed?"], strict=False)
+        self.assertEqual(len(translator.last_integrity_failures), 1)
+
+        # A refused string raises before any translating happens; the log must still
+        # have been reset, so a caller catching this does not read the stale entry.
+        with self.assertRaises(TranslationIntegrityError):
+            translator.bulk_translate(["es"], [self.ICU])
+
+        self.assertEqual(translator.last_integrity_failures, [])

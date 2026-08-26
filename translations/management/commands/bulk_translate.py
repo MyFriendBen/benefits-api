@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.db.models import Q, OuterRef, Exists
 from translations.models import Translation
-from integrations.clients.google_translate import Translate
+from integrations.clients.google_translate import Translate, is_auto_translatable, unsupported_reason
 
 
 class Command(BaseCommand):
@@ -103,13 +103,35 @@ class Command(BaseCommand):
         print(f"Processing {len(batches)} batches for language {lang}")
 
         records_created = 0
+        # Accumulated across batches, since the client resets its own log per call.
+        skipped_integrity: list[tuple[str, str]] = []
+        skipped_refused: list[tuple[str, str]] = []
 
         for i, batch in enumerate(batches):
 
             try:
-                auto = translate.bulk_translate([lang], list(batch.keys()))
+                # Strings we refuse to machine-translate would raise and abort the whole
+                # run, losing the batches still to come. Filter them out and report.
+                translatable = [text for text in batch if is_auto_translatable(text)]
+                for text in batch:
+                    if text not in translatable:
+                        for trans in batch[text]:
+                            skipped_refused.append((trans.label, unsupported_reason(text)))
+                if not translatable:
+                    continue
+
+                # strict=False so one mangled placeholder costs only that string, not the
+                # rest of this batch and every batch after it.
+                auto = translate.bulk_translate([lang], translatable, strict=False)
+
+                for text, _lang, _detail in translate.last_integrity_failures:
+                    for trans in batch.get(text, []):
+                        skipped_integrity.append((trans.label, lang))
 
                 for [original_text, new_text] in auto.items():
+                    if lang not in new_text:
+                        # Placeholder integrity failure; recorded above.
+                        continue
                     for trans in batch[original_text]:
                         Translation.objects.edit_translation_by_id(trans.id, lang, new_text[lang], manual=False)
                         records_created += 1
@@ -120,3 +142,11 @@ class Command(BaseCommand):
 
         print(f"Bulk translate completed successfully for {lang}")
         print(f"Total records created/updated: {records_created}")
+        if skipped_integrity:
+            print(f"Skipped {len(skipped_integrity)} label(s) whose placeholders did not survive translation:")
+            for label, failed_lang in skipped_integrity:
+                print(f"  ! {label} [{failed_lang}]")
+        if skipped_refused:
+            print(f"Skipped {len(skipped_refused)} label(s) we refuse to machine-translate:")
+            for label, reason in skipped_refused:
+                print(f"  ! {label} - it {reason}")

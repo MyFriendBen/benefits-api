@@ -214,12 +214,15 @@ class Translate:
         if "__all__" in langs:
             langs = Translate.languages
 
+        # Reset before the refusal check, not after: a caller that catches the refusal
+        # and then reads last_integrity_failures must not see the previous call's
+        # failures attributed to this batch.
+        self.last_integrity_failures = []
+
         for text in texts:
             reason = unsupported_reason(text)
             if reason is not None:
                 raise TranslationIntegrityError(f"Refusing to auto-translate {text!r}: it {reason}")
-
-        self.last_integrity_failures: list[tuple[str, str, str]] = []
 
         translations = {text: {} for text in texts}
         for lang in langs:

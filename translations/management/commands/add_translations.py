@@ -236,10 +236,14 @@ class Command(BaseCommand):
             # keeping a stale corrupted value.
             results = translate.bulk_translate(["__all__"], unique_texts, strict=False)
         except TranslationIntegrityError as e:
+            # Backstop only: refused strings are filtered out above with the same
+            # predicate bulk_translate uses, and strict=False suppresses per-language
+            # integrity raises, so this should be unreachable. If it does fire, some
+            # languages may already have been written before the failure.
             raise CommandError(
-                f"A translation came back with its placeholders altered; English rows were saved "
-                f"but no other-language rows were written. This is the guard working - the string "
-                f"needs a human translation rather than a re-run. Error: {e}"
+                f"A string was refused by the translation integrity guard. English rows were saved and "
+                f"some languages may already have been written. The string needs a human translation "
+                f"rather than a re-run. Error: {e}"
             )
         except Exception as e:
             raise CommandError(f"Translation API call failed; English rows were saved. Re-run to retry. Error: {e}")
