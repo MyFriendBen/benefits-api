@@ -11,6 +11,9 @@ class MoConfigurationData(ConfigurationData):
     # BASIC INFORMATION
     # ==========================================================================================
 
+    # Reachable at /mo and offered to the 2-1-1 referrers, but not yet in the public dropdown.
+    publicly_launched = False
+
     state = {"name": "Missouri"}
 
     public_charge_rule = {"link": "https://www.uscis.gov/green-card/green-card-processes-and-procedures/public-charge"}

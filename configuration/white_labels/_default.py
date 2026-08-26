@@ -52,9 +52,8 @@ class DefaultConfigurationData(ConfigurationData):
             ]
         },
         "uiOptions": {"default": []},
-        # The Kansas City metro spans the state line, so the KS and MO 2-1-1s serve callers on
-        # both sides of it. Their links land on the state dropdown offering exactly KS and MO,
-        # which the public list leaves out until those states launch. Empty = public list.
+        # The KS and MO 2-1-1s serve the Kansas City metro on both sides of the state line, so their
+        # links offer exactly those two states; empty means every publicly launched state.
         "stateOptions": {"default": [], "211ks": ["ks", "mo"], "211mo": ["ks", "mo"]},
         "noResultMessage": {
             "default": {

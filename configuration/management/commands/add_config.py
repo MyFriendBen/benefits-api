@@ -4,7 +4,7 @@ from django.db import transaction
 from configuration.models import (
     Configuration,
 )
-from configuration.white_labels import white_label_config
+from configuration.white_labels import state_options, white_label_config
 from screener.models import NPSScore
 import argparse
 
@@ -88,6 +88,13 @@ class Command(BaseCommand):
                 name="results_survey",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.results_survey, "active": True},
+            )
+
+            # Save the state dropdown's options to database, derived from the white label registry
+            Configuration.objects.update_or_create(
+                name="state_options",
+                white_label=white_label,
+                defaults={"data": state_options(), "active": True},
             )
 
             # Save override_text to database

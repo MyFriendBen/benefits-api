@@ -40,6 +40,9 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
 
     # TODO: Set your state/region name
+    # Set to False while the state is reachable by link but should stay out of the public dropdown.
+    publicly_launched = True
+
     state = {"name": "{{name}}"}
 
     # Banner messages (optional - uncomment if needed)
@@ -296,13 +299,11 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     * "white_multi_select_tile_icon" - White icons on multi-select tiles
     #     * "dont_show_category_values" - Hide dollar amounts on category headings
     #
-    # stateOptions: State codes offered in the "What is your state?" dropdown
-    #   - Only read from the "_default" white label, since the dropdown is shown
-    #     before a state is chosen; leave it out of state configs
-    #   - Empty list = show the frontend's public state list
-    #   - A non-empty list restricts the dropdown to those white labels, and may
-    #     include states that are not publicly launched (e.g. {"211ks": ["ks", "mo"]}
-    #     for a referrer whose service area spans the KS/MO line)
+    # stateOptions: State codes this referrer's "What is your state?" dropdown offers
+    #   - Empty list = every publicly launched state (see publicly_launched below)
+    #   - A non-empty list may name states that are not public yet, e.g.
+    #     {"211ks": ["ks", "mo"]} for a referrer serving both sides of the KS/MO line
+    #   - Only the "_default" config is read, since the dropdown precedes the state choice
     #
     # noResultMessage: Message shown when user has no eligible programs
     #   - Format: {"_label": "translation.key", "_default_message": "Message text"}

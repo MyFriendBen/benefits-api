@@ -226,10 +226,13 @@ referrer_data = {
 }
 ```
 
-`stateOptions` is the exception: it belongs in `_default.py` only. The state dropdown renders
-before a state is chosen, so only the `_default` config is loaded there. An empty list shows the
-frontend's public state list; a non-empty list per referrer code restricts the dropdown to those
-white labels, launched publicly or not.
+`stateOptions` is the exception: it belongs in `_default.py` only, because the state dropdown
+renders before a state is chosen. An empty list means every publicly launched state; a non-empty
+list per referrer code names the states that referrer sees, launched publicly or not.
+
+The dropdown's catalog of states is not hand-maintained — `add_config` derives the `state_options`
+config from the white label registry, using each state's `state["name"]`, `is_state` and
+`publicly_launched`. A new state appears once its config exists and `add_config` runs.
 
 ### 5. Experiments (A/B Testing)
 

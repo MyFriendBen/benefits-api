@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from django.test import SimpleTestCase, TestCase
 from configuration.models import Configuration
 from configuration.serializers import ConfigurationSerializer
-from configuration.white_labels import white_label_config
+from configuration.white_labels import state_options, white_label_config
 from screener.models import WhiteLabel
 from screener.feature_flags import FeatureFlagConfig
 
@@ -192,33 +192,38 @@ class TestLegalLinkConfiguration(SimpleTestCase):
 
 
 class TestStateOptionsConfiguration(SimpleTestCase):
-    """
-    Guards the referrer-scoped state dropdown config. The dropdown renders before a state is
-    chosen, so it only ever reads the "_default" white label, and a code that is not a real
-    white label silently falls back to the public state list — a typo here would look like the
-    feature was never configured.
-    """
+    """Guards the state dropdown's derived catalog and the per-referrer overrides that select from it."""
+
+    def test_catalog_covers_every_state_white_label(self):
+        """Every state white label appears once, with a name to show in the dropdown."""
+        catalog = state_options()
+        codes = [state["code"] for state in catalog]
+
+        self.assertEqual(len(codes), len(set(codes)))
+        for code, white_label_data in white_label_config.items():
+            expected = white_label_data.is_state and not white_label_data.is_default
+            with self.subTest(white_label=code):
+                self.assertEqual(code in codes, expected)
+
+        for state in catalog:
+            with self.subTest(white_label=state["code"]):
+                self.assertTrue(state["name"], f'White label "{state["code"]}" has no state name to display.')
 
     def test_default_white_label_declares_state_options(self):
-        """The "_default" config is the only one the state dropdown reads."""
+        """The "_default" config is the only one the dropdown reads its referrer overrides from."""
         self.assertIn("stateOptions", white_label_config["_default"].referrer_data)
 
-    def test_state_options_codes_are_real_white_labels(self):
-        """Every state code offered to a referrer must be a white label the screener can route to."""
-        for code, white_label_data in white_label_config.items():
-            state_options = white_label_data.referrer_data.get("stateOptions", {})
+    def test_referrer_overrides_name_states_in_the_catalog(self):
+        """An override naming a state outside the catalog would render an empty dropdown."""
+        codes = {state["code"] for state in state_options()}
 
-            for referrer, states in state_options.items():
+        for code, white_label_data in white_label_config.items():
+            for referrer, states in white_label_data.referrer_data.get("stateOptions", {}).items():
                 for state in states:
                     with self.subTest(white_label=code, referrer=referrer, state=state):
                         self.assertIn(
                             state,
-                            white_label_config,
-                            f'"{referrer}" in white label "{code}" offers state "{state}", which '
-                            "is not a white label. The dropdown would drop it.",
-                        )
-                        self.assertNotEqual(
-                            state,
-                            "_default",
-                            f'"{referrer}" in white label "{code}" offers "_default", which is not a state.',
+                            codes,
+                            f'"{referrer}" in white label "{code}" offers "{state}", which the state '
+                            "dropdown has no entry for.",
                         )

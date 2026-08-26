@@ -11,6 +11,9 @@ class KsConfigurationData(ConfigurationData):
     # BASIC INFORMATION
     # ==========================================================================================
 
+    # Reachable at /ks and offered to the 2-1-1 referrers, but not yet in the public dropdown.
+    publicly_launched = False
+
     state = {"name": "Kansas"}
 
     public_charge_rule = {"link": "https://www.uscis.gov/green-card/green-card-processes-and-procedures/public-charge"}

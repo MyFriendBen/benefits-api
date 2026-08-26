@@ -15,6 +15,12 @@ For detailed documentation on how to configure each section, see:
 class ConfigurationData:
     is_default = False
 
+    # Whether this white label is a state screener the state dropdown can offer.
+    is_state = True
+
+    # Whether this state appears in the public state dropdown, as opposed to being reachable only by link.
+    publicly_launched = True
+
     @classmethod
     def get_white_label(self) -> WhiteLabel:
         raise NotImplemented()
@@ -525,11 +531,7 @@ class ConfigurationData:
             ],
         },
         "uiOptions": {"default": []},
-        # State codes offered in the "What is your state?" dropdown. Empty means "use the
-        # frontend's public state list"; a non-empty list restricts the dropdown to those
-        # white labels, including ones that are not publicly launched yet. Only the
-        # "_default" white label config is read here, because the dropdown is shown before
-        # a state is chosen.
+        # State codes this referrer's dropdown offers; empty means every publicly launched state.
         "stateOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": ""},
