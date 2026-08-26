@@ -25,7 +25,7 @@ from programs.programs.testing_fixtures.pe_integration import (
     screener_value,
 )
 
-PE_VERSION = "1.794.2"
+PE_VERSION = "1.815.1"
 YEAR = "2026"
 
 
