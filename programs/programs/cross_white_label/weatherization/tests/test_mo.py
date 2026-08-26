@@ -1,10 +1,11 @@
 """
 Unit tests for the MoWap calculator.
 
-Coverage maps to ``specs/mo.md`` — its three implemented eligibility criteria
-(1a income, 1b cash assistance, 1d HUD/Section 8), every income-counting rule in
-Criterion 2, its Benefit Value section, all thirteen Acceptance Criteria, and one
-test per entry in its twelve-scenario Test Scenarios list.
+Coverage maps to ``specs/mo.md`` — its four implemented eligibility criteria
+(1a income, 1b cash assistance, 1c LIHEAP, 1d HUD/Section 8), every
+income-counting rule in Criterion 2, its Benefit Value section, all fourteen
+Acceptance Criteria, and one test per entry in its thirteen-scenario Test
+Scenarios list.
 
 Built on real ``Screen`` / ``HouseholdMember`` / ``IncomeStream`` / ``Expense`` /
 ``CurrentBenefit`` rows rather than mocks. Almost every rule here is a question
@@ -26,9 +27,9 @@ docstring):
 - Criterion 3 (qualified aliens) — the program's ``legal_status_required`` config.
 - Missouri residency — enforced at the screener's ZIP step, which rejects a
   non-Missouri ZIP before any calculator runs.
-- Criteria 1c (LIHEAP) and 1e (USDA), the twelve-month cash-assistance lookback,
-  and the HUD programs other than Section 8 — all unscreenable, all recorded as
-  inclusive data gaps.
+- Criterion 1e (USDA), the twelve-month cash-assistance lookback, the HUD
+  programs other than Section 8, and the LIHEAP-income-eligible-but-unenrolled
+  half of Criterion 1c — all unscreenable, all recorded as inclusive data gaps.
 - Priority categories, dwelling type, and prior-weatherization history — none
   affect eligibility or value.
 
@@ -366,17 +367,29 @@ class TestMoWapMinorIncomeExclusion(MoWapTestCase):
         # high-school student from a college one, so an over-18 full-time
         # student's wages come out too. Inclusive-safe by design.
         screen = self.household_with_second_member(
-            {"age": 22, "student_full_time": True},
+            {"age": 22, "student": True, "student_full_time": True},
             [("wages", 9_000)],
         )
         self.assertEqual(self.countable_income(screen), self.ADULT_WAGES)
 
     def test_adult_part_time_student_wages_count(self):
         screen = self.household_with_second_member(
-            {"age": 22, "student_full_time": False},
+            {"age": 22, "student": True, "student_full_time": False},
             [("wages", 9_000)],
         )
         self.assertEqual(self.countable_income(screen), self.ADULT_WAGES + 9_000)
+
+    def test_full_time_flag_without_student_does_not_exclude(self):
+        """`student_full_time` is only meaningful alongside `student`. Nothing
+        enforces that server-side, so a direct API write can set the flag on a
+        non-student — whose wages WPN 25-3 Section D.1 still counts."""
+        for student in (False, None):
+            with self.subTest(student=student):
+                screen = self.household_with_second_member(
+                    {"age": 22, "student": student, "student_full_time": True},
+                    [("wages", 9_000)],
+                )
+                self.assertEqual(self.countable_income(screen), self.ADULT_WAGES + 9_000)
 
     def test_unknown_age_and_student_status_counts_as_an_adult(self):
         # The disregard is granted on proof of age; an unproven one is not assumed.

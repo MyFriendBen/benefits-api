@@ -168,12 +168,20 @@ class MoWap(ProgramCalculator):
         which is the safe direction for a program whose alternative pathways
         are themselves unscreenable. A member of unknown age is treated as an
         adult: the disregard is granted on proof of age, not assumed without it.
+
+        Read as `student and student_full_time`, matching
+        `FullTimeCollegeStudentDependency`. `student_full_time` is only asked
+        once `student` is ticked, but nothing enforces that server-side: the
+        frontend clears it only on a student→non-student transition and only
+        outside the energy-calculator flow, and a direct API write can set it
+        with `student` false or null. The conjunction keeps a non-student's
+        wages counted.
         """
         age = member.calc_age()
         if age is not None and age < self.minor_age:
             return True
 
-        return bool(member.student_full_time)
+        return bool(member.student and member.student_full_time)
 
     def _categorically_eligible(self) -> bool:
         """Whether a non-income pathway admits the household outright."""
