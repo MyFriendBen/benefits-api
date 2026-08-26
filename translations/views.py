@@ -34,7 +34,7 @@ from programs.translation_overrides import warning_calculators
 from phonenumber_field.formfields import PhoneNumberField
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from integrations.clients.google_translate import Translate
+from integrations.clients.google_translate import Translate, TranslationIntegrityError, is_auto_translatable
 from django.urls import path
 
 
@@ -112,7 +112,15 @@ def admin_view(request):
             text = form["default_message"].value()
             translation = Translation.objects.add_translation(form["label"].value(), text)
 
-            auto_translations = Translate().bulk_translate(["__all__"], [text])[text]
+            # The label row is already committed above, so a translation problem must not
+            # 500 the request and lose that. strict=False keeps the languages that worked;
+            # a refused string (ICU plural/select) raises regardless and yields none.
+            auto_translations = {}
+            if is_auto_translatable(text):
+                try:
+                    auto_translations = Translate().bulk_translate(["__all__"], [text], strict=False).get(text, {})
+                except Exception as e:
+                    capture_exception(e, level="warning")
 
             for [language, auto_text] in auto_translations.items():
                 Translation.objects.edit_translation_by_id(translation.id, language, auto_text, False)
@@ -290,9 +298,26 @@ def edit_translation(request, id=0, lang="en-us"):
                     if not auto_translate_check:
                         Translation.objects.edit_translation_by_id(id, lang, text, False)
                     else:
-                        translations = Translate().bulk_translate(languages, [text])[text]
+                        # strict=False so one language mangling a placeholder does not cost
+                        # the rest, and so an integrity failure cannot 500 an admin edit.
+                        translations = {}
+                        if is_auto_translatable(text):
+                            try:
+                                translations = Translate().bulk_translate(languages, [text], strict=False).get(text, {})
+                            except TranslationIntegrityError as e:
+                                capture_exception(e, level="warning")
+
                         for language in languages:
-                            translated_text = text if translation.no_auto else translations[language]
+                            if translation.no_auto:
+                                translated_text = text
+                            elif language in translations:
+                                translated_text = translations[language]
+                            else:
+                                # Placeholder failure for this language. Leave the existing row
+                                # alone rather than writing junk. Unlike add_translations, which
+                                # deletes the stale row because nobody inspects a bulk run, an
+                                # admin is looking at this page and will see the untouched value.
+                                continue
                             Translation.objects.edit_translation_by_id(id, language, translated_text, False)
 
             parent = Translation.objects.get(pk=id)
