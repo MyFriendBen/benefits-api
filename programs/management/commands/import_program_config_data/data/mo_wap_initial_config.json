@@ -16,6 +16,8 @@
       "otherWithWorkPermission"
     ],
     "base_program": "wap",
+    "active": true,
+    "show_in_has_benefits_step": false,
     "value_format": "estimated_annual",
     "name": "Weatherization Assistance Program (WAP)",
     "description": "The Weatherization Assistance Program (WAP) provides free home energy upgrades. These upgrades can help lower your heating and cooling bills. Work may include insulation, air sealing, and repairs to heating or cooling systems.\n\nAfter you apply, your local agency will review your information. If you qualify, an energy auditor will check your home. The agency will then arrange the approved work and complete a final inspection at no cost to you.\n\nHouseholds with older adults, people with disabilities, or children may get help sooner. Some households with high energy use or high energy costs may also get priority. You may also qualify if you get LIHEAP or certain housing or rural assistance. The same is true if you got SSI or cash assistance in the past year. Your local agency will check if any of these apply to you.\n\nTo apply, use the Apply button and select your county. You can then contact the local weatherization agency listed for your area.",
