@@ -11,7 +11,7 @@ from integrations.clients.google_translate import (
     is_auto_translatable,
     unsupported_reason,
 )
-from translations.models import Translation
+from translations.models import Translation, _invalidate_translation_cache
 
 
 class Command(BaseCommand):
@@ -231,8 +231,9 @@ class Command(BaseCommand):
         try:
             # "__all__" expands to every configured non-default language inside the client.
             # strict=False so one language mangling a placeholder does not cost us the
-            # other sixteen; the failures are reported below and simply get no row,
-            # which falls back to English.
+            # other sixteen. Failed pairs are reported below, and any pre-existing row
+            # for them is cleared so the label falls back to English rather than
+            # keeping a stale corrupted value.
             results = translate.bulk_translate(["__all__"], unique_texts, strict=False)
         except TranslationIntegrityError as e:
             raise CommandError(
@@ -255,6 +256,39 @@ class Command(BaseCommand):
                 labels = sorted(label for label, value in data.items() if value == text)
                 self.stdout.write(self.style.WARNING(f"  ! {', '.join(labels)} [{lang}]"))
                 self.stdout.write(f"      {detail}")
+
+            # Skipping the write is only "falls back to English" for a brand-new label.
+            # Re-translating an already-corrupted key is the main use of this command, and
+            # there the old bad row is still sitting in the DB - leaving it would mean the
+            # guard reports a problem while the corruption stays live. Delete the row so
+            # the API's key-presence fallback serves English instead. Deleting rather than
+            # blanking matters: an empty row is served as empty text, not fallen back on.
+            cleared = 0
+            preserved: list[str] = []
+            for text, lang, _detail in integrity_failures:
+                for translation_obj in by_text.get(text, []):
+                    row = translation_obj.translations.filter(language_code=lang).first()
+                    if row is None:
+                        continue
+                    if row.edited:
+                        # Never destroy a human's work to make room for a fallback.
+                        preserved.append(f"{translation_obj.label} [{lang}]")
+                        continue
+                    row.delete()
+                    cleared += 1
+
+            if cleared:
+                _invalidate_translation_cache()
+                self.stdout.write(
+                    self.style.WARNING(f"  Cleared {cleared} stale row(s) so those languages fall back to English.")
+                )
+            if preserved:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Kept {len(preserved)} manually-edited row(s) despite the failure: "
+                        f"{', '.join(preserved)}"
+                    )
+                )
 
         translated_records = 0
         langs_written = set()

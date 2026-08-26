@@ -172,3 +172,70 @@ class AddTranslationsCommandTest(TestCase):
         path = self._write_json('{"a": 123}')
         with self.assertRaises(CommandError):
             call_command("add_translations", path, stdout=self.out)
+
+
+class IntegrityFailureRowCleanupTest(AddTranslationsCommandTest):
+    """
+    A skipped language must not leave a stale corrupted row behind.
+
+    Skipping the write only means "falls back to English" for a brand-new label.
+    Re-translating an already-corrupted key is the main use of this command, and
+    there the old bad row is still in the DB - so the guard would report a problem
+    while the corruption stayed live on the site.
+    """
+
+    def _translate_mock(self, mock_translate, failures):
+        instance = mock_translate.return_value
+        instance.bulk_translate.side_effect = lambda langs, texts, strict=True: {t: {} for t in texts}
+        instance.last_integrity_failures = failures
+        return instance
+
+    @patch("translations.management.commands.add_translations._invalidate_translation_cache")
+    @patch("translations.management.commands.add_translations.Translate")
+    @patch("translations.management.commands.add_translations.Translation")
+    def test_stale_row_is_deleted_so_the_label_falls_back_to_english(
+        self, mock_translation, mock_translate, mock_invalidate
+    ):
+        mock_translation.objects = self._mock_existing({})
+        row = MagicMock(edited=False)
+        parent = MagicMock(id="k", label="k")
+        parent.translations.filter.return_value.first.return_value = row
+        mock_translation.objects.add_translation.side_effect = lambda label, default_message, **_: parent
+
+        self._translate_mock(mock_translate, [("Are {subject} employed?", "es", "detail")])
+        self._run({"k": "Are {subject} employed?"})
+
+        row.delete.assert_called_once()
+        mock_invalidate.assert_called_once()
+
+    @patch("translations.management.commands.add_translations._invalidate_translation_cache")
+    @patch("translations.management.commands.add_translations.Translate")
+    @patch("translations.management.commands.add_translations.Translation")
+    def test_manually_edited_row_is_preserved(self, mock_translation, mock_translate, mock_invalidate):
+        """Never destroy a human's translation to make room for an English fallback."""
+        mock_translation.objects = self._mock_existing({})
+        row = MagicMock(edited=True)
+        parent = MagicMock(id="k", label="k")
+        parent.translations.filter.return_value.first.return_value = row
+        mock_translation.objects.add_translation.side_effect = lambda label, default_message, **_: parent
+
+        self._translate_mock(mock_translate, [("Are {subject} employed?", "es", "detail")])
+        self._run({"k": "Are {subject} employed?"})
+
+        row.delete.assert_not_called()
+        mock_invalidate.assert_not_called()
+
+    @patch("translations.management.commands.add_translations._invalidate_translation_cache")
+    @patch("translations.management.commands.add_translations.Translate")
+    @patch("translations.management.commands.add_translations.Translation")
+    def test_absent_row_needs_no_cleanup(self, mock_translation, mock_translate, mock_invalidate):
+        """A brand-new label has no row to clear; nothing should be deleted or invalidated."""
+        mock_translation.objects = self._mock_existing({})
+        parent = MagicMock(id="k", label="k")
+        parent.translations.filter.return_value.first.return_value = None
+        mock_translation.objects.add_translation.side_effect = lambda label, default_message, **_: parent
+
+        self._translate_mock(mock_translate, [("Are {subject} employed?", "es", "detail")])
+        self._run({"k": "Are {subject} employed?"})
+
+        mock_invalidate.assert_not_called()
