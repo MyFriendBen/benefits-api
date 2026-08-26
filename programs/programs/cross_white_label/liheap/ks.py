@@ -66,9 +66,14 @@ class KsLieap(ProgramCalculator):
     def _categorically_eligible(self) -> bool:
         """A household member receiving SNAP, TANF, or SSI qualifies regardless of
         income (Criterion 2). SNAP/TANF/SSI receipt is read via `has_base_benefit`
-        so KS variants (`ks_snap`, `ks_ssi`, ...) are matched. SSI additionally
-        counts an sSI income stream (`has_ssi_or_ssi_income`), since a KS SSI
-        income stream is not auto-written to the current-benefit table."""
+        so KS variants (`ks_snap`, `ks_ssi`, ...) are matched.
+
+        The sSI income-stream check is now belt-and-braces rather than a
+        workaround: `serializers._derived_current_benefit_names` used to name SSI
+        variants from a hardcoded list that omitted `ks_ssi`, so a KS income
+        stream derived no row. It reads `base_program` now and covers KS. Kept
+        because it still carries screens whose rows were written before that fix
+        and have not been re-saved since."""
         return (
             self.screen.has_base_benefit("snap")
             or self.screen.has_base_benefit("tanf")
