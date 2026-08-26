@@ -121,7 +121,9 @@ class AddTranslationsCommandTest(TestCase):
         mock_translation.objects = self._mock_existing({})
         translate_instance = mock_translate.return_value
         # Echo back a translation per requested lang so fan-out has something to write.
-        translate_instance.bulk_translate.side_effect = lambda langs, texts: {t: {"es": f"{t}-es"} for t in texts}
+        translate_instance.bulk_translate.side_effect = lambda langs, texts, strict=True: {
+            t: {"es": f"{t}-es"} for t in texts
+        }
 
         # Three labels, two of which share identical English text.
         self._run({"x": "Shared", "y": "Shared", "z": "Unique"})

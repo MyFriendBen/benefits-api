@@ -5,7 +5,12 @@ from sys import stdin
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from integrations.clients.google_translate import Translate
+from integrations.clients.google_translate import (
+    Translate,
+    TranslationIntegrityError,
+    is_auto_translatable,
+    unsupported_reason,
+)
 from translations.models import Translation
 
 
@@ -156,6 +161,17 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write(f"Auto-translate target languages: {target_languages}")
+            not_translatable = {
+                label: unsupported_reason(text) for label, text in data.items() if not is_auto_translatable(text)
+            }
+            if not_translatable:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"{len(not_translatable)} label(s) will get English rows only, not auto-translated:"
+                    )
+                )
+                for label, reason in not_translatable.items():
+                    self.stdout.write(self.style.WARNING(f"  ! {label} - it {reason}"))
 
         if dry_run:
             self.stdout.write(self.style.NOTICE("\nDry run — no changes written, no translation API calls made."))
@@ -186,6 +202,27 @@ class Command(BaseCommand):
             if text and text.strip():
                 by_text.setdefault(text, []).append(translation_obj)
 
+        # Strings we refuse to machine-translate (ICU plural/select) are reported and
+        # skipped rather than aborting the batch: their English rows are already saved
+        # above, so the label exists and react-intl falls back to English until a human
+        # supplies the other languages.
+        refused = {}
+        for text in list(by_text):
+            reason = unsupported_reason(text)
+            if reason is not None:
+                refused[text] = reason
+                del by_text[text]
+
+        if refused:
+            self.stdout.write(
+                self.style.WARNING(f"\nSkipping auto-translate for {len(refused)} string(s) - English rows saved:")
+            )
+            for text, reason in refused.items():
+                labels = sorted(label for label, value in data.items() if value == text)
+                self.stdout.write(self.style.WARNING(f"  ! {', '.join(labels)}"))
+                self.stdout.write(f"      {text!r}")
+                self.stdout.write(f"      it {reason}")
+
         unique_texts = list(by_text.keys())
         if not unique_texts:
             self.stdout.write(self.style.SUCCESS("No non-empty English text to translate."))
@@ -193,9 +230,31 @@ class Command(BaseCommand):
 
         try:
             # "__all__" expands to every configured non-default language inside the client.
-            results = translate.bulk_translate(["__all__"], unique_texts)
+            # strict=False so one language mangling a placeholder does not cost us the
+            # other sixteen; the failures are reported below and simply get no row,
+            # which falls back to English.
+            results = translate.bulk_translate(["__all__"], unique_texts, strict=False)
+        except TranslationIntegrityError as e:
+            raise CommandError(
+                f"A translation came back with its placeholders altered; English rows were saved "
+                f"but no other-language rows were written. This is the guard working - the string "
+                f"needs a human translation rather than a re-run. Error: {e}"
+            )
         except Exception as e:
             raise CommandError(f"Translation API call failed; English rows were saved. Re-run to retry. Error: {e}")
+
+        integrity_failures = getattr(translate, "last_integrity_failures", [])
+        if integrity_failures:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"\n{len(integrity_failures)} (string, language) pair(s) came back with altered "
+                    f"placeholders and were NOT written - those languages fall back to English:"
+                )
+            )
+            for text, lang, detail in integrity_failures:
+                labels = sorted(label for label, value in data.items() if value == text)
+                self.stdout.write(self.style.WARNING(f"  ! {', '.join(labels)} [{lang}]"))
+                self.stdout.write(f"      {detail}")
 
         translated_records = 0
         langs_written = set()
