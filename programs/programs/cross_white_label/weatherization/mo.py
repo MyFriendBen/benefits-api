@@ -58,6 +58,11 @@ class MoWap(ProgramCalculator):
         Missouri's plan and is invisible here. Receipt is the inclusive half —
         it admits households the income test would reject, and never rejects one
         the income test would admit.
+      * Section D.1's "full-time high school student" clause is honoured only at
+        age 18 (see `_income_excluded_as_minor`), so a 19-plus high-school
+        student's earned income is counted. MFB collects no level of schooling to
+        do better, and past 18 the flag reaches adult education and college far
+        more often than high school.
       * The twelve-month cash-assistance lookback: only current receipt is
         visible, so a household paid SSI or TANF earlier in the year reads as
         not having it.
@@ -110,7 +115,8 @@ class MoWap(ProgramCalculator):
     #: survivor benefit — still counts.
     minor_excluded_income_types: ClassVar[tuple[str, ...]] = ("wages", "selfEmployment", "unemployment")
 
-    #: Section D.1's age threshold.
+    #: Section D.1's age threshold. Under this, the disregard is outright; at
+    #: exactly this age it needs the full-time student flag; above it, never.
     minor_age = 18
 
     #: Income streams that evidence Criterion 1b. `cashAssistance` is MFB's
@@ -124,7 +130,7 @@ class MoWap(ProgramCalculator):
     ]
 
     def household_eligible(self, e: Eligibility):
-        # Criteria 1b and 1d bypass the income test entirely
+        # Criteria 1b, 1c and 1d bypass the income test entirely
         if self._categorically_eligible():
             e.condition(True, messages.presumed_eligibility())
             return
@@ -161,13 +167,15 @@ class MoWap(ProgramCalculator):
         """Whether Section D.1 disregards this member's earned income and
         unemployment compensation.
 
-        Under 18 is the exact test. `student_full_time` stands in for the
-        "full-time high school student" clause, which MFB cannot distinguish
-        from full-time college enrollment — so an over-18 full-time college
-        student's wages come out too. That errs toward admitting households,
-        which is the safe direction for a program whose alternative pathways
-        are themselves unscreenable. A member of unknown age is treated as an
-        adult: the disregard is granted on proof of age, not assumed without it.
+        Under 18 is the exact test. Section D.1's "(or full-time high school
+        students)" clause is honoured only at exactly 18, because MFB collects
+        no level of schooling — `student_full_time` is the same flag a full-time
+        college or graduate student sets. Reading it at every age would exclude
+        a 45-year-old's wages outright, and past 18 the population it would
+        actually reach is adult education or a GED rather than high school. So
+        the clause is capped at the one age where "still in high school" is the
+        ordinary reading, and 19-plus high-school students — a rare enough case
+        to be worth the false negative — count their earned income.
 
         Read as `student and student_full_time`, matching
         `FullTimeCollegeStudentDependency`. `student_full_time` is only asked
@@ -176,12 +184,21 @@ class MoWap(ProgramCalculator):
         outside the energy-calculator flow, and a direct API write can set it
         with `student` false or null. The conjunction keeps a non-student's
         wages counted.
+
+        A member of unknown age is treated as an adult: the disregard is
+        granted on proof of age, not assumed without it.
         """
         age = member.calc_age()
-        if age is not None and age < self.minor_age:
+        if age is None:
+            return False
+
+        if age < self.minor_age:
             return True
 
-        return bool(member.student and member.student_full_time)
+        if age == self.minor_age:
+            return bool(member.student and member.student_full_time)
+
+        return False
 
     def _categorically_eligible(self) -> bool:
         """Whether a non-income pathway admits the household outright."""

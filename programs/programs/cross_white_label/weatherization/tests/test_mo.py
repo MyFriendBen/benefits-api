@@ -326,9 +326,9 @@ class TestMoWapCountableIncomeExclusions(MoWapTestCase):
 
 
 class TestMoWapMinorIncomeExclusion(MoWapTestCase):
-    """Criterion 2 / WPN 25-3 Section D.1 — a minor's or full-time student's
-    earned income and unemployment compensation come out; their unearned income
-    stays in."""
+    """Criterion 2 / WPN 25-3 Section D.1 — earned income and unemployment
+    compensation come out for a member under 18, or at exactly 18 with the
+    full-time student flag. Their unearned income stays in."""
 
     ADULT_WAGES = 20_000
 
@@ -358,38 +358,62 @@ class TestMoWapMinorIncomeExclusion(MoWapTestCase):
         screen = self.household_with_second_member({"age": 17}, [("wages", 9_000)])
         self.assertEqual(self.countable_income(screen), self.ADULT_WAGES)
 
-    def test_eighteen_year_old_is_not_a_minor(self):
+    def test_eighteen_year_old_who_is_not_a_student_counts(self):
         screen = self.household_with_second_member({"age": 18}, [("wages", 9_000)])
         self.assertEqual(self.countable_income(screen), self.ADULT_WAGES + 9_000)
 
-    def test_adult_full_time_student_wages_excluded_as_the_high_school_proxy(self):
-        # Committed data-gap handling: `student_full_time` cannot distinguish a
-        # high-school student from a college one, so an over-18 full-time
-        # student's wages come out too. Inclusive-safe by design.
+    def test_eighteen_year_old_full_time_student_is_excluded(self):
+        """Section D.1's "(or full-time high school student)" clause. Honoured at
+        18 and only at 18 — the one age where the flag ordinarily means high
+        school rather than college or adult education."""
         screen = self.household_with_second_member(
-            {"age": 22, "student": True, "student_full_time": True},
+            {"age": 18, "student": True, "student_full_time": True},
             [("wages", 9_000)],
         )
         self.assertEqual(self.countable_income(screen), self.ADULT_WAGES)
 
-    def test_adult_part_time_student_wages_count(self):
+    def test_eighteen_year_old_part_time_student_counts(self):
         screen = self.household_with_second_member(
-            {"age": 22, "student": True, "student_full_time": False},
+            {"age": 18, "student": True, "student_full_time": False},
             [("wages", 9_000)],
         )
         self.assertEqual(self.countable_income(screen), self.ADULT_WAGES + 9_000)
 
-    def test_full_time_flag_without_student_does_not_exclude(self):
-        """`student_full_time` is only meaningful alongside `student`. Nothing
-        enforces that server-side, so a direct API write can set the flag on a
-        non-student — whose wages WPN 25-3 Section D.1 still counts."""
-        for student in (False, None):
-            with self.subTest(student=student):
+    def test_full_time_student_over_eighteen_counts(self):
+        """The student clause does not extend past 18. MFB collects no level of
+        schooling, so past 18 the flag reaches college and adult education far
+        more often than high school; reading it at any age would exclude a
+        45-year-old's wages outright. The cost is a 19-plus high-school student
+        whose earned income is counted — rare enough to accept."""
+        for age in (19, 22, 45):
+            with self.subTest(age=age):
                 screen = self.household_with_second_member(
-                    {"age": 22, "student": student, "student_full_time": True},
+                    {"age": age, "student": True, "student_full_time": True},
                     [("wages", 9_000)],
                 )
                 self.assertEqual(self.countable_income(screen), self.ADULT_WAGES + 9_000)
+
+    def test_full_time_flag_without_student_does_not_exclude(self):
+        """`student_full_time` is only meaningful alongside `student`. Nothing
+        enforces that server-side, so a direct API write can set the flag on a
+        non-student — whose wages WPN 25-3 Section D.1 still counts. Tested at
+        18, the only age where the flag is read at all."""
+        for student in (False, None):
+            with self.subTest(student=student):
+                screen = self.household_with_second_member(
+                    {"age": 18, "student": student, "student_full_time": True},
+                    [("wages", 9_000)],
+                )
+                self.assertEqual(self.countable_income(screen), self.ADULT_WAGES + 9_000)
+
+    def test_unknown_age_full_time_student_counts(self):
+        """Age gates the whole rule, so an unproven age counts as an adult even
+        with the student flag set."""
+        screen = self.household_with_second_member(
+            {"age": None, "student": True, "student_full_time": True},
+            [("wages", 9_000)],
+        )
+        self.assertEqual(self.countable_income(screen), self.ADULT_WAGES + 9_000)
 
     def test_unknown_age_and_student_status_counts_as_an_adult(self):
         # The disregard is granted on proof of age; an unproven one is not assumed.
