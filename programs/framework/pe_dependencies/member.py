@@ -708,6 +708,13 @@ class Chip(Member):
     field = "chip"
 
 
+class ChipGross(Member):
+    # CHIP's per-child value before PolicyEngine's cost-sharing offsets. Read instead of
+    # `chip` (the net figure) by any program that subtracts a state premium itself —
+    # netting both would count cost-sharing twice.
+    field = "chip_gross"
+
+
 class IncomeDependency(Member):
     dependencies = (
         "income_type",

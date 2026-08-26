@@ -47,6 +47,25 @@ def _resolve_comparable_version(programs: List[PolicyEngineCalulator], version: 
     return comparable_version
 
 
+def _period_for(program, Data) -> str:
+    """The period one variable is sent at.
+
+    `program` is normally a calculator instance, and this defers to its own `period_for`.
+    Many of the older payload-shape tests pass the calculator *class* instead; `pe_period`
+    is a property, so on a class it yields the property object rather than a period. Those
+    tests assert on which fields are sent and read the period key back off the dict, so that
+    has always worked — keep it working rather than making this the place that migration
+    happens.
+    """
+    if isinstance(program, PolicyEngineCalulator):
+        return program.period_for(Data)
+
+    if Data in program.pe_monthly_outputs:
+        return f"{program.pe_period}-{program.pe_period_month}"
+
+    return program.pe_period
+
+
 def pe_input(
     screen: Screen,
     programs: List[PolicyEngineCalulator],
@@ -145,9 +164,9 @@ def pe_input(
             ):
                 continue
 
-            period = program.pe_period
-            if hasattr(program, "pe_output_period") and Data in program.pe_outputs:
-                period = program.pe_output_period
+            # Per variable, not per program: a program can read an annual value and a
+            # monthly one in the same request (see PolicyEngineCalulator.period_for).
+            period = _period_for(program, Data)
 
             if issubclass(Data, Member):
                 for member in members:

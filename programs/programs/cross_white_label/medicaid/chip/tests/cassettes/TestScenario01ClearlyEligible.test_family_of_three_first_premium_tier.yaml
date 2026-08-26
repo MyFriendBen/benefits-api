@@ -1,0 +1,113 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"101": {"age": {"2026": 41}, "is_pregnant": {"2026":
+      false}, "ssi_countable_resources": {"2026": 0}, "is_disabled": {"2026": null},
+      "employment_income": {"2026": 50004}, "self_employment_income": {"2026": 0},
+      "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "ssi": {"2026": null},
+      "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+      "receives_medicaid": {"2026": false}, "chip_gross": {"2026": null}}, "102":
+      {"age": {"2026": 39}, "is_pregnant": {"2026": false}, "ssi_countable_resources":
+      {"2026": 0}, "is_disabled": {"2026": null}, "employment_income": {"2026": 0},
+      "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+      0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+      0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "receives_medicaid": {"2026": false}, "chip_gross": {"2026":
+      null}}, "103": {"age": {"2026": 7}, "is_pregnant": {"2026": false}, "ssi_countable_resources":
+      {"2026": 0}, "is_disabled": {"2026": null}, "employment_income": {"2026": 0},
+      "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+      0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+      0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "receives_medicaid": {"2026": false}, "chip_gross": {"2026":
+      null}}}, "tax_units": {"main_tax_unit": {"members": ["101", "102", "103"], "mo_chip_premium":
+      {"2026-07": null}}}, "families": {"family": {"members": ["101", "102", "103"]}},
+      "households": {"household": {"members": ["101", "102", "103"], "state_code":
+      {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["101", "102", "103"],
+      "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+      {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+      {"2026": false}}}, "marital_units": {"101-102": {"members": ["101", "102"]}}},
+      "version": "1.815.1"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2419'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"101": {"age":
+        {"2026": 41}, "is_pregnant": {"2026": false}, "ssi_countable_resources": {"2026":
+        0}, "is_disabled": {"2026": false}, "employment_income": {"2026": 50004},
+        "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+        {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
+        {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
+        {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "receives_medicaid": {"2026": false}, "chip_gross": {"2026":
+        0.0}}, "102": {"age": {"2026": 39}, "is_pregnant": {"2026": false}, "ssi_countable_resources":
+        {"2026": 0}, "is_disabled": {"2026": false}, "employment_income": {"2026":
+        0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+        {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
+        {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
+        {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "receives_medicaid": {"2026": false}, "chip_gross": {"2026":
+        0.0}}, "103": {"age": {"2026": 7}, "is_pregnant": {"2026": false}, "ssi_countable_resources":
+        {"2026": 0}, "is_disabled": {"2026": false}, "employment_income": {"2026":
+        0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+        {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
+        {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
+        {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "receives_medicaid": {"2026": false}, "chip_gross": {"2026":
+        2911.851}}}, "tax_units": {"main_tax_unit": {"members": ["101", "102", "103"],
+        "mo_chip_premium": {"2026-07": 32.0}}}, "families": {"family": {"members":
+        ["101", "102", "103"]}}, "households": {"household": {"members": ["101", "102",
+        "103"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
+        ["101", "102", "103"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
+        "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
+        "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {"101-102":
+        {"members": ["101", "102"]}}}, "policyengine_bundle": {"model_version": "1.815.1",
+        "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '2520'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Tue, 25 Aug 2026 13:44:52 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-a8ea0af0ca4c1d062e69eebd624b0e56-ff47c9e267f1cd4f-01
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - a8ea0af0ca4c1d062e69eebd624b0e56;o=1
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 04c0d0a8-eff7-47cd-880b-08036ecdd40f
+      x-policyengine-route-channel:
+      - frontier
+    status:
+      code: 200
+      message: OK
+version: 1

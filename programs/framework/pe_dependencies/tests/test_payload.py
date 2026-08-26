@@ -27,6 +27,10 @@ from programs.programs.cross_white_label.wic.tx import TxWic
 from programs.programs.cross_white_label.ssi.base import Ssi
 from programs.programs.white_labels.federal.acp.calculator import Acp
 from programs.framework.pe_dependencies import household
+from programs.programs.cross_white_label.medicaid.chip.mo import MoChip
+from programs.models import FederalPoveryLimit, Program
+from programs.util import Dependencies
+import programs.framework.pe_dependencies as dependency
 
 
 @override_settings(CACHES=LOCAL_CACHE)
@@ -588,3 +592,60 @@ class TestResolveUnpinnedVersion(TestCase):
             self.pe_versions.resolve_unpinned_comparable_version()
             self.pe_versions.resolve_unpinned_comparable_version()
             self.assertEqual(mock_get.call_count, 2)  # retried, not cached
+
+
+class TestPerVariableOutputPeriod(PeInputTestBase):
+    """`PolicyEngineCalulator.period_for`: the period is chosen per variable, not per program.
+
+    PolicyEngine defines some variables per month, and asking for one at the annual period
+    returns its twelve months summed. `mo_chip_premium` is the case that forced this — its
+    Appendix E rates turn over July 1, so the annual period returns six months of each
+    schedule and matches neither. A program must be able to read that monthly while reading
+    its other outputs annually, in one request.
+    """
+
+    def setUp(self):
+        super().setUp()
+
+        self.program = Program.objects.new_program(white_label="tx", name_abbreviated="mo_chip")
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2026", defaults={"period": "2026"})
+        self.program.year = fpl
+        self.program.save()
+
+    def _calculator(self):
+        return MoChip(self.screen, self.program, Dependencies())
+
+    def test_monthly_output_and_annual_output_in_one_payload(self):
+        household = pe_input(self.screen, [self._calculator()])["household"]
+
+        self.assertEqual(
+            list(household["tax_units"][MAIN_TAX_UNIT]["mo_chip_premium"].keys()),
+            ["2026-07"],
+        )
+        self.assertEqual(
+            list(household["people"][str(self.child.id)]["chip_gross"].keys()),
+            ["2026"],
+        )
+
+    def test_inputs_stay_annual_even_when_an_output_is_monthly(self):
+        household = pe_input(self.screen, [self._calculator()])["household"]
+
+        self.assertEqual(list(household["households"]["household"]["state_code"].keys()), ["2026"])
+        self.assertEqual(list(household["people"][str(self.head.id)]["age"].keys()), ["2026"])
+
+    def test_period_for_defaults_to_the_annual_period(self):
+        calculator = self._calculator()
+
+        self.assertEqual(calculator.period_for(dependency.member.ChipGross), "2026")
+        self.assertEqual(calculator.period_for(dependency.member.AgeDependency), "2026")
+
+    def test_period_for_returns_the_month_period_for_a_monthly_output(self):
+        self.assertEqual(self._calculator().period_for(dependency.tax.MoChipPremium), "2026-07")
+
+    def test_a_program_with_no_monthly_outputs_asks_for_everything_annually(self):
+        """Snap reads its own output monthly; SchoolLunch reads everything annually. Guards
+        against the month period leaking into programs that never opted in."""
+        calculator = SchoolLunch(self.screen, self.program, Dependencies())
+
+        for Data in calculator.pe_inputs + calculator.pe_outputs:
+            self.assertEqual(calculator.period_for(Data), "2026")
