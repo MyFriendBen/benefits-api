@@ -115,7 +115,7 @@ None.
 
 ## Benefit Value
 
-**Formula**: `annual value = max(0, sum(PE chip_gross for each CHIP-eligible child) − (PE mo_chip_premium × 12))`. Both `chip_gross` and `mo_chip_premium` are read live from PE's own output — MFB does not copy PE's gross figure into an MFB-side constant, and does not run its own Appendix E premium lookup alongside PE. Premium is charged once per household, not per child.
+**Formula**: `annual value = max(1, sum(PE chip_gross for each CHIP-eligible child) − (PE mo_chip_premium × 12))`. Both `chip_gross` and `mo_chip_premium` are read live from PE's own output — MFB does not copy PE's gross figure into an MFB-side constant, and does not run its own Appendix E premium lookup alongside PE. Premium is charged once per household, not per child.
 
 **Gross per-child value: PE's live `chip_gross` output, ≈$2,911.85/year per eligible child** — a FY2024 spending proxy (per child ever enrolled in MO's separate CHIP program), not a precise per-child benefit figure. Read directly from PE's own `per_capita_chip_gross` calculation, not an MFB-side constant. Derivation, for provenance only:
 
@@ -153,9 +153,9 @@ Note: $303,540,996 ÷ 108,596 = $2,795.14 is PE's **net** per-capita figure (`ch
 
 **Worked examples** (one eligible child): family of 1, tier 1: $2,911.85 − ($19×12=$228) = **$2,683.85**; tier 2: − ($62×12=$744) = **$2,167.85**; tier 3: − ($150×12=$1,800) = **$1,111.85**. The ≤150%-FPL no-premium band is empty in practice, since the premium-CHIP lower routing boundary (153%/201%) sits above the 150% non-premium line for both age groups. For multiple children: multiply gross by eligible-child count, subtract the single household premium once.
 
-**Floor at $0** (Scenario 10): family size 3+ in the top tier makes premium×12 exceed $2,911.85, going negative — floor at $0. Product/display convention only, not a Missouri rule (their chart has no concept of negative benefit).
+**Floor at $1, not $0** (Scenario 10): family size 3+ in the top tier makes premium×12 exceed $2,911.85, going negative — floor the net value at **$1**. Product/display convention only, not a Missouri rule (their chart has no concept of negative benefit). The floor is $1 rather than $0 because a $0 program is reported ineligible (`eligible = value > 0`) and then dropped again by the frontend's own `programValue(program) > 0` filter, so a $0 floor would hide CHIP from exactly the families this case describes — a child who is eligible and would get coverage, just with no net monetary value at this income and family size. $1 is a visibility sentinel, not an estimate of the benefit.
 
-**MFB value methodology**: `max(0, sum(chip_gross for each eligible child) − mo_chip_premium × 12)`, where every term on the right is read live from PE's own output — `eligible_children` is the set of children **PE's own live `is_chip_eligible_child` output** marks eligible, `chip_gross` is PE's own per-eligible-child gross value, and `mo_chip_premium` is PE's own monthly household premium. PE is the actual runtime determination for eligibility, gross value, and premium alike — not an offline cross-check, and not a set of PE outputs copied into MFB-side constants or recomputed in parallel. Reading `chip_gross` (not `chip`/`per_capita_chip`, PE's net figure) avoids double-counting cost-sharing, since `mo_chip_premium` is subtracted separately. **Committed handling**: MFB sends PE the household facts it actually knows (age, income, household size, reported current Medicaid enrollment via `receives_medicaid`) and uses PE's live `is_chip_eligible_child`, `chip_gross`, and `mo_chip_premium` outputs as the determination, full stop — no MFB-side Appendix A/Appendix E recomputation runs in place of or alongside it, and no MFB override neutralizes a PE result MFB doesn't like. The three exact-dollar-boundary divergences (Scenarios 3, 4, 15a) are confirmed fixed and MFB's production PE version pin has been updated — see Acceptance Criteria.
+**MFB value methodology**: `max(1, sum(chip_gross for each eligible child) − mo_chip_premium × 12)`, where every term on the right is read live from PE's own output — `eligible_children` is the set of children **PE's own live `is_chip_eligible_child` output** marks eligible, `chip_gross` is PE's own per-eligible-child gross value, and `mo_chip_premium` is PE's own monthly household premium. PE is the actual runtime determination for eligibility, gross value, and premium alike — not an offline cross-check, and not a set of PE outputs copied into MFB-side constants or recomputed in parallel. Reading `chip_gross` (not `chip`/`per_capita_chip`, PE's net figure) avoids double-counting cost-sharing, since `mo_chip_premium` is subtracted separately. **Committed handling**: MFB sends PE the household facts it actually knows (age, income, household size, reported current Medicaid enrollment via `receives_medicaid`) and uses PE's live `is_chip_eligible_child`, `chip_gross`, and `mo_chip_premium` outputs as the determination, full stop — no MFB-side Appendix A/Appendix E recomputation runs in place of or alongside it, and no MFB override neutralizes a PE result MFB doesn't like. The three exact-dollar-boundary divergences (Scenarios 3, 4, 15a) are confirmed fixed and MFB's production PE version pin has been updated — see Acceptance Criteria.
 
 **Data gap — AI/AN premium exemption** (value precision, not eligibility): 42 CFR § 457.535 prohibits states from imposing CHIP premiums/cost-sharing on AI/AN children (DSS § 1840.025.00). Not screenable — no tribal-membership field, and PE's `race` variable has no AI/AN category. **Handling**: compute the premium normally for everyone, and note the exemption in the program description so AI/AN families know to inquire.
 
@@ -180,7 +180,7 @@ Note: $303,540,996 ÷ 108,596 = $2,795.14 is PE's **net** per-capita figure (`ch
 [ ] `chip_gross`/`is_chip_eligible_child` are queried at the annual period; `mo_chip_premium` alone is queried at a current-month period and multiplied by 12 — never the same period for both (querying `chip_gross` monthly would understate every scenario's value ~12×; see Benefit Value's "Query-period methodology").
 [ ] The household premium is subtracted exactly once per household, regardless of the number of CHIP-eligible children (Scenarios 12, 13, 17).
 [ ] Per-child gross value is summed unrounded across all eligible children before the single final rounding to cents (Scenario 17).
-[ ] Net value floors at $0.00 and is never displayed as negative (Scenario 10).
+[ ] Net value floors at $1 — never $0 and never negative — so a premium-exceeds-value household keeps a visible program rather than being filtered out by `eligible = value > 0` (Scenario 10).
 [ ] Value is presented on an annual cadence (`annual value` / `estimated_annual`), not monthly.
 
 **Test coverage**
@@ -195,7 +195,12 @@ Not independently re-confirmed by this review: the live production DB value of `
 
 ## Test Scenarios
 
-**Fixed evaluation date: July 20, 2026.** Every scenario's age (computed from `birth_month`/`birth_year`) and eligibility result below assumes a screening date of July 20, 2026. Ages, and any result that depends on age (e.g., Scenario 14's "turns 19 next month," Scenario 2's income-eligible-at-18 child), will differ if evaluated at a different date and must be recomputed accordingly — do not assume these results are stable indefinitely.
+**Fixed evaluation date: July 20, 2026.** Every scenario's age (computed from `birth_month`/`birth_year`) and eligibility result below assumes a screening date of July 20, 2026. Ages, and any result that depends on age, must be recomputed if evaluated at a different date — do not assume these results are stable indefinitely.
+
+Two notes on the age-sensitive scenarios, since CHIP's under-19 gate is an age *ceiling* and any upward shift in a child's computed age can push them out of eligibility:
+
+- **Scenario 14 is date-stable as written.** Its child's birth month was chosen so the scenario reads 18 for every screening month of 2026 and under either age semantics described below. It previously used `August 2007` ("turns 19 next month"), which read 18 only through July 2026 and returned Not eligible from August onward.
+- **Scenario 2 is not date-stable.** Its child's `December 2007` birth month reads 18 on a screening-date age, but 19 on a period-year age (`period year − birth_year`). If the shared `AgeDependency` moves to period-year age (MFB-1726), that child ages out and Scenario 2 stops exercising the 5% disregard at all — it would return Not eligible for a reason that has nothing to do with the disregard. Restating the child's birth month as any 2008 month keeps both the income calibration and the disregard test intact under either semantics. Note that the spec-scenario tests pass a literal `age`, not a birth date, so they stay green either way and will not catch this.
 
 ### Scenario 1: Clearly Eligible Child – Low-Income Family of 3, ~183% FPL
 **What we're checking**: Basic happy-path eligibility: child under 19, household income in the first premium tier (150–185% FPL), Missouri resident, uninsured, no existing Medicaid, proper relationship
@@ -321,9 +326,9 @@ Not independently re-confirmed by this review: the live production DB value of `
 
 ---
 
-### Scenario 10: Single Child, Top Premium Tier – Net Value Floors at $0
-**What we're checking**: When a single eligible child's household is in the top premium tier for a family size where premium × 12 exceeds the gross per-child value, the net value must floor at $0 rather than display negative
-**Expected**: Eligible, **$0.00/year** (floored)
+### Scenario 10: Single Child, Top Premium Tier – Net Value Floors at $1
+**What we're checking**: When a single eligible child's household is in the top premium tier for a family size where premium × 12 exceeds the gross per-child value, the net value must floor at $1 rather than display negative or fall to $0 (which would filter the program out of the results entirely)
+**Expected**: Eligible, **$1/year** (floored sentinel)
 
 **Steps**:
 - **Location**: Enter ZIP code `63101`, Select county `St. Louis City`
@@ -332,8 +337,8 @@ Not independently re-confirmed by this review: the live production DB value of `
 - **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `spouse`, Has income: No, Insurance: `none`, Citizenship: US Citizen
 - **Person 3**: Birth month/year: `January 2018` (age 8), Relationship: `child`, Has income: No, Insurance: `none`, Not currently receiving Medicaid or CHIP, Citizenship: US Citizen
 
-**Why this matters**: 2026 FPL for a household of 3 is $27,320; $70,000/year is ≈256% FPL, landing in the top premium tier ($256/mo). Raw computation: $2,911.85 − ($256 × 12 = $3,072) = **−$160.15**, which must never be displayed to a user. The correct behavior is to floor at **$0.00/year** while the child remains eligible (still gets coverage, just no net monetary value at this income/family-size combination). This is the committed test for the Benefit Value section's floor rule.
-- **Source**: DSS Manual Appendix E, IM-4(PRM) (07-26) (HH3, >225–300% band, $256/mo); the $0 floor itself is an MFB product/display convention (Benefit Value section), not a Missouri-published rule.
+**Why this matters**: 2026 FPL for a household of 3 is $27,320; $70,000/year is ≈256% FPL, landing in the top premium tier ($256/mo). Raw computation: $2,911.85 − ($256 × 12 = $3,072) = **−$160.15**, which must never be displayed to a user. The correct behavior is to floor at **$1/year** while the child remains eligible (still gets coverage, just no net monetary value at this income/family-size combination). $1 rather than $0 because `eligible = value > 0` would report a $0 program ineligible and the frontend's `programValue(program) > 0` filter would drop it again — flooring at $0 hides CHIP from precisely this household. This is the committed test for the Benefit Value section's floor rule.
+- **Source**: DSS Manual Appendix E, IM-4(PRM) (07-26) (HH3, >225–300% band, $256/mo); the $1 floor itself is an MFB product/display convention (Benefit Value section), not a Missouri-published rule.
 
 ---
 
@@ -384,22 +389,22 @@ Not independently re-confirmed by this review: the live production DB value of `
 - **Person 4**: Relationship: `child`, Birth month/year: `January 2015` (age 11), Has income: No, Insurance: None, Not currently receiving Medicaid or CHIP
 - **Person 5**: Relationship: `child`, Birth month/year: `April 2021` (age 5), Has income: No, Insurance: None, Not currently receiving Medicaid or CHIP
 
-**Why this matters**: 2026 FPL for a household of 5 is $38,680; combined income of $90,000/year is ≈233% FPL, landing in the top premium tier ($363/mo for family size 5). Three eligible children, one household premium: net value = (3 × $2,911.85 = $8,735.55) − ($363 × 12 = $4,356) = **$4,379.55/year**. Confirms the system identifies ALL eligible children (not just the first) while adults are correctly excluded, and that a large eligible-child count comfortably absorbs the top-tier premium without hitting the $0 floor.
+**Why this matters**: 2026 FPL for a household of 5 is $38,680; combined income of $90,000/year is ≈233% FPL, landing in the top premium tier ($363/mo for family size 5). Three eligible children, one household premium: net value = (3 × $2,911.85 = $8,735.55) − ($363 × 12 = $4,356) = **$4,379.55/year**. Confirms the system identifies ALL eligible children (not just the first) while adults are correctly excluded, and that a large eligible-child count comfortably absorbs the top-tier premium without hitting the $1 floor.
 - **Source**: DSS Manual Appendix E, IM-4(PRM) (07-26) (HH5, >225–300% band, $363/mo); premium-once-per-household per the Benefit Value section's committed methodology.
 
 ---
 
-### Scenario 14: Child One Month From Turning 19 – Unambiguously Still 18
-**What we're checking**: Tests the upper age boundary using a birth month that is unambiguous given the screener only captures birth month/year (no day) — the child's birthday month has not yet arrived, so they are definitively still 18 for the entire current month
+### Scenario 14: Child in the Last Still-Eligible Birth Year – Unambiguously Still 18
+**What we're checking**: Tests the upper age boundary from the eligible side, using a birth month whose *eligibility outcome* is unambiguous even though the screener captures only birth month/year and cannot know whether the birthday has already occurred
 **Expected**: Eligible, **$2,611.85/year**
 
 **Steps**:
 - **Location**: Enter ZIP code `63101`, Select county `St. Louis City`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `headOfHousehold`, Birth month/year: `March 1980` (age 46), Has income: Yes, Employment income: `$3,000` per month (~$36,000/year), Insurance: None, Citizenship: US Citizen
-- **Person 2**: Relationship: `child`, Birth month/year: `August 2007` (age 18, turns 19 next month), Has income: No, Insurance: None, Not currently receiving Medicaid or CHIP, Citizenship: US Citizen
+- **Person 2**: Relationship: `child`, Birth month/year: `January 2008` (age 18), Has income: No, Insurance: None, Not currently receiving Medicaid or CHIP, Citizenship: US Citizen
 
-**Why this matters**: The screener only captures birth month/year, not day, so whether a person born in the current month has already had their birthday can't be determined. A birth month one full month after the current month removes that ambiguity. $36,000/year is ≈166% FPL for a household of 2, landing in the first premium tier ($25/mo). Net value = $2,911.85 − ($25 × 12 = $300) = **$2,611.85/year**.
+**Why this matters**: The screener captures birth month/year, not day, so for a birth month at or adjacent to the boundary it cannot tell whether the birthday has already occurred — and a single day would flip the result. `January 2008` removes that risk from both directions at once: the screener computes 18 for every screening month of 2026, and even if the child's actual birthday has not yet passed they would be 17 — both are under 19, so the eligibility outcome carries no day-level ambiguity. 2008 is also the last birth year still 18 in 2026 under a period-year age, so this input holds under either age semantics (see the evaluation-date note above). Scenario 7 covers the ineligible side of the same boundary at age 19. $36,000/year is ≈166% FPL for a household of 2, landing in the first premium tier ($25/mo). Net value = $2,911.85 − ($25 × 12 = $300) = **$2,611.85/year**.
 - **Source**: Mo. Rev. Stat. § 208.631.2 (under-19 age gate, evaluated from `birth_month`/`birth_year`) and DSS Manual Appendix E, IM-4(PRM) (07-26) (HH2, >150–185% band, $25/mo).
 
 ---

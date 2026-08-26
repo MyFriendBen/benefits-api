@@ -281,8 +281,14 @@ class TestScenario13ThreeEligibleChildren(MoChipScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario14ChildOneMonthFromNineteen(MoChipScenarioTestCase):
-    """Unambiguously still 18: the birthday month has not arrived. First tier ($25/mo)."""
+class TestScenario14ChildInTheLastEligibleBirthYear(MoChipScenarioTestCase):
+    """The eligible side of the under-19 gate; Scenario 7 covers the excluded side at 19.
+
+    The spec states this child as born January 2008 rather than one month shy of their
+    nineteenth birthday. The screener has no birth day, so a birth month at the boundary
+    leaves the outcome turning on a day it cannot see; a January 2008 child reads 18 in
+    every month of 2026 and is 17 at worst, both under 19. First tier ($25/mo).
+    """
 
     screen_id = 14
 
