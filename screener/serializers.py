@@ -138,16 +138,9 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-# The base program an `sSI` income stream implies receipt of, and the income type
-# that implies it.
-#
-# Looked up by `base_program` rather than by a list of `name_abbreviated`s. The
-# hardcoded set this replaced — {"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"} — covered
-# CO / IL / MA / NC (which ship the bare name) plus TX, WA and CESN, but silently
-# missed `ks_ssi` and `mo_ssi`: a KS or MO household reporting SSI income derived
-# no row at all, so the tile-less case this function exists for did not work in
-# those two white labels. Reading `base_program` is the same structural fix
-# `has_base_benefit()` is, and a new state's variant is picked up on import.
+# Matched by `base_program`, not a list of `name_abbreviated`s: the hardcoded
+# {"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"} this replaced missed `ks_ssi` and
+# `mo_ssi`, so KS and MO derived no row at all.
 _SSI_BASE_PROGRAM = "ssi"
 _SSI_INCOME_TYPE = "sSI"
 
