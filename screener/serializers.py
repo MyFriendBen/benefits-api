@@ -138,11 +138,18 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-# SSI program variants across white labels. An sSI income stream implies SSI
-# receipt regardless of whether the user ticked the tile, so all variants are
-# listed here; the WL-scoped resolve in `_write_current_benefits()` drops the
-# ones a given white label doesn't offer (e.g. `wa_ssi` on a CO screen).
-_SSI_BENEFIT_NAMES = frozenset({"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"})
+# The base program an `sSI` income stream implies receipt of, and the income type
+# that implies it.
+#
+# Looked up by `base_program` rather than by a list of `name_abbreviated`s. The
+# hardcoded set this replaced — {"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"} — covered
+# CO / IL / MA / NC (which ship the bare name) plus TX, WA and CESN, but silently
+# missed `ks_ssi` and `mo_ssi`: a KS or MO household reporting SSI income derived
+# no row at all, so the tile-less case this function exists for did not work in
+# those two white labels. Reading `base_program` is the same structural fix
+# `has_base_benefit()` is, and a new state's variant is picked up on import.
+_SSI_BASE_PROGRAM = "ssi"
+_SSI_INCOME_TYPE = "sSI"
 
 
 def _derived_current_benefit_names(screen: Screen) -> set[str]:
@@ -158,10 +165,21 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     `ma_mass_health` compounds are deliberately NOT here — those are member-level
     insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
     flow through `current_benefits`. Add new derivable compounds here as they appear.
+
+    Already scoped to this screen's white label, so every name returned resolves in
+    `_write_current_benefits()` — unlike the hardcoded set this replaced, which
+    relied on that resolve to drop the variants a white label doesn't ship.
     """
     derived: set[str] = set()
-    if screen.calc_gross_income("yearly", ("sSI",)) > 0:
-        derived |= _SSI_BENEFIT_NAMES
+    if screen.calc_gross_income("yearly", (_SSI_INCOME_TYPE,)) > 0:
+        # An empty result is normal, not a config gap: `_default`,
+        # `co_tax_calculator` and `dbg_wl` ship no SSI program at all.
+        derived |= set(
+            Program.objects.filter(
+                white_label=screen.white_label,
+                base_program=_SSI_BASE_PROGRAM,
+            ).values_list("name_abbreviated", flat=True)
+        )
     return derived
 
 
