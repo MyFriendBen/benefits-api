@@ -1,0 +1,105 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_housing"
+  },
+  "program": {
+    "name_abbreviated": "mo_wap",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "base_program": "wap",
+    "value_format": "estimated_annual",
+    "name": "Weatherization Assistance Program (WAP)",
+    "description": "The Weatherization Assistance Program (WAP) provides free home energy upgrades. These upgrades can help lower your heating and cooling bills. Work may include insulation, air sealing, and repairs to heating or cooling systems.\n\nAfter you apply, your local agency will review your information. If you qualify, an energy auditor will check your home. The agency will then arrange the approved work and complete a final inspection at no cost to you.\n\nHouseholds with older adults, people with disabilities, or children may get help sooner. Some households with high energy use or high energy costs may also get priority. You may also qualify if you get LIHEAP or certain housing or rural assistance. The same is true if you got SSI or cash assistance in the past year. Your local agency will check if any of these apply to you.\n\nTo apply, use the Apply button and select your county. You can then contact the local weatherization agency listed for your area.",
+    "description_short": "Free home energy upgrades to lower your bills",
+    "learn_more_link": "https://dnr.mo.gov/energy/weatherization/low-income-assistance",
+    "apply_button_link": "https://dnr.mo.gov/energy/weatherization/local-agencies",
+    "apply_button_description": "Find Local Agency",
+    "estimated_application_time": "30-60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Free home energy upgrades to lower your bills"
+  },
+  "documents": [
+    {
+      "external_name": "mo_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_wap_earned_income",
+      "text": "Proof of earned income from the past three months (ex: pay stubs or self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_wap_unearned_income",
+      "text": "Proof of other income from the past three months",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn",
+      "text": "Social Security card for the main applicant",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_utility_bills",
+      "text": "Current utility bills (electric, gas, or propane)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_wap_benefit_proof",
+      "text": "Proof that you get qualifying assistance (ex: LIHEAP, SSI, TANF, or certain HUD or USDA programs)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_home_ownership",
+      "text": "Proof of home ownership, if you own your home (ex: deed, mortgage statement, or homeowners insurance)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_landlord_agreement",
+      "text": "Signed landlord agreement, if you rent your home",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_zero_income",
+      "text": "Signed statement for any adult with no income. A notarized form is required if no one in the household has income",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_211",
+      "name": "Missouri 211",
+      "email": "",
+      "description": "211 links Missouri residents to local health and human services. This includes access to regional weatherization and community action agencies. Call 211 to find help in your area.",
+      "assistance_link": "https://www.211helps.org/",
+      "phone_number": "+18004274626",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}
