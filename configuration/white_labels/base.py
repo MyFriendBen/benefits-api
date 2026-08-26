@@ -525,6 +525,12 @@ class ConfigurationData:
             ],
         },
         "uiOptions": {"default": []},
+        # State codes offered in the "What is your state?" dropdown. Empty means "use the
+        # frontend's public state list"; a non-empty list restricts the dropdown to those
+        # white labels, including ones that are not publicly launched yet. Only the
+        # "_default" white label config is read here, because the dropdown is shown before
+        # a state is chosen.
+        "stateOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": ""},
         "noResultMessage": {

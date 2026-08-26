@@ -226,6 +226,11 @@ referrer_data = {
 }
 ```
 
+`stateOptions` is the exception: it belongs in `_default.py` only. The state dropdown renders
+before a state is chosen, so only the `_default` config is loaded there. An empty list shows the
+frontend's public state list; a non-empty list per referrer code restricts the dropdown to those
+white labels, launched publicly or not.
+
 ### 5. Experiments (A/B Testing)
 
 Controls A/B test variant assignment. The frontend reads the variants list and uses a UUID hash to deterministically assign each user a variant.

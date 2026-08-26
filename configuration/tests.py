@@ -189,3 +189,36 @@ class TestLegalLinkConfiguration(SimpleTestCase):
                             f"absolute https URL: {link!r}. An empty string here renders as a link "
                             "with an empty href.",
                         )
+
+
+class TestStateOptionsConfiguration(SimpleTestCase):
+    """
+    Guards the referrer-scoped state dropdown config. The dropdown renders before a state is
+    chosen, so it only ever reads the "_default" white label, and a code that is not a real
+    white label silently falls back to the public state list — a typo here would look like the
+    feature was never configured.
+    """
+
+    def test_default_white_label_declares_state_options(self):
+        """The "_default" config is the only one the state dropdown reads."""
+        self.assertIn("stateOptions", white_label_config["_default"].referrer_data)
+
+    def test_state_options_codes_are_real_white_labels(self):
+        """Every state code offered to a referrer must be a white label the screener can route to."""
+        for code, white_label_data in white_label_config.items():
+            state_options = white_label_data.referrer_data.get("stateOptions", {})
+
+            for referrer, states in state_options.items():
+                for state in states:
+                    with self.subTest(white_label=code, referrer=referrer, state=state):
+                        self.assertIn(
+                            state,
+                            white_label_config,
+                            f'"{referrer}" in white label "{code}" offers state "{state}", which '
+                            "is not a white label. The dropdown would drop it.",
+                        )
+                        self.assertNotEqual(
+                            state,
+                            "_default",
+                            f'"{referrer}" in white label "{code}" offers "_default", which is not a state.',
+                        )
