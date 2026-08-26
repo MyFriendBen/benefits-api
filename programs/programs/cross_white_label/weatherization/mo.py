@@ -23,6 +23,13 @@ class MoWap(ProgramCalculator):
         assistance in the preceding twelve months, so a current `sSI` or
         `cashAssistance` income stream is sufficient on its own and bypasses
         the income test.
+      * Criterion 1c: LIHEAP categorical eligibility, which Missouri elected
+        under 10 CFR 440.22(a)(3) — a household already deemed income eligible
+        for LIHEAP may use that as verification of income. Missouri's LIHEAP
+        standard is 60% SMI, which sits above 200% of poverty at every household
+        size, so the federal proviso ("provided that such basis is at least 200
+        percent of the poverty level") is satisfied and this genuinely widens
+        eligibility rather than duplicating Criterion 1a.
       * Criterion 1d: HUD means-tested categorical eligibility, which Missouri
         elected under WPN 22-5. Section 8 / HCV receipt is the one HUD program
         MFB records, matched structurally via `has_base_benefit` so a Missouri
@@ -44,10 +51,13 @@ class MoWap(ProgramCalculator):
 
     Data gaps, all handled inclusively — the household keeps every other
     pathway and none of these is treated as disproving eligibility:
-      * LIHEAP income-eligibility (Criterion 1c) and USDA means-tested program
-        eligibility (Criterion 1e), both elected by Missouri, have no screener
-        field. `mo_liheap` exists but is off the has-benefits step, so LIHEAP
-        receipt is unreportable.
+      * USDA means-tested program eligibility (Criterion 1e), also elected by
+        Missouri, has no screener field at all.
+      * Criterion 1c reads *reported LIHEAP receipt*, which is narrower than the
+        rule: a household income-eligible for LIHEAP but not enrolled satisfies
+        Missouri's plan and is invisible here. Receipt is the inclusive half —
+        it admits households the income test would reject, and never rejects one
+        the income test would admit.
       * The twelve-month cash-assistance lookback: only current receipt is
         visible, so a household paid SSI or TANF earlier in the year reads as
         not having it.
@@ -169,10 +179,14 @@ class MoWap(ProgramCalculator):
         """Whether a non-income pathway admits the household outright."""
         cash_assistance = self.screen.calc_gross_income("yearly", list(self.cash_assistance_income_types)) > 0
 
+        # Criterion 1c. `mo_liheap` is the Missouri variant; read structurally so
+        # any future LIHEAP row (or a rename) is matched without editing this.
+        liheap = self.screen.has_base_benefit("liheap")
+
         # Section 8 is the HCV program (base_program "section_8"); the bare
         # has_benefit("section_8") is a dead check — no row carries that
         # name_abbreviated. No Missouri HCV row exists yet, so this is wired
         # ahead of the data rather than reading it.
         section_8 = self.screen.has_base_benefit("section_8")
 
-        return cash_assistance or section_8
+        return cash_assistance or liheap or section_8

@@ -45,9 +45,10 @@
 - **⚠️ Data Gap**: this captures current receipt only, not the 12-month lookback window WPN 25-3 describes. Handling: treat current receipt as sufficient positive evidence; do not model the lookback window or treat its absence as disproving eligibility (Criterion 1a and the other pathways still apply). Program description: surface that receiving SSI or cash assistance within the past 12 months — not just currently — can independently qualify a household for WAP.
 
 #### 1c. LIHEAP-based eligibility
-- **Screener fields**: none available.
+- **Screener mechanism**: `Screen.has_base_benefit("liheap")` — `mo_liheap` carries `base_program: liheap`, so the structural read matches it (and any future Missouri LIHEAP variant) without naming it.
 - Missouri has elected this option. Source: MO WAP State Plan Master File (PY2025): *"Codified in 10 CFR 440.22(a)(3), the WAP already has a provision to allow the inclusion of households that are income eligible for the U.S. Department of Health and Human Services' (HHS) Low-Income Home Energy Assistance Program (LIHEAP)... Households that have been deemed income eligible for [LIHEAP] assistance may use their LIHEAP eligibility as verification of income."* Base federal option: 10 CFR 440.22(a)(3): *"If a Grantee elects, is the basis for eligibility for assistance under [LIHEAP], provided that such basis is at least 200 percent of the poverty level."*
-- **⚠️ Data Gap — Handling**: inclusive data gap — MFB has no LIHEAP-receipt field. Continue evaluating the household against the other pathways. Program description: surface that existing LIHEAP eligibility can independently qualify a household for WAP.
+- **Implemented.** `mo_liheap` is set `show_in_has_benefits_step: true` so a Missouri household can report LIHEAP receipt, and reported receipt bypasses the Criterion 1a income test. This widens eligibility rather than duplicating 1a: Missouri's LIHEAP standard is 60% SMI, which exceeds 200% of poverty at every household size (size 1: $34,080 vs $31,300; size 4: $65,532 vs $64,300), so the federal proviso — *"provided that such basis is at least 200 percent of the poverty level"* — is satisfied.
+- **⚠️ Residual Data Gap**: the screener records LIHEAP *receipt*, while Missouri's plan admits households *income eligible* for LIHEAP whether or not they enrolled. Receipt is the inclusive half of that rule — it admits households Criterion 1a would reject and never rejects one Criterion 1a would admit — so an unenrolled but LIHEAP-income-eligible household is still evaluated on the other pathways. Program description: surface that existing LIHEAP eligibility can independently qualify a household for WAP.
 
 #### 1d. HUD means-tested program eligibility (including Section 8)
 - Missouri has elected this option (WPN 22-5). Source: MO Master File: *"Missouri intends to implement categorical eligibility as outlined in WPN 22-5 to support and enhance the guidance provided in WPN 24-3."* WPN 22-5 extends eligibility to HUD means-tested programs' income qualifications at or below 80% of Area Median Income; Master File examples include Community Development Block Grants, HOME, Lead Hazard Control & Healthy Homes, and Section 8 Housing Choice Voucher holders.
@@ -99,6 +100,7 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 - [ ] A household with countable income exactly $1 over its household-size limit, with no current `sSI`/`cashAssistance` receipt or Section 8, is ineligible.
 - [ ] Current `sSI` income-stream receipt independently establishes eligibility regardless of income.
 - [ ] Current `cashAssistance` income-stream receipt independently establishes eligibility regardless of income.
+- [ ] Reported LIHEAP receipt independently establishes eligibility regardless of income.
 - [ ] SNAP receipt alone does not establish eligibility, even though it does for TX's implementation of this same program.
 - [ ] Child support received or paid does not affect countable income.
 - [ ] Gifts received do not affect countable income.
@@ -127,7 +129,8 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 | Child support paid not deducted | 11 | Not eligible | — |
 | Household size > 8 | 12 | Eligible | $370 |
 | Legal status filtering | — | N/A | Verified via `legal_status_required` config, not a household scenario (platform-level, not `mo_wap`-specific) |
-| ⚠️ LIHEAP / USDA / HUD / 12-month lookback / self-employment / rental / investment (data gaps) — SNAP (not a gap; not a pathway) | — | N/A | Committed inclusive handling per Criteria 1b–1e and 2 — no scenario |
+| LIHEAP receipt categorical (over-income) | 13 | Eligible | $370 |
+| ⚠️ USDA / HUD / LIHEAP-income-eligible-but-unenrolled / 12-month lookback / self-employment / rental / investment (data gaps) — SNAP (not a gap; not a pathway) | — | N/A | Committed inclusive handling per Criteria 1b–1e and 2 — no scenario |
 
 ## Test Scenarios
 
@@ -219,6 +222,13 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 - Person 1: Head of Household, wages $119,300/year exactly (the 8-person limit of $108,300 plus the $11,000 per-additional-person extension for the 9th member); Persons 2–9: no income
 - No categorical benefit
 - **Why this matters**: confirms the +$11,000-per-additional-person rule is correctly applied above the table's explicit 8-person row, at the exact boundary.
+
+### Scenario 13: LIHEAP Receipt Establishes Eligibility Above the Income Limit
+**Expected**: Eligible, $370/year
+- ZIP `63101`, county `St. Louis City`, household size 1
+- Person 1: Head of Household, wages $34,000/year (above the $31,300 1-person limit, and within Missouri's 60% SMI LIHEAP standard of $34,080)
+- Reports receiving LIHEAP on the "already have this benefit" step; no `sSI` or `cashAssistance` stream
+- **Why this matters**: this is the band the LIHEAP pathway exists to cover — a household over 200% of poverty but inside Missouri's own LIHEAP standard, which 10 CFR 440.22(a)(3) admits and Criterion 1a alone would reject.
 
 ## Source Documentation
 

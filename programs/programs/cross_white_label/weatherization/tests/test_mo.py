@@ -427,6 +427,19 @@ class TestMoWapCategoricalEligibility(MoWapTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.pass_messages[0][0]["label"], "eligibility_message.presumptive_eligibility-0")
 
+    def test_liheap_receipt_bypasses_the_income_test(self):
+        # Criterion 1c. Missouri elected the 10 CFR 440.22(a)(3) option, and
+        # `mo_liheap` is on the has-benefits step so receipt is reportable.
+        screen, _ = self.over_income_household()
+        self.receive_benefit(screen, "mo_liheap", "liheap")
+        self.assertTrue(self.household_eligible(screen).eligible)
+
+    def test_liheap_is_matched_structurally_not_by_exact_name(self):
+        screen, _ = self.over_income_household()
+        self.receive_benefit(screen, "mo_liheap", "liheap")
+        self.assertFalse(screen.has_benefit("liheap"))
+        self.assertTrue(screen.has_base_benefit("liheap"))
+
     def test_section_8_receipt_bypasses_the_income_test(self):
         # Criterion 1d, wired ahead of the data: no Missouri section_8 program
         # row exists yet, so this pathway activates the day one is added.
@@ -621,6 +634,16 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         # Treating the expense as a deduction would read $20,000 and wrongly pass.
         self.assertEqual(self.countable_income(screen), 32_000)
         self.assert_ineligible(screen)
+
+    def test_scenario_13_liheap_receipt_establishes_eligibility_above_the_limit(self):
+        screen = self.build(1, zipcode="63101", county="St. Louis City")
+        head = self.add_person(screen, age=52)
+        # Over 200% of poverty, but inside Missouri's 60% SMI LIHEAP standard
+        # ($34,080 for one person) — the band this pathway exists to cover.
+        self.add_yearly_income(head, "wages", 34_000)
+        self.receive_benefit(screen, "mo_liheap", "liheap")
+        self.assertGreater(self.countable_income(screen), LIMIT[1])
+        self.assert_eligible(screen)
 
     def test_scenario_12_household_size_above_8_applies_the_per_person_extension(self):
         screen = self.build(9, zipcode="64108", county="Jackson")
