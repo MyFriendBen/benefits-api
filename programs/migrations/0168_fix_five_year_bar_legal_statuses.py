@@ -10,17 +10,23 @@ from django.db import migrations
 # the same lists, but the importer applies `legal_status_required` with `.add()` and skips programs
 # that already exist, so it cannot narrow a live program. This migration is what lands the change.
 #
-# Not every config edited alongside this migration needs an entry here. `wa_fap` loses `refugee` in
-# 0169, which has to own both sides of that move to keep wa_snap and wa_fap disjoint. `il_mpe` and
+# Not every config edited alongside this migration needs an entry here. `il_mpe` and
 # `tx_medicaid_for_pregnant_women` dropped `other` and `gc_under5`, labels with no LegalStatus row,
 # so they were never applied to a program and there is nothing in the database to correct.
+# `mo_snap` is handled by 0169, and `wa_fap` needs nothing: it was created by its config
+# import, so the database already matches the config.
+#
+# `gc_5less` is in a removal list even for programs whose config never declared it. 0127 added
+# `gc_5less` to *every* program that held the legacy `green_card` label, so a live row can carry it
+# without any config saying so, and a program left un-narrowed keeps showing to barred LPR adults —
+# the reported bug. `.remove()` on an absent status is a no-op, so the extra entry costs nothing.
 CHANGES = [
     # wa_snap was narrowed in the config file only. No migration ever carried it, and the
     # importer cannot narrow a live program, so the change reached staging by an out-of-band admin
     # edit and did not replicate. Re-stating it here converges every environment, including the one
-    # the bug was reported against. `otherWithWorkPermission` moves to wa_fap for the same reason
-    # `refugee` does in 0169: the two programs resolve the same PolicyEngine `snap` variable, so a
-    # status on both double-counts one benefit.
+    # the bug was reported against. `otherWithWorkPermission` comes off because wa_fap already
+    # declares it: the two programs resolve the same PolicyEngine `snap` variable, so a status on
+    # both double-counts one benefit.
     ("wa_snap", ["gc_under18_no5"], ["gc_5less", "otherWithWorkPermission"]),
     # Full-scope Medicaid is barred for LPRs under five years. Children are already served by
     # wa_apple_health_for_kids, which covers every status. Adults have no WA program to fall back
@@ -34,8 +40,8 @@ CHANGES = [
     # SNAP exempts LPRs under 18 regardless of the status they adjusted from (8 USC 1613(c)).
     # Neither state has a state-funded analogue of WA's FAP, so barred adults get nothing.
     ("ks_snap", ["gc_under18_no5"], ["gc_5less"]),
-    ("tx_snap", ["gc_under18_no5"], []),
-    ("nc_snap", ["gc_under18_no5"], []),
+    ("tx_snap", ["gc_under18_no5"], ["gc_5less"]),
+    ("nc_snap", ["gc_under18_no5"], ["gc_5less"]),
     # NC adopted the ICHIA option and folded CHIP into Medicaid, so lawfully residing children up
     # to 21 are covered without the bar. `otherHealthCareUnder21` is linked only to `gc_5less` and
     # `otherWithWorkPermission`, both lawfully present, so it cannot widen the program beyond them.
@@ -48,20 +54,34 @@ CHANGES = [
     # in the household total. CO scopes its emergency program to
     # `notPregnantOrUnder19ForEmergencyMedicaid` and so avoids this; NC's is bare `non_citizen`.
     # Covering pregnancy needs a label that excludes `non_citizen`, which is a frontend change.
-    ("nc_medicaid", ["otherHealthCareUnder21"], []),
+    ("nc_medicaid", ["otherHealthCareUnder21"], ["gc_5less"]),
 ]
+
+# The labels this migration is allowed to create. Both are calculated labels, and no migration has
+# ever created either one: 0129 seeded only the six user-selected statuses, and the config importer
+# resolves labels with `.get()` and merely warns on a miss. Where they exist they were added by
+# hand, so on an environment built from migrations alone a bare `.get()` below would raise inside
+# `RunPython`, failing the deploy's `migrate` step and rolling back every pending migration — not
+# just this one.
+SEEDABLE = {"gc_under18_no5", "otherHealthCareUnder21"}
 
 
 def get_status(LegalStatus, status):
     """
-    Look up a label, refusing to invent one.
+    Look up a label, creating one only where this migration expects to.
 
-    `LegalStatus.status` has no unique constraint, so `get_or_create` on a typo inserts a row that
-    no program card and no frontend filter will ever match, and the migration still reports success.
-    The importer resolves labels with `.get()` and warns for the same reason. Every label named in
-    this migration already exists in every environment, so this raises only on a genuine mistake,
-    and a test asserts the names against the frontend's label set before it can reach a deploy.
+    `LegalStatus.status` has no unique constraint, so an unrestricted `get_or_create` on a typo
+    inserts a row that no program card and no frontend filter will ever match, and the migration
+    still reports success. Gating creation on `SEEDABLE` keeps that protection for every other
+    label while removing the deploy-blocking failure mode described above. A test asserts the names
+    in `SEEDABLE` and `CHANGES` against the frontend's label set before either can reach a deploy.
     """
+    if status in SEEDABLE:
+        legal_status, created = LegalStatus.objects.get_or_create(status=status)
+        if created:
+            print(f"➕ seeded missing legal status '{status}'")
+        return legal_status
+
     try:
         return LegalStatus.objects.get(status=status)
     except LegalStatus.DoesNotExist:
@@ -95,6 +115,14 @@ def apply_changes(apps, schema_editor, reverse=False):
 
 
 def reverse_changes(apps, schema_editor):
+    """
+    Best-effort reverse, in the same sense as 0127's.
+
+    Forward removals are written to be no-ops where the status is absent, so reversing them re-adds
+    `gc_5less` to every program in `CHANGES` — including the ones whose config never declared it.
+    Reversing restores the overstated eligibility this migration exists to remove; it is here to
+    unblock a rollback, not to reconstruct the prior state exactly.
+    """
     apply_changes(apps, schema_editor, reverse=True)
 
 
