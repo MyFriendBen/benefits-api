@@ -239,3 +239,55 @@ class IntegrityFailureRowCleanupTest(AddTranslationsCommandTest):
         self._run({"k": "Are {subject} employed?"})
 
         mock_invalidate.assert_not_called()
+
+    @patch("translations.management.commands.add_translations._invalidate_translation_cache")
+    @patch("translations.management.commands.add_translations.Translate")
+    @patch("translations.management.commands.add_translations.Translation")
+    def test_refused_string_blank_rows_are_cleared(self, mock_translation, mock_translate, mock_invalidate):
+        """
+        A refused ICU string must fall back to English, not render empty.
+
+        add_translation creates a row for every configured language and the non-English
+        ones start blank. _build_translation_data picks the English fallback on key
+        presence, not emptiness, so leaving those blanks in place makes the label render
+        as empty text in every language - worse than the English it should fall back to.
+        Measured on staging before this fix: 18 rows, serving '' for es, zh-hans and ar.
+        """
+        mock_translation.objects = self._mock_existing({})
+        blank_rows = {}
+
+        def _row_for(language_code):
+            return blank_rows.setdefault(language_code, MagicMock(edited=False, text=""))
+
+        parent = MagicMock(id="k", label="k")
+        parent.translations.filter.side_effect = lambda language_code: MagicMock(first=lambda: _row_for(language_code))
+        mock_translation.objects.add_translation.side_effect = lambda label, default_message, **_: parent
+
+        self._translate_mock(mock_translate, [])
+        self._run({"k": "{count, plural, one {item} other {items}}"})
+
+        # Never sent to the API...
+        mock_translate.return_value.bulk_translate.assert_not_called()
+        # ...but its blank non-English rows must still be removed.
+        assert blank_rows, "expected blank non-English rows to be looked up"
+        for lang, row in blank_rows.items():
+            assert lang != "en-us"
+            row.delete.assert_called_once()
+        mock_invalidate.assert_called_once()
+
+    @patch("translations.management.commands.add_translations._invalidate_translation_cache")
+    @patch("translations.management.commands.add_translations.Translate")
+    @patch("translations.management.commands.add_translations.Translation")
+    def test_refused_string_keeps_edited_rows(self, mock_translation, mock_translate, mock_invalidate):
+        """A human's translation of a refused string survives the blank-row cleanup."""
+        mock_translation.objects = self._mock_existing({})
+        edited_row = MagicMock(edited=True, text="人間の翻訳")
+        parent = MagicMock(id="k", label="k")
+        parent.translations.filter.return_value.first.return_value = edited_row
+        mock_translation.objects.add_translation.side_effect = lambda label, default_message, **_: parent
+
+        self._translate_mock(mock_translate, [])
+        self._run({"k": "{count, plural, one {item} other {items}}"})
+
+        edited_row.delete.assert_not_called()
+        mock_invalidate.assert_not_called()
