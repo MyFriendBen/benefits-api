@@ -89,6 +89,36 @@ class Command(BaseCommand):
             ),
         )
 
+    def _clear_rows(self, pairs, by_text):
+        """
+        Delete the non-English rows named by `pairs` so those languages fall back to English.
+
+        Deleting rather than blanking is load-bearing. `_build_translation_data` picks the
+        English fallback on key *presence*, not emptiness:
+
+            label: (texts[lang] if lang in texts else texts.get(default_lang))
+
+        so a row holding "" is served as empty text and the UI renders nothing at all -
+        strictly worse than the English it was meant to fall back to.
+
+        Returns (cleared_count, preserved_labels). Rows a human has edited are never
+        deleted; they are reported instead.
+        """
+        cleared = 0
+        preserved: list[str] = []
+        for text, lang in pairs:
+            for translation_obj in by_text.get(text, []):
+                row = translation_obj.translations.filter(language_code=lang).first()
+                if row is None:
+                    continue
+                if row.edited:
+                    # Never destroy a human's work to make room for a fallback.
+                    preserved.append(f"{translation_obj.label} [{lang}]")
+                    continue
+                row.delete()
+                cleared += 1
+        return cleared, preserved
+
     def _load_data(self, options):
         try:
             data = json.load(options["data"])
@@ -203,10 +233,18 @@ class Command(BaseCommand):
                 by_text.setdefault(text, []).append(translation_obj)
 
         # Strings we refuse to machine-translate (ICU plural/select) are reported and
-        # skipped rather than aborting the batch: their English rows are already saved
-        # above, so the label exists and react-intl falls back to English until a human
-        # supplies the other languages.
+        # skipped rather than aborting the batch, so their English rows still save and the
+        # label exists.
+        #
+        # Skipping the translate step is NOT enough to get an English fallback, though.
+        # add_translation creates a row for every configured language, and the non-English
+        # ones start empty - so a refused string ends up with 17 blank rows, which
+        # _build_translation_data serves as empty text rather than falling back. Measured on
+        # staging: a refused ICU label had 18 rows and served '' for es, zh-hans and ar.
+        # The blank rows are therefore cleared, exactly as they are for a failed integrity
+        # check further down.
         refused = {}
+        refused_pairs: list[tuple[str, str]] = []
         for text in list(by_text):
             reason = unsupported_reason(text)
             if reason is not None:
@@ -222,6 +260,28 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"  ! {', '.join(labels)}"))
                 self.stdout.write(f"      {text!r}")
                 self.stdout.write(f"      it {reason}")
+                refused_pairs.extend((text, lang) for lang in target_languages)
+
+            # by_text no longer holds the refused strings, so rebuild the mapping the
+            # clearing helper needs from the objects created above.
+            refused_by_text: dict[str, list] = {}
+            for translation_obj, text in translation_objects:
+                if text in refused:
+                    refused_by_text.setdefault(text, []).append(translation_obj)
+
+            cleared, preserved = self._clear_rows(refused_pairs, refused_by_text)
+            if cleared:
+                _invalidate_translation_cache()
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Cleared {cleared} blank row(s) so these fall back to English rather than "
+                        f"rendering empty."
+                    )
+                )
+            if preserved:
+                self.stdout.write(
+                    self.style.WARNING(f"  Kept {len(preserved)} manually-edited row(s): {', '.join(preserved)}")
+                )
 
         unique_texts = list(by_text.keys())
         if not unique_texts:
@@ -267,19 +327,7 @@ class Command(BaseCommand):
             # guard reports a problem while the corruption stays live. Delete the row so
             # the API's key-presence fallback serves English instead. Deleting rather than
             # blanking matters: an empty row is served as empty text, not fallen back on.
-            cleared = 0
-            preserved: list[str] = []
-            for text, lang, _detail in integrity_failures:
-                for translation_obj in by_text.get(text, []):
-                    row = translation_obj.translations.filter(language_code=lang).first()
-                    if row is None:
-                        continue
-                    if row.edited:
-                        # Never destroy a human's work to make room for a fallback.
-                        preserved.append(f"{translation_obj.label} [{lang}]")
-                        continue
-                    row.delete()
-                    cleared += 1
+            cleared, preserved = self._clear_rows([(text, lang) for text, lang, _detail in integrity_failures], by_text)
 
             if cleared:
                 _invalidate_translation_cache()
