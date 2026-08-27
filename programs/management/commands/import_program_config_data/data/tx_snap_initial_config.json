@@ -12,7 +12,8 @@
     "year": "2025",
     "legal_status_required": [
       "citizen",
-      "gc_5plus"
+      "gc_5plus",
+      "gc_under18_no5"
     ],
     "name": "Supplemental Nutrition Assistance Program (SNAP)",
     "description_short": "Monthly assistance to buy food",
@@ -24,11 +25,21 @@
     "estimated_delivery_time": "30 days",
     "estimated_value": ""
   },
-  "warning_message": {
-    "external_name": "tx_snap_mixed_status",
-    "calculator": "_show",
-    "message": "SNAP amounts are based in part on the number of citizens or qualified non-citizens in a household. Your estimated SNAP value may be affected if you have a mixed-status household."
-  },
+  "warning_messages": [
+    {
+      "external_name": "tx_snap_mixed_status",
+      "calculator": "_show",
+      "message": "SNAP amounts are based in part on the number of citizens or qualified non-citizens in a household. Your estimated SNAP value may be affected if you have a mixed-status household."
+    },
+    {
+      "external_name": "tx_snap_adult_five_year_wait",
+      "calculator": "_show",
+      "legal_statuses": [
+        "gc_under18_no5"
+      ],
+      "message": "Children with a green card can get SNAP right away. Adults usually wait five years after getting a green card. Some adults do not have to wait: veterans and active-duty service members and their spouse and children, people with 40 or more Social Security work credits (credits from a parent or a spouse count toward your total), people who receive disability-related assistance, people 65 or older who were living in the U.S. lawfully before August 22, 1996, citizens of the Marshall Islands, Micronesia, or Palau, and people who came to the U.S. as a refugee or asylee and later received a green card. Not sure whether this applies to you? Contact Texas Health and Human Services or a caseworker for help."
+    }
+  ],
   "documents": [
     {
       "external_name": "tx_home",
