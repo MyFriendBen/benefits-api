@@ -122,8 +122,8 @@ class TestMoHealthNet(TestCase):
     def test_every_category_annualizes_to_a_published_kff_figure(self):
         """member_value multiplies by 12, so each rate must restore its KFF annual figure exactly.
 
-        Storing a whole-dollar monthly rate instead would report a value up to $5 away from
-        KFF's published number - $4,572 rather than $4,576 for a child, for example.
+        A rounded whole-dollar monthly rate would report a value a few dollars away from
+        KFF's published number, which is what this catches if one creeps back in.
         """
         published = {
             0,

@@ -87,12 +87,11 @@ class TestMoHealthNetSmoke(PeIntegrationTestCase):
         return self._member_values(calc_pe_program(screen, MoHealthNet, program))
 
     def test_parent_at_the_mhf_standard_is_valued_as_a_mandatory_adult(self):
-        """Parent at Missouri's flat $241/mo MHF standard -> the non-expansion Adults rate.
+        """Parent at Missouri's flat MHF standard -> the non-expansion Adults rate.
 
-        MHF is a mandatory pre-expansion category and takes precedence over adult expansion,
-        so this parent must not be valued at the higher expansion rate even though their
-        income also clears the far higher expansion ceiling. Pairs with the $242 test below:
-        together they are what makes categorical precedence observable in the result at all.
+        MHF is mandatory and takes precedence over adult expansion, so this parent must not
+        be valued at the expansion rate even though their income also clears the much higher
+        expansion ceiling.
         """
         values = self._parent_and_child(241)
 
@@ -102,8 +101,8 @@ class TestMoHealthNetSmoke(PeIntegrationTestCase):
     def test_parent_one_dollar_over_the_mhf_standard_falls_through_to_expansion(self):
         """Parent one dollar over the flat MHF standard -> expansion, not denial.
 
-        $242/mo is nowhere near the expansion ceiling, so failing MHF re-routes them to
-        adult expansion at KFF's higher expansion rate rather than dropping them.
+        Their income is nowhere near the expansion ceiling, so failing MHF re-routes them to
+        adult expansion rather than dropping them.
         """
         values = self._parent_and_child(242)
 
