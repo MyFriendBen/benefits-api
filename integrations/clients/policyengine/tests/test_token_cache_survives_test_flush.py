@@ -49,7 +49,7 @@ class TestPeTokenSurvivesTestCacheFlush(TestCase):
         """
         cache.set(_PE_TOKEN_CACHE_KEY, "token-abc", timeout=600)
 
-        (_, _, timeout), = _preserved_cache_entries()
+        ((_, _, timeout),) = _preserved_cache_entries()
 
         if hasattr(cache, "ttl"):
             self.assertIsNotNone(timeout)
