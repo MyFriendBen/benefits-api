@@ -31,9 +31,21 @@ CHANGES = [
     # Full-scope Medicaid is barred for LPRs under five years. Children are already served by
     # wa_apple_health_for_kids, which covers every status. Adults have no WA program to fall back
     # to yet — Alien Emergency Medical is not modeled.
+    #
+    # This program also declares `non_citizen`, so after the removal it shows to an undocumented WA
+    # household but not to a 3-year green card holder. That is a real inconsistency, and the wider
+    # of the two overstatements — but it is not the five-year bar. No Apple Health Expansion program
+    # is modeled that would justify `non_citizen` here, and taking it off would hide the card from a
+    # population this change was never scoped to. Left for its own ticket, as on ks_tanf below.
     ("wa_apple_health_medicaid", [], ["gc_5less"]),
     # TANF's exemptions are prior exempt status, veteran/active-duty, COFA citizen and certain
     # foreign-born Native Americans. None is derivable, and none is age-based.
+    #
+    # wa_tanf under-reports as a result. WA funds State Family Assistance for legal immigrants
+    # barred from TANF, and there is no wa_sfa to route them to the way wa_snap routes to wa_fap, so
+    # a barred family now sees no cash-assistance card at all. That is the safer of the two failures
+    # — better than telling a barred LPR they qualify for federal TANF — and closing it needs a new
+    # program, not a label. Also its own ticket.
     ("wa_tanf", [], ["gc_5less"]),
     ("ks_tanf", [], ["gc_5less"]),
     ("mo_tanf", [], ["gc_5less"]),
