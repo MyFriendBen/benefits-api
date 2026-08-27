@@ -14,6 +14,11 @@ from django.db import migrations
 # Not to be confused with the bar's exemption for people who *adjusted to LPR* from refugee or
 # asylee status. Those people hold a green card now, so they select a green-card option, and
 # expressing their exemption needs a filter the screener does not yet have.
+#
+# `mo_snap_initial_config.json` drops `refugee` alongside this migration and has to. The importer
+# applies `legal_status_required` with `.add()`, so a config still declaring it would re-add it on
+# the next `--override` import, on any fresh environment, and on every new white label seeded from
+# that config. A test asserts the two agree.
 PROGRAM = "mo_snap"
 STATUS = "refugee"
 
