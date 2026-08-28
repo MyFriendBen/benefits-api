@@ -1,13 +1,13 @@
 interactions:
 - request:
-    body: '{"household": {"people": {"1": {"age": {"2026": 34}, "is_pregnant": {"2026":
-      false}, "ssi_countable_resources": {"2026": 0}, "is_disabled": {"2026": null},
-      "employment_income": {"2026": 14400}, "self_employment_income": {"2026": 0},
+    body: '{"household": {"people": {"1": {"age": {"2026": 40}, "is_pregnant": {"2026":
+      false}, "ssi_countable_resources": {"2026": 0}, "is_disabled": {"2026": true},
+      "employment_income": {"2026": 19200}, "self_employment_income": {"2026": 0},
       "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
       {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
       {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "ssi": {"2026": null},
       "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
-      "meets_ssi_disability_criteria": {"2026": null}, "is_blind": {"2026": false},
+      "meets_ssi_disability_criteria": {"2026": true}, "is_blind": {"2026": false},
       "medicaid": {"2026": null}, "medicaid_category": {"2026": null}, "is_optional_senior_or_disabled_for_medicaid":
       {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families":
       {"family": {"members": ["1"]}}, "households": {"household": {"members": ["1"],
@@ -33,15 +33,15 @@ interactions:
   response:
     body:
       string: '{"status": "ok", "message": null, "result": {"people": {"1": {"age":
-        {"2026": 34}, "is_pregnant": {"2026": false}, "ssi_countable_resources": {"2026":
-        0}, "is_disabled": {"2026": false}, "employment_income": {"2026": 14400},
-        "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
-        {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
-        {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
-        {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
-        {"2026": false}, "meets_ssi_disability_criteria": {"2026": false}, "is_blind":
+        {"2026": 40}, "is_pregnant": {"2026": false}, "ssi_countable_resources": {"2026":
+        0}, "is_disabled": {"2026": true}, "employment_income": {"2026": 19200}, "self_employment_income":
+        {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
+        0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+        0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+        0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "meets_ssi_disability_criteria": {"2026": true}, "is_blind":
         {"2026": false}, "medicaid": {"2026": 12559.627}, "medicaid_category": {"2026":
-        "ADULT"}, "is_optional_senior_or_disabled_for_medicaid": {"2026": false}}},
+        "ADULT"}, "is_optional_senior_or_disabled_for_medicaid": {"2026": true}}},
         "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families": {"family":
         {"members": ["1"]}}, "households": {"household": {"members": ["1"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf": {"2026":
@@ -51,23 +51,23 @@ interactions:
         "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1325'
+      - '1322'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 28 Aug 2026 12:00:38 GMT
+      - Fri, 28 Aug 2026 12:00:49 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-76b2b9b917ad911b2327eb711e6023b7-205113a7bafd5fb3-01
+      - 00-ee7e2652a6c99358e72275c09f81e1fc-f3d665dd660bd347-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 76b2b9b917ad911b2327eb711e6023b7;o=1
+      - ee7e2652a6c99358e72275c09f81e1fc;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -75,7 +75,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 14b300ab-125c-445c-8027-bf62f8084f10
+      - 204e1a20-b9b7-4605-8dfe-672a1de4d2f5
       x-policyengine-route-channel:
       - current
     status:
