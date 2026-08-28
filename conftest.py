@@ -408,21 +408,21 @@ def _preserved_cache_entries():
 
     from integrations.clients.policyengine.engines import _PE_TOKEN_CACHE_KEY
 
-    entries = []
     value = cache.get(_PE_TOKEN_CACHE_KEY)
     if value is None:
-        return entries
+        return []
 
-    # django_redis returns remaining seconds, None for "no expiry", 0 for absent; LocMemCache
-    # has no ttl() at all, so fall back to no expiry and let a 401 evict a stale token.
+    # django_redis reports seconds remaining, None for "no expiry", and 0 for a key that is
+    # absent or already expired - which the read above can race. Restoring on a 0 would put a
+    # dead token back with no expiry at all, so drop it and let the next caller mint one.
+    # LocMemCache has no ttl() to consult, so fall back to no expiry and let a 401 evict.
     timeout = None
     if hasattr(cache, "ttl"):
-        remaining = cache.ttl(_PE_TOKEN_CACHE_KEY)
-        if remaining:
-            timeout = remaining
+        timeout = cache.ttl(_PE_TOKEN_CACHE_KEY)
+        if timeout == 0:
+            return []
 
-    entries.append((_PE_TOKEN_CACHE_KEY, value, timeout))
-    return entries
+    return [(_PE_TOKEN_CACHE_KEY, value, timeout)]
 
 
 @pytest.fixture(autouse=True)

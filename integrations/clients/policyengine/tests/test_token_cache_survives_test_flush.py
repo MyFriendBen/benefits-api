@@ -6,6 +6,8 @@ Django cache. conftest's autouse ``clear_cache`` fixture flushes that cache befo
 without an exemption a recording run mints one token per test that reaches the network.
 """
 
+from unittest import mock
+
 from django.core.cache import cache
 from django.test import TestCase
 
@@ -39,6 +41,29 @@ class TestPeTokenSurvivesTestCacheFlush(TestCase):
         cache.delete(_PE_TOKEN_CACHE_KEY)
 
         self.assertEqual(_preserved_cache_entries(), [])
+
+    def test_expired_token_is_not_restored(self):
+        """A ttl of 0 means the key is gone, even though the read above returned a value.
+
+        django_redis reports 0 for a key that is absent or already expired, which the read can
+        race. Restoring on that signal would put a dead token back with no expiry, and every
+        caller would use it until something got a 401.
+        """
+        cache.set(_PE_TOKEN_CACHE_KEY, "token-abc", timeout=600)
+
+        with mock.patch.object(cache, "ttl", return_value=0, create=True):
+            self.assertEqual(_preserved_cache_entries(), [])
+
+    def test_token_with_no_expiry_is_restored_with_no_expiry(self):
+        """A ttl of None means the key exists and never expires - distinct from a ttl of 0.
+
+        ``seed_pe_token`` stores its placeholder this way, so conflating the two signals would
+        either drop it or, worse, treat a genuinely expired token as unexpiring.
+        """
+        cache.set(_PE_TOKEN_CACHE_KEY, "token-abc", timeout=None)
+
+        with mock.patch.object(cache, "ttl", return_value=None, create=True):
+            self.assertEqual(_preserved_cache_entries(), [(_PE_TOKEN_CACHE_KEY, "token-abc", None)])
 
     def test_remaining_expiry_is_preserved_not_extended(self):
         """Restoring must not hand a stale token a fresh 30-day lease.
