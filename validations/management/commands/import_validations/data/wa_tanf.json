@@ -1,5 +1,6 @@
 [
   {
+    "scenario_key": "clearly_eligible",
     "notes": "Scenario 1: Clearly eligible single parent with two young children. Income $800/month, assets $1,500, WA resident, not receiving TANF.",
     "household": {
       "white_label": "wa",
@@ -78,6 +79,7 @@
     }
   },
   {
+    "scenario_key": "minimally_eligible_boundary",
     "notes": "Scenario 2: Minimally eligible — single parent with one child (age 17, turns 18 in June 2026), income $521/month, assets exactly at $6,000 limit.",
     "household": {
       "white_label": "wa",
@@ -139,6 +141,7 @@
     }
   },
   {
+    "scenario_key": "clearly_ineligible",
     "notes": "Scenario 5: Single parent with two children, income $2,500/month — countable earned income after disregard ($1,000) exceeds 3-person payment standard ($706). Ineligible.",
     "household": {
       "white_label": "wa",

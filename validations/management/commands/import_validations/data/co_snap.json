@@ -1,0 +1,227 @@
+[
+  {
+    "scenario_key": "clearly_eligible",
+    "notes": "CO SNAP - Single Adult, Low Wage Income - Clearly Eligible. Used by the CO SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015) to compare old CoSnap vs new SnapCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "co",
+      "household_size": 1,
+      "zipcode": "80202",
+      "county": "Denver County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1994,
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+        
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "co_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "clearly_ineligible",
+    "notes": "CO SNAP - Single Adult, High Wage Income - Should NOT Be Eligible. Used by the CO SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015) to compare old CoSnap vs new SnapCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "co",
+      "household_size": 1,
+      "zipcode": "80202",
+      "county": "Denver County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1994,
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "co_snap",
+      "eligible": false
+    }
+  },
+  {
+    "scenario_key": "household_size_edge",
+    "notes": "CO SNAP - Family of Four, Two Working Adults and Two Children - Household Size Edge Case. Exercises pe_input()'s per-member loop with multiple HouseholdMembers. Used by the CO SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015).",
+    "household": {
+      "white_label": "co",
+      "household_size": 4,
+      "zipcode": "80903",
+      "county": "El Paso County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1989,
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 9,
+          "birth_year": 1991,
+          "age": 33,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2016,
+          "age": 10,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 7,
+          "birth_year": 2019,
+          "age": 6,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 1500.0, "frequency": "monthly" },
+        { "type": "childcare", "amount": 400.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "co_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "non_integer_income",
+    "notes": "CO SNAP - Single Adult, Deliberately Odd Monthly Income - Stresses Cast/Rounding Behavior. Income chosen so the real PolicyEngine-computed monthly SNAP value is unlikely to land on a whole dollar amount, exercising the same cast-then-multiply-by-12 order D-013's 279.59998 fixture correction was written to catch, now through a real end-to-end PolicyEngine computation instead of a stubbed value. Used by the CO SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015).",
+    "household": {
+      "white_label": "co",
+      "household_size": 1,
+      "zipcode": "80301",
+      "county": "Boulder County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 11,
+          "birth_year": 1984,
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1137.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 700.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "co_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "elderly_member",
+    "notes": "CO SNAP - Single Elderly Adult, Social Security Income - Federal Elderly Deduction Path. Exercises SNAP's real elderly-specific handling (age 60+), independent of WA's BBCE specifics -- CO has no BBCE net-income waiver, this scenario stresses the federal elderly pathway instead. Used by the CO SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015).",
+    "household": {
+      "white_label": "co",
+      "household_size": 1,
+      "zipcode": "80202",
+      "county": "Denver County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 2,
+          "birth_year": 1958,
+          "age": 67,
+          "disabled": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 900.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "co_snap",
+      "eligible": true
+    }
+  }
+]

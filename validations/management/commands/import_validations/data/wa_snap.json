@@ -1,5 +1,6 @@
 [
   {
+    "scenario_key": "clearly_eligible",
     "notes": "WA Basic Food (SNAP) - Single Adult, Income Well Below 200% FPL - Clearly Eligible",
     "household": {
       "white_label": "wa",
@@ -37,6 +38,7 @@
     }
   },
   {
+    "scenario_key": "clearly_ineligible",
     "notes": "WA Basic Food (SNAP) - Single Adult, Gross Income Above 200% FPL ($2,661/mo) - Should NOT Be Eligible. Income of $2,661/mo exceeds both the SNAP FY2026 threshold ($2,608/mo, based on 2025 FPL: $15,650/yr ÷ 12 × 2) and the upcoming SNAP FY2027 threshold ($2,660/mo, based on 2026 FPL: $15,960/yr ÷ 12 × 2, effective Oct 2026). Value chosen to remain robustly ineligible across the Oct 2026 FPL-year transition.",
     "household": {
       "white_label": "wa",
@@ -74,6 +76,7 @@
     }
   },
   {
+    "scenario_key": "pregnant_household_size",
     "notes": "WA Basic Food (SNAP) - Pregnant Woman Living Alone, Below Income Threshold - Should Be Eligible with HH Size 1. Patmanson correction: federal SNAP (WAC 388-408-0015) does NOT count unborn children as household members; pregnancy only affects the work requirement exemption. Original scenario 14 incorrectly treated household as size 2.",
     "household": {
       "white_label": "wa",
@@ -109,6 +112,43 @@
       "program_name": "wa_snap",
       "eligible": true,
       "value": 864
+    }
+  },
+  {
+    "scenario_key": "bbce_net_income_waiver",
+    "notes": "WA Basic Food (SNAP) - BBCE Regression Test - Net Income Above 100% FPL But Still Eligible. Gross income ($2,200/mo) is below the 200% FPL limit ($2,608/mo for HH=1), so the household is categorically eligible under WA's Broad-Based Categorical Eligibility. Net income after standard deductions (~$1,541/mo) would exceed the 100% FPL limit (~$1,304/mo), but this is irrelevant under WA BBCE -- PolicyEngine implements this via meets_tanf_non_cash_net_income_test with net_applies=false for WA (see wa/snap/spec.md Scenario 9, and DECISIONS.md's WA-audit finding that this waiver lives entirely inside PolicyEngine, not in WaSnap/WaSnapCalculator's Python). Added specifically for the CO SNAP parity harness's extension to WA (Phase 4) -- the 3 original scenarios never exercised this state-specific mechanism at all.",
+    "household": {
+      "white_label": "wa",
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1992,
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_snap",
+      "eligible": true
     }
   }
 ]
