@@ -14,9 +14,9 @@
 
 **Documented but not directly screenable** — surfaced in the program description, not gated on: postpartum continuation (criterion 3), Transitional MO HealthNet (NOT RUNNABLE, criterion 9), automatic newborn continuation (criterion 10), Former Foster Care Youth (NOT RUNNABLE, criterion 11), §1619(b) continuation (NOT RUNNABLE, criterion 15), and the four-month spousal-support extension (NOT RUNNABLE, criterion 16).
 
-**Legal status / immigration**: handled through `legal_status_required`, the platform-wide household-visibility gate — not per-member logic inside `MoMedicaid`. See "Legal Status & Immigration" below.
+**Legal status / immigration**: handled through `legal_status_required`, the platform-wide household-visibility gate — not per-member logic inside `MoHealthNet`. See "Legal Status & Immigration" below.
 
-**Build pattern**: `MoMedicaid(Medicaid)`, following the existing Medicaid PE-calculator pattern (`KsKanCare(Medicaid)` precedent, MFB-1054).
+**Build pattern**: `MoHealthNet(Medicaid)`, following the existing Medicaid PE-calculator pattern (`KsKanCare(Medicaid)` precedent, MFB-1054).
 
 **Explicitly out of scope**: Premium CHIP 73/74/75 (MFB-1262 — not CHIP 4M, which this calculator continues to cover under criterion 2b), Ticket to Work Health Assurance (MFB-1287/MFB-1223), institutional/vendor/HCBS/long-term-care Medicaid, BCCT, Show-Me Healthy Babies, UWHS, and Emergency MO HealthNet Care for Ineligible Aliens (EMCIA).
 
@@ -27,7 +27,7 @@
 1. **Missouri residency required**
    - Screener fields: `zipcode`, `county`
    - Source: MO DSS FSD Manual Section 1805.005.00 — https://dssmanuals.mo.gov/family-mo-healthnet-magi/1805-000-00/1805-005-00/ — "42 CFR subsection 435.403 requires individuals to reside in the state where they are applying for benefits."
-   - **Screener-level precondition, not a calculator-level test**: `benefits-calculator`'s `Zipcode.tsx` step Zod-validates the ZIP against `counties_by_zipcode` before the screener advances, so no non-Missouri household ever reaches `MoMedicaid`.
+   - **Screener-level precondition, not a calculator-level test**: `benefits-calculator`'s `Zipcode.tsx` step Zod-validates the ZIP against `counties_by_zipcode` before the screener advances, so no non-Missouri household ever reaches `MoHealthNet`.
 
 2a. **MO HealthNet for Kids (MHK) — Infants (under age 1): base 196% FPL, effective 201% FPL after the 5% MAGI disregard**
    - Operative table row (Appendix A, effective 07-01-26–03-31-27): "196% of Poverty# MPW & MHK under 1" — HH1 $2,674, HH2 **$3,625**, HH3 $4,577, HH4 $5,528 ("#" = 5% disregard already applied).
@@ -206,7 +206,7 @@ Medicaid is valued per MFB convention as KFF's published average spending per fu
 
 **Implementation is complete when:**
 
-- [ ] All 34 scenarios pass with the exact eligibility, category, and annual value stated. `eligible: true` alone is insufficient where a value is specified.
+- [ ] 33 of the 34 scenarios pass with the exact eligibility, category, and annual value stated. `eligible: true` alone is insufficient where a value is specified. Scenario 8 is the accepted exception: it depends on applicant-specific MAGI household construction, which the platform does not yet build, and so cannot pass on any white label — tracked in MFB-1745 and annotated at the scenario itself.
 - [ ] Income boundaries confirm an inclusive (`≤`) comparator across the tested household sizes and pathways: AEG HH1 $1,836/$1,837 (2/5) and HH4 $3,795/$3,797 (32/33); MHK HH2 $2,760/$2,761 (4/17); MHF HH2 $241/$242 (12/26); and infant/MPW HH2 $3,625/$3,626 (27/28, 29/30). MHABD is tested at the exact adjusted-income ceiling only (11) because the over-limit branch may depend on unobservable spend-down.
 - [ ] Scenarios 27 and 29 confirm the infant/MPW 201% standard is load-bearing by using income above the 1–18 children's 153% ceiling.
 - [ ] MHDC deeming scenarios 9 and 25 assert the exact PE deemed-income value and non-spend-down classification, not only top-level eligibility/value.
@@ -215,7 +215,7 @@ Medicaid is valued per MFB convention as KFF's published average spending per fu
 - [ ] Scenario 20 reads PE's `is_parent_for_medicaid` result as-is for `relatedOther`, consistent with criterion 4's kinship data-gap handling.
 - [ ] Scenario 34 switches from MHDC deeming to adult MHABD and uses the applicant's own income once the MHDC deeming period has ended.
 - [ ] Non-runnable pathways remain documentation/data-gap treatments only and are not implemented as calculator gates.
-- [ ] Household construction uses applicant-specific units; non-spouses and non-dependent relatives sharing a physical household are not combined into one unit — see MAGI Household Composition & Income Methodology.
+- [ ] Household construction uses applicant-specific units; non-spouses and non-dependent relatives sharing a physical household are not combined into one unit — see MAGI Household Composition & Income Methodology. **Not met today**, for the reason recorded against Scenario 8 above; this is the criterion that scenario tests.
 
 ## Test Scenarios
 

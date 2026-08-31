@@ -79,7 +79,7 @@ class MoHealthNet(Medicaid):
         "DISABLED": KFF_DISABLED / 12,
     }
 
-    # KFF defines Seniors as 65+ regardless of disability, and mo_medicaid_spec.md's
+    # KFF defines Seniors as 65+ regardless of disability, and specs/mo.md's
     # value-priority rule follows it: "age 65+ -> Seniors, even if disability-eligible".
     # The default is the opposite because specs/ks.md reads its source table the other way.
     senior_value_takes_precedence = True
