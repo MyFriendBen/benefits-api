@@ -189,3 +189,38 @@ class TestLegalLinkConfiguration(SimpleTestCase):
                             f"absolute https URL: {link!r}. An empty string here renders as a link "
                             "with an empty href.",
                         )
+
+
+class TestPublicChargeRuleConfiguration(SimpleTestCase):
+    """
+    Asserts every white label's public charge rule carries both a link and a visible label. The
+    frontend renders the anchor as <a href={link}>{text}</a>, so a config with a link but no text
+    ships an invisible, unclickable link rather than failing loudly.
+    """
+
+    def test_public_charge_rule_has_link_and_text(self):
+        """A configured link must come with the label the anchor renders as its content."""
+        for code, white_label_data in white_label_config.items():
+            public_charge_rule = white_label_data.public_charge_rule
+
+            with self.subTest(white_label=code):
+                link = public_charge_rule.get("link", "")
+
+                # The base class ships an empty link so white labels can opt out entirely; only
+                # a white label that actually points somewhere needs a label to go with it.
+                if not link:
+                    continue
+
+                text = public_charge_rule.get("text")
+                self.assertIsNotNone(
+                    text,
+                    f'White label "{code}" sets a public charge link but no "text". The frontend '
+                    "renders the anchor with no children, so nothing is visible to click.",
+                )
+                self.assertTrue(
+                    text.get("_label") and text.get("_default_message"),
+                    f'White label "{code}" has a public charge "text" missing "_label" or '
+                    '"_default_message". Both are required for the frontend to build a '
+                    "FormattedMessage, which falls back to the default message when no "
+                    "translation row exists.",
+                )

@@ -25,8 +25,12 @@ class ConfigurationData:
     # Banner messages displayed at top of screener (optional)
     banner_messages = []
 
-    # Link to public charge information for your state
-    public_charge_rule = {"link": ""}
+    # Public charge information for your state. "link" is the destination and "text" is the
+    # visible link label; both are required, as the frontend renders an empty anchor without "text".
+    public_charge_rule = {
+        "link": "",
+        "text": {"_label": "", "_default_message": ""},
+    }
 
     # Resources shown at bottom of results page (e.g., 2-1-1, state help lines)
     more_help_options = {
