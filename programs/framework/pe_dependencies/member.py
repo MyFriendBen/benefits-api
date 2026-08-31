@@ -857,6 +857,20 @@ class MiscellaneousIncomeDependency(IncomeDependency):
     income_types = ["gifts"]
 
 
+class NonTanfCashAssistanceIncomeDependency(IncomeDependency):
+    """
+    ``cashAssistanceOther`` — General Assistance, another state's TANF, a local fund — as
+    PolicyEngine's ``financial_assistance``.
+
+    Picked for its treatment, not its name: measured, it is the only source in TANF's unearned
+    list that also counts in ``snap_gross_income`` and stays out of ``adjusted_gross_income``,
+    which is what non-taxable cash aid needs.
+    """
+
+    field = "financial_assistance"
+    income_types = ["cashAssistanceOther"]
+
+
 class UnemploymentIncomeDependency(IncomeDependency):
     field = "unemployment_compensation"
     income_types = ["unemployment"]

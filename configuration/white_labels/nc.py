@@ -175,13 +175,8 @@ class NcConfigurationData(ConfigurationData):
     # Nested income options organized by category (for future use with categorized UI)
     income_options_by_category = {
         **ConfigurationData.income_options_by_category,
-        "government": {
-            **ConfigurationData.income_options_by_category["government"],
-            "cashAssistance": {
-                "_label": "incomeOptions.nc_cashAssistance",
-                "_default_message": "Cash Assistance Grant",
-            },
-        },
+        # `cashAssistance` is no longer overridden here: base's split pair reads
+        # "Cash Assistance - TANF" / "Cash Assistance - Other", which is NC's wording too.
         "investment": {
             **ConfigurationData.income_options_by_category["investment"],
             "pension": {

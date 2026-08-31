@@ -184,8 +184,12 @@ class CoConfigurationData(ConfigurationData):
         "government": {
             **ConfigurationData.income_options_by_category["government"],
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance.co",
-                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+                "_label": "incomeOptions.cashAssistanceTanf.co",
+                "_default_message": "Cash Assistance - TANF (Colorado Works)",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.co",
+                "_default_message": "Cash Assistance - Other",
             },
             "cOSDisability": {
                 "_label": "incomeOptions.cOSDisability",

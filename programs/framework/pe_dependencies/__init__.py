@@ -21,14 +21,15 @@ irs_gross_income = [
 #
 #     wic_countable_income = add(spm_unit, period, sources) + max_(0, capital_gains)
 #
-# Of WIC's 24 sources this reaches 13, plus the separate positive-only capital-gains
+# Of WIC's 24 sources this reaches 14, plus the separate positive-only capital-gains
 # term. Measured one field at a time against the private API: each moved
 # `wic_countable_income` by the amount sent.
 #
 # Sent under the source's own name:
 #   employment_income, self_employment_income, rental_income, social_security,
 #   unemployment_compensation, ssi, tanf, workers_compensation, alimony_income,
-#   miscellaneous_income (gifts), child_support_received
+#   miscellaneous_income (gifts), financial_assistance (cashAssistanceOther),
+#   child_support_received
 #
 # Reached through a PE `adds` chain, so the field we send and the source differ:
 #   taxable_pension_income     -> pension_income            (pension, veteran)
@@ -39,7 +40,7 @@ irs_gross_income = [
 # `ssi` and `tanf` are dual-role: each sends the reported amount, or None so PE computes
 # its own.
 #
-# The 11 sources we never populate split into three kinds:
+# The 10 sources we never populate split into three kinds:
 #
 #   Money we do count, just under a different source. PE keeps SSDI, SS survivor and SS
 #   dependent benefits in `social_security` (which `adds` social_security_disability /
@@ -58,23 +59,24 @@ irs_gross_income = [
 #   real undercounts, in four of the six WIC states.
 #
 #   Money the screener never asks about: military_service_income, gi_cash_assistance,
-#   financial_assistance, strike_benefits, educational_assistance, railroad_benefits.
+#   strike_benefits, educational_assistance, railroad_benefits.
 wic_income = [
     *irs_gross_income,
     member.WorkersCompensationDependency,
     member.AlimonyIncomeDependency,
     member.MiscellaneousIncomeDependency,
+    member.NonTanfCashAssistanceIncomeDependency,
     member.ChildSupportReceivedDependency,
     member.Ssi,
     spm.Tanf,
 ]
 
 # The TANF income sources the screener collects beyond the taxable set: child support
-# received, alimony, and gifts (PE's `miscellaneous_income`). None are taxable, so
-# `irs_gross_income` — the taxable contract — correctly omits all three. TANF counts them
-# (`gov.hhs.tanf.cash.income.sources.unearned`), so a state TANF calculator sending only
-# `irs_gross_income` drops them from every gate. Same shape as `wic_income` above, which
-# carries the same three.
+# received, alimony, gifts (PE's `miscellaneous_income`) and non-TANF cash assistance (PE's
+# `financial_assistance`). None are taxable, so `irs_gross_income` — the taxable contract —
+# correctly omits all four. TANF counts them (`gov.hhs.tanf.cash.income.sources.unearned`), so
+# a state TANF calculator sending only `irs_gross_income` drops them from every gate. Same
+# shape as `wic_income` above, which carries the same four.
 #
 # Alimony is here on the strength of that source list rather than a scenario: no state spec
 # exercises it yet. Every field reaches PE the same way, so leaving one out keeps the same
@@ -87,6 +89,7 @@ tanf_income = [
     member.ChildSupportReceivedDependency,
     member.AlimonyIncomeDependency,
     member.MiscellaneousIncomeDependency,
+    member.NonTanfCashAssistanceIncomeDependency,
 ]
 
 # PolicyEngine's actual-receipt contract: countable income and categorical eligibility follow

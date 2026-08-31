@@ -381,7 +381,7 @@ class TestMoLiheapCountableIncome(MoLiheapTestCase):
     def test_gifts_cash_assistance_and_veteran_income_are_counted(self):
         # An earlier draft excluded all three; the manual documents each as
         # countable — see specs/mo.md data gap 7.
-        for income_type in ("gifts", "cashAssistance", "veteran"):
+        for income_type in ("gifts", "cashAssistance", "cashAssistanceOther", "veteran"):
             with self.subTest(income_type=income_type):
                 screen = self.build(1)
                 head = self.add_person(screen, "headOfHousehold", 1986)

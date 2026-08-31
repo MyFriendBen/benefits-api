@@ -18,6 +18,9 @@ class Wic(PolicyEngineMembersCalculator):
     back eligible at any reported income (measured: eligible at $150k/yr). ``wic_income`` is
     that source list, as far as the screener collects it.
 
+    ``financial_assistance`` carries the screener's ``cashAssistanceOther`` type (non-TANF cash
+    aid). It is a WIC source, so omitting it undercounted every household reporting one.
+
     Adjunctive eligibility above 185% FPL is correct, not a bug: 42 U.S.C. § 1786(d)(2)(A)
     makes SNAP/TANF/Medicaid receipt its own pathway, and the 185% figure attaches only to
     the income-test pathway. The practical boundary is the state's Medicaid limit — in MO,

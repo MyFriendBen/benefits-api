@@ -28,6 +28,9 @@ class TxTanf(Tanf):
         dependency.household.TxStateCodeDependency,
         dependency.member.TaxUnitDependentDependency,
         *dependency.irs_gross_income,
+        # Non-TANF cash aid is in TANF's unearned source list but not the taxable set, so
+        # irs_gross_income alone drops it from every gate.
+        dependency.member.NonTanfCashAssistanceIncomeDependency,
     ]
 
     pe_outputs = [dependency.spm.TxTanf]

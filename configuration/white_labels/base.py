@@ -234,7 +234,17 @@ class ConfigurationData:
                 "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
             },
             "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
-            "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
+            # Two adjacent options so the screener can tell the household's own TANF grant from
+            # any other cash aid. `cashAssistance` is the TANF field (PE excludes it from TANF's
+            # own gates); `cashAssistanceOther` is ordinary countable unearned income.
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistanceTanf",
+                "_default_message": "Cash Assistance - TANF",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther",
+                "_default_message": "Cash Assistance - Other",
+            },
             "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
             "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         },
