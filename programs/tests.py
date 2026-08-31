@@ -1,8 +1,18 @@
+from io import StringIO
 from unittest.mock import patch
 
+from django.core.management import call_command
+from django.db.utils import IntegrityError
 from django.test import SimpleTestCase, TestCase
 
-from programs.models import _FPL_DEFAULTS, FederalPoveryLimit, Program, _get_fpl_data
+from programs.fpl_values import MAX_MATERIALIZED_SIZE, sync_fpl_values
+from programs.models import (
+    _FPL_DEFAULTS,
+    FederalPoveryLimit,
+    FederalPovertyLimitValue,
+    Program,
+    _get_fpl_data,
+)
 from screener.models import WhiteLabel
 
 
@@ -91,3 +101,83 @@ class FederalPovertyLimitTests(SimpleTestCase):
                     list(range(1, FederalPoveryLimit.MAX_DEFINED_SIZE + 1)),
                 )
                 self.assertIn("additional", table)
+
+
+class FederalPovertyLimitValueTests(TestCase):
+    """The materialized FPL table must reproduce get_limit() exactly.
+
+    FederalPovertyLimitValue exists so SQL-only consumers (the dbt/Metabase
+    analytics pipeline) can compute a percent-of-FPL band, which they cannot do
+    while the thresholds live only in a Python constant. It is a mirror of
+    _FPL_DEFAULTS, so the risk it introduces is drift: someone adds a year to the
+    constant and the table silently keeps answering with the old one. These tests
+    are what make that a CI failure instead of a wrong number on a dashboard.
+    """
+
+    def test_migration_populated_every_period_and_size(self):
+        expected = len(_FPL_DEFAULTS) * MAX_MATERIALIZED_SIZE
+
+        self.assertEqual(FederalPovertyLimitValue.objects.count(), expected)
+
+    def test_every_row_matches_get_limit(self):
+        """The mirror agrees with the calculators' own lookup, size by size."""
+        for period in _FPL_DEFAULTS:
+            fpl = FederalPoveryLimit(year=period, period=period)
+            for size in range(1, MAX_MATERIALIZED_SIZE + 1):
+                with self.subTest(period=period, household_size=size):
+                    row = FederalPovertyLimitValue.objects.get(period=period, household_size=size)
+                    self.assertEqual(row.annual_limit, fpl.get_limit(size))
+
+    def test_sync_is_idempotent(self):
+        counts = sync_fpl_values()
+
+        self.assertEqual(counts, {"created": 0, "updated": 0, "deleted": 0})
+
+    def test_sync_repairs_a_drifted_row(self):
+        row = FederalPovertyLimitValue.objects.get(period="2026", household_size=4)
+        row.annual_limit = 1
+        row.save(update_fields=["annual_limit"])
+
+        counts = sync_fpl_values()
+        row.refresh_from_db()
+
+        self.assertEqual(counts["updated"], 1)
+        self.assertEqual(row.annual_limit, _FPL_DEFAULTS["2026"][4])
+
+    def test_sync_removes_a_period_no_longer_in_the_constant(self):
+        FederalPovertyLimitValue.objects.create(period="1999", household_size=1, annual_limit=1)
+
+        counts = sync_fpl_values()
+
+        self.assertEqual(counts["deleted"], 1)
+        self.assertFalse(FederalPovertyLimitValue.objects.filter(period="1999").exists())
+
+    def test_extrapolated_sizes_apply_the_additional_amount(self):
+        table = _FPL_DEFAULTS["2026"]
+        row = FederalPovertyLimitValue.objects.get(period="2026", household_size=10)
+
+        self.assertEqual(row.annual_limit, table[8] + table["additional"] * 2)
+
+    def test_duplicate_period_and_size_is_rejected(self):
+        """The uniqueness constraint is what lets analytics join without fanning out."""
+        with self.assertRaises(IntegrityError):
+            FederalPovertyLimitValue.objects.create(period="2026", household_size=4, annual_limit=1)
+
+    def test_command_reports_a_clean_sync(self):
+        out = StringIO()
+
+        call_command("sync_fpl_values", stdout=out)
+
+        self.assertIn("0 created, 0 updated, 0 deleted", out.getvalue())
+
+    def test_dry_run_reports_drift_without_writing(self):
+        row = FederalPovertyLimitValue.objects.get(period="2026", household_size=4)
+        row.annual_limit = 1
+        row.save(update_fields=["annual_limit"])
+        out = StringIO()
+
+        call_command("sync_fpl_values", "--dry-run", stdout=out)
+        row.refresh_from_db()
+
+        self.assertIn("update 1", out.getvalue())
+        self.assertEqual(row.annual_limit, 1, "dry run must not write")

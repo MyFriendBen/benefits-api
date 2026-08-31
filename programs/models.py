@@ -96,6 +96,38 @@ class FederalPoveryLimit(models.Model):
         return self.year
 
 
+class FederalPovertyLimitValue(models.Model):
+    """A database mirror of FederalPoveryLimit.get_limit(), one row per size.
+
+    FederalPoveryLimit stores a year and a period; the dollar thresholds live in
+    the _FPL_DEFAULTS constant above, so a consumer that can only read the
+    database -- the dbt/Metabase analytics pipeline -- cannot compute a
+    percent-of-FPL band. This table exists for those consumers.
+
+    It is a mirror, not a second source of truth. The constant stays
+    authoritative and the calculators keep reading it through get_limit();
+    programs.fpl_values.sync_fpl_values() rewrites this table from the constant,
+    and a test asserts the two agree so they cannot drift apart unnoticed. If you
+    add a year to _FPL_DEFAULTS, run `manage.py sync_fpl_values`.
+
+    Sizes beyond MAX_DEFINED_SIZE are materialized with the per-additional-person
+    amount already applied, so joins do not have to reimplement that arithmetic.
+    """
+
+    period = models.CharField(max_length=32, db_index=True)
+    household_size = models.PositiveSmallIntegerField()
+    annual_limit = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["period", "household_size"], name="unique_fpl_value_per_size"),
+        ]
+        ordering = ("period", "household_size")
+
+    def __str__(self):
+        return f"{self.period} / {self.household_size} person: ${self.annual_limit:,}"
+
+
 class LegalStatus(models.Model):
     status = models.CharField(max_length=256)
     parent = models.ForeignKey(
