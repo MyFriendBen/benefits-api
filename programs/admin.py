@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Max, Q
 from django.urls import reverse
 from django.utils.html import format_html
@@ -576,6 +576,29 @@ class ProgramCategoryAdmin(SecureAdmin):
 
     shared.boolean = True
     shared.short_description = "Shared"
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        # A shared category is a single row used by every white label, so an edit
+        # here is not scoped to the editor's own state. Nothing else on the page
+        # conveys that, so say it explicitly and name who is affected.
+        category = self.get_queryset(request).filter(pk=object_id).first()
+
+        if category is not None and category.white_label is None:
+            affected = sorted(
+                {
+                    code
+                    for code in category.programs.values_list("white_label__code", flat=True).distinct()
+                    if code is not None
+                }
+            )
+            used_by = ", ".join(affected) if affected else "no white labels yet"
+            messages.warning(
+                request,
+                f"“{category}” is a shared category. Changes to it — including its name and icon — "
+                f"apply to every white label that uses it ({used_by}), not just yours.",
+            )
+
+        return super().change_view(request, object_id, form_url, extra_context)
 
     def get_str(self, obj):
         return str(obj)
