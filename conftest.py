@@ -232,8 +232,36 @@ def policy_engine_body(r1, r2):
     return True
 
 
+def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
+    """Point this xdist worker at its own Redis database.
+
+    ``clear_cache`` flushes the whole cache before every test, and on django_redis that
+    flushes the entire database rather than just this run's keys. Workers sharing one
+    database therefore delete each other's entries mid-test: the symptom is a worker
+    losing the bearer token ``seed_pe_token`` just wrote and trying to authenticate
+    against live PolicyEngine ("client id or secret not configured" in CI).
+
+    Redis serves databases 0-15 by default, which bounds how many workers can be
+    isolated this way; beyond that they wrap and share again.
+    """
+    from django.conf import settings
+
+    location = settings.CACHES.get("default", {}).get("LOCATION", "")
+    if not location.startswith(("redis://", "rediss://")):
+        return
+
+    base, _, tail = location.rpartition("/")
+    if not tail.isdigit():
+        base, tail = location.rstrip("/"), "0"
+
+    # worker_id is "gw0", "gw1", ...; offset from the configured database so a worker
+    # never lands on the one a non-xdist run would use.
+    db = (int(tail) + 1 + int(worker_id.removeprefix("gw"))) % 16
+    settings.CACHES["default"]["LOCATION"] = f"{base}/{db}"
+
+
 def pytest_configure(config):
-    """Reject an unrecognized VCR_MODE before any test runs.
+    """Reject an unrecognized VCR_MODE before any test runs, and isolate per-worker state.
 
     vcr_record_mode() would raise anyway at the point of use, but that surfaces as an error on
     each integration test partway into the run. Checking at startup fails the whole session
@@ -244,6 +272,10 @@ def pytest_configure(config):
         vcr_record_mode()
     except ValueError as e:
         raise pytest.UsageError(str(e)) from e
+
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER")
+    if worker_id:
+        _isolate_cache_per_xdist_worker(worker_id)
 
 
 @pytest.hookimpl(wrapper=True, tryfirst=True)
