@@ -1,11 +1,11 @@
 # Court-Based Rental Assistance Program (CBRAP) (IL) — Program Spec
 
-- **Program key**: `il_cbrap` — `programs/programs/il/cbrap`, class `IlCbrap`
+- **Program key**: `il_cbrap` — `programs/programs/white_labels/il/cbrap`, class `IlCbrap`
 - **Base federal program**: none — Illinois state program (IHDA)
 - **White label**: IL
 - **Engine**: MFB custom — no PolicyEngine variable models this program
 - **Program status**: paused — not accepting new applications
-- **Added to MFB**: not yet added — Discovery package for MFB-1722
+- **Added to MFB**: 2026-09-01
 - **Spec last updated**: 2026-08-31
 - **Sources verified as of**: 2026-08-28
 
@@ -135,7 +135,7 @@ derived — and the $10,000 cap would overstate the award for nearly every house
 
 ## Implementation
 
-Binding build requirements for `programs/programs/il/cbrap`, class `IlCbrap`. These are not sourced
+Binding build requirements for `programs/programs/white_labels/il/cbrap`, class `IlCbrap`. These are not sourced
 policy rules; they are how the sourced rules map onto MFB.
 
 - **Income limit**: call `hud_client.get_screen_il_ami(screen, "80%", program.year.period)`. Pass the
