@@ -606,6 +606,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "excludes_programs": list[str],
             "value_format": Optional[str],
             "white_label": str,
+            "year_type": str,
         },
     )
 
@@ -632,6 +633,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
             "white_label": program.white_label.code,
+            "year_type": program.year_type,
         }
 
     def from_model_data(self, data: DataType):
@@ -643,6 +645,7 @@ class ProgramDataController(ModelDataController["Program"]):
         program.low_confidence = data["low_confidence"]
         program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
+        program.year_type = data.get("year_type", "hardcoded")
 
         # get or create fpl
         fpl = data["fpl"]
