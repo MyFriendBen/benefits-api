@@ -1,0 +1,106 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "program_category": {
+    "external_name": "il_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "il_cbrap",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Court-Based Rental Assistance Program (CBRAP)",
+    "description_short": "One-time grant for Illinois renters facing an eviction case filed for unpaid rent",
+    "description": "CBRAP helps Illinois renters facing eviction in court for unpaid rent. If you are behind on rent but no one has filed an eviction case, this program cannot help you yet. The rented home must be your primary residence.\n\nCBRAP pays up to $10,000 in total. The money can go toward the rent you already owe, some future rent, and eligible court costs. It is a grant, so you do not pay it back. This benefit is one time only. A household approved in the past 18 months cannot get it again.\n\nYour landlord can also submit their part of the application. If they do, the two applications will be matched. If your landlord does not take part, you may still get help. The money may be paid to you directly.\n\nClick 'Apply Online' to complete the CBRAP application.",
+    "learn_more_link": "https://www.illinoishousinghelp.org/cbrap",
+    "apply_button_link": "https://www.illinoishousinghelp.org/cbrap",
+    "apply_button_description": "",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "website_description": "One-time grant for Illinois renters facing an eviction case filed for unpaid rent",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "low_confidence": false,
+    "show_on_current_benefits": false,
+    "show_in_has_benefits_step": false,
+    "has_calculator": true
+  },
+  "documents": [
+    {
+      "external_name": "il_cbrap_eviction_court_documents",
+      "text": "Eviction court documents, such as a summons or complaint",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_cbrap_photo_id",
+      "text": "Government-issued photo ID",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_cbrap_proof_of_address",
+      "text": "Proof of address dated within the last 60 days",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_cbrap_proof_of_income",
+      "text": "Proof of current household income",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_cbrap_past_due_rent",
+      "text": "Proof of past-due rent",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_cbrap_lease",
+      "text": "Current signed lease, if available",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_cbrap_public_assistance",
+      "text": "Proof of public assistance, if applicable",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "il_cbrap_eviction_help_illinois",
+      "name": "Eviction Help Illinois",
+      "email": "",
+      "phone_number": "+18556310811",
+      "description": "Eviction Help Illinois offers free legal help, mediation, and housing referrals. They can help you find other support while CBRAP is closed.",
+      "assistance_link": "https://evictionhelpillinois.org/"
+    },
+    {
+      "external_name": "il_cbrap_nhs_chicago",
+      "name": "Neighborhood Housing Services of Chicago",
+      "email": "homeownership@nhschicago.org",
+      "phone_number": "+17733294111",
+      "description": "NHS Chicago helps renters dealing with eviction, money problems, and landlord issues. They can help you find other housing support while CBRAP is closed.",
+      "assistance_link": "https://nhschicago.org/renter-support/"
+    }
+  ],
+  "warning_messages": [
+    {
+      "external_name": "il_cbrap_applications_closed",
+      "calculator": "_show",
+      "message": "CBRAP is not accepting new applications right now. If you may be evicted, get help from legal aid or a housing counseling agency. If you have already applied, you can check your application status."
+    }
+  ]
+}
