@@ -3,9 +3,9 @@
         "code": "ma"
     },
     "program_category": {
-        "external_name": "ma_cash",
-        "name": "Cash Assistance",
-        "icon": "cash"
+        "external_name": "ma_savings",
+        "name": "Savings",
+        "icon": "savings"
     },
     "program": {
         "name_abbreviated": "trump_account",

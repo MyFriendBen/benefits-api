@@ -3,9 +3,9 @@
         "code": "mo"
     },
     "program_category": {
-        "external_name": "mo_cash",
-        "name": "Cash Assistance",
-        "icon": "cash"
+        "external_name": "mo_savings",
+        "name": "Savings",
+        "icon": "savings"
     },
     "program": {
         "name_abbreviated": "trump_account",

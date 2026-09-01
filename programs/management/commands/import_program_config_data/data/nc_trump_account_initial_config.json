@@ -3,9 +3,9 @@
         "code": "nc"
     },
     "program_category": {
-        "external_name": "nc_cash",
-        "name": "Cash Assistance",
-        "icon": "cash"
+        "external_name": "nc_savings",
+        "name": "Savings",
+        "icon": "savings"
     },
     "program": {
         "name_abbreviated": "trump_account",

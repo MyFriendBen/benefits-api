@@ -3,9 +3,9 @@
         "code": "il"
     },
     "program_category": {
-        "external_name": "il_cash",
-        "name": "Cash Assistance",
-        "icon": "cash"
+        "external_name": "il_savings",
+        "name": "Savings",
+        "icon": "savings"
     },
     "program": {
         "name_abbreviated": "trump_account",

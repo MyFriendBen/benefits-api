@@ -3,9 +3,9 @@
         "code": "co"
     },
     "program_category": {
-        "external_name": "cash",
-        "name": "Cash Assistance",
-        "icon": "cash"
+        "external_name": "savings",
+        "name": "Savings",
+        "icon": "savings"
     },
     "program": {
         "name_abbreviated": "trump_account",

@@ -3,7 +3,9 @@
     "code": "co"
   },
   "program_category": {
-    "external_name": "child_care"
+    "external_name": "savings",
+    "name": "Savings",
+    "icon": "savings"
   },
   "program": {
     "name_abbreviated": "co_collegeinvest_first_step",

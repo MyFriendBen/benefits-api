@@ -3,9 +3,9 @@
         "code": "ks"
     },
     "program_category": {
-        "external_name": "ks_cash",
-        "name": "Cash Assistance",
-        "icon": "cash"
+        "external_name": "ks_savings",
+        "name": "Savings",
+        "icon": "savings"
     },
     "program": {
         "name_abbreviated": "trump_account",
