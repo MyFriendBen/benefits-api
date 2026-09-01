@@ -25,7 +25,10 @@ class ConfigurationData:
     # Banner messages displayed at top of screener (optional)
     banner_messages = []
 
-    # Link to public charge information for your state
+    # Public charge information. The disclaimer step renders this as <a href={link}>{text}</a>
+    # unconditionally, so every white label must set both keys in its own config; "text" is
+    # deliberately absent here so a white label that forgets it fails the config test rather
+    # than shipping an anchor with an empty label.
     public_charge_rule = {"link": ""}
 
     # Resources shown at bottom of results page (e.g., 2-1-1, state help lines)
