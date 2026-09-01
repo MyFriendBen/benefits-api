@@ -102,7 +102,8 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         year="THIS_YEAR_CALENDAR", period="2026". Matching on year AND period
         only ever worked for legacy rows where the two happen to be equal, and
         always missed dynamic rows."""
-        fpl = FederalPoveryLimit.objects.create(year="THIS_YEAR_CALENDAR", period="2026")
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="THIS_YEAR_CALENDAR", defaults={"period": "2026"})
+        self.assertNotEqual(fpl.period, fpl.year)
         config = copy.deepcopy(self.base_config)
         config["program"]["year"] = "THIS_YEAR_CALENDAR"
         config_file = self._create_temp_config(config)

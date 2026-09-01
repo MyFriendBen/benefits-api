@@ -365,3 +365,53 @@ class ProgramDataControllerDynamicFplTests(TestCase):
 
         hardcoded_fpl.refresh_from_db()
         self.assertEqual(hardcoded_fpl.period, "2023")
+
+
+class ProgramDataControllerYearTypeRoundTripTests(TestCase):
+    """to_model_data()/from_model_data() must round-trip year_type, not just
+    `year`. Without it, recreating a program from an exported snapshot (e.g.
+    restoring into an empty DB) silently defaults year_type to "hardcoded"
+    even though `year` gets correctly restored from `fpl`, the same
+    year_type/year mismatch findings #6/#9 were about, via a different path."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.calendar_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
+        )
+
+    def test_export_then_import_preserves_year_type(self):
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "calendar_year"
+        program.save()
+
+        builder = program.TranslationExportBuilder(program)
+        data = builder.to_model_data()
+        self.assertEqual(data["year_type"], "calendar_year")
+
+        # Simulate this program getting deleted, then recreated from its last
+        # exported snapshot, e.g. a restore into an empty DB. from_model_data
+        # also restores name_abbreviated from the snapshot, so the recreated
+        # instance must reuse the same name, not a different one, or it'd
+        # collide with the (still existing) original instead of testing this.
+        program.delete()
+        fresh = Program.objects.new_program(self.white_label.code, "snap")
+        builder = fresh.TranslationExportBuilder(fresh)
+        builder.from_model_data(data)
+
+        fresh.refresh_from_db()
+        self.assertEqual(fresh.year_type, "calendar_year")
+        self.assertEqual(fresh.year_id, self.calendar_fpl.id)
+
+    def test_snapshot_without_year_type_defaults_to_hardcoded(self):
+        """Backward compatibility: an older snapshot exported before this field
+        existed has no "year_type" key at all."""
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        builder = program.TranslationExportBuilder(program)
+        data = builder.to_model_data()
+        del data["year_type"]
+
+        builder.from_model_data(data)
+
+        program.refresh_from_db()
+        self.assertEqual(program.year_type, "hardcoded")
