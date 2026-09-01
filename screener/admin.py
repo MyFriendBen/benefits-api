@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import reverse
 from authentication.admin import SecureAdmin
-from .models import WhiteLabel
+from .models import AssistantConversation, AssistantMessage, WhiteLabel
 
 
 class WhiteLabelAdmin(SecureAdmin):
@@ -106,3 +106,68 @@ class FeatureFlagsAdmin(SecureAdmin):
 
 admin.site.register(WhiteLabel, WhiteLabelAdmin)
 admin.site.register(FeatureFlags, FeatureFlagsAdmin)
+
+
+class AssistantMessageInline(admin.TabularInline):
+    """Transcript, in `seq` order, on the conversation page."""
+
+    model = AssistantMessage
+    extra = 0
+    can_delete = False
+    ordering = ("seq",)
+    fields = ("seq", "role", "text", "model", "prompt_tokens", "completion_tokens", "latency_ms", "error")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class AssistantConversationAdmin(SecureAdmin):
+    """Read-only view of Benji transcripts. Superusers only.
+
+    Deliberately read-only in every direction. mfb-ai-service is the writer for these
+    tables (see screener/models.AssistantConversation) and reconciles nothing with the
+    admin, so a hand-edit here would silently diverge from what the assistant's own
+    prompt is built from — and editing a transcript after the fact is not a thing we
+    should be able to do at all.
+
+    Access falls out of SecureAdmin: `white_label` here is a CharField holding the
+    white label *code*, not a ForeignKey, so `_model_has_white_label()` is False and
+    non-superusers get an empty queryset. That is the intent rather than an accident
+    — these rows hold free-text household PII, so they should not be visible to
+    tenant staff by default.
+    """
+
+    always_can_view = False
+    inlines = (AssistantMessageInline,)
+    list_display = ("conversation_id", "screen_uuid", "white_label", "status", "mode", "updated_at")
+    list_filter = ("white_label", "status", "mode")
+    search_fields = ("conversation_id", "screen_uuid")
+    ordering = ("-updated_at",)
+    readonly_fields = (
+        "conversation_id",
+        "screen_uuid",
+        "white_label",
+        "locale",
+        "mode",
+        "prompt_version",
+        "status",
+        "context",
+        "created_at",
+        "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # History is retained indefinitely and deliberately (see screener/models.py),
+        # so there is no routine reason to delete from here — and a click that quietly
+        # destroys a household's transcript should not be one keystroke away.
+        return False
+
+
+admin.site.register(AssistantConversation, AssistantConversationAdmin)
