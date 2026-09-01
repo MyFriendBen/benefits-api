@@ -9,12 +9,18 @@ without an exemption a recording run mints one token per test that reaches the n
 from unittest import mock
 
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
+from benefits.tests.cache_override import LOCAL_CACHE
 from conftest import _preserved_cache_entries
 from integrations.clients.policyengine.engines import _PE_TOKEN_CACHE_KEY
 
 
+# Every test here reads and writes the one global token key. On the ambient Redis
+# that key is shared with every other concurrently running test process, which can
+# set or clear it mid-test; pin these to a per-process cache so they observe only
+# their own writes.
+@override_settings(CACHES=LOCAL_CACHE)
 class TestPeTokenSurvivesTestCacheFlush(TestCase):
     def test_token_is_carried_across_a_flush(self):
         """The whole point: a token set before the flush is still readable after it."""

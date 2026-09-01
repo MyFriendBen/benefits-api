@@ -65,6 +65,7 @@ pytest==8.4.2
 pytest-django==4.11.1
 pytest-cov==7.0.0
 pytest-env==1.2.0
+pytest-xdist==3.8.0
 protobuf==5.29.6
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
