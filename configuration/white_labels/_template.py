@@ -45,12 +45,13 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # Banner messages (optional - uncomment if needed)
     # banner_messages = []
 
-    # TODO: Add public charge information. Both keys are required: "text" is the visible
-    # link label, and the frontend renders an empty anchor if it is missing.
+    # TODO: Add public charge information. Both keys are required: "text" is the visible link
+    # label, and the disclaimer step renders an empty anchor without it. The label suffix is the
+    # uppercased code (e.g. "landingPage.publicChargeLinkTX" for code "tx").
     public_charge_rule = {
         "link": "",
         "text": {
-            "_label": "landingPage.publicChargeLink{{code}}",
+            "_label": "landingPage.publicChargeLink{{code_capitalize}}",
             "_default_message": "",
         },
     }
