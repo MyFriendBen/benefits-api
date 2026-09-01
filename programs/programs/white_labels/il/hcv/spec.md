@@ -1,6 +1,6 @@
 # Housing Choice Voucher Program (Section 8) (IL) — Program Spec
 
-- **Program key**: `il_hcv` — `programs/programs/il/hcv`, class `IlHcv`
+- **Program key**: `il_hcv` — `programs/programs/white_labels/il/hcv`, class `IlHcv`
 - **Base federal program**: Housing Choice Voucher (Section 8), 24 CFR part 982
 - **White label**: IL
 - **Engine**: MFB Custom — Python
@@ -230,7 +230,7 @@ Selection order among eligible households on a waiting list. These change when a
 | Value axis — elderly deduction | 10 (elderly, with income so the deduction moves the result), 4 (non-elderly counterpart) |
 | Value axis — elderly or disabled family reached by disability | 14 (head with a disability), 10 (reached by age instead) |
 | Value axis — dependent reached by disability | 14 (22-year-old with a disability), 7 (reached by full-time study), 1 (reached by age) |
-| Value axis — gross-rent proxy relative to the payment standard | 1 (rent above → standard governs), 8 (rent below → rent governs), 9 (rent so low the payment falls to zero) |
+| Value axis — gross-rent proxy relative to the payment standard | 1 (rent above → standard governs), 8 (rent below → rent governs), 9 (rent so low the computed payment falls to zero and the $1 floor applies) |
 | Value axis — zero-income floor | 11 (no income and no deductible remainder, so TTP is $0) |
 | TTP — 10 percent of monthly income prong | 17 (eight-person household where the 10 percent prong governs) |
 
@@ -377,9 +377,10 @@ Selection order among eligible households on a waiting list. These change when a
 
 ---
 
-### Scenario 9: Cook County family whose rent is below its own tenant payment — Eligible, $0
-**What this tests**: the payment floors at zero rather than going negative.
-**Expected**: Eligible — $0 (rent $1,200 governs; TTP $1,494 as in Scenario 2 exceeds it, so the unfloored payment would be −$294/month; floored to $0/month × 12). The household qualifies but receives no subsidy at this rent.
+### Scenario 9: Cook County family whose rent is below its own tenant payment — Eligible, $1
+**What this tests**: the payment floors rather than going negative, and that the floor is a visible one.
+**Expected**: Eligible — $1 (rent $1,200 governs; TTP $1,494 as in Scenario 2 exceeds it, so the unfloored payment would be −$294/month; the computed annual value is $0, floored to **$1**). The household qualifies but nets no subsidy at this rent.
+**Amended 2026-09-01, during implementation.** The value floor is $1, not $0. `Eligibility.value` drives the results page's own visibility filter — `filterPrograms.ts` drops any program whose value is not greater than zero — so returning $0 here would hide Section 8 from a household that genuinely qualifies for it, which is the opposite of the intended outcome. A nominal dollar keeps the program, its waitlist warning and its apply link in front of exactly the household the rule reaches. The floor applies only to a value the formula computed at zero; a value MFB could not compute at all (a HUD lookup failure) still returns $0, because hiding the program is the honest outcome there.
 **Household inputs**:
 * Location: ZIP `60623`, county `Cook`
 * Person 1: birth_year 1990, birth_month 3 (age 36), head of household, income: wages $60,750/year
@@ -389,7 +390,7 @@ Selection order among eligible households on a waiting list. These change when a
 * Expenses: rent $1,200/month
 * Household assets: $2,000
 * Current benefits: none
-**Why this matters**: kills a calculator that reports a negative benefit, and forces an explicit decision about presenting an eligible household with a zero-dollar value. As with the preceding scenario, the rent figure is the MFB gross-rent proxy rather than an exact § 982.505 gross rent.
+**Why this matters**: kills a calculator that reports a negative benefit, and one that returns an unfloored $0 and so silently drops an eligible household from results. As with the preceding scenario, the rent figure is the MFB gross-rent proxy rather than an exact § 982.505 gross rent.
 
 ---
 
