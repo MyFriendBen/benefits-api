@@ -95,14 +95,6 @@
       "description": "AARP Foundation Tax-Aide provides free, IRS-certified tax help across Kansas and will help you claim any credits you're eligible for. It is open to everyone, with no age or AARP membership requirement, and gives priority to people 50 and older with low to moderate income. Appointments are seasonal and fill quickly.",
       "assistance_link": "https://www.kstaxaide.com/homestead-2025",
       "phone_number": "+18882277669"
-    },
-    {
-      "external_name": "ks_211",
-      "name": "Kansas 211",
-      "email": "",
-      "description": "Kansas 211 connects residents to local services. During tax season it can point people to free tax preparation sites (VITA) where you can get help claiming the Earned Income Tax Credit on your federal return.",
-      "assistance_link": "https://211.org/get-help",
-      "phone_number": "+18884134327"
     }
   ]
 }
