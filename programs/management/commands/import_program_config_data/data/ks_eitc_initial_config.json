@@ -28,7 +28,6 @@
     "show_on_current_benefits": true,
     "has_calculator": true,
     "show_in_has_benefits_step": false,
-    "base_program": "eitc",
     "website_description": "A state tax credit that gives extra money back to working families"
   },
   "documents": [
