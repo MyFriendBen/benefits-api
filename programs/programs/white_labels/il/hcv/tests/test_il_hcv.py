@@ -396,9 +396,14 @@ class TestIlHcvTotalTenantPayment(TestCase):
         self.assertEqual(calc._total_tenant_payment(income, adjusted), 51)
 
     def test_rounds_half_up_not_half_even(self):
-        """$1,188.50 must round to $1,189. Python's `round()` gives 1188, and so does
-        a float `0.3 * (47540 / 12)`, which lands at 1188.4999999999998."""
+        """$1,188.50 must round to $1,189. Python's `round()` gives 1188."""
         self.assertEqual(self._ttp(50_040, 47_540), 1_189)
+
+    def test_a_half_dollar_a_float_loses_still_rounds_up(self):
+        """30% of monthly adjusted income on $20,020 is exactly $500.50, so the payment
+        is $501. A float `0.3 * (20020 / 12)` lands at 500.49999999999994 and would
+        round down to $500 — the prongs are computed from the annual figure to avoid it."""
+        self.assertEqual(self._ttp(20_020, 20_020), 501)
 
     def test_rounds_a_half_dollar_up_at_a_second_value(self):
         self.assertEqual(self._ttp(30_500, 29_500), 738)

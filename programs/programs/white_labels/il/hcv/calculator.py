@@ -186,10 +186,11 @@ class IlHcv(ProgramCalculator):
 
         Each prong is computed from the annual figure — 30% of a monthly amount is the
         annual over 40, and 10% is the annual over 120 — so an exact half-dollar stays
-        exact instead of landing a hair under it. A float ``0.3 * (47540 / 12)`` gives
-        1188.4999999999998 and rounds the wrong way; ``Decimal(47540) / 40`` gives
-        1188.5 and rounds to 1189. Python's ``round()`` is banker's rounding and would
-        also give 1188, so it is not used.
+        exact instead of landing a hair under it. A float ``0.3 * (20020 / 12)`` gives
+        500.49999999999994 and rounds down to $500, where the exact 30% of monthly
+        adjusted income is $500.50 and rounds up to $501; ``Decimal(20020) / 40`` is
+        exactly 500.5. Python's ``round()`` is banker's rounding and turns an exact
+        1188.5 into 1188, so it is not used either.
         """
         thirty_percent_monthly_adjusted = annual_adjusted / 40
         ten_percent_monthly_income = Decimal(str(annual_income)) / 120
