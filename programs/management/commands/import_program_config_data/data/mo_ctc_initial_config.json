@@ -3,7 +3,7 @@
     "code": "mo"
   },
   "program_category": {
-    "external_name": "mo_tax",
+    "external_name": "tax_credit",
     "name": "Tax Credits",
     "icon": "tax_credit",
     "tax_category": true

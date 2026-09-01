@@ -1,7 +1,7 @@
 {
     "white_label": {"code": "tx"},
     "program_category": {
-        "external_name": "tx_tax_credits",
+        "external_name": "tax_credit",
         "name": "Tax Credits",
         "icon": "tax_credit"
     },

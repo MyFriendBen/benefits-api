@@ -14,7 +14,7 @@ from django.http import (
     HttpResponseNotFound,
     HttpResponseRedirect,
 )
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Q
 from django.db import models
 from sentry_sdk import capture_exception
 import traceback
@@ -442,7 +442,10 @@ class TranslationAdminViews:
         if user.is_superuser:
             return query_set
 
-        return query_set.filter(white_label__in=user.white_labels.all())
+        # A row with a null white_label is shared across white labels (see
+        # ProgramCategory) and stays visible to every white label admin;
+        # filtering on white_label alone would exclude it.
+        return query_set.filter(Q(white_label__in=user.white_labels.all()) | Q(white_label__isnull=True))
 
     def _wapper(self, func):
         @login_required(login_url="/admin/login")
@@ -688,11 +691,20 @@ class ProgramCategoryTranslationAdmin(TranslationAdminViews):
         external_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
         icon = forms.ChoiceField(choices=get_urgent_need_icon_choices, widget=forms.Select(attrs={"class": "input"}))
 
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            # Leaving the white label blank creates a shared category, which
+            # programs in any white label can use.
+            white_label = self.fields["white_label"]
+            white_label.required = False
+            white_label.choices = [("", "Shared (all white labels)"), *white_label.choices]
+
     Model = ProgramCategory
 
     def _new_object(self, form: Form) -> models.Model:
         return self.Model.objects.new_program_category(
-            form["white_label"].value(), form["external_name"].value(), form["icon"].value()
+            form["white_label"].value() or None, form["external_name"].value(), form["icon"].value()
         )
 
     def _filter_query_set(self, request):

@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "tx"},
-    "program_category": {"external_name": "tx_food", "name": "Food and Nutrition", "icon": "food"},
+    "program_category": {"external_name": "food", "name": "Food and Nutrition", "icon": "food"},
     "program": {
         "name_abbreviated": "tx_csfp",
         "year": "2025",

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.urls import reverse
 from django.utils.html import format_html
 from unfold.admin import TabularInline
@@ -545,11 +545,37 @@ class TranslationOverrideAdmin(SecureAdmin):
 
 class ProgramCategoryAdmin(SecureAdmin):
     search_fields = ("external_name",)
-    list_display = ["get_str", "external_name", "action_buttons"]
+    list_display = ["get_str", "external_name", "shared", "action_buttons"]
     exclude = ["name", "description"]
 
     def has_add_permission(self, request):
         return False
+
+    def get_queryset(self, request):
+        # SecureAdmin scopes to white_label__in=[user's white labels], which
+        # excludes shared categories because their white_label is null. Any
+        # white label admin may see and edit them.
+        qs = super(SecureAdmin, self).get_queryset(request)
+
+        if self._is_superuser(request):
+            return qs
+
+        return qs.filter(Q(white_label__in=request.user.white_labels.all()) | Q(white_label__isnull=True))
+
+    def has_obj_permission(self, request, obj):
+        # A shared category belongs to no single white label, so grant access to
+        # any white label admin rather than falling through to the
+        # `obj.white_label in ...` check, which is False for null.
+        if obj is not None and obj.white_label is None and not self._is_superuser(request):
+            return request.user.white_labels.exists()
+
+        return super().has_obj_permission(request, obj)
+
+    def shared(self, obj):
+        return obj.white_label is None
+
+    shared.boolean = True
+    shared.short_description = "Shared"
 
     def get_str(self, obj):
         return str(obj)
