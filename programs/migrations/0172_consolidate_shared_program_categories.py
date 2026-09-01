@@ -30,20 +30,27 @@
 #   * No frontend code reads a category external_name; categories render from
 #     icon + translated name.
 
+from django.conf import settings
 from django.db import migrations
 
-# The 9 shared categories, keyed by external_name.
+from integrations.clients.google_translate import Translate, is_auto_translatable
+
+# The 10 shared categories, keyed by external_name.
 # (icon, display name, tax_category)
 SHARED_CATEGORIES = {
     "cash": ("cash", "Cash Assistance", False),
     "food": ("food", "Food and Nutrition", False),
     "health_care": ("health_care", "Health Care", False),
     "housing": ("housing", "Housing and Utilities", False),
-    "child_care": ("child_care", "Child Care, Youth, and Education", False),
+    "child_care": ("child_care", "Child Care and Youth", False),
     "tax_credit": ("tax_credit", "Tax Credits", True),
     "transportation": ("transportation", "Transportation", False),
     "employment": ("job_resources", "Employment", False),
     "savings": ("savings", "Savings", False),
+    # Post-secondary and adult education: scholarships, tuition aid and
+    # workforce training. Distinct from child_care, which covers early
+    # childhood and K-12 programs.
+    "education": ("education", "Education and Training", False),
 }
 
 # CO holds the unprefixed names already; promote these rows to shared rather than
@@ -80,6 +87,12 @@ CONSOLIDATE = [
     ("ks", "ks_tax_credit", "tax_credit"),
     ("ma", "ma_cash", "cash"),
     ("ma", "ma_child_care", "child_care"),
+    # Listed here as well as in PROMOTE_TO_SHARED: promotion renames the row in
+    # place, but is skipped if the target name is already taken (e.g. a re-run
+    # after partial failure). These entries make sure the programs consolidate
+    # either way.
+    ("ma", "ma_employment", "employment"),
+    ("ma", "ma_savings", "savings"),
     ("ma", "ma_food", "food"),
     ("ma", "ma_health_care", "health_care"),
     ("ma", "ma_housing", "housing"),
@@ -127,6 +140,13 @@ DELETE_EMPTY = [
 MOVE_PROGRAMS = [
     *[(wl, "trump_account", "savings") for wl in ("co", "il", "ks", "ma", "mo", "nc", "tx", "wa")],
     ("co", "co_collegeinvest_first_step", "savings"),
+    # Post-secondary education and training, previously filed under child care
+    # because no education category existed. All four are scholarships or
+    # tuition aid for adult learners, not child care.
+    ("wa", "wa_wsos_bas", "education"),  # STEM/health care undergraduate scholarship
+    ("wa", "wa_wsos_cts", "education"),  # associate degree, certificate, apprenticeship
+    ("wa", "wa_wsos_grd", "education"),  # nurse practitioner graduate scholarship
+    ("ks", "ks_promise_act", "education"),  # community/technical college tuition, fees, books
 ]
 
 
@@ -143,7 +163,30 @@ def forward(apps, schema_editor):
         ).first()
 
     def set_name(cat, text):
-        Translation.objects.add_translation(label=cat.name.label, default_message=text)
+        """
+        Set the English display name and machine-translate the rest.
+
+        add_translation only fills in English and leaves the other languages
+        blank, which renders an empty category heading for non-English users.
+        Mirrors what import_program_config does, marking the results unedited so
+        a human translation still overrides them.
+        """
+        translation = Translation.objects.add_translation(label=cat.name.label, default_message=text)
+
+        if not is_auto_translatable(text):
+            return
+
+        try:
+            translated = Translate().bulk_translate(Translate.languages, [text], strict=False).get(text, {})
+        except Exception:
+            # A translation outage must not fail the migration; English is
+            # already saved and the rest can be filled in from the admin.
+            return
+
+        for lang, translated_text in translated.items():
+            if lang == settings.LANGUAGE_CODE:
+                continue
+            Translation.objects.edit_translation_by_id(translation.id, lang, translated_text, manual=False)
 
     # Step 1: promote existing rows to shared, renaming where needed.
     for entry in PROMOTE_TO_SHARED:
@@ -157,6 +200,12 @@ def forward(apps, schema_editor):
         if cat is None:
             continue
 
+        # A row already holding the target name means a previous run promoted it,
+        # or the name is in use elsewhere. Renaming into it would violate the
+        # unique constraint, so leave this row for step 3 to consolidate.
+        if target_name != external_name and ProgramCategory.objects.filter(external_name=target_name).exists():
+            continue
+
         cat.external_name = target_name
         cat.white_label = None
         cat.save()
@@ -165,7 +214,12 @@ def forward(apps, schema_editor):
     # icon, display name and tax_category on all of them.
     shared = {}
     for external_name, (icon_name, display_name, tax_category) in SHARED_CATEGORIES.items():
-        cat = ProgramCategory.objects.filter(external_name=external_name, white_label__isnull=True).first()
+        # Look the row up by external_name alone, not scoped to white_label__isnull.
+        # external_name is globally unique, so a row that already carries this name
+        # while still scoped to a white label must be adopted and promoted — trying
+        # to create a second one violates the unique constraint. This is what makes
+        # the migration re-runnable after a partial failure.
+        cat = ProgramCategory.objects.filter(external_name=external_name).first()
 
         if cat is None:
             cat = ProgramCategory.objects.new_program_category(
