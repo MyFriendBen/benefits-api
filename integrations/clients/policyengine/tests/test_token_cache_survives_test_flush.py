@@ -71,19 +71,33 @@ class TestPeTokenSurvivesTestCacheFlush(TestCase):
         with mock.patch.object(cache, "ttl", return_value=None, create=True):
             self.assertEqual(_preserved_cache_entries(), [(_PE_TOKEN_CACHE_KEY, "token-abc", None)])
 
-    def test_remaining_expiry_is_preserved_not_extended(self):
+    def test_remaining_expiry_is_carried_not_extended(self):
         """Restoring must not hand a stale token a fresh 30-day lease.
 
         Carrying the remaining TTL keeps the cache entry expiring when the token really does. A
         token that outlives its lease would 401, and ``PrivateApiSim`` evicts the key on 401 and
         requests a new one - self-healing, but only if the entry expires roughly on time.
+
+        ``ttl()`` is mocked because this class pins LocMemCache, which has no ``ttl`` at all --
+        so without the mock the assertion below would silently fall through to the no-expiry
+        case and this branch would go untested.
+        """
+        cache.set(_PE_TOKEN_CACHE_KEY, "token-abc", timeout=600)
+
+        with mock.patch.object(cache, "ttl", return_value=450, create=True):
+            ((_, _, timeout),) = _preserved_cache_entries()
+
+        self.assertEqual(timeout, 450)
+
+    def test_a_backend_without_ttl_restores_with_no_expiry(self):
+        """LocMemCache has no ttl() to consult, so there is no remaining lease to carry.
+
+        Falling back to no expiry keeps the token usable; a 401 evicts it if it really is
+        dead. This is the path the pinned LocMemCache in this class actually takes.
         """
         cache.set(_PE_TOKEN_CACHE_KEY, "token-abc", timeout=600)
 
         ((_, _, timeout),) = _preserved_cache_entries()
 
-        if hasattr(cache, "ttl"):
-            self.assertIsNotNone(timeout)
-            self.assertLessEqual(timeout, 600)
-        else:
-            self.assertIsNone(timeout)
+        self.assertFalse(hasattr(cache, "ttl"), "this test covers the no-ttl fallback")
+        self.assertIsNone(timeout)

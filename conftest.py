@@ -7,7 +7,9 @@ from cassettes using VCR's built-in filtering capabilities.
 
 VCR behavior controlled by VCR_MODE environment variable:
 - VCR_MODE=none (PRs and push to main): Replays only, never records, errors on any new HTTP request
-- VCR_MODE=once (local default): Replays existing interactions, ERRORS if cassette missing new HTTP request
+- VCR_MODE=once (local default): Replays existing interactions, ERRORS if cassette missing new HTTP
+  request. Downgraded to `none` inside an xdist worker unless PE_RECORD is set, so a parallel
+  run cannot record a missing cassette live (see vcr_record_mode)
 - VCR_MODE=new_episodes: Replays existing interactions, records NEW HTTP requests not in cassette
 - VCR_MODE=all (production deploy): Never replays, re-records ALL cassettes from scratch
 
@@ -63,6 +65,11 @@ VALID_VCR_MODES = ("none", "new_episodes", "all", "once")
 DEFAULT_VCR_MODE = "once"
 
 
+def _in_xdist_worker() -> bool:
+    """Whether this process is one of several running tests concurrently."""
+    return bool(os.environ.get("PYTEST_XDIST_WORKER"))
+
+
 def vcr_record_mode() -> str:
     """The record mode this run uses. Raises on a VCR_MODE we don't recognize.
 
@@ -79,10 +86,20 @@ def vcr_record_mode() -> str:
     mode = os.getenv("VCR_MODE", "").strip().lower()
 
     if not mode:
-        return DEFAULT_VCR_MODE
-
-    if mode not in VALID_VCR_MODES:
+        mode = DEFAULT_VCR_MODE
+    elif mode not in VALID_VCR_MODES:
         raise ValueError(f"Unrecognized VCR_MODE {mode!r}. Expected one of: {', '.join(VALID_VCR_MODES)}.")
+
+    # "once" is write-protected only once a cassette has been loaded --
+    # Cassette.write_protected is `rewound and record_mode == ONCE`, and `rewound` is set
+    # only by a successful _load(). So a missing cassette file makes "once" record live,
+    # and two workers reaching the same missing cassette would both call the live API and
+    # race to write one file. Serializing every "once" run would make the default run
+    # (VCR_MODE unset) single-process; downgrading to "none" instead keeps the fan-out and
+    # removes the write path altogether, turning a missing cassette into a failure rather
+    # than a live call. Recording is unaffected: it is single-process by then.
+    if mode == "once" and _in_xdist_worker() and not _recording_opted_in():
+        return "none"
 
     return mode
 
@@ -344,19 +361,27 @@ def _isolatable_database_count() -> int:
     return max(0, REDIS_DATABASE_COUNT - 1 - _redis_database(location))
 
 
+def _recording_opted_in() -> bool:
+    """Whether this run explicitly asked to record PolicyEngine cassettes."""
+    return os.getenv(PE_RECORD_ENV_VAR, "").lower() in PE_RECORD_TRUTHY
+
+
 def _run_records_cassettes(mode: str) -> bool:
     """Whether this run may write a cassette, and so must not fan out across workers.
 
-    ``all`` and ``new_episodes`` record on a cassette miss. ``once`` does not qualify on
-    its own: it is the default when VCR_MODE is unset and writes only when an entire
-    cassette file is absent, so treating it as recording would make every default run
-    serial. ``PE_RECORD`` is the explicit opt-in that turns a ``once`` run into a
-    recording one -- see docs/TESTING.md.
+    ``all`` and ``new_episodes`` record on a cassette miss, and ``PE_RECORD`` is the
+    explicit opt-in that makes an otherwise-replaying run record -- see docs/TESTING.md.
+
+    ``once`` does not qualify on its own. It is the default when VCR_MODE is unset, and
+    a run of a fully-recorded suite only replays; treating it as recording would make
+    every default run serial. It *can* still write when a cassette file is missing
+    entirely, which is why ``vcr_record_mode`` downgrades it to ``none`` on a parallel
+    run rather than this function claiming such a run is safe.
     """
     if mode in ("all", "new_episodes"):
         return True
 
-    return os.getenv(PE_RECORD_ENV_VAR, "").lower() in PE_RECORD_TRUTHY
+    return _recording_opted_in()
 
 
 def pytest_configure(config):
@@ -506,7 +531,8 @@ def auto_vcr(request, vcr_config):
     - Detects if a test is marked with @pytest.mark.integration
     - Automatically uses VCR to record/replay HTTP interactions
     - VCR_MODE=none (PRs and push to main): Read-only - replays only, never records, errors on new HTTP requests
-    - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP request
+    - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP
+      request. Becomes `none` in a parallel worker unless PE_RECORD is set
     - VCR_MODE=new_episodes: Flexible - replays existing, records new HTTP requests not yet in cassette
     - VCR_MODE=all (production deploy): Fresh start - never replays, re-records all cassettes from scratch
 

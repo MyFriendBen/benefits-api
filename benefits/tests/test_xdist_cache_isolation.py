@@ -17,6 +17,7 @@ from django.test import SimpleTestCase, override_settings
 from benefits.cache_config import redis_pool_kwargs
 from conftest import (
     PE_RECORD_ENV_VAR,
+    REDIS_DATABASE_COUNT,
     _isolatable_database_count,
     _isolate_cache_per_xdist_worker,
     _rebuild_cache_connections,
@@ -47,9 +48,18 @@ def _redis_available() -> bool:
         return False
 
 
+# These tests only read back the database a connection resolved to; they never store
+# anything. Point them at the highest database rather than the one REDIS_URL names: the
+# autouse clear_cache fixture FLUSHDBs whatever this class resolves to, and FLUSHDB
+# ignores KEY_PREFIX, so targeting the base database would wipe the keys
+# benefits/tests/test_redis_backend.py is asserting on from a concurrent worker -- the
+# very cross-worker flush this module exists to verify is prevented.
+SCRATCH_DATABASE = REDIS_DATABASE_COUNT - 1
+SCRATCH_LOCATION = redis_url_for_database(BASE_LOCATION, SCRATCH_DATABASE)
+
 # A fresh dict per test module: _isolate_cache_per_xdist_worker mutates
 # settings.CACHES in place, and override_settings does not copy it.
-REDIS_CACHES = {"default": {"BACKEND": "django_redis.cache.RedisCache", "LOCATION": BASE_LOCATION}}
+REDIS_CACHES = {"default": {"BACKEND": "django_redis.cache.RedisCache", "LOCATION": SCRATCH_LOCATION}}
 
 
 class TestRedisUrlForDatabase(SimpleTestCase):
@@ -101,7 +111,9 @@ class TestWorkerIsolation(SimpleTestCase):
     def tearDown(self):
         from django.conf import settings
 
-        settings.CACHES["default"]["LOCATION"] = BASE_LOCATION
+        # Back to the scratch database, so the autouse clear_cache flush that follows
+        # cannot reach the base database or another worker's.
+        settings.CACHES["default"]["LOCATION"] = SCRATCH_LOCATION
         _rebuild_cache_connections()
 
     def test_the_connection_moves_not_just_the_setting(self):
@@ -164,3 +176,45 @@ class TestRecordingModesRunSerially(SimpleTestCase):
         """docs/TESTING.md records PolicyEngine cassettes with PE_RECORD=1 VCR_MODE=once,
         which writes cassettes even though the mode alone would not."""
         self.assertTrue(self._records("once", pe_record="1"))
+
+
+class TestOnceIsNotAWritePathUnderParallelism(SimpleTestCase):
+    """``once`` is write-protected only after a cassette has been loaded.
+
+    ``Cassette.write_protected`` is ``rewound and record_mode == ONCE``, and ``rewound``
+    is set only by a successful ``_load()``. A missing cassette therefore leaves ``once``
+    free to record, so two workers reaching the same missing cassette would each call the
+    live API and race to write one file. Downgrading to ``none`` in a worker removes the
+    write path while keeping the fan-out, which serializing every ``once`` run would not.
+    """
+
+    def _effective_mode(self, vcr_mode: str | None, worker: str | None, pe_record: str | None = None) -> str:
+        env = {
+            "VCR_MODE": vcr_mode or "",
+            "PYTEST_XDIST_WORKER": worker or "",
+            PE_RECORD_ENV_VAR: pe_record or "",
+        }
+        with mock.patch.dict(os.environ, env, clear=False):
+            if not worker:
+                os.environ.pop("PYTEST_XDIST_WORKER", None)
+            return vcr_record_mode()
+
+    def test_once_becomes_none_in_a_worker(self):
+        self.assertEqual(self._effective_mode("once", "gw0"), "none")
+
+    def test_an_unset_mode_becomes_none_in_a_worker(self):
+        """The default. Without this, a plain parallel `pytest` can record live."""
+        self.assertEqual(self._effective_mode(None, "gw3"), "none")
+
+    def test_once_is_preserved_in_a_serial_run(self):
+        """Serial runs keep the stricter-erroring behaviour `once` is chosen for."""
+        self.assertEqual(self._effective_mode("once", None), "once")
+
+    def test_an_opted_in_recording_run_keeps_once(self):
+        """PE_RECORD=1 VCR_MODE=once is the documented recording command; it is already
+        single-process by the time it runs, so there is nothing to protect against."""
+        self.assertEqual(self._effective_mode("once", "gw0", pe_record="1"), "once")
+
+    def test_explicit_recording_modes_are_untouched(self):
+        self.assertEqual(self._effective_mode("all", "gw0"), "all")
+        self.assertEqual(self._effective_mode("new_episodes", "gw0"), "new_episodes")
