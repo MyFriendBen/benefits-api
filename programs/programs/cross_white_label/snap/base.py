@@ -1,7 +1,12 @@
 """SNAP."""
 
+import logging
+from datetime import date
+
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 import programs.framework.pe_dependencies as dependency
+
+logger = logging.getLogger(__name__)
 
 SNAP_BASE_INPUTS = [
     dependency.spm.SnapUnearnedIncomeDependency,
@@ -60,7 +65,41 @@ class Snap(PolicyEngineSpmCalulator):
     pe_outputs = [dependency.spm.SnapIfTakesUp]
     # PolicyEngine defines snap monthly, so it is read monthly and annualized.
     pe_monthly_outputs = [dependency.spm.SnapIfTakesUp]
-    pe_period_month = "01"
+
+    @property
+    def pe_period_month(self) -> str:
+        """The month SNAP's monthly outputs are read at: today, within the requested year.
+
+        States re-base their broad-based categorical eligibility gross income limit onto
+        the current year's poverty guidelines on their own schedule -- October federally,
+        April in WA, February in MA, January in ME, March in OR -- and PolicyEngine reads
+        that schedule off the month asked about (`fpg_year_start_month`). A fixed month
+        would pin every screen to one side of the cutover all year.
+
+        Clamped to the requested year, since `pe_period` may lag or lead the calendar year
+        and `YYYY-MM` has to name a month that year had: a past year reads December, a
+        future year January.
+        """
+        today = date.today()
+
+        try:
+            requested_year = int(self.pe_period)
+        except ValueError:
+            # No supported configuration reaches this -- `period` is the numeric year that
+            # indexes the FPL figures -- so warn rather than silently serve the prior
+            # year's guidelines.
+            logger.warning(
+                "SNAP program %s has non-numeric FederalPoveryLimit period %r; "
+                "falling back to January, which reads the prior year's poverty guidelines.",
+                self.program.name_abbreviated,
+                self.pe_period,
+            )
+            return "01"
+
+        if requested_year == today.year:
+            return f"{today.month:02d}"
+
+        return "12" if requested_year < today.year else "01"
 
     def household_value(self):
         return int(self.sim.value(self.pe_category, self.pe_sub_category, self.pe_name, self.pe_month_period)) * 12
