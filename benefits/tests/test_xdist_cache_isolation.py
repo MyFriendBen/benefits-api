@@ -16,11 +16,12 @@ from django.test import SimpleTestCase, override_settings
 
 from benefits.cache_config import redis_pool_kwargs
 from conftest import (
-    MAX_ISOLATED_WORKERS,
     PE_RECORD_ENV_VAR,
-    _run_records_cassettes,
+    _isolatable_database_count,
     _isolate_cache_per_xdist_worker,
     _rebuild_cache_connections,
+    _redis_database,
+    _run_records_cassettes,
     redis_url_for_database,
     vcr_record_mode,
 )
@@ -105,8 +106,6 @@ class TestWorkerIsolation(SimpleTestCase):
 
     def test_the_connection_moves_not_just_the_setting(self):
         """The regression: settings said db N while the connection stayed on the base."""
-        from conftest import _redis_database
-
         expected = _redis_database(BASE_LOCATION) + 1 + 3
 
         self.assertEqual(self._resolved_database("gw3"), str(expected))
@@ -115,16 +114,12 @@ class TestWorkerIsolation(SimpleTestCase):
         """The base database stays free for serial runs and for test_redis_backend.py,
         which pins REDIS_URL directly and flushes whatever it points at. Offsetting from
         0 rather than from the configured database put gw0 straight onto it."""
-        from conftest import _redis_database, _isolatable_database_count
-
         base = str(_redis_database(BASE_LOCATION))
         databases = {self._resolved_database(f"gw{i}") for i in range(_isolatable_database_count())}
 
         self.assertNotIn(base, databases)
 
     def test_each_worker_gets_a_distinct_database(self):
-        from conftest import _isolatable_database_count
-
         count = _isolatable_database_count()
         databases = [self._resolved_database(f"gw{i}") for i in range(count)]
 
