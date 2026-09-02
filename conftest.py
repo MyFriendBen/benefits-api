@@ -24,6 +24,7 @@ import logging
 import os
 import re
 from typing import Optional
+from urllib.parse import urlsplit, urlunsplit
 
 import pytest
 import vcr as vcrpy
@@ -232,17 +233,37 @@ def policy_engine_body(r1, r2):
     return True
 
 
+# Redis serves databases 0-15 by default. Database 0 is reserved for whatever a
+# non-xdist run uses, so workers get 1-15 and at most 15 can be isolated.
+REDIS_DATABASE_COUNT = 16
+MAX_ISOLATED_WORKERS = REDIS_DATABASE_COUNT - 1
+
+
+def redis_url_for_database(location: str, db: int) -> str:
+    """``location`` with its database index replaced by ``db``.
+
+    Split on the URL structure rather than the last "/": a Heroku-style
+    ``rediss://host:6379/0?ssl_cert_reqs=none`` carries a query string, and treating
+    that as part of the path produces ``...?ssl_cert_reqs=none/1`` -- an unusable URL
+    that still parses as a string. See benefits/cache_config.py for that shape.
+    """
+    parts = urlsplit(location)
+    return urlunsplit(parts._replace(path=f"/{db}"))
+
+
 def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     """Point this xdist worker at its own Redis database.
 
-    ``clear_cache`` flushes the whole cache before every test, and on django_redis that
-    flushes the entire database rather than just this run's keys. Workers sharing one
+    ``clear_cache`` flushes the cache before every test, and on django_redis ``clear()``
+    issues FLUSHDB -- the whole database, not just this run's prefix. Workers sharing a
     database therefore delete each other's entries mid-test: the symptom is a worker
-    losing the bearer token ``seed_pe_token`` just wrote and trying to authenticate
-    against live PolicyEngine ("client id or secret not configured" in CI).
+    losing the bearer token ``seed_pe_token`` just wrote and authenticating against live
+    PolicyEngine ("client id or secret not configured" in CI).
 
-    Redis serves databases 0-15 by default, which bounds how many workers can be
-    isolated this way; beyond that they wrap and share again.
+    Workers map to databases 1..15, leaving database 0 to non-xdist runs and to
+    ``benefits/tests/test_redis_backend.py``, which pins REDIS_URL directly and flushes
+    it. Beyond 15 workers there is no database left to hand out, so fail loudly rather
+    than wrap onto a database another worker is already flushing.
     """
     from django.conf import settings
 
@@ -250,14 +271,15 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     if not location.startswith(("redis://", "rediss://")):
         return
 
-    base, _, tail = location.rpartition("/")
-    if not tail.isdigit():
-        base, tail = location.rstrip("/"), "0"
+    index = int(worker_id.removeprefix("gw"))
+    if index >= MAX_ISOLATED_WORKERS:
+        raise pytest.UsageError(
+            f"xdist worker {worker_id} exceeds the {MAX_ISOLATED_WORKERS} Redis databases "
+            f"available for per-worker cache isolation. Run with -n {MAX_ISOLATED_WORKERS} "
+            "or fewer, or point REDIS_URL at a server with more databases."
+        )
 
-    # worker_id is "gw0", "gw1", ...; offset from the configured database so a worker
-    # never lands on the one a non-xdist run would use.
-    db = (int(tail) + 1 + int(worker_id.removeprefix("gw"))) % 16
-    settings.CACHES["default"]["LOCATION"] = f"{base}/{db}"
+    settings.CACHES["default"]["LOCATION"] = redis_url_for_database(location, index + 1)
 
 
 def pytest_configure(config):
@@ -269,9 +291,18 @@ def pytest_configure(config):
     message about the environment rather than an internal traceback.
     """
     try:
-        vcr_record_mode()
+        mode = vcr_record_mode()
     except ValueError as e:
         raise pytest.UsageError(str(e)) from e
+
+    # Every mode except "none" records on a cassette miss, which means real API calls
+    # and concurrent writes to the same cassette file. pytest.ini turns on -n auto for
+    # the common case (offline replay), so any recording run has to drop back to a
+    # single process -- enforced here rather than in CI alone, so it also covers the
+    # recording commands in docs/TESTING.md.
+    if mode != "none" and config.getoption("numprocesses", default=None):
+        config.option.numprocesses = 0
+        config.option.dist = "no"
 
     worker_id = os.environ.get("PYTEST_XDIST_WORKER")
     if worker_id:

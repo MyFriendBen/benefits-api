@@ -50,21 +50,12 @@ runs:
           echo "Running tests with VCR - VCR_MODE=${{ inputs.vcr-mode }}"
         fi
 
-        # pytest.ini runs the suite in parallel (-n auto). Recording modes must not:
-        # they issue real API calls, and concurrent workers would multiply the load on
-        # PolicyEngine and race to write the same cassette files. Force one worker for
-        # any mode that can record (-n 0 runs in-process), and keep the fan-out for
-        # pure playback.
-        if [ "${{ inputs.vcr-mode }}" = "all" ] || [ "${{ inputs.vcr-mode }}" = "new_episodes" ]; then
-          PARALLEL="-n 0"
-        else
-          PARALLEL="-n auto --dist loadscope"
-        fi
-
+        # pytest.ini runs the suite in parallel; conftest's pytest_configure drops any
+        # recording mode back to a single process, so no mode handling is needed here.
         if [ "${{ inputs.upload-coverage }}" = "true" ]; then
-          pytest $PARALLEL --cov --cov-branch --cov-report=xml
+          pytest --cov --cov-branch --cov-report=xml
         else
-          pytest $PARALLEL --cov --cov-branch
+          pytest --cov --cov-branch
         fi
 
     - name: Upload coverage to Codecov

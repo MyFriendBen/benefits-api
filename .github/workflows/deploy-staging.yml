@@ -43,7 +43,10 @@ jobs:
       - name: Run tests
         uses: ./.github/actions/run-tests
         with:
-          vcr-mode: new_episodes
+          # Same strict playback as PR validation. Every commit reaching main has
+          # already passed that gate, so there is nothing left for staging to record
+          # -- and recording would keep it serial (and ~4x slower) for no benefit.
+          vcr-mode: none
           upload-coverage: "false"
           hud-api-token: ${{ secrets.HUD_API_TOKEN }}
 
