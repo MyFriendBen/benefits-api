@@ -33,11 +33,13 @@ YEAR = "2026"
 
 # `Snap.pe_period_month` reads today's month so the BBCE income limit tracks the poverty
 # guidelines a state is currently applying (MFB-1740). The month is part of the recorded
-# request body, so the clock has to be pinned or the cassette stops matching once the
-# month rolls over. October: Missouri did not adopt BBCE, so the cutover this models does
-# not move MO SNAP either way, and a fiscal-year month keeps the recording aligned with
-# the FY2026 allotment the expected value is stated against.
-TODAY = date(int(YEAR), 10, 15)
+# request body, so the date is pinned here rather than read off the wall clock: the
+# expected value below is only reproducible against a fixed date.
+#
+# January, because SNAP's maximum allotment steps up each October with the federal fiscal
+# year -- this household reads $487/month asked about January and $517 asked about October.
+# Either is correct for its own date; pinning one is what makes the assertion stable.
+TODAY = date(int(YEAR), 1, 15)
 
 
 @pytest.mark.integration
@@ -72,9 +74,10 @@ class TestMoSnapResolves(PeIntegrationTestCase):
             eligibility = calc_pe_program(screen, MoSnap, program)
 
         self.assertTrue(eligibility.eligible)
-        # $487/month. Missouri's FY2026 three-person max allotment less 30% of net income:
-        # $1,500 gross, less the 20% earned-income deduction and the household-of-three
-        # standard deduction, leaves ~$992 net. Asserted exactly so a re-record at a newer
-        # PolicyEngine version surfaces a value change instead of passing on any nonzero
-        # number. `household_value` truncates the monthly figure before annualizing it.
+        # $487/month, as of `TODAY`. Missouri's FY2026 three-person max allotment less 30%
+        # of net income: $1,500 gross, less the 20% earned-income deduction and the
+        # household-of-three standard deduction, leaves ~$992 net. Asserted exactly so a
+        # re-record at a newer PolicyEngine version surfaces a value change instead of
+        # passing on any nonzero number. `household_value` truncates the monthly figure
+        # before annualizing it.
         self.assertEqual(screener_value(eligibility), 487 * 12)
