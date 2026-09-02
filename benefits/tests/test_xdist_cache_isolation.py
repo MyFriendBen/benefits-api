@@ -7,13 +7,19 @@ the PolicyEngine bearer token ``seed_pe_token`` had just written and falling thr
 a live auth attempt.
 """
 
+import os
+from unittest import mock
+
 from django.test import SimpleTestCase, override_settings
 
 from conftest import (
     MAX_ISOLATED_WORKERS,
+    PE_RECORD_ENV_VAR,
+    _run_records_cassettes,
     _isolate_cache_per_xdist_worker,
     _rebuild_cache_connections,
     redis_url_for_database,
+    vcr_record_mode,
 )
 
 BASE_LOCATION = "redis://localhost:6379/0"
@@ -96,3 +102,35 @@ class TestWorkerIsolation(SimpleTestCase):
             _isolate_cache_per_xdist_worker("gw0")
 
             self.assertNotIn("LOCATION", settings.CACHES["default"])
+
+
+class TestRecordingModesRunSerially(SimpleTestCase):
+    """Which runs may write cassettes, and so must not fan out across workers.
+
+    Two workers recording the same cassette race to write one file, and each issues its
+    own live API call. Only modes that actually record belong here: "once" is the default
+    when VCR_MODE is unset and writes only when a whole cassette file is absent, so
+    treating it as recording silently made every default local run serial.
+    """
+
+    def _records(self, vcr_mode: str | None, pe_record: str | None = None) -> bool:
+        env = {"VCR_MODE": vcr_mode or "", PE_RECORD_ENV_VAR: pe_record or ""}
+        with mock.patch.dict(os.environ, env, clear=False):
+            return _run_records_cassettes(vcr_record_mode())
+
+    def test_replay_modes_stay_parallel(self):
+        self.assertFalse(self._records("none"))
+        self.assertFalse(self._records("once"))
+
+    def test_an_unset_mode_stays_parallel(self):
+        """The default. pytest.ini configures -n auto for exactly this case."""
+        self.assertFalse(self._records(None))
+
+    def test_recording_modes_go_serial(self):
+        self.assertTrue(self._records("all"))
+        self.assertTrue(self._records("new_episodes"))
+
+    def test_pe_record_makes_an_otherwise_replaying_run_serial(self):
+        """docs/TESTING.md records PolicyEngine cassettes with PE_RECORD=1 VCR_MODE=once,
+        which writes cassettes even though the mode alone would not."""
+        self.assertTrue(self._records("once", pe_record="1"))

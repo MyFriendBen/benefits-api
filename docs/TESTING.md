@@ -20,17 +20,19 @@ pytest --cov --cov-report=html
 The suite runs in parallel by default (`-n auto` in `pytest.ini`), which takes it from
 roughly three minutes to under one. Two things follow from that:
 
-- **Recording drops back to one process automatically.** Any `VCR_MODE` other than `none`
-  can record, and parallel workers would issue duplicate live API calls and race to write
-  the same cassette file. `conftest.py` detects this and disables the fan-out, so the
-  recording commands below need no extra flags.
+- **Recording drops back to one process automatically.** `VCR_MODE=all`,
+  `VCR_MODE=new_episodes`, and any run with `PE_RECORD=1` may write cassettes, and
+  parallel workers would issue duplicate live API calls and race to write the same file.
+  `conftest.py` detects these and disables the fan-out, so the recording commands below
+  need no extra flags. (`once` — the default when `VCR_MODE` is unset — only writes when
+  a whole cassette file is absent, so it keeps the fan-out.)
 - **Each worker gets its own Redis database** (1-15) when `REDIS_URL` is set, because
   `clear_cache` issues FLUSHDB and would otherwise wipe other workers' entries mid-test.
   Database 0 is left to serial runs and to `benefits/tests/test_redis_backend.py`.
-  `pytest.ini` therefore caps the fan-out with `--maxprocesses 15`; an explicit `-n`
-  above that fails with a message naming the limit. Note `-n auto` counts *logical*
-  cores here (xdist prefers physical via `psutil`, which is not installed), so it can
-  exceed 15 on a large machine -- hence the cap.
+  `pytest.ini` therefore caps the fan-out with `--maxprocesses 15`, which is what keeps
+  `-n auto` safe on a large machine: it counts *logical* cores here (xdist prefers
+  physical via `psutil`, which is not installed). Raising the cap past 15 fails with a
+  message naming the limit rather than letting workers share a database.
 
 Pass `-n 0` to force a serial run when debugging test interdependence.
 

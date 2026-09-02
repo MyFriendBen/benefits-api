@@ -49,6 +49,12 @@ HUD_TEST_PATH_FRAGMENT = "hud_income_limits"
 # programs/framework/tests/integration_test_helpers.py).
 VCR_IGNORE_HOSTS = ["policyengine.uk.auth0.com"]
 
+# Recording PolicyEngine cassettes is an explicit opt-in rather than a VCR_MODE, so the
+# serial-run check below has to consider it too. Mirrors
+# programs/programs/testing_fixtures/pe_integration.py.
+PE_RECORD_ENV_VAR = "PE_RECORD"
+PE_RECORD_TRUTHY = ("1", "true", "yes")
+
 # Record modes VCR_MODE may name. Anything else falls back to "once".
 VALID_VCR_MODES = ("none", "new_episodes", "all", "once")
 DEFAULT_VCR_MODE = "once"
@@ -277,9 +283,10 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     """
     from django.conf import settings
 
-    location = settings.CACHES.get("default", {}).get("LOCATION", "")
-    if not location.startswith(("redis://", "rediss://")):
+    if not _cache_needs_per_worker_database():
         return
+
+    location = settings.CACHES["default"]["LOCATION"]
 
     index = int(worker_id.removeprefix("gw"))
     settings.CACHES["default"]["LOCATION"] = redis_url_for_database(location, index + 1)
@@ -308,6 +315,21 @@ def _rebuild_cache_connections() -> None:
     caches._connections = Local()
 
 
+def _run_records_cassettes(mode: str) -> bool:
+    """Whether this run may write a cassette, and so must not fan out across workers.
+
+    ``all`` and ``new_episodes`` record on a cassette miss. ``once`` does not qualify on
+    its own: it is the default when VCR_MODE is unset and writes only when an entire
+    cassette file is absent, so treating it as recording would make every default run
+    serial. ``PE_RECORD`` is the explicit opt-in that turns a ``once`` run into a
+    recording one -- see docs/TESTING.md.
+    """
+    if mode in ("all", "new_episodes"):
+        return True
+
+    return os.getenv(PE_RECORD_ENV_VAR, "").lower() in PE_RECORD_TRUTHY
+
+
 def pytest_configure(config):
     """Reject an unrecognized VCR_MODE before any test runs, and isolate per-worker state.
 
@@ -321,27 +343,32 @@ def pytest_configure(config):
     except ValueError as e:
         raise pytest.UsageError(str(e)) from e
 
-    # Every mode except "none" records on a cassette miss, which means real API calls
-    # and concurrent writes to the same cassette file. pytest.ini turns on -n auto for
-    # the common case (offline replay), so any recording run has to drop back to a
-    # single process -- enforced here rather than in CI alone, so it also covers the
-    # recording commands in docs/TESTING.md.
-    if mode != "none" and config.getoption("numprocesses", default=None):
+    # A run that may write cassettes has to be single-process: workers would issue
+    # duplicate live calls and race to write the same file. Enforced here rather than in
+    # CI alone so it also covers the recording commands in docs/TESTING.md.
+    #
+    # "once" is deliberately not treated as recording on its own. It is the default when
+    # VCR_MODE is unset, and it only writes when an entire cassette file is absent --
+    # every fully-recorded run replays. Treating it as recording made the default local
+    # run serial, contradicting the parallel-by-default behaviour pytest.ini configures.
+    # PE_RECORD is the explicit opt-in that turns a "once" run into a recording one
+    # (docs/TESTING.md records PolicyEngine cassettes with PE_RECORD=1 VCR_MODE=once).
+    if _run_records_cassettes(mode) and config.getoption("numprocesses", default=None):
         config.option.numprocesses = 0
         config.option.dist = "no"
 
-    # The worker count is capped by --maxprocesses in pytest.ini, which xdist applies
-    # before it spawns anything. It cannot be enforced from here: pytest_cmdline_main
-    # has already turned numprocesses into the worker list (config.option.tx) by the
-    # time pytest_configure runs, so changing it now spawns the original count anyway.
-    # Assert the cap held rather than silently wrapping onto a shared database.
-    worker_count = config.getoption("numprocesses", default=None)
-    if worker_count and worker_count > MAX_ISOLATED_WORKERS and _cache_needs_per_worker_database():
+    # --maxprocesses in pytest.ini caps the fan-out to the databases available for
+    # per-worker cache isolation. Read the worker list rather than numprocesses: xdist
+    # applies the cap when it builds config.option.tx and never rewrites numprocesses,
+    # so on a machine with more cores than databases numprocesses still reports the
+    # uncapped count and comparing against it aborts a run that was correctly capped.
+    worker_count = len(config.option.tx or [])
+    if worker_count > MAX_ISOLATED_WORKERS and _cache_needs_per_worker_database():
         raise pytest.UsageError(
-            f"-n {worker_count} exceeds the {MAX_ISOLATED_WORKERS} Redis databases available "
-            "for per-worker cache isolation; workers would share a database and flush each "
-            f"other's entries. Pass --maxprocesses {MAX_ISOLATED_WORKERS} (pytest.ini sets "
-            "this by default)."
+            f"{worker_count} workers exceeds the {MAX_ISOLATED_WORKERS} Redis databases "
+            "available for per-worker cache isolation; workers would share a database and "
+            f"flush each other's entries. Pass --maxprocesses {MAX_ISOLATED_WORKERS} "
+            "(pytest.ini sets this by default)."
         )
 
     worker_id = os.environ.get("PYTEST_XDIST_WORKER")
