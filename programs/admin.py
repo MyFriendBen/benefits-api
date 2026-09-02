@@ -1,6 +1,12 @@
 from django.contrib import admin, messages
-from django.db.models import Max, Q
+from django.db.models import Max, Q, QuerySet
+from django.db.models import Field as ModelField
+from django import forms
+from django.forms import Field as FormField
+from django.forms.models import BaseInlineFormSet
+from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
+from django.utils.safestring import SafeString
 from django.utils.html import format_html
 from unfold.admin import TabularInline
 from authentication.admin import SecureAdmin
@@ -42,12 +48,12 @@ class ProgramNavigatorInline(TabularInline):
     fields = ["navigator", "order"]
     autocomplete_fields = ["navigator"]
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[ProgramNavigator]:
         """Optimize queries with select_related"""
         qs = super().get_queryset(request)
         return qs.select_related("navigator", "program")
 
-    def get_formset(self, request, obj=None, **kwargs):
+    def get_formset(self, request: HttpRequest, obj: Program | None = None, **kwargs) -> type[BaseInlineFormSet]:
         """
         Auto-assign next sequential order to new navigators.
         Ensures consistent sequential numbering (0, 1, 2, 3...) instead of gaps.
@@ -79,7 +85,7 @@ class ProgramNavigatorInline(TabularInline):
 
         return formset
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    def formfield_for_foreignkey(self, db_field: ModelField, request: HttpRequest, **kwargs) -> FormField | None:
         """Filter navigators by the program's white label"""
         if db_field.name == "navigator":
             obj_id = request.resolver_match.kwargs.get("object_id")
@@ -137,15 +143,15 @@ class ProgramAdmin(SecureAdmin):
     ]
     inlines = [ProgramNavigatorInline]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
     @admin.display(ordering="name", description="Program")
-    def get_str(self, obj):
+    def get_str(self, obj: Program) -> str:
         return str(obj) if str(obj).strip() else "unnamed"
 
     @admin.display(description="Translations")
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: Program) -> SafeString:
         return format_html(
             """
             <div class="dropdown">
@@ -202,17 +208,17 @@ class NavigatorAdmin(SecureAdmin):
     ]
     readonly_fields = ["get_associated_programs"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_str(self, obj):
+    def get_str(self, obj: Navigator) -> str:
         return str(obj) if str(obj).strip() else "unnamed"
 
     get_str.admin_order_field = "name"
     get_str.short_description = "Navigator"
 
     @admin.display(description="Associated Programs")
-    def get_associated_programs(self, obj):
+    def get_associated_programs(self, obj: Navigator) -> str:
         """Display programs this navigator is associated with (read-only)"""
         if not obj.pk:
             return "-"
@@ -220,7 +226,7 @@ class NavigatorAdmin(SecureAdmin):
         programs = [f"{pn.program.name_abbreviated} (order: {pn.order})" for pn in program_navs]
         return ", ".join(programs) if programs else "No programs associated"
 
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: Navigator) -> SafeString:
         name = obj.name
         email = obj.email
         assistance_link = obj.assistance_link
@@ -262,16 +268,16 @@ class WarningMessageAdmin(SecureAdmin):
     )
     exclude = ["message", "link_url", "link_text"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_str(self, obj):
+    def get_str(self, obj: WarningMessage) -> str:
         return str(obj)
 
     get_str.admin_order_field = "external_name"
     get_str.short_description = "Name"
 
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: WarningMessage) -> SafeString:
 
         return format_html(
             """
@@ -354,16 +360,16 @@ class UrgentNeedAdmin(SecureAdmin):
         ),
     )
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_str(self, obj):
+    def get_str(self, obj: UrgentNeed) -> str:
         return str(obj) if str(obj).strip() else "unnamed"
 
     get_str.admin_order_field = "name"
     get_str.short_description = "Urgent Need"
 
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: UrgentNeed) -> SafeString:
         name = obj.name
         description = obj.description
         link = obj.link
@@ -425,16 +431,16 @@ class DocumentAdmin(SecureAdmin):
     list_display = ["get_str", "action_buttons"]
     exclude = ["text", "link_url", "link_text"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_str(self, obj):
+    def get_str(self, obj: Document) -> str:
         return str(obj)
 
     get_str.admin_order_field = "external_name"
     get_str.short_description = "Document"
 
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: Document) -> SafeString:
 
         return format_html(
             """
@@ -473,7 +479,7 @@ class ReferrerAdmin(SecureAdmin):
         ),
     }
 
-    def get_form(self, request, obj=None, **kwargs):
+    def get_form(self, request: HttpRequest, obj: Referrer | None = None, **kwargs) -> type[forms.ModelForm]:
         form = super().get_form(request, obj, **kwargs)
         for field_name, help_text in self.help_texts.items():
             if field_name in form.base_fields:
@@ -504,27 +510,27 @@ class TranslationOverrideAdmin(SecureAdmin):
     exclude = ["translation"]
     list_editable = ["active"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[TranslationOverride]:
         """Prefetch counties so the list column is one query, not one per row."""
         return super().get_queryset(request).prefetch_related("counties")
 
-    def get_counties(self, obj):
+    def get_counties(self, obj: TranslationOverride) -> str:
         """Show the county scope in the list so a mis-scoped override is visible."""
         names = [c.name for c in obj.counties.all()]
         return ", ".join(names) if names else "All counties"
 
     get_counties.short_description = "Counties"
 
-    def get_str(self, obj):
+    def get_str(self, obj: TranslationOverride) -> str:
         return str(obj)
 
     get_str.admin_order_field = "external_name"
     get_str.short_description = "Name"
 
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: TranslationOverride) -> SafeString:
         message = obj.translation
 
         return format_html(
@@ -548,10 +554,10 @@ class ProgramCategoryAdmin(SecureAdmin):
     list_display = ["get_str", "external_name", "shared", "action_buttons"]
     exclude = ["name", "description"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[ProgramCategory]:
         # SecureAdmin scopes to white_label__in=[user's white labels], which
         # excludes shared categories because their white_label is null. Any
         # white label admin may see and edit them.
@@ -562,7 +568,7 @@ class ProgramCategoryAdmin(SecureAdmin):
 
         return qs.filter(Q(white_label__in=request.user.white_labels.all()) | Q(white_label__isnull=True))
 
-    def has_obj_permission(self, request, obj):
+    def has_obj_permission(self, request: HttpRequest, obj: ProgramCategory | None) -> bool:
         # A shared category belongs to no single white label, so grant access to
         # any white label admin rather than falling through to the
         # `obj.white_label in ...` check, which is False for null.
@@ -571,13 +577,19 @@ class ProgramCategoryAdmin(SecureAdmin):
 
         return super().has_obj_permission(request, obj)
 
-    def shared(self, obj):
+    def shared(self, obj: ProgramCategory) -> bool:
         return obj.white_label is None
 
     shared.boolean = True
     shared.short_description = "Shared"
 
-    def change_view(self, request, object_id, form_url="", extra_context=None):
+    def change_view(
+        self,
+        request: HttpRequest,
+        object_id: str,
+        form_url: str = "",
+        extra_context: dict | None = None,
+    ) -> HttpResponse:
         # A shared category is a single row used by every white label, so an edit
         # here is not scoped to the editor's own state. Nothing else on the page
         # conveys that, so say it explicitly and name who is affected.
@@ -600,13 +612,13 @@ class ProgramCategoryAdmin(SecureAdmin):
 
         return super().change_view(request, object_id, form_url, extra_context)
 
-    def get_str(self, obj):
+    def get_str(self, obj: ProgramCategory) -> str:
         return str(obj)
 
     get_str.admin_order_field = "external_name"
     get_str.short_description = "Name"
 
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: ProgramCategory) -> SafeString:
         return format_html(
             """
             <div class="dropdown">
@@ -629,16 +641,16 @@ class UrgentNeedTypeAdmin(SecureAdmin):
     search_fields = ("name",)
     list_display = ["get_str", "icon", "action_buttons"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_str(self, obj):
+    def get_str(self, obj: UrgentNeedType) -> str:
         return str(obj)
 
     get_str.admin_order_field = "name"
     get_str.short_description = "Name"
 
-    def action_buttons(self, obj):
+    def action_buttons(self, obj: UrgentNeedType) -> SafeString:
         return format_html(
             """
             <div class="dropdown">
