@@ -1,5 +1,7 @@
 """SNAP."""
 
+from datetime import date
+
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 import programs.framework.pe_dependencies as dependency
 
@@ -60,7 +62,45 @@ class Snap(PolicyEngineSpmCalulator):
     pe_outputs = [dependency.spm.SnapIfTakesUp]
     # PolicyEngine defines snap monthly, so it is read monthly and annualized.
     pe_monthly_outputs = [dependency.spm.SnapIfTakesUp]
-    pe_period_month = "01"
+
+    @property
+    def pe_period_month(self) -> str:
+        """The month SNAP's monthly outputs are read at: today, within the requested year.
+
+        A screener answers "what would I get if I applied today", and one input to that
+        answer changes mid-year. States re-base their broad-based categorical eligibility
+        (BBCE) gross income limit onto the current calendar year's poverty guidelines on
+        their own schedule -- October federally, but April in WA, February in MA, January
+        in ME and March in OR (PolicyEngine's `fpg_year_start_month`). PolicyEngine reads
+        that schedule off the month asked about, so a fixed month pins every screen to one
+        side of the cutover for the whole year. Asking about January put Colorado on the
+        prior year's guidelines permanently: a household of one at $31,434/yr read $0
+        against the stale $31,300 limit instead of eligible against the current $31,920
+        one (MFB-1740).
+
+        Only households within the gap between two years' limits -- roughly 2% of income
+        -- change, but for them SNAP flips between $0 and eligible, and a $0 program is
+        dropped from the results page entirely.
+
+        Clamped to the requested year: `pe_period` comes from the program's configured
+        FederalPoveryLimit row, which may lag or lead the current calendar year, and
+        `YYYY-MM` has to name a month that year actually had. A past year reads December,
+        its final state; a future year reads January, its first.
+        """
+        today = date.today()
+
+        try:
+            requested_year = int(self.pe_period)
+        except ValueError:
+            # `period` is a free-text column, so a non-numeric value is possible. January
+            # is the historical default this replaced, and the safe answer for a period
+            # whose calendar year we cannot place.
+            return "01"
+
+        if requested_year == today.year:
+            return f"{today.month:02d}"
+
+        return "12" if requested_year < today.year else "01"
 
     def household_value(self):
         return int(self.sim.value(self.pe_category, self.pe_sub_category, self.pe_name, self.pe_month_period)) * 12

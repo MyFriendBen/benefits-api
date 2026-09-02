@@ -12,6 +12,9 @@ Asserted in **annual** dollars, which is what the screener reports (``estimated_
 ``Snap.household_value`` multiplies PolicyEngine's monthly figure by 12.
 """
 
+from datetime import date
+from unittest.mock import patch
+
 import pytest
 
 from programs.programs.cross_white_label.snap.mo import MoSnap
@@ -27,6 +30,14 @@ from programs.programs.testing_fixtures.pe_integration import (
 
 PE_VERSION = "1.815.1"
 YEAR = "2026"
+
+# `Snap.pe_period_month` reads today's month so the BBCE income limit tracks the poverty
+# guidelines a state is currently applying (MFB-1740). The month is part of the recorded
+# request body, so the clock has to be pinned or the cassette stops matching once the
+# month rolls over. October: Missouri did not adopt BBCE, so the cutover this models does
+# not move MO SNAP either way, and a fiscal-year month keeps the recording aligned with
+# the FY2026 allotment the expected value is stated against.
+TODAY = date(int(YEAR), 10, 15)
 
 
 @pytest.mark.integration
@@ -56,7 +67,9 @@ class TestMoSnapResolves(PeIntegrationTestCase):
         add_member(screen, 3, "child", 4)
         program = make_program("mo", "mo_snap", YEAR)
 
-        eligibility = calc_pe_program(screen, MoSnap, program)
+        with patch("programs.programs.cross_white_label.snap.base.date") as mock_date:
+            mock_date.today.return_value = TODAY
+            eligibility = calc_pe_program(screen, MoSnap, program)
 
         self.assertTrue(eligibility.eligible)
         # $487/month. Missouri's FY2026 three-person max allotment less 30% of net income:
