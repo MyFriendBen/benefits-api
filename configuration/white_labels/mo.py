@@ -1494,9 +1494,34 @@ class MoConfigurationData(ConfigurationData):
 
     # MO uses generic MFB branding and the default step directory, so it inherits
     # everything from base and overrides only the values that are MO-specific:
-    # the share link and the state name.
+    # the share link, the state name, and the Kansas City metro referrer.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        "shareLink": {"default": "https://screener.myfriendben.org/mo/step-1"},
-        "stateName": {"default": "Missouri"},
+        # "uwgkc" is United Way of Greater Kansas City, whose 2-1-1 covers the metro on both sides
+        # of the state line. The same referrer code is configured identically in ks.py, since each
+        # state path loads its own config.
+        "theme": {"default": "default", "uwgkc": "uwgkc"},
+        "logoSource": {"default": "MFB_Logo", "uwgkc": "MO211_MFBLogo"},
+        "logoAlt": {
+            "default": {
+                "id": "referrerHook.logoAlts.default",
+                "defaultMessage": "MyFriendBen home page button",
+            },
+            "uwgkc": {
+                "id": "referrerHook.logoAlts.mo211",
+                "defaultMessage": "211 Missouri and MyFriendBen home page button",
+            },
+        },
+        # The co-branded logo's MyFriendBen wordmark is dark navy, which would disappear against
+        # the theme's dark blue header, so this referrer gets the white header treatment.
+        "uiOptions": {"default": [], "uwgkc": ["white_header"]},
+        "logoClass": {"default": "logo", "uwgkc": "uwgkc-logo-size"},
+        "shareLink": {
+            "default": "https://screener.myfriendben.org/mo/step-1",
+            "uwgkc": "https://screener.myfriendben.org/mo/step-1?referrer=uwgkc",
+        },
+        "stateOptions": {"default": [], "uwgkc": ["ks", "mo"]},
+        # Blank for uwgkc: its logo already carries "Missouri", so the header's separate state name
+        # would repeat it underneath the artwork.
+        "stateName": {"default": "Missouri", "uwgkc": ""},
     }

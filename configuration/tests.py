@@ -210,8 +210,34 @@ class TestStateOptionsConfiguration(SimpleTestCase):
                 self.assertTrue(state["name"], f'White label "{state["code"]}" has no state name to display.')
 
     def test_default_white_label_declares_state_options(self):
-        """The "_default" config is the only one the dropdown reads its referrer overrides from."""
+        """The "_default" config backs the dropdown for entry without a state (/?referrer=code)."""
         self.assertIn("stateOptions", white_label_config["_default"].referrer_data)
+
+    def test_multi_state_referrers_are_configured_in_every_state_they_offer(self):
+        """
+        A referrer whose dropdown offers several states is handed out under each of those state
+        paths, and each path loads its own config. Configuring it in only one of them leaves the
+        others on generic branding with an unscoped dropdown.
+        """
+        branding_keys = ("theme", "logoSource", "logoClass", "stateOptions")
+
+        for code, white_label_data in white_label_config.items():
+            for referrer, states in white_label_data.referrer_data.get("stateOptions", {}).items():
+                if referrer == "default" or code not in states:
+                    continue
+
+                for state in states:
+                    state_referrer_data = white_label_config[state].referrer_data
+
+                    for key in branding_keys:
+                        with self.subTest(referrer=referrer, configured_in=code, missing_from=state, key=key):
+                            self.assertIn(
+                                referrer,
+                                state_referrer_data.get(key, {}),
+                                f'"{referrer}" is configured in white label "{code}" and offers '
+                                f'"{state}", but white label "{state}" has no "{referrer}" entry '
+                                f'for "{key}".',
+                            )
 
     def test_referrer_overrides_name_states_in_the_catalog(self):
         """An override naming a state outside the catalog would render an empty dropdown."""

@@ -226,13 +226,20 @@ referrer_data = {
 }
 ```
 
-`stateOptions` is the exception: it belongs in `_default.py` only, because the state dropdown
-renders before a state is chosen. An empty list means every publicly launched state; a non-empty
-list per referrer code names the states that referrer sees, launched publicly or not.
+`stateOptions` behaves differently from the other referrer keys: an empty list means every
+publicly launched state, while a non-empty list per referrer code names the states that referrer
+sees, launched publicly or not.
+
+The dropdown reads whichever config is loaded, so where the entry belongs depends on how the
+referrer is reached. `_default.py` covers entry without a state (`/?referrer=code`); a referrer
+handed out under a state path (`/ks/step-1?referrer=code`) also needs the entry in that state's
+config. A referrer spanning several states, as `uwgkc` does for the Kansas City metro, needs the
+same entry in each of them — see `ks.py` and `mo.py`.
 
 The dropdown's catalog of states is not hand-maintained — `add_config` derives the `state_options`
 config from the white label registry, using each state's `state["name"]`, `is_state` and
-`publicly_launched`. A new state appears once its config exists and `add_config` runs.
+`publicly_launched`. Because the catalog is written to the `_default` row, a new state appears
+only once its config exists and `add_config --all` (or `add_config _default`) runs.
 
 ### 5. Experiments (A/B Testing)
 

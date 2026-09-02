@@ -52,9 +52,11 @@ class DefaultConfigurationData(ConfigurationData):
             ]
         },
         "uiOptions": {"default": []},
-        # The KS and MO 2-1-1s serve the Kansas City metro on both sides of the state line, so their
-        # links offer exactly those two states; empty means every publicly launched state.
-        "stateOptions": {"default": [], "211ks": ["ks", "mo"], "211mo": ["ks", "mo"]},
+        # United Way of Greater Kansas City's 2-1-1 serves the metro on both sides of the state
+        # line, so its links offer exactly those two states; empty means every publicly launched
+        # state. The same referrer is used from /ks and /mo, which read their own configs, so this
+        # entry only covers entry without a state (screener.myfriendben.org/?referrer=uwgkc).
+        "stateOptions": {"default": [], "uwgkc": ["ks", "mo"]},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

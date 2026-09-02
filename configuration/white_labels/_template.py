@@ -261,7 +261,8 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #
     # theme: CSS theme name (usually "default")
     #   - Used to apply custom styling/themes
-    #   - Available themes: "default", "twoOneOne", "twoOneOneNC", "nc_lanc"
+    #   - Available themes: "default", "twoOneOne", "twoOneOneNC", "co_energy", "nc_lanc",
+    #     "nc_ccla", "cu_denver", "uwgkc" (defined in the frontend's styleController.ts)
     #
     # logoSource: Logo filename from public/locales folder
     #   - Displayed in header throughout screener
@@ -302,8 +303,10 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # stateOptions: State codes this referrer's "What is your state?" dropdown offers
     #   - Empty list = every publicly launched state (see publicly_launched below)
     #   - A non-empty list may name states that are not public yet, e.g.
-    #     {"211ks": ["ks", "mo"]} for a referrer serving both sides of the KS/MO line
-    #   - Only the "_default" config is read, since the dropdown precedes the state choice
+    #     {"uwgkc": ["ks", "mo"]} for a referrer serving both sides of the KS/MO line
+    #   - The dropdown reads whichever config is loaded, so a referrer reachable from more than
+    #     one state path needs the same entry in each of those states' configs, plus "_default"
+    #     for the no-state entry point
     #
     # noResultMessage: Message shown when user has no eligible programs
     #   - Format: {"_label": "translation.key", "_default_message": "Message text"}
