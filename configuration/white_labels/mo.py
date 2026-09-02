@@ -16,7 +16,13 @@ class MoConfigurationData(ConfigurationData):
 
     state = {"name": "Missouri"}
 
-    public_charge_rule = {"link": "https://www.uscis.gov/green-card/green-card-processes-and-procedures/public-charge"}
+    public_charge_rule = {
+        "link": "https://www.uscis.gov/green-card/green-card-processes-and-procedures/public-charge",
+        "text": {
+            "_label": "landingPage.publicChargeLinkMO",
+            "_default_message": "U.S. Citizenship and Immigration Services",
+        },
+    }
 
     more_help_options = {
         "moreHelpOptions": [

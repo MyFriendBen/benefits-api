@@ -144,7 +144,16 @@ This directory contains configuration files for MyFriendBen white labels (state/
 
 ```python
 state = {"name": "Texas"}
-public_charge_rule = {"link": "https://..."}
+
+# Rendered as <a href={link}>{text}</a> on the disclaimer step, so both keys are required;
+# without "text" the anchor has no visible label. The label suffix is the uppercased code.
+public_charge_rule = {
+    "link": "https://...",
+    "text": {
+        "_label": "landingPage.publicChargeLinkTX",
+        "_default_message": "Protecting Immigrant Families website",
+    },
+}
 more_help_options = { ... }  # Help resources shown when user clicks "More Help" button
 ```
 

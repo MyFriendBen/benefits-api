@@ -13,8 +13,7 @@
     "legal_status_required": [
       "citizen",
       "gc_5plus",
-      "gc_under18_no5",
-      "refugee"
+      "gc_under18_no5"
     ],
     "name": "Food Assistance (SNAP)",
     "description_short": "Monthly food benefits loaded onto an EBT card for low-income households",

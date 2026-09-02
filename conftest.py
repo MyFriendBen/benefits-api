@@ -396,19 +396,53 @@ def auto_vcr(request, vcr_config):
         _discard_failed_recording(cassette_path, contents_before)
 
 
+def _preserved_cache_entries():
+    """Snapshot the cache entries that must survive a between-test flush.
+
+    Only the PolicyEngine bearer token: it is a credential rather than application state, and
+    PolicyEngine issues a limited number of long-life tokens per month. Flushing it between tests
+    means a recording run re-authenticates for every test that hits the network, minting one
+    30-day token per test.
+    """
+    from django.core.cache import cache
+
+    from integrations.clients.policyengine.engines import _PE_TOKEN_CACHE_KEY
+
+    value = cache.get(_PE_TOKEN_CACHE_KEY)
+    if value is None:
+        return []
+
+    # django_redis reports seconds remaining, None for "no expiry", and 0 for a key that is
+    # absent or already expired - which the read above can race. Restoring on a 0 would put a
+    # dead token back with no expiry at all, so drop it and let the next caller mint one.
+    # LocMemCache has no ttl() to consult, so fall back to no expiry and let a 401 evict.
+    timeout = None
+    if hasattr(cache, "ttl"):
+        timeout = cache.ttl(_PE_TOKEN_CACHE_KEY)
+        if timeout == 0:
+            return []
+
+    return [(_PE_TOKEN_CACHE_KEY, value, timeout)]
+
+
 @pytest.fixture(autouse=True)
 def clear_cache():
-    """Start every test with an empty cache.
+    """Start every test with an empty cache, except for preserved credentials.
 
     LocMemCache gives each process its own cache, so isolation was implicit while
     CI set no REDIS_URL. Against a real Redis the state outlives both the test and
     the run, which makes order-dependent passes and stale-value failures easy to
     introduce. Note this flushes the configured cache database, so pointing
     REDIS_URL at a Redis you also use for development will clear it.
+
+    See ``_preserved_cache_entries`` for what is carried across the flush and why.
     """
     from django.core.cache import cache
 
+    preserved = _preserved_cache_entries()
     cache.clear()
+    for key, value, timeout in preserved:
+        cache.set(key, value, timeout=timeout)
     yield
 
 

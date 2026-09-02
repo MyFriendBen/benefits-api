@@ -96,19 +96,60 @@ class TestMoHealthNet(TestCase):
     def test_medicaid_categories_are_kff_monthly_figures(self):
         """Category values are the KFF 2023 MO per-full-benefit-enrollee figures, monthly.
 
-        Grouped the way KFF reports them: one rate for the MAGI adult categories, one for
-        children, and the higher aged and disabled rates.
+        KFF publishes five mutually exclusive groups; all five are represented, including
+        the expansion-adult rate that PE's ADULT category maps to in an expansion state.
         """
         cats = MoHealthNet.medicaid_categories
 
         self.assertEqual(cats["NONE"], 0)
-        for adult_category in ("ADULT", "YOUNG_ADULT", "PARENT", "PREGNANT"):
-            self.assertEqual(cats[adult_category], 532)
+        self.assertEqual(cats["ADULT"], MoHealthNet.KFF_EXPANSION_ADULTS / 12)
+        for adult_category in ("YOUNG_ADULT", "PARENT", "PREGNANT"):
+            self.assertEqual(cats[adult_category], MoHealthNet.KFF_ADULTS / 12)
         for child_category in ("INFANT", "YOUNG_CHILD", "OLDER_CHILD"):
-            self.assertEqual(cats[child_category], 381)
-        self.assertEqual(cats["AGED"], 1_821)
-        self.assertEqual(cats["DISABLED"], 2_534)
+            self.assertEqual(cats[child_category], MoHealthNet.KFF_CHILDREN / 12)
+        self.assertEqual(cats["AGED"], MoHealthNet.KFF_SENIORS / 12)
+        self.assertEqual(cats["DISABLED"], MoHealthNet.KFF_DISABLED / 12)
         self.assertEqual(cats["SSI_RECIPIENT"], cats["DISABLED"])
+
+    def test_kff_annual_figures_are_the_published_values(self):
+        """The annual KFF figures are the source of truth, not the derived monthly rates."""
+        self.assertEqual(MoHealthNet.KFF_CHILDREN, 4_576)
+        self.assertEqual(MoHealthNet.KFF_ADULTS, 6_379)
+        self.assertEqual(MoHealthNet.KFF_EXPANSION_ADULTS, 7_445)
+        self.assertEqual(MoHealthNet.KFF_SENIORS, 21_857)
+        self.assertEqual(MoHealthNet.KFF_DISABLED, 30_410)
+
+    def test_every_category_annualizes_to_a_published_kff_figure(self):
+        """member_value multiplies by 12, so each rate must restore its KFF annual figure exactly.
+
+        A rounded whole-dollar monthly rate would report a value a few dollars away from
+        KFF's published number, which is what this catches if one creeps back in.
+        """
+        published = {
+            0,
+            MoHealthNet.KFF_CHILDREN,
+            MoHealthNet.KFF_ADULTS,
+            MoHealthNet.KFF_EXPANSION_ADULTS,
+            MoHealthNet.KFF_SENIORS,
+            MoHealthNet.KFF_DISABLED,
+        }
+
+        for category, monthly in MoHealthNet.medicaid_categories.items():
+            annual = monthly * 12
+            self.assertEqual(annual, int(annual), f"{category} does not annualize to a whole dollar")
+            self.assertIn(int(annual), published, f"{category} annualizes to an unpublished value")
+
+    def test_expansion_and_mandatory_adult_rates_differ(self):
+        """A parent found through MHF must be distinguishable from one found through expansion.
+
+        Missouri's mandatory categories (MHF, MPW) take precedence over adult expansion and
+        carry KFF's non-expansion Adults rate, so collapsing them onto one adult rate would
+        make categorical precedence unobservable in the result.
+        """
+        cats = MoHealthNet.medicaid_categories
+
+        self.assertNotEqual(cats["ADULT"], cats["PARENT"])
+        self.assertGreater(cats["ADULT"], cats["PARENT"])
 
     def test_aged_min_age_inherited(self):
         """MO uses the federal 65+ cutoff for the aged pathway."""

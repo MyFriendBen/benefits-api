@@ -62,8 +62,8 @@
 ### Federal & KS-specific rules the screener cannot fully measure (⚠️ data gaps)
 
 10. **At least one household member must be a U.S. citizen or qualified non-citizen** ⚠️ *not screened — by design*
-    - Note: This is a federal eligibility rule, but **MFB intentionally does not screen or gate on citizenship.** The calculation always runs as `CITIZEN`, so SNAP is computed and shown to everyone; status only affects which program cards are *displayed*, via the results-page `legal_status_required` filter (post-OBBBA: `citizen`, `gc_5plus`, `gc_5less`). KS has no state-funded food program for immigrants (unlike WA's FAP).
-    - **Suggestion — no screener improvement:** Because citizenship isn't a screener input at all (it's handled only as a results-page display filter), there's no screener field to add. The single action is keeping that filter accurate — the dev's current cleanup dropping the now-ineligible statuses (`refugee`, `non_citizen`, `otherWithWorkPermission`). The Cuban/Haitian/COFA edge stays an accepted inclusivity assumption (small group; PE's COFA gap #8296 mishandles it anyway).
+    - Note: This is a federal eligibility rule, but **MFB intentionally does not screen or gate on citizenship.** The calculation always runs as `CITIZEN`, so SNAP is computed and shown to everyone; status only affects which program cards are *displayed*, via the results-page `legal_status_required` filter (post-OBBBA: `citizen`, `gc_5plus`, `gc_under18_no5`). KS has no state-funded food program for immigrants (unlike WA's FAP), so a green card holder under five years who is 18 or older sees no food program at all.
+    - **Suggestion — no screener improvement:** Because citizenship isn't a screener input at all (it's handled only as a results-page display filter), there's no screener field to add. The single action is keeping that filter accurate — the dev's current cleanup dropping the now-ineligible statuses (`refugee`, `non_citizen`, `otherWithWorkPermission`), and narrowing bare `gc_5less` to `gc_under18_no5` so the under-18 exemption to the five-year bar is expressed without also claiming the barred adults. The Cuban/Haitian/COFA edge stays an accepted inclusivity assumption (small group; PE's COFA gap #8296 mishandles it anyway), and Cuban/Haitian entrant has no filter option at all.
     - Source: 7 U.S.C. § 2015(f); 7 CFR 273.4. Impact: Medium
 
 11. **General work requirement — "work registrants" aged 18–59 must register for work, accept suitable employment, and not voluntarily quit** ⚠️ *data gap (PE applies the hours test)*
@@ -641,7 +641,7 @@ SUA value scenarios 12–14 carry committed amounts ($2,424 / $3,576 / $4,668 pe
 File: `programs/management/commands/import_program_config_data/data/ks_snap_initial_config.json` (PR #1586). Config carries no `warning_message`, 7 required documents, and 2 navigators (Mirror Inc., Harvesters).
 
 Two config updates this spec recommends:
-- **`legal_status_required`** → `citizen`, `gc_5plus`, `gc_5less` (drop `refugee`, `non_citizen`, `otherWithWorkPermission` — no longer SNAP-eligible post-OBBBA; see the dev thread on the ticket).
+- **`legal_status_required`** → `citizen`, `gc_5plus`, `gc_under18_no5` (drop `refugee`, `non_citizen`, `otherWithWorkPermission` — no longer SNAP-eligible post-OBBBA; see the dev thread on the ticket). Bare `gc_5less` becomes `gc_under18_no5`: SNAP exempts green card holders under 18 from the five-year bar regardless of the status they adjusted from, while the barred adults have no KS program to fall back to.
 - **Program description** → add a child-support-cooperation line (criterion 13). Suggested: append to the eligibility paragraph — *"Single parents may need to cooperate with child support services to get benefits. Some exceptions apply, such as for safety reasons."*
 
 
