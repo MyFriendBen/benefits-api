@@ -2660,7 +2660,7 @@ class NcConfigurationData(ConfigurationData):
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage.nc",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the “Additional Resources” tab.",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated a need for an immediate resource, please click on the “Additional Resources” tab.",
             }
         },
         "defaultLanguage": {
