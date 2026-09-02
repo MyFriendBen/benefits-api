@@ -263,8 +263,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
     def test_scenario_9_birth_pathway_month_boundary(self):
         """
         Scenario 9: a child turning one during the current month is still inside the window.
-        Asserting `birth_pathway_eligible` is required — the top-level result alone can't tell
-        this apart from the adoption fallback.
+        Asserting `birth_pathway_eligible` pins the month-level boundary directly.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=2)
         self.make_member(screen, "headOfHousehold", date(1990, 5, 1))
@@ -298,7 +297,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         frozen July 22, 2026 evaluation date rather than copied from the ticket, which
         reported ages relative to the live date.
         """
-        screen = self.make_screen(household_size=5)
+        screen = self.make_screen(zipcode="02148", county="Malden", household_size=5)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         self.make_member(screen, "domesticPartner", date(1991, 3, 1))
         infant = self.make_member(screen, "child", date(2026, 1, 1))
