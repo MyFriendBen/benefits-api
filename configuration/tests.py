@@ -232,15 +232,35 @@ class TestStateOptionsConfiguration(SimpleTestCase):
         paths, and each path loads its own config. Configuring it in only one of them leaves the
         others on generic branding with an unscoped dropdown.
         """
-        branding_keys = ("theme", "logoSource", "logoClass", "stateOptions")
+        branding_keys = ("theme", "logoSource", "logoClass")
 
         for code, white_label_data in white_label_config.items():
             for referrer, states in white_label_data.referrer_data.get("stateOptions", {}).items():
-                if referrer == "default" or code not in states:
+                if referrer == "default" or len(states) < 2:
                     continue
 
                 for state in states:
                     state_referrer_data = white_label_config[state].referrer_data
+                    offered_by_state = state_referrer_data.get("stateOptions", {})
+
+                    with self.subTest(referrer=referrer, configured_in=code, offered_state=state):
+                        self.assertIn(
+                            referrer,
+                            offered_by_state,
+                            f'"{referrer}" is configured in white label "{code}" and offers '
+                            f'"{state}", but white label "{state}" has no "{referrer}" entry for '
+                            '"stateOptions", so entering from that path falls back to the '
+                            "publicly launched states.",
+                        )
+                        # Membership has to match, or the dropdown contradicts itself depending on
+                        # which state's screener the referrer was entered from. Order is free,
+                        # since a state may reasonably list itself first.
+                        self.assertCountEqual(
+                            offered_by_state[referrer],
+                            states,
+                            f'"{referrer}" offers {sorted(states)} in white label "{code}" but '
+                            f'{sorted(offered_by_state[referrer])} in white label "{state}".',
+                        )
 
                     for key in branding_keys:
                         with self.subTest(referrer=referrer, configured_in=code, missing_from=state, key=key):
