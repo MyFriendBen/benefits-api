@@ -199,8 +199,7 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         calculator, eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
-        # $50, not $100 — the older sibling's birth window closed and the adoption pathway
-        # is not evaluable from screener data.
+        # $50, not $100 — the older sibling is past the cutoff.
         self.assertEqual(eligibility.value, 50)
         self.assertTrue(calculator.birth_pathway_eligible(newborn))
         self.assertFalse(calculator.birth_pathway_eligible(older_sibling))
@@ -482,9 +481,8 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
 
     def test_older_child_is_denied_by_the_age_cutoff(self):
         """
-        The first-birthday cutoff applies to every candidate. An adopted teenager inside their
-        adoption-anniversary window would really qualify, but the screener collects no adoption
-        input — that known false negative is disclosed in the program description instead.
+        The first-birthday cutoff applies to every candidate, including one who could qualify
+        via the adoption pathway (Criterion 2b).
         """
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1975, 3, 1))
