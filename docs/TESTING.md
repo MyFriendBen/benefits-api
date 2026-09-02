@@ -26,7 +26,11 @@ roughly three minutes to under one. Two things follow from that:
   recording commands below need no extra flags.
 - **Each worker gets its own Redis database** (1-15) when `REDIS_URL` is set, because
   `clear_cache` issues FLUSHDB and would otherwise wipe other workers' entries mid-test.
-  Runs above 15 workers fail with a clear message rather than sharing a database.
+  Database 0 is left to serial runs and to `benefits/tests/test_redis_backend.py`.
+  `pytest.ini` therefore caps the fan-out with `--maxprocesses 15`; an explicit `-n`
+  above that fails with a message naming the limit. Note `-n auto` counts *logical*
+  cores here (xdist prefers physical via `psutil`, which is not installed), so it can
+  exceed 15 on a large machine -- hence the cap.
 
 Pass `-n 0` to force a serial run when debugging test interdependence.
 

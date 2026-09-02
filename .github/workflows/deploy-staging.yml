@@ -20,6 +20,10 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       ENABLE_GOOGLE_INTEGRATIONS: false
+      # Without this, settings.py takes the LocMemCache branch, TestRedisBackend
+      # skips itself, and the entire django_redis path goes untested -- the exact
+      # gap that let a Redis config error reach staging with a green build.
+      REDIS_URL: redis://localhost:6379/0
 
     services:
       postgres:
@@ -32,6 +36,16 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d test_benefits_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5

@@ -7,16 +7,19 @@ the PolicyEngine bearer token ``seed_pe_token`` had just written and falling thr
 a live auth attempt.
 """
 
-import pytest
 from django.test import SimpleTestCase, override_settings
 
 from conftest import (
     MAX_ISOLATED_WORKERS,
     _isolate_cache_per_xdist_worker,
+    _rebuild_cache_connections,
     redis_url_for_database,
 )
 
-REDIS_CACHES = {"default": {"BACKEND": "django_redis.cache.RedisCache", "LOCATION": "redis://localhost:6379/0"}}
+BASE_LOCATION = "redis://localhost:6379/0"
+# A fresh dict per test module: _isolate_cache_per_xdist_worker mutates
+# settings.CACHES in place, and override_settings does not copy it.
+REDIS_CACHES = {"default": {"BACKEND": "django_redis.cache.RedisCache", "LOCATION": BASE_LOCATION}}
 
 
 class TestRedisUrlForDatabase(SimpleTestCase):
@@ -46,30 +49,45 @@ class TestRedisUrlForDatabase(SimpleTestCase):
 
 @override_settings(CACHES=REDIS_CACHES)
 class TestWorkerIsolation(SimpleTestCase):
-    def _location_for(self, worker_id: str) -> str:
+    """Assertions here read the *resolved connection*, not settings.
+
+    Asserting on settings alone passes even when isolation does nothing: the connection
+    handler caches connection objects, and the default connection already exists before
+    pytest_configure runs (django-parler reads cache.default_timeout at import, so
+    django.setup() builds it). Rewriting settings without rebuilding the connection
+    leaves every worker flushing database 0 while settings claim otherwise.
+    """
+
+    def _resolved_database(self, worker_id: str) -> str:
+        from django.conf import settings
+        from django.core.cache import cache
+
+        settings.CACHES["default"]["LOCATION"] = BASE_LOCATION
+        _isolate_cache_per_xdist_worker(worker_id)
+        # cache is a proxy; touching .client resolves the real connection.
+        return cache.client._server[0].rsplit("/", 1)[1]
+
+    def tearDown(self):
         from django.conf import settings
 
-        settings.CACHES["default"]["LOCATION"] = "redis://localhost:6379/0"
-        _isolate_cache_per_xdist_worker(worker_id)
-        return settings.CACHES["default"]["LOCATION"]
+        settings.CACHES["default"]["LOCATION"] = BASE_LOCATION
+        _rebuild_cache_connections()
+
+    def test_the_connection_moves_not_just_the_setting(self):
+        """The regression: settings said db N while the connection stayed on db 0."""
+        self.assertEqual(self._resolved_database("gw3"), "4")
 
     def test_workers_never_get_database_zero(self):
         """Database 0 stays free for non-xdist runs and for test_redis_backend.py,
         which pins REDIS_URL directly and flushes whatever it points at."""
-        databases = {self._location_for(f"gw{i}").rsplit("/", 1)[1] for i in range(MAX_ISOLATED_WORKERS)}
+        databases = {self._resolved_database(f"gw{i}") for i in range(MAX_ISOLATED_WORKERS)}
 
         self.assertNotIn("0", databases)
 
     def test_each_worker_gets_a_distinct_database(self):
-        databases = [self._location_for(f"gw{i}") for i in range(MAX_ISOLATED_WORKERS)]
+        databases = [self._resolved_database(f"gw{i}") for i in range(MAX_ISOLATED_WORKERS)]
 
         self.assertEqual(len(set(databases)), MAX_ISOLATED_WORKERS)
-
-    def test_a_worker_beyond_the_database_count_is_an_error(self):
-        """Wrapping with % would put this worker back on database 0, where it would
-        flush the entries of whatever else is using it -- the bug this guards."""
-        with self.assertRaises(pytest.UsageError):
-            self._location_for(f"gw{MAX_ISOLATED_WORKERS}")
 
     def test_a_non_redis_cache_is_left_alone(self):
         from django.conf import settings

@@ -26,6 +26,8 @@ import re
 from typing import Optional
 from urllib.parse import urlsplit, urlunsplit
 
+from asgiref.local import Local
+
 import pytest
 import vcr as vcrpy
 from decouple import config
@@ -262,8 +264,16 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
 
     Workers map to databases 1..15, leaving database 0 to non-xdist runs and to
     ``benefits/tests/test_redis_backend.py``, which pins REDIS_URL directly and flushes
-    it. Beyond 15 workers there is no database left to hand out, so fail loudly rather
-    than wrap onto a database another worker is already flushing.
+    whatever it points at. More workers than databases wrap around and share, so
+    ``pytest_configure`` caps the worker count instead of letting that happen.
+
+    Rewriting ``settings.CACHES`` is not enough on its own: the connection handler caches
+    connection objects, and the default connection already exists by this point --
+    django-parler evaluates ``cache.default_timeout`` as a default argument at import
+    (``parler/cache.py``), so ``django.setup()`` builds it, and pytest-django calls that
+    from ``pytest_load_initial_conftests``, before any ``pytest_configure``. The rebuild
+    below is what actually moves the connection; without it the mutation is visible in
+    settings while every worker keeps flushing database 0.
     """
     from django.conf import settings
 
@@ -272,14 +282,30 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
         return
 
     index = int(worker_id.removeprefix("gw"))
-    if index >= MAX_ISOLATED_WORKERS:
-        raise pytest.UsageError(
-            f"xdist worker {worker_id} exceeds the {MAX_ISOLATED_WORKERS} Redis databases "
-            f"available for per-worker cache isolation. Run with -n {MAX_ISOLATED_WORKERS} "
-            "or fewer, or point REDIS_URL at a server with more databases."
-        )
-
     settings.CACHES["default"]["LOCATION"] = redis_url_for_database(location, index + 1)
+    _rebuild_cache_connections()
+
+
+def _cache_needs_per_worker_database() -> bool:
+    """Whether the configured cache is a Redis one workers would otherwise share."""
+    from django.conf import settings
+
+    location = settings.CACHES.get("default", {}).get("LOCATION", "")
+    return isinstance(location, str) and location.startswith(("redis://", "rediss://"))
+
+
+def _rebuild_cache_connections() -> None:
+    """Drop cached cache connections so the next access reads current settings.
+
+    Mirrors Django's own ``clear_cache_handlers`` (``django/test/signals.py``), which is
+    what fires when ``override_settings`` changes CACHES. Called directly here because
+    mutating ``settings.CACHES`` in place sends no ``setting_changed`` signal.
+    """
+    from django.core.cache import caches, close_caches
+
+    close_caches()
+    caches._settings = caches.settings = caches.configure_settings(None)
+    caches._connections = Local()
 
 
 def pytest_configure(config):
@@ -303,6 +329,20 @@ def pytest_configure(config):
     if mode != "none" and config.getoption("numprocesses", default=None):
         config.option.numprocesses = 0
         config.option.dist = "no"
+
+    # The worker count is capped by --maxprocesses in pytest.ini, which xdist applies
+    # before it spawns anything. It cannot be enforced from here: pytest_cmdline_main
+    # has already turned numprocesses into the worker list (config.option.tx) by the
+    # time pytest_configure runs, so changing it now spawns the original count anyway.
+    # Assert the cap held rather than silently wrapping onto a shared database.
+    worker_count = config.getoption("numprocesses", default=None)
+    if worker_count and worker_count > MAX_ISOLATED_WORKERS and _cache_needs_per_worker_database():
+        raise pytest.UsageError(
+            f"-n {worker_count} exceeds the {MAX_ISOLATED_WORKERS} Redis databases available "
+            "for per-worker cache isolation; workers would share a database and flush each "
+            f"other's entries. Pass --maxprocesses {MAX_ISOLATED_WORKERS} (pytest.ini sets "
+            "this by default)."
+        )
 
     worker_id = os.environ.get("PYTEST_XDIST_WORKER")
     if worker_id:
