@@ -21,13 +21,14 @@ from unittest import mock
 from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from benefits.tests.cache_override import LOCAL_CACHE
 from programs.models import Program
 from screener.assistant import (
     CONTEXT_PREFETCH,
@@ -823,14 +824,16 @@ class AssistantStartViewTests(APITestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class AssistantThrottleTests(APITestCase):
     """The throttles are on AllowAny endpoints that proxy to a paid LLM, so "it's
     configured" isn't enough — assert one actually engages and returns 429.
 
-    Throttle history is cache-backed and LocMemCache is shared for the whole test
-    session, so every test here clears it. Without that, `AssistantStartViewTests`
-    spending part of the 30/hour budget would eventually make these fail for unrelated
-    reasons — and vice versa.
+    Throttle history is cache-backed, so these tests pin the cache to a per-process
+    LocMemCache. Left on the ambient backend they share one Redis with every other
+    test process, and a concurrent run spending part of the 30/hour budget makes the
+    429 assertion fail for reasons unrelated to throttling. The clears below keep the
+    budget clean between tests within this process.
     """
 
     def setUp(self):

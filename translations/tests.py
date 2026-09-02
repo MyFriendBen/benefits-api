@@ -331,3 +331,38 @@ class TestAdminAutoTranslateFailurePaths(TestCase):
         self.assertEqual(parent.text, "es-text")
         # fr was omitted by the guard, so no row should have been written for it.
         self.assertFalse(parent.has_translation("fr"))
+
+
+class TestTranslationSaveDoesNotReportExpectedMisses(TestCase):
+    """`Translation.save()` diffs each configured language against its pre-save text
+    to fill in the latest history row's `affected_language`/`original_text` fields.
+
+    A brand-new Translation has no prior text for any language, so there is nothing
+    to diff. The languages must be skipped before the descriptor read that would
+    raise for them -- otherwise every save reports a swallowed DoesNotExist per
+    language to Sentry, which both floods the error budget and dominates the cost of
+    creating a Translation.
+    """
+
+    def test_creating_a_translation_reports_nothing_to_sentry(self):
+        with patch.object(translation_models, "capture_exception") as capture:
+            Translation.objects.add_translation("test.save_reports_nothing", default_message="hello")
+
+        self.assertEqual(
+            capture.call_args_list,
+            [],
+            "creating a Translation should not funnel expected missing-language reads to Sentry",
+        )
+
+    def test_editing_a_translation_still_records_the_language_it_changed(self):
+        translation = Translation.objects.add_translation("test.save_records_diff", default_message="before")
+
+        with patch.object(translation_models, "capture_exception") as capture:
+            Translation.objects.edit_translation("test.save_records_diff", DEFAULT_LANG, "after")
+
+        self.assertEqual(capture.call_args_list, [])
+
+        latest = Translation.objects.get(pk=translation.pk).history.first()
+        self.assertEqual(latest.affected_language, DEFAULT_LANG)
+        self.assertEqual(latest.original_text, "before")
+        self.assertEqual(latest.changed_text, "after")
