@@ -47,6 +47,84 @@ class TestAgeDependency(TestCase):
         self.assertEqual(dep.field, "is_disabled")
 
 
+class TestAgeAtEndOfClaimYearDependency(TestCase):
+    """The age a tax-year rule means: attained by December 31 of the year being claimed.
+
+    The claim year comes from the period the variable is sent at, which is the program's
+    configured year. It used to be a constant on a subclass hardcoded to 2026, which would
+    have gone on sending 2026 ages under a 2027 period, understating every claimant by a year
+    and reintroducing the disagreement with `AgeDependency` for a wider slice of
+    households.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+
+    def setUp(self):
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Cole County",
+            household_size=1,
+            completed=False,
+        )
+
+    def member_born(self, year, month, age=None):
+        return HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=age if age is not None else datetime.date.today().year - year,
+            birth_year_month=datetime.date(year, month, 1),
+        )
+
+    def test_reports_the_age_attained_during_the_period(self):
+        """A September 1961 claimant is 65 for all of 2026 as the statute counts it, whatever
+        month the screen runs in."""
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, self.member_born(1961, 9), {}, period="2026")
+
+        self.assertEqual(dep.value(), 65)
+
+    def test_the_year_follows_the_period(self):
+        household_member = self.member_born(1961, 9)
+
+        self.assertEqual(
+            [
+                member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {}, period=period).value()
+                for period in ("2026", "2027")
+            ],
+            [65, 66],
+        )
+
+    def test_a_monthly_period_still_yields_the_year(self):
+        """Nothing sends age monthly today, but the period shape is per variable, so reading
+        the year rather than assuming ``YYYY`` keeps this correct if something does."""
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, self.member_born(1961, 9), {}, period="2026-09")
+
+        self.assertEqual(dep.value(), 65)
+
+    def test_falls_back_to_the_screening_date_age_without_a_birth_month(self):
+        """Most screens report an age and no birth date. There is no year to subtract from,
+        so the reported age is the only answer available."""
+        household_member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=64)
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {}, period="2026")
+
+        self.assertEqual(dep.value(), 64)
+
+    def test_falls_back_to_the_screening_date_age_without_a_period(self):
+        """Constructed outside payload assembly — a dependency with no period cannot know
+        which year to measure against, and must not guess one."""
+        household_member = self.member_born(1961, 9, age=64)
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {})
+
+        self.assertEqual(dep.value(), household_member.calc_age())
+
+    def test_it_writes_the_same_field_as_the_screening_date_age(self):
+        """Which is why a screen carrying both splits into two PolicyEngine requests: one
+        payload slot cannot hold both answers."""
+        self.assertEqual(member.AgeAtEndOfClaimYearDependency.field, member.AgeDependency.field)
+
+
 class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
     """Tests for MeetsSsiDisabilityCriteriaDependency, required by PolicyEngine frontier
     to classify a person as SSI-disabled (MFB-1102)."""
@@ -2176,7 +2254,7 @@ class TestMaTotalHoursWorkedDependency(TestCase):
 
     def test_shares_the_field_with_the_base_class(self):
         """Same field and period as the base class, which is why an MA calculator that
-        sends both raises DependencyError."""
+        sends both splits the screen across two PolicyEngine requests."""
         self.assertEqual(
             member.MaTotalHoursWorkedDependency.field,
             member.TotalHoursWorkedDependency.field,

@@ -25,7 +25,7 @@ class MoPts(PolicyEngineTaxUnitCalulator):
 
     pe_name = "mo_property_tax_credit"
     pe_inputs = [
-        dependency.member.AgeAtEndOf2026Dependency,
+        dependency.member.AgeAtEndOfClaimYearDependency,
         dependency.member.TaxUnitHeadDependency,
         dependency.member.TaxUnitSpouseDependency,
         dependency.member.TaxUnitDependentDependency,

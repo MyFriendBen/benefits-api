@@ -2,7 +2,7 @@
 
 from screener.models import HouseholdMember
 from programs.programs.cross_white_label.csfp.tx import TxCsfp
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 from programs.programs.testing_fixtures.pe_input_test_base import TxPeInputTestBase
 from django.test import TestCase
 from programs.programs.cross_white_label.csfp.base import CommoditySupplementalFoodProgram

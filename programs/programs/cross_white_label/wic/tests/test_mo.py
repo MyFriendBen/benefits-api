@@ -13,7 +13,7 @@ from screener.models import WhiteLabel
 from programs.programs.cross_white_label.wic.base import Wic
 import programs.framework.pe_dependencies as dependency
 from programs.framework.pe_dependencies import member as member_deps
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 from programs.framework.pe_dependencies import household
 from programs.framework.pe_dependencies import member
 

@@ -8,8 +8,8 @@ household through PolicyEngine once and replays from a cassette.
 
 Every scenario states a birth month and year rather than an age. That is load-bearing:
 the statute measures age on December 31 of the claim year, so ``MoPts`` sends
-``AgeAtEndOf2026Dependency`` instead of the screening-date age. Scenario 6 fails without
-it.
+``AgeAtEndOfClaimYearDependency`` instead of the screening-date age. Scenario 6 fails
+without it.
 
 Scenario 19 is the one place a scenario's expected screener result departs from its
 statutory result. The household satisfies every eligibility gate and the phaseout floors
@@ -165,7 +165,7 @@ class TestScenario05AtTheMinimumBase(MoPtsScenarioTestCase):
 class TestScenario06TurnsSixtyFiveLaterInTheYear(MoPtsScenarioTestCase):
     """Born September 1961 — age is measured on Dec 31, not the screening date.
 
-    The case that requires ``AgeAtEndOf2026Dependency``: the screening-date age reads 64
+    The case that requires ``AgeAtEndOfClaimYearDependency``: the screening-date age reads 64
     for most of the year and fails the age-65 pathway.
     """
 

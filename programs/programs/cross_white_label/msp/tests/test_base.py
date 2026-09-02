@@ -12,7 +12,7 @@ from screener.models import Insurance
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from programs.framework.pe_dependencies import household
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 from programs.programs.cross_white_label.test_helpers import (
     distinct_state_codes,
     registered_subclasses,

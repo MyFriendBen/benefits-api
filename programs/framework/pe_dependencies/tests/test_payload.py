@@ -13,7 +13,8 @@ from unittest.mock import Mock, patch
 from django.test import TestCase, override_settings
 from benefits.tests.cache_override import LOCAL_CACHE
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
-from integrations.clients.policyengine.policy_engine import _drop_unreadable_programs, pe_input
+from integrations.clients.policyengine.policy_engine import _drop_unreadable_programs
+from programs.framework.pe_dependencies.payload import PayloadPlan, pe_input
 from programs.framework.pe_dependencies.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
@@ -413,7 +414,8 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
             "programs.framework.pe_dependencies.payload.pe_versions.resolve_unpinned_comparable_version",
             return_value=(1, 779, 3),
         ) as resolve, patch(
-            "integrations.clients.policyengine.policy_engine.pe_input", return_value={}
+            "integrations.clients.policyengine.policy_engine.build_pe_input",
+            return_value=PayloadPlan(payload={}, buckets=[]),
         ) as build_payload, patch(
             "integrations.clients.policyengine.policy_engine.pe_engines", []
         ):
