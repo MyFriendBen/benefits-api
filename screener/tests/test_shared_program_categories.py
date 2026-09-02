@@ -44,6 +44,27 @@ def make_program(*, label_prefix: str, **overrides) -> Program:
     return Program.objects.create(**defaults)
 
 
+class _FakeMember:
+    """Stands in for a HouseholdMember; cap calculators only read frontend_id."""
+
+    def __init__(self, frontend_id: str):
+        self.frontend_id = frontend_id
+
+
+class _FakeMemberEligibility:
+    def __init__(self, member: _FakeMember, value: int):
+        self.member = member
+        self.value = value
+        self.eligible = True
+
+
+class _FakeEligibility:
+    def __init__(self, value: int, eligible_members: list):
+        self.value = value
+        self.eligible_members = eligible_members
+        self.eligible = True
+
+
 def make_category(external_name: str, white_label=None, icon: str = None) -> ProgramCategory:
     icon_instance = CategoryIconName.objects.get_or_create(name=icon)[0] if icon else None
     return ProgramCategory.objects.create(
@@ -195,3 +216,31 @@ class TestSharedCategoryCapCalculators(TestCase):
                 self.assertEqual(cap.programs, [], f"{name} kept programs for a screen that has none")
                 self.assertEqual(cap.household_cap, 0)
                 self.assertEqual(cap.member_caps, {})
+
+    def test_a_max_cap_survives_a_single_eligible_program(self):
+        """
+        calc_max_cap used to unpack the value list, so max(*[1200]) raised
+        TypeError and took down the whole results request. One value is the
+        common case: exactly one of the capped programs is present.
+        """
+        from programs.categories import category_cap_calculators
+
+        member = _FakeMember("1")
+        eligibility = {"cfhc": _FakeEligibility(1200, [_FakeMemberEligibility(member, 1200)])}
+
+        caps = category_cap_calculators["co_health_care"](eligibility).caps()
+
+        self.assertEqual([cap.member_caps for cap in caps], [{"1": 1200}])
+
+    def test_a_max_cap_takes_the_highest_of_several_programs(self):
+        from programs.categories import category_cap_calculators
+
+        member = _FakeMember("1")
+        eligibility = {
+            "cfhc": _FakeEligibility(1200, [_FakeMemberEligibility(member, 1200)]),
+            "awd_medicaid": _FakeEligibility(900, [_FakeMemberEligibility(member, 900)]),
+        }
+
+        caps = category_cap_calculators["co_health_care"](eligibility).caps()
+
+        self.assertEqual([cap.member_caps for cap in caps], [{"1": 1200}])

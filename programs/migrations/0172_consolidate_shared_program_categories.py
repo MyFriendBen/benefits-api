@@ -36,21 +36,27 @@ from django.db import migrations
 from integrations.clients.google_translate import Translate, is_auto_translatable
 
 # The 10 shared categories, keyed by external_name.
-# (icon, display name, tax_category)
+# (icon, display name, tax_category, priority)
+#
+# priority is set explicitly, not inherited from the promoted row. It is
+# serialized to the frontend, which sorts categories by it ahead of value
+# (Programs.tsx) — so a value carried over from CO would silently reorder the
+# results page for every white label. null means "no override", i.e. sort by
+# total value, which is the behaviour every white label has today.
 SHARED_CATEGORIES = {
-    "cash": ("cash", "Cash Assistance", False),
-    "food": ("food", "Food and Nutrition", False),
-    "health_care": ("health_care", "Health Care", False),
-    "housing": ("housing", "Housing and Utilities", False),
-    "child_care": ("child_care", "Child Care and Youth", False),
-    "tax_credit": ("tax_credit", "Tax Credits", True),
-    "transportation": ("transportation", "Transportation", False),
-    "employment": ("job_resources", "Employment", False),
-    "savings": ("savings", "Savings", False),
+    "cash": ("cash", "Cash Assistance", False, None),
+    "food": ("food", "Food and Nutrition", False, None),
+    "health_care": ("health_care", "Health Care", False, None),
+    "housing": ("housing", "Housing and Utilities", False, None),
+    "child_care": ("child_care", "Child Care and Youth", False, None),
+    "tax_credit": ("tax_credit", "Tax Credits", True, None),
+    "transportation": ("transportation", "Transportation", False, None),
+    "employment": ("job_resources", "Employment", False, None),
+    "savings": ("savings", "Savings", False, None),
     # Post-secondary and adult education: scholarships, tuition aid and
     # workforce training. Distinct from child_care, which covers early
     # childhood and K-12 programs.
-    "education": ("education", "Education and Training", False),
+    "education": ("education", "Education and Training", False, None),
 }
 
 # CO holds the unprefixed names already; promote these rows to shared rather than
@@ -166,11 +172,17 @@ def forward(apps, schema_editor):
         """
         Set the English display name and machine-translate the rest.
 
-        add_translation only fills in English and leaves the other languages
-        blank, which renders an empty category heading for non-English users.
-        Mirrors what import_program_config does, marking the results unedited so
-        a human translation still overrides them.
+        Only touches a category whose English text actually differs. Rewriting a
+        name in place would replace every other language with machine output:
+        add_translation always marks English edited, and edit_translation_by_id's
+        manual=False guard only spares a row that is both no_auto and edited,
+        which categories are not. For the five categories whose text is
+        unchanged that would discard curated copy for nothing.
         """
+        cat.name.set_current_language(settings.LANGUAGE_CODE)
+        if (cat.name.text or "").strip() == text:
+            return
+
         translation = Translation.objects.add_translation(label=cat.name.label, default_message=text)
 
         if not is_auto_translatable(text):
@@ -213,7 +225,7 @@ def forward(apps, schema_editor):
     # Step 2: create any shared category that doesn't exist yet, and normalise the
     # icon, display name and tax_category on all of them.
     shared = {}
-    for external_name, (icon_name, display_name, tax_category) in SHARED_CATEGORIES.items():
+    for external_name, (icon_name, display_name, tax_category, priority) in SHARED_CATEGORIES.items():
         # Look the row up by external_name alone, not scoped to white_label__isnull.
         # external_name is globally unique, so a row that already carries this name
         # while still scoped to a white label must be adopted and promoted — trying
@@ -232,6 +244,7 @@ def forward(apps, schema_editor):
 
         cat.icon = icon
         cat.tax_category = tax_category
+        cat.priority = priority
         cat.white_label = None
         # calculator is carried over from the promoted row rather than reset.
         # child_care and health_care inherit CO's cap calculators (co_preschool,
