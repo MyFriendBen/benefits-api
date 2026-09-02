@@ -1,9 +1,8 @@
 """SNAP reads its monthly output at today's month, so the BBCE limit tracks today's rules.
 
 States re-base their broad-based categorical eligibility gross income limit onto the
-current calendar year's poverty guidelines on their own schedule, and PolicyEngine reads
-that schedule off the month asked about (`fpg_year_start_month`). A fixed month pinned
-every screen to one side of the cutover for a whole year -- see `Snap.pe_period_month`.
+current year's poverty guidelines on their own schedule, and PolicyEngine reads that
+schedule off the month asked about. See `Snap.pe_period_month`.
 """
 
 from datetime import date
@@ -53,7 +52,7 @@ class SnapMonthTestCase(TestCase):
 
 class TestMonthFollowsToday(SnapMonthTestCase):
     def test_current_year_reads_the_current_month(self):
-        """The whole point: in September we ask PolicyEngine about September."""
+        """In September we ask PolicyEngine about September."""
         with patch("programs.programs.cross_white_label.snap.base.date") as mock_date:
             mock_date.today.return_value = date(2026, 9, 2)
             self.assertEqual(self.calculator("2026").pe_period_month, "09")
@@ -75,7 +74,7 @@ class TestMonthFollowsToday(SnapMonthTestCase):
                     self.assertEqual(self.calculator("2026").pe_period_month, f"{month:02d}")
 
     def test_october_reads_october_so_a_fiscal_year_state_re_bases(self):
-        """The MFB-1740 case: Colorado's BBCE limit moves to the new guidelines on Oct 1."""
+        """Colorado's BBCE limit moves to the new guidelines on Oct 1."""
         with patch("programs.programs.cross_white_label.snap.base.date") as mock_date:
             mock_date.today.return_value = date(2026, 10, 1)
             self.assertEqual(self.calculator("2026").pe_period_month, "10")
@@ -96,19 +95,19 @@ class TestMonthStaysInsideTheRequestedYear(SnapMonthTestCase):
             self.assertEqual(self.calculator("2027").pe_period_month, "01")
 
     def test_a_past_year_does_not_borrow_a_month_from_today(self):
-        """September of a year that has ended is not "today" in any useful sense, and
-        December is the state that year finished in."""
+        """December is the state a finished year ended in; today's month is meaningless."""
         with patch("programs.programs.cross_white_label.snap.base.date") as mock_date:
             mock_date.today.return_value = date(2026, 3, 15)
             self.assertNotEqual(self.calculator("2024").pe_period_month, "03")
             self.assertEqual(self.calculator("2024").pe_period_month, "12")
 
     def test_a_non_numeric_period_falls_back_rather_than_raising(self):
-        """`FederalPoveryLimit.period` is free text. A value whose calendar year cannot be
-        placed has to degrade to a month, not raise inside eligibility calculation."""
+        """Defensive: misconfiguration degrades to a month and warns, rather than raising
+        inside eligibility calculation and taking down every program on the screen."""
         with patch("programs.programs.cross_white_label.snap.base.date") as mock_date:
             mock_date.today.return_value = date(2026, 9, 2)
-            self.assertEqual(self.calculator("THIS_YEAR_FISCAL").pe_period_month, "01")
+            with self.assertLogs("programs.programs.cross_white_label.snap.base", "WARNING"):
+                self.assertEqual(self.calculator("not-a-year").pe_period_month, "01")
 
 
 class TestEveryVariantInherits(SnapMonthTestCase):
@@ -122,7 +121,7 @@ class TestEveryVariantInherits(SnapMonthTestCase):
                     self.assertEqual(self.calculator("2026", calculator).pe_period_month, "09")
 
     def test_no_variant_hardcodes_its_own_month(self):
-        """A subclass reintroducing a constant would silently opt back out of the fix."""
+        """A subclass overriding with a constant would silently stop tracking today."""
         for calculator in SNAP_VARIANTS:
             with self.subTest(calculator=calculator.__name__):
                 self.assertIsInstance(calculator.pe_period_month, property)

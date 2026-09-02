@@ -31,14 +31,10 @@ from programs.programs.testing_fixtures.pe_integration import (
 PE_VERSION = "1.815.1"
 YEAR = "2026"
 
-# `Snap.pe_period_month` reads today's month so the BBCE income limit tracks the poverty
-# guidelines a state is currently applying (MFB-1740). The month is part of the recorded
-# request body, so the date is pinned here rather than read off the wall clock: the
-# expected value below is only reproducible against a fixed date.
-#
-# January, because SNAP's maximum allotment steps up each October with the federal fiscal
-# year -- this household reads $487/month asked about January and $517 asked about October.
-# Either is correct for its own date; pinning one is what makes the assertion stable.
+# `Snap.pe_period_month` reads today's month, which is part of the recorded request body,
+# so the date is pinned rather than taken from the wall clock. January: the maximum
+# allotment steps up each October -- this household reads $487/month asked about January
+# and $517 asked about October -- so the expected value below only holds for a fixed date.
 TODAY = date(int(YEAR), 1, 15)
 
 
