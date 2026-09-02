@@ -63,6 +63,8 @@
 - [ ] Scenario 1 (Single adult, Wyandotte County/Rating Area 1, 120% FPL, non-expansion coverage gap): User should be **eligible** — $6,257/year (~$521.42/month)
 - [ ] Scenario 2 (same household, Sedgwick County/Rating Area 6 — isolates rating-area/SLCSP variation): User should be **eligible** — $7,599/year (~$633.25/month)
 - [ ] Scenario 3 (Single adult, Wyandotte County, 50% FPL, below-floor): User should be **ineligible** — $0
+- [ ] Scenario 4 (Single adult, Wyandotte County, 402.6% FPL — above the restored 400% FPL cap): User should be **ineligible** — $0
+- [ ] Scenario 5 (Scenario 1's household, but with employer-sponsored coverage): User should be **ineligible** — $0
 
 ---
 
@@ -85,3 +87,22 @@
 
 - **Household**: 1 adult, birth month/year `March 1991` (age 35), employment income $7,825/year, KS resident, Wyandotte County (zip 66101), no health coverage, no employer offer, U.S. citizen.
 - **Expected**: Ineligible. `aca_ptc` = **$0**.
+
+### Scenario 4: Single Adult, Wyandotte County — 402.6% FPL, Above the Restored 400% Cap
+
+- **Household**: 1 adult, birth month/year `March 1991` (age 35), employment income $63,000/year, KS resident, Wyandotte County (zip 66101), no health coverage, no employer offer, U.S. citizen.
+- **Expected**: Ineligible. `aca_ptc` = **$0**.
+- **Why this matters**: the enhanced (ARPA/IRA) premium tax credits expired after 2025, so the 400% FPL eligibility cap is **back in force for 2026** — PolicyEngine models this (`gov/aca/ptc_income_eligibility.yaml` returns the >400% bracket to `false` from `2026-01-01`). This is the single largest behavioral change in the program for 2026 and the coverage gap's upper edge: the same household $1,000 lower, at $62,000 (396.2% FPL), is eligible for $476/year. Without this scenario a re-extension of the enhanced credits — or a PolicyEngine parameter change — would silently flip thousands of Kansas households between $0 and a subsidy with nothing failing.
+
+### Scenario 5: Scenario 1's Household, With Employer-Sponsored Coverage
+
+- **Household**: identical to Scenario 1 (1 adult, age 35, $18,780/year, Wyandotte County, zip 66101) **except** the adult reports health coverage through a job.
+- **Expected**: Ineligible. `aca_ptc` = **$0**.
+- **Why this matters**: enrollment in an eligible employer plan is a statutory disqualifier (26 U.S.C. § 36B(c)(2)(C)), and PolicyEngine applies it **only if we send `has_esi`**. Holding everything else constant against Scenario 1 isolates that one input: $6,257 → $0. If `HasEsiDependency` is ever dropped from `KsAca`, this is the only scenario that fails.
+
+---
+
+## Data Gaps and Known Discrepancies
+
+- **PolicyEngine excludes households at *exactly* 400% FPL.** 26 U.S.C. § 36B(c)(1)(A) makes a household eligible when income "does not exceed" 400% of the poverty line, so exactly 400% should qualify. PolicyEngine's `ptc_income_eligibility` bracket applies the `false` amount at a threshold of `4.00` inclusive, so a single adult at exactly $62,600 (400.0% FPL) returns $0 rather than a credit. Verified at PE 1.815.1: $62,000 → $476.37, $62,600 → $0.00. The affected band is a single dollar of annual income, so this is documented rather than worked around, and **Scenario 4 deliberately sits at 402.6% FPL** — where the statute and PolicyEngine agree — instead of encoding the discrepancy as an assertion. Worth reporting upstream to PolicyEngine.
+- **Ages are asserted as fixed integers in the codified tests**, not as the birth month/year the scenarios state. The recorded cassettes match on the exact request body, so an age derived from the current date would break the suite on a calendar boundary. `March 1991` is age 35 throughout the 2026 coverage year either way, so the values are unaffected — but the screener's birth-date path is exercised by API QA rather than by these tests.
