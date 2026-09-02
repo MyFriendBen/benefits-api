@@ -231,26 +231,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         # Still exactly $50 — the separate "SNAP into BabySteps" $120 add-on is out of scope.
         self.assertEqual(eligibility.value, 50)
 
-    def test_scenario_7_out_of_state_zip_is_not_a_calculator_gate(self):
-        """
-        Scenario 7 (documented, not enforced here): the spec expects an out-of-state household
-        to be ineligible, but Massachusetts residency (Criterion 1) is enforced upstream by
-        white-label routing — `ma_bsp` is only ever calculated for `ma` screens, and BabySteps
-        is statewide, so there is no sub-state or ZIP condition to assert. This test pins that
-        design decision: the calculator deliberately applies no location gate, so an
-        out-of-state ZIP reaching it still returns the per-child result.
-        """
-        screen = self.make_screen(zipcode="03301", county="Concord", household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
-
-        _, eligibility = self.calculate(screen)
-
-        self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
-
-    def test_scenario_8_grandchild_qualifies(self):
-        """Scenario 8: a `grandChild` beneficiary candidate → eligible, $50."""
+    def test_scenario_7_grandchild_qualifies(self):
+        """Scenario 7: a `grandChild` beneficiary candidate → eligible, $50."""
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1968, 3, 1))
         self.make_member(screen, "grandChild", date(2026, 3, 1))
@@ -260,9 +242,9 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
 
-    def test_scenario_9_birth_pathway_month_boundary(self):
+    def test_scenario_8_birth_pathway_month_boundary(self):
         """
-        Scenario 9: a child turning one during the current month is still inside the window.
+        Scenario 8: a child turning one during the current month is still inside the window.
         Asserting `birth_pathway_eligible` pins the month-level boundary directly.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=2)
@@ -275,9 +257,9 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
 
-    def test_scenario_10_birth_pathway_expired_is_ineligible(self):
+    def test_scenario_9_birth_pathway_expired_is_ineligible(self):
         """
-        Scenario 10: the paired case — a child whose birth window has closed is ineligible.
+        Scenario 9: the paired case — a child whose birth window has closed is ineligible.
         The adoption pathway would need an adoption date the screener does not collect.
         """
         screen = self.make_screen(zipcode="02139", county="Cambridge", household_size=2)
@@ -290,9 +272,9 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.assertFalse(eligibility.eligible)
         self.assertEqual(eligibility.value, 0)
 
-    def test_scenario_11_reported_bug_household(self):
+    def test_scenario_10_reported_bug_household(self):
         """
-        The MFB-1729 repro household shape: two children under one plus a two-year-old.
+        Scenario 10 — the MFB-1729 repro household shape: two children under one plus a two-year-old.
         Only the two under-one children are valued. Birth dates are re-anchored to the
         frozen July 22, 2026 evaluation date rather than copied from the ticket, which
         reported ages relative to the live date.

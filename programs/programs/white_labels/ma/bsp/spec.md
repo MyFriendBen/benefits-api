@@ -13,8 +13,8 @@ BabySteps eligibility is determined **separately for each child** in the househo
 ### 1. Child must be a Massachusetts resident when the U.Fund account is opened
 
 - **Rule**: Applies to the **child**, not necessarily the parent, guardian, or account owner — anyone (a relative or friend) may open the account on the eligible child's behalf.
-- **Screener fields**: `zipcode`; `relationship` (identifies which household members are the children being evaluated, not itself a residency test)
-- **Handling**: Use the household's Massachusetts ZIP as a proxy for the listed child's residence rather than requiring a separately identified parent/guardian to be the Massachusetts resident.
+- **Screener fields**: none read by this calculator — `relationship` identifies which household members are evaluated as beneficiaries, but it is not a residency test.
+- **Handling**: Enforced upstream by white-label routing, not by this calculator — `ma_bsp` is only ever evaluated for `ma` screens, and the program is statewide, so there is no sub-state or ZIP condition to apply. No out-of-state scenario is listed below because an out-of-state household never reaches this calculator.
 - **Source**: Mass.gov BabySteps eligibility FAQ ("Live in Massachusetts"); Massachusetts Treasury, "This 529 Day, Claim $50 for Your Child's Future with BabySteps" (2026), which confirms relatives or friends may open the account.
 
 ### 2. Child must qualify through the birth pathway or the adoption pathway
@@ -250,20 +250,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 
 ---
 
-### Scenario 7: Out-of-State Residency — Ineligible Due to Non-Massachusetts ZIP
-**What we're checking**: A household located outside Massachusetts is correctly excluded, confirming the one real evaluable gate (Massachusetts residency) is enforced.
-**Expected**: Ineligible
-
-- **Location**: ZIP `03301` (out of state — New Hampshire)
-- **Household**: 2 people
-- Person 1: `headOfHousehold`, born March 1990
-- Person 2: `child`, born February 2026
-
-**Why this matters**: The primary negative test for the one criterion the screener can definitively evaluate.
-
----
-
-### Scenario 8: Qualifying Grandchild — Non-`child` Relationship Value
+### Scenario 7: Qualifying Grandchild — Non-`child` Relationship Value
 **What we're checking**: A household member reported under a relationship value other than `child` — here `grandChild`, a committed beneficiary candidate — is evaluated as a potential beneficiary. BabySteps' rule is about Massachusetts residency and birth/adoption timing, not being the head of household's biological son or daughter.
 **Expected**: Eligible, $50.00
 
@@ -276,7 +263,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 
 ---
 
-### Scenario 9: Birth-Pathway Month Boundary — Child Turning One This Month
+### Scenario 8: Birth-Pathway Month Boundary — Child Turning One This Month
 **What we're checking**: The screener only collects birth month/year, not day. A child turning one during the current month is treated inclusively as still within the one-year enrollment window.
 **Expected**: Eligible, $50.00
 
@@ -287,11 +274,11 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 - Person 1: `headOfHousehold`, born May 1990
 - Person 2: `child`, born July 2025 (turning one this month)
 
-**Why this matters**: The first-birthday month is the exact boundary the whole cutoff turns on, and it is the one month where the missing birth *day* makes the answer genuinely ambiguous. Scenario 10 is the paired case one month later, where the window has definitively closed.
+**Why this matters**: The first-birthday month is the exact boundary the whole cutoff turns on, and it is the one month where the missing birth *day* makes the answer genuinely ambiguous. Scenario 9 is the paired case one month later, where the window has definitively closed.
 
 ---
 
-### Scenario 10: Birth Pathway Expired — Ineligible
+### Scenario 9: Birth Pathway Expired — Ineligible
 **What we're checking**: A child whose birth-pathway window has definitively closed is ineligible. The adoption pathway would require an adoption date the screener does not collect, so it cannot rescue this case.
 **Expected**: Ineligible
 
@@ -302,11 +289,11 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 - Person 1: `headOfHousehold`, born March 1990
 - Person 2: `child`, born June 2025 (birth pathway closed as of the frozen July 22, 2026 evaluation date — 13 months, one month past the window)
 
-**Why this matters**: Paired with Scenario 9, this pins the boundary from both sides — the first-birthday month is inside the window, the following month is outside it. This is the direct regression test for MFB-1729.
+**Why this matters**: Paired with Scenario 8, this pins the boundary from both sides — the first-birthday month is inside the window, the following month is outside it. This is the direct regression test for MFB-1729.
 
 ---
 
-### Scenario 11: Reported Bug Household — Two Children Under One Plus a Two-Year-Old
+### Scenario 10: Reported Bug Household — Two Children Under One Plus a Two-Year-Old
 **What we're checking**: The MFB-1729 partner-reported household shape. Only the two children under one are valued; the two-year-old is excluded.
 **Expected**: Eligible, $100.00
 
@@ -335,7 +322,7 @@ Three real eligibility/program facts have no corresponding screener input at all
 | Child confirmed born/adopted outside Massachusetts | Ineligible | Eligible, $50 (Criterion 4 inclusive default) | Scenario 1 |
 | Child confirmed to have already received a BabySteps contribution | Ineligible for a second contribution | Eligible, $50 — no household-level current-benefits field is read for this per-child fact (Criterion 3) | Scenario 1 |
 | Older child adopted this year in a household with a newborn | Eligible, $100 (both children) | Eligible, $50 — only the newborn passes the age cutoff | Scenario 4 |
-| Older child confirmed adopted within the preceding year | Eligible, $50, via the adoption pathway | **Ineligible** — the birth-pathway cutoff applies and no adoption input exists (Criterion 2b). Known false negative, disclosed in the program description. | Scenario 10 |
+| Older child confirmed adopted within the preceding year | Eligible, $50, via the adoption pathway | **Ineligible** — the birth-pathway cutoff applies and no adoption input exists (Criterion 2b). Known false negative, disclosed in the program description. | Scenario 9 |
 
 If BabySteps is later added as a selectable current-benefits option for an unrelated product reason, it must not be wired into this calculator's eligibility logic without a fresh, source-supported per-child mapping.
 
