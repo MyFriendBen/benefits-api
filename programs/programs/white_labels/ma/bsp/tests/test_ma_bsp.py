@@ -1,11 +1,10 @@
 """
 Unit tests for MaBabySteps (MA BabySteps Savings Plan) custom calculator.
 
-Eligibility is evaluated per child: each beneficiary candidate is worth a one-time $50 seed
-deposit, either through the birth pathway (born on or after Jan 1, 2020 and still inside the
-one-year enrollment window) or through the adoption-pathway inclusive fallback. There is no
-income, asset, insurance, or benefit-receipt gate, and Massachusetts residency is handled
-upstream by white-label routing.
+Eligibility is evaluated per child: each beneficiary candidate inside the birth-pathway
+window (born on or after Jan 1, 2020 and no more than one year ago) is worth a one-time $50
+seed deposit. There is no income, asset, insurance, or benefit-receipt gate, and
+Massachusetts residency is handled upstream by white-label routing.
 
 Scenario numbers in the test names map to the "Test Scenarios" section of spec.md. Per that
 section, every scenario is evaluated as of July 22, 2026, so `Screen.get_reference_date` is
@@ -332,8 +331,13 @@ class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
     def test_missing_birth_year_month_is_ineligible(self):
         """
         A candidate with no birth date cannot be placed inside the one-year window, so the
-        birth pathway does not pass. The screener requires a birth date for every member, so
-        this pins the defensive branch rather than a reachable screener state.
+        birth pathway does not pass.
+
+        This state is reachable: `HouseholdMemberSerializer` takes `birth_year`/`birth_month`
+        as optional and accepts `age` directly, leaving `birth_year_month` null. The React
+        wizard always sends both, so there is no user-facing regression, but an API-direct
+        caller or a legacy row with only `age` set now returns $0 where it previously
+        returned $50 via the removed adoption fallback.
         """
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
