@@ -3,7 +3,7 @@
         "code": "tx"
     },
     "program_category": {
-        "external_name": "tx_cash",
+        "external_name": "savings",
         "name": "Cash Assistance",
         "icon": "cash"
     },

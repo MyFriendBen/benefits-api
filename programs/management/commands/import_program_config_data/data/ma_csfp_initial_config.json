@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "ma"},
-    "program_category": {"external_name": "ma_food"},
+    "program_category": {"external_name": "food"},
     "program": {
         "name_abbreviated": "ma_csfp",
         "year": "2025",

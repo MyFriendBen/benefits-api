@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "tx"},
-    "program_category": {"external_name": "tx_cash", "name": "Cash Assistance", "icon": "cash"},
+    "program_category": {"external_name": "cash", "name": "Cash Assistance", "icon": "cash"},
     "program": {
         "name_abbreviated": "tx_ssi",
         "year": "2025",

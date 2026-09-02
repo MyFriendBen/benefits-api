@@ -180,7 +180,11 @@ class FormOption(models.Model):
 class ProgramCategoryManager(models.Manager):
     translated_fields = ("name", "description")
 
-    def new_program_category(self, white_label: str, external_name: str, icon: str):
+    def new_program_category(self, white_label: Optional[str], external_name: str, icon: str):
+        """
+        Create a program category. A falsy white_label creates a shared category,
+        usable by programs in every white label.
+        """
         translations = {}
         for field in self.translated_fields:
             translations[field] = Translation.objects.add_translation(
@@ -188,7 +192,7 @@ class ProgramCategoryManager(models.Manager):
             )
 
         # set white label
-        white_label = WhiteLabel.objects.get(code=white_label)
+        white_label = WhiteLabel.objects.get(code=white_label) if white_label else None
 
         # set icon
         icon_instance = None
@@ -228,7 +232,8 @@ class ProgramCategoryDataController(ModelDataController["ProgramCategory"]):
             "calculator": program_category.calculator,
             "icon": program_category.icon.name if program_category.icon else None,
             "tax_category": program_category.tax_category,
-            "white_label": program_category.white_label.code,
+            # None for a shared category, which has no white label
+            "white_label": program_category.white_label.code if program_category.white_label else None,
             "priority": program_category.priority,
         }
 
@@ -239,11 +244,15 @@ class ProgramCategoryDataController(ModelDataController["ProgramCategory"]):
         program_category.priority = data["priority"]
         program_category.tax_category = data["tax_category"]
 
-        try:
-            white_label = WhiteLabel.objects.get(code=data["white_label"])
-        except WhiteLabel.DoesNotExist:
-            white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
-        program_category.white_label = white_label
+        if data["white_label"] is None:
+            # Shared category, usable by every white label
+            program_category.white_label = None
+        else:
+            try:
+                white_label = WhiteLabel.objects.get(code=data["white_label"])
+            except WhiteLabel.DoesNotExist:
+                white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
+            program_category.white_label = white_label
 
         if data["icon"]:
             icon = CategoryIconName.objects.filter(name=data["icon"]).first()
@@ -264,11 +273,19 @@ class ProgramCategory(models.Model):
     class Meta:
         verbose_name_plural = "Program categories"
 
+    # A null white_label means the category is shared: programs in any white label
+    # point at the same row, so a category like "cash" exists exactly once and
+    # cannot drift between states. A set white_label scopes the category to that
+    # white label, for categories only it has (CESN's efficiency upgrades, the CO
+    # tax calculator).
+    #
+    # Editing a shared row changes it for every white label. The admin surfaces a
+    # warning to that effect; see ProgramCategoryAdmin.
     white_label = models.ForeignKey(
         WhiteLabel,
         related_name="program_categories",
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
     )
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
@@ -590,7 +607,14 @@ class ProgramDataController(ModelDataController["Program"]):
         # get program category
         program_category = None
         if data["category"] is not None:
-            program_category = ProgramCategory.objects.get(external_name=data["category"])
+            # external_name is unique, so this needs no white label scoping: a
+            # shared category resolves for every white label.
+            try:
+                program_category = ProgramCategory.objects.get(external_name=data["category"])
+            except ProgramCategory.DoesNotExist:
+                raise ProgramCategory.DoesNotExist(
+                    f"No program category with external_name '{data['category']}'"
+                ) from None
         program.category = program_category
 
         # add required programs

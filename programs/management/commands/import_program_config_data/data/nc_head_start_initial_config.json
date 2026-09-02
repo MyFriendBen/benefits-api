@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "nc"},
-    "program_category": {"external_name": "nc_head_start", "name": "Child Care", "icon": "child_care"},
+    "program_category": {"external_name": "child_care", "name": "Child Care", "icon": "child_care"},
     "program": {
         "name_abbreviated": "nc_head_start",
         "year": "2025",

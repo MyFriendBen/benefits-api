@@ -3,7 +3,7 @@
         "code": "nc"
     },
     "program_category": {
-        "external_name": "nc_housing",
+        "external_name": "housing",
         "name": "Housing and Utilities",
         "icon": "housing"
     },

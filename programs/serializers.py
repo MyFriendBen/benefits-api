@@ -55,7 +55,16 @@ class ProgramCategorySerializer(serializers.ModelSerializer):
         fields = ("id", "name", "icon", "programs")
 
     def get_programs(self, obj: ProgramCategory):
-        return ProgramSerializer(obj.programs.filter(active=True, show_on_current_benefits=True), many=True).data
+        # A shared category holds programs from every white label, so the
+        # requested white label has to be applied here too. Without it a
+        # category would list other states' programs.
+        programs = obj.programs.filter(active=True, show_on_current_benefits=True)
+
+        white_label = self.context.get("white_label")
+        if white_label is not None:
+            programs = programs.filter(white_label__code=white_label)
+
+        return ProgramSerializer(programs, many=True).data
 
     def get_icon(self, obj: ProgramCategory):
         return obj.icon.name if obj.icon else "default"

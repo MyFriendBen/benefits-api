@@ -1,7 +1,7 @@
 {
     "white_label": {"code": "il"},
     "program_category": {
-        "external_name": "il_food"
+        "external_name": "food"
     },
     "program": {
         "name_abbreviated": "il_csfp",

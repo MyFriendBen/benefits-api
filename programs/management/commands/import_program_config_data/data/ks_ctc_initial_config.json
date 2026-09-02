@@ -3,7 +3,7 @@
     "code": "ks"
   },
   "program_category": {
-    "external_name": "ks_tax_credit",
+    "external_name": "tax_credit",
     "name": "Tax Credits",
     "icon": "tax_credit",
     "tax_category": true
