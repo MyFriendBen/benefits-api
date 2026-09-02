@@ -176,3 +176,22 @@ class TestSharedCategoryEndpoint(APITestCase):
 
         program_ids = [p["id"] for category in response.data for p in category["programs"]]
         self.assertEqual(program_ids, [self.programs["co_tanf"].id])
+
+
+class TestSharedCategoryCapCalculators(TestCase):
+    """
+    child_care and health_care become shared rows while still carrying CO's cap
+    calculators, which CO's active programs depend on. The caps are defined by
+    program name, so they have to stay inert for other white labels.
+    """
+
+    def test_co_cap_calculators_are_a_noop_without_their_programs(self):
+        from programs.categories import category_cap_calculators
+
+        for name in ("co_preschool", "co_health_care"):
+            calculator = category_cap_calculators[name]({})
+
+            for cap in calculator.caps():
+                self.assertEqual(cap.programs, [], f"{name} kept programs for a screen that has none")
+                self.assertEqual(cap.household_cap, 0)
+                self.assertEqual(cap.member_caps, {})

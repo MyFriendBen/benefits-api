@@ -747,10 +747,8 @@ class Command(BaseCommand):
         if not external_name:
             raise CommandError("Missing required field 'external_name' in program_category")
 
-        # Look up by external_name alone rather than scoping to the white label.
-        # external_name is globally unique, and a shared category (white_label
-        # null) is usable by every white label — scoping the lookup would miss it
-        # and then fail the unique constraint trying to create a duplicate.
+        # Unscoped: external_name is globally unique, and a shared category has
+        # no white label to match on.
         existing_category = ProgramCategory.objects.filter(external_name=external_name).first()
 
         if existing_category:

@@ -233,6 +233,12 @@ def forward(apps, schema_editor):
         cat.icon = icon
         cat.tax_category = tax_category
         cat.white_label = None
+        # calculator is carried over from the promoted row rather than reset.
+        # child_care and health_care inherit CO's cap calculators (co_preschool,
+        # co_health_care), which CO's active programs still depend on. They list
+        # CO-only program names and the cap logic drops any program missing from
+        # a screen's eligibility, so on another state's screen they produce an
+        # empty cap.
         cat.save()
 
         # One shared row carries one name. This applies the canonical spelling,
