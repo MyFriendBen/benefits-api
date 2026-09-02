@@ -19,7 +19,9 @@ class NCFamilyPlanningServices(ProgramCalculator):
         income_limit = int(NCFamilyPlanningServices.fpl_percent * fpl.get_limit(self.screen.household_size))
 
         # Calculate the household's gross yearly income, excluding cash assistance
-        gross_income = int(self.screen.calc_gross_income("yearly", ["all"], exclude=["cashAssistance"]))
+        gross_income = int(
+            self.screen.calc_gross_income("yearly", ["all"], exclude=["cashAssistance", "cashAssistanceOther"])
+        )
 
         # Check if gross income is below the Family Planning Medicaid income limit
         e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))

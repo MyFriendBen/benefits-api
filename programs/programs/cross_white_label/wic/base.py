@@ -19,7 +19,12 @@ class Wic(PolicyEngineMembersCalculator):
     that source list, as far as the screener collects it.
 
     ``financial_assistance`` carries the screener's ``cashAssistanceOther`` type (non-TANF cash
-    aid). It is a WIC source, so omitting it undercounted every household reporting one.
+    aid). It is added to hold WIC harmless, not to fix an undercount: ``gov.usda.wic.income``
+    lists both ``tanf`` and ``financial_assistance``, so before the cash-assistance split this
+    money already counted here via the ``tanf`` input. Adding it keeps ``wic_countable_income``
+    unchanged now that the money arrives in a different field — measured, the total is identical
+    either way. The real WIC change in the split is narrower: adjunctive eligibility no longer
+    triggers on non-TANF cash aid, because that is no longer read as TANF receipt.
 
     Adjunctive eligibility above 185% FPL is correct, not a bug: 42 U.S.C. § 1786(d)(2)(A)
     makes SNAP/TANF/Medicaid receipt its own pathway, and the 185% figure attaches only to

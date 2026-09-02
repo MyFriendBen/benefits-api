@@ -28,8 +28,13 @@ class TxTanf(Tanf):
         dependency.household.TxStateCodeDependency,
         dependency.member.TaxUnitDependentDependency,
         *dependency.irs_gross_income,
-        # Non-TANF cash aid is in TANF's unearned source list but not the taxable set, so
-        # irs_gross_income alone drops it from every gate.
+        # Non-TANF cash aid is not in the taxable set, so irs_gross_income alone drops it
+        # from every gate. Sent here for when PolicyEngine reads it, but inert today:
+        # unlike the federal list, TX's own `gov.states.tx.tanf.income.sources.unearned`
+        # omits `financial_assistance`, so `tx_tanf_countable_unearned_income` stays 0 and
+        # the grant is still overstated by the reported amount. Supplying TX's unearned
+        # total ourselves would fix that at the cost of counting `sSI`, `veteran`, `rental`
+        # and `boarder` income that TX deliberately excludes, so the fix belongs upstream.
         dependency.member.NonTanfCashAssistanceIncomeDependency,
     ]
 

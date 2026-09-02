@@ -18,9 +18,13 @@ per calculator rather than per route:
 * CO, IL, NC and MA compute countable unearned income themselves and pass a total, excluding
   only ``cashAssistance``. The new type falls into ``"unearned"`` automatically.
 
-Asserted behaviourally rather than structurally — each calculator's own inputs are evaluated
-against a household reporting the income — so a state that changes route still passes and a
-state that loses the income fails.
+What this asserts, and what it does not: each calculator's own inputs are evaluated against a
+household reporting the income, so this pins where the money lands *in the payload we send*
+and survives a state changing route. It does not prove PolicyEngine then reads the field — the
+values here never leave our process. Measured live, KS, MO and WA do read it and TX does not:
+``gov.states.tx.tanf.income.sources.unearned`` omits ``financial_assistance``, so TX passes
+this test while ``tx_tanf`` is unchanged. See the note in ``tanf/tx.py``. The four states that
+supply their own total are proven by construction, since the total is ours.
 """
 
 from django.test import TestCase
@@ -28,6 +32,7 @@ from django.test import TestCase
 from integrations.clients.policyengine.registry import all_calculators
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.cross_white_label.tanf.ma import MaTafdc
+from programs.util import DependencyError
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
 MONTHLY_AMOUNT = 400
@@ -73,7 +78,9 @@ class TanfCashAssistanceSplitTestCase(TestCase):
 
         Dependencies that need screen data this fixture does not carry (county lookups, tax
         units) are skipped rather than failed: this asserts where the money lands, not that
-        every unrelated input is satisfiable.
+        every unrelated input is satisfiable. Only ``DependencyError`` is skipped, and the
+        caller checks the result is non-empty — a dependency that starts raising something
+        else would otherwise empty this dict and make the assertions below vacuous.
         """
         totals = {}
         for dep in calculator.pe_inputs:
@@ -82,10 +89,20 @@ class TanfCashAssistanceSplitTestCase(TestCase):
                 continue
             try:
                 value = dep(self.screen, self.head, {}).value()
-            except Exception:
+            except DependencyError:
                 continue
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 totals[field] = totals.get(field, 0) + value
+        return totals
+
+    def _numeric_income_totals(self, slug: str, calculator: type) -> dict[str, float]:
+        """``_income_totals`` plus the guard that it actually measured something."""
+        totals = self._income_totals(calculator)
+        self.assertTrue(
+            totals,
+            f"{slug} reported no numeric income inputs at all, so this fixture can no longer "
+            f"tell whether cash assistance is counted",
+        )
         return totals
 
 
@@ -97,10 +114,10 @@ class TestNonTanfCashAssistanceReachesEveryState(TanfCashAssistanceSplitTestCase
         for slug, calculator in sorted(_tanf_calculators().items()):
             with self.subTest(program=slug):
                 IncomeStream.objects.all().delete()
-                before = self._income_totals(calculator)
+                before = self._numeric_income_totals(slug, calculator)
 
                 self._report("cashAssistanceOther")
-                after = self._income_totals(calculator)
+                after = self._numeric_income_totals(slug, calculator)
 
                 moved = {
                     field: after[field] - before.get(field, 0)
@@ -120,10 +137,10 @@ class TestNonTanfCashAssistanceReachesEveryState(TanfCashAssistanceSplitTestCase
         for slug, calculator in sorted(_tanf_calculators().items()):
             with self.subTest(program=slug):
                 IncomeStream.objects.all().delete()
-                before = self._income_totals(calculator)
+                before = self._numeric_income_totals(slug, calculator)
 
                 self._report("cashAssistance")
-                after = self._income_totals(calculator)
+                after = self._numeric_income_totals(slug, calculator)
 
                 counted_against_itself = {
                     field: after[field] - before.get(field, 0)
