@@ -52,10 +52,15 @@ runs:
 
         # pytest.ini runs the suite in parallel; conftest's pytest_configure drops any
         # recording mode back to a single process, so no mode handling is needed here.
+        #
+        # The coverage-uploading branch is PR validation: strict replay, 4k tests, where
+        # per-test output is noise. The other branch is the deploy path, which records
+        # against live APIs -- keep the verbose flags there, since a cassette or API
+        # failure is hardest to diagnose from a bare assertion.
         if [ "${{ inputs.upload-coverage }}" = "true" ]; then
           pytest --cov --cov-branch --cov-report=xml
         else
-          pytest --cov --cov-branch
+          pytest --cov --cov-branch --verbosity=2 --log-cli-level=INFO
         fi
 
     - name: Upload coverage to Codecov

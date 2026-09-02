@@ -8,10 +8,13 @@ a live auth attempt.
 """
 
 import os
+import unittest
 from unittest import mock
 
+from decouple import config
 from django.test import SimpleTestCase, override_settings
 
+from benefits.cache_config import redis_pool_kwargs
 from conftest import (
     MAX_ISOLATED_WORKERS,
     PE_RECORD_ENV_VAR,
@@ -22,7 +25,27 @@ from conftest import (
     vcr_record_mode,
 )
 
-BASE_LOCATION = "redis://localhost:6379/0"
+# Read the ambient URL like benefits/tests/test_redis_backend.py does, rather than
+# hardcoding a host: the connection assertions below open a real socket, so a developer
+# whose Redis lives elsewhere (or nowhere) should skip rather than error.
+REDIS_URL = config("REDIS_URL", default=None)
+BASE_LOCATION = REDIS_URL or "redis://127.0.0.1:6379/0"
+
+
+def _redis_available() -> bool:
+    if not REDIS_URL:
+        return False
+    try:
+        import redis
+
+        kwargs = redis_pool_kwargs(REDIS_URL)
+        ssl = {"ssl_cert_reqs": None} if "ssl_cert_reqs" in kwargs else {}
+        redis.from_url(REDIS_URL, socket_connect_timeout=2, **ssl).ping()
+        return True
+    except Exception:
+        return False
+
+
 # A fresh dict per test module: _isolate_cache_per_xdist_worker mutates
 # settings.CACHES in place, and override_settings does not copy it.
 REDIS_CACHES = {"default": {"BACKEND": "django_redis.cache.RedisCache", "LOCATION": BASE_LOCATION}}
@@ -53,6 +76,7 @@ class TestRedisUrlForDatabase(SimpleTestCase):
         self.assertEqual(redis_url_for_database("redis://user:pw@h:6380/7", 4), "redis://user:pw@h:6380/4")
 
 
+@unittest.skipUnless(_redis_available(), "REDIS_URL not set or Redis unreachable")
 @override_settings(CACHES=REDIS_CACHES)
 class TestWorkerIsolation(SimpleTestCase):
     """Assertions here read the *resolved connection*, not settings.
@@ -80,20 +104,31 @@ class TestWorkerIsolation(SimpleTestCase):
         _rebuild_cache_connections()
 
     def test_the_connection_moves_not_just_the_setting(self):
-        """The regression: settings said db N while the connection stayed on db 0."""
-        self.assertEqual(self._resolved_database("gw3"), "4")
+        """The regression: settings said db N while the connection stayed on the base."""
+        from conftest import _redis_database
 
-    def test_workers_never_get_database_zero(self):
-        """Database 0 stays free for non-xdist runs and for test_redis_backend.py,
-        which pins REDIS_URL directly and flushes whatever it points at."""
-        databases = {self._resolved_database(f"gw{i}") for i in range(MAX_ISOLATED_WORKERS)}
+        expected = _redis_database(BASE_LOCATION) + 1 + 3
 
-        self.assertNotIn("0", databases)
+        self.assertEqual(self._resolved_database("gw3"), str(expected))
+
+    def test_workers_never_get_the_base_database(self):
+        """The base database stays free for serial runs and for test_redis_backend.py,
+        which pins REDIS_URL directly and flushes whatever it points at. Offsetting from
+        0 rather than from the configured database put gw0 straight onto it."""
+        from conftest import _redis_database, _isolatable_database_count
+
+        base = str(_redis_database(BASE_LOCATION))
+        databases = {self._resolved_database(f"gw{i}") for i in range(_isolatable_database_count())}
+
+        self.assertNotIn(base, databases)
 
     def test_each_worker_gets_a_distinct_database(self):
-        databases = [self._resolved_database(f"gw{i}") for i in range(MAX_ISOLATED_WORKERS)]
+        from conftest import _isolatable_database_count
 
-        self.assertEqual(len(set(databases)), MAX_ISOLATED_WORKERS)
+        count = _isolatable_database_count()
+        databases = [self._resolved_database(f"gw{i}") for i in range(count)]
+
+        self.assertEqual(len(set(databases)), count)
 
     def test_a_non_redis_cache_is_left_alone(self):
         from django.conf import settings

@@ -6,10 +6,13 @@ HTTP interactions during tests. It automatically scrubs sensitive information
 from cassettes using VCR's built-in filtering capabilities.
 
 VCR behavior controlled by VCR_MODE environment variable:
-- VCR_MODE=new_episodes (PRs): Replays existing interactions, records NEW HTTP requests not in cassette
-- VCR_MODE=all (push to main): Never replays, re-records ALL cassettes from scratch
+- VCR_MODE=none (PRs and push to main): Replays only, never records, errors on any new HTTP request
 - VCR_MODE=once (local default): Replays existing interactions, ERRORS if cassette missing new HTTP request
-- VCR_MODE=none (strict playback): Replays only, never records, errors on any new HTTP requests
+- VCR_MODE=new_episodes: Replays existing interactions, records NEW HTTP requests not in cassette
+- VCR_MODE=all (production deploy): Never replays, re-records ALL cassettes from scratch
+
+A run that may write a cassette is forced single-process (see pytest_configure): parallel
+workers would issue duplicate live calls and race to write the same file.
 
 All integration tests marked with @pytest.mark.integration automatically use VCR.
 
@@ -259,6 +262,12 @@ def redis_url_for_database(location: str, db: int) -> str:
     return urlunsplit(parts._replace(path=f"/{db}"))
 
 
+def _redis_database(location: str) -> int:
+    """The database index ``location`` names, or 0 when it names none."""
+    path = urlsplit(location).path.lstrip("/")
+    return int(path) if path.isdigit() else 0
+
+
 def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     """Point this xdist worker at its own Redis database.
 
@@ -288,8 +297,13 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
 
     location = settings.CACHES["default"]["LOCATION"]
 
+    # Offset from the database REDIS_URL already names, not from 0. That database is the
+    # one a serial run uses and the one benefits/tests/test_redis_backend.py pins and
+    # FLUSHDBs, so a worker landing on it recreates the cross-process flush this function
+    # exists to prevent -- and the repo's own .env points at /1, not /0.
     index = int(worker_id.removeprefix("gw"))
-    settings.CACHES["default"]["LOCATION"] = redis_url_for_database(location, index + 1)
+    db = _redis_database(location) + 1 + index
+    settings.CACHES["default"]["LOCATION"] = redis_url_for_database(location, db)
     _rebuild_cache_connections()
 
 
@@ -313,6 +327,21 @@ def _rebuild_cache_connections() -> None:
     close_caches()
     caches._settings = caches.settings = caches.configure_settings(None)
     caches._connections = Local()
+
+
+def _isolatable_database_count() -> int:
+    """How many workers can get a database of their own.
+
+    Workers are offset above the database REDIS_URL names, so a URL pointing at a higher
+    database leaves fewer to hand out. Redis serves 0-15 by default.
+    """
+    from django.conf import settings
+
+    location = settings.CACHES.get("default", {}).get("LOCATION", "")
+    if not isinstance(location, str):
+        return MAX_ISOLATED_WORKERS
+
+    return max(0, REDIS_DATABASE_COUNT - 1 - _redis_database(location))
 
 
 def _run_records_cassettes(mode: str) -> bool:
@@ -362,13 +391,17 @@ def pytest_configure(config):
     # applies the cap when it builds config.option.tx and never rewrites numprocesses,
     # so on a machine with more cores than databases numprocesses still reports the
     # uncapped count and comparing against it aborts a run that was correctly capped.
+    # config.option.tx is likewise stale once the recording override above zeroes
+    # numprocesses, so a serial run is exempt regardless of what tx still holds.
+    running_parallel = bool(config.getoption("numprocesses", default=None))
     worker_count = len(config.option.tx or [])
-    if worker_count > MAX_ISOLATED_WORKERS and _cache_needs_per_worker_database():
+    available = _isolatable_database_count()
+    if running_parallel and worker_count > available and _cache_needs_per_worker_database():
         raise pytest.UsageError(
-            f"{worker_count} workers exceeds the {MAX_ISOLATED_WORKERS} Redis databases "
-            "available for per-worker cache isolation; workers would share a database and "
-            f"flush each other's entries. Pass --maxprocesses {MAX_ISOLATED_WORKERS} "
-            "(pytest.ini sets this by default)."
+            f"{worker_count} workers exceeds the {available} Redis databases available for "
+            "per-worker cache isolation; workers would share a database and flush each "
+            f"other's entries. Pass --maxprocesses {available}, or point REDIS_URL at a "
+            "lower database number to free more."
         )
 
     worker_id = os.environ.get("PYTEST_XDIST_WORKER")
@@ -472,10 +505,10 @@ def auto_vcr(request, vcr_config):
     This fixture:
     - Detects if a test is marked with @pytest.mark.integration
     - Automatically uses VCR to record/replay HTTP interactions
-    - VCR_MODE=new_episodes (PRs): Flexible - replays existing, records new HTTP requests not yet in cassette
-    - VCR_MODE=all (push to main): Fresh start - never replays, re-records all cassettes from scratch
+    - VCR_MODE=none (PRs and push to main): Read-only - replays only, never records, errors on new HTTP requests
     - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP request
-    - VCR_MODE=none (strict playback): Read-only - replays only, never records, errors on new HTTP requests
+    - VCR_MODE=new_episodes: Flexible - replays existing, records new HTTP requests not yet in cassette
+    - VCR_MODE=all (production deploy): Fresh start - never replays, re-records all cassettes from scratch
 
     Cassettes are stored in: <test_dir>/cassettes/<TestClass>.<test_name>.yaml
     Example: integrations/clients/hud_income_limits/tests/cassettes/
@@ -497,7 +530,7 @@ def auto_vcr(request, vcr_config):
 
     # Determine VCR record mode based on VCR_MODE environment variable
     # Possible values:
-    #   - "new_episodes": Flexible - replays existing, records new HTTP requests (PRs in CI)
+    #   - "new_episodes": Flexible - replays existing, records new HTTP requests
     #   - "all": Fresh start - never replays, re-records everything from scratch (push to main in CI)
     #   - "once" (default): Strict - replays existing, errors if cassette missing new HTTP request (local dev)
     #   - "none": Read-only - replays only, never records, errors on new HTTP requests (strict mode)

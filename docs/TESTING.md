@@ -26,9 +26,11 @@ roughly three minutes to under one. Two things follow from that:
   `conftest.py` detects these and disables the fan-out, so the recording commands below
   need no extra flags. (`once` — the default when `VCR_MODE` is unset — only writes when
   a whole cassette file is absent, so it keeps the fan-out.)
-- **Each worker gets its own Redis database** (1-15) when `REDIS_URL` is set, because
+- **Each worker gets its own Redis database** when `REDIS_URL` is set, because
   `clear_cache` issues FLUSHDB and would otherwise wipe other workers' entries mid-test.
-  Database 0 is left to serial runs and to `benefits/tests/test_redis_backend.py`.
+  Workers are numbered *above* the database `REDIS_URL` names, leaving that one to serial
+  runs and to `benefits/tests/test_redis_backend.py`, which flushes it directly. Pointing
+  `REDIS_URL` at a higher database leaves fewer to hand out.
   `pytest.ini` therefore caps the fan-out with `--maxprocesses 15`, which is what keeps
   `-n auto` safe on a large machine: it counts *logical* cores here (xdist prefers
   physical via `psutil`, which is not installed). Raising the cap past 15 fails with a
