@@ -1,0 +1,86 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_health_care",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "mo_chip",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "MO HealthNet for Kids (CHIP)",
+    "description": "MO HealthNet for Kids (CHIP) provides free or low-cost health coverage for children. It covers doctor visits, hospital care, prescriptions, dental care, and vision care.\n\nAfter approval, most children get coverage through a MO HealthNet health plan. Some families pay a monthly premium. Some American Indian and Alaska Native children may not have to pay this premium. Ask about this when you apply if your child belongs to a federally recognized tribe.\n\nMissouri makes a separate decision for each child, so your result is only an estimate. If your child qualifies for another MO HealthNet program, they may be moved from CHIP to that program.\n\nThe state will check your child's health insurance and other health coverage they may be able to get. Another health plan may affect whether your child can get CHIP, but limited coverage may not. A plan through a state government job can also affect eligibility, even if it costs a lot.\n\nSelect \"Apply Now\" to start Missouri's online MO HealthNet application. You can also apply by phone at 855-373-9994.",
+    "description_short": "Free or low-cost health coverage for kids",
+    "learn_more_link": "https://mydss.mo.gov/mhd/benefits",
+    "apply_button_link": "https://mydssapp.mo.gov/",
+    "apply_button_description": "",
+    "estimated_application_time": "15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "benefit",
+    "value_format": "estimated_annual",
+    "active": true,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "base_program": "chp",
+    "website_description": "Free or low-cost health coverage for kids"
+  },
+  "documents": [
+    {
+      "external_name": "mo_home",
+      "text": "Proof of home address, if requested (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity for the child, if requested (ex: school ID or government-issued ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn",
+      "text": "Social Security numbers for each person applying, if they have one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_income_proof",
+      "text": "Income records (ex: pay stubs, tax forms, or benefit letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_us_status",
+      "text": "Citizenship or immigration documents or numbers for each person applying, if needed",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_health_insurance",
+      "text": "Current health insurance information, if applicable",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_parentlink",
+      "name": "ParentLink Access Navigators",
+      "email": "parentlink@missouri.edu",
+      "description": "ParentLink helps Missouri families complete and submit MO HealthNet applications. Its navigators can also check an application's status and help solve access problems.",
+      "assistance_link": "https://parentlink.missouri.edu/navigators/",
+      "phone_number": "+18005528522"
+    }
+  ]
+}

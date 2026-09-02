@@ -1,0 +1,98 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"91131": {"age": {"2025": 35}, "is_tax_unit_spouse":
+      {"2025": false}, "is_tax_unit_dependent": {"2025": false}, "employment_income":
+      {"2025": 45000}, "self_employment_income": {"2025": 0}, "rental_income": {"2025":
+      0}, "taxable_pension_income": {"2025": 0}, "social_security": {"2025": 0}, "unemployment_compensation":
+      {"2025": 0}, "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions":
+      {"2025": 0}, "real_estate_taxes": {"2025": 0}}, "91132": {"age": {"2025": 34},
+      "is_tax_unit_spouse": {"2025": true}, "is_tax_unit_dependent": {"2025": false},
+      "employment_income": {"2025": 0}, "self_employment_income": {"2025": 0}, "rental_income":
+      {"2025": 0}, "taxable_pension_income": {"2025": 0}, "social_security": {"2025":
+      0}, "unemployment_compensation": {"2025": 0}, "long_term_capital_gains": {"2025":
+      0}, "taxable_ira_distributions": {"2025": 0}, "real_estate_taxes": {"2025":
+      0}}, "91133": {"age": {"2025": 10}, "is_tax_unit_spouse": {"2025": false}, "is_tax_unit_dependent":
+      {"2025": true}, "employment_income": {"2025": 0}, "self_employment_income":
+      {"2025": 0}, "rental_income": {"2025": 0}, "taxable_pension_income": {"2025":
+      0}, "social_security": {"2025": 0}, "unemployment_compensation": {"2025": 0},
+      "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions": {"2025":
+      0}, "real_estate_taxes": {"2025": 0}}}, "tax_units": {"main_tax_unit": {"members":
+      ["91131", "91132", "91133"], "mo_wftc": {"2025": null}}}, "families": {"family":
+      {"members": ["91131", "91132", "91133"]}}, "households": {"household": {"members":
+      ["91131", "91132", "91133"], "state_code": {"2025": "MO"}}}, "spm_units": {"spm_unit":
+      {"members": ["91131", "91132", "91133"]}}, "marital_units": {"91131-91132":
+      {"members": ["91131", "91132"]}}}, "version": "1.794.2"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1790'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"91131": {"age":
+        {"2025": 35}, "is_tax_unit_spouse": {"2025": false}, "is_tax_unit_dependent":
+        {"2025": false}, "employment_income": {"2025": 45000}, "self_employment_income":
+        {"2025": 0}, "rental_income": {"2025": 0}, "taxable_pension_income": {"2025":
+        0}, "social_security": {"2025": 0}, "unemployment_compensation": {"2025":
+        0}, "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions": {"2025":
+        0}, "real_estate_taxes": {"2025": 0}}, "91132": {"age": {"2025": 34}, "is_tax_unit_spouse":
+        {"2025": true}, "is_tax_unit_dependent": {"2025": false}, "employment_income":
+        {"2025": 0}, "self_employment_income": {"2025": 0}, "rental_income": {"2025":
+        0}, "taxable_pension_income": {"2025": 0}, "social_security": {"2025": 0},
+        "unemployment_compensation": {"2025": 0}, "long_term_capital_gains": {"2025":
+        0}, "taxable_ira_distributions": {"2025": 0}, "real_estate_taxes": {"2025":
+        0}}, "91133": {"age": {"2025": 10}, "is_tax_unit_spouse": {"2025": false},
+        "is_tax_unit_dependent": {"2025": true}, "employment_income": {"2025": 0},
+        "self_employment_income": {"2025": 0}, "rental_income": {"2025": 0}, "taxable_pension_income":
+        {"2025": 0}, "social_security": {"2025": 0}, "unemployment_compensation":
+        {"2025": 0}, "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions":
+        {"2025": 0}, "real_estate_taxes": {"2025": 0}}}, "tax_units": {"main_tax_unit":
+        {"members": ["91131", "91132", "91133"], "mo_wftc": {"2025": 401.22125}}},
+        "families": {"family": {"members": ["91131", "91132", "91133"]}}, "households":
+        {"household": {"members": ["91131", "91132", "91133"], "state_code": {"2025":
+        "MO"}}}, "spm_units": {"spm_unit": {"members": ["91131", "91132", "91133"]}},
+        "marital_units": {"91131-91132": {"members": ["91131", "91132"]}}}, "policyengine_bundle":
+        {"model_version": "1.794.2", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '1895'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Fri, 21 Aug 2026 18:59:25 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-c1bfec56f9a31dc5e3d09cc12e508162-246318a414b44c38-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - c1bfec56f9a31dc5e3d09cc12e508162
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 286510ad-1c3f-4578-8b9d-4578248c97c4
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

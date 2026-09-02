@@ -189,3 +189,49 @@ class TestLegalLinkConfiguration(SimpleTestCase):
                             f"absolute https URL: {link!r}. An empty string here renders as a link "
                             "with an empty href.",
                         )
+
+
+class TestPublicChargeRuleConfiguration(SimpleTestCase):
+    """
+    Asserts every white label's public charge rule carries both a link and a visible label. The
+    frontend renders the anchor as <a href={link}>{text}</a>, so a config with a link but no text
+    ships an invisible, unclickable link rather than failing loudly.
+    """
+
+    def test_public_charge_rule_has_link_and_text(self):
+        """Every live white label needs both an absolute link and the label the anchor renders."""
+        for code, white_label_data in white_label_config.items():
+            # The base class holds the empty placeholder every white label overrides, and
+            # "_default" is never served to the frontend, so neither has copy of its own.
+            if white_label_data.is_default:
+                continue
+
+            public_charge_rule = white_label_data.public_charge_rule
+
+            with self.subTest(white_label=code):
+                # The disclaimer step renders <a href={link}>{text}</a> with no emptiness check,
+                # so an unset value here reaches the browser as a broken anchor either way.
+                link = public_charge_rule.get("link", "")
+                parsed = urlparse(link)
+                self.assertTrue(
+                    parsed.scheme == "https" and bool(parsed.netloc),
+                    f'White label "{code}" has a public charge link that is not an absolute '
+                    f"https URL: {link!r}. The disclaimer step renders the anchor "
+                    "unconditionally, so an empty value ships an anchor with an empty href.",
+                )
+
+                text = public_charge_rule.get("text")
+                self.assertIsInstance(
+                    text,
+                    dict,
+                    f'White label "{code}" is missing a dict "text" for its public charge link. '
+                    "The frontend renders the anchor with no children, so nothing is visible "
+                    "to click.",
+                )
+                self.assertTrue(
+                    text.get("_label") and text.get("_default_message"),
+                    f'White label "{code}" has a public charge "text" missing "_label" or '
+                    '"_default_message". The frontend only converts an object carrying both '
+                    "into a FormattedMessage; an empty _label renders as a FormattedMessage "
+                    "with an empty id.",
+                )

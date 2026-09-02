@@ -16,6 +16,16 @@ class PolicyEngineCalulator(ProgramCalculator):
     pe_inputs: List[type[PolicyEngineScreenInput]] = []
     pe_outputs: List[type[PolicyEngineScreenInput]] = []
 
+    #: Outputs PolicyEngine defines per month, so they are requested at `pe_month_period`
+    #: rather than `pe_period`. Everything not listed here is requested annually, which
+    #: keeps the choice per variable: a program can read a monthly premium and an annual
+    #: value in the same request. See `period_for`.
+    pe_monthly_outputs: List[type[PolicyEngineScreenInput]] = []
+
+    #: Month, as ``MM``, that `pe_monthly_outputs` are read at. Pick one inside the window
+    #: whose rates the program's expected values are stated against.
+    pe_period_month = "01"
+
     pe_name = ""
     pe_category = ""
     pe_sub_category = ""
@@ -68,6 +78,26 @@ class PolicyEngineCalulator(ProgramCalculator):
         return self.program.year.period
 
     @property
+    def pe_month_period(self) -> str:
+        """The ``YYYY-MM`` period used for `pe_monthly_outputs`."""
+        return f"{self.pe_period}-{self.pe_period_month}"
+
+    def period_for(self, Data: type[PolicyEngineScreenInput]) -> str:
+        """The period `Data` is requested at, and read back from.
+
+        Almost everything is annual and uses `pe_period`. A variable PolicyEngine defines
+        per month has to be asked for per month: requesting one at the annual period returns
+        its twelve months summed, which silently blends the halves of a year whose rate
+        changes mid-year. `mo_chip_premium` is the case that forced this — Missouri's
+        Appendix E premiums turn over July 1, and the annual period returns 6 months of each
+        schedule (HH3 tier 1: $804/yr, i.e. 6 x $102 + 6 x $32, matching neither).
+        """
+        if Data in self.pe_monthly_outputs:
+            return self.pe_month_period
+
+        return self.pe_period
+
+    @property
     def sim(self) -> Sim:
         if self._sim is None:
             raise Exception("Engine is not configured")
@@ -83,8 +113,12 @@ class PolicyEngineCalulator(ProgramCalculator):
     def get_tax_variable(self, unit: str):
         return self.sim.value(self.pe_category, unit, self.pe_name, self.pe_period)
 
+    def get_tax_dependency_value(self, dependency: PolicyEngineScreenInput, unit: str):
+        """One tax unit's value for `dependency`, read at that dependency's own period."""
+        return self.sim.value(dependency.unit, unit, dependency.field, self.period_for(dependency))
+
     def get_dependency_value(self, dependency: PolicyEngineScreenInput):
-        return self.sim.value(dependency.unit, dependency.sub_unit, dependency.field, self.pe_period)
+        return self.sim.value(dependency.unit, dependency.sub_unit, dependency.field, self.period_for(dependency))
 
     def can_calc(self):
         for input in self.pe_inputs:
@@ -128,4 +162,4 @@ class PolicyEngineMembersCalculator(PolicyEngineCalulator):
         return self.sim.value(self.pe_category, str(member_id), self.pe_name, self.pe_period)
 
     def get_member_dependency_value(self, dependency: PolicyEngineScreenInput, member_id: int):
-        return self.sim.value(dependency.unit, str(member_id), dependency.field, self.pe_period)
+        return self.sim.value(dependency.unit, str(member_id), dependency.field, self.period_for(dependency))

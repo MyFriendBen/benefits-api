@@ -1,0 +1,110 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_healthcare",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "mo_medicaid",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "otherWithWorkPermission"
+    ],
+    "name": "MO HealthNet (Medicaid)",
+    "description": "MO HealthNet is Missouri's Medicaid program. It helps pay for things like doctor visits, hospital stays, and prescriptions. It also covers dental, vision, mental health care, nursing home care, and personal care services. There is little or no cost to you.\n\nMost people pick a MO HealthNet Managed Care health plan. Then you use your member ID card at the doctor, pharmacy, and other providers. You can manage your coverage and find a provider through My MO Health Portal.\n\nMissouri covers adults ages 19 through 64 with income up to 138% of the federal poverty level. Children, pregnant people, parents and caretakers, and people who are 65 or older, blind, or have a disability can qualify at other income levels. If you are 65 or older, blind, or have a disability, there may be a limit on your savings and property. There is no savings limit for children and families. If your income is above the limit but you have high medical bills, you may still qualify through a \"spend-down.\" There are other ways to qualify too. It is worth applying if you are not sure.\n\nTo apply, click Apply Now to start your application online. You can also apply by phone by calling 1-855-373-9994.",
+    "description_short": "Free or low-cost health coverage for eligible Missourians",
+    "learn_more_link": "https://dss.mo.gov/healthcare",
+    "apply_button_link": "https://dss.mo.gov/healthcare/apply",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "45 - 90 days",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "website_description": "Free or low-cost health coverage for eligible Missourians",
+    "base_program": "medicaid",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "active": true
+  },
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn",
+      "text": "Social Security numbers for each person applying, if they have one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_us_status",
+      "text": "Citizenship or immigration documents or numbers for each person applying, if needed",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_residency_proof",
+      "text": "Proof of Missouri residency, if requested (e.g., utility bill, lease agreement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_income_proof",
+      "text": "Income records (ex: pay stubs, tax forms, or benefit letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_unearned_income",
+      "text": "Proof of unearned income, if requested (ex: child support, Social Security, unemployment)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_health_insurance",
+      "text": "Current health insurance information, if applicable",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_disability_proof",
+      "text": "Proof of disability, if applicable (ex: Social Security or VA letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_assets",
+      "text": "Proof of resources (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, or a burial fund",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_healthnet_participant_services",
+      "name": "MO HealthNet Participant Services",
+      "email": "Ask.MHD@dss.mo.gov",
+      "phone_number": "+18003922161",
+      "description": "The MO HealthNet Division's help line for people who have or are applying for MO HealthNet. Staff can explain what your coverage includes, help you find a doctor, dentist, or pharmacy that accepts MO HealthNet, answer questions about managed care health plans, and help with billing or coverage problems.",
+      "assistance_link": "https://dss.mo.gov/mhd"
+    },
+    {
+      "external_name": "mo_fsd_information_center",
+      "name": "Family Support Division Information Center",
+      "email": "",
+      "phone_number": "+18553734636",
+      "description": "The Family Support Division decides who qualifies for MO HealthNet. Call this line to apply by phone, check the status of an application, report a change, or ask what documents you still need to send in. Staff can also help with annual renewals.",
+      "assistance_link": "https://dss.mo.gov/healthcare/apply"
+    }
+  ]
+}

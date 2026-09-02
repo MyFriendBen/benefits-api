@@ -49,6 +49,14 @@ class KsChipPremium(TaxUnit):
     field = "ks_chip_premium"
 
 
+class MoChipPremium(TaxUnit):
+    # Missouri's CHIP premium per household. Unlike ks_chip_premium this is a MONTHLY
+    # variable (PolicyEngine 1.790.2 made it one so Appendix E's July 1 turnover takes
+    # effect), so it must be requested at a month period — see
+    # PolicyEngineCalulator.period_for.
+    field = "mo_chip_premium"
+
+
 class Ilctc(TaxUnit):
     field = "il_ctc"
 

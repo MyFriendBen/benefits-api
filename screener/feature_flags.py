@@ -46,9 +46,11 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
         scope="frontend",
     ),
     "benbot": FeatureFlagConfig(
-        label="Benbot AI Assistant",
+        # The assistant was renamed Benji (MFB-1737); the flag KEY stays 'benbot'
+        # so existing white-label configs keep working.
+        label="Benji AI Assistant",
         description=(
-            "Show the Benbot AI assistant on the results page and enable the "
+            "Show the Benji AI assistant on the results page and enable the "
             "mfb-ai-service proxy endpoints for guided benefit applications."
         ),
         scope="both",  # frontend renders the widget; backend gates the proxy endpoints

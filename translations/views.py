@@ -19,6 +19,7 @@ from django.db import models
 from sentry_sdk import capture_exception
 import traceback
 from programs.models import (
+    County,
     Program,
     Navigator,
     ProgramCategory,
@@ -29,10 +30,11 @@ from programs.models import (
     WarningMessage,
     TranslationOverride,
 )
+from programs.translation_overrides import warning_calculators
 from phonenumber_field.formfields import PhoneNumberField
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from integrations.clients.google_translate import Translate
+from integrations.clients.google_translate import Translate, TranslationIntegrityError, is_auto_translatable
 from django.urls import path
 
 
@@ -110,7 +112,15 @@ def admin_view(request):
             text = form["default_message"].value()
             translation = Translation.objects.add_translation(form["label"].value(), text)
 
-            auto_translations = Translate().bulk_translate(["__all__"], [text])[text]
+            # The label row is already committed above, so a translation problem must not
+            # 500 the request and lose that. strict=False keeps the languages that worked;
+            # a refused string (ICU plural/select) raises regardless and yields none.
+            auto_translations = {}
+            if is_auto_translatable(text):
+                try:
+                    auto_translations = Translate().bulk_translate(["__all__"], [text], strict=False).get(text, {})
+                except Exception as e:
+                    capture_exception(e, level="warning")
 
             for [language, auto_text] in auto_translations.items():
                 Translation.objects.edit_translation_by_id(translation.id, language, auto_text, False)
@@ -288,9 +298,26 @@ def edit_translation(request, id=0, lang="en-us"):
                     if not auto_translate_check:
                         Translation.objects.edit_translation_by_id(id, lang, text, False)
                     else:
-                        translations = Translate().bulk_translate(languages, [text])[text]
+                        # strict=False so one language mangling a placeholder does not cost
+                        # the rest, and so an integrity failure cannot 500 an admin edit.
+                        translations = {}
+                        if is_auto_translatable(text):
+                            try:
+                                translations = Translate().bulk_translate(languages, [text], strict=False).get(text, {})
+                            except TranslationIntegrityError as e:
+                                capture_exception(e, level="warning")
+
                         for language in languages:
-                            translated_text = text if translation.no_auto else translations[language]
+                            if translation.no_auto:
+                                translated_text = text
+                            elif language in translations:
+                                translated_text = translations[language]
+                            else:
+                                # Placeholder failure for this language. Leave the existing row
+                                # alone rather than writing junk. Unlike add_translations, which
+                                # deletes the stale row because nobody inspects a bulk run, an
+                                # admin is looking at this page and will see the untouched value.
+                                continue
                             Translation.objects.edit_translation_by_id(id, language, translated_text, False)
 
             parent = Translation.objects.get(pk=id)
@@ -558,23 +585,95 @@ class WarningMessageTranslationAdmin(TranslationAdminViews):
         )
 
 
+def get_translation_override_field_choices():
+    return [(f, f) for f in Program.objects.translated_fields]
+
+
+def get_translation_override_calculator_choices():
+    return [(name, name) for name in sorted(warning_calculators)]
+
+
 class TranslationOverrideTranslationAdmin(TranslationAdminViews):
     name = "translation_overrides"
 
     class Form(WhiteLabelForm):
+        """Collects everything an override needs to work, including the program it
+        overrides and the counties it applies to.
+
+        Those last two used to be reachable only from the Django admin after
+        creating the row here, so a new override started out pointing at no program
+        and applying to every county.
+        """
+
         external_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
-        calculator_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
-        field_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
+        calculator_name = forms.ChoiceField(
+            choices=get_translation_override_calculator_choices, widget=forms.Select(attrs={"class": "input"})
+        )
+        field_name = forms.ChoiceField(
+            choices=get_translation_override_field_choices, widget=forms.Select(attrs={"class": "input"})
+        )
+        program = forms.ModelChoiceField(queryset=Program.objects.none(), widget=forms.Select(attrs={"class": "input"}))
+        counties = forms.ModelMultipleChoiceField(
+            queryset=County.objects.none(),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "input"}),
+            help_text="Leave empty to apply to every county. County names must match the screener's "
+            "own spelling for this white label — Illinois uses 'Cook' where Colorado uses 'Denver County'.",
+        )
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            # The white label is picked in this same form, so the program and county
+            # choices can only be narrowed once it has been submitted. Until then
+            # offer every option the user is allowed to see, and let clean() reject
+            # combinations that cross white labels.
+            allowed = [code for code, _ in self.fields["white_label"].choices]
+            self.fields["program"].queryset = Program.objects.filter(white_label__code__in=allowed).order_by(
+                "white_label__code", "name_abbreviated"
+            )
+            self.fields["counties"].queryset = County.objects.filter(white_label__code__in=allowed).order_by(
+                "white_label__code", "name"
+            )
+
+        def clean(self):
+            """Reject a program or county belonging to a different white label.
+
+            A county from another white label can never equal the screen's county, so
+            the override would silently never fire.
+            """
+            cleaned_data = super().clean()
+            white_label = cleaned_data.get("white_label")
+            program = cleaned_data.get("program")
+            counties = cleaned_data.get("counties")
+
+            if white_label and program and program.white_label.code != white_label:
+                self.add_error("program", f"{program} does not belong to the {white_label} white label.")
+
+            if white_label and counties:
+                mismatched = [c.name for c in counties if c.white_label.code != white_label]
+                if mismatched:
+                    self.add_error(
+                        "counties",
+                        f"{', '.join(mismatched)} does not belong to the {white_label} white label.",
+                    )
+
+            return cleaned_data
 
     Model = TranslationOverride
 
     def _new_object(self, form: Form) -> models.Model:
-        return self.Model.objects.new_translation_override(
-            form["white_label"].value(),
-            form["calculator_name"].value(),
-            form["field_name"].value(),
-            form["external_name"].value(),
+        translation_override = self.Model.objects.new_translation_override(
+            form.cleaned_data["white_label"],
+            form.cleaned_data["calculator_name"],
+            form.cleaned_data["field_name"],
+            form.cleaned_data["external_name"],
         )
+        translation_override.program = form.cleaned_data["program"]
+        translation_override.save()
+        translation_override.counties.set(form.cleaned_data["counties"])
+
+        return translation_override
 
     def _filter_query_set(self, request):
         return self._model_white_label_query_set(request.user).filter(

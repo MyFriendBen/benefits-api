@@ -13,7 +13,7 @@
     "legal_status_required": [
       "citizen",
       "gc_5plus",
-      "gc_5less"
+      "gc_under18_no5"
     ],
     "name": "Food Assistance (SNAP)",
     "description_short": "Monthly food benefits loaded onto an EBT card for low-income households",
@@ -31,6 +31,16 @@
     "has_calculator": true,
     "show_in_has_benefits_step": true
   },
+  "warning_messages": [
+    {
+      "external_name": "ks_snap_adult_five_year_wait",
+      "calculator": "_show",
+      "legal_statuses": [
+        "gc_under18_no5"
+      ],
+      "message": "Children with a green card can get Food Assistance right away. Adults usually wait five years after getting a green card. Some adults do not have to wait: veterans and active-duty service members and their spouse and children, people with 40 or more Social Security work credits (credits from a parent or a spouse count toward your total), people who receive disability-related assistance, people 65 or older who were living in the U.S. lawfully before August 22, 1996, citizens of the Marshall Islands, Micronesia, or Palau, and people who came to the U.S. as a refugee or asylee and later received a green card. Not sure whether this applies to you? Contact DCF or a caseworker for help."
+    }
+  ],
   "documents": [
     {
       "external_name": "ks_snap_photo_id",

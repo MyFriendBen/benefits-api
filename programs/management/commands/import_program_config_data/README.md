@@ -244,7 +244,7 @@ match — but a config edited without being reimported will disagree with the ro
 and the row is what wins.
 
 For example, for a CSFP program on the `il` white label:
-- `programs/programs/il/csfp/calculator.py` declares `program_code = "il_csfp"`
+- `programs/programs/cross_white_label/csfp/il.py` declares `program_code = "il_csfp"`
 - This config sets `name_abbreviated` to `"il_csfp"`, seeding a row with that value
 
 A mismatch means the program resolves to no calculator. Nothing catches that at
@@ -349,7 +349,7 @@ Before importing a program, you need to create the eligibility calculator:
 
 Example for IL CSFP:
 ```python
-# programs/programs/il/csfp/calculator.py
+# programs/programs/cross_white_label/csfp/il.py
 class IlCommoditySupplementalFoodProgram(ProgramCalculator):
     program_code = "il_csfp"  # the Program row's name_abbreviated
 ```

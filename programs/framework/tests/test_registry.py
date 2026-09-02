@@ -30,6 +30,15 @@ from programs.framework.registry import (
     is_abstract,
     register,
 )
+from programs.programs.cross_white_label.ccdf.base import Ccdf
+from programs.programs.cross_white_label.medicaid.base import Medicaid
+from programs.programs.cross_white_label.cdcc.base import Cdcc
+from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.msp.base import Msp
+from programs.programs.cross_white_label.head_start.base import HeadStart
+from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
+from programs.programs.cross_white_label.aca.base import Aca
+from programs.programs.cross_white_label.medicaid.chip.base import Chip
 
 
 class WalkClassesTests(SimpleTestCase):
@@ -181,8 +190,8 @@ class RegistryCoversEveryCalculatorTests(SimpleTestCase):
         harmless while one state uses it and breaks when a second arrives, because
         the base and the new state's subclass then claim the same code.
         """
-        from programs.programs.federal.pe.member import Ccdf, EarlyHeadStart, HeadStart, Medicaid
-        from programs.programs.federal.pe.tax import Cdcc
+        from programs.programs.cross_white_label.ccdf.base import Ccdf
+        from programs.programs.cross_white_label.medicaid.base import Medicaid
 
         for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart, Ccdf):
             with self.subTest(base=base.__name__):
@@ -239,7 +248,6 @@ class AbstractDeclarationTests(SimpleTestCase):
         classes are dual-role like that, which is why "is it a base?" cannot be
         inferred from whether anything subclasses it.
         """
-        from programs.programs.federal.pe.spm import Snap
 
         registry = build("programs.programs", ProgramCalculator)
 
@@ -257,8 +265,8 @@ class AbstractDeclarationTests(SimpleTestCase):
         )
 
     def test_the_family_bases_declare_themselves_abstract(self):
-        from programs.programs.federal.pe.member import Ccdf, Chip, EarlyHeadStart, HeadStart, Medicaid, Msp
-        from programs.programs.federal.pe.tax import Aca, Cdcc
+        from programs.programs.cross_white_label.ccdf.base import Ccdf
+        from programs.programs.cross_white_label.medicaid.base import Medicaid
 
         for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Ccdf, Msp, Aca, Cdcc):
             with self.subTest(cls=cls.__name__):
@@ -293,7 +301,7 @@ class ModuleWalkTests(SimpleTestCase):
         package import and never reach the per-module loop this guards.
         """
         real_import = importlib.import_module
-        broken = "programs.programs.tx.pe.tax"
+        broken = "programs.programs.cross_white_label.snap.tx"
 
         def fail_on_one(name, *args, **kwargs):
             if name == broken:

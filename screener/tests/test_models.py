@@ -5,9 +5,10 @@ Unit tests for Screen, HouseholdMember, and WhiteLabel model methods.
 from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
-from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
+from programs.models import Program
+from screener.models import CurrentBenefit, Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
 from screener.feature_flags import FeatureFlagConfig
-from screener.serializers import _write_current_benefits
+from screener.serializers import _derived_current_benefit_names, _write_current_benefits
 from screener.tests.helpers import seed_program
 
 
@@ -310,8 +311,12 @@ class TestScreen(TestCase):
         ssi resolves True via reported sSI income even when the SSI tile wasn't
         selected (empty current_benefits). This is the case that would silently
         break without the derive-at-write-time path.
+
+        `base_program` is what the derive reads, so the row needs it — every SSI
+        program in production carries it, and a row without it is the config gap
+        `_derived_current_benefit_names` reports to Sentry.
         """
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi")
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
@@ -325,12 +330,94 @@ class TestScreen(TestCase):
 
     def test_has_benefit_ssi_from_explicit_tile(self):
         """ssi (and offered variants) resolve True when sent explicitly."""
-        seed_program(self.white_label, "ssi", "tx_ssi", "cesn_ssi")
+        seed_program(self.white_label, "ssi", "tx_ssi", "cesn_ssi", base_program="ssi")
         _write_current_benefits(self.screen, ["ssi", "tx_ssi", "cesn_ssi"])
 
         self.assertTrue(self.screen.has_benefit("ssi"))
         self.assertTrue(self.screen.has_benefit("tx_ssi"))
         self.assertTrue(self.screen.has_benefit("cesn_ssi"))
+
+    def _report_ssi_income(self):
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="sSI",
+            amount=500,
+            frequency="monthly",
+        )
+
+    def test_has_benefit_ssi_derived_for_a_state_prefixed_variant(self):
+        """
+        The derive is by `base_program`, not by a list of names. A white label
+        whose SSI program is state-prefixed rather than the bare `ssi` must still
+        get a row from reported sSI income — the hardcoded
+        {"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"} set this replaced missed `ks_ssi`
+        and `mo_ssi`, so `has_base_benefit("ssi")` read False on exactly those
+        two white labels' screens.
+        """
+        self._report_ssi_income()
+        for name in ("mo_ssi", "ks_ssi"):
+            with self.subTest(name_abbreviated=name):
+                Program.objects.filter(white_label=self.white_label).delete()
+                CurrentBenefit.objects.filter(screen=self.screen).delete()
+                self.screen.invalidate_current_benefits_cache()
+                seed_program(self.white_label, name, base_program="ssi")
+
+                _write_current_benefits(self.screen, [])
+                self.screen.invalidate_current_benefits_cache()
+
+                self.assertTrue(self.screen.has_benefit(name))
+                self.assertTrue(self.screen.has_base_benefit("ssi"))
+
+    def test_every_shipped_ssi_variant_is_derivable(self):
+        """
+        Guard on the mechanism rather than a name list: for every
+        `name_abbreviated` any white label ships under `base_program: ssi`,
+        reported sSI income must derive a row. A future state's variant is
+        covered by construction, which is the property the hardcoded set lacked.
+        """
+        self._report_ssi_income()
+        for name in ("ssi", "co_ssi", "some_future_state_ssi"):
+            with self.subTest(name_abbreviated=name):
+                Program.objects.filter(white_label=self.white_label).delete()
+                CurrentBenefit.objects.filter(screen=self.screen).delete()
+                self.screen.invalidate_current_benefits_cache()
+                seed_program(self.white_label, name, base_program="ssi")
+
+                _write_current_benefits(self.screen, [])
+                self.screen.invalidate_current_benefits_cache()
+
+                self.assertTrue(self.screen.has_base_benefit("ssi"))
+
+    def test_has_benefit_ssi_not_derived_without_reported_ssi_income(self):
+        """The derive is driven by the income stream, not by the program existing."""
+        seed_program(self.white_label, "mo_ssi", base_program="ssi")
+        _write_current_benefits(self.screen, [])
+        self.screen.invalidate_current_benefits_cache()
+
+        self.assertFalse(self.screen.has_benefit("mo_ssi"))
+        self.assertFalse(self.screen.has_base_benefit("ssi"))
+
+    def test_ssi_derive_does_not_leak_across_white_labels(self):
+        """
+        A variant another white label ships must not be written to this screen.
+        The old set relied on the WL-scoped resolve in `_write_current_benefits`
+        to drop those; the derive is now scoped itself, so assert it directly.
+        """
+        other_wl = WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        seed_program(self.white_label, "mo_ssi", base_program="ssi")
+        seed_program(other_wl, "wa_ssi", base_program="ssi")
+
+        self._report_ssi_income()
+        self.assertEqual(_derived_current_benefit_names(self.screen), {"mo_ssi"})
+
+    def test_ssi_income_derives_nothing_for_a_white_label_with_no_ssi_program(self):
+        """
+        `_default`, `co_tax_calculator` and `dbg_wl` ship no SSI program, so an
+        empty derive is the correct answer there rather than a config gap.
+        """
+        self._report_ssi_income()
+        self.assertEqual(_derived_current_benefit_names(self.screen), set())
 
     def test_has_benefit_unknown_program_returns_false(self):
         """Unknown name_abbreviated returns False (no row in join table)."""

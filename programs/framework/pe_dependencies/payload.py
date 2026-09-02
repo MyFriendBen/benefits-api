@@ -14,7 +14,7 @@ which fields are sent.
 
 from typing import List, Optional
 
-from screener.models import HouseholdMember, Screen
+from screener.models import Screen
 
 from programs.framework.pe_base import PolicyEngineCalulator
 from programs.framework.pe_dependencies.base import DependencyError, Member, TaxUnit
@@ -45,6 +45,25 @@ def _resolve_comparable_version(programs: List[PolicyEngineCalulator], version: 
     if comparable_version is None and _has_gated_input(programs):
         comparable_version = pe_versions.resolve_unpinned_comparable_version()
     return comparable_version
+
+
+def _period_for(program, Data) -> str:
+    """The period one variable is sent at.
+
+    `program` is normally a calculator instance, and this defers to its own `period_for`.
+    Many of the older payload-shape tests pass the calculator *class* instead; `pe_period`
+    is a property, so on a class it yields the property object rather than a period. Those
+    tests assert on which fields are sent and read the period key back off the dict, so that
+    has always worked — keep it working rather than making this the place that migration
+    happens.
+    """
+    if isinstance(program, PolicyEngineCalulator):
+        return program.period_for(Data)
+
+    if Data in program.pe_monthly_outputs:
+        return f"{program.pe_period}-{program.pe_period_month}"
+
+    return program.pe_period
 
 
 def pe_input(
@@ -96,7 +115,11 @@ def pe_input(
         version = pe_versions.determine_pe_version(pe_version)
         comparable_version = _resolve_comparable_version(programs, version)
 
-    members: list[HouseholdMember] = screen.household_members.all()
+    # order_by("id") is load-bearing, not tidiness: the payload lists every unit's members
+    # in iteration order, and the cassette matcher compares request bodies exactly. Without
+    # it Postgres picks the order, so the same household can serialize differently between
+    # runs and a recorded cassette stops matching — the request then goes to the live API.
+    members = screen.household_members.all().order_by("id")
     relationship_map = screen.relationship_map()
 
     main_tax_members = []
@@ -141,9 +164,9 @@ def pe_input(
             ):
                 continue
 
-            period = program.pe_period
-            if hasattr(program, "pe_output_period") and Data in program.pe_outputs:
-                period = program.pe_output_period
+            # Per variable, not per program: a program can read an annual value and a
+            # monthly one in the same request (see PolicyEngineCalulator.period_for).
+            period = _period_for(program, Data)
 
             if issubclass(Data, Member):
                 for member in members:

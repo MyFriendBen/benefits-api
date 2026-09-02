@@ -18,6 +18,19 @@ from programs.framework.pe_dependencies.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
 )
+from programs.programs.cross_white_label.nslp.base import SchoolLunch
+from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.snap.tx import TxSnap
+from programs.programs.cross_white_label.tanf.base import Tanf
+from programs.programs.cross_white_label.wic.base import Wic
+from programs.programs.cross_white_label.wic.tx import TxWic
+from programs.programs.cross_white_label.ssi.base import Ssi
+from programs.programs.white_labels.federal.acp.calculator import Acp
+from programs.framework.pe_dependencies import household
+from programs.programs.cross_white_label.medicaid.chip.mo import MoChip
+from programs.models import FederalPoveryLimit, Program
+from programs.util import Dependencies
+import programs.framework.pe_dependencies as dependency
 
 
 @override_settings(CACHES=LOCAL_CACHE)
@@ -31,9 +44,6 @@ class PeInputTestBase(TestCase):
 
     def setUp(self):
         """Set up test screen with household members."""
-        # Import here to avoid circular imports at module level
-        from programs.programs.tx.pe.spm import TxSnap
-
         self.calculator_class = TxSnap
 
         self.screen = Screen.objects.create(
@@ -268,7 +278,6 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
 
     def test_with_multiple_calculators(self):
         """Test that pe_input handles multiple calculator inputs correctly."""
-        from programs.programs.federal.pe.spm import SchoolLunch
 
         result = pe_input(self.screen, [self.calculator_class, SchoolLunch])
 
@@ -283,7 +292,6 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
 
     def test_calculator_dependencies_are_merged(self):
         """Test that dependencies from multiple calculators are merged."""
-        from programs.programs.tx.pe.member import TxWic
 
         result = pe_input(self.screen, [self.calculator_class, TxWic])
 
@@ -316,8 +324,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
 
     def setUp(self):
         super().setUp()
-        from programs.programs.federal.pe.member import Ssi
-        from programs.programs.federal.pe.spm import Snap, Tanf
 
         # WIC is deliberately absent: it reads the ungated `wic`, so no floor applies to it.
         self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf}
@@ -342,7 +348,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """The guard is scoped to unreadable outputs — it must not thin out the rest of
         the request, whose gated *inputs* degrade harmlessly to PolicyEngine modelling
         the value itself."""
-        from programs.programs.federal.pe.spm import Acp, SchoolLunch
 
         kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, (1, 750, 0))
 
@@ -352,7 +357,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """WIC reads the ungated `wic`, which every supported model defines, so it is not
         exposed to the floor. Switching it to `wic_if_takes_up` would put it here for no
         behavioral gain — the two are equal for every payload we send."""
-        from programs.programs.federal.pe.member import Wic
 
         kept = self._drop({"wic": Wic}, (1, 750, 0))
 
@@ -426,7 +430,6 @@ class TestPeInputVersionGating(PeInputTestBase):
 
     def setUp(self):
         super().setUp()
-        from programs.programs.federal.pe.member import Ssi
 
         self.ssi = Ssi
         self.head_id = str(self.head.id)
@@ -589,3 +592,60 @@ class TestResolveUnpinnedVersion(TestCase):
             self.pe_versions.resolve_unpinned_comparable_version()
             self.pe_versions.resolve_unpinned_comparable_version()
             self.assertEqual(mock_get.call_count, 2)  # retried, not cached
+
+
+class TestPerVariableOutputPeriod(PeInputTestBase):
+    """`PolicyEngineCalulator.period_for`: the period is chosen per variable, not per program.
+
+    PolicyEngine defines some variables per month, and asking for one at the annual period
+    returns its twelve months summed. `mo_chip_premium` is the case that forced this — its
+    Appendix E rates turn over July 1, so the annual period returns six months of each
+    schedule and matches neither. A program must be able to read that monthly while reading
+    its other outputs annually, in one request.
+    """
+
+    def setUp(self):
+        super().setUp()
+
+        self.program = Program.objects.new_program(white_label="tx", name_abbreviated="mo_chip")
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2026", defaults={"period": "2026"})
+        self.program.year = fpl
+        self.program.save()
+
+    def _calculator(self):
+        return MoChip(self.screen, self.program, Dependencies())
+
+    def test_monthly_output_and_annual_output_in_one_payload(self):
+        household = pe_input(self.screen, [self._calculator()])["household"]
+
+        self.assertEqual(
+            list(household["tax_units"][MAIN_TAX_UNIT]["mo_chip_premium"].keys()),
+            ["2026-07"],
+        )
+        self.assertEqual(
+            list(household["people"][str(self.child.id)]["chip_gross"].keys()),
+            ["2026"],
+        )
+
+    def test_inputs_stay_annual_even_when_an_output_is_monthly(self):
+        household = pe_input(self.screen, [self._calculator()])["household"]
+
+        self.assertEqual(list(household["households"]["household"]["state_code"].keys()), ["2026"])
+        self.assertEqual(list(household["people"][str(self.head.id)]["age"].keys()), ["2026"])
+
+    def test_period_for_defaults_to_the_annual_period(self):
+        calculator = self._calculator()
+
+        self.assertEqual(calculator.period_for(dependency.member.ChipGross), "2026")
+        self.assertEqual(calculator.period_for(dependency.member.AgeDependency), "2026")
+
+    def test_period_for_returns_the_month_period_for_a_monthly_output(self):
+        self.assertEqual(self._calculator().period_for(dependency.tax.MoChipPremium), "2026-07")
+
+    def test_a_program_with_no_monthly_outputs_asks_for_everything_annually(self):
+        """Snap reads its own output monthly; SchoolLunch reads everything annually. Guards
+        against the month period leaking into programs that never opted in."""
+        calculator = SchoolLunch(self.screen, self.program, Dependencies())
+
+        for Data in calculator.pe_inputs + calculator.pe_outputs:
+            self.assertEqual(calculator.period_for(Data), "2026")

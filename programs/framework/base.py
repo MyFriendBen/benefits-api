@@ -189,6 +189,86 @@ class ProgramCalculator:
 
         return eligibility
 
+    def program_eligible(self, program_code: str) -> bool:
+        """
+        Whether the household is eligible for ``program_code``, another program this one
+        gates on. Callers name the program, so the dependency is visible in the file that
+        has it.
+
+        ``self.data`` holds only the programs already calculated, so this relies on
+        `screener.views.CALC_ORDER` listing ``program_code`` first. An absent key means
+        "not calculated", which is a different answer from "calculated, and not eligible" —
+        so it raises instead of returning False. ``DependencyError`` is what the
+        eligibility loop already catches for an uncalculable program, so the dependent
+        program is left out of the results rather than reported ineligible on a guess.
+
+        An upstream can be missing for three reasons, and this raises for all of them: its
+        row is inactive, its own ``can_calc`` failed on a missing screener field, or — for a
+        PolicyEngine upstream — the PolicyEngine call failed and returned no eligibility at
+        all. The last case drops fifteen gates across fourteen programs at once, so a PE
+        outage now omits them rather than reporting each one ineligible.
+
+        Declare the upstream's ``dependencies`` alongside your own. Otherwise a screener
+        field the upstream needs and you do not makes you calculable where it is not, and
+        this raises on a household you could have answered for.
+        """
+        if program_code not in self.data:
+            raise DependencyError()
+
+        return self.data[program_code].eligible
+
+    def any_program_eligible(self, program_codes) -> bool:
+        """
+        Whether the household is eligible for any of ``program_codes``.
+
+        A presumptive-eligibility list asks "does this household already qualify for one of
+        these?", so it stops at the first yes and treats a program that was not calculated
+        as one this household does not have. Requiring the whole list to be present would
+        couple the caller to every sibling being active: one deactivated row would raise and
+        drop the caller from results, even when an earlier program in the list already
+        answered yes.
+
+        Only for a list the caller must *qualify* through. Treating absence as "no" is the
+        conservative reading there — the household loses a way in it may not have had. On an
+        *exclusion* it is the permissive one: absence would read as "not eligible for the
+        thing that disqualifies them", so the program is offered to someone who should have
+        been screened out. Use `program_eligible` and let it raise for those, which is why
+        `cesn_energy_ebt` and `cesn_eoccip` gate on `cesn_leap` strictly.
+
+        Choosing between the two is a question about the rule, not the data: can this
+        program be answered at all without the upstream? Every strict gate today is a
+        program defined in terms of another — a Medicaid category, a program for people
+        Medicaid does not cover, or the leftover category between two siblings — so an
+        unknown upstream leaves nothing to report. A program where the upstream is one
+        route in among several belongs here instead, where not knowing costs the household
+        that route rather than the whole program.
+        """
+        for program_code in program_codes:
+            entry = self.data.get(program_code)
+            if entry is not None and entry.eligible:
+                return True
+
+        return False
+
+    def member_program_eligible(self, program_code: str, member: HouseholdMember) -> bool:
+        """
+        Whether `member` is eligible for ``program_code``, another program this one gates
+        on at member rather than household scope.
+
+        Same contract as `program_eligible`: an absent key means "not calculated", which is
+        a different answer from "calculated, and not eligible", so it raises. A member with
+        no entry in the upstream's results is not eligible for it — the upstream records a
+        verdict for every member it evaluated, so a gap means it did not consider them.
+        """
+        if program_code not in self.data:
+            raise DependencyError()
+
+        for member_eligibility in self.data[program_code].eligible_members:
+            if member_eligibility.member.id == member.id:
+                return member_eligibility.eligible
+
+        return False
+
     def can_calc(self):
         """
         Returns whether or not the program can be calculated with the missing dependencies

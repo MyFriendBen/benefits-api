@@ -1,0 +1,86 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"91101": {"age": {"2024": 34}, "is_tax_unit_spouse":
+      {"2024": false}, "is_tax_unit_dependent": {"2024": false}, "employment_income":
+      {"2024": 40000}, "self_employment_income": {"2024": 0}, "rental_income": {"2024":
+      0}, "taxable_pension_income": {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation":
+      {"2024": 0}, "long_term_capital_gains": {"2024": 4300}, "taxable_ira_distributions":
+      {"2024": 0}, "real_estate_taxes": {"2024": 0}}, "91102": {"age": {"2024": 9},
+      "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent": {"2024": true},
+      "employment_income": {"2024": 0}, "self_employment_income": {"2024": 0}, "rental_income":
+      {"2024": 0}, "taxable_pension_income": {"2024": 0}, "social_security": {"2024":
+      0}, "unemployment_compensation": {"2024": 0}, "long_term_capital_gains": {"2024":
+      0}, "taxable_ira_distributions": {"2024": 0}, "real_estate_taxes": {"2024":
+      0}}}, "tax_units": {"main_tax_unit": {"members": ["91101", "91102"], "mo_wftc":
+      {"2024": null}}}, "families": {"family": {"members": ["91101", "91102"]}}, "households":
+      {"household": {"members": ["91101", "91102"], "state_code": {"2024": "MO"}}},
+      "spm_units": {"spm_unit": {"members": ["91101", "91102"]}}, "marital_units":
+      {}}, "version": "1.794.2"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1266'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"91101": {"age":
+        {"2024": 34}, "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent":
+        {"2024": false}, "employment_income": {"2024": 40000}, "self_employment_income":
+        {"2024": 0}, "rental_income": {"2024": 0}, "taxable_pension_income": {"2024":
+        0}, "social_security": {"2024": 0}, "unemployment_compensation": {"2024":
+        0}, "long_term_capital_gains": {"2024": 4300}, "taxable_ira_distributions":
+        {"2024": 0}, "real_estate_taxes": {"2024": 0}}, "91102": {"age": {"2024":
+        9}, "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent": {"2024":
+        true}, "employment_income": {"2024": 0}, "self_employment_income": {"2024":
+        0}, "rental_income": {"2024": 0}, "taxable_pension_income": {"2024": 0}, "social_security":
+        {"2024": 0}, "unemployment_compensation": {"2024": 0}, "long_term_capital_gains":
+        {"2024": 0}, "taxable_ira_distributions": {"2024": 0}, "real_estate_taxes":
+        {"2024": 0}}}, "tax_units": {"main_tax_unit": {"members": ["91101", "91102"],
+        "mo_wftc": {"2024": 152.90323}}}, "families": {"family": {"members": ["91101",
+        "91102"]}}, "households": {"household": {"members": ["91101", "91102"], "state_code":
+        {"2024": "MO"}}}, "spm_units": {"spm_unit": {"members": ["91101", "91102"]}},
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.794.2",
+        "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '1371'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Fri, 21 Aug 2026 18:59:19 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-1885872274b104ef617e97e510dc14ac-a097eb5abd8fe86d-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 1885872274b104ef617e97e510dc14ac
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 4d2170ff-1882-463f-bc02-d40b4998ad9e
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

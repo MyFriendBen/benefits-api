@@ -1,0 +1,93 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
+  },
+  "program": {
+    "name_abbreviated": "mo_snap",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_under18_no5"
+    ],
+    "name": "Food Assistance (SNAP)",
+    "description_short": "Monthly food benefits loaded onto an EBT card for low-income households",
+    "description": "Food Assistance is Missouri's name for the federal Supplemental Nutrition Assistance Program (SNAP). It helps low-income households buy food each month. The amount you get depends on your household's size, income, and certain expenses like rent, utilities, and child care.\n\nEach month your benefits load onto a Missouri EBT card, which works like a debit card. You can use it at grocery stores, farmers markets, and many online retailers. If you get Food Assistance, your children automatically qualify for free school meals, and you may also qualify for discounted internet and utility help.\n\nMissouri counts a few things in your favor that not every state does: child support you pay is subtracted from your income, and if you are self-employed your actual business expenses are deducted. Households with someone 60 or older, or with a disability, do not have to meet the gross income test and can deduct medical costs.\n\nAdults without children may need to work or train a set number of hours to keep benefits past three months, though many people are exempt. To apply, submit an application through myDSS, by mail, or at a Family Support Division Resource Center. You will have a phone or in-person interview after you apply. Most households hear back within 30 days; if your income and money on hand are very low, you may get benefits within 7 days.",
+    "learn_more_link": "https://mydss.mo.gov/food-assistance",
+    "apply_button_link": "https://mydss.mo.gov/food-assistance/apply-for-snap",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "30 days",
+    "estimated_value": "",
+    "value_format": null,
+    "website_description": "Monthly food benefits loaded onto an EBT card for low-income households",
+    "base_program": "snap",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true,
+    "active": true
+  },
+  "documents": [
+    {
+      "external_name": "mo_snap_photo_id",
+      "text": "Government-issued photo ID for the person applying (e.g. driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_snap_citizenship_status",
+      "text": "Proof of citizenship or immigration status for each household member applying (e.g. birth certificate, passport, immigration documents)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_snap_ssn",
+      "text": "Social Security Number for each household member applying",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_snap_proof_address",
+      "text": "Proof of your Missouri address (e.g. lease, utility bill, or mail with your name and address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_snap_proof_income",
+      "text": "Proof of income for everyone in the household (e.g. recent pay stubs, award letters, or self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_snap_proof_expenses",
+      "text": "Proof of monthly expenses that raise your benefit (e.g. rent or mortgage, utility bills, child care, child support you pay, and medical costs if someone is 60+ or has a disability)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_snap_proof_assets",
+      "text": "Recent bank statements and proof of any other resources (e.g. stocks, bonds, or a second vehicle)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "usda_national_hunger_hotline",
+      "name": "USDA National Hunger Hotline",
+      "email": "",
+      "description": "A federal hotline staffed to help callers with school meal applications and other food assistance programs. Live representatives are available Monday–Friday, 7am–10pm ET, with Spanish-language support. You can also text for automated help.",
+      "assistance_link": "https://www.fna.usda.gov/national-hunger-hotline",
+      "phone_number": "+18663486479",
+      "languages": [
+        "English",
+        "Spanish"
+      ]
+    }
+  ]
+}

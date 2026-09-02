@@ -70,7 +70,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_injects_ssi_from_income_without_tile(self):
         """sSI income implies SSI even when the user didn't tick the SSI tile."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -85,7 +85,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_income_wins_over_explicit_deselect(self):
         """An explicit deselect can't remove SSI when sSI income is present (OR semantics)."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -100,15 +100,23 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_no_ssi_without_income_or_tile(self):
         """No SSI tile and no sSI income → SSI is not written."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi")
 
         _write_current_benefits(self.screen, ["snap"])
 
         self.assertEqual(self._benefit_names(self.screen), {"snap"})
 
     def test_new_path_derived_ssi_variant_not_in_other_wl(self):
-        """Derived SSI variants for other WLs (e.g. wa_ssi) aren't written to this WL."""
-        seed_program(self.white_label, "ssi")  # this WL only offers "ssi"
+        """Another WL's SSI variant isn't written to this one.
+
+        The derive reads `base_program` scoped to the screen's white label, so
+        `wa_ssi` is never a candidate here. It used to come from a hardcoded name
+        list and rely on the resolve below to drop it — that list also omitted
+        `ks_ssi` and `mo_ssi`, which is the bug this now avoids.
+        """
+        seed_program(self.white_label, "ssi", base_program="ssi")  # this WL only offers "ssi"
+        other_wl = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
+        seed_program(other_wl, "wa_ssi", base_program="ssi")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -118,7 +126,6 @@ class WriteCurrentBenefitsTests(TestCase):
 
         _write_current_benefits(self.screen, [])
 
-        # Only the variant this WL offers is written; tx_ssi / wa_ssi / cesn_ssi are dropped.
         self.assertEqual(self._benefit_names(self.screen), {"ssi"})
 
 

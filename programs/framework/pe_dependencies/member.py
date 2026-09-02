@@ -1,3 +1,5 @@
+from screener.models import EARNED_INCOME_TYPES
+
 from .base import Member
 from .receipt import SSI_INCOME_TYPE, member_reports_ssi_amount, screen_reports_ssi_without_amount
 
@@ -522,27 +524,105 @@ class SnapChildSupportDependency(Member):
 
 
 class TotalHoursWorkedDependency(Member):
+    """
+    Weekly hours worked, taken from hourly income streams and approximated from the
+    rest at minimum wage.
+
+    Only *earned* income counts. The approximation branch divides income by a wage,
+    which is only meaningful for money paid for work: run over an unearned stream it
+    invents hours nobody worked, and PolicyEngine's SNAP/TANF work screens read this
+    field. A 45-year-old with $2,000/mo of SSDI would otherwise be credited ~69
+    "work" hours a week and clear every work requirement.
+
+    Subclasses override ``minimum_wage`` with their state's rate; the federal floor
+    is the conservative default, since a lower wage buys more approximated hours.
+
+    Reported hours are floored at ``assumed_weekly_hours`` for anyone old enough for a
+    SNAP work test to reach (``work_test_minimum_age``). PolicyEngine dropped this
+    field's 40-hour default in 1.815.1, and its SNAP work screens deny the *whole* SPM
+    unit when any member reads under 30 hours (20 for ABAWD) without an exemption --
+    ``meets_snap_work_requirements`` is ANDed into ``is_snap_eligible`` and categorical
+    eligibility does not override it. We collect income, not employment: an adult with
+    no earned income may be working unpaid, between jobs, or under a waiver or the
+    ABAWD grace period, and part-time earnings say nothing about work *registration*,
+    which is what the general requirement actually tests. Screening errs inclusive, so
+    the floor asserts the work test is met rather than denying on data we never asked
+    for -- the same result PolicyEngine's own default produced, now stated explicitly
+    (MFB-1637).
+
+    The floor reaches every consumer of this field on purpose. All programs in a screen
+    share one payload, so two dependencies writing different values to this field raise
+    ``DependencyError`` in ``update_unit`` -- from ``pe_input()``, outside
+    ``calc_pe_eligibility``'s try/except, so a 500 rather than a degraded result. That
+    makes one value per member per screen a hard constraint, and it costs accuracy on
+    the field's other readers: ``tx_ccs``'s work requirement and the MA TAFDC/EAEDC
+    dependent-care deductions both read hours and both get more generous. Accepted
+    deliberately; modelling the SNAP work test properly is follow-up work.
+    """
+
     field = "weekly_hours_worked_before_lsr"
-    dependencies = ("income_frequency",)
+    dependencies = (
+        "age",
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
 
     minimum_wage = 7.25
     work_weeks_in_month = 4
 
+    assumed_weekly_hours = 40
+    # PolicyEngine exempts under-16s from the general work requirement and under-18s
+    # from ABAWD, so no work test can reach a member below this age and the floor would
+    # only put phantom hours in the payload -- which the MA dependent-care deduction
+    # sums over every member, children included. No upper bound: the ABAWD exempt age
+    # has moved twice (50 -> 55 -> 65), and a stale ceiling here would read as a denial.
+    work_test_minimum_age = 16
+
     def value(self):
+        reported = self.reported_hours()
+
+        if self.member.calc_age() < self.work_test_minimum_age:
+            return reported
+
+        return max(reported, self.assumed_weekly_hours)
+
+    def reported_hours(self):
+        """Hours the screen actually evidences, before the work-test floor."""
         hours = 0
 
         for income in self.member.income_streams.all():
+            if income.type not in EARNED_INCOME_TYPES:
+                continue
+
             if income.frequency == "hourly":
+                # hours_worked is nullable and, unlike type/amount/frequency, is not
+                # reported by IncomeStream.missing_fields(), so can_calc() will not
+                # hold the request back when it is absent. An hourly stream's amount
+                # is a rate, so there is nothing to approximate hours from either.
+                # Contribute nothing rather than raising and failing the whole build.
+                if income.hours_worked is None:
+                    continue
+
                 hours += int(income.hours_worked)
                 continue
 
-            # aproximate weekly hours using the minimum wage in MA
+            # approximate weekly hours by valuing the income at minimum wage
             hours += int(income.monthly()) / self.minimum_wage / self.work_weeks_in_month
 
         return hours
 
 
 class MaTotalHoursWorkedDependency(TotalHoursWorkedDependency):
+    """
+    Massachusetts approximation, at the state minimum wage.
+
+    Every MA calculator sending this field must use this subclass. Two dependencies
+    writing different values to the same field and period raise ``DependencyError``
+    in ``update_unit``, so mixing this with the base class inside one MA screen
+    fails the request build.
+    """
+
     minimum_wage = 15
 
 
@@ -626,6 +706,13 @@ class ChipCategory(Member):
 
 class Chip(Member):
     field = "chip"
+
+
+class ChipGross(Member):
+    # CHIP's per-child value before PolicyEngine's cost-sharing offsets. Read instead of
+    # `chip` (the net figure) by any program that subtracts a state premium itself —
+    # netting both would count cost-sharing twice.
+    field = "chip_gross"
 
 
 class IncomeDependency(Member):
@@ -1068,3 +1155,43 @@ class SelfEmploymentIncomeBeforeLsrDependency(IncomeDependency):
 
 class WaAppleHealthKidsEligible(Member):
     field = "wa_apple_health_kids_eligible"
+
+
+class InSecondarySchoolDependency(Member):
+    """
+    PolicyEngine's ``is_in_secondary_school`` — secondary school, or an equivalent level of
+    vocational or technical training.
+
+    The variable has no formula and no default, so PolicyEngine reads False for everyone
+    unless it is sent. Its consumers all use it as
+    ``where(is_in_secondary_school, student_age_limit, non_student_age_limit)``, so an
+    unsent input silently applies the lower limit.
+
+    Means high school or equivalent vocational training — distinct from PolicyEngine's
+    ``is_in_k12_school``, which covers all of K-12 and imputes ages 5–17.
+
+    The screener has no secondary-enrollment field: ``student`` and ``student_full_time``
+    ask about college, and a False there does not disprove high-school attendance. So this
+    is an imputation from age alone.
+
+    Age alone, deliberately: attendance does not depend on tax-dependency status, and gating
+    on it would route this through ``HouseholdMember.is_dependent()``, whose support test
+    drops exactly the 18-year-olds this input exists to keep in the assistance unit
+    (MFB-1693).
+    """
+
+    field = "is_in_secondary_school"
+    dependencies = ("age",)
+
+    # US high school runs roughly ages 14-18. The upper bound is 18 rather than 17 because a
+    # student in their final year is exactly the case the 18-vs-19 age limits distinguish;
+    # the lower bound excludes younger K-8 children, for whom the variable is simply false.
+    MIN_AGE = 14
+    MAX_AGE = 18
+
+    def value(self):
+        # calc_age(), not the age column: AgeDependency sends the same reference-date age, and
+        # the two disagree by a year for any member with birth_year_month — on the 18/19
+        # boundary this input exists to control.
+        age = self.member.calc_age()
+        return self.MIN_AGE <= age <= self.MAX_AGE
