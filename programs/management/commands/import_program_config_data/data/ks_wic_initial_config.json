@@ -3,9 +3,7 @@
     "code": "ks"
   },
   "program_category": {
-    "external_name": "ks_food",
-    "name": "Food and Nutrition",
-    "icon": "food"
+    "external_name": "food"
   },
   "program": {
     "name_abbreviated": "ks_wic",
