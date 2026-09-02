@@ -210,8 +210,21 @@ class TestStateOptionsConfiguration(SimpleTestCase):
                 self.assertTrue(state["name"], f'White label "{state["code"]}" has no state name to display.')
 
     def test_default_white_label_declares_state_options(self):
-        """The "_default" config backs the dropdown for entry without a state (/?referrer=code)."""
-        self.assertIn("stateOptions", white_label_config["_default"].referrer_data)
+        """
+        The "_default" config backs the state-agnostic /select-state route, so it stays the
+        generic every-public-state list. A partner narrowing the dropdown belongs in the config
+        for the state path it is handed out under, where the screener actually reads it.
+        """
+        state_options_config = white_label_config["_default"].referrer_data.get("stateOptions")
+
+        self.assertIsNotNone(state_options_config, '"_default" must declare "stateOptions".')
+        self.assertEqual(
+            state_options_config,
+            {"default": []},
+            '"_default" should offer every publicly launched state and nothing partner-specific. '
+            f"Found {state_options_config!r}; move any referrer entry to that referrer's state "
+            "config.",
+        )
 
     def test_multi_state_referrers_are_configured_in_every_state_they_offer(self):
         """

@@ -52,11 +52,9 @@ class DefaultConfigurationData(ConfigurationData):
             ]
         },
         "uiOptions": {"default": []},
-        # United Way of Greater Kansas City's 2-1-1 serves the metro on both sides of the state
-        # line, so its links offer exactly those two states; empty means every publicly launched
-        # state. The same referrer is used from /ks and /mo, which read their own configs, so this
-        # entry only covers entry without a state (screener.myfriendben.org/?referrer=uwgkc).
-        "stateOptions": {"default": [], "uwgkc": ["ks", "mo"]},
+        # Empty means every publicly launched state. Referrers that narrow the dropdown declare it
+        # in the config for the state path they are handed out under, not here.
+        "stateOptions": {"default": []},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

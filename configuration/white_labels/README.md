@@ -239,11 +239,15 @@ referrer_data = {
 publicly launched state, while a non-empty list per referrer code names the states that referrer
 sees, launched publicly or not.
 
-The dropdown reads whichever config is loaded, so where the entry belongs depends on how the
-referrer is reached. `_default.py` covers entry without a state (`/?referrer=code`); a referrer
-handed out under a state path (`/ks/step-1?referrer=code`) also needs the entry in that state's
-config. A referrer spanning several states, as `uwgkc` does for the Kansas City metro, needs the
-same entry in each of them — see `ks.py` and `mo.py`.
+The dropdown reads whichever config is loaded, so the entry belongs in the config for the state
+path the referrer is handed out under — `/ks/step-1?referrer=code` reads `ks.py`, not `_default.py`.
+A referrer spanning several states, as `uwgkc` does for the Kansas City metro, needs the same entry
+in each of them; see `ks.py` and `mo.py`.
+
+Keep partner entries out of `_default.py`. It stays the generic every-public-state list, since it
+backs the state-agnostic `/select-state` route rather than any one partner. The tradeoff is that a
+bare `/?referrer=code` link cannot narrow the dropdown — a referrer that needs one should be given
+state-scoped links instead.
 
 The dropdown's catalog of states is not hand-maintained — `add_config` derives the `state_options`
 config from the white label registry, using each state's `state["name"]`, `is_state` and

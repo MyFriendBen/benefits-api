@@ -313,8 +313,8 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #   - A non-empty list may name states that are not public yet, e.g.
     #     {"uwgkc": ["ks", "mo"]} for a referrer serving both sides of the KS/MO line
     #   - The dropdown reads whichever config is loaded, so a referrer reachable from more than
-    #     one state path needs the same entry in each of those states' configs, plus "_default"
-    #     for the no-state entry point
+    #     one state path needs the same entry in each of those states' configs. Keep partner
+    #     entries out of "_default", which stays the generic every-public-state list
     #
     # noResultMessage: Message shown when user has no eligible programs
     #   - Format: {"_label": "translation.key", "_default_message": "Message text"}
