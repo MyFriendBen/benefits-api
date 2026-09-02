@@ -17,9 +17,8 @@ class MaBabySteps(ProgramCalculator):
     - The member must be a beneficiary candidate (see `beneficiary_relationships`). No source
       maps BabySteps beneficiary status onto MFB `relationship` values, so Product committed
       this mapping directly: the child roles are candidates, adult caregiver/partner roles are
-      not. Two edge cases are accepted: an adult-adopted beneficiary reported as
-      `headOfHousehold` is missed, and an older `sibling`/`other` may be valued via the
-      adoption fallback below. See spec.md "Beneficiary/member-identification mapping".
+      not. One edge case is accepted: an adult-adopted beneficiary reported as
+      `headOfHousehold` is missed. See spec.md "Beneficiary/member-identification mapping".
     - Birth pathway: born on or after Jan 1, 2020 with the account opened before the first
       birthday. The screener only collects birth month/year, so the entire first-birthday
       month is treated as inside the window (`birth_pathway_eligible`).
@@ -27,11 +26,14 @@ class MaBabySteps(ProgramCalculator):
     Massachusetts residency (Criterion 1) is handled upstream by white-label routing — the
     program operates statewide, so no sub-state or ZIP check is applied here.
 
-    Data gaps, all handled inclusively (each is disclosed in the program description):
-    - Adoption pathway (Criterion 2b): the screener collects no adoption status or date, and
-      adopted children of any age can qualify within a year of adoption. A candidate whose
-      birth-pathway window has closed is therefore still eligible via `adoption_fallback`
-      rather than being denied by a hard age cutoff.
+    The adoption pathway (Criterion 2b) is not evaluable: an adopted child of any age
+    qualifies within one year of the adoption, but the screener collects no adoption status
+    or date. Because that window turns on the adoption date rather than age, it cannot be
+    approximated from birth date — so the birth-pathway cutoff applies to every candidate and
+    the program description directs recently adopting families to check directly. This is a
+    known false negative for that group.
+
+    Data gaps handled inclusively (each is disclosed in the program description):
     - Prior BabySteps receipt (Criterion 3): the current-benefits field is household-level and
       cannot identify per-child receipt, so it is not read here. A family that already claimed
       BabySteps for one child may still have a newly born or adopted child who qualifies.
@@ -59,9 +61,13 @@ class MaBabySteps(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
 
-        # Beneficiary candidacy is the only evaluable member gate: a candidate qualifies either
-        # through the birth pathway or through the adoption-pathway inclusive fallback.
+        # A beneficiary candidate qualifies through the birth pathway: born on or after the
+        # program start date and still inside the one-year enrollment window. The adoption
+        # pathway opens a separate one-year window off the adoption date, which the screener
+        # collects no input for, so it cannot be evaluated here — the program description
+        # tells families with a recently adopted child of any age to check directly.
         e.condition(self.is_beneficiary_candidate(member.relationship))
+        e.condition(self.birth_pathway_eligible(member))
 
     def is_beneficiary_candidate(self, relationship: Optional[str]) -> bool:
         """
@@ -95,14 +101,3 @@ class MaBabySteps(ProgramCalculator):
         )
 
         return 0 <= months_since_birth <= self.enrollment_window_months
-
-    def adoption_fallback_applied(self, member: HouseholdMember) -> bool:
-        """
-        Whether this member is eligible only through the adoption-pathway inclusive default
-        (Criterion 2b) rather than a confirmed birth-pathway result.
-
-        A child adopted within the past year qualifies at any age, and the screener collects
-        no adoption information, so a candidate whose birth-pathway window has closed is not
-        denied. This is a screening assumption — actual eligibility is verified at enrollment.
-        """
-        return self.is_beneficiary_candidate(member.relationship) and not self.birth_pathway_eligible(member)

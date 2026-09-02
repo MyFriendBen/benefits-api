@@ -185,10 +185,10 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 100)
 
-    def test_scenario_4_mixed_age_household_values_both_children(self):
+    def test_scenario_4_mixed_age_household_values_only_the_child_under_one(self):
         """
-        Scenario 4: a recent birth plus an older sibling whose adoption status is unknown.
-        The older child is not denied outright — the adoption fallback values them too.
+        Scenario 4: a recent birth plus an older sibling past the first-birthday cutoff.
+        Only the child inside the birth-pathway window is valued.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=4)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
@@ -199,11 +199,11 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         calculator, eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 100)
-        # The two $50s come from different pathways: one confirmed, one inclusive default.
+        # $50, not $100 — the older sibling's birth window closed and the adoption pathway
+        # is not evaluable from screener data.
+        self.assertEqual(eligibility.value, 50)
         self.assertTrue(calculator.birth_pathway_eligible(newborn))
         self.assertFalse(calculator.birth_pathway_eligible(older_sibling))
-        self.assertTrue(calculator.adoption_fallback_applied(older_sibling))
 
     def test_scenario_5_no_beneficiary_candidate_is_ineligible(self):
         """Scenario 5: household of only headOfHousehold + spouse → ineligible."""
@@ -274,14 +274,13 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         calculator, eligibility = self.calculate(screen)
 
         self.assertTrue(calculator.birth_pathway_eligible(child))
-        self.assertFalse(calculator.adoption_fallback_applied(child))
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
 
-    def test_scenario_10_eligible_via_adoption_fallback_only(self):
+    def test_scenario_10_birth_pathway_expired_is_ineligible(self):
         """
-        Scenario 10: the paired case — a child whose birth window closed is still eligible, but
-        only through the adoption-pathway fallback.
+        Scenario 10: the paired case — a child whose birth window has closed is ineligible.
+        The adoption pathway would need an adoption date the screener does not collect.
         """
         screen = self.make_screen(zipcode="02139", county="Cambridge", household_size=2)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
@@ -290,9 +289,30 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         calculator, eligibility = self.calculate(screen)
 
         self.assertFalse(calculator.birth_pathway_eligible(child))
-        self.assertTrue(calculator.adoption_fallback_applied(child))
+        self.assertFalse(eligibility.eligible)
+        self.assertEqual(eligibility.value, 0)
+
+    def test_scenario_11_reported_bug_household(self):
+        """
+        The MFB-1729 repro household shape: two children under one plus a two-year-old.
+        Only the two under-one children are valued. Birth dates are re-anchored to the
+        frozen July 22, 2026 evaluation date rather than copied from the ticket, which
+        reported ages relative to the live date.
+        """
+        screen = self.make_screen(household_size=5)
+        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
+        self.make_member(screen, "domesticPartner", date(1991, 3, 1))
+        infant = self.make_member(screen, "child", date(2026, 1, 1))
+        foster_infant = self.make_member(screen, "fosterChild", date(2025, 10, 1))
+        two_year_old = self.make_member(screen, "child", date(2024, 5, 1))
+
+        calculator, eligibility = self.calculate(screen)
+
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
+        self.assertEqual(eligibility.value, 100)
+        self.assertTrue(calculator.birth_pathway_eligible(infant))
+        self.assertTrue(calculator.birth_pathway_eligible(foster_infant))
+        self.assertFalse(calculator.birth_pathway_eligible(two_year_old))
 
 
 class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
@@ -329,27 +349,31 @@ class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
     def test_missing_birth_year_month_is_outside_window(self):
         self.assertFalse(self.birth_pathway_result(None))
 
-    def test_missing_birth_year_month_still_eligible_via_fallback(self):
-        """A candidate with no birth date is not denied — the inclusive default applies."""
+    def test_missing_birth_year_month_is_ineligible(self):
+        """
+        A candidate with no birth date cannot be placed inside the one-year window, so the
+        birth pathway does not pass. The screener requires a birth date for every member, so
+        this pins the defensive branch rather than a reachable screener state.
+        """
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         child = self.make_member(screen, "child", None)
 
         calculator, eligibility = self.calculate(screen)
 
-        self.assertTrue(calculator.adoption_fallback_applied(child))
-        self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
+        self.assertFalse(calculator.birth_pathway_eligible(child))
+        self.assertFalse(eligibility.eligible)
+        self.assertEqual(eligibility.value, 0)
 
-    def test_non_candidate_never_gets_adoption_fallback(self):
-        """The fallback only relaxes timing for members already in the assistance unit."""
+    def test_non_candidate_adult_is_not_eligible(self):
+        """An adult caregiver role is outside the assistance unit regardless of timing."""
         screen = self.make_screen(household_size=1)
         head = self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
 
         calculator = self.make_calculator(screen)
 
         self.assertFalse(calculator.birth_pathway_eligible(head))
-        self.assertFalse(calculator.adoption_fallback_applied(head))
+        self.assertFalse(calculator.is_beneficiary_candidate(head.relationship))
 
 
 class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
@@ -452,12 +476,15 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
 
         self.assertTrue(screen.has_benefit("ma_bsp"))
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 100)
+        # $50: the household-level receipt flag does not exclude the newly born child. The
+        # 2022 child is excluded by the age cutoff, not by the receipt flag.
+        self.assertEqual(eligibility.value, 50)
 
-    def test_older_child_of_any_age_is_not_denied(self):
+    def test_older_child_is_denied_by_the_age_cutoff(self):
         """
-        Criterion 2b: adopted children qualify at any age, so an older candidate falls through
-        to the fallback instead of hitting an age cutoff.
+        The first-birthday cutoff applies to every candidate. An adopted teenager inside their
+        adoption-anniversary window would really qualify, but the screener collects no adoption
+        input — that known false negative is disclosed in the program description instead.
         """
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1975, 3, 1))
@@ -465,9 +492,9 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
 
         calculator, eligibility = self.calculate(screen)
 
-        self.assertTrue(calculator.adoption_fallback_applied(teenager))
-        self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
+        self.assertFalse(calculator.birth_pathway_eligible(teenager))
+        self.assertFalse(eligibility.eligible)
+        self.assertEqual(eligibility.value, 0)
 
     def test_birthplace_is_not_used_to_exclude(self):
         """
