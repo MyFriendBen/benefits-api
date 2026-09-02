@@ -1,6 +1,8 @@
+from importlib import import_module
 from io import StringIO
 from unittest.mock import patch
 
+from django.apps import apps as global_apps
 from django.core.management import call_command
 from django.db.utils import IntegrityError
 from django.test import SimpleTestCase, TestCase
@@ -112,10 +114,33 @@ class FederalPovertyLimitValueTests(TestCase):
     _FPL_DEFAULTS, so the risk it introduces is drift: someone adds a year to the
     constant and the table silently keeps answering with the old one. These tests
     are what make that a CI failure instead of a wrong number on a dashboard.
+
+    setUp syncs the table rather than relying on migration 0171 having filled it:
+    pytest.ini runs with --nomigrations, so pytest-django builds the schema from
+    the models and never executes a RunPython. Depending on the migration here
+    would pass under `manage.py test` and fail in CI. The migration's own
+    populate() is covered separately below, by calling it directly.
     """
 
-    def test_migration_populated_every_period_and_size(self):
+    def setUp(self):
+        sync_fpl_values()
+
+    def test_sync_populates_every_period_and_size(self):
         expected = len(_FPL_DEFAULTS) * MAX_MATERIALIZED_SIZE
+
+        self.assertEqual(FederalPovertyLimitValue.objects.count(), expected)
+
+    def test_migration_populate_fills_the_table(self):
+        """Covers migration 0171's RunPython, which --nomigrations skips.
+
+        This is what fills the table on a real deploy, so it needs a test that
+        does not depend on the migration runner having run.
+        """
+        expected = len(_FPL_DEFAULTS) * MAX_MATERIALIZED_SIZE
+        FederalPovertyLimitValue.objects.all().delete()
+        migration = import_module("programs.migrations.0171_federal_poverty_limit_value")
+
+        migration.populate(global_apps, None)
 
         self.assertEqual(FederalPovertyLimitValue.objects.count(), expected)
 
