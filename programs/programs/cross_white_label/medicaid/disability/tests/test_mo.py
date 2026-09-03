@@ -2,8 +2,8 @@
 Unit tests for the MoTwha calculator — one test per spec.md Test Scenario, plus the
 helper-level tests the spec requires where a rule has no eligibility outcome to flip.
 
-Coverage maps to ``specs/mo.md``: its seven Covered Eligibility Criteria, criterion 5's
-ordered disregards, Data Gap 7's two-pass fallback, and its 19 scenarios.
+Coverage maps to ``specs/mo.md`` — its criteria, criterion 5's ordered disregards, Data
+Gap 7's two-pass fallback, and its 19 scenarios.
 
 Built on real ``Screen`` / ``HouseholdMember`` / ``IncomeStream`` / ``Expense`` /
 ``Insurance`` rows rather than mocks. Almost every rule here is a question about
@@ -21,16 +21,9 @@ stream's contribution or a disregard's amount — rather than the verdict, becau
 inclusive pass would return Eligible on those fixtures either way, so the verdict alone
 cannot show the rule was applied. The spec says so explicitly for each.
 
-Not tested here, because the calculator does not and cannot implement them:
-- Criterion 6 (Missouri residency) — white-label routing.
-- Criterion 7 (citizenship) — the program's ``legal_status_required`` config.
-- The premium schedule — surfaced in the description, not a calculator output, and its band
-  moves with an unobservable fact.
-- The Basic Coverage / Medically Improved group split, the formal PTD/MRT determination,
-  sheltered-workshop certification, and the dental/optical premium — no screener field, so
-  no branch. Applied unconditionally instead (see the class docstring).
-
-Every eligible member is worth $12,200/year.
+What is deliberately not tested here, and why, is listed in specs/mo.md under "Known
+scenario gaps" — residency and citizenship are config rather than calculator logic, and the
+rest turn on facts the screener never collects, so they have no branch to exercise.
 """
 
 from datetime import date
