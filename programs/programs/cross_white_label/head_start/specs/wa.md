@@ -64,9 +64,10 @@ Additionally, two **discretionary enrollment pathways** exist outside the federa
 
 **4. Child is in foster care.**
 
-   - Screener fields: `relationship (HouseholdMember)` — count members where `relationship == "fosterChild"`
+   - Screener fields: `relationship (HouseholdMember)` — count members where `relationship == "fosterChild"`; `was_in_foster_care (HouseholdMember)` — the Step 5 "Ever in foster care, even briefly" tile
    - Source: [45 CFR § 1302.12(c)(1)(iv)](https://headstart.gov/policy/45-cfr-chap-xiii/1302-12-determining-verifying-documenting-eligibility); [Head Start FAQs](https://headstart.gov/about-us/article/head-start-faqs)
    - Note: WA `relationship` enum confirmed to include a `fosterChild` option. Foster care eligibility applies regardless of income.
+   - Note: the relationship alone misses a child whose caregiver reported them as `child`, so `was_in_foster_care` is OR'd in. `FosterCareDependency` sends True when either holds, and None otherwise so PolicyEngine keeps its own default.
 
 ---
 

@@ -359,6 +359,13 @@ class IlConfigurationData(ConfigurationData):
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
                 },
             },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
+                },
+            },
         },
         "them": {
             "student": {
@@ -400,6 +407,13 @@ class IlConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "conditionOptions.longTermDisability",
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
+                },
+            },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
                 },
             },
         },

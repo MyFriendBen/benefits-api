@@ -35,7 +35,9 @@
 4. **Child is in foster care**
    - Screener fields:
      - `household_member.relationship`
+     - `household_member.was_in_foster_care`
    - Source: 45 CFR 1302.12(a)(1)(iii) - Categorical eligibility for foster children
+   - Note: `relationship == "fosterChild"` alone misses a child whose caregiver reported them as `child`, so the per-member `was_in_foster_care` tile ("Ever in foster care, even briefly") is OR'd in. `FosterCareDependency` sends True when either holds, and None otherwise so PolicyEngine keeps its own default.
 
 5. **Child is homeless (McKinney-Vento definition)** ⚠️ *data gap*
    - Note: The housing_situation field exists in the data model but is not collected from users during screening. The needs_housing_help field only indicates whether the user wants housing assistance, not their actual housing status. Cannot determine if child meets McKinney-Vento homeless definition (42 U.S.C. § 11434a). Categorical eligibility under this pathway cannot be evaluated until housing_situation is collected.

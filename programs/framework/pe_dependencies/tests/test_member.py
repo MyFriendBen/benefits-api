@@ -1325,7 +1325,8 @@ class TestIsMedicaidEligibleDependency(TestCase):
 
 
 class TestFosterCareDependency(TestCase):
-    """Tests for FosterCareDependency which maps fosterChild relationship to was_in_foster_care."""
+    """Tests for FosterCareDependency, which maps the fosterChild relationship OR the
+    self-reported was_in_foster_care tile to PolicyEngine's was_in_foster_care."""
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
@@ -1359,6 +1360,44 @@ class TestFosterCareDependency(TestCase):
         """Returns None for the head of household (not a foster child)."""
         dep = member.FosterCareDependency(self.screen, self.head, {})
         self.assertIsNone(dep.value())
+
+    def test_value_returns_true_for_self_reported_head_of_household(self):
+        """Returns True for an adult who ticked the tile, whom the relationship misses.
+
+        This is the case the relationship proxy cannot reach at all: a young adult who
+        aged out of care is their own head of household, never a `fosterChild`.
+        """
+        self.head.was_in_foster_care = True
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_true_for_self_reported_child(self):
+        """Returns True for a child reported as `child` whose caregiver ticked the tile."""
+        self.biological_child.was_in_foster_care = True
+        dep = member.FosterCareDependency(self.screen, self.biological_child, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_none_when_tile_explicitly_false(self):
+        """An unticked tile stays None, not False.
+
+        Sending False would assert a negative on a question the member may never have
+        been shown; None lets PolicyEngine apply its own default.
+        """
+        self.head.was_in_foster_care = False
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_true_for_foster_child_with_tile_false(self):
+        """The relationship still wins when the tile is unticked."""
+        self.foster_child.was_in_foster_care = False
+        dep = member.FosterCareDependency(self.screen, self.foster_child, {})
+        self.assertTrue(dep.value())
+
+    def test_dependencies_includes_both_sources(self):
+        """Both source fields are declared so `can_calc` sees them."""
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertIn("relationship", dep.dependencies)
+        self.assertIn("was_in_foster_care", dep.dependencies)
 
 
 class TestEmploymentIncomeBeforeLsrDependency(TestCase):

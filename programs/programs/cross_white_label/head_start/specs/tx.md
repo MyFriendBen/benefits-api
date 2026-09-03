@@ -35,7 +35,9 @@
 4. **Child is in foster care**
    - Screener fields:
      - `household_member.relationship`
+     - `household_member.was_in_foster_care`
    - Source: 45 CFR § 1302.12(c)(1)(iii) - Foster children eligibility
+   - Note: `relationship == "fosterChild"` alone misses a child whose caregiver reported them as `child`, so the per-member `was_in_foster_care` tile ("Ever in foster care, even briefly") is OR'd in. `FosterCareDependency` sends True when either holds, and None otherwise so PolicyEngine keeps its own default.
 
 5. **Family income between 100% and 130% FPL (up to 35% of enrollment)** — show as eligible
    - Note: Under 45 CFR § 1302.12(d)(1-2), a program may enroll up to an additional 35% of participants whose family income is between 100–130% FPL, provided specific reporting requirements are met. Because this pathway serves a defined income band with a substantial enrollment allowance, the screener surfaces these families as potentially eligible. The program description notes that enrollment depends on grantee slot availability.

@@ -66,7 +66,7 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: age (under 3) or pregnancy, income at/below FPL, categorical via TANF/SNAP/SSI (self-report), foster care.
+- ✅ Evaluable criteria: age (under 3) or pregnancy, income at/below FPL, categorical via TANF/SNAP/SSI (self-report), foster care (from `relationship == "fosterChild"` or the per-member `was_in_foster_care` tile).
 - ⚠️ Data gap: homelessness. The screener doesn't collect current housing status, and PE's `is_homeless` variable defaults to `false` when not provided — the same as every shipped Head Start/EHS sibling. A household that qualifies *solely* through the homelessness pathway will not be found eligible by this integration; a household that qualifies through any other pathway is unaffected. This is a shared PE/MFB limitation across the whole Head Start/EHS program family, not a Missouri-specific gap.
 - This is a **light spec**: eligibility is federal and trusted to PolicyEngine, so the scenario suite below isolates Missouri's state-specific *value* and its aggregation rather than re-testing every federal eligibility branch. No negative federal-eligibility scenario is included — a household with no child under 3 and no pregnancy isn't a Missouri state-value isolation test, and federal eligibility branch coverage is PE's responsibility, not this spec's.
 

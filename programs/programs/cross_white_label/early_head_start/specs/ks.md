@@ -42,7 +42,9 @@
 4. **Child is in foster care**
    - Screener fields:
      - `household_member.relationship`
+     - `household_member.was_in_foster_care`
    - Source: 45 CFR § 1302.12(c)(1)(iii)
+   - Note: `relationship == "fosterChild"` alone misses a child whose caregiver reported them as `child`, so the per-member `was_in_foster_care` tile ("Ever in foster care, even briefly") is OR'd in. `FosterCareDependency` sends True when either holds, and None otherwise so PolicyEngine keeps its own default.
 
 5. **Child experiencing homelessness (McKinney-Vento definition)** ⚠️ *data gap*
    - Note: Children (and pregnant women) experiencing homelessness are categorically eligible regardless of income. The screener has a `housing_situation` field in the data model but it is not collected from users. The `needs_housing_help` field indicates desire for housing assistance, not current housing status. Cannot evaluate homelessness status. Same accepted gap as WA Head Start.
