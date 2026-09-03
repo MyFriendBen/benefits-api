@@ -51,3 +51,16 @@ class AssistantMessageRateThrottle(HashedIPAnonRateThrottle):
     """Sending a Benbot message. Holds a worker for up to AI_SERVICE_TIMEOUT (60s)."""
 
     scope = "assistant_message"
+
+
+class AssistantHistoryRateThrottle(HashedIPAnonRateThrottle):
+    """Reading a Benbot transcript back.
+
+    Separate from `assistant_start` because it is a much cheaper call — no context
+    assembly, no LLM, one indexed lookup in ai-service — and a much more frequent one:
+    the widget auto-opens on nearly every results page, and a page reload repeats it.
+    Sharing the start budget would let ordinary browsing exhaust the ability to open a
+    conversation at all.
+    """
+
+    scope = "assistant_history"

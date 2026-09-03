@@ -11,6 +11,10 @@ class Tanf(PolicyEngineSpmCalulator):
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.member.FullTimeCollegeStudentDependency,
+        # Unsent, this reads False for everyone and narrows the minor-child age limit. It lands
+        # in the whole screen's payload, but no other program we ship reads it: SNAP does not,
+        # and Medicaid's is_parent_for_medicaid_nfc deliberately leaves it out.
+        dependency.member.InSecondarySchoolDependency,
         *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.spm.TanfIfTakesUp]

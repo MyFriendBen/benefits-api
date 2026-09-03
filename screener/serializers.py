@@ -138,11 +138,11 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-# SSI program variants across white labels. An sSI income stream implies SSI
-# receipt regardless of whether the user ticked the tile, so all variants are
-# listed here; the WL-scoped resolve in `_write_current_benefits()` drops the
-# ones a given white label doesn't offer (e.g. `wa_ssi` on a CO screen).
-_SSI_BENEFIT_NAMES = frozenset({"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"})
+# Matched by `base_program`, not a list of `name_abbreviated`s: the hardcoded
+# {"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"} this replaced missed `ks_ssi` and
+# `mo_ssi`, so KS and MO derived no row at all.
+_SSI_BASE_PROGRAM = "ssi"
+_SSI_INCOME_TYPE = "sSI"
 
 
 def _derived_current_benefit_names(screen: Screen) -> set[str]:
@@ -158,10 +158,21 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     `ma_mass_health` compounds are deliberately NOT here — those are member-level
     insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
     flow through `current_benefits`. Add new derivable compounds here as they appear.
+
+    Already scoped to this screen's white label, so every name returned resolves in
+    `_write_current_benefits()` — unlike the hardcoded set this replaced, which
+    relied on that resolve to drop the variants a white label doesn't ship.
     """
     derived: set[str] = set()
-    if screen.calc_gross_income("yearly", ("sSI",)) > 0:
-        derived |= _SSI_BENEFIT_NAMES
+    if screen.calc_gross_income("yearly", (_SSI_INCOME_TYPE,)) > 0:
+        # An empty result is normal, not a config gap: `_default`,
+        # `co_tax_calculator` and `dbg_wl` ship no SSI program at all.
+        derived |= set(
+            Program.objects.filter(
+                white_label=screen.white_label,
+                base_program=_SSI_BASE_PROGRAM,
+            ).values_list("name_abbreviated", flat=True)
+        )
     return derived
 
 

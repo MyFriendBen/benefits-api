@@ -29,6 +29,8 @@ from translations.models import (
     _translation_cache_timeout,
 )
 from translations.views import TranslationView
+from authentication.models import User
+from integrations.clients.google_translate import TranslationIntegrityError
 
 DEFAULT_LANG = settings.LANGUAGE_CODE
 
@@ -262,3 +264,105 @@ class TestTranslationViewErrorPath(TestCase):
             response = self._get(DEFAULT_LANG)
 
         self.assertNotIn("traceback", response.data)
+
+
+class TestAdminAutoTranslateFailurePaths(TestCase):
+    """
+    The translation integrity guard raises where it used to silently write corrupted
+    text. These admin views had no exception handling, so an unprotected guard turned
+    a silent corruption into a 500 for the admin -- and in the create case the label
+    row is committed before the translation call, so a 500 would strand a new label
+    behind an error page with no explanation.
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_superuser(email_or_cell="admin@example.com", password="pw")
+        self.client.force_login(self.user)
+
+    def _make_label(self, label, english):
+        parent = Translation.objects.create(label=label, active=True)
+        parent.create_translation(DEFAULT_LANG, text=english, edited=True)
+        _invalidate_translation_cache()
+        return parent
+
+    @patch("translations.views.Translate")
+    def test_create_with_icu_plural_does_not_500_and_still_creates_the_label(self, mock_translate):
+        """An ICU string is refused by the guard; the label must still be created."""
+        response = self.client.post(
+            "/api/translations/admin",
+            {"label": "test.plural", "default_message": "{count, plural, one {item} other {items}}"},
+        )
+
+        self.assertNotEqual(response.status_code, 500)
+        self.assertTrue(Translation.objects.filter(label="test.plural").exists())
+        # Refused before any API call, so the client is never even constructed.
+        mock_translate.return_value.bulk_translate.assert_not_called()
+
+    @patch("translations.views.Translate")
+    def test_create_survives_an_integrity_error_from_the_client(self, mock_translate):
+        mock_translate.return_value.bulk_translate.side_effect = TranslationIntegrityError("mangled")
+
+        response = self.client.post(
+            "/api/translations/admin",
+            {"label": "test.placeholder", "default_message": "Are {subject} employed?"},
+        )
+
+        self.assertNotEqual(response.status_code, 500)
+        self.assertTrue(Translation.objects.filter(label="test.placeholder").exists())
+
+    @patch("translations.views.Translate")
+    def test_edit_skips_only_the_failing_language(self, mock_translate):
+        """A placeholder failure in one language must not cost the others, or 500."""
+        parent = self._make_label("test.subject", "Are {subject} employed?")
+        mock_translate.return_value.bulk_translate.return_value = {
+            "Are {subject} changed?": {"es": "es-text"}  # note: 'fr' absent -> integrity failure
+        }
+        mock_translate.languages = ["es", "fr"]
+
+        response = self.client.post(
+            f"/api/translations/admin/{parent.id}/en-us",
+            {"text": "Are {subject} changed?", "auto_translate_check": "on"},
+        )
+
+        self.assertNotEqual(response.status_code, 500)
+        parent.refresh_from_db()
+        parent.set_current_language("es")
+        self.assertEqual(parent.text, "es-text")
+        # fr was omitted by the guard, so no row should have been written for it.
+        self.assertFalse(parent.has_translation("fr"))
+
+
+class TestTranslationSaveDoesNotReportExpectedMisses(TestCase):
+    """`Translation.save()` diffs each configured language against its pre-save text
+    to fill in the latest history row's `affected_language`/`original_text` fields.
+
+    A brand-new Translation has no prior text for any language, so there is nothing
+    to diff. The languages must be skipped before the descriptor read that would
+    raise for them -- otherwise every save reports a swallowed DoesNotExist per
+    language to Sentry, which both floods the error budget and dominates the cost of
+    creating a Translation.
+    """
+
+    def test_creating_a_translation_reports_nothing_to_sentry(self):
+        with patch.object(translation_models, "capture_exception") as capture:
+            Translation.objects.add_translation("test.save_reports_nothing", default_message="hello")
+
+        self.assertEqual(
+            capture.call_args_list,
+            [],
+            "creating a Translation should not funnel expected missing-language reads to Sentry",
+        )
+
+    def test_editing_a_translation_still_records_the_language_it_changed(self):
+        translation = Translation.objects.add_translation("test.save_records_diff", default_message="before")
+
+        with patch.object(translation_models, "capture_exception") as capture:
+            Translation.objects.edit_translation("test.save_records_diff", DEFAULT_LANG, "after")
+
+        self.assertEqual(capture.call_args_list, [])
+
+        latest = Translation.objects.get(pk=translation.pk).history.first()
+        self.assertEqual(latest.affected_language, DEFAULT_LANG)
+        self.assertEqual(latest.original_text, "before")
+        self.assertEqual(latest.changed_text, "after")

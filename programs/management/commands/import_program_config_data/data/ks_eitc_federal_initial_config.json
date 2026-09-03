@@ -1,0 +1,100 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "tax_credit"
+  },
+  "program": {
+    "name_abbreviated": "ks_eitc_federal",
+    "external_name": "ks_eitc_federal",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Federal Earned Income Tax Credit (EITC)",
+    "description_short": "Federal tax credit for working people with lower incomes. It can lower your taxes or increase your refund",
+    "description": "The Earned Income Tax Credit (EITC) is a federal tax credit for working people with lower incomes. It can lower the federal tax you owe, and if the credit is more than you owe, you get the rest back as part of your refund.\n\nThe amount depends on your earned income, your filing status, and how many qualifying children you claim. This screener shows an estimate, so your actual credit may differ.\n\nSome EITC rules cannot be checked here. You need a Social Security number valid for work, and so do your spouse if you file jointly and each child you claim. You cannot claim the EITC if you file Form 2555 for foreign earned income. If you do not claim a child, you must have lived in the United States for more than half the year, and no one else can claim you as a dependent or qualifying child.\n\nThis is a federal credit — there is no separate Kansas application. You claim it on your federal tax return, even if you owe no tax. Select \"File for Free\" to prepare and file your federal tax return at no cost. If you would rather have someone help you file, see the \"Get Help Applying\" section. The Kansas Earned Income Tax Credit is separate and is claimed on your Kansas return.",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit/who-qualifies-for-the-earned-income-tax-credit-eitc",
+    "apply_button_link": "https://www.irs.gov/filing/free-file-do-your-federal-taxes-for-free",
+    "apply_button_description": "File for Free",
+    "estimated_application_time": "45 minutes",
+    "estimated_delivery_time": "21 days after e-filing",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "website_description": "Federal tax credit for working people with lower incomes. It can lower your taxes or increase your refund",
+    "base_program": "eitc",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_ssn",
+      "text": "Valid Social Security Number (SSN) for you, your spouse, and any qualifying children",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of current earnings (e.g. W-2 forms, pay stubs, or self-employment tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_eitc_federal_investment_income",
+      "text": "Records of investment income (e.g. 1099-INT, 1099-DIV, 1099-B)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_eitc_federal_child_records",
+      "text": "Records for qualifying children (e.g. birth certificate, school records, adoption or foster papers)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_eitc_federal_prior_year_return",
+      "text": "Last year's federal tax return, if you filed one (used to verify your identity when e-filing)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_eitc_federal_get_your_refund",
+      "name": "GetYourRefund",
+      "email": "",
+      "description": "Free tax filing from Code for America, in partnership with IRS-certified VITA volunteers. You can file on your own with help by chat or email, have a tax expert file for you, or find an in-person site near you.",
+      "assistance_link": "https://www.getyourrefund.org/en",
+      "phone_number": ""
+    },
+    {
+      "external_name": "ks_vita_free_tax_prep",
+      "name": "VITA Free Tax Preparation (IRS Volunteer Income Tax Assistance)",
+      "email": "",
+      "description": "Free tax preparation help for people who earn low to moderate income. Trained volunteers can help you file your federal and Kansas returns and claim the EITC.",
+      "assistance_link": "https://irs.treasury.gov/freetaxprep/",
+      "phone_number": "+18008291040"
+    },
+    {
+      "external_name": "ks_aarp_tax_aide",
+      "name": "AARP Foundation Tax-Aide",
+      "email": "taxaide@aarp.org",
+      "description": "AARP Foundation Tax-Aide provides free, IRS-certified tax help across Kansas and will help you claim any credits you're eligible for. It is open to everyone, with no age or AARP membership requirement, and gives priority to people 50 and older with low to moderate income. Appointments are seasonal and fill quickly.",
+      "assistance_link": "https://www.kstaxaide.com/homestead-2025",
+      "phone_number": "+18882277669"
+    }
+  ]
+}

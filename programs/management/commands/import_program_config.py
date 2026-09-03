@@ -747,11 +747,13 @@ class Command(BaseCommand):
         if not external_name:
             raise CommandError("Missing required field 'external_name' in program_category")
 
-        # Try to find existing category by external_name
-        existing_category = ProgramCategory.objects.filter(external_name=external_name, white_label=white_label).first()
+        # Unscoped: external_name is globally unique, and a shared category has
+        # no white label to match on.
+        existing_category = ProgramCategory.objects.filter(external_name=external_name).first()
 
         if existing_category:
-            self.stdout.write(f"  Using existing: {external_name} (ID: {existing_category.id})")
+            scope = "shared" if existing_category.white_label is None else existing_category.white_label.code
+            self.stdout.write(f"  Using existing: {external_name} ({scope}, ID: {existing_category.id})")
             return existing_category
         else:
             # For new categories, validate required fields
@@ -1019,6 +1021,8 @@ class Command(BaseCommand):
         # Associate the created program with this warning message
         warning.programs.add(program)
 
+        self._set_warning_scope(warning, warning_config)
+
         # Update translations for the warning message
         translated_fields = WarningMessage.objects.translated_fields
 
@@ -1030,6 +1034,41 @@ class Command(BaseCommand):
         }
 
         self._bulk_update_entity_translations(warning, field_values, "warning", translated_fields)
+
+    def _set_warning_scope(self, warning: WarningMessage, warning_config: dict[str, Any]) -> None:
+        """
+        Apply the legal statuses and counties that narrow who sees a warning.
+
+        Both are optional and both mean "no restriction" when absent: the frontend
+        shows a warning with no legal statuses to every citizenship, and
+        `WarningCalculator.county_eligible` treats an empty county list as all
+        counties. A config that omits them therefore gets the same unrestricted
+        warning it got before these fields were read.
+
+        An unknown name is a warning rather than an error, matching how
+        `legal_status_required` is handled for the program itself. Both are
+        reported, since a silently dropped status would widen the audience for a
+        message meant for one group.
+        """
+        statuses = []
+        for status_code in warning_config.get("legal_statuses", []):
+            try:
+                statuses.append(LegalStatus.objects.get(status=status_code))
+            except LegalStatus.DoesNotExist:
+                self.stdout.write(self.style.WARNING(f"  Warning: Legal status '{status_code}' not found"))
+        if statuses:
+            warning.legal_statuses.set(statuses)
+            self.stdout.write(f"  Legal statuses: {', '.join(s.status for s in statuses)}")
+
+        counties = []
+        for county_name in warning_config.get("counties", []):
+            try:
+                counties.append(County.objects.get(name=county_name, white_label=warning.white_label))
+            except County.DoesNotExist:
+                self.stdout.write(self.style.WARNING(f"  Warning: County '{county_name}' not found"))
+        if counties:
+            warning.counties.set(counties)
+            self.stdout.write(f"  Counties: {', '.join(c.name for c in counties)}")
 
     def _import_documents(self, program: Program, documents_config: list[dict[str, Any]]) -> None:
         """

@@ -3,14 +3,14 @@
     "code": "wa"
   },
   "program_category": {
-    "external_name": "wa_cash",
+    "external_name": "cash",
     "name": "Cash Assistance",
     "icon": "cash"
   },
   "program": {
     "name_abbreviated": "wa_tanf",
     "legal_status_required": [
-      "citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"
+      "citizen", "gc_5plus", "refugee", "otherWithWorkPermission"
     ],
     "name": "Temporary Assistance for Needy Families (TANF)",
     "description_short": "Temporary Assistance for Needy Families (TANF) gives families monthly cash to help pay for things like food and rent",

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import reverse
 from authentication.admin import SecureAdmin
-from .models import WhiteLabel
+from .models import AssistantConversation, AssistantMessage, WhiteLabel
 
 
 class WhiteLabelAdmin(SecureAdmin):
@@ -106,3 +106,97 @@ class FeatureFlagsAdmin(SecureAdmin):
 
 admin.site.register(WhiteLabel, WhiteLabelAdmin)
 admin.site.register(FeatureFlags, FeatureFlagsAdmin)
+
+
+class AssistantMessageInline(admin.TabularInline):
+    """Transcript, in `seq` order, on the conversation page."""
+
+    model = AssistantMessage
+    extra = 0
+    can_delete = False
+    ordering = ("seq",)
+    fields = ("seq", "role", "text", "model", "prompt_tokens", "completion_tokens", "latency_ms", "error")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class AssistantConversationAdmin(SecureAdmin):
+    """Read-only view of Benji transcripts. Superusers only.
+
+    Deliberately read-only in every direction. mfb-ai-service is the writer for these
+    tables (see screener/models.AssistantConversation) and reconciles nothing with the
+    admin, so a hand-edit here would silently diverge from what the assistant's own
+    prompt is built from — and editing a transcript after the fact is not a thing we
+    should be able to do at all.
+
+    Superuser-only is enforced EXPLICITLY below rather than left to SecureAdmin's
+    white-label scoping, which cannot work for this model and fails loudly if relied
+    on. `SecureAdmin._model_has_white_label()` tests `hasattr(self.model,
+    "white_label")`, and that is True even though `white_label` here is a plain
+    CharField holding the white label *code*: Django gives every concrete field a
+    `DeferredAttribute` class descriptor. So the base class takes its scoping branch
+    and runs `filter(white_label__in=request.user.white_labels.all())`, comparing a
+    varchar column against a subquery of integer primary keys — `ProgrammingError:
+    operator does not exist: character varying = bigint`, a 500 on the changelist for
+    every non-superuser staff member. These rows hold free-text household PII, so the
+    correct behavior is to be invisible to tenant staff, and that is now stated as
+    code instead of inferred from a base-class side effect.
+    """
+
+    always_can_view = False
+    inlines = (AssistantMessageInline,)
+    list_display = ("conversation_id", "screen_uuid", "white_label", "status", "mode", "updated_at")
+    list_filter = ("white_label", "status", "mode")
+    search_fields = ("conversation_id", "screen_uuid")
+    ordering = ("-updated_at",)
+    readonly_fields = (
+        "conversation_id",
+        "screen_uuid",
+        "white_label",
+        "locale",
+        "mode",
+        "prompt_version",
+        "status",
+        "context",
+        "created_at",
+        "updated_at",
+    )
+
+    def get_queryset(self, request):
+        """Superusers only. Never fall through to SecureAdmin's white-label filter.
+
+        That filter would compare this model's `white_label` CharField against a
+        queryset of WhiteLabel primary keys and raise a database type error (see the
+        class docstring). Returning an empty queryset is also what we actually want
+        for non-superusers, so this both fixes the 500 and makes the intent explicit.
+        """
+        if not self._is_superuser(request):
+            return self.model._default_manager.none()
+        # SecureAdmin's superuser branch returns the queryset unfiltered, so this is
+        # the ordinary path once the non-superuser case is handled above.
+        return super().get_queryset(request)
+
+    def has_module_permission(self, request):
+        # Keep the section out of the admin nav for tenant staff entirely — the base
+        # class would show it, because _model_has_white_label() is True here.
+        return self._is_superuser(request)
+
+    def has_view_permission(self, request, obj=None):
+        return self._is_superuser(request)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # History is retained indefinitely and deliberately (see screener/models.py),
+        # so there is no routine reason to delete from here — and a click that quietly
+        # destroys a household's transcript should not be one keystroke away.
+        return False
+
+
+admin.site.register(AssistantConversation, AssistantConversationAdmin)

@@ -3,7 +3,7 @@
     "code": "wa"
   },
   "program_category": {
-    "external_name": "wa_healthcare",
+    "external_name": "health_care",
     "icon": "health_care",
     "name": "Health Care"
   },
@@ -15,7 +15,6 @@
       "non_citizen",
       "refugee",
       "gc_5plus",
-      "gc_5less",
       "otherWithWorkPermission"
     ],
     "name": "Apple Health (Medicaid)",

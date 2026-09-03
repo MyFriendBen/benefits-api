@@ -7,6 +7,9 @@ class CesnConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="cesn")
 
+    # A Colorado sub-brand rather than a state screener, so it never appears in the state dropdown.
+    is_state = False
+
     state = {"name": "Colorado"}
 
     public_charge_rule = {

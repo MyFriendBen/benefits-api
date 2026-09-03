@@ -1,0 +1,86 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "mo_liheap",
+    "active": true,
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Low Income Home Energy Assistance Program (LIHEAP)",
+    "description": "LIHEAP helps Missouri households pay for home heating and cooling costs. Energy Assistance provides a one-time payment each year to help with your energy bill.\n\nThe payment usually goes to your energy company to help pay your bill. In some cases, it may be sent directly to you. MyFriendBen shows a conservative estimate, so your actual payment may be different.\n\nIf someone in your household is 60 or older or has a disability, you may be able to apply earlier in the season. There is also a $3,000 limit on certain household resources, like savings or investments.\n\nSelect \"Apply Now\" to complete and submit your LIHEAP application.",
+    "description_short": "Help paying home heating or cooling bills",
+    "learn_more_link": "https://mydss.mo.gov/utility-assistance/liheap",
+    "apply_button_link": "https://formsportal.mo.gov/content/forms/af/moa/my-dss/family-support-division/liheap/liheap/.html",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "60 days",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "website_description": "Help paying home heating or cooling bills",
+    "base_program": "liheap",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "warning_message": {
+    "external_name": "mo_liheap_application_window",
+    "calculator": "_show",
+    "message": "Energy Assistance has seasonal application dates. Households with someone age 60 or older or with a disability can apply starting October 1. All other households can apply starting November 1. Applications close May 31."
+  },
+  "navigators": [
+    {
+      "external_name": "mo_211",
+      "name": "Missouri 211",
+      "email": "",
+      "description": "Missouri 211 connects residents to local services and can help you find utility and energy assistance in your area.",
+      "assistance_link": "https://www.211helps.org/",
+      "phone_number": "+18004274626"
+    },
+    {
+      "external_name": "mo_liheap_fsd_help",
+      "name": "Missouri Family Support Division - LIHEAP",
+      "email": "FSD.LIHEAP@dss.mo.gov",
+      "description": "Contact the Family Support Division for help with your LIHEAP application.",
+      "assistance_link": "https://mydss.mo.gov/fsd/intro",
+      "phone_number": "+18553734636"
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "mo_liheap_ssn",
+      "text": "Social Security number proof for everyone in the household",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_liheap_utility_bill",
+      "text": "Recent utility, heating, or cooling bills and any disconnection notices",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_liheap_income",
+      "text": "Proof of last month's household income, unless the person gets SNAP",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_liheap_self_employment",
+      "text": "Most recent Form 1040 and Schedule 1 for anyone who is self-employed",
+      "link_url": "https://www.irs.gov/forms-pubs/about-form-1040",
+      "link_text": "Form 1040 and Schedule 1"
+    }
+  ]
+}

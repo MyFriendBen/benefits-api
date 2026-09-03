@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "il"},
-    "program_category": {"external_name": "il_health"},
+    "program_category": {"external_name": "health_care"},
     "program": {
         "name_abbreviated": "il_hfs_fpp",
         "year": "2025",

@@ -15,6 +15,15 @@ For detailed documentation on how to configure each section, see:
 class ConfigurationData:
     is_default = False
 
+    # Whether this white label is a state screener the state dropdown can offer.
+    is_state = True
+
+    # Whether this state appears in the public state dropdown, as opposed to being reachable only
+    # by link. Opt in, so a state under construction cannot reach the public dropdown by omission:
+    # a launched state missing from the dropdown is reported quickly, while a pre-launch state
+    # exposed there sends real users into an unfinished screener.
+    publicly_launched = False
+
     @classmethod
     def get_white_label(self) -> WhiteLabel:
         raise NotImplemented()
@@ -25,7 +34,10 @@ class ConfigurationData:
     # Banner messages displayed at top of screener (optional)
     banner_messages = []
 
-    # Link to public charge information for your state
+    # Public charge information. The disclaimer step renders this as <a href={link}>{text}</a>
+    # unconditionally, so every white label must set both keys in its own config; "text" is
+    # deliberately absent here so a white label that forgets it fails the config test rather
+    # than shipping an anchor with an empty label.
     public_charge_rule = {"link": ""}
 
     # Resources shown at bottom of results page (e.g., 2-1-1, state help lines)
@@ -525,6 +537,8 @@ class ConfigurationData:
             ],
         },
         "uiOptions": {"default": []},
+        # State codes this referrer's dropdown offers; empty means every publicly launched state.
+        "stateOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": ""},
         "noResultMessage": {

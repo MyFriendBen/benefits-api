@@ -11,9 +11,18 @@ class KsConfigurationData(ConfigurationData):
     # BASIC INFORMATION
     # ==========================================================================================
 
+    # Reachable at /ks and offered to the 2-1-1 referrers, but not yet in the public dropdown.
+    publicly_launched = False
+
     state = {"name": "Kansas"}
 
-    public_charge_rule = {"link": "https://www.uscis.gov/green-card/green-card-processes-and-procedures/public-charge"}
+    public_charge_rule = {
+        "link": "https://www.uscis.gov/green-card/green-card-processes-and-procedures/public-charge",
+        "text": {
+            "_label": "landingPage.publicChargeLinkKS",
+            "_default_message": "U.S. Citizenship and Immigration Services",
+        },
+    }
 
     more_help_options = {
         "moreHelpOptions": [
@@ -1083,22 +1092,34 @@ class KsConfigurationData(ConfigurationData):
     # override only the keys KS customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        "theme": {"default": "default"},
-        "logoSource": {"default": "MFB_Logo"},
+        # "uwgkc" is United Way of Greater Kansas City, whose 2-1-1 covers the metro on both sides
+        # of the state line. The same referrer code is configured identically in mo.py, since each
+        # state path loads its own config.
+        "theme": {"default": "default", "uwgkc": "uwgkc"},
+        "logoSource": {"default": "MFB_Logo", "uwgkc": "KS211_MFBLogo"},
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
             },
+            "uwgkc": {
+                "id": "referrerHook.logoAlts.ks211",
+                "defaultMessage": "211 Kansas and MyFriendBen home page button",
+            },
         },
+        # The co-branded logo's MyFriendBen wordmark is dark navy, which would disappear against
+        # the theme's dark blue header, so this referrer gets the white header treatment.
+        "uiOptions": {"default": [], "uwgkc": ["white_header"]},
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
         },
-        "logoClass": {"default": "logo"},
+        "logoClass": {"default": "logo", "uwgkc": "uwgkc-logo-size"},
         "shareLink": {
             "default": "https://screener.myfriendben.org/ks/step-1",
+            "uwgkc": "https://screener.myfriendben.org/ks/step-1?referrer=uwgkc",
         },
+        "stateOptions": {"default": [], "uwgkc": ["ks", "mo"]},
         "stepDirectory": {
             "default": [
                 "zipcode",
@@ -1114,5 +1135,7 @@ class KsConfigurationData(ConfigurationData):
             ],
         },
         "defaultLanguage": {"default": "en-us"},
-        "stateName": {"default": "Kansas"},
+        # Blank for uwgkc: its logo already carries "Kansas", so the header's separate state name
+        # would repeat it underneath the artwork.
+        "stateName": {"default": "Kansas", "uwgkc": ""},
     }

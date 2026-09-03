@@ -1,10 +1,10 @@
 {
     "white_label": {"code": "il"},
-    "program_category": {"external_name": "il_health"},
+    "program_category": {"external_name": "health_care"},
     "program": {
         "name_abbreviated": "il_mpe",
         "year": "2025",
-        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission", "other"],
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
         "name": "Medicaid Presumptive Eligibility (MPE) Program",
         "description": "MPE gives pregnant women quick, short-term health coverage if they meet income rules. You don't have to pay any fees.\n\nYour coverage starts the same day you visit an MPE provider. It lasts until the end of the next month. MPE covers doctor visits for your pregnancy, lab tests, prenatal vitamins, medicines, eye care, dental care, emergency room visits, mental health care, and rides to medical appointments.\n\nImportant: MPE does NOT cover hospital stays or having your baby at the hospital. You should also apply for the Moms & Babies program to get full coverage when you have your baby.\n\nYou don't need to fill out an application yourself. Just visit an MPE provider and they will check if you qualify and sign you up on the spot. If your doctor or clinic is not an MPE provider, or if you do not have a doctor or clinic, call the HFS Health Benefits Hotline at 1-800-226-0768 to find a nearby MPE Provider.",
         "apply_button_link": "https://hfs.illinois.gov/medicalprograms/allkids/momsandbabies.html#MPE",
