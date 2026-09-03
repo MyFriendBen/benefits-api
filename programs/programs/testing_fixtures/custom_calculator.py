@@ -16,7 +16,7 @@ household → assertion.
 
 from contextlib import contextmanager
 from datetime import date
-from typing import Optional
+from typing import Optional, Union
 from unittest.mock import Mock, patch
 
 from django.test import TestCase
@@ -195,7 +195,7 @@ class CustomCalculatorTestCase(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def hud_ami(self, limit: Optional[int] = None, unavailable: bool = False):
+    def hud_ami(self, limit: Union[int, dict, None] = None, unavailable: bool = False):
         """`hud_ami` for this test case's calculator. See the module-level function."""
         return hud_ami(self.calculator_class, limit, unavailable)
 
@@ -226,7 +226,7 @@ class CustomCalculatorTestCase(TestCase):
 @contextmanager
 def hud_ami(
     calculator_class: type,
-    limit: Optional[int] = None,
+    limit: Union[int, dict, None] = None,
     unavailable: bool = False,
 ):
     """Stand in for the HUD income-limit client while a calculator runs.
@@ -239,6 +239,10 @@ def hud_ami(
     target follows `calculator_class`; patching the integration package would miss every
     calculator. All three lookups are stubbed, because a calculator choosing between the
     standard and the approximated limit is asserting on which one it called.
+
+    `limit` may instead be a dict keyed by AMI percentage — `{"60%": 60_000, "80%": 80_000}`
+    — for a calculator that compares a household against several bands. Any percentage not
+    named returns 0.
 
     `unavailable=True` raises `HudIncomeClientError` instead, for the tests covering what a
     calculator does when HUD is down.
@@ -253,16 +257,22 @@ def hud_ami(
     `integrations/clients/hud_income_limits/tests`, not here.
     """
     client = Mock()
+    lookups = ("get_screen_il_ami", "get_screen_mtsp_ami", "approximate_screen_mtsp_ami")
 
     if unavailable:
         error = HudIncomeClientError("HUD unavailable")
-        client.get_screen_il_ami.side_effect = error
-        client.get_screen_mtsp_ami.side_effect = error
-        client.approximate_screen_mtsp_ami.side_effect = error
+        for lookup in lookups:
+            getattr(client, lookup).side_effect = error
+    elif isinstance(limit, dict):
+        # A calculator comparing a household against several AMI bands asks for each one.
+        def by_percent(_screen, percent, *_args, **_kwargs):
+            return limit.get(percent, 0)
+
+        for lookup in lookups:
+            getattr(client, lookup).side_effect = by_percent
     else:
-        client.get_screen_il_ami.return_value = limit
-        client.get_screen_mtsp_ami.return_value = limit
-        client.approximate_screen_mtsp_ami.return_value = limit
+        for lookup in lookups:
+            getattr(client, lookup).return_value = limit
 
     with patch(f"{calculator_class.__module__}.hud_client", client):
         yield client
