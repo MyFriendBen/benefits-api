@@ -18,8 +18,11 @@ class ConfigurationData:
     # Whether this white label is a state screener the state dropdown can offer.
     is_state = True
 
-    # Whether this state appears in the public state dropdown, as opposed to being reachable only by link.
-    publicly_launched = True
+    # Whether this state appears in the public state dropdown, as opposed to being reachable only
+    # by link. Opt in, so a state under construction cannot reach the public dropdown by omission:
+    # a launched state missing from the dropdown is reported quickly, while a pre-launch state
+    # exposed there sends real users into an unfinished screener.
+    publicly_launched = False
 
     @classmethod
     def get_white_label(self) -> WhiteLabel:

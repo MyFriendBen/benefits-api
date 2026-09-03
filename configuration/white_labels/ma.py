@@ -7,6 +7,9 @@ class MaConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="ma")
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Massachusetts"}
 
     public_charge_rule = {

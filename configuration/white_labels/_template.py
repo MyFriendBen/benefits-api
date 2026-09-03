@@ -40,8 +40,9 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
 
     # TODO: Set your state/region name
-    # Set to False while the state is reachable by link but should stay out of the public dropdown.
-    publicly_launched = True
+    # TODO: Flip to True only when the state is ready for the public dropdown. Until then it stays
+    # reachable by direct link and by any referrer that names it in "stateOptions".
+    publicly_launched = False
 
     state = {"name": "{{name}}"}
 
@@ -269,8 +270,8 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #
     # theme: CSS theme name (usually "default")
     #   - Used to apply custom styling/themes
-    #   - Available themes: "default", "twoOneOne", "twoOneOneNC", "co_energy", "nc_lanc",
-    #     "nc_ccla", "cu_denver", "uwgkc" (defined in the frontend's styleController.ts)
+    #   - The available names are the keys of `themes` in the frontend's
+    #     src/Assets/styleController.ts; an unlisted name silently falls back to "default"
     #
     # logoSource: Logo filename from public/locales folder
     #   - Displayed in header throughout screener

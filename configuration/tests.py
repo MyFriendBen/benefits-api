@@ -194,20 +194,53 @@ class TestLegalLinkConfiguration(SimpleTestCase):
 class TestStateOptionsConfiguration(SimpleTestCase):
     """Guards the state dropdown's derived catalog and the per-referrer overrides that select from it."""
 
-    def test_catalog_covers_every_state_white_label(self):
-        """Every state white label appears once, with a name to show in the dropdown."""
+    # Pinned rather than re-derived from is_state/publicly_launched: computing the expectation with
+    # the same predicate state_options() filters on would only restate the implementation. A new
+    # state has to be added here deliberately, which is the point — that edit is where someone
+    # decides whether it belongs in the public dropdown yet.
+    EXPECTED_CATALOG = {
+        "co": True,
+        "il": True,
+        "ks": False,
+        "ma": True,
+        "mo": False,
+        "nc": True,
+        "tx": True,
+        "wa": True,
+    }
+
+    def test_catalog_matches_the_expected_states(self):
+        """The dropdown offers exactly these states, with exactly these launched flags."""
         catalog = state_options()
         codes = [state["code"] for state in catalog]
 
-        self.assertEqual(len(codes), len(set(codes)))
-        for code, white_label_data in white_label_config.items():
-            expected = white_label_data.is_state and not white_label_data.is_default
-            with self.subTest(white_label=code):
-                self.assertEqual(code in codes, expected)
+        self.assertEqual(len(codes), len(set(codes)), f"The catalog repeats a state: {codes}.")
+        self.assertEqual(
+            {state["code"]: state["public"] for state in catalog},
+            self.EXPECTED_CATALOG,
+            "The state dropdown's contents changed. If that was intended, update EXPECTED_CATALOG; "
+            'a state added with "publicly_launched" unset is offered only by link and to referrers '
+            "that name it.",
+        )
 
         for state in catalog:
             with self.subTest(white_label=state["code"]):
                 self.assertTrue(state["name"], f'White label "{state["code"]}" has no state name to display.')
+
+    def test_catalog_excludes_non_state_white_labels(self):
+        """A sub-brand like "cesn" routes to a state screener but is not itself a state choice."""
+        codes = {state["code"] for state in state_options()}
+
+        for code, white_label_data in white_label_config.items():
+            if white_label_data.is_state and not white_label_data.is_default:
+                continue
+
+            with self.subTest(white_label=code):
+                self.assertNotIn(
+                    code,
+                    codes,
+                    f'White label "{code}" is not a state screener but is offered as a state.',
+                )
 
     def test_default_white_label_declares_state_options(self):
         """
@@ -240,6 +273,17 @@ class TestStateOptionsConfiguration(SimpleTestCase):
                     continue
 
                 for state in states:
+                    # The code is unvalidated referrer config, so indexing it directly would raise
+                    # a bare KeyError naming neither the referrer nor the white label it came from
+                    # — and this test runs before the one written to diagnose exactly that typo.
+                    if state not in white_label_config:
+                        with self.subTest(referrer=referrer, configured_in=code, offered_state=state):
+                            self.fail(
+                                f'"{referrer}" in white label "{code}" offers "{state}", which is '
+                                "not a white label at all."
+                            )
+                        continue
+
                     state_referrer_data = white_label_config[state].referrer_data
                     offered_by_state = state_referrer_data.get("stateOptions", {})
 

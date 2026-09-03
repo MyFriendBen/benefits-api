@@ -251,8 +251,10 @@ state-scoped links instead.
 
 The dropdown's catalog of states is not hand-maintained — `add_config` derives the `state_options`
 config from the white label registry, using each state's `state["name"]`, `is_state` and
-`publicly_launched`. Because the catalog is written to the `_default` row, a new state appears
-only once its config exists and `add_config --all` (or `add_config _default`) runs.
+`publicly_launched`. It writes an identical copy of that catalog to **every** white label's row,
+and the frontend reads the row for whichever label is loaded (`GET /api/configuration/ks/`), so
+`add_config --all` is required. A single-label run leaves every other row stale, which renders the
+dropdown from out-of-date data — or empty, if the row was never written.
 
 ### 5. Experiments (A/B Testing)
 

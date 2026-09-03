@@ -7,6 +7,9 @@ class IlConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="il")
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Illinois"}
 
     public_charge_rule = {
