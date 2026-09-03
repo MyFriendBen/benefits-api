@@ -41,9 +41,9 @@ CALCULATED = {
 }
 KNOWN_LABELS = USER_SELECTED | CALCULATED
 
-# Every program whose config this change edits, plus wa_fap, which the wa_snap edit has to stay
-# disjoint from — pinned to the exact statuses each should declare. Pinning the whole set is what
-# stops a later config pass from quietly re-adding `gc_5less` to any of them.
+# Programs pinned to the exact statuses each should declare — plus wa_fap, which the wa_snap edit
+# has to stay disjoint from. Pinning the whole set is what stops a later config pass from quietly
+# re-adding `gc_5less` to any of them.
 #
 # SNAP exempts LPRs under 18 from the bar regardless of the status they adjusted from, so
 # `gc_under18_no5` replaces bare `gc_5less`. TANF has no age-based exemption, so `gc_5less` simply
@@ -69,6 +69,20 @@ EDITED_PROGRAMS = {
     },
     "tx_medicaid_for_pregnant_women": {"citizen", "gc_5plus", "refugee"},
     "il_mpe": {"citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"},
+    # Lifeline, every white label. DOJ's Office of Legal Counsel concluded PRWORA reaches Lifeline
+    # as both a federal public benefit and a federal means-tested public benefit, so `non_citizen`
+    # comes off under the first finding and `gc_5less` under the second. `otherWithWorkPermission`
+    # stays: the bucket mixes qualified aliens subject only to the five-year clock with lawfully
+    # present statuses that never clear the qualified-alien gate at all, so removing it would
+    # over-exclude. A scoped warning banner carries that distinction instead.
+    "co_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "il_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "ks_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "ma_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "mo_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "nc_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "tx_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "wa_lifeline": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
 }
 
 # The subset this change narrows for the bar, where bare `gc_5less` is the reported bug.
@@ -86,6 +100,18 @@ BAR_SUBJECT_PROGRAMS = (
     "mo_tanf",
     "ks_tanf",
     "wa_apple_health_medicaid",
+    # Lifeline is means-tested under PRWORA §403, so the bar applies. The age-split labels are not
+    # an exempt subset here the way they are for SNAP — they are `gc_5less` proxies via
+    # `linkedFilters`, so leaving either on would re-admit the population `gc_5less` removal
+    # excludes. None of the eight declares them.
+    "co_lifeline",
+    "il_lifeline",
+    "ks_lifeline",
+    "ma_lifeline",
+    "mo_lifeline",
+    "nc_lifeline",
+    "tx_lifeline",
+    "wa_lifeline",
 )
 
 # Federal SNAP does not reach refugee or asylee status. Washington serves that group through
