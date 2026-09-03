@@ -185,9 +185,15 @@ class MaConfigurationData(ConfigurationData):
         **ConfigurationData.income_options_by_category,
         "government": {
             **ConfigurationData.income_options_by_category["government"],
+            # EAEDC is not TANF, and the old single label named both — so the split has to name
+            # each side or the ambiguity survives the rename.
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance.ma",
-                "_default_message": "Government Cash Assistance (including TAFDC and EAEDC)",
+                "_label": "incomeOptions.cashAssistanceTanf.ma",
+                "_default_message": "Cash Assistance - TAFDC",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.ma",
+                "_default_message": "Cash Assistance - Other (including EAEDC)",
             },
             "stateDisability": {
                 "_label": "incomeOptions.stateDisability.ma",

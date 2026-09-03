@@ -163,8 +163,10 @@ class TestMoWapClassAttributes(MoWapTestCase):
     def test_minor_age_is_18(self):
         self.assertEqual(MoWap.minor_age, 18)
 
-    def test_cash_assistance_income_types_are_title_iv_and_xvi(self):
-        self.assertEqual(set(MoWap.cash_assistance_income_types), {"sSI", "cashAssistance"})
+    def test_cash_assistance_income_types_cover_every_cash_assistance_source(self):
+        """10 CFR 440.3 names Titles IV and XVI "or applicable State or local law", so
+        non-TANF cash aid evidences the criterion alongside TANF and SSI."""
+        self.assertEqual(set(MoWap.cash_assistance_income_types), {"sSI", "cashAssistance", "cashAssistanceOther"})
 
     def test_snap_is_not_a_pathway(self):
         """Unlike tx_wap / cowap / wa_wap, no SNAP name appears anywhere in this
@@ -442,6 +444,13 @@ class TestMoWapCategoricalEligibility(MoWapTestCase):
     def test_cash_assistance_income_stream_bypasses_the_income_test(self):
         screen, member = self.over_income_household()
         self.add_monthly_income(member, "cashAssistance", 500)
+        self.assertTrue(self.household_eligible(screen).eligible)
+
+    def test_non_tanf_cash_assistance_stream_bypasses_the_income_test(self):
+        """The "or applicable State or local law" half of 10 CFR 440.3 — General Assistance
+        evidences the criterion just as TANF does."""
+        screen, member = self.over_income_household()
+        self.add_monthly_income(member, "cashAssistanceOther", 500)
         self.assertTrue(self.household_eligible(screen).eligible)
 
     def test_another_members_ssi_qualifies_the_household(self):

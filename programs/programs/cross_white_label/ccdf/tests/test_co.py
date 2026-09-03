@@ -75,5 +75,10 @@ class TestChildCareAssistanceIncomeExclusions(TestCase):
     def test_cash_assistance_does_not_push_a_household_over_the_limit(self):
         self.assertTrue(self._run({"wages": 28_000, "cashAssistance": 7_200}))
 
+    def test_cash_assistance_other_does_not_push_a_household_over_the_limit(self):
+        # Non-TANF cash aid reaches PolicyEngine as `financial_assistance` rather than
+        # `tanf`, but it is the same kind of money and is excluded on the same grounds.
+        self.assertTrue(self._run({"wages": 28_000, "cashAssistanceOther": 7_200}))
+
     def test_a_counted_income_type_of_the_same_size_does_push_it_over(self):
         self.assertFalse(self._run({"wages": 28_000, "gifts": 7_200}))

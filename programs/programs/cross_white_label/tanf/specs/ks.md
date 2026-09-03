@@ -169,6 +169,7 @@ Apply income disregards to gross income:
   - Example: $500/month earned → countable = ($500 − $90) × 40% = $164/month
 - Children's earnings: fully excluded
 - Unearned income (e.g., Social Security, child support): counted in full with no disregard
+- Cash assistance: the screener offers two types. `cashAssistance` ("Cash Assistance - TANF") is the household's own grant and is excluded from its own recalculation; `cashAssistanceOther` ("Cash Assistance - Other" — General Assistance, another state's TANF, a local fund) is counted in full as unearned income
 
 #### Step 2 — Payment Standard
 

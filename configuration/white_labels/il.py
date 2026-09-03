@@ -169,8 +169,12 @@ class IlConfigurationData(ConfigurationData):
         "government": {
             **ConfigurationData.income_options_by_category["government"],
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance.il",
-                "_default_message": "Government Cash Assistance (including TANF)",
+                "_label": "incomeOptions.cashAssistanceTanf.il",
+                "_default_message": "Cash Assistance - TANF",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.il",
+                "_default_message": "Cash Assistance - Other",
             },
             "iLStateDisability": {
                 "_label": "incomeOptions.stateDisability",

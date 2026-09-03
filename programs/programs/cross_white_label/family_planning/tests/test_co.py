@@ -188,11 +188,14 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
         self.assertTrue(self._run(1, 0))
 
     def test_cash_assistance_and_nurturing_futures_are_excluded_from_income(self):
-        # Family planning services is a MAGI-based Medicaid pathway, so neither counts.
+        # Family planning services is a MAGI-based Medicaid pathway, so none of these count.
+        # Both cash-assistance types are excluded: PolicyEngine keeps `tanf` and
+        # `financial_assistance` out of adjusted_gross_income, so counting either here would
+        # measure a MAGI pathway against non-MAGI income.
         calc = make_calculator(household_income=1_000)
         calc.household_eligible(eligibility_with_members(1))
         calc.screen.calc_gross_income.assert_called_once_with(
-            "yearly", ["all"], exclude=["cashAssistance", "nurturingFutures"]
+            "yearly", ["all"], exclude=["cashAssistance", "cashAssistanceOther", "nurturingFutures"]
         )
 
     def test_income_limit_is_sized_using_every_member_not_just_eligible_ones(self):

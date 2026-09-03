@@ -19,10 +19,10 @@ class MoWap(ProgramCalculator):
         2025, whose 200% figures are the WPN 25-3 attachment verbatim
         ($31,300 / $42,300 / $53,300 / $64,300 … +$11,000 per person past 8).
       * Criterion 1b: cash-assistance categorical eligibility. 10 CFR 440.3
-        admits a household paid Title IV (TANF) or Title XVI (SSI) cash
-        assistance in the preceding twelve months, so a current `sSI` or
-        `cashAssistance` income stream is sufficient on its own and bypasses
-        the income test.
+        admits a household paid Title IV (TANF), Title XVI (SSI) or State/local
+        cash assistance in the preceding twelve months, so a current `sSI`,
+        `cashAssistance` or `cashAssistanceOther` income stream is sufficient on
+        its own and bypasses the income test.
       * Criterion 1c: LIHEAP categorical eligibility, which Missouri elected
         under 10 CFR 440.22(a)(3) — a household already deemed income eligible
         for LIHEAP may use that as verification of income. Missouri's LIHEAP
@@ -119,9 +119,10 @@ class MoWap(ProgramCalculator):
     #: exactly this age it needs the full-time student flag; above it, never.
     minor_age = 18
 
-    #: Income streams that evidence Criterion 1b. `cashAssistance` is MFB's
-    #: TANF grant (Title IV); `sSI` is Title XVI.
-    cash_assistance_income_types: ClassVar[tuple[str, ...]] = ("sSI", "cashAssistance")
+    #: Income streams that evidence Criterion 1b. `cashAssistance` is the TANF grant
+    #: (Title IV) and `sSI` is Title XVI; `cashAssistanceOther` is the "or applicable State
+    #: or local law" clause, which General Assistance falls under.
+    cash_assistance_income_types: ClassVar[tuple[str, ...]] = ("sSI", "cashAssistance", "cashAssistanceOther")
 
     dependencies: ClassVar[list[str]] = [
         "household_size",

@@ -70,9 +70,16 @@ class CesnConfigurationData(ConfigurationData):
         **ConfigurationData.income_options_by_category,
         "government": {
             **ConfigurationData.income_options_by_category["government"],
+            # Own keys rather than base's: CESN's Colorado wording used to share
+            # `incomeOptions.cashAssistance` with base, so whichever config imported last won the
+            # single Translation row.
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance",
-                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+                "_label": "incomeOptions.cashAssistanceTanf.cesn",
+                "_default_message": "Cash Assistance - TANF (Colorado Works)",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.cesn",
+                "_default_message": "Cash Assistance - Other",
             },
             "cOSDisability": {
                 "_label": "incomeOptions.cOSDisability",

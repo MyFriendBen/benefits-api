@@ -122,14 +122,18 @@ The exclusion branch is constructed by submitting the NPCR's household with that
 | `investment` (MFB's combined field) | N/A — MFB reports interest, dividends, and stock-sale profit as one undifferentiated amount | **Exclude the entire reported `investment` amount** — cannot separate the components. Committed inclusive handling, no scenario |
 | `rental` | Earned only if the reporting member manages the property ≥20 hrs/week; otherwise unearned | ⚠️ **Counted as unearned, not earned.** No management-hours sub-field, so the favorable default would be earned — but MFB sends `rental` as PolicyEngine's `rental_income`, which PE's TANF source list names as unearned, and that field is shared with several other programs. So rental gets no earned-income disregard: a household with $300/month rental is denied where the earned treatment would grant $114. Accepted limitation, MFB-1700 |
 | `childSupport` | Included, unearned, special pending/active-case budgeting rule | See below |
-| `cashAssistance` | Excluded when it's the household's own MO TA payment; otherwise included, unearned | See below |
+| `cashAssistance` (Cash Assistance - TANF) | Excluded — the household's own TA payment | See below |
+| `cashAssistanceOther` (Cash Assistance - Other) | Included, unearned | See below |
 | `selfEmployment` | Net self-employment profit | See below |
 
   ¹ Not because Missouri lacks a threshold, but because MFB's input model cannot express a one-time amount.
   **Source:** [0210.015.05](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-015-05/) — *"workers compensation (WC-include)"*; *"unemployment compensation/insurance (UC-include)"*; *"Social Security ... (OASDI) (SS-include)"*; *"union fund/pension benefits/retirement (UF-include)"*; *"Veteran's benefits ... (VA-include)"*; *"dividend/royalty (DI-include)"*; *"interest (IN-exclude)"*; *"consider income from rental property earned income only if a member of the EU is actively engaged in managing the property at least 20 hours per week"*; *"gifts (GF-include unless this is a small non-recurring cash gift such as those for Christmas, birthdays, and graduations not exceeding the percentage of need standard for the assistance group in a month)."*
 - **Committed treatment — child support received:** for a pending application, treat the reported `childSupport` amount as unearned income equal to what the household actually received that month. For an **active TA case**, Missouri first runs a trial eligibility budget using the total support paid to CSE/DFAS and/or sent directly to the child, and only if the household remains eligible there does it compute the regular (grant) budget using only the amount sent to the child. No field exists for the CSE/DFAS-retained amount, so the trial budget can't be run. **Committed inclusive treatment:** for both pending and active cases, use only the reported amount as unearned income in the regular budget, and don't impute any additional retained amount or assume it would independently fail the trial budget.
   - **Source:** [0210.015.20.20](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-015-20-20/) — *"Only budget the amount of current child support and arrearage payments actually received."* Missouri's own active-case worked example runs a trial budget with $156 ($125 retained by CSE + $31 sent to the household) before using only the $31 in the regular budget.
-- **Committed treatment — cash assistance (MO TA self-exclusion):** 13 CSR 40-2.310(10)–(12) defines each income test using family income "other than Temporary Assistance benefits," and the income-source manual separately excludes TA itself. When `current_benefits` includes `mo_tanf`, exclude the reported `cashAssistance` amount from all three gates — it's the household's existing grant being recalculated, not outside income. A `cashAssistance` entry without `mo_tanf` in `current_benefits` isn't assumed to be MO TA (no field distinguishes the program) and is included as unearned income (e.g., another state's or program's cash assistance).
+- **Committed treatment — cash assistance (MO TA self-exclusion):** 13 CSR 40-2.310(10)–(12) defines each income test using family income "other than Temporary Assistance benefits," and the income-source manual separately excludes TA itself. The screener offers two adjacent cash-assistance income types, and the household's choice is what distinguishes the branches:
+  - **`cashAssistance` ("Cash Assistance - TANF")** is the household's own TA grant. Exclude it from all three gates — it's the grant being recalculated, not outside income. It reaches PolicyEngine as the `tanf` input, which PolicyEngine excludes from TANF's own unearned-income sources.
+  - **`cashAssistanceOther` ("Cash Assistance - Other")** is cash aid from any other program — General Assistance, another state's TANF, a local fund. Include it as unearned income at every gate. It reaches PolicyEngine as `financial_assistance`, which is in `gov.hhs.tanf.cash.income.sources.unearned`.
+  - The Current Benefits tile is **not** the arbiter. A household that reports its own grant without ticking the tile still has it excluded, and a household on `mo_tanf` reporting other cash aid still has that aid counted.
   - **Source:** 13 CSR 40-2.310(10)–(12); [0210.015.05](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-015-05/) — *"Temporary Assistance (C1-C6 exclude)."*
 - **Committed treatment — self-employment income:** a reported `selfEmployment` amount is treated as net profit after ordinary business expenses, before personal taxes — consistent with the federal net-earnings-from-self-employment definition (26 U.S.C. § 1402) and Missouri's own business-profit definition. Include it directly in gross earned income at Gate 1 and carry it through the same disregard sequence as wages at Gates 2/3 (Benefit Value Steps 2–3) — no second business-expense subtraction.
 - **Source:** [0210.010.05.185](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-010-05-185/); [0210.010.10](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-010-10/); [0210.010.15](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-010-15/); 0210.005.45; 0210.005.30; 0210.015.35.10; 0210.015.35.15; 0210.015.30.22; [0210.015.00](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-015-00/); [0210.015.05](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-015-05/); [0210.015.20.20](https://dssmanuals.mo.gov/temporary-assistance-case-management/0210-015-20-20/)
@@ -861,7 +865,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 ### Scenario 31: Current TA cash grant excluded from its own recalculation
 
-**What we're checking**: The committed cash-assistance treatment (Criterion 8) — when `current_benefits` includes `mo_tanf`, a reported `cashAssistance` amount representing the household's own existing TA grant is excluded entirely, not counted as additional unearned income against itself.
+**What we're checking**: The committed cash-assistance treatment (Criterion 8) — an amount reported under `cashAssistance` ("Cash Assistance - TANF") is the household's own existing TA grant and is excluded entirely, not counted as additional unearned income against itself.
 **Expected**: Eligible — $234/month (identical to a current recipient reporting no income at all — the reported `cashAssistance` amount is excluded from all three gates: Gate 1: $0 countable < $1,254 ✓; Gate 2: $0 < $678 ✓; deficit `= 234 − 0 = 234`. A naive implementation that counted the $234 `cashAssistance` entry as unearned income would instead compute deficit `= 234 − 234 = 0` and wrongly zero out the grant.)
 **Steps**:
 * Household size: `2`
@@ -869,7 +873,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 * Person 2: Birth month/year `January 2020` (age 6), `child`, no income
 * `current_benefits` includes `mo_tanf`
 
-**Why this matters**: Catches a realistic implementation error — a current TA recipient re-screening and reporting their own existing grant as `cashAssistance` income must not have that amount counted against them at any gate.
+**Why this matters**: Catches a realistic implementation error — a current TA recipient re-screening and reporting their own existing grant as `cashAssistance` income must not have that amount counted against them at any gate. The exclusion follows the income type, not the tile: it must hold for a recipient who reports the amount without ticking `mo_tanf` in `current_benefits`.
 
 ### Scenario 32: Gate 1 exact-equality boundary, genuinely isolated
 
@@ -916,19 +920,17 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the automatic-needy exception's SSI-receipt trigger is implemented as an independent path to needy status, not merely the spouse-absent trigger already covered by Scenario 11. An implementation that only checks spouse presence — without separately checking SSI receipt — would incorrectly run the full neediness budget, and might still reach the same benefit number here, masking the missing branch.
 
-### Scenario 35: Generic `cashAssistance` included when household is not currently on `mo_tanf`
+### Scenario 35: Non-TANF cash assistance included as unearned income
 
-**What we're checking**: Criterion 8's committed cash-assistance treatment table — a reported `cashAssistance` amount is excluded *only* when `current_benefits` includes `mo_tanf` (Scenario 31); otherwise it is not assumed to represent the household's own MO TA grant, and is included as ordinary unearned income (e.g., cash assistance from another state or program).
+**What we're checking**: Criterion 8's committed cash-assistance treatment table — an amount reported under `cashAssistanceOther` ("Cash Assistance - Other") is cash aid from another program (General Assistance, another state's TANF, a local fund) and is included as ordinary unearned income at every gate.
 **Expected**: Eligible — $34/month (Gate 1: `$200 < $1,254` size-2 Gross Max ✓. Gate 2: `$200 < $678` size-2 Standard of Need ✓ — cash assistance receives no earned-income disregard at either gate. Gate 3: countable income `$200` (no disregard applies to unearned income); deficit `= $234 − $200 = $34`.)
 **Steps**:
 * Household size: `2`
-* Person 1: Birth month/year `January 1996` (age 30), `headOfHousehold`, income stream `cashAssistance`: $200/month
+* Person 1: Birth month/year `January 1996` (age 30), `headOfHousehold`, income stream `cashAssistanceOther`: $200/month
 * Person 2: Birth month/year `January 2020` (age 6), `child`, no income
 * `current_benefits` does not include `mo_tanf`
 
-**Why this matters**: Scenario 31 proves the self-exclusion branch when `cashAssistance` represents the household's own MO TA grant. This scenario proves the opposite branch — an implementation that excluded every reported `cashAssistance` amount regardless of `current_benefits` would incorrectly omit countable unearned income and overstate the household's grant ($234 instead of $34 here).
-
-**⚠️ Pending MFB-1697 — not yet the shipped result:** `cashAssistance` is the screener's TANF field, and `spm.Tanf` sends any reported amount as PolicyEngine's `tanf` input, which PolicyEngine excludes from TANF's own unearned-income sources. So a household reporting non-MO cash assistance currently has it excluded too, returning $234/month rather than the $34 above. Separating the two branches means revisiting the `cashAssistance` → TANF mapping across every PolicyEngine input that reads it — tracked in MFB-1697. The expected value above is what the calculator should return once that lands; this scenario's test is skipped in the meantime.
+**Why this matters**: Scenario 31 proves the self-exclusion branch for the household's own grant; this scenario proves the opposite branch. An implementation that routed both cash-assistance types to PolicyEngine's `tanf` input would exclude this $200 too and overstate the grant at $234 instead of $34.
 
 ### Scenario 36: Age-18 dependent child included with their caretaker
 

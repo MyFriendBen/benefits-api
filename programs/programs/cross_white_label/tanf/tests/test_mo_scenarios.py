@@ -47,7 +47,7 @@ from screener.models import Expense
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
-PE_VERSION = "1.794.2"
+PE_VERSION = "1.815.1"
 YEAR = "2026"
 
 
@@ -665,19 +665,12 @@ class TestScenario34NpcrSpouseOnSsi(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-@pytest.mark.skip(
-    reason="Blocked on MFB-1697: cashAssistance is the screener's TANF field, so spm.Tanf "
-    "sends any reported amount as PE's `tanf` input, which PE excludes from TANF's own "
-    "unearned-income sources. A household reporting non-MO cash assistance therefore has it "
-    "excluded too and returns $234/month. The assertion is Criterion 8's expected $34. "
-    "Separating the branches means revisiting the cashAssistance -> TANF mapping across every "
-    "PE input that reads it; un-skip when that lands."
-)
 class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
-    """Cash assistance from a household not on mo_tanf is ordinary unearned income → $34.
+    """Non-TANF cash assistance is ordinary unearned income → $34.
 
     The mirror of Scenario 31, which proves the self-exclusion branch when the amount *is*
-    the household's own MO TA grant.
+    the household's own MO TA grant. The two are told apart by the income type the household
+    picks, not by the Current Benefits tile.
     """
 
     screen_id = 35
@@ -685,7 +678,7 @@ class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
     def test_cash_assistance_counts_when_not_on_tanf(self):
         screen = self.build(2)
         head = self.add_person(screen, 1, "headOfHousehold", 1996)
-        add_income(head, amount=200, income_type="cashAssistance")
+        add_income(head, amount=200, income_type="cashAssistanceOther")
         self.add_person(screen, 2, "child", 2020)
         self.assert_result(screen, True, 409)
 

@@ -10,7 +10,7 @@ from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, E
 from programs.models import Program
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
-from programs.framework.pe_dependencies import spm
+from programs.framework.pe_dependencies import member, spm
 
 
 class TestSnapIncomeDependency(TestCase):
@@ -708,6 +708,56 @@ class TestTanfDependencies(TestCase):
 
         self.assertIsNone(spm.Tanf(self.screen, None, {}).value())
         self.assertFalse(spm.ReceivesTanfDependency(self.screen, None, {}).value())
+
+    def test_non_tanf_cash_assistance_is_neither_the_amount_nor_receipt(self):
+        """The whole point of the split: General Assistance, another state's TANF or a local
+        fund is ordinary income, so it must not be sent as the household's own TANF grant —
+        PolicyEngine excludes `tanf` from TANF's own gates — nor read as TANF receipt."""
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="cashAssistanceOther",
+            amount=400,
+            frequency="monthly",
+        )
+
+        self.assertIsNone(spm.Tanf(self.screen, None, {}).value())
+        self.assertFalse(spm.ReceivesTanfDependency(self.screen, None, {}).value())
+        self.assertFalse(spm.TakesUpTanfIfEligibleDependency(self.screen, None, {}).value())
+
+    def test_non_tanf_cash_assistance_goes_out_as_financial_assistance(self):
+        """It reaches PolicyEngine as `financial_assistance`, which TANF counts as unearned
+        income — the source that makes the household's grant come out $200/month lower."""
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="cashAssistanceOther",
+            amount=400,
+            frequency="monthly",
+        )
+
+        dep = member.NonTanfCashAssistanceIncomeDependency(self.screen, self.head, {})
+
+        self.assertEqual(dep.field, "financial_assistance")
+        self.assertEqual(dep.value(), 4800)  # $400/month * 12
+
+    def test_the_two_cash_assistance_types_do_not_bleed_into_each_other(self):
+        """Both reported at once: each reaches only its own PolicyEngine field, so a household
+        re-reporting its own grant alongside other aid is neither double-counted nor netted."""
+        self._report_cash_assistance(300)
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="cashAssistanceOther",
+            amount=400,
+            frequency="monthly",
+        )
+
+        self.assertEqual(spm.Tanf(self.screen, None, {}).value(), 3600)  # $300/month * 12
+        self.assertEqual(
+            member.NonTanfCashAssistanceIncomeDependency(self.screen, self.head, {}).value(), 4800
+        )  # $400/month * 12
+        self.assertTrue(spm.ReceivesTanfDependency(self.screen, None, {}).value())
 
 
 class TestWaTanfDependency(TestCase):

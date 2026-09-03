@@ -40,8 +40,8 @@
 
 #### 1b. Cash-assistance categorical eligibility
 - Source: 10 CFR 440.3, per WPN 25-3: *"(2) Is the basis on which cash assistance payments have been paid during the preceding twelve-month period under Titles IV and XVI of the Social Security Act or applicable State or local law."* (Title IV = TANF, Title XVI = SSI; this is a general cash-assistance rule, not limited to SSI/TANF.) MO confirmation: [JFCAC](https://www.jfcac.org/weatherization.html): *"If you receive Supplemental Security Income (SSI) and/or Temporary Assistance for Needy Families (TANF), you are automatically eligible."*
-- **Screener fields**: a household member currently reporting a nonzero `sSI` or `cashAssistance` income-stream amount — both base MFB income-stream types available to every white label, including MO (`configuration/white_labels/base.py`, not overridden by `mo.py`).
-- Presence of either income-stream type with amount > $0 is sufficient positive evidence and overrides Criterion 1a for that household.
+- **Screener fields**: a household member currently reporting a nonzero `sSI`, `cashAssistance` ("Cash Assistance - TANF") or `cashAssistanceOther` ("Cash Assistance - Other") income-stream amount — all three are base MFB income-stream types available to every white label, including MO (`configuration/white_labels/base.py`, not overridden by `mo.py`). `cashAssistanceOther` is included on the strength of the "or applicable State or local law" clause quoted above, which is what General Assistance falls under.
+- Presence of any of these income-stream types with amount > $0 is sufficient positive evidence and overrides Criterion 1a for that household.
 - **⚠️ Data Gap**: this captures current receipt only, not the 12-month lookback window WPN 25-3 describes. Handling: treat current receipt as sufficient positive evidence; do not model the lookback window or treat its absence as disproving eligibility (Criterion 1a and the other pathways still apply). Program description: surface that receiving SSI or cash assistance within the past 12 months — not just currently — can independently qualify a household for WAP.
 
 #### 1c. LIHEAP-based eligibility
@@ -97,9 +97,10 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 ## Acceptance Criteria
 
 - [ ] A household with countable annual income (per Criterion 2's rules) ≤ the WPN 25-3 200%-of-poverty amount for its `household_size` is eligible for `mo_wap` at $370/year.
-- [ ] A household with countable income exactly $1 over its household-size limit, with no current `sSI`/`cashAssistance` receipt or Section 8, is ineligible.
+- [ ] A household with countable income exactly $1 over its household-size limit, with no current `sSI`/`cashAssistance`/`cashAssistanceOther` receipt, no LIHEAP receipt and no Section 8, is ineligible.
 - [ ] Current `sSI` income-stream receipt independently establishes eligibility regardless of income.
 - [ ] Current `cashAssistance` income-stream receipt independently establishes eligibility regardless of income.
+- [ ] Current `cashAssistanceOther` income-stream receipt independently establishes eligibility regardless of income.
 - [ ] Reported LIHEAP receipt independently establishes eligibility regardless of income.
 - [ ] SNAP receipt alone does not establish eligibility, even though it does for TX's implementation of this same program.
 - [ ] Child support received or paid does not affect countable income.
@@ -166,7 +167,7 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 **Expected**: Eligible, $370/year
 - ZIP `65616`, county `Taney`, household size 2
 - Person 1: `sSI` income stream $900/month; Person 2 (spouse): wages $3,000/month (combined $46,800/year, above the $42,300 2-person limit)
-- No `cashAssistance` income stream
+- No cash-assistance income stream of either type
 - **Why this matters**: confirms `sSI` is tested as a pathway distinct from `cashAssistance`.
 
 ### Scenario 6: Child Support Received Is Excluded from Countable Income
@@ -227,7 +228,7 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 **Expected**: Eligible, $370/year
 - ZIP `63101`, county `St. Louis City`, household size 1
 - Person 1: Head of Household, wages $34,000/year (above the $31,300 1-person limit, and within Missouri's 60% SMI LIHEAP standard of $34,080)
-- Reports receiving LIHEAP on the "already have this benefit" step; no `sSI` or `cashAssistance` stream
+- Reports receiving LIHEAP on the "already have this benefit" step; no `sSI` or cash-assistance stream
 - **Why this matters**: this is the band the LIHEAP pathway exists to cover — a household over 200% of poverty but inside Missouri's own LIHEAP standard, which 10 CFR 440.22(a)(3) admits and Criterion 1a alone would reject.
 
 ## Source Documentation
