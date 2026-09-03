@@ -1,0 +1,78 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "mo_twha",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "otherWithWorkPermission"
+    ],
+    "name": "Ticket to Work Health Assurance (TWHA)",
+    "description": "Ticket to Work Health Assurance (TWHA) helps people with disabilities. It can help you get or keep MO HealthNet while you work.\n\nTWHA helps pay for health care. Some people may have to pay a monthly premium based on their income. If you have health insurance through your job, you can still qualify. Missouri may pay part of the cost of that insurance. If it does, MO HealthNet would cover only certain services.\n\nWhen you apply, Missouri will review your disability, work, income, and resources. Retirement accounts do not count, and some income may not count either. Missouri may also count some property or other resources.\n\nSelect \"Apply Online\" to start your MO HealthNet application. If you need help applying, call 855-373-9994.",
+    "description_short": "Health coverage for working Missourians with disabilities",
+    "learn_more_link": "https://dmh.mo.gov/medicaid-eligibility/twha",
+    "apply_button_link": "https://mydssapp.mo.gov/UniversalAccess/",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "base_program": "medicaid",
+    "website_description": "Health coverage for working Missourians with disabilities",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "active": false,
+    "low_confidence": false
+  },
+  "documents": [
+    {
+      "external_name": "mo_id_proof"
+    },
+    {
+      "external_name": "mo_residency_proof"
+    },
+    {
+      "external_name": "mo_ssn_proof"
+    },
+    {
+      "external_name": "mo_us_status"
+    },
+    {
+      "external_name": "mo_disability_proof"
+    },
+    {
+      "external_name": "mo_earned_income"
+    },
+    {
+      "external_name": "mo_health_insurance"
+    },
+    {
+      "external_name": "mo_assets"
+    },
+    {
+      "external_name": "mo_mhabd_supplement",
+      "text": "Aged, Blind, and Disabled Supplement (IM-1ABDS)",
+      "link_url": "https://formsportal.mo.gov/content/forms/af/moa/my-dss/family-support-division/mo-healthnet-for-the-aged--blind--and-disabled/IM-1ABDSV3/.html",
+      "link_text": "Complete the Aged, Blind, and Disabled Supplement"
+    },
+    {
+      "external_name": "mo_mrt_packet",
+      "text": "Disability review forms, if Missouri needs to confirm your disability",
+      "link_url": "https://dssmanuals.mo.gov/wp-content/uploads/2021/09/im-61mrt.pdf",
+      "link_text": "Complete the Medical Review Team Packet"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_fsd_information_center"
+    }
+  ]
+}
