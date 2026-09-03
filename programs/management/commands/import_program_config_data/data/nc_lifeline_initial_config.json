@@ -8,13 +8,11 @@
         "icon": "housing"
     },
     "program": {
-        "name_abbreviated": "lifeline",
+        "name_abbreviated": "nc_lifeline",
         "year": "2026",
         "legal_status_required": [
             "citizen",
-            "non_citizen",
             "gc_5plus",
-            "gc_5less",
             "refugee",
             "otherWithWorkPermission"
         ],
