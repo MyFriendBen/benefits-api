@@ -6,13 +6,15 @@ pin the parts a calculator actually depends on: the one-to-one rows that raise w
 absent, the fields FPL lookups read, and the two entry points a test calls.
 """
 
+from datetime import date
 from unittest.mock import Mock
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from screener.models import Insurance
+from screener.models import HouseholdMember, Insurance
 from programs.programs.testing_fixtures.custom_calculator import (
     CustomCalculatorTestCase,
     add_expense,
+    birth_year_month_for_age,
     add_income,
     add_insurance,
 )
@@ -164,3 +166,70 @@ class TestProgramRowOptOut(CustomCalculatorTestCase):
         self.add_member(screen)
 
         self.assertEqual(self.calculate(screen).value, _Uninsured.member_amount)
+
+
+class TestAgeDerivation(CustomCalculatorTestCase):
+    """`add_member(age=...)` sets a `birth_year_month` that reads back as the same age.
+
+    Calculators read age two ways — the stored `age` field, and `calc_age()`/`fraction_age()`
+    derived from `birth_year_month` against the current date. A member built from an age has
+    to satisfy both, on whatever day the suite happens to run.
+    """
+
+    calculator_class = _Uninsured
+    needs_program_row = False
+
+    def test_whole_year_ages_read_back_unchanged(self):
+        """`calc_age()` returns the age that was asked for, across the range programs gate on."""
+        screen = self.make_screen()
+
+        for age in (0, 1, 2, 3, 5, 6, 12, 13, 17, 18, 19, 21, 59, 62, 64, 65, 80):
+            with self.subTest(age=age):
+                self.assertEqual(self.add_member(screen, age=age).calc_age(), age)
+
+    def test_a_derived_age_holds_in_every_reference_month(self):
+        """The reference month cancels out, so the run date cannot move the answer."""
+        for month in range(1, 13):
+            reference = date(2026, month, 15)
+            for age in (0, 3, 17, 65):
+                with self.subTest(month=month, age=age):
+                    birth = birth_year_month_for_age(age, reference)
+
+                    self.assertEqual(HouseholdMember.age_from_date(birth, reference), age)
+
+    def test_fractional_ages_read_back_through_fraction_age(self):
+        """`3.5` is three years six months, for the calculators reading month precision."""
+        screen = self.make_screen()
+
+        for age in (0.5, 2.5, 3.25, 3.5, 12.75):
+            with self.subTest(age=age):
+                self.assertAlmostEqual(self.add_member(screen, age=age).fraction_age(), age, places=6)
+
+    def test_a_fractional_age_truncates_to_the_whole_year(self):
+        """A member aged 3.5 is 3 to a calculator reading whole years."""
+        member = self.add_member(self.make_screen(), age=3.5)
+
+        self.assertEqual(member.calc_age(), 3)
+
+    def test_the_stored_age_and_the_derived_age_agree(self):
+        """Calculators read both fields; a member must not be two different people."""
+        member = self.add_member(self.make_screen(), age=7)
+
+        self.assertEqual(member.age, 7)
+        self.assertEqual(member.calc_age(), 7)
+
+    def test_an_explicit_birth_year_month_is_left_alone(self):
+        """Scenarios pinned to a calendar window supply the date themselves."""
+        birth = date(2020, 3, 1)
+
+        member = self.add_member(self.make_screen(), age=5, birth_year_month=birth)
+
+        self.assertEqual(member.birth_year_month, birth)
+
+    def test_a_fractional_age_survives_a_database_round_trip(self):
+        """`age` is a PositiveIntegerField, so the fraction lives in `birth_year_month`."""
+        member = self.add_member(self.make_screen(), age=3.5)
+        member.refresh_from_db()
+
+        self.assertAlmostEqual(member.fraction_age(), 3.5, places=6)
+        self.assertEqual(member.calc_age(), 3)

@@ -1,6 +1,5 @@
-from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.co.upk.calculator import UniversalPreschool
-from screener.models import Screen, HouseholdMember, IncomeStream
 
 
 class TestCoUniversalPreschool(CustomCalculatorTestCase):
@@ -14,38 +13,15 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     def test_member_value_3yo_foster_child_income_270_fpl_returns_10_hours(self):
         """Test 3-year-old foster child with HH income 270% FPL or less returns 10 hours"""
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=2,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=True,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=True)
 
         # Add income below 270% FPL
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=parent,
-            type="wages",
-            amount=4500,  # 54,000/yearly
-            frequency="monthly",
-        )
+        add_income(parent, 4500, income_type="wages", frequency="monthly")  # 54,000/yearly
 
         # Eligible child (3 years old and foster child)
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="fosterChild",
-            age=3,
-            has_income=False,
-        )
+        child = self.add_member(screen, relationship="fosterChild", age=3, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
@@ -56,38 +32,15 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     def test_member_value_3yo_income_100_fpl_returns_10_hours(self):
         """Test 3-year-old child with HH income ≤100% FPL returns 10 hours"""
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=2,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=True,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=True)
 
         # Add income below 100% FPL
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=parent,
-            type="wages",
-            amount=1700,  # 20,400/yearly
-            frequency="monthly",
-        )
+        add_income(parent, 1700, income_type="wages", frequency="monthly")  # 20,400/yearly
 
         # Eligible child (3 years old)
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="child",
-            age=3,
-            has_income=False,
-        )
+        child = self.add_member(screen, relationship="child", age=3, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
@@ -98,45 +51,17 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     def test_member_value_4yo_foster_income_270_fpl_returns_30_hours(self):
         """Test 4-year-old foster child with HH income 270% FPL or less returns 30 hours"""
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=3,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=3, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=True,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=True)
 
         # Add income below 270% FPL
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=parent,
-            type="wages",
-            amount=5600,  # 67,200 yearly
-            frequency="monthly",
-        )
+        add_income(parent, 5600, income_type="wages", frequency="monthly")  # 67,200 yearly
 
         # Eligible child (4 years old and foster child)
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="fosterChild",
-            age=4,
-            has_income=False,
-        )
+        child = self.add_member(screen, relationship="fosterChild", age=4, has_income=False)
 
-        spouse = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="spouse",
-            age=21,
-            has_income=False,
-        )
+        spouse = self.add_member(screen, relationship="spouse", age=21, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
@@ -147,38 +72,15 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     def test_member_value_4yo_income_100_fpl_returns_30_hours(self):
         """Test 4-year-old child with HH income 100% FPL or less returns 30 hours"""
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=2,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=True,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=True)
 
         # Add income below 100% FPL
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=parent,
-            type="wages",
-            amount=1700,  # 20,400 yearly
-            frequency="monthly",
-        )
+        add_income(parent, 1700, income_type="wages", frequency="monthly")  # 20,400 yearly
 
         # Eligible child (4 years old)
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="child",
-            age=4,
-            has_income=False,
-        )
+        child = self.add_member(screen, relationship="child", age=4, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
@@ -189,37 +91,14 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     def test_member_value_4yo_non_qualifying_returns_15_hours(self):
         """Test 4-year-old child with HH income above 270% FPL returns 15 hours"""
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=2,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=True,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=True)
 
         # Add income above 270% FPL
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=parent,
-            type="wages",
-            amount=5000,  # 60,000 yearly
-            frequency="monthly",
-        )
+        add_income(parent, 5000, income_type="wages", frequency="monthly")  # 60,000 yearly
         # Eligible child (4 years old)
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="child",
-            age=4,
-            has_income=False,
-        )
+        child = self.add_member(screen, relationship="child", age=4, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
@@ -230,36 +109,13 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     # Eligibility Tests
     def test_eligibility_3yo_above_270_fpl_not_eligible(self):
         """Test 3-year-old child with HH income above 270% FPL is not eligible"""
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=2,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=True,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=True)
 
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=parent,
-            type="wages",
-            amount=5000,  # 60,000
-            frequency="monthly",
-        )
+        add_income(parent, 5000, income_type="wages", frequency="monthly")  # 60,000
 
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="child",
-            age=3,
-            has_income=False,
-        )
+        child = self.add_member(screen, relationship="child", age=3, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
@@ -268,28 +124,12 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
     def test_age_2_not_eligible(self):
         """Test 2-year-old is not eligible (below minimum age)"""
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=2,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=True,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=True)
 
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="fosterChild",
-            age=2,  # Too young!
-            has_income=False,
-        )
+        # Too young for preschool
+        child = self.add_member(screen, relationship="fosterChild", age=2, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
@@ -297,28 +137,11 @@ class TestCoUniversalPreschool(CustomCalculatorTestCase):
 
     def test_age_5_not_eligible(self):
         """Test 5-year-old is not eligible (above maximum age)"""
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="80016",
-            county="Elbert County",
-            household_size=2,
-            white_label=self.white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="80016", county="Elbert County")
 
-        parent = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="headOfHousehold",
-            age=32,
-            has_income=False,
-        )
+        parent = self.add_member(screen, relationship="headOfHousehold", age=32, has_income=False)
 
-        child = HouseholdMember.objects.create(
-            screen=screen,
-            relationship="child",
-            age=5,
-            has_income=False,
-        )
+        child = self.add_member(screen, relationship="child", age=5, has_income=False)
 
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
