@@ -5,7 +5,6 @@ from screener.models import HouseholdMember
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
 
-
 # Streams whose reported amount may be wholly excluded by a rule MFB cannot observe, and so
 # are removed in full by the inclusive second pass. `wages`/`selfEmployment` are the
 # sheltered-workshop exclusion (which reaches any assistance-unit member, spouse included);
@@ -285,9 +284,7 @@ class MoTwha(ProgramCalculator):
                     applied = min(amount, spouse_disregard_remaining)
                     spouse_disregard_remaining -= applied
                     amount -= applied
-                    result.disregards["spouse_earned"] = result.disregards.get(
-                        "spouse_earned", Decimal(0)
-                    ) + applied
+                    result.disregards["spouse_earned"] = result.disregards.get("spouse_earned", Decimal(0)) + applied
 
                 self._record(result, income_type, amount)
 

@@ -215,9 +215,7 @@ class TestSpecScenarios(MoTwhaTestCase):
     def test_scenario_7_no_qualifying_disability(self):
         """Neither disability field set — the requirement is not waived for a working adult."""
         screen = self.build(1)
-        member = self.add_person(
-            screen, "headOfHousehold", 1986, long_term_disability=False, visually_impaired=False
-        )
+        member = self.add_person(screen, "headOfHousehold", 1986, long_term_disability=False, visually_impaired=False)
         self.add_income(member, 1_000)
 
         eligible, _ = self.evaluate(screen)
@@ -350,9 +348,7 @@ class TestSpecScenarios(MoTwhaTestCase):
     def test_scenario_15_visually_impaired_alone_qualifies(self):
         """``visually_impaired`` alone satisfies the proxy — the two signals are an OR."""
         screen = self.build(1)
-        member = self.add_person(
-            screen, "headOfHousehold", 1986, long_term_disability=False, visually_impaired=True
-        )
+        member = self.add_person(screen, "headOfHousehold", 1986, long_term_disability=False, visually_impaired=True)
         self.add_income(member, 1_000)
 
         self.assertEqual(self.evaluate(screen), (True, VALUE_PER_MEMBER))
@@ -505,9 +501,7 @@ class TestInclusiveFallback(MoTwhaTestCase):
         self.add_income(member, 5_000, "investment")
 
         self.assertEqual(self.evaluate(screen), (True, VALUE_PER_MEMBER))
-        self.assertEqual(
-            self.countable(screen, member, exclude_unisolable=True).contribution("investment"), Decimal(0)
-        )
+        self.assertEqual(self.countable(screen, member, exclude_unisolable=True).contribution("investment"), Decimal(0))
 
     def test_pension_is_untouched_by_pass_two_and_still_denies(self):
         """Unearned income outside the exclusion list is not swallowed by the fallback."""
@@ -518,7 +512,9 @@ class TestInclusiveFallback(MoTwhaTestCase):
 
         eligible, _ = self.evaluate(screen)
         self.assertFalse(eligible)
-        self.assertEqual(self.countable(screen, member, exclude_unisolable=True).contribution("pension"), Decimal(4_000))
+        self.assertEqual(
+            self.countable(screen, member, exclude_unisolable=True).contribution("pension"), Decimal(4_000)
+        )
 
     def test_half_earned_deduction_applies_even_when_the_earned_income_is_excluded(self):
         """The two treatments are independent (criterion 5, item 7)."""
