@@ -52,7 +52,8 @@
       "external_name": "mo_earned_income"
     },
     {
-      "external_name": "mo_health_insurance"
+      "external_name": "mo_health_insurance",
+      "text": "Proof of any health insurance you have, if applicable (ex: insurance card, premium statement, or your employer's plan details)"
     },
     {
       "external_name": "mo_assets"
@@ -72,7 +73,12 @@
   ],
   "navigators": [
     {
-      "external_name": "mo_fsd_information_center"
+      "external_name": "mo_fsd_information_center",
+      "name": "Family Support Division Information Center",
+      "email": "",
+      "phone_number": "855-373-4636",
+      "description": "The Family Support Division Information Center can answer questions about MO HealthNet and help you apply. You can also apply for MO HealthNet by phone at 855-373-9994.",
+      "assistance_link": "https://mydss.mo.gov/healthcare"
     }
   ]
 }
