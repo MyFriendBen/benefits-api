@@ -7,6 +7,9 @@ class CoConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="co")
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Colorado"}
 
     # System banner messages

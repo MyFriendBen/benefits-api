@@ -11,6 +11,9 @@ class WaConfigurationData(ConfigurationData):
     # BASIC INFORMATION
     # ==========================================================================================
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Washington"}
 
     public_charge_rule = {

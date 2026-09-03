@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from django.test import SimpleTestCase, TestCase
 from configuration.models import Configuration
 from configuration.serializers import ConfigurationSerializer
-from configuration.white_labels import white_label_config
+from configuration.white_labels import state_options, white_label_config
 from screener.models import WhiteLabel
 from screener.feature_flags import FeatureFlagConfig
 
@@ -188,6 +188,147 @@ class TestLegalLinkConfiguration(SimpleTestCase):
                             f'White label "{code}" has a {key} link for "{locale}" that is not an '
                             f"absolute https URL: {link!r}. An empty string here renders as a link "
                             "with an empty href.",
+                        )
+
+
+class TestStateOptionsConfiguration(SimpleTestCase):
+    """Guards the state dropdown's derived catalog and the per-referrer overrides that select from it."""
+
+    # Pinned rather than re-derived from is_state/publicly_launched: computing the expectation with
+    # the same predicate state_options() filters on would only restate the implementation. A new
+    # state has to be added here deliberately, which is the point — that edit is where someone
+    # decides whether it belongs in the public dropdown yet.
+    EXPECTED_CATALOG = {
+        "co": True,
+        "il": True,
+        "ks": False,
+        "ma": True,
+        "mo": False,
+        "nc": True,
+        "tx": True,
+        "wa": True,
+    }
+
+    def test_catalog_matches_the_expected_states(self):
+        """The dropdown offers exactly these states, with exactly these launched flags."""
+        catalog = state_options()
+        codes = [state["code"] for state in catalog]
+
+        self.assertEqual(len(codes), len(set(codes)), f"The catalog repeats a state: {codes}.")
+        self.assertEqual(
+            {state["code"]: state["public"] for state in catalog},
+            self.EXPECTED_CATALOG,
+            "The state dropdown's contents changed. If that was intended, update EXPECTED_CATALOG; "
+            'a state added with "publicly_launched" unset is offered only by link and to referrers '
+            "that name it.",
+        )
+
+        for state in catalog:
+            with self.subTest(white_label=state["code"]):
+                self.assertTrue(state["name"], f'White label "{state["code"]}" has no state name to display.')
+
+    def test_catalog_excludes_non_state_white_labels(self):
+        """A sub-brand like "cesn" routes to a state screener but is not itself a state choice."""
+        codes = {state["code"] for state in state_options()}
+
+        for code, white_label_data in white_label_config.items():
+            if white_label_data.is_state and not white_label_data.is_default:
+                continue
+
+            with self.subTest(white_label=code):
+                self.assertNotIn(
+                    code,
+                    codes,
+                    f'White label "{code}" is not a state screener but is offered as a state.',
+                )
+
+    def test_default_white_label_declares_state_options(self):
+        """
+        The "_default" config backs the state-agnostic /select-state route, so it stays the
+        generic every-public-state list. A partner narrowing the dropdown belongs in the config
+        for the state path it is handed out under, where the screener actually reads it.
+        """
+        state_options_config = white_label_config["_default"].referrer_data.get("stateOptions")
+
+        self.assertIsNotNone(state_options_config, '"_default" must declare "stateOptions".')
+        self.assertEqual(
+            state_options_config,
+            {"default": []},
+            '"_default" should offer every publicly launched state and nothing partner-specific. '
+            f"Found {state_options_config!r}; move any referrer entry to that referrer's state "
+            "config.",
+        )
+
+    def test_multi_state_referrers_are_configured_in_every_state_they_offer(self):
+        """
+        A referrer whose dropdown offers several states is handed out under each of those state
+        paths, and each path loads its own config. Configuring it in only one of them leaves the
+        others on generic branding with an unscoped dropdown.
+        """
+        branding_keys = ("theme", "logoSource", "logoClass")
+
+        for code, white_label_data in white_label_config.items():
+            for referrer, states in white_label_data.referrer_data.get("stateOptions", {}).items():
+                if referrer == "default" or len(states) < 2:
+                    continue
+
+                for state in states:
+                    # The code is unvalidated referrer config, so indexing it directly would raise
+                    # a bare KeyError naming neither the referrer nor the white label it came from
+                    # — and this test runs before the one written to diagnose exactly that typo.
+                    if state not in white_label_config:
+                        with self.subTest(referrer=referrer, configured_in=code, offered_state=state):
+                            self.fail(
+                                f'"{referrer}" in white label "{code}" offers "{state}", which is '
+                                "not a white label at all."
+                            )
+                        continue
+
+                    state_referrer_data = white_label_config[state].referrer_data
+                    offered_by_state = state_referrer_data.get("stateOptions", {})
+
+                    with self.subTest(referrer=referrer, configured_in=code, offered_state=state):
+                        self.assertIn(
+                            referrer,
+                            offered_by_state,
+                            f'"{referrer}" is configured in white label "{code}" and offers '
+                            f'"{state}", but white label "{state}" has no "{referrer}" entry for '
+                            '"stateOptions", so entering from that path falls back to the '
+                            "publicly launched states.",
+                        )
+                        # Membership has to match, or the dropdown contradicts itself depending on
+                        # which state's screener the referrer was entered from. Order is free,
+                        # since a state may reasonably list itself first.
+                        self.assertCountEqual(
+                            offered_by_state[referrer],
+                            states,
+                            f'"{referrer}" offers {sorted(states)} in white label "{code}" but '
+                            f'{sorted(offered_by_state[referrer])} in white label "{state}".',
+                        )
+
+                    for key in branding_keys:
+                        with self.subTest(referrer=referrer, configured_in=code, missing_from=state, key=key):
+                            self.assertIn(
+                                referrer,
+                                state_referrer_data.get(key, {}),
+                                f'"{referrer}" is configured in white label "{code}" and offers '
+                                f'"{state}", but white label "{state}" has no "{referrer}" entry '
+                                f'for "{key}".',
+                            )
+
+    def test_referrer_overrides_name_states_in_the_catalog(self):
+        """An override naming a state outside the catalog would render an empty dropdown."""
+        codes = {state["code"] for state in state_options()}
+
+        for code, white_label_data in white_label_config.items():
+            for referrer, states in white_label_data.referrer_data.get("stateOptions", {}).items():
+                for state in states:
+                    with self.subTest(white_label=code, referrer=referrer, state=state):
+                        self.assertIn(
+                            state,
+                            codes,
+                            f'"{referrer}" in white label "{code}" offers "{state}", which the state '
+                            "dropdown has no entry for.",
                         )
 
 
