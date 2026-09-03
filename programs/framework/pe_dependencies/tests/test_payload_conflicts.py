@@ -13,8 +13,11 @@ matter are that the union payload is exactly what an agreeing screen would have 
 that a program on the losing side still sees every other input the screen produced.
 """
 
+import datetime
+
 from django.test import TestCase, override_settings
 
+import programs.framework.pe_dependencies as dependency
 from benefits.tests.cache_override import LOCAL_CACHE
 from programs.framework.pe_dependencies.base import ConflictingDependencyError, Household, Member
 from programs.framework.pe_dependencies.payload import (
@@ -65,7 +68,7 @@ class StateCode(Household):
         return "TX"
 
 
-def fake_program(code, inputs):
+def fake_program(code, inputs, period=PERIOD):
     """A calculator-shaped stand-in.
 
     A class rather than an instance, as the other payload tests use: `pe_period` is a
@@ -80,7 +83,7 @@ def fake_program(code, inputs):
             "pe_inputs": list(inputs),
             "pe_outputs": [],
             "pe_monthly_outputs": [],
-            "pe_period": PERIOD,
+            "pe_period": period,
         },
     )
 
@@ -303,6 +306,89 @@ class TestTheConflictReport(PayloadConflictTestBase):
         plan = build_pe_input(self.screen, [fake_program("a", [FortyYearOld])])
 
         self.assertEqual(plan.conflicts, [])
+
+
+class TestAProgramThatContradictsItself(PayloadConflictTestBase):
+    """A program declaring two dependencies that write one field with different values.
+
+    Nothing declares that today, but `pe_inputs` lists are assembled from shared dependency
+    groups, so adding a group carrying `AgeDependency` to a program already listing
+    `AgeAtEndOfClaimYearDependency` produces one. Partitioning cannot serve it: it loses that
+    slot in every pass, is forced back in alone to keep the loop moving, and writing its
+    values then raises -- which costs every PolicyEngine program on the screen its result,
+    the exact failure splitting exists to prevent. So it is dropped before partitioning.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.plan = build_pe_input(
+            self.screen,
+            [
+                fake_program("a", [FortyYearOld]),
+                fake_program("contradicts_itself", [FortyYearOld, FortyOneYearOld]),
+                fake_program("b", [FortyYearOld]),
+            ],
+        )
+
+    def test_the_other_programs_are_still_served_by_one_request(self):
+        self.assertEqual([bucket.program_indexes for bucket in self.plan.buckets], [[0, 2]])
+
+    def test_it_is_dropped_and_the_reason_is_kept_apart(self):
+        self.assertEqual(self.plan.dropped_program_indexes, [1])
+        self.assertEqual(self.plan.self_conflicting_program_indexes, [1])
+
+    def test_the_payload_holds_what_the_served_programs_agreed_on(self):
+        self.assertEqual(self.ages(self.plan.payload), {PERIOD: 40})
+
+    def test_it_is_named_in_the_report_as_a_surprise(self):
+        self.assertTrue(any("contradicts_itself" in report for report in self.plan.conflicts))
+        self.assertEqual(self.plan.unexpected_conflicts, self.plan.conflicts)
+
+    def test_alone_on_a_screen_it_sends_nothing_rather_than_a_guess(self):
+        """Its contributions are dropped with it instead of one of the two values being
+        picked arbitrarily -- no program left in the request reads that slot."""
+        plan = build_pe_input(self.screen, [fake_program("only", [FortyYearOld, FortyOneYearOld])])
+
+        self.assertEqual(plan.buckets, [])
+        self.assertEqual(plan.dropped_program_indexes, [0])
+        self.assertNotIn("age", plan.payload["household"]["people"][self.head_id])
+
+
+class TestWhichDisagreementsAreASurprise(PayloadConflictTestBase):
+    """Age on the screening date against age at the end of the claim year is why splitting
+    exists, and it recurs on a large share of Missouri screens. That pairing is reported as
+    expected so the caller can log it instead of raising; anything else stays a surprise."""
+
+    CLAIM_YEAR = "2030"
+
+    def setUp(self):
+        super().setUp()
+        # A claim year years ahead of the screening date makes the two age bases disagree
+        # whichever month the suite runs in: one is measured against 2030, the other against
+        # today. Pinning the birth month instead would agree every December.
+        self.head.birth_year_month = datetime.date(1961, 6, 1)
+        self.head.save()
+
+    def age_plan(self, screening_date_input, claim_year_input):
+        return build_pe_input(
+            self.screen,
+            [
+                fake_program("screening_date_age", [screening_date_input], period=self.CLAIM_YEAR),
+                fake_program("claim_year_age", [claim_year_input], period=self.CLAIM_YEAR),
+            ],
+        )
+
+    def test_the_two_age_bases_are_a_known_pairing(self):
+        plan = self.age_plan(dependency.member.AgeDependency, dependency.member.AgeAtEndOfClaimYearDependency)
+
+        self.assertEqual(len(plan.conflicts), 1)
+        self.assertEqual(plan.unexpected_conflicts, [])
+
+    def test_any_other_pairing_is_not(self):
+        plan = self.age_plan(FortyYearOld, FortyOneYearOld)
+
+        self.assertEqual(plan.unexpected_conflicts, plan.conflicts)
+        self.assertTrue(plan.unexpected_conflicts)
 
 
 class TestTheWriteInvariant(PayloadConflictTestBase):

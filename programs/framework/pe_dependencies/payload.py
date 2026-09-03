@@ -28,7 +28,24 @@ from integrations.clients.policyengine import versions as pe_versions
 #: worker timeout (120s) against PolicyEngine's read timeout (30s) leaves room for a handful.
 #: Only screens that actually carry a disagreement split at all, and today exactly one
 #: program wants a value another program contradicts, so 3 is slack rather than a budget.
+#:
+#: This bounds the request *count* only. Three slow-but-not-failing calls would outlast the
+#: worker timeout and cost the whole response, so the dispatcher holds a wall-clock budget
+#: too (`PE_BUCKET_TIME_BUDGET_SECONDS` in the PolicyEngine client) and stops early when it
+#: is spent.
 MAX_PAYLOAD_BUCKETS = 3
+
+#: Dependency classes known to write one payload slot with different values, as the set of
+#: class names taking part in each such disagreement.
+#:
+#: A split between exactly these is structural rather than a mistake: age on the screening
+#: date and age at the end of the claim year are both correct, for different rules, and a
+#: large recurring share of Missouri screens carries both. Reporting every one of them as a
+#: Sentry warning would bury the disagreements that mean something, so these are logged
+#: instead (see `_report_conflicts`). Any other combination stays a warning.
+EXPECTED_CONFLICTING_DEPENDENCIES: Tuple[frozenset, ...] = (
+    frozenset({"AgeDependency", "AgeAtEndOfClaimYearDependency"}),
+)
 
 
 @dataclass(frozen=True)
@@ -56,6 +73,11 @@ class Contribution:
     value: object
     program_index: int
 
+    #: Name of the dependency class that produced this value, for telling an expected
+    #: disagreement from an unexpected one (see EXPECTED_CONFLICTING_DEPENDENCIES). Defaults
+    #: to empty for contributions built by tests, which assert on values not on sources.
+    dependency: str = ""
+
 
 @dataclass
 class Bucket:
@@ -81,6 +103,16 @@ class PayloadPlan:
     buckets: List[Bucket]
     dropped_program_indexes: List[int] = dataclass_field(default_factory=list)
     conflicts: List[str] = dataclass_field(default_factory=list)
+
+    #: Programs dropped because they contradict *themselves* — two of their own dependencies
+    #: write one slot with different values, so no single payload can serve them. Also listed
+    #: in `dropped_program_indexes`; kept apart because it means a program's declared inputs
+    #: are wrong, not that a screen ran out of requests.
+    self_conflicting_program_indexes: List[int] = dataclass_field(default_factory=list)
+
+    #: The subset of `conflicts` whose dependency classes are not a known pairing, i.e. the
+    #: disagreements worth raising rather than logging.
+    unexpected_conflicts: List[str] = dataclass_field(default_factory=list)
 
 
 def _has_gated_input(programs: List[PolicyEngineCalulator]) -> bool:
@@ -199,19 +231,29 @@ def build_pe_input(
         comparable_version,
     )
 
-    program_indexes = list(range(len(programs)))
-    grouped, dropped = _partition(contributions, program_indexes, max_buckets)
+    # A program whose own two dependencies want different values for one slot can be served
+    # by no payload at all, so it is dropped before partitioning rather than left to lose
+    # every pass: partitioning would force it back in on its own to guarantee progress, and
+    # `_values_for` would then raise — costing every PolicyEngine program on the screen its
+    # result over one program's input list. Its contributions go too, so nothing arbitrarily
+    # picks one of its two values for a slot nobody left will read.
+    self_conflicting = _self_conflicting_indexes(contributions)
+    servable = [contribution for contribution in contributions if contribution.program_index not in self_conflicting]
+
+    program_indexes = [index for index in range(len(programs)) if index not in self_conflicting]
+    grouped, unserved = _partition(servable, program_indexes, max_buckets)
+    dropped = sorted(unserved + sorted(self_conflicting))
 
     # The union payload takes the first bucket's value wherever the two differ. Every
     # contradicted slot is written by the first bucket by construction — the majority group
     # is what defines that bucket — so a slot missing from its values is a slot nobody
     # disagreed about, and there the contribution's own value is the only one there is.
-    union_values = _values_for(contributions, grouped[0]) if grouped else {}
-    written = _write_union(raw_input, contributions, union_values)
+    union_values = _values_for(servable, grouped[0]) if grouped else {}
+    written = _write_union(raw_input, servable, union_values)
 
     buckets = [Bucket(program_indexes=grouped[0])] if grouped else []
     for bucket_indexes in grouped[1:]:
-        bucket_values = _values_for(contributions, bucket_indexes)
+        bucket_values = _values_for(servable, bucket_indexes)
         buckets.append(
             Bucket(
                 program_indexes=bucket_indexes,
@@ -223,11 +265,15 @@ def build_pe_input(
             )
         )
 
+    conflicts, unexpected_conflicts = _describe_conflicts(contributions, programs, grouped, dropped)
+
     return PayloadPlan(
         payload=_finalize(raw_input, version, len(secondary_tax_members) == 0),
         buckets=buckets,
         dropped_program_indexes=dropped,
-        conflicts=_describe_conflicts(contributions, programs, grouped, dropped),
+        conflicts=conflicts,
+        self_conflicting_program_indexes=sorted(self_conflicting),
+        unexpected_conflicts=unexpected_conflicts,
     )
 
 
@@ -359,7 +405,12 @@ def _collect_contributions(
                 for member in members:
                     data = Data(screen, member, relationship_map, period=period)
                     contributions.append(
-                        Contribution(Slot(data.unit, str(member.id), data.field, period), data.value(), index)
+                        Contribution(
+                            Slot(data.unit, str(member.id), data.field, period),
+                            data.value(),
+                            index,
+                            Data.__name__,
+                        )
                     )
             elif issubclass(Data, TaxUnit):
                 # split the household into the main and secondary tax unit.
@@ -369,12 +420,12 @@ def _collect_contributions(
                 ):
                     data = Data(screen, unit_members, relationship_map, period=period)
                     contributions.append(
-                        Contribution(Slot(data.unit, sub_unit, data.field, period), data.value(), index)
+                        Contribution(Slot(data.unit, sub_unit, data.field, period), data.value(), index, Data.__name__)
                     )
             else:
                 data = Data(screen, members, relationship_map, period=period)
                 contributions.append(
-                    Contribution(Slot(data.unit, data.sub_unit, data.field, period), data.value(), index)
+                    Contribution(Slot(data.unit, data.sub_unit, data.field, period), data.value(), index, Data.__name__)
                 )
 
     return contributions
@@ -399,6 +450,31 @@ def _group_by_value(contributions: List[Contribution]) -> Dict[Slot, List[Tuple[
             slot_groups.append((contribution.value, [contribution.program_index]))
 
     return groups
+
+
+def _self_conflicting_indexes(contributions: List[Contribution]) -> set:
+    """Programs that want two different values for one slot all by themselves.
+
+    `pe_inputs` lists are assembled from shared dependency groups, so a program can end up
+    declaring two classes that write the same field — `AgeDependency` alongside
+    `AgeAtEndOfClaimYearDependency`, say. Two *programs* shaped that way split into two
+    requests and both get served. One *program* shaped that way cannot be served at all:
+    both values would have to land in the same payload. It is a bug in that program's
+    declared inputs, so it is dropped and reported rather than allowed to fail the screen.
+    """
+    values: Dict[Tuple[int, Slot], object] = {}
+    conflicting: set = set()
+
+    for contribution in contributions:
+        key = (contribution.program_index, contribution.slot)
+        if key in values:
+            if values[key] != contribution.value:
+                conflicting.add(contribution.program_index)
+            continue
+
+        values[key] = contribution.value
+
+    return conflicting
 
 
 def _partition(
@@ -438,7 +514,9 @@ def _partition(
 
         # A program can win one slot and lose another, so in principle every program in a
         # pass can be a loser. Keeping the first one guarantees the pass makes progress and
-        # the loop terminates; without it a screen shaped that way would hang.
+        # the loop terminates; without it a screen shaped that way would hang. A group of one
+        # is always servable: programs that contradict themselves are dropped before
+        # partitioning, so no single program holds two values for one slot.
         if not kept:
             kept = remaining[:1]
 
@@ -522,29 +600,41 @@ def _program_label(program) -> str:
     return code if isinstance(code, str) and code else type(program).__name__
 
 
+def _dependencies_for(contributions: List[Contribution], slot: Slot) -> frozenset:
+    """The dependency classes that contributed a value to one slot."""
+    return frozenset(contribution.dependency for contribution in contributions if contribution.slot == slot)
+
+
 def _describe_conflicts(
     contributions: List[Contribution],
     programs: List[PolicyEngineCalulator],
     grouped: List[List[int]],
     dropped: List[int],
-) -> List[str]:
+) -> Tuple[List[str], List[str]]:
     """One line per disagreement, naming the slot, each value and who wanted it.
 
     Built here rather than at the log site because this is the only place that still knows
-    which program produced which value.
+    which program produced which value. Returns every description, and separately the ones
+    whose dependency classes are not a known pairing — those are a surprise worth raising,
+    where a known pairing is just a second request (see EXPECTED_CONFLICTING_DEPENDENCIES).
     """
     if len(grouped) < 2 and not dropped:
-        return []
+        return [], []
 
     def labels(indexes) -> str:
         return ", ".join(sorted({_program_label(programs[index]) for index in indexes}))
 
-    descriptions = []
+    descriptions: List[str] = []
+    unexpected: List[str] = []
     for slot, slot_groups in _group_by_value(contributions).items():
         if len(slot_groups) < 2:
             continue
 
         wanted = "; ".join(f"{value!r} ({labels(indexes)})" for value, indexes in slot_groups)
-        descriptions.append(f"{slot.field} at {slot.period} for {slot.unit}/{slot.sub_unit}: {wanted}")
+        description = f"{slot.field} at {slot.period} for {slot.unit}/{slot.sub_unit}: {wanted}"
+        descriptions.append(description)
 
-    return descriptions
+        if _dependencies_for(contributions, slot) not in EXPECTED_CONFLICTING_DEPENDENCIES:
+            unexpected.append(description)
+
+    return descriptions, unexpected

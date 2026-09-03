@@ -1,3 +1,6 @@
+import logging
+import time
+
 from screener.models import Screen
 from programs.framework.pe_base import PolicyEngineCalulator
 from programs.framework.base import Eligibility
@@ -14,6 +17,20 @@ from programs.framework.pe_dependencies.payload import (
 from . import versions as pe_versions
 from integrations.external_api_status import record_external_api_failure, POLICY_ENGINE
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+#: Wall-clock budget, in seconds, for the whole bucket loop.
+#:
+#: A split screen sends its requests one after another, each waiting up to PolicyEngine's 30s
+#: read timeout (see engines.py), so MAX_PAYLOAD_BUCKETS on its own permits ~105s of
+#: PolicyEngine. Past the gunicorn worker timeout (120s) once the custom calculators and DB
+#: work are added — and a killed worker loses the *entire* response, including the programs
+#: that never needed PolicyEngine, which is worse than the degraded result splitting exists
+#: to guarantee. This leaves a slow follow-up request room to finish inside the worker's life
+#: while bounding the total: the first bucket always goes out, and each later one only if the
+#: budget has not already been spent.
+PE_BUCKET_TIME_BUDGET_SECONDS = 45
 
 
 class PEData(TypedDict, total=False):
@@ -74,7 +91,8 @@ def calc_pe_eligibility(
         )
     except ConflictingDependencyError as e:
         # Unreachable by design: build_pe_input partitions disagreeing programs into separate
-        # requests before writing a value, so this means the partition itself is wrong. It is
+        # requests before writing a value, and drops the one shape a partition cannot serve
+        # (a program contradicting itself), so this means the partition is wrong. It is
         # caught rather than left to propagate because the whole point of splitting is that
         # one program's input disagreement must not take down every program's results — a bug
         # here costs the PolicyEngine programs for this screen, not the response.
@@ -92,11 +110,20 @@ def calc_pe_eligibility(
 
     eligibility: Dict[str, Eligibility] = {}
     requests_made: List[Dict[str, Any]] = []
+    deadline = time.monotonic() + PE_BUCKET_TIME_BUDGET_SECONDS
 
     # One request per bucket. Almost every screen has exactly one: a second appears only when
     # two programs want different values for the same input, and then the alternative is
     # serving one of them a value its rule doesn't mean.
-    for bucket in plan.buckets:
+    for position, bucket in enumerate(plan.buckets):
+        # MAX_PAYLOAD_BUCKETS bounds how many requests a split may cost; the deadline bounds
+        # how long they may take. Stopping here gives up the remaining buckets' programs,
+        # which the caller already reports as missing; running past the worker timeout would
+        # give up the response.
+        if position > 0 and time.monotonic() >= deadline:
+            _report_bucket_deadline(plan, program_names, position)
+            break
+
         bucket_programs = {program_names[index]: program_list[index] for index in bucket.program_indexes}
         payload = bucket_payload(plan, bucket)
 
@@ -186,7 +213,15 @@ def _combine_pe_data(requests_made: List[Dict[str, Any]]) -> PEData:
 def _report_conflicts(plan: PayloadPlan, program_names: List[str]) -> None:
     """Make a disagreement visible. It is never load-bearing for the response — the split
     already handled it — but it means a program silently wanting a different value than
-    everyone else shows up somewhere other than a puzzling extra request."""
+    everyone else shows up somewhere other than a puzzling extra request.
+
+    Where it shows up depends on whether anything needs looking at. A known dependency
+    pairing (age on the screening date against age at the end of the claim year) splits a
+    large and recurring share of Missouri screens by design, and a Sentry warning on each of
+    them is a permanently-firing issue that buries the splits that mean something — those go
+    to the log. An unrecognised disagreement, a program dropped for running out of requests,
+    or a program contradicting itself is still worth waking somebody up for.
+    """
     if not plan.conflicts:
         return
 
@@ -196,11 +231,38 @@ def _report_conflicts(plan: PayloadPlan, program_names: List[str]) -> None:
         f"split across {len(plan.buckets)} request(s) [{split}]. Conflicts: {plan.conflicts}"
     )
 
-    if plan.dropped_program_indexes:
-        dropped = sorted(program_names[index] for index in plan.dropped_program_indexes)
-        message = f"{message} Dropped (past the request limit, no result for these): {dropped}"
+    self_conflicting = set(plan.self_conflicting_program_indexes)
+    past_the_limit = sorted(
+        program_names[index] for index in plan.dropped_program_indexes if index not in self_conflicting
+    )
+    if past_the_limit:
+        message = f"{message} Dropped (past the request limit, no result for these): {past_the_limit}"
 
-    capture_message(message, level="warning")
+    if self_conflicting:
+        contradict_themselves = sorted(program_names[index] for index in self_conflicting)
+        message = (
+            f"{message} Dropped (each declares two dependencies writing one field with "
+            f"different values, which no single payload can serve): {contradict_themselves}"
+        )
+
+    if plan.unexpected_conflicts or past_the_limit or self_conflicting:
+        capture_message(message, level="warning")
+    else:
+        logger.info(message)
+
+
+def _report_bucket_deadline(plan: PayloadPlan, program_names: List[str], position: int) -> None:
+    """Report the buckets abandoned for running out of wall clock.
+
+    Their programs are simply absent from the merged eligibility, the same shape as a program
+    dropped past the request limit, which the caller already handles.
+    """
+    abandoned = sorted(program_names[index] for bucket in plan.buckets[position:] for index in bucket.program_indexes)
+    capture_message(
+        f"PolicyEngine: out of time after {position} of {len(plan.buckets)} request(s); "
+        f"abandoned the rest so the response survives. No result for: {abandoned}",
+        level="warning",
+    )
 
 
 def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator]):
