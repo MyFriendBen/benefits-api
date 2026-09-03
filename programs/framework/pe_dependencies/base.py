@@ -1,5 +1,10 @@
 from screener.models import Screen, HouseholdMember
+import re
 from typing import List, Optional
+
+#: The period shapes PolicyEngine accepts, and the only two `period_for` produces: a bare
+#: year for an annual variable, ``YYYY-MM`` for a monthly one.
+_PERIOD_PATTERN = re.compile(r"^(\d{4})(?:-(0[1-9]|1[0-2]))?$")
 
 
 class PolicyEngineScreenInput:
@@ -53,19 +58,24 @@ class PolicyEngineScreenInput:
     def period_year(self) -> Optional[int]:
         """The calendar year of `period`, or None when there is no usable period.
 
-        Both period shapes lead with the year (``2026``, ``2026-09``), so the year is the
-        leading component. Returns None rather than raising for anything unparseable: the
-        payload-shape tests pass a calculator class whose `pe_period` is an unevaluated
-        property, and a dependency that cannot resolve a year should fall back to whatever
-        it does without one, not break payload assembly.
+        Accepts only the two shapes `PolicyEngineCalulator.period_for` produces -- ``YYYY``
+        annual and ``YYYY-MM`` monthly, month 01 through 12 -- and returns None for anything
+        else. Reading the leading digits of whatever it was handed would turn a malformed
+        period into a confidently wrong year (``"20260"`` becomes year 20260, and an age
+        computed from it), where None sends a dependency to whatever it does without a
+        period. A malformed period is also the payload's period key, so such a request is
+        already doomed; this only keeps it from being doomed *and* nonsensical.
+
+        Returns None rather than raising, because the payload-shape tests pass a calculator
+        class whose `pe_period` is an unevaluated property object. A dependency that cannot
+        resolve a year should fall back, not break payload assembly.
         """
         if self.period is None:
             return None
 
-        try:
-            return int(str(self.period).split("-")[0])
-        except (TypeError, ValueError):
-            return None
+        match = _PERIOD_PATTERN.match(str(self.period))
+
+        return int(match.group(1)) if match else None
 
     def value(self) -> object:
         """

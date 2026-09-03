@@ -119,6 +119,23 @@ class TestAgeAtEndOfClaimYearDependency(TestCase):
 
         self.assertEqual(dep.value(), household_member.calc_age())
 
+    def test_a_malformed_period_falls_back_instead_of_inventing_a_year(self):
+        """`period` is a free-text ``FederalPoveryLimit.period``, so a typo can reach here.
+        Reading the leading digits of ``"20260"`` would send PolicyEngine an age of 18299;
+        falling back sends the screening-date age. Such a request is already doomed -- the
+        same string is the payload's period key -- but it should not also be nonsensical.
+        """
+        household_member = self.member_born(1961, 9)
+        screening_date_age = household_member.calc_age()
+
+        self.assertEqual(
+            [
+                member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {}, period=period).value()
+                for period in ("20260", "2026-13", "2026-9", "")
+            ],
+            [screening_date_age] * 4,
+        )
+
     def test_it_writes_the_same_field_as_the_screening_date_age(self):
         """Which is why a screen carrying both splits into two PolicyEngine requests: one
         payload slot cannot hold both answers."""

@@ -291,7 +291,7 @@ class TestTheRequestLimit(PayloadConflictTestBase):
 
 
 class TestTheConflictReport(PayloadConflictTestBase):
-    def test_it_names_the_slot_both_values_and_who_wanted_each(self):
+    def test_it_names_the_slot_and_the_programs_on_each_side(self):
         plan = build_pe_input(
             self.screen,
             [fake_program("wants_forty", [FortyYearOld]), fake_program("wants_forty_one", [FortyOneYearOld])],
@@ -299,8 +299,21 @@ class TestTheConflictReport(PayloadConflictTestBase):
 
         self.assertEqual(len(plan.conflicts), 1)
         report = plan.conflicts[0]
-        for expected in ("age", PERIOD, self.head_id, "40", "41", "wants_forty", "wants_forty_one"):
+        for expected in ("age", PERIOD, self.head_id, "2 distinct values", "wants_forty", "wants_forty_one"):
             self.assertIn(expected, report)
+
+    def test_it_leaves_the_values_out(self):
+        """These lines reach Sentry and the application log. The slot and the two sides say
+        what disagreed; the household's own numbers stay in the payload, which is admin-only.
+        """
+        plan = build_pe_input(
+            self.screen,
+            [fake_program("wants_forty", [FortyYearOld]), fake_program("wants_forty_one", [FortyOneYearOld])],
+        )
+
+        report = plan.conflicts[0]
+        self.assertNotIn("40", report)
+        self.assertNotIn("41", report)
 
     def test_an_agreeing_screen_reports_nothing(self):
         plan = build_pe_input(self.screen, [fake_program("a", [FortyYearOld])])

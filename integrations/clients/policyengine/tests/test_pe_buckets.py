@@ -170,7 +170,7 @@ class TestProgramsThatDisagree(PeBucketTestBase):
 
 
 class TestTheDisagreementIsReported(PeBucketTestBase):
-    def test_it_logs_the_split_and_both_values(self):
+    def warning_message(self):
         log = []
         with patch.object(pe, "pe_engines", [sent_payloads(log)]), patch.object(
             pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")
@@ -185,9 +185,22 @@ class TestTheDisagreementIsReported(PeBucketTestBase):
 
         warnings = [c for c in capture_message.call_args_list if c.kwargs.get("level") == "warning"]
         self.assertEqual(len(warnings), 1)
-        message = warnings[0].args[0]
-        for expected in ("age", "40", "41", "wants_forty", "wants_forty_one", "2 request"):
+        return warnings[0].args[0]
+
+    def test_it_names_the_slot_the_split_and_the_programs(self):
+        message = self.warning_message()
+
+        for expected in ("age", "wants_forty", "wants_forty_one", "2 request"):
             self.assertIn(expected, message)
+
+    def test_it_does_not_send_the_household_values_to_sentry(self):
+        """A conflicting slot holds screener data about a real household. What disagreed is
+        actionable; what the household reported is not, and Sentry has no scrubbing
+        configured."""
+        message = self.warning_message()
+
+        self.assertNotIn("40", message)
+        self.assertNotIn("41", message)
 
 
 class TestPastTheRequestLimit(PeBucketTestBase):

@@ -611,12 +611,18 @@ def _describe_conflicts(
     grouped: List[List[int]],
     dropped: List[int],
 ) -> Tuple[List[str], List[str]]:
-    """One line per disagreement, naming the slot, each value and who wanted it.
+    """One line per disagreement, naming the slot and which programs took each side.
 
     Built here rather than at the log site because this is the only place that still knows
     which program produced which value. Returns every description, and separately the ones
     whose dependency classes are not a known pairing — those are a surprise worth raising,
     where a known pairing is just a second request (see EXPECTED_CONFLICTING_DEPENDENCIES).
+
+    Deliberately without the values themselves. A conflicting slot holds household data — an
+    age, an hour count derived from reported income — and these lines reach Sentry and the
+    application log, neither of which needs a screen's contents to be actionable. The slot
+    and the programs on each side are enough to find the two dependency classes and read what
+    they compute; the values are recoverable from the payload, which stays admin-only.
     """
     if len(grouped) < 2 and not dropped:
         return [], []
@@ -630,8 +636,11 @@ def _describe_conflicts(
         if len(slot_groups) < 2:
             continue
 
-        wanted = "; ".join(f"{value!r} ({labels(indexes)})" for value, indexes in slot_groups)
-        description = f"{slot.field} at {slot.period} for {slot.unit}/{slot.sub_unit}: {wanted}"
+        sides = " vs ".join(f"[{labels(indexes)}]" for _, indexes in slot_groups)
+        description = (
+            f"{slot.field} at {slot.period} for {slot.unit}/{slot.sub_unit}: "
+            f"{len(slot_groups)} distinct values, {sides}"
+        )
         descriptions.append(description)
 
         if _dependencies_for(contributions, slot) not in EXPECTED_CONFLICTING_DEPENDENCIES:
