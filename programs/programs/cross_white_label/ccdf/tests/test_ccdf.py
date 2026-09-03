@@ -14,15 +14,10 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         super().setUp()
 
         # Basic eligible household: employed parent, one 3-year-old, income below 225% FPL
-        self.eligible_screen = self.make_il_screen(zipcode="60601", county="Cook")
+        self.eligible_screen = self.make_screen(zipcode="60601", county="Cook")
         self.parent = self.add_member(self.eligible_screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(self.parent, 2000)
         self.child = self.add_member(self.eligible_screen, "child", 3)
-
-    def make_il_screen(self, zipcode="60601", county="Cook", household_size=2, **kwargs):
-        return self.make_screen(
-            "il", "IL", household_size=household_size, zipcode=zipcode, county=county, agree_to_tos=True, **kwargs
-        )
 
     # County Group Tests
     def test_get_county_group_ia(self):
@@ -34,7 +29,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_get_county_group_ib(self):
         """Test county group IB (medium rate counties)"""
-        screen = self.make_il_screen(zipcode="61820", county="Champaign", household_size=2)
+        screen = self.make_screen(zipcode="61820", county="Champaign", household_size=2)
         calc = self.make_calculator(screen)
         self.assertEqual(calc.get_county_group("Champaign"), "GROUP_1B")
         self.assertEqual(calc.get_county_group("Peoria"), "GROUP_1B")
@@ -42,7 +37,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_get_county_group_ii(self):
         """Test county group II (all other Illinois counties)"""
-        screen = self.make_il_screen(zipcode="62401", county="Effingham", household_size=2)
+        screen = self.make_screen(zipcode="62401", county="Effingham", household_size=2)
         calc = self.make_calculator(screen)
         self.assertEqual(calc.get_county_group("Effingham"), "GROUP_2")
         self.assertEqual(calc.get_county_group("Random County"), "GROUP_2")
@@ -57,7 +52,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
     def test_household_eligible_with_student_parent(self):
         """Test household is eligible when parent is a student"""
         # Create new screen with student parent
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=True, has_income=False)
         child = self.add_member(screen, "child", 3, has_income=False)
 
@@ -67,7 +62,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_household_ineligible_no_employment_or_school(self):
         """Test household is ineligible when parent is neither employed nor in school"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=False)
         child = self.add_member(screen, "child", 3, has_income=False)
 
@@ -77,7 +72,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_household_ineligible_income_too_high(self):
         """Test household is ineligible when income exceeds 225% FPL"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         # Income well above 225% FPL
         self.add_income(parent, 10000)
@@ -99,7 +94,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_member_ineligible_child_over_13(self):
         """Test child over 13 is not eligible (unless disabled)"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # 14-year-old child (too old)
@@ -113,7 +108,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_member_eligible_disabled_child_under_19(self):
         """Test disabled child under 19 is eligible"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # 16-year-old with disability
@@ -127,7 +122,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_member_ineligible_wrong_relationship(self):
         """Test non-child household members are not eligible"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=3)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=3)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # Adult sibling (not eligible relationship)
@@ -141,7 +136,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_member_eligible_various_child_relationships(self):
         """Test various child relationships are eligible"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=5)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=5)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
 
@@ -161,7 +156,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
     # Value Calculation Tests
     def test_member_value_cook_county_infant(self):
         """Test benefit value for infant in Cook County (Group IA)"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # Infant (1 year old)
@@ -181,7 +176,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_member_value_champaign_county_school_age(self):
         """Test benefit value for school-age child in Champaign County (Group IB)"""
-        screen = self.make_il_screen(zipcode="61820", county="Champaign", household_size=2)
+        screen = self.make_screen(zipcode="61820", county="Champaign", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # School-age child (8 years old)
@@ -194,7 +189,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_member_value_rural_county_twos(self):
         """Test benefit value for 2-year-old in rural county (Group II)"""
-        screen = self.make_il_screen(zipcode="62401", county="Effingham", household_size=2)
+        screen = self.make_screen(zipcode="62401", county="Effingham", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # 2-year-old
@@ -207,7 +202,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_member_value_too_old_returns_zero(self):
         """Test benefit value is 0 for children over 13 (non-disabled)"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # 15-year-old (too old, not disabled)
@@ -219,7 +214,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_total_value_multiple_children(self):
         """Test total benefit value for household with multiple children"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=4)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=4)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
 
@@ -252,7 +247,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
     # Copayment Calculation Tests
     def test_copayment_at_100_percent_fpl(self):
         """Test copayment is $1/month for families at or below 100% FPL"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         # Income at 100% FPL for family of 2 (approximately $1,580/month in 2025)
         self.add_income(parent, 1500)
@@ -264,7 +259,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_copayment_just_above_100_percent_fpl(self):
         """Test copayment follows table for income just above 100% FPL"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         # $1,800/month - above 100% FPL, should use table
         self.add_income(parent, 1800)
@@ -277,7 +272,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_copayment_mid_income_family_of_4(self):
         """Test copayment for mid-income family of 4"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=4)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=4)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         # $3,000/month income
         self.add_income(parent, 3000)
@@ -291,7 +286,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_copayment_at_bracket_boundary_lower(self):
         """Test copayment at lower boundary of income bracket"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=3)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=3)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         # Exactly at bracket minimum: ((1985, 2312), 42)
         self.add_income(parent, 1985)
@@ -303,7 +298,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_copayment_at_bracket_boundary_upper(self):
         """Test copayment at upper boundary of income bracket"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=3)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=3)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         # Exactly at bracket maximum: ((1985, 2312), 42)
         self.add_income(parent, 2312)
@@ -315,7 +310,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_copayment_highest_bracket(self):
         """Test copayment at highest income bracket"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=10)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=10)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         # At highest bracket for family of 10
         self.add_income(parent, 13000)
@@ -327,7 +322,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_household_value_returns_negative_copayment(self):
         """Test household_value returns negative annual copayment"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         child = self.add_member(screen, "child", 3, has_income=False)
@@ -340,7 +335,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
 
     def test_net_benefit_calculation(self):
         """Test that total value correctly calculates net benefit (subsidy - copayment)"""
-        screen = self.make_il_screen(zipcode="60601", county="Cook", household_size=2)
+        screen = self.make_screen(zipcode="60601", county="Cook", household_size=2)
         parent = self.add_member(screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(parent, 2000)
         # Infant in Cook County

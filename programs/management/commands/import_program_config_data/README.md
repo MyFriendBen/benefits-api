@@ -388,7 +388,7 @@ class TestIlCsfp(CustomCalculatorTestCase):
     state_code = "IL"
 
     def test_eligible_household(self):
-        screen = self.make_screen("il", "IL", household_size=2, county="Cook")
+        screen = self.make_screen(household_size=2, county="Cook")
         add_income(self.add_member(screen, age=65), 1_200)
 
         self.assertTrue(self.calculate(screen).eligible)
