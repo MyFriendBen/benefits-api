@@ -1,7 +1,7 @@
 {
     "white_label": {"code": "wa"},
     "program_category": {
-        "external_name": "wa_food"
+        "external_name": "food"
     },
     "program": {
         "name_abbreviated": "wa_wic",

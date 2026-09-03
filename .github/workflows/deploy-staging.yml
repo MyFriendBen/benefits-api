@@ -20,6 +20,10 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       ENABLE_GOOGLE_INTEGRATIONS: false
+      # Without this, settings.py takes the LocMemCache branch, TestRedisBackend
+      # skips itself, and the entire django_redis path goes untested -- the exact
+      # gap that let a Redis config error reach staging with a green build.
+      REDIS_URL: redis://localhost:6379/0
 
     services:
       postgres:
@@ -36,6 +40,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -43,7 +57,10 @@ jobs:
       - name: Run tests
         uses: ./.github/actions/run-tests
         with:
-          vcr-mode: new_episodes
+          # Same strict playback as PR validation. Every commit reaching main has
+          # already passed that gate, so there is nothing left for staging to record
+          # -- and recording would keep it serial (and ~4x slower) for no benefit.
+          vcr-mode: none
           upload-coverage: "false"
           hud-api-token: ${{ secrets.HUD_API_TOKEN }}
 

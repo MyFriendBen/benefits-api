@@ -747,11 +747,13 @@ class Command(BaseCommand):
         if not external_name:
             raise CommandError("Missing required field 'external_name' in program_category")
 
-        # Try to find existing category by external_name
-        existing_category = ProgramCategory.objects.filter(external_name=external_name, white_label=white_label).first()
+        # Unscoped: external_name is globally unique, and a shared category has
+        # no white label to match on.
+        existing_category = ProgramCategory.objects.filter(external_name=external_name).first()
 
         if existing_category:
-            self.stdout.write(f"  Using existing: {external_name} (ID: {existing_category.id})")
+            scope = "shared" if existing_category.white_label is None else existing_category.white_label.code
+            self.stdout.write(f"  Using existing: {external_name} ({scope}, ID: {existing_category.id})")
             return existing_category
         else:
             # For new categories, validate required fields

@@ -3,13 +3,13 @@
     "code": "tx"
   },
   "program_category": {
-    "external_name": "tx_food",
+    "external_name": "food",
     "name": "Food and Nutrition",
     "icon": "food"
   },
   "program": {
     "name_abbreviated": "tx_snap",
-    "year": "2025",
+    "year": "2026",
     "legal_status_required": [
       "citizen",
       "gc_5plus",

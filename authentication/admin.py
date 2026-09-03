@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
+from django.db.models import Q
 from django.core.exceptions import PermissionDenied
 from rest_framework.authtoken.models import TokenProxy
 from rest_framework.authtoken.admin import TokenAdmin
@@ -78,13 +79,18 @@ class SecureAdmin(ModelAdmin):
             field.queryset = field.queryset.filter(id__in=user.white_labels.all())
             return
 
-        # filter the selects to only the ones that the user has access to
+        # filter the selects to only the ones that the user has access to.
+        # A related row with a null white_label is shared across white labels
+        # (see ProgramCategory), so it stays selectable for every white label
+        # rather than being filtered out by these scoping rules.
         if hasattr(field.queryset.model, "white_label"):
+            shared = Q(white_label__isnull=True)
+
             if not self._is_superuser(request):
-                field.queryset = field.queryset.filter(white_label__in=user.white_labels.all())
+                field.queryset = field.queryset.filter(Q(white_label__in=user.white_labels.all()) | shared)
 
             if obj is not None:
-                field.queryset = field.queryset.filter(white_label=obj.white_label)
+                field.queryset = field.queryset.filter(Q(white_label=obj.white_label) | shared)
 
     # remove the history view for non super users
     def history_view(self, request, object_id, extra_context=None):

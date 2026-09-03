@@ -1,7 +1,7 @@
 name: PR Validation
 
 # Validates pull requests to main branch with:
-# - Full test suite using VCR (replays existing cassettes, records new interactions)
+# - Full test suite using VCR in strict playback (cassettes only, never records)
 # - Coverage upload to Codecov (same-repo PRs only; fork PRs skip upload — no secrets)
 # - Code formatting checks
 
@@ -64,7 +64,10 @@ jobs:
       - name: Run tests with VCR and upload coverage
         uses: ./.github/actions/run-tests
         with:
-          vcr-mode: new_episodes
+          # Strict playback. A request with no matching cassette fails the build
+          # instead of being recorded live, so a PR can never go green by reaching
+          # a real API -- and no fork PR needs credentials to pass.
+          vcr-mode: none
           # Secrets (incl. CODECOV_TOKEN) are not available to workflows on fork PRs.
           # Still run the full suite; upload coverage only for same-repo PRs.
           upload-coverage: ${{ !github.event.pull_request.head.repo.fork && 'true' || 'false' }}

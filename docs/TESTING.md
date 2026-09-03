@@ -17,6 +17,33 @@ pytest
 pytest --cov --cov-report=html
 ```
 
+The suite runs in parallel by default (`-n auto` in `pytest.ini`), which takes it from
+roughly three minutes to under one. Two things follow from that:
+
+- **Recording drops back to one process automatically.** `VCR_MODE=all`,
+  `VCR_MODE=new_episodes`, and any run with `PE_RECORD=1` may write cassettes, and
+  parallel workers would issue duplicate live API calls and race to write the same file.
+  `conftest.py` detects these and disables the fan-out, so the recording commands below
+  need no extra flags.
+- **`once` is downgraded to `none` inside a worker.** `once` is write-protected only
+  after a cassette has been loaded, so a *missing* cassette lets it record live — and two
+  workers hitting the same missing cassette would both call the API and race to write it.
+  A parallel run that has not opted into recording therefore replays strictly instead:
+  a missing cassette fails rather than being recorded. Serial runs keep `once` as-is, so
+  `pytest -n 0` still reports the "cassette missing, recorded it" behaviour if you want
+  it.
+- **Each worker gets its own Redis database** when `REDIS_URL` is set, because
+  `clear_cache` issues FLUSHDB and would otherwise wipe other workers' entries mid-test.
+  Workers are numbered *above* the database `REDIS_URL` names, leaving that one to serial
+  runs and to `benefits/tests/test_redis_backend.py`, which flushes it directly. Pointing
+  `REDIS_URL` at a higher database leaves fewer to hand out.
+  `pytest.ini` therefore caps the fan-out with `--maxprocesses 14`, which is what keeps
+  `-n auto` safe on a large machine: it counts *logical* cores here (xdist prefers
+  physical via `psutil`, which is not installed). Raising the cap past 15 fails with a
+  message naming the limit rather than letting workers share a database.
+
+Pass `-n 0` to force a serial run when debugging test interdependence.
+
 ### Unit Tests Only
 ```bash
 # Skip integration tests
@@ -50,10 +77,10 @@ Controlled by the `VCR_MODE` environment variable:
 
 | Environment | VCR_MODE | Behavior | API Calls |
 |------------|----------|----------|-----------|
-| **PRs** (`pr-validation`) | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
-| **Push to main** (`deploy-staging`) | `new_episodes` | Same as PRs. | ✅ Yes (only for new HTTP requests) |
+| **PRs** (`pr-validation`) | `none` | **Read-only:** Replays only. A request with no matching cassette fails the build rather than being recorded live, so a PR cannot pass by reaching a real API. | ❌ No (never records) |
+| **Push to main** (`deploy-staging`) | `none` | Same as PRs: replay-only, parallel. Every commit here already passed the PR gate. | ❌ No (never records) |
 | **Release** (`deploy-production`) | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. PolicyEngine spec-scenario tests skip (see below). | ✅ Yes (every non-skipped test hits the live API) |
-| **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** | Only if entire cassette file missing |
+| **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** In a parallel run (the default) this is downgraded to `none`, so a missing cassette fails instead of recording. | Only if entire cassette file missing, and only when running serially |
 | **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
 
 Re-recording in CI is never committed — no workflow commits cassettes — so a CI run in `new_episodes` or `all` mode does not refresh what's in the repo. It only changes what that run tests against.
@@ -216,20 +243,22 @@ git diff integrations/**/cassettes/*.yaml
 
 ## CI/CD Testing Strategy
 
-### Pull Requests (VCR_MODE=new_episodes)
+### Pull Requests (VCR_MODE=none)
 ```yaml
-- Records new interactions only
-- Replays existing cassettes
-- Fast feedback for existing tests
-- Only makes API calls for new test scenarios
-- Requires HUD_API_TOKEN secret
+- Replays existing cassettes only
+- Never records; no API calls, no credentials needed
+- A request with no matching cassette fails the build
+- Runs in parallel (-n auto)
 ```
 
-**If new tests added**: New cassettes will be recorded automatically in CI.
+**If new tests added**: record their cassettes locally and commit them. CI will not record
+on your behalf — a missing cassette is a build failure, which is the point: it keeps a PR
+from passing against a live API.
 
-### Push to Main (VCR_MODE=new_episodes)
+### Push to Main (VCR_MODE=none)
 
-`deploy-staging` runs the same mode as PR validation — it does not re-record everything.
+`deploy-staging` runs the same strict playback as PR validation. Every commit reaching
+main has already passed that gate, so there is nothing left to record.
 
 ### Release / Production Deploy (VCR_MODE=all)
 ```yaml

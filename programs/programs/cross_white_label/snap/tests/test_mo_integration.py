@@ -12,6 +12,9 @@ Asserted in **annual** dollars, which is what the screener reports (``estimated_
 ``Snap.household_value`` multiplies PolicyEngine's monthly figure by 12.
 """
 
+from datetime import date
+from unittest.mock import patch
+
 import pytest
 
 from programs.programs.cross_white_label.snap.mo import MoSnap
@@ -27,6 +30,12 @@ from programs.programs.testing_fixtures.pe_integration import (
 
 PE_VERSION = "1.815.1"
 YEAR = "2026"
+
+# `Snap.pe_period_month` reads today's month, which is part of the recorded request body,
+# so the date is pinned rather than taken from the wall clock. January: the maximum
+# allotment steps up each October -- this household reads $487/month asked about January
+# and $517 asked about October -- so the expected value below only holds for a fixed date.
+TODAY = date(int(YEAR), 1, 15)
 
 
 @pytest.mark.integration
@@ -56,12 +65,15 @@ class TestMoSnapResolves(PeIntegrationTestCase):
         add_member(screen, 3, "child", 4)
         program = make_program("mo", "mo_snap", YEAR)
 
-        eligibility = calc_pe_program(screen, MoSnap, program)
+        with patch("programs.programs.cross_white_label.snap.base.date") as mock_date:
+            mock_date.today.return_value = TODAY
+            eligibility = calc_pe_program(screen, MoSnap, program)
 
         self.assertTrue(eligibility.eligible)
-        # $487/month. Missouri's FY2026 three-person max allotment less 30% of net income:
-        # $1,500 gross, less the 20% earned-income deduction and the household-of-three
-        # standard deduction, leaves ~$992 net. Asserted exactly so a re-record at a newer
-        # PolicyEngine version surfaces a value change instead of passing on any nonzero
-        # number. `household_value` truncates the monthly figure before annualizing it.
+        # $487/month, as of `TODAY`. Missouri's FY2026 three-person max allotment less 30%
+        # of net income: $1,500 gross, less the 20% earned-income deduction and the
+        # household-of-three standard deduction, leaves ~$992 net. Asserted exactly so a
+        # re-record at a newer PolicyEngine version surfaces a value change instead of
+        # passing on any nonzero number. `household_value` truncates the monthly figure
+        # before annualizing it.
         self.assertEqual(screener_value(eligibility), 487 * 12)

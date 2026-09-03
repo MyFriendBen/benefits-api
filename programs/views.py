@@ -28,12 +28,21 @@ class ProgramCategoryViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, v
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Scope by the *programs'* white label rather than the category's own.
+        # A shared category has no white label, so filtering on it would drop
+        # every shared row; the programs it contains are what belong to a
+        # white label.
         return ProgramCategory.objects.filter(
             programs__isnull=False,
             programs__active=True,
             programs__show_on_current_benefits=True,
-            white_label__code=self.kwargs["white_label"],
+            programs__white_label__code=self.kwargs["white_label"],
         ).distinct()
+
+    def get_serializer_context(self):
+        # The serializer needs the white label to filter a shared category's
+        # programs down to the ones this white label owns.
+        return {**super().get_serializer_context(), "white_label": self.kwargs["white_label"]}
 
 
 class NavigatorViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):

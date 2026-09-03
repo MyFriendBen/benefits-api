@@ -296,13 +296,16 @@ class Translation(TranslatableModel):
 
         for lang_code, _ in settings.LANGUAGES:
             try:
-                self.set_current_language(lang_code)
-                new_text = self.text
-                new_edited = self.edited
-
+                # Nothing to diff against means nothing to record, so bail before
+                # touching self.text -- reading a language that has no translation
+                # row raises, and this loop covers every configured language.
                 old = old_translations.get(lang_code)
                 if old is None:
                     continue
+
+                self.set_current_language(lang_code)
+                new_text = self.text
+                new_edited = self.edited
 
                 if old["text"] != new_text:
                     latest_history = self.history.first()

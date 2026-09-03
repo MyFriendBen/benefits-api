@@ -1,11 +1,10 @@
 """
 Unit tests for MaBabySteps (MA BabySteps Savings Plan) custom calculator.
 
-Eligibility is evaluated per child: each beneficiary candidate is worth a one-time $50 seed
-deposit, either through the birth pathway (born on or after Jan 1, 2020 and still inside the
-one-year enrollment window) or through the adoption-pathway inclusive fallback. There is no
-income, asset, insurance, or benefit-receipt gate, and Massachusetts residency is handled
-upstream by white-label routing.
+Eligibility is evaluated per child: each beneficiary candidate inside the birth-pathway
+window (born on or after Jan 1, 2020 and no more than one year ago) is worth a one-time $50
+seed deposit. There is no income, asset, insurance, or benefit-receipt gate, and
+Massachusetts residency is handled upstream by white-label routing.
 
 Scenario numbers in the test names map to the "Test Scenarios" section of spec.md. Per that
 section, every scenario is evaluated as of July 22, 2026, so `Screen.get_reference_date` is
@@ -185,10 +184,10 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 100)
 
-    def test_scenario_4_mixed_age_household_values_both_children(self):
+    def test_scenario_4_mixed_age_household_values_only_the_child_under_one(self):
         """
-        Scenario 4: a recent birth plus an older sibling whose adoption status is unknown.
-        The older child is not denied outright — the adoption fallback values them too.
+        Scenario 4: a recent birth plus an older sibling past the first-birthday cutoff.
+        Only the child inside the birth-pathway window is valued.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=4)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
@@ -199,11 +198,10 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         calculator, eligibility = self.calculate(screen)
 
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 100)
-        # The two $50s come from different pathways: one confirmed, one inclusive default.
+        # $50, not $100 — the older sibling is past the cutoff.
+        self.assertEqual(eligibility.value, 50)
         self.assertTrue(calculator.birth_pathway_eligible(newborn))
         self.assertFalse(calculator.birth_pathway_eligible(older_sibling))
-        self.assertTrue(calculator.adoption_fallback_applied(older_sibling))
 
     def test_scenario_5_no_beneficiary_candidate_is_ineligible(self):
         """Scenario 5: household of only headOfHousehold + spouse → ineligible."""
@@ -232,26 +230,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         # Still exactly $50 — the separate "SNAP into BabySteps" $120 add-on is out of scope.
         self.assertEqual(eligibility.value, 50)
 
-    def test_scenario_7_out_of_state_zip_is_not_a_calculator_gate(self):
-        """
-        Scenario 7 (documented, not enforced here): the spec expects an out-of-state household
-        to be ineligible, but Massachusetts residency (Criterion 1) is enforced upstream by
-        white-label routing — `ma_bsp` is only ever calculated for `ma` screens, and BabySteps
-        is statewide, so there is no sub-state or ZIP condition to assert. This test pins that
-        design decision: the calculator deliberately applies no location gate, so an
-        out-of-state ZIP reaching it still returns the per-child result.
-        """
-        screen = self.make_screen(zipcode="03301", county="Concord", household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
-
-        _, eligibility = self.calculate(screen)
-
-        self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
-
-    def test_scenario_8_grandchild_qualifies(self):
-        """Scenario 8: a `grandChild` beneficiary candidate → eligible, $50."""
+    def test_scenario_7_grandchild_qualifies(self):
+        """Scenario 7: a `grandChild` beneficiary candidate → eligible, $50."""
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1968, 3, 1))
         self.make_member(screen, "grandChild", date(2026, 3, 1))
@@ -261,11 +241,10 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
 
-    def test_scenario_9_birth_pathway_month_boundary(self):
+    def test_scenario_8_birth_pathway_month_boundary(self):
         """
-        Scenario 9: a child turning one during the current month is still inside the window.
-        Asserting `birth_pathway_eligible` is required — the top-level result alone can't tell
-        this apart from the adoption fallback.
+        Scenario 8: a child turning one during the current month is still inside the window.
+        Asserting `birth_pathway_eligible` pins the month-level boundary directly.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=2)
         self.make_member(screen, "headOfHousehold", date(1990, 5, 1))
@@ -274,14 +253,13 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         calculator, eligibility = self.calculate(screen)
 
         self.assertTrue(calculator.birth_pathway_eligible(child))
-        self.assertFalse(calculator.adoption_fallback_applied(child))
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 50)
 
-    def test_scenario_10_eligible_via_adoption_fallback_only(self):
+    def test_scenario_9_birth_pathway_expired_is_ineligible(self):
         """
-        Scenario 10: the paired case — a child whose birth window closed is still eligible, but
-        only through the adoption-pathway fallback.
+        Scenario 9: the paired case — a child whose birth window has closed is ineligible.
+        The adoption pathway would need an adoption date the screener does not collect.
         """
         screen = self.make_screen(zipcode="02139", county="Cambridge", household_size=2)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
@@ -290,9 +268,30 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         calculator, eligibility = self.calculate(screen)
 
         self.assertFalse(calculator.birth_pathway_eligible(child))
-        self.assertTrue(calculator.adoption_fallback_applied(child))
+        self.assertFalse(eligibility.eligible)
+        self.assertEqual(eligibility.value, 0)
+
+    def test_scenario_10_reported_bug_household(self):
+        """
+        Scenario 10 — the MFB-1729 repro household shape: two children under one plus a two-year-old.
+        Only the two under-one children are valued. Birth dates are re-anchored to the
+        frozen July 22, 2026 evaluation date rather than copied from the ticket, which
+        reported ages relative to the live date.
+        """
+        screen = self.make_screen(zipcode="02148", county="Malden", household_size=5)
+        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
+        self.make_member(screen, "domesticPartner", date(1991, 3, 1))
+        infant = self.make_member(screen, "child", date(2026, 1, 1))
+        foster_infant = self.make_member(screen, "fosterChild", date(2025, 10, 1))
+        two_year_old = self.make_member(screen, "child", date(2024, 5, 1))
+
+        calculator, eligibility = self.calculate(screen)
+
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
+        self.assertEqual(eligibility.value, 100)
+        self.assertTrue(calculator.birth_pathway_eligible(infant))
+        self.assertTrue(calculator.birth_pathway_eligible(foster_infant))
+        self.assertFalse(calculator.birth_pathway_eligible(two_year_old))
 
 
 class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
@@ -329,27 +328,36 @@ class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
     def test_missing_birth_year_month_is_outside_window(self):
         self.assertFalse(self.birth_pathway_result(None))
 
-    def test_missing_birth_year_month_still_eligible_via_fallback(self):
-        """A candidate with no birth date is not denied — the inclusive default applies."""
+    def test_missing_birth_year_month_is_ineligible(self):
+        """
+        A candidate with no birth date cannot be placed inside the one-year window, so the
+        birth pathway does not pass.
+
+        This state is reachable: `HouseholdMemberSerializer` takes `birth_year`/`birth_month`
+        as optional and accepts `age` directly, leaving `birth_year_month` null. The React
+        wizard always sends both, so there is no user-facing regression, but an API-direct
+        caller or a legacy row with only `age` set now returns $0 where it previously
+        returned $50 via the removed adoption fallback.
+        """
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         child = self.make_member(screen, "child", None)
 
         calculator, eligibility = self.calculate(screen)
 
-        self.assertTrue(calculator.adoption_fallback_applied(child))
-        self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
+        self.assertFalse(calculator.birth_pathway_eligible(child))
+        self.assertFalse(eligibility.eligible)
+        self.assertEqual(eligibility.value, 0)
 
-    def test_non_candidate_never_gets_adoption_fallback(self):
-        """The fallback only relaxes timing for members already in the assistance unit."""
+    def test_non_candidate_adult_is_not_eligible(self):
+        """An adult caregiver role is outside the assistance unit regardless of timing."""
         screen = self.make_screen(household_size=1)
         head = self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
 
         calculator = self.make_calculator(screen)
 
         self.assertFalse(calculator.birth_pathway_eligible(head))
-        self.assertFalse(calculator.adoption_fallback_applied(head))
+        self.assertFalse(calculator.is_beneficiary_candidate(head.relationship))
 
 
 class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
@@ -452,12 +460,14 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
 
         self.assertTrue(screen.has_benefit("ma_bsp"))
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 100)
+        # $50: the household-level receipt flag does not exclude the newly born child. The
+        # 2022 child is excluded by the age cutoff, not by the receipt flag.
+        self.assertEqual(eligibility.value, 50)
 
-    def test_older_child_of_any_age_is_not_denied(self):
+    def test_older_child_is_denied_by_the_age_cutoff(self):
         """
-        Criterion 2b: adopted children qualify at any age, so an older candidate falls through
-        to the fallback instead of hitting an age cutoff.
+        The first-birthday cutoff applies to every candidate, including one who could qualify
+        via the adoption pathway (Criterion 2b).
         """
         screen = self.make_screen(household_size=2)
         self.make_member(screen, "headOfHousehold", date(1975, 3, 1))
@@ -465,9 +475,9 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
 
         calculator, eligibility = self.calculate(screen)
 
-        self.assertTrue(calculator.adoption_fallback_applied(teenager))
-        self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 50)
+        self.assertFalse(calculator.birth_pathway_eligible(teenager))
+        self.assertFalse(eligibility.eligible)
+        self.assertEqual(eligibility.value, 0)
 
     def test_birthplace_is_not_used_to_exclude(self):
         """

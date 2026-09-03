@@ -51,7 +51,10 @@ class ProgramCategoryCapCalculator:
         return 0
 
     def calc_max_cap(self, cap: CategoryCap, values: list[int]) -> ReturnCategoryCap:
-        return max(*values)
+        # max(values), not max(*values): unpacking a single-element list calls
+        # max(1200), which raises TypeError. One value happens whenever exactly
+        # one of the capped programs is present for a member.
+        return max(values, default=0)
 
     def calc_average_cap(self, cap: CategoryCap, values: list[int]) -> ReturnCategoryCap:
         non_0_values = [v for v in values if v > 0]
