@@ -14,9 +14,14 @@ in the 13 files whose calculator reads one. The larger group — 76 files — st
 household → assertion.
 """
 
-from unittest.mock import Mock
+from contextlib import contextmanager
+from datetime import date
+from typing import Optional
+from unittest.mock import Mock, patch
 
 from django.test import TestCase
+
+from integrations.clients.hud_income_limits import HudIncomeClientError
 
 from programs.framework.base import Eligibility
 from programs.util import Dependencies
@@ -62,8 +67,18 @@ def make_screen(
     )
 
 
-def add_member(screen: Screen, relationship: str = "headOfHousehold", age: float = 30, **kwargs) -> HouseholdMember:
-    """Add a household member.
+def add_member(
+    screen: Screen,
+    relationship: str = "headOfHousehold",
+    age: float = 30,
+    monthly_income: int = 0,
+    **kwargs,
+) -> HouseholdMember:
+    """Add a household member, and their income when the scenario states one.
+
+    `monthly_income` is the common case — a member described by what they earn. Call
+    `add_income` directly for anything else: a second stream, another frequency, or an
+    income type other than wages.
 
     `age` is stated as the scenario states it and may be fractional — `3.5` is three years
     six months, for the calculators that read `fraction_age()` rather than a whole-year age.
@@ -84,6 +99,9 @@ def add_member(screen: Screen, relationship: str = "headOfHousehold", age: float
 
     household_member = HouseholdMember.objects.create(screen=screen, relationship=relationship, age=age, **kwargs)
     Insurance.objects.create(household_member=household_member)
+
+    if monthly_income:
+        add_income(household_member, monthly_income)
 
     return household_member
 
@@ -114,6 +132,18 @@ class CustomCalculatorTestCase(TestCase):
     state_code: str = "TS"
     fpl_year: str = "2025"
 
+    #: Where a household sits when the scenario does not say. Set these when a white label's
+    #: programs are all local to one place, so a scenario names a location only to move away
+    #: from it. Note that some white labels put a city in `county` — MA does (MFB-548).
+    default_zipcode: str = ""
+    default_county: str = ""
+
+    #: Set when scenarios are written against a fixed calendar date rather than an age — a
+    #: program start date, an enrollment window, a birth month copied from a spec. Ages built
+    #: by `add_member` need no such pin, since they are derived against the same clock the
+    #: calculator reads, but a literal `birth_year_month` drifts out of its window without one.
+    reference_date: Optional[date] = None
+
     #: Set False when the calculator never reads `self.program` — no FPL or SMI lookup, no
     #: `program.year`. `self.program` is then a `Mock`, which skips the ~10 translated
     #: fields a real `Program` row writes per language.
@@ -128,11 +158,13 @@ class CustomCalculatorTestCase(TestCase):
     def make_screen(self, household_size: int = 1, **kwargs) -> Screen:
         """A household in this test case's white label.
 
-        The white label and state come from the class attributes, so a scenario names only
-        what makes it distinct — its size, county, or assets.
+        The white label, state and default location come from the class attributes, so a
+        scenario names only what makes it distinct — its size, county, or assets.
         """
         kwargs.setdefault("white_label_code", self.white_label_code)
         kwargs.setdefault("state_code", self.state_code)
+        kwargs.setdefault("zipcode", self.default_zipcode)
+        kwargs.setdefault("county", self.default_county)
 
         return make_screen(household_size=household_size, **kwargs)
 
@@ -150,6 +182,22 @@ class CustomCalculatorTestCase(TestCase):
             cls.program = make_program(cls.white_label_code, cls.program_code, cls.fpl_year, cls.state_code)
         else:
             cls.program = Mock()
+
+    def setUp(self):
+        """Freeze `Screen.get_reference_date` when the subclass pinned one."""
+        super().setUp()
+
+        if self.reference_date is None:
+            return
+
+        frozen = self.reference_date
+        patcher = patch.object(Screen, "get_reference_date", lambda _self: frozen)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def hud_ami(self, limit: Optional[int] = None, unavailable: bool = False):
+        """`hud_ami` for this test case's calculator. See the module-level function."""
+        return hud_ami(self.calculator_class, limit, unavailable)
 
     def make_calculator(self, screen: Screen, data: dict[str, Eligibility] = None, missing=()):
         """Build the calculator without running it.
@@ -173,6 +221,51 @@ class CustomCalculatorTestCase(TestCase):
         unpacking the single return value fails loudly rather than silently.
         """
         return self.make_calculator(screen, data, missing).calc()
+
+
+@contextmanager
+def hud_ami(
+    calculator_class: type,
+    limit: Optional[int] = None,
+    unavailable: bool = False,
+):
+    """Stand in for the HUD income-limit client while a calculator runs.
+
+    A calculator reading an area median income asks `hud_client`, which is constructed at
+    import time and calls HUD over the network. `limit` is the figure HUD would return for
+    this household, so the scenario states an income limit the way it states an income.
+
+    The client is bound per calculator module (`from ... import hud_client`), so the patch
+    target follows `calculator_class`; patching the integration package would miss every
+    calculator. All three lookups are stubbed, because a calculator choosing between the
+    standard and the approximated limit is asserting on which one it called.
+
+    `unavailable=True` raises `HudIncomeClientError` instead, for the tests covering what a
+    calculator does when HUD is down.
+
+    Yields the mock, so a test can still assert on the call:
+
+        with hud_ami(MaCha, 50_000) as hud:
+            ...
+            hud.get_screen_il_ami.assert_called_once_with(screen, "80%", "2025")
+
+    HUD's own behaviour — request building, retries, error mapping — is covered by
+    `integrations/clients/hud_income_limits/tests`, not here.
+    """
+    client = Mock()
+
+    if unavailable:
+        error = HudIncomeClientError("HUD unavailable")
+        client.get_screen_il_ami.side_effect = error
+        client.get_screen_mtsp_ami.side_effect = error
+        client.approximate_screen_mtsp_ami.side_effect = error
+    else:
+        client.get_screen_il_ami.return_value = limit
+        client.get_screen_mtsp_ami.return_value = limit
+        client.approximate_screen_mtsp_ami.return_value = limit
+
+    with patch(f"{calculator_class.__module__}.hud_client", client):
+        yield client
 
 
 def eligible_result(value: int = 0) -> Eligibility:

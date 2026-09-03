@@ -52,31 +52,10 @@ class MaBabyStepsTestCase(CustomCalculatorTestCase):
     program_code = "ma_bsp"
     white_label_code = "ma"
     state_code = "MA"
-
-    def setUp(self):
-        super().setUp()
-        patcher = patch.object(Screen, "get_reference_date", lambda _self: FROZEN_DATE)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def make_screen(self, zipcode="02101", county="Boston", household_size=2):
-        # MA stores city name in the county field (see MFB-548), so the defaults differ
-        # from the base class's empty ones.
-        return super().make_screen(household_size=household_size, zipcode=zipcode, county=county)
-
-    def make_member(self, screen, relationship, birth_year_month=None, monthly_income=0):
-        age = None
-        if birth_year_month is not None:
-            age = HouseholdMember.age_from_date(birth_year_month, FROZEN_DATE)
-
-        household_member = self.add_member(
-            screen, relationship=relationship, age=age, birth_year_month=birth_year_month
-        )
-
-        if monthly_income:
-            add_income(household_member, monthly_income)
-
-        return household_member
+    default_zipcode = "02101"
+    # MA stores the city name in the county field (MFB-548).
+    default_county = "Boston"
+    reference_date = FROZEN_DATE
 
 
 class TestMaBabyStepsClassAttributes(MaBabyStepsTestCase):
@@ -107,7 +86,7 @@ class TestBeneficiaryRelationshipMapping(MaBabyStepsTestCase):
     """
 
     def test_is_beneficiary_candidate_for_all_relationship_values(self):
-        calculator = self.make_calculator(self.make_screen())
+        calculator = self.make_calculator(self.make_screen(household_size=2))
 
         for relationship, expected in RELATIONSHIP_CANDIDACY.items():
             with self.subTest(relationship=relationship):
@@ -117,7 +96,7 @@ class TestBeneficiaryRelationshipMapping(MaBabyStepsTestCase):
         self.assertEqual(len(RELATIONSHIP_CANDIDACY), 12)
 
     def test_unknown_and_missing_relationships_are_not_candidates(self):
-        calculator = self.make_calculator(self.make_screen())
+        calculator = self.make_calculator(self.make_screen(household_size=2))
 
         self.assertFalse(calculator.is_beneficiary_candidate(None))
         self.assertFalse(calculator.is_beneficiary_candidate("notARelationship"))
@@ -127,8 +106,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
     def test_scenario_1_golden_path_recent_birth(self):
         """Scenario 1: MA household with a child born Feb 2026 → eligible, $50."""
         screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1994, 3, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1994, 3, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
 
         eligibility = self.calculate(screen)
 
@@ -138,9 +117,9 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
     def test_scenario_2_no_income_gate(self):
         """Scenario 2: high-income household with a qualifying child → eligible, $50."""
         screen = self.make_screen(zipcode="02139", county="Cambridge", household_size=3)
-        self.make_member(screen, "headOfHousehold", date(1991, 3, 1), monthly_income=6_250)
-        self.make_member(screen, "spouse", date(1992, 6, 1), monthly_income=5_417)
-        self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1991, 3, 1), monthly_income=6_250)
+        self.add_member(screen, "spouse", age=None, birth_year_month=date(1992, 6, 1), monthly_income=5_417)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
 
         eligibility = self.calculate(screen)
 
@@ -153,10 +132,10 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
     def test_scenario_3_twins_stack_per_child(self):
         """Scenario 3: two children inside the birth window → $100, not a flat $50."""
         screen = self.make_screen(zipcode="01201", county="Pittsfield", household_size=4)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "spouse", date(1991, 8, 1))
-        self.make_member(screen, "child", date(2025, 11, 1))
-        self.make_member(screen, "child", date(2025, 11, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "spouse", age=None, birth_year_month=date(1991, 8, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2025, 11, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2025, 11, 1))
 
         eligibility = self.calculate(screen)
 
@@ -169,10 +148,10 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         Only the child inside the birth-pathway window is valued.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=4)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "spouse", date(1991, 6, 1))
-        older_sibling = self.make_member(screen, "child", date(2018, 9, 1))
-        newborn = self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "spouse", age=None, birth_year_month=date(1991, 6, 1))
+        older_sibling = self.add_member(screen, "child", age=None, birth_year_month=date(2018, 9, 1))
+        newborn = self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
 
         calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
@@ -186,8 +165,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
     def test_scenario_5_no_beneficiary_candidate_is_ineligible(self):
         """Scenario 5: household of only headOfHousehold + spouse → ineligible."""
         screen = self.make_screen(zipcode="01201", county="Pittsfield", household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "spouse", date(1991, 8, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "spouse", age=None, birth_year_month=date(1991, 8, 1))
 
         eligibility = self.calculate(screen)
 
@@ -198,9 +177,9 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         """Scenario 6: SNAP is neither required nor disqualifying → eligible, $50."""
         snap = Program.objects.new_program(white_label="ma", name_abbreviated="ma_snap")
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=3)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1), monthly_income=2_800)
-        self.make_member(screen, "spouse", date(1989, 8, 1), monthly_income=2_200)
-        self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1), monthly_income=2_800)
+        self.add_member(screen, "spouse", age=None, birth_year_month=date(1989, 8, 1), monthly_income=2_200)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
         CurrentBenefit.objects.create(screen=screen, program=snap)
 
         eligibility = self.calculate(screen)
@@ -213,8 +192,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
     def test_scenario_7_grandchild_qualifies(self):
         """Scenario 7: a `grandChild` beneficiary candidate → eligible, $50."""
         screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1968, 3, 1))
-        self.make_member(screen, "grandChild", date(2026, 3, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1968, 3, 1))
+        self.add_member(screen, "grandChild", age=None, birth_year_month=date(2026, 3, 1))
 
         eligibility = self.calculate(screen)
 
@@ -227,8 +206,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         Asserting `birth_pathway_eligible` pins the month-level boundary directly.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 5, 1))
-        child = self.make_member(screen, "child", date(2025, 7, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 5, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2025, 7, 1))
 
         calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
@@ -243,8 +222,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         The adoption pathway would need an adoption date the screener does not collect.
         """
         screen = self.make_screen(zipcode="02139", county="Cambridge", household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        child = self.make_member(screen, "child", date(2025, 6, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2025, 6, 1))
 
         calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
@@ -261,11 +240,11 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         reported ages relative to the live date.
         """
         screen = self.make_screen(zipcode="02148", county="Malden", household_size=5)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "domesticPartner", date(1991, 3, 1))
-        infant = self.make_member(screen, "child", date(2026, 1, 1))
-        foster_infant = self.make_member(screen, "fosterChild", date(2025, 10, 1))
-        two_year_old = self.make_member(screen, "child", date(2024, 5, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "domesticPartner", age=None, birth_year_month=date(1991, 3, 1))
+        infant = self.add_member(screen, "child", age=None, birth_year_month=date(2026, 1, 1))
+        foster_infant = self.add_member(screen, "fosterChild", age=None, birth_year_month=date(2025, 10, 1))
+        two_year_old = self.add_member(screen, "child", age=None, birth_year_month=date(2024, 5, 1))
 
         calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
@@ -280,36 +259,57 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
 class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
     """Direct coverage of `birth_pathway_eligible`, which the scenarios only sample."""
 
-    def birth_pathway_result(self, birth_year_month):
-        screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        child = self.make_member(screen, "child", birth_year_month)
-
-        return self.make_calculator(screen).birth_pathway_eligible(child)
-
     def test_newborn_is_inside_window(self):
-        self.assertTrue(self.birth_pathway_result(date(2026, 7, 1)))
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2026, 7, 1))
+
+        self.assertTrue(self.make_calculator(screen).birth_pathway_eligible(child))
 
     def test_eleven_months_old_is_inside_window(self):
-        self.assertTrue(self.birth_pathway_result(date(2025, 8, 1)))
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2025, 8, 1))
+
+        self.assertTrue(self.make_calculator(screen).birth_pathway_eligible(child))
 
     def test_first_birthday_month_is_inside_window(self):
         """Month-level inclusive treatment: the screener has no day of birth to compare."""
-        self.assertTrue(self.birth_pathway_result(date(2025, 7, 1)))
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2025, 7, 1))
+
+        self.assertTrue(self.make_calculator(screen).birth_pathway_eligible(child))
 
     def test_month_after_first_birthday_is_outside_window(self):
-        self.assertFalse(self.birth_pathway_result(date(2025, 6, 1)))
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2025, 6, 1))
+
+        self.assertFalse(self.make_calculator(screen).birth_pathway_eligible(child))
 
     def test_born_before_program_start_is_outside_window(self):
         """A December 2019 birth predates the program, so the birth pathway cannot apply."""
-        self.assertFalse(self.birth_pathway_result(date(2019, 12, 1)))
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2019, 12, 1))
+
+        self.assertFalse(self.make_calculator(screen).birth_pathway_eligible(child))
 
     def test_program_start_month_alone_does_not_qualify(self):
         """January 2020 is on or after the start date but far outside the one-year window."""
-        self.assertFalse(self.birth_pathway_result(date(2020, 1, 1)))
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=date(2020, 1, 1))
+
+        self.assertFalse(self.make_calculator(screen).birth_pathway_eligible(child))
 
     def test_missing_birth_year_month_is_outside_window(self):
-        self.assertFalse(self.birth_pathway_result(None))
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", age=None, birth_year_month=None)
+
+        self.assertFalse(self.make_calculator(screen).birth_pathway_eligible(child))
 
     def test_missing_birth_year_month_is_ineligible(self):
         """
@@ -323,8 +323,8 @@ class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
         returned $50 via the removed adoption fallback.
         """
         screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        child = self.make_member(screen, "child", None)
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        child = self.add_member(screen, "child", None)
 
         calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
@@ -336,7 +336,7 @@ class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
     def test_non_candidate_adult_is_not_eligible(self):
         """An adult caregiver role is outside the assistance unit regardless of timing."""
         screen = self.make_screen(household_size=1)
-        head = self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
+        head = self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
 
         calculator = self.make_calculator(screen)
 
@@ -350,8 +350,8 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
         for relationship in MaBabySteps.beneficiary_relationships:
             with self.subTest(relationship=relationship):
                 screen = self.make_screen(household_size=2)
-                self.make_member(screen, "headOfHousehold", date(1985, 3, 1))
-                self.make_member(screen, relationship, date(2026, 2, 1))
+                self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1985, 3, 1))
+                self.add_member(screen, relationship, age=None, birth_year_month=date(2026, 2, 1))
 
                 eligibility = self.calculate(screen)
 
@@ -368,7 +368,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
         for relationship in non_candidates:
             with self.subTest(relationship=relationship):
                 screen = self.make_screen(household_size=1)
-                self.make_member(screen, relationship, date(2026, 2, 1))
+                self.add_member(screen, relationship, age=None, birth_year_month=date(2026, 2, 1))
 
                 eligibility = self.calculate(screen)
 
@@ -378,9 +378,9 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
     def test_only_candidate_members_are_valued(self):
         """Non-candidate members in an eligible household contribute no value."""
         screen = self.make_screen(household_size=3)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "spouse", date(1991, 3, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "spouse", age=None, birth_year_month=date(1991, 3, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
 
         eligibility = self.calculate(screen)
 
@@ -391,10 +391,10 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
 
     def test_three_children_stack_to_150(self):
         screen = self.make_screen(household_size=4)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
-        self.make_member(screen, "child", date(2025, 9, 1))
-        self.make_member(screen, "grandChild", date(2026, 1, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2025, 9, 1))
+        self.add_member(screen, "grandChild", age=None, birth_year_month=date(2026, 1, 1))
 
         eligibility = self.calculate(screen)
 
@@ -404,8 +404,8 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
     def test_no_household_value_component(self):
         """The benefit is entirely per-child; nothing is added at the household level."""
         screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
 
         eligibility = self.calculate(screen)
 
@@ -414,8 +414,8 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
     def test_no_fail_messages(self):
         """No household condition carries a message — there is no evaluable household gate."""
         screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "spouse", date(1991, 3, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "spouse", age=None, birth_year_month=date(1991, 3, 1))
 
         eligibility = self.calculate(screen)
 
@@ -435,9 +435,9 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         if BabySteps is reported as a current benefit, a newly born child still qualifies.
         """
         screen = self.make_screen(household_size=3)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "child", date(2022, 4, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2022, 4, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
         CurrentBenefit.objects.create(screen=screen, program=self.program)
 
         eligibility = self.calculate(screen)
@@ -454,8 +454,8 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         via the adoption pathway (Criterion 2b).
         """
         screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1975, 3, 1))
-        teenager = self.make_member(screen, "child", date(2009, 5, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1975, 3, 1))
+        teenager = self.add_member(screen, "child", age=None, birth_year_month=date(2009, 5, 1))
 
         calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
@@ -470,8 +470,8 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         it is applied inclusively — the calculator reads no birthplace input at all.
         """
         screen = self.make_screen(household_size=2)
-        self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
-        self.make_member(screen, "child", date(2026, 2, 1))
+        self.add_member(screen, "headOfHousehold", age=None, birth_year_month=date(1990, 3, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 2, 1))
 
         calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
