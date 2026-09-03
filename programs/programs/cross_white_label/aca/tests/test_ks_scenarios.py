@@ -33,9 +33,9 @@ from screener.models import Insurance
 
 # Recorded at "current" rather than "frontier": production and staging both ride the
 # floating current alias, so this is the version real households are scored against.
-# 1.815.1 and frontier 1.821.2 return identical values for every scenario here, so no
+# 1.821.2 and frontier 1.821.10 return identical values for every scenario here, so no
 # PolicyEngineConfig pin is needed to ship.
-PE_VERSION = "1.815.1"
+PE_VERSION = "1.821.2"
 YEAR = "2026"
 
 # Age 35 at the 2026 coverage year, stated in the spec as birth month/year March 1991. Fixed
@@ -127,8 +127,8 @@ class TestKsAcaScenarios(PeIntegrationTestCase):
         The enhanced (ARPA/IRA) credits expired after 2025, so the 400% FPL cap is back in
         force for 2026 and PolicyEngine models it. This is the coverage gap's upper edge and
         the largest behavioral change in the program this year: the same household at
-        $62,000 (396.2% FPL) is eligible for $476. Asserting $0 here is what would fail if
-        the cap were re-lifted or PolicyEngine's parameter changed.
+        $62,599 (399.99% FPL) is eligible for $416.71. Asserting $0 here is what would fail
+        if the cap were re-lifted or PolicyEngine's parameter changed.
 
         Deliberately at 402.6% rather than exactly 400%: PolicyEngine treats exactly 400%
         FPL as ineligible where the statute ("does not exceed 400 percent") makes it
