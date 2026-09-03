@@ -20,6 +20,9 @@ urlpatterns = [
         name="screen-current-benefits",
     ),
     # Benbot assistant — proxies to mfb-ai-service; gated by the 'benbot' feature flag.
+    # The conversations path takes both verbs: POST opens/resumes (a write, which
+    # refreshes the stored context), GET reads an existing transcript back (creating
+    # nothing). They are throttled separately; see AssistantStartView.get_throttles.
     path(
         "screens/<uuid:screen_uuid>/assistant/conversations/",
         assistant.AssistantStartView.as_view(),

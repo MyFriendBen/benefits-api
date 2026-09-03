@@ -15,6 +15,7 @@ and can only discuss what this payload contains. Two invariants matter.
 See the ai-service repo's docs/04-mfb-ai-service-api-contract.md (Layer 2).
 """
 
+import uuid
 from decimal import Decimal
 from unittest import mock
 
@@ -34,6 +35,7 @@ from screener.assistant import (
     CONTEXT_PREFETCH,
     AssistantMessageRateThrottle,
     AssistantStartRateThrottle,
+    AssistantStartView,
     MAX_PROGRAM_VALUE,
     MAX_VISIBLE_PROGRAMS,
     _build_context,
@@ -865,3 +867,141 @@ class AssistantThrottleTests(APITestCase):
         rates = settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]
         self.assertIn("assistant_start", rates)
         self.assertIn("assistant_message", rates)
+
+
+class AssistantHistoryViewTests(APITestCase):
+    """GET on the conversations path — read a transcript back, creating nothing.
+
+    Exists so the chat widget can restore a returning household's conversation when it
+    opens. The emailed results link returns them to the same `screen_uuid`, so their
+    history is on the other end of this call; before it, the widget showed the generic
+    welcome and their transcript only appeared once they sent another message.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(
+            name="Test State", code="test", state_code="TS", feature_flags={"benbot": True}
+        )
+        self.screen = Screen.objects.create(white_label=self.white_label, completed=True, household_size=2)
+        self.url = reverse("assistant-start", args=[self.screen.uuid])
+
+    def _get(self, upstream_status=200, upstream_body=None):
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(
+                status_code=upstream_status,
+                json=lambda: upstream_body if upstream_body is not None else {"conversation_id": "c1", "messages": []},
+            )
+            response = self.client.get(self.url)
+        return response, request
+
+    def test_forwards_the_screen_uuid_as_a_query_parameter(self):
+        response, request = self._get()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(request.call_args.args[0], "GET")
+        self.assertTrue(request.call_args.args[1].endswith("/v1/conversations"))
+        self.assertEqual(request.call_args.kwargs["params"], {"screen_uuid": str(self.screen.uuid)})
+
+    def test_sends_no_request_body(self):
+        """A GET carrying a JSON body is not handled predictably by every intermediary,
+        and ai-service reads the screen id from the query string."""
+        _, request = self._get()
+
+        self.assertIsNone(request.call_args.kwargs["json"])
+
+    def test_passes_the_transcript_through(self):
+        body = {
+            "conversation_id": "c1",
+            "messages": [
+                {"message_id": "m1", "role": "user", "text": "what about WIC?", "created_at": "2026-09-01T00:00:00Z"},
+                {"message_id": "m2", "role": "assistant", "text": "here you go", "created_at": "2026-09-01T00:00:01Z"},
+            ],
+        }
+        response, _ = self._get(upstream_body=body)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([m["text"] for m in response.data["messages"]], ["what about WIC?", "here you go"])
+
+    def test_no_history_passes_the_404_through(self):
+        """The common case for a first-time visitor, and not an error — the frontend
+        reads it as "nothing to restore"."""
+        response, _ = self._get(
+            upstream_status=404,
+            upstream_body={"error": {"code": "conversation_not_found", "message": "none"}},
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["error"]["code"], "conversation_not_found")
+
+    def test_assembles_no_context(self):
+        """A read must not build or send context. The POST refreshes ai-service's
+        stored snapshot; if this did too, merely opening the widget would overwrite the
+        context an in-flight conversation is reasoning from (the MFB-1427 failure)."""
+        _, request = self._get()
+
+        self.assertNotIn("context", request.call_args.kwargs.get("params") or {})
+        self.assertIsNone(request.call_args.kwargs["json"])
+
+    def test_disabled_flag_is_403_and_calls_nothing(self):
+        self.white_label.feature_flags = {"benbot": False}
+        self.white_label.save()
+
+        with mock.patch("screener.assistant.requests.request") as request:
+            response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)
+        request.assert_not_called()
+
+    def test_unknown_screen_is_404_and_calls_nothing(self):
+        url = reverse("assistant-start", args=[uuid.uuid4()])
+
+        with mock.patch("screener.assistant.requests.request") as request:
+            response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 404)
+        request.assert_not_called()
+
+    def test_read_uses_its_own_throttle_not_the_start_budget(self):
+        """Reads are cheap and frequent (the widget opens on nearly every results page,
+        and a reload repeats it). On the 30/hour start budget, ordinary browsing would
+        exhaust a household's ability to open a conversation at all.
+        """
+        view = AssistantStartView()
+        view.request = mock.Mock(method="GET")
+
+        throttles = view.get_throttles()
+
+        self.assertEqual([t.scope for t in throttles], ["assistant_history"])
+
+    def test_post_still_uses_the_start_throttle(self):
+        view = AssistantStartView()
+        view.request = mock.Mock(method="POST")
+
+        throttles = view.get_throttles()
+
+        self.assertEqual([t.scope for t in throttles], ["assistant_start"])
+
+    def test_head_is_throttled_as_a_read_not_as_a_start(self):
+        """Django's `View.setup` aliases HEAD to the `get` handler when no `head` is
+        defined, so a HEAD request is served by the read path and must be charged to
+        the read budget. Matching only "GET" put it on the 30/hour start budget — the
+        exact inversion `get_throttles` exists to prevent, and the throttle keys on
+        client IP, so one scanner or prefetcher would spend that budget for everyone
+        behind the same address.
+        """
+        view = AssistantStartView()
+        view.request = mock.Mock(method="HEAD")
+
+        throttles = view.get_throttles()
+
+        self.assertEqual([t.scope for t in throttles], ["assistant_history"])
+
+    def test_head_reaches_the_read_handler(self):
+        """Pins the aliasing the test above depends on, so it cannot quietly stop being
+        true (by someone defining a `head` method, say) and leave that test vacuous."""
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(status_code=200, json=lambda: {"conversation_id": "c1", "messages": []})
+            response = self.client.head(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(request.call_args.args[0], "GET")
