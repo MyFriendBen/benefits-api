@@ -1,46 +1,23 @@
-from django.test import TestCase
-from unittest.mock import patch
-
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from screener.models import IncomeStream
 from programs.programs.white_labels.wa.seattle_fresh_bucks.calculator import WaSeattleFreshBucks
-from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
-from programs.models import Program, FederalPoveryLimit
-from programs.util import Dependencies
 
 
-class TestWaSeattleFreshBucks(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.wa_white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
-        cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
-        cls.program = Program.objects.new_program(white_label="wa", name_abbreviated="wa_seattle_fresh_bucks")
-        cls.program.year = cls.fpl_year
-        cls.program.save()
+class TestWaSeattleFreshBucks(CustomCalculatorTestCase):
+    calculator_class = WaSeattleFreshBucks
+    program_code = "wa_seattle_fresh_bucks"
+    white_label_code = "wa"
+    state_code = "WA"
+    default_zipcode = "98103"
+    default_county = "King County"
 
     def setUp(self):
-        self.screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="98103",
-            county="King County",
-            household_size=1,
-            white_label=self.wa_white_label,
-            completed=False,
-        )
-        self.head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=30,
-            has_income=True,
-        )
-        IncomeStream.objects.create(
-            screen=self.screen,
-            household_member=self.head,
-            type="wages",
-            amount=2500,
-            frequency="monthly",
-        )
+        super().setUp()
+        self.screen = self.make_screen(household_size=1)
+        self.head = self.add_member(self.screen, "headOfHousehold", 30, has_income=True, monthly_income=2500)
 
     def create_calculator(self, screen=None):
-        return WaSeattleFreshBucks(screen or self.screen, self.program, {}, Dependencies())
+        return self.make_calculator(screen or self.screen)
 
     # --- Class attributes ---
 
@@ -55,143 +32,122 @@ class TestWaSeattleFreshBucks(TestCase):
 
     # --- Location ---
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_eligible_seattle_zip(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        calc = self.create_calculator()
-        self.assertTrue(calc.eligible().eligible)
+    def test_eligible_seattle_zip(self):
+        with self.hud_ami(100_000):
+            calc = self.create_calculator()
+            self.assertTrue(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_ineligible_non_seattle_zip(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        self.screen.zipcode = "98004"  # Bellevue
-        self.screen.save()
-        calc = self.create_calculator()
-        self.assertFalse(calc.eligible().eligible)
-
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_all_test_scenario_zips_are_seattle(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        for zipcode in ["98103", "98118", "98144", "98122"]:
-            self.screen.zipcode = zipcode
+    def test_ineligible_non_seattle_zip(self):
+        with self.hud_ami(100_000):
+            self.screen.zipcode = "98004"  # Bellevue
             self.screen.save()
             calc = self.create_calculator()
-            self.assertTrue(calc.eligible().eligible, f"Expected {zipcode} to be eligible")
+            self.assertFalse(calc.eligible().eligible)
+
+    def test_all_test_scenario_zips_are_seattle(self):
+        with self.hud_ami(100_000):
+            for zipcode in ["98103", "98118", "98144", "98122"]:
+                self.screen.zipcode = zipcode
+                self.screen.save()
+                calc = self.create_calculator()
+                self.assertTrue(calc.eligible().eligible, f"Expected {zipcode} to be eligible")
 
     # --- Age ---
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_eligible_head_age_18(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        self.head.age = 18
-        self.head.save()
-        calc = self.create_calculator()
-        self.assertTrue(calc.eligible().eligible)
+    def test_eligible_head_age_18(self):
+        with self.hud_ami(100_000):
+            self.head.age = 18
+            self.head.save()
+            calc = self.create_calculator()
+            self.assertTrue(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_ineligible_head_age_17(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        self.head.age = 17
-        self.head.save()
-        calc = self.create_calculator()
-        self.assertFalse(calc.eligible().eligible)
+    def test_ineligible_head_age_17(self):
+        with self.hud_ami(100_000):
+            self.head.age = 17
+            self.head.save()
+            calc = self.create_calculator()
+            self.assertFalse(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_eligible_senior_head(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        self.head.age = 72
-        self.head.save()
-        calc = self.create_calculator()
-        self.assertTrue(calc.eligible().eligible)
+    def test_eligible_senior_head(self):
+        with self.hud_ami(100_000):
+            self.head.age = 72
+            self.head.save()
+            calc = self.create_calculator()
+            self.assertTrue(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_ineligible_head_age_none(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        self.head.age = None
-        self.head.save()
-        calc = self.create_calculator()
-        self.assertFalse(calc.eligible().eligible)
+    def test_ineligible_head_age_none(self):
+        with self.hud_ami(100_000):
+            self.head.age = None
+            self.head.save()
+            calc = self.create_calculator()
+            self.assertFalse(calc.eligible().eligible)
 
     # --- Income ---
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_eligible_income_below_ami(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 84_850  # 80% AMI 1-person
-        calc = self.create_calculator()
-        self.assertTrue(calc.eligible().eligible)
+    def test_eligible_income_below_ami(self):
+        # 80% AMI 1-person
+        with self.hud_ami(84_850):
+            calc = self.create_calculator()
+            self.assertTrue(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_eligible_income_exactly_at_ami(self, mock_hud):
-        # $7,071/mo × 12 = $84,852/yr; limit set to match exactly
-        IncomeStream.objects.filter(screen=self.screen).update(amount=7071, frequency="monthly")
-        mock_hud.get_screen_il_ami.return_value = 84_852
-        calc = self.create_calculator()
-        self.assertTrue(calc.eligible().eligible)
+    def test_eligible_income_exactly_at_ami(self):
+        with self.hud_ami(84_852):
+            # $7,071/mo × 12 = $84,852/yr; limit set to match exactly
+            IncomeStream.objects.filter(screen=self.screen).update(amount=7071, frequency="monthly")
+            calc = self.create_calculator()
+            self.assertTrue(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_ineligible_income_above_ami(self, mock_hud):
-        IncomeStream.objects.filter(screen=self.screen).update(amount=7072, frequency="monthly")
-        mock_hud.get_screen_il_ami.return_value = 84_850  # $7,072/mo × 12 = $84,864 > $84,850
-        calc = self.create_calculator()
-        self.assertFalse(calc.eligible().eligible)
+    def test_ineligible_income_above_ami(self):
+        # $7,072/mo × 12 = $84,864 > $84,850
+        with self.hud_ami(84_850):
+            IncomeStream.objects.filter(screen=self.screen).update(amount=7072, frequency="monthly")
+            calc = self.create_calculator()
+            self.assertFalse(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_eligible_zero_income(self, mock_hud):
-        IncomeStream.objects.filter(screen=self.screen).delete()
-        self.head.has_income = False
-        self.head.save()
-        mock_hud.get_screen_il_ami.return_value = 84_850
-        calc = self.create_calculator()
-        self.assertTrue(calc.eligible().eligible)
+    def test_eligible_zero_income(self):
+        with self.hud_ami(84_850):
+            IncomeStream.objects.filter(screen=self.screen).delete()
+            self.head.has_income = False
+            self.head.save()
+            calc = self.create_calculator()
+            self.assertTrue(calc.eligible().eligible)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_ineligible_on_hud_client_error(self, mock_hud):
-        from integrations.clients.hud_income_limits import HudIncomeClientError
+    def test_ineligible_on_hud_client_error(self):
+        with self.hud_ami(unavailable=True):
+            calc = self.create_calculator()
+            self.assertFalse(calc.eligible().eligible)
 
-        mock_hud.get_screen_il_ami.side_effect = HudIncomeClientError("API unavailable")
-        calc = self.create_calculator()
-        self.assertFalse(calc.eligible().eligible)
-
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_hud_client_called_with_correct_args(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        calc = self.create_calculator()
-        calc.eligible()
-        mock_hud.get_screen_il_ami.assert_called_once_with(self.screen, "80%", "2025")
+    def test_hud_client_called_with_correct_args(self):
+        with self.hud_ami(100_000) as mock_hud:
+            calc = self.create_calculator()
+            calc.eligible()
+            mock_hud.get_screen_il_ami.assert_called_once_with(self.screen, "80%", "2025")
 
     # --- Benefit value ---
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_value_is_yearly_when_eligible(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        calc = self.create_calculator()
-        e = calc.eligible()
-        calc.value(e)
-        self.assertEqual(e.value, 60 * 12)
+    def test_value_is_yearly_when_eligible(self):
+        with self.hud_ami(100_000):
+            calc = self.create_calculator()
+            e = calc.eligible()
+            calc.value(e)
+            self.assertEqual(e.value, 60 * 12)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_value_is_household_level_not_per_member(self, mock_hud):
+    def test_value_is_household_level_not_per_member(self):
         """Multi-adult household still gets a single $60/mo ($720/yr) benefit."""
-        mock_hud.get_screen_il_ami.return_value = 200_000
-        self.screen.household_size = 2
-        self.screen.save()
-        HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="spouse",
-            age=28,
-            has_income=False,
-        )
-        calc = self.create_calculator()
-        e = calc.eligible()
-        calc.value(e)
-        self.assertEqual(e.value, 60 * 12)
+        with self.hud_ami(200_000):
+            self.screen.household_size = 2
+            self.screen.save()
+            self.add_member(self.screen, "spouse", 28, has_income=False)
+            calc = self.create_calculator()
+            e = calc.eligible()
+            calc.value(e)
+            self.assertEqual(e.value, 60 * 12)
 
-    @patch("programs.programs.white_labels.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_value_is_0_when_ineligible(self, mock_hud):
-        mock_hud.get_screen_il_ami.return_value = 100_000
-        self.screen.zipcode = "98004"
-        self.screen.save()
-        calc = self.create_calculator()
-        e = calc.eligible()
-        calc.value(e)
-        self.assertEqual(e.value, 0)
+    def test_value_is_0_when_ineligible(self):
+        with self.hud_ami(100_000):
+            self.screen.zipcode = "98004"
+            self.screen.save()
+            calc = self.create_calculator()
+            e = calc.eligible()
+            calc.value(e)
+            self.assertEqual(e.value, 0)
