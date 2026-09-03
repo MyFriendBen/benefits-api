@@ -6,14 +6,23 @@ contract between the two repos, and these tests are what pin them. If a constrai
 here is relaxed, ai-service's Postgres store loses a guarantee it relies on.
 """
 
+import importlib
 import uuid
 from datetime import timedelta
 
-from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.contrib.admin.sites import AdminSite
+from django.db import IntegrityError, connection, transaction
+from django.test import RequestFactory, TestCase, TransactionTestCase
 from django.utils import timezone
 
-from screener.models import AssistantConversation, AssistantMessage
+from authentication.models import User
+from screener.admin import AssistantConversationAdmin
+from screener.models import AssistantConversation, AssistantMessage, WhiteLabel
+
+# Migration 0163 turns the message foreign key into a database-level ON DELETE
+# CASCADE. Imported by name because the module starts with a digit, so the plain
+# `import` statement cannot reach it.
+MIGRATION_0163 = importlib.import_module("screener.migrations.0163_assistant_message_db_cascade")
 
 
 def make_conversation(**overrides) -> AssistantConversation:
@@ -107,7 +116,13 @@ class TestAssistantConversationConstraints(TestCase):
 
         self.assertEqual(conversation.messages.count(), 4)
 
-    def test_deleting_a_conversation_removes_its_messages(self):
+    def test_orm_delete_of_a_conversation_removes_its_messages(self):
+        """Covers Django's Python-level cascade only — NOT migration 0163.
+
+        `on_delete=models.CASCADE` makes the ORM collect and delete children itself,
+        so this passes with or without a database-level cascade. The migration's own
+        SQL is covered by TestDatabaseLevelCascade below.
+        """
         conversation = make_conversation()
         make_message(conversation, seq=0)
         make_message(conversation, seq=1, role="assistant")
@@ -142,3 +157,179 @@ class TestAssistantConversationConstraints(TestCase):
         stored = AssistantConversation.objects.get(pk=conversation.pk)
         self.assertEqual(stored.created_at, stamp)
         self.assertEqual(stored.updated_at, stamp)
+
+
+class TestDatabaseLevelCascade(TransactionTestCase):
+    """Migration 0163's SQL, exercised for real against Postgres.
+
+    This has to apply the migration's SQL itself. pytest runs with `--nomigrations`
+    (see pytest.ini), so the test schema is built from the models and no `RunSQL` ever
+    executes — the foreign key in the test database has NO database-level cascade.
+    Without this class, 0163 had zero coverage: the ORM-delete test above passes
+    either way, so dropping or breaking the migration left the suite green and the
+    failure surfaced only on the path 0163 exists for — a raw `DELETE`, which is how
+    mfb-ai-service (no ORM) and any future bulk deletion would do it.
+
+    Importing `_ADD_DB_CASCADE` rather than restating the SQL is the point: what gets
+    tested is the string the migration actually runs.
+
+    `TransactionTestCase`, not `TestCase`, for two reasons that are the same reason —
+    the transaction a `TestCase` wraps each test in distorts precisely what is under
+    test here. Postgres refuses `ALTER TABLE` on a table with pending deferred-FK
+    trigger events ("cannot ALTER TABLE ... because it has pending trigger events"),
+    which any prior ORM insert leaves behind; and Django's foreign keys are DEFERRABLE
+    INITIALLY DEFERRED, so inside an open transaction both the violation and the
+    cascade action fire at commit rather than at the statement, which is not how
+    production behaves. Running in autocommit costs a table flush per test and buys
+    semantics that match the deployed database.
+    """
+
+    def setUp(self):
+        # Autocommit means the DDL below is NOT rolled back at the end of the test, so
+        # it has to be undone explicitly or it leaks into every later test sharing this
+        # database. Registered before anything runs, so it also covers a failure
+        # partway through. `_DROP_DB_CASCADE` is safe to run whether or not the cascade
+        # was ever applied — it restores the constraint to NO ACTION either way.
+        self.addCleanup(self._restore_no_action)
+
+    def _restore_no_action(self) -> None:
+        with connection.cursor() as cursor:
+            cursor.execute(MIGRATION_0163._DROP_DB_CASCADE)
+
+    def _apply_cascade(self) -> None:
+        with connection.cursor() as cursor:
+            cursor.execute(MIGRATION_0163._ADD_DB_CASCADE)
+
+    def _delete_type(self) -> str:
+        """`pg_constraint.confdeltype` for the message FK: 'a' = no action, 'c' = cascade."""
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """SELECT confdeltype FROM pg_constraint
+                   WHERE conrelid = 'screener_assistantmessage'::regclass AND contype = 'f'"""
+            )
+            return cursor.fetchone()[0]
+
+    def _raw_delete(self, conversation_id) -> None:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM screener_assistantconversation WHERE conversation_id = %s",
+                [str(conversation_id)],
+            )
+
+    def test_the_test_database_starts_without_the_cascade(self):
+        """Guards against this whole class becoming vacuous.
+
+        If `--nomigrations` were ever dropped, the constraint would already be a
+        cascade and the tests below would pass without proving anything. Then this
+        assertion fails and tells you to simplify rather than silently over-claiming.
+        """
+        self.assertEqual(self._delete_type(), "a")
+
+    def test_migration_sql_converts_the_fk_to_cascade(self):
+        self._apply_cascade()
+
+        self.assertEqual(self._delete_type(), "c")
+
+    def test_raw_sql_delete_cascades_once_the_migration_has_run(self):
+        """The behavior the migration is for: a DELETE issued outside the ORM.
+
+        The cascade is applied before any row exists, because Postgres will not ALTER a
+        table that has pending deferred-FK trigger events from an earlier insert.
+        """
+        self._apply_cascade()
+        conversation = make_conversation()
+        make_message(conversation, seq=0)
+        make_message(conversation, seq=1, role="assistant")
+
+        self._raw_delete(conversation.pk)
+
+        self.assertEqual(AssistantMessage.objects.count(), 0)
+        self.assertEqual(AssistantConversation.objects.count(), 0)
+
+    def test_raw_sql_delete_fails_without_the_migration(self):
+        """Proves the migration is load-bearing rather than decorative — this is what
+        production would do on a raw delete if 0163 were missing."""
+        conversation = make_conversation()
+        make_message(conversation, seq=0)
+
+        with self.assertRaises(IntegrityError):
+            self._raw_delete(conversation.pk)
+
+    def test_reverse_sql_restores_no_action(self):
+        """0163 has to be reversible — `migrate screener 0161` is the documented undo."""
+        self._apply_cascade()
+        self.assertEqual(self._delete_type(), "c")
+
+        self._restore_no_action()
+
+        self.assertEqual(self._delete_type(), "a")
+
+
+class TestAssistantConversationAdminAccess(TestCase):
+    """Superuser-only access to transcripts, and the 500 that used to hide behind it.
+
+    `SecureAdmin` scopes a changelist by white label whenever
+    `hasattr(self.model, "white_label")` is true — and that is true here even though
+    `white_label` is a plain CharField holding a code, because Django gives every
+    concrete field a `DeferredAttribute` class descriptor. So the base class took its
+    scoping branch and ran `filter(white_label__in=request.user.white_labels.all())`,
+    comparing a varchar column against a subquery of integer primary keys. Postgres
+    raised `operator does not exist: character varying = bigint`, which is a 500 on
+    the changelist for every non-superuser staff member — and, before that, the
+    section was listed in the admin nav for them at all, which is the opposite of what
+    these PII rows need.
+    """
+
+    def setUp(self):
+        self.admin = AssistantConversationAdmin(AssistantConversation, AdminSite())
+        self.factory = RequestFactory()
+
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.conversation = make_conversation(white_label="test")
+
+        self.staff = User.objects.create_user(email_or_cell="tenant-staff@example.com", password="pw")
+        self.staff.is_staff = True
+        self.staff.save()
+        self.staff.white_labels.add(self.white_label)
+
+        self.superuser = User.objects.create_user(email_or_cell="root@example.com", password="pw")
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+    def _request(self, user):
+        request = self.factory.get("/admin/screener/assistantconversation/")
+        request.user = user
+        return request
+
+    def test_tenant_staff_get_an_empty_queryset_rather_than_a_database_error(self):
+        """The regression. Evaluating the queryset is the assertion — before the fix
+        this raised ProgrammingError instead of returning rows."""
+        queryset = self.admin.get_queryset(self._request(self.staff))
+
+        self.assertEqual(list(queryset), [])
+
+    def test_tenant_staff_do_not_see_the_section_in_the_admin_nav(self):
+        self.assertFalse(self.admin.has_module_permission(self._request(self.staff)))
+
+    def test_tenant_staff_cannot_view_a_transcript(self):
+        request = self._request(self.staff)
+
+        self.assertFalse(self.admin.has_view_permission(request))
+        self.assertFalse(self.admin.has_view_permission(request, self.conversation))
+
+    def test_superusers_see_every_conversation(self):
+        queryset = self.admin.get_queryset(self._request(self.superuser))
+
+        self.assertEqual([c.pk for c in queryset], [self.conversation.pk])
+
+    def test_superusers_can_view_but_not_modify(self):
+        """Read-only in every direction: ai-service is the writer, and editing a
+        household's transcript after the fact is not something we should be able to
+        do."""
+        request = self._request(self.superuser)
+
+        self.assertTrue(self.admin.has_view_permission(request))
+        self.assertFalse(self.admin.has_add_permission(request))
+        self.assertFalse(self.admin.has_change_permission(request, self.conversation))
+        self.assertFalse(self.admin.has_delete_permission(request, self.conversation))

@@ -131,11 +131,18 @@ class AssistantConversationAdmin(SecureAdmin):
     prompt is built from — and editing a transcript after the fact is not a thing we
     should be able to do at all.
 
-    Access falls out of SecureAdmin: `white_label` here is a CharField holding the
-    white label *code*, not a ForeignKey, so `_model_has_white_label()` is False and
-    non-superusers get an empty queryset. That is the intent rather than an accident
-    — these rows hold free-text household PII, so they should not be visible to
-    tenant staff by default.
+    Superuser-only is enforced EXPLICITLY below rather than left to SecureAdmin's
+    white-label scoping, which cannot work for this model and fails loudly if relied
+    on. `SecureAdmin._model_has_white_label()` tests `hasattr(self.model,
+    "white_label")`, and that is True even though `white_label` here is a plain
+    CharField holding the white label *code*: Django gives every concrete field a
+    `DeferredAttribute` class descriptor. So the base class takes its scoping branch
+    and runs `filter(white_label__in=request.user.white_labels.all())`, comparing a
+    varchar column against a subquery of integer primary keys — `ProgrammingError:
+    operator does not exist: character varying = bigint`, a 500 on the changelist for
+    every non-superuser staff member. These rows hold free-text household PII, so the
+    correct behavior is to be invisible to tenant staff, and that is now stated as
+    code instead of inferred from a base-class side effect.
     """
 
     always_can_view = False
@@ -156,6 +163,28 @@ class AssistantConversationAdmin(SecureAdmin):
         "created_at",
         "updated_at",
     )
+
+    def get_queryset(self, request):
+        """Superusers only. Never fall through to SecureAdmin's white-label filter.
+
+        That filter would compare this model's `white_label` CharField against a
+        queryset of WhiteLabel primary keys and raise a database type error (see the
+        class docstring). Returning an empty queryset is also what we actually want
+        for non-superusers, so this both fixes the 500 and makes the intent explicit.
+        """
+        if not self._is_superuser(request):
+            return self.model._default_manager.none()
+        # SecureAdmin's superuser branch returns the queryset unfiltered, so this is
+        # the ordinary path once the non-superuser case is handled above.
+        return super().get_queryset(request)
+
+    def has_module_permission(self, request):
+        # Keep the section out of the admin nav for tenant staff entirely — the base
+        # class would show it, because _model_has_white_label() is True here.
+        return self._is_superuser(request)
+
+    def has_view_permission(self, request, obj=None):
+        return self._is_superuser(request)
 
     def has_add_permission(self, request):
         return False

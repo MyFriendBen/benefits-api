@@ -584,6 +584,27 @@ class AssistantStartView(views.APIView):
 
     Both live on one URL because they are the write and read halves of the same
     resource, but they are throttled separately — see `get_throttles`.
+
+    WHAT THE GET EXPOSES, recorded as a decision rather than left implicit. Both verbs
+    are AllowAny and the screen UUID is also the results-page URL, which we email to
+    households — so anyone holding that link can read the full transcript, including
+    whatever free text the household typed, which can be far more than the screener
+    itself asks for. That exposure is not new: the POST has always returned `messages`
+    for the same screen, and `_displayed_value` already documents the same "a third
+    party who has seen a link" threat. The GET widens it in three specific ways worth
+    naming:
+
+      - it is silent — the POST mutates the stored context snapshot and creates a
+        conversation, so repeated abuse leaves traces a read does not;
+      - it is cheaper — 120/hour against the POST's 30;
+      - it needs no request body.
+
+    We are accepting that for now because the alternative is real per-household
+    authentication, which this layer does not have (the frontend sends a shared API
+    key, not a session) and which is a larger change than the storage work this
+    endpoint belongs to. Rate limiting is NOT a mitigation here: one request is enough
+    to read a transcript. If Benji ever carries more sensitive disclosure than it does
+    today, this is the endpoint to put behind a real per-screen proof first.
     """
 
     permission_classes = [permissions.AllowAny]
@@ -599,8 +620,15 @@ class AssistantStartView(views.APIView):
         start budget (30/hour). The widget auto-opens on nearly every results page and
         a reload repeats the read, so ordinary browsing would exhaust a household's
         ability to actually open a conversation.
+
+        HEAD counts as a read: Django's `View.setup` aliases it to the `get` handler
+        when no `head` is defined, so a HEAD request is served by `get` below. Matching
+        only "GET" charged it to the start budget instead — the exact inversion this
+        override exists to prevent, and worse than it sounds because
+        `HashedIPAnonRateThrottle` keys on the client IP, so one scanner or prefetcher
+        would spend the budget for everyone behind that address.
         """
-        if self.request.method == "GET":
+        if self.request.method in ("GET", "HEAD"):
             return [AssistantHistoryRateThrottle()]
         return super().get_throttles()
 

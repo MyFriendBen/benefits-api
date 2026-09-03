@@ -980,3 +980,28 @@ class AssistantHistoryViewTests(APITestCase):
         throttles = view.get_throttles()
 
         self.assertEqual([t.scope for t in throttles], ["assistant_start"])
+
+    def test_head_is_throttled_as_a_read_not_as_a_start(self):
+        """Django's `View.setup` aliases HEAD to the `get` handler when no `head` is
+        defined, so a HEAD request is served by the read path and must be charged to
+        the read budget. Matching only "GET" put it on the 30/hour start budget — the
+        exact inversion `get_throttles` exists to prevent, and the throttle keys on
+        client IP, so one scanner or prefetcher would spend that budget for everyone
+        behind the same address.
+        """
+        view = AssistantStartView()
+        view.request = mock.Mock(method="HEAD")
+
+        throttles = view.get_throttles()
+
+        self.assertEqual([t.scope for t in throttles], ["assistant_history"])
+
+    def test_head_reaches_the_read_handler(self):
+        """Pins the aliasing the test above depends on, so it cannot quietly stop being
+        true (by someone defining a `head` method, say) and leave that test vacuous."""
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(status_code=200, json=lambda: {"conversation_id": "c1", "messages": []})
+            response = self.client.head(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(request.call_args.args[0], "GET")
