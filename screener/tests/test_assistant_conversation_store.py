@@ -24,6 +24,16 @@ from screener.models import AssistantConversation, AssistantMessage, WhiteLabel
 # `import` statement cannot reach it.
 MIGRATION_0163 = importlib.import_module("screener.migrations.0163_assistant_message_db_cascade")
 
+# Kept as a named constant rather than inlined into cursor.execute(): a multiline
+# string as the sole argument to a call is formatted one way by black 24 (split onto
+# its own line) and the opposite way by black 25+ (hugged to the parens), so inline it
+# fails `black --check` for someone regardless of which form is committed. CI runs
+# psf/black@stable, i.e. whatever is newest.
+FK_DELETE_TYPE_SQL = """
+SELECT confdeltype FROM pg_constraint
+WHERE conrelid = 'screener_assistantmessage'::regclass AND contype = 'f'
+"""
+
 
 def make_conversation(**overrides) -> AssistantConversation:
     defaults = {
@@ -203,10 +213,7 @@ class TestDatabaseLevelCascade(TransactionTestCase):
     def _delete_type(self) -> str:
         """`pg_constraint.confdeltype` for the message FK: 'a' = no action, 'c' = cascade."""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT confdeltype FROM pg_constraint
-                   WHERE conrelid = 'screener_assistantmessage'::regclass AND contype = 'f'"""
-            )
+            cursor.execute(FK_DELETE_TYPE_SQL)
             return cursor.fetchone()[0]
 
     def _raw_delete(self, conversation_id) -> None:
