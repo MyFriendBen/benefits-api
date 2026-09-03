@@ -133,8 +133,6 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 **Why this matters**: Validates that SNAP categorical eligibility (45 CFR § 1302.12(a)(1)(ii)(B)) independently qualifies a family regardless of income. The same logic applies to TANF and SSI.
 
-**Known limitation**: PolicyEngine determines categorical eligibility from *calculated* SNAP/TANF/SSI, not reported receipt. A household that reports receiving SNAP but whose income is above PolicyEngine's calculated SNAP threshold is not caught by this path, so this scenario is not satisfied by the current PolicyEngine implementation.
-
 ---
 
 ### Scenario 4: Family Above 135% FPL, No Categorical Eligibility — Income Ineligible

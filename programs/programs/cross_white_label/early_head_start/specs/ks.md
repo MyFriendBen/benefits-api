@@ -161,8 +161,6 @@ Early Head Start eligibility can be substantially evaluated with current screene
 
 **Why this matters**: Validates that SNAP categorical eligibility (45 CFR § 1302.12(a)(1)(ii)(B)) independently qualifies a family regardless of income. At ~136% FPL, this family is well above the 100% FPL income limit PolicyEngine enforces (`is_early_head_start_eligible` requires `AGI ≤ 100% FPG` or categorical eligibility), so income is not a valid pathway on its own. Eligibility flows solely from SNAP receipt. Tests a distinct code branch from Scenario 1. The same logic applies to TANF and SSI.
 
-**Known limitation** (same as shipped HS, PR #1622): PolicyEngine determines categorical eligibility from *calculated* SNAP/TANF/SSI, not reported receipt. A household that reports receiving SNAP but whose income is above PolicyEngine's calculated SNAP threshold is not caught by this path, so this scenario is not satisfied by the current PolicyEngine implementation unless the household's income also clears PE's own SNAP calculation.
-
 ---
 
 ### Scenario 5: Family Above 100% FPL, No Categorical Eligibility — Income Ineligible
