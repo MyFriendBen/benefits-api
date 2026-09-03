@@ -31,19 +31,44 @@ class TestKsKanCareScenarios(TestCase):
         m.has_disability = Mock(return_value=is_disabled)
         return m
 
+    def _pe(self, calc, medicaid=0, category="NONE", abd=False):
+        """Stand in for PolicyEngine's answer about one member.
+
+        Both variables have to be modelled, not just the one a scenario is about: ``medicaid``
+        and ``medicaid_category`` are read together, and ``member_value`` consults the ABD flag
+        only for the members the ordinary pathway does not price.
+        """
+        calc.get_member_variable = Mock(return_value=medicaid)
+
+        def dependency_value(dependency, member_id):
+            if dependency is member_deps.MedicaidSeniorOrDisabled:
+                return abd
+            if dependency is member_deps.MedicaidCategory:
+                return category
+            raise AssertionError(f"unexpected dependency read: {dependency}")
+
+        calc.get_member_dependency_value = Mock(side_effect=dependency_value)
+
     def _magi_eligible(self, calc, category):
         """PE finds the member MAGI-eligible in ``category`` (non-senior, non-disabled path)."""
-        calc.get_member_variable = Mock(return_value=1)
-        calc.get_member_dependency_value = Mock(return_value=category)
+        self._pe(calc, medicaid=1, category=category)
 
     def _magi_ineligible(self, calc):
         """PE returns the member ineligible on the MAGI path."""
-        calc.get_member_variable = Mock(return_value=0)
-        calc.get_member_dependency_value = Mock(return_value="NONE")
+        self._pe(calc, medicaid=0, category="NONE")
 
     def _abd(self, calc, qualifies):
-        """PE's is_optional_senior_or_disabled_for_medicaid result for the ABD/senior path."""
-        calc.get_member_dependency_value = Mock(return_value=qualifies)
+        """PE finds the member eligible on the ABD pathway, or not.
+
+        specs/ks.md records that PE returns ``SSI_RECIPIENT`` for every KS ABD scenario, so an
+        ABD-eligible member is medicaid-eligible in PE's eyes too; an ineligible one is neither.
+        ``SSI_RECIPIENT`` carries no aged/disabled distinction of its own, which is exactly why
+        the value tier comes from the member's own age and disability flags.
+        """
+        if qualifies:
+            self._pe(calc, medicaid=1, category="SSI_RECIPIENT", abd=True)
+        else:
+            self._pe(calc, medicaid=0, category="NONE", abd=False)
 
     # --- Scenario 1 & 2: pregnant, low income / near boundary -> PREGNANT $3,648 ---
     def test_s1_pregnant_low_income_eligible(self):

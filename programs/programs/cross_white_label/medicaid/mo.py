@@ -31,11 +31,11 @@ class MoHealthNet(Medicaid):
       still found eligible through expansion.
     - No Substantial Gainful Activity test gates the disability pathways. Not measured.
 
-    Two behaviours are ours rather than PolicyEngine's, both in ``Medicaid.member_value``
-    and shared by every Medicaid state, so neither is worked around here: a member who
-    reports a disability and fails the aged/disabled pathway is not then evaluated for
-    adult expansion, and a member who is both 65+ and disabled is valued at the disabled
-    rather than the senior rate.
+    Valuation is ours rather than PolicyEngine's, and lives in ``Medicaid.member_value``:
+    PolicyEngine decides which pathway found a member eligible, and the KFF group is then
+    assigned from the member's own age and disability, per specs/mo.md's value-priority
+    rule. ``senior_value_takes_precedence`` below is the one place Missouri departs from
+    the shared default.
     """
 
     program_code = "mo_medicaid"
@@ -78,3 +78,8 @@ class MoHealthNet(Medicaid):
         "AGED": KFF_SENIORS / 12,
         "DISABLED": KFF_DISABLED / 12,
     }
+
+    # KFF defines Seniors as 65+ regardless of disability, and specs/mo.md's
+    # value-priority rule follows it: "age 65+ -> Seniors, even if disability-eligible".
+    # The default is the opposite because specs/ks.md reads its source table the other way.
+    senior_value_takes_precedence = True

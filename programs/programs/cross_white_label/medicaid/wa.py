@@ -63,9 +63,7 @@ class WaAppleHealthMedicaid(Medicaid):
                 qualifies = self.get_member_dependency_value(dependency.member.MedicaidSeniorOrDisabled, member.id)
                 if not qualifies:
                     return 0
-                if is_disabled:
-                    return self.medicaid_categories["DISABLED"] * 12
-                return self.medicaid_categories["AGED"] * 12
+                return self.abd_value(is_senior, is_disabled)
 
             # Medicare-entitled, not senior/disabled → ineligible for expansion
             return 0
