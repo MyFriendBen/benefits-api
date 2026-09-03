@@ -3,23 +3,13 @@ from django.db import migrations, models
 from programs.fpl_values import MAX_MATERIALIZED_SIZE, limits_for_period
 
 
-# The FPL thresholds live in the _FPL_DEFAULTS constant in programs/models.py;
-# FederalPoveryLimit stores only a year and a period pointing into it. That works for
-# the calculators, which resolve limits in Python through get_limit(), but it means
-# anything reading the database alone -- the dbt/Metabase analytics pipeline -- cannot
-# compute a percent-of-FPL band. MFB-1182 needs exactly that, to segment the CESN
-# dashboard by income without ever exposing a household's actual income.
+# Creates the FederalPovertyLimitValue mirror and does its initial fill. See the
+# model docstring for why it exists; MFB-1182 needs it to band the CESN dashboard
+# by income without exposing a household's actual income.
 #
-# This creates the mirror table and fills it from the constant. Nothing about the
-# eligibility path changes: get_limit() and as_dict() still read the constant, and a
-# test asserts the table reproduces get_limit() for every period and size so the two
-# cannot drift. When a new year is added to the constant, `manage.py sync_fpl_values`
-# brings the table forward -- this migration is the initial fill, not the mechanism.
-#
-# The constant is imported here rather than inlined. A data migration that reads app
-# code is normally a smell, because the code can change under a migration that already
-# ran. It is safe in this direction: the table is a derived mirror, re-running the sync
-# is idempotent, and the parity test fails loudly if the two ever disagree.
+# A migration runs once, so it is the initial fill and not the mechanism: the
+# deploy runs `manage.py sync_fpl_values` on every release to keep the table
+# current as years are added to the constant.
 def populate(apps, schema_editor):
     from programs.models import _get_fpl_data
 
@@ -31,7 +21,7 @@ def populate(apps, schema_editor):
         for size, limit in limits_for_period(table, MAX_MATERIALIZED_SIZE).items()
     ]
 
-    FederalPovertyLimitValue.objects.bulk_create(rows, ignore_conflicts=True)
+    FederalPovertyLimitValue.objects.bulk_create(rows)
     print(f"✅ materialized {len(rows)} FPL threshold rows")
 
 
@@ -42,7 +32,7 @@ def clear(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0170_deactivate_il_rent_asst"),
+        ("programs", "0172_consolidate_shared_program_categories"),
     ]
 
     operations = [

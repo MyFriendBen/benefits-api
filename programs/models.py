@@ -99,19 +99,35 @@ class FederalPoveryLimit(models.Model):
 class FederalPovertyLimitValue(models.Model):
     """A database mirror of FederalPoveryLimit.get_limit(), one row per size.
 
-    FederalPoveryLimit stores a year and a period; the dollar thresholds live in
-    the _FPL_DEFAULTS constant above, so a consumer that can only read the
-    database -- the dbt/Metabase analytics pipeline -- cannot compute a
-    percent-of-FPL band. This table exists for those consumers.
+    The canonical explanation of this table lives here; other modules point back
+    rather than restate it.
 
-    It is a mirror, not a second source of truth. The constant stays
-    authoritative and the calculators keep reading it through get_limit();
-    programs.fpl_values.sync_fpl_values() rewrites this table from the constant,
-    and a test asserts the two agree so they cannot drift apart unnoticed. If you
-    add a year to _FPL_DEFAULTS, run `manage.py sync_fpl_values`.
+    WHY: FederalPoveryLimit stores a year and a period, while the dollar
+    thresholds live in the _FPL_DEFAULTS constant above. A consumer that can only
+    read the database -- the dbt/Metabase analytics pipeline -- therefore cannot
+    compute a percent-of-FPL band. This table is for those consumers.
 
-    Sizes beyond MAX_DEFINED_SIZE are materialized with the per-additional-person
-    amount already applied, so joins do not have to reimplement that arithmetic.
+    NOT A SECOND SOURCE OF TRUTH: the constant stays authoritative and the
+    calculators keep reading it through get_limit(). sync_fpl_values() rewrites
+    this table from the constant and runs on every deploy, so adding a year to
+    the constant cannot leave the table behind. Unit tests verify sync produces a
+    table matching get_limit(); they cannot verify a given environment has been
+    synced, which is why the deploy hook rather than the tests is what keeps prod
+    honest.
+
+    CONTRACT WITH CONSUMERS:
+      * Sizes beyond MAX_DEFINED_SIZE are materialized with the
+        per-additional-person amount already applied, so a join does not have to
+        reimplement that arithmetic.
+      * Rows stop at fpl_values.MAX_MATERIALIZED_SIZE. get_limit() extrapolates
+        without limit, so a household larger than the cap has no row. Consumers
+        must clamp to the largest available size rather than joining loosely and
+        reading a NULL as "no band". The dbt bridge model does this.
+      * Keyed on `period`, deliberately not a FK. FederalPoveryLimit.period is
+        not unique (only `year` is), so there is no single row to point at, and
+        an analytics mirror should not gain a write-path constraint. The cost is
+        that a FederalPoveryLimit whose period has no rows here is possible;
+        as_dict() already raises KeyError for that case.
     """
 
     period = models.CharField(max_length=32, db_index=True)

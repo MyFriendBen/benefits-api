@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.db.utils import IntegrityError
 from django.test import SimpleTestCase, TestCase
 
-from programs.fpl_values import MAX_MATERIALIZED_SIZE, sync_fpl_values
+from programs.fpl_values import MAX_MATERIALIZED_SIZE, limits_for_period, sync_fpl_values
 from programs.models import (
     _FPL_DEFAULTS,
     FederalPoveryLimit,
@@ -108,18 +108,16 @@ class FederalPovertyLimitTests(SimpleTestCase):
 class FederalPovertyLimitValueTests(TestCase):
     """The materialized FPL table must reproduce get_limit() exactly.
 
-    FederalPovertyLimitValue exists so SQL-only consumers (the dbt/Metabase
-    analytics pipeline) can compute a percent-of-FPL band, which they cannot do
-    while the thresholds live only in a Python constant. It is a mirror of
-    _FPL_DEFAULTS, so the risk it introduces is drift: someone adds a year to the
-    constant and the table silently keeps answering with the old one. These tests
-    are what make that a CI failure instead of a wrong number on a dashboard.
+    These verify that sync_fpl_values() produces a table matching get_limit().
+    They deliberately do NOT claim to catch a given environment drifting out of
+    sync -- CI builds a fresh database and syncs it here, so it can never observe
+    prod's state. Keeping prod current is the deploy hook's job (see the Sync FPL
+    values step in .github/actions/heroku-migrations), with
+    `sync_fpl_values --dry-run` available as a drift check that exits non-zero.
 
-    setUp syncs the table rather than relying on migration 0171 having filled it:
-    pytest.ini runs with --nomigrations, so pytest-django builds the schema from
-    the models and never executes a RunPython. Depending on the migration here
-    would pass under `manage.py test` and fail in CI. The migration's own
-    populate() is covered separately below, by calling it directly.
+    setUp syncs rather than relying on migration 0173: pytest.ini runs with
+    --nomigrations, so pytest-django builds the schema from the models and never
+    executes a RunPython. The migration's own populate() is covered separately.
     """
 
     def setUp(self):
@@ -138,7 +136,7 @@ class FederalPovertyLimitValueTests(TestCase):
         """
         expected = len(_FPL_DEFAULTS) * MAX_MATERIALIZED_SIZE
         FederalPovertyLimitValue.objects.all().delete()
-        migration = import_module("programs.migrations.0171_federal_poverty_limit_value")
+        migration = import_module("programs.migrations.0173_federal_poverty_limit_value")
 
         migration.populate(global_apps, None)
 
@@ -188,6 +186,11 @@ class FederalPovertyLimitValueTests(TestCase):
         with self.assertRaises(IntegrityError):
             FederalPovertyLimitValue.objects.create(period="2026", household_size=4, annual_limit=1)
 
+    def test_expanding_a_table_with_no_sizes_raises(self):
+        """defined[-1] would otherwise be an IndexError on a malformed table."""
+        with self.assertRaises(ValueError):
+            limits_for_period({"additional": 5_000})
+
     def test_command_reports_a_clean_sync(self):
         out = StringIO()
 
@@ -195,14 +198,51 @@ class FederalPovertyLimitValueTests(TestCase):
 
         self.assertIn("0 created, 0 updated, 0 deleted", out.getvalue())
 
-    def test_dry_run_reports_drift_without_writing(self):
+    def test_dry_run_reports_drift_and_exits_non_zero(self):
+        """--dry-run is usable as a drift alarm, so drift must fail the command."""
         row = FederalPovertyLimitValue.objects.get(period="2026", household_size=4)
         row.annual_limit = 1
         row.save(update_fields=["annual_limit"])
+        err = StringIO()
+
+        with self.assertRaises(SystemExit) as raised:
+            call_command("sync_fpl_values", "--dry-run", stderr=err)
+        row.refresh_from_db()
+
+        self.assertEqual(raised.exception.code, 1)
+        self.assertIn("OUT OF DATE", err.getvalue())
+        self.assertEqual(row.annual_limit, 1, "dry run must not write")
+
+    def test_dry_run_is_quiet_and_succeeds_when_in_sync(self):
         out = StringIO()
 
         call_command("sync_fpl_values", "--dry-run", stdout=out)
-        row.refresh_from_db()
 
-        self.assertIn("update 1", out.getvalue())
-        self.assertEqual(row.annual_limit, 1, "dry run must not write")
+        self.assertIn("up to date", out.getvalue())
+
+    def test_dry_run_counts_match_a_real_sync(self):
+        """The preview and the write share one diff, so they cannot disagree.
+
+        A separate preview implementation would drift from the real one and start
+        lying about what a sync would do -- the point of threading dry_run through
+        sync_fpl_values rather than recomputing the diff in the command.
+        """
+        FederalPovertyLimitValue.objects.filter(period="2026", household_size__in=[4, 5]).delete()
+        row = FederalPovertyLimitValue.objects.get(period="2025", household_size=1)
+        row.annual_limit = 1
+        row.save(update_fields=["annual_limit"])
+        FederalPovertyLimitValue.objects.create(period="1999", household_size=1, annual_limit=1)
+
+        previewed = sync_fpl_values(dry_run=True)
+        actual = sync_fpl_values()
+
+        self.assertEqual(previewed, {"created": 2, "updated": 1, "deleted": 1})
+        self.assertEqual(previewed, actual)
+
+    def test_dry_run_writes_nothing(self):
+        FederalPovertyLimitValue.objects.filter(period="2026").delete()
+        before = FederalPovertyLimitValue.objects.count()
+
+        sync_fpl_values(dry_run=True)
+
+        self.assertEqual(FederalPovertyLimitValue.objects.count(), before)
