@@ -70,7 +70,7 @@
 
 ## Test Scenarios
 
-> All three scenarios use a single-person tax unit, no employer-sponsored insurance, no dependents, 2026. Ages are entered via birth month/year (the screener's actual fields).
+> All five scenarios use a single-person tax unit with no dependents, 2026. Ages are entered via birth month/year (the screener's actual fields). Employer-sponsored insurance is absent everywhere except Scenario 5, which exists to test it.
 
 ### Scenario 1: Single Adult, Wyandotte County — 120% FPL, Non-Expansion Coverage Gap (Golden Path)
 
