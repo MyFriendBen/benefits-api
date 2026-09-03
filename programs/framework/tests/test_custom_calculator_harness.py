@@ -233,3 +233,45 @@ class TestAgeDerivation(CustomCalculatorTestCase):
 
         self.assertAlmostEqual(member.fraction_age(), 3.5, places=6)
         self.assertEqual(member.calc_age(), 3)
+
+
+class TestPinnedReferenceDate(CustomCalculatorTestCase):
+    """`reference_date` freezes the clock scenarios written against a calendar are read by."""
+
+    calculator_class = _Uninsured
+    needs_program_row = False
+    reference_date = date(2026, 7, 22)
+
+    def test_the_screen_reads_the_pinned_date(self):
+        self.assertEqual(self.make_screen().get_reference_date(), date(2026, 7, 22))
+
+    def test_a_literal_birth_month_is_read_against_the_pin(self):
+        """A date copied from a spec keeps its age as the calendar moves."""
+        member = self.add_member(self.make_screen(), age=None, birth_year_month=date(2020, 3, 1))
+
+        self.assertEqual(member.calc_age(), 6)
+
+    def test_an_age_still_round_trips(self):
+        """Derivation uses the same pinned clock the calculator reads."""
+        self.assertEqual(self.add_member(self.make_screen(), age=4).calc_age(), 4)
+
+
+class TestDefaultLocation(CustomCalculatorTestCase):
+    """A white label whose programs are local to one place states it once."""
+
+    calculator_class = _Uninsured
+    needs_program_row = False
+    default_zipcode = "02101"
+    default_county = "Boston"
+
+    def test_a_screen_takes_the_class_default(self):
+        screen = self.make_screen()
+
+        self.assertEqual(screen.zipcode, "02101")
+        self.assertEqual(screen.county, "Boston")
+
+    def test_a_scenario_can_move_away_from_it(self):
+        screen = self.make_screen(county="Malden")
+
+        self.assertEqual(screen.county, "Malden")
+        self.assertEqual(screen.zipcode, "02101")
