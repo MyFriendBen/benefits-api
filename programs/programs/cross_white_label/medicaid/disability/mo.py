@@ -136,12 +136,8 @@ class MoTwha(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
 
-        # Age 16 through 64, inclusive of the birthday month at both ends. `calc_age` counts
-        # the birth month as attained (it compares month >= birth month against the screen's
-        # reference date), which is exactly TWHA's rule per 0855.005.05 — so someone in their
-        # 65th-birthday month reads as 65 and must still pass, while one month later fails.
-        age = self._age(member)
-        e.condition(age is not None and self.min_age <= age <= self.max_age)
+        # Age 16 through 64, inclusive of the calendar month the person turns 16 or 65.
+        e.condition(self._age_eligible(member))
 
         # Qualifying disability. The generic `disabled` flag is deliberately not read: it
         # admits short-term conditions the statutory standard excludes.
@@ -158,17 +154,36 @@ class MoTwha(ProgramCalculator):
     def member_value(self, member: HouseholdMember) -> int:
         return self.member_amount
 
-    def _age(self, member: HouseholdMember):
-        """This member's age against the screen's reference date, month-precision.
+    def _age_eligible(self, member: HouseholdMember) -> bool:
+        """Whether this member is age 16 through 64, counting the birthday month itself at
+        both ends (0855.005.05: "includes the month the person turns age 16 or 65").
 
-        A stored ``birth_year_month`` is what makes the birthday-month boundary decidable, so
-        it is preferred; ``calc_age`` falls back to the bare ``age`` integer when the screener
-        did not record one, and a member with neither fails the age condition closed.
+        ``calc_age`` already treats the birth month as attained — it compares
+        ``reference.month >= birth.month`` — so it reads 16 from the first day of the
+        16th-birthday month, which is the floor TWHA wants. The ceiling needs one more month
+        than ``age <= 64`` allows: someone in their 65th-birthday month reads as 65 and is
+        still covered, while the month after is not. So 65 passes only when the reference
+        date is inside the birthday month itself.
+
+        A member with neither a stored birth date nor an age fails closed.
         """
         try:
-            return member.calc_age()
+            age = member.calc_age()
         except (TypeError, AttributeError):
-            return None
+            return False
+
+        if age is None:
+            return False
+
+        if self.min_age <= age <= self.max_age:
+            return True
+
+        # The 65th-birthday month. Decidable only from a stored birth month; a bare `age`
+        # integer cannot distinguish it from one month later, so it fails closed.
+        if age == self.max_age + 1 and member.birth_month is not None:
+            return member.birth_month == self.screen.get_reference_date().month
+
+        return False
 
     def _assistance_unit(self, worker: HouseholdMember) -> list[HouseholdMember]:
         """The worker, plus their spouse if there is one. Never the whole household —
