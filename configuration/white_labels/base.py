@@ -470,7 +470,10 @@ class ConfigurationData:
             "disabled": {
                 "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "conditionOptions.disabled",
+                    # Distinct label from the "you" page: Translation.label is globally
+                    # unique, so sharing one label makes both pages render whichever
+                    # pronoun that single row happens to hold.
+                    "_label": "conditionOptions.disabled.them",
                     "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
                 },
             },
