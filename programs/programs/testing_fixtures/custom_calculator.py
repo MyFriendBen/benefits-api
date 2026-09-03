@@ -14,9 +14,12 @@ in the 13 files whose calculator reads one. The larger group — 76 files — st
 household → assertion.
 """
 
+from datetime import date
+from typing import Optional
 from unittest.mock import Mock
 
 from django.test import TestCase
+from django.utils import timezone
 
 from programs.framework.base import Eligibility
 from programs.models import FederalPoveryLimit, Program
@@ -63,17 +66,45 @@ def make_screen(
     )
 
 
-def add_member(screen: Screen, relationship: str = "headOfHousehold", age: int = 30, **kwargs) -> HouseholdMember:
+def birth_year_month_for_age(age: float, reference_date: Optional[date] = None) -> date:
+    """The birth month of someone `age` years old on `reference_date`.
+
+    `HouseholdMember.age_from_date` treats the birth month as already attained
+    (`reference_date.month >= birth_month` counts the whole year), so counting whole months
+    back from the reference month lands on a birthday that has just happened. Reading the
+    result back through `calc_age()` returns `age` again, whatever day the suite runs on:
+    the reference month cancels out of both the derivation and the comparison.
+
+    `age` may be fractional, in twelfths — `3.5` is three years six months. The model stores
+    year and month only (`day` is always 1), so anything finer rounds to the nearest month.
+    """
+    months = round(age * 12)
+    reference = reference_date or timezone.now().date()
+    total = reference.year * 12 + reference.month - months
+
+    return date((total - 1) // 12, (total - 1) % 12 + 1, 1)
+
+
+def add_member(screen: Screen, relationship: str = "headOfHousehold", age: float = 30, **kwargs) -> HouseholdMember:
     """Add a household member.
 
-    `age` is the field calculators read. `birth_year_month` derives `fraction_age()` for
-    the programs that need a birthday rather than a whole-year age, so pass it as well
-    when a scenario turns on one.
+    `age` is stated as the scenario states it and may be fractional — `3.5` is three years
+    six months, for the calculators that read `fraction_age()` rather than a whole-year age.
+    Both `age` and a matching `birth_year_month` are set, so a calculator reading either
+    field sees the same person.
+
+    Pass `birth_year_month` explicitly instead when the scenario turns on an absolute
+    calendar date rather than an age — a program start date or an enrollment window — since
+    a birth month derived from today would drift out of that window as the calendar moves.
+    Doing so leaves `age` alone, so pass that too if the calculator reads it.
 
     An `Insurance` row comes with the member, defaulting to uninsured, because the
     relation is one-to-one and non-null: a calculator reading `member.insurance` raises
     `RelatedObjectDoesNotExist` without it. Override with `add_insurance`.
     """
+    if "birth_year_month" not in kwargs and age is not None:
+        kwargs["birth_year_month"] = birth_year_month_for_age(age, screen.get_reference_date())
+
     household_member = HouseholdMember.objects.create(screen=screen, relationship=relationship, age=age, **kwargs)
     Insurance.objects.create(household_member=household_member)
 

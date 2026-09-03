@@ -7,9 +7,8 @@ Tests verify:
 - Correct value calculation ($6,000 / 2.5 years = $2,400/year)
 """
 
-from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.il.nfp.calculator import IlNurseFamilyPartnership
-from screener.models import HouseholdMember, IncomeStream
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
 
@@ -29,20 +28,8 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
     # Household Eligibility Tests
     def test_household_eligible_income_below_300_fpl(self):
         """Test household is eligible when income is below 300% FPL."""
-        parent = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            pregnant=True,
-            has_income=True,
-        )
-        IncomeStream.objects.create(
-            screen=self.screen,
-            household_member=parent,
-            type="wages",
-            amount=2500,
-            frequency="monthly",
-        )
+        parent = self.add_member(self.screen, relationship="headOfHousehold", age=25, pregnant=True, has_income=True)
+        add_income(parent, 2500, income_type="wages", frequency="monthly")
 
         calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
@@ -55,21 +42,9 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
         seed_program(self.white_label, "il_wic", base_program="wic")
         _write_current_benefits(self.screen, ["il_wic"])
 
-        parent = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=28,
-            pregnant=True,
-            has_income=True,
-        )
+        parent = self.add_member(self.screen, relationship="headOfHousehold", age=28, pregnant=True, has_income=True)
         # Income above 300% FPL
-        IncomeStream.objects.create(
-            screen=self.screen,
-            household_member=parent,
-            type="wages",
-            amount=6000,
-            frequency="monthly",
-        )
+        add_income(parent, 6000, income_type="wages", frequency="monthly")
 
         calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
@@ -78,21 +53,9 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
 
     def test_household_ineligible_income_above_300_fpl_no_wic(self):
         """Test household is ineligible when income exceeds 300% FPL and no WIC."""
-        parent = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=30,
-            pregnant=True,
-            has_income=True,
-        )
+        parent = self.add_member(self.screen, relationship="headOfHousehold", age=30, pregnant=True, has_income=True)
         # Income well above 300% FPL
-        IncomeStream.objects.create(
-            screen=self.screen,
-            household_member=parent,
-            type="wages",
-            amount=7000,
-            frequency="monthly",
-        )
+        add_income(parent, 7000, income_type="wages", frequency="monthly")
 
         calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
@@ -102,20 +65,10 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
     # Member Eligibility Tests
     def test_member_eligible_when_pregnant(self):
         """Test member is eligible when pregnant."""
-        pregnant_member = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            pregnant=True,
-            has_income=True,
+        pregnant_member = self.add_member(
+            self.screen, relationship="headOfHousehold", age=25, pregnant=True, has_income=True
         )
-        IncomeStream.objects.create(
-            screen=self.screen,
-            household_member=pregnant_member,
-            type="wages",
-            amount=2000,
-            frequency="monthly",
-        )
+        add_income(pregnant_member, 2000, income_type="wages", frequency="monthly")
 
         calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
@@ -126,20 +79,10 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
 
     def test_member_ineligible_when_not_pregnant(self):
         """Test member is ineligible when not pregnant."""
-        non_pregnant = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            pregnant=False,
-            has_income=True,
+        non_pregnant = self.add_member(
+            self.screen, relationship="headOfHousehold", age=25, pregnant=False, has_income=True
         )
-        IncomeStream.objects.create(
-            screen=self.screen,
-            household_member=non_pregnant,
-            type="wages",
-            amount=2000,
-            frequency="monthly",
-        )
+        add_income(non_pregnant, 2000, income_type="wages", frequency="monthly")
 
         calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
@@ -152,28 +95,10 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
         self.screen.household_size = 2
         self.screen.save()
 
-        head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=30,
-            pregnant=False,
-            has_income=True,
-        )
-        IncomeStream.objects.create(
-            screen=self.screen,
-            household_member=head,
-            type="wages",
-            amount=2500,
-            frequency="monthly",
-        )
+        head = self.add_member(self.screen, relationship="headOfHousehold", age=30, pregnant=False, has_income=True)
+        add_income(head, 2500, income_type="wages", frequency="monthly")
 
-        pregnant_spouse = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="spouse",
-            age=28,
-            pregnant=True,
-            has_income=False,
-        )
+        pregnant_spouse = self.add_member(self.screen, relationship="spouse", age=28, pregnant=True, has_income=False)
 
         calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
@@ -196,13 +121,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
 
     def test_zero_income_eligible(self):
         """Test that zero income household is eligible."""
-        parent = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=22,
-            pregnant=True,
-            has_income=False,
-        )
+        parent = self.add_member(self.screen, relationship="headOfHousehold", age=22, pregnant=True, has_income=False)
 
         calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
