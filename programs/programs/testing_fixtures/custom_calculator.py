@@ -14,25 +14,21 @@ in the 13 files whose calculator reads one. The larger group — 76 files — st
 household → assertion.
 """
 
-from datetime import date
-from typing import Optional
 from unittest.mock import Mock
 
 from django.test import TestCase
-from django.utils import timezone
 
 from programs.framework.base import Eligibility
-from programs.models import FederalPoveryLimit, Program
 from programs.util import Dependencies
-from screener.models import Expense, HouseholdMember, IncomeStream, Insurance, Screen, WhiteLabel
-
-
-def make_white_label(code: str = "test", state_code: str = "TS") -> WhiteLabel:
-    """The white label a screen belongs to, created once and reused."""
-    white_label, _ = WhiteLabel.objects.get_or_create(
-        code=code, defaults={"name": code.upper(), "state_code": state_code}
-    )
-    return white_label
+from programs.programs.testing_fixtures.households import (
+    add_expense,
+    add_income,
+    add_insurance,
+    birth_year_month_for_age,
+    make_program,
+    make_white_label,
+)
+from screener.models import HouseholdMember, Insurance, Screen
 
 
 def make_screen(
@@ -66,25 +62,6 @@ def make_screen(
     )
 
 
-def birth_year_month_for_age(age: float, reference_date: Optional[date] = None) -> date:
-    """The birth month of someone `age` years old on `reference_date`.
-
-    `HouseholdMember.age_from_date` treats the birth month as already attained
-    (`reference_date.month >= birth_month` counts the whole year), so counting whole months
-    back from the reference month lands on a birthday that has just happened. Reading the
-    result back through `calc_age()` returns `age` again, whatever day the suite runs on:
-    the reference month cancels out of both the derivation and the comparison.
-
-    `age` may be fractional, in twelfths — `3.5` is three years six months. The model stores
-    year and month only (`day` is always 1), so anything finer rounds to the nearest month.
-    """
-    months = round(age * 12)
-    reference = reference_date or timezone.now().date()
-    total = reference.year * 12 + reference.month - months
-
-    return date((total - 1) // 12, (total - 1) % 12 + 1, 1)
-
-
 def add_member(screen: Screen, relationship: str = "headOfHousehold", age: float = 30, **kwargs) -> HouseholdMember:
     """Add a household member.
 
@@ -109,74 +86,6 @@ def add_member(screen: Screen, relationship: str = "headOfHousehold", age: float
     Insurance.objects.create(household_member=household_member)
 
     return household_member
-
-
-def add_income(
-    member: HouseholdMember,
-    amount: int,
-    income_type: str = "wages",
-    frequency: str = "monthly",
-) -> IncomeStream:
-    """Give a member an income stream, stated as the scenario states it.
-
-    `calc_gross_income` annualizes by frequency, so converting to a yearly figure here
-    would hide what the scenario actually says.
-    """
-    return IncomeStream.objects.create(
-        screen=member.screen,
-        household_member=member,
-        type=income_type,
-        amount=amount,
-        frequency=frequency,
-    )
-
-
-def add_expense(member: HouseholdMember, amount: int, expense_type: str = "rent", frequency: str = "monthly"):
-    """Give a member an expense, for the programs that net it out of income."""
-    return Expense.objects.create(
-        screen=member.screen,
-        household_member=member,
-        type=expense_type,
-        amount=amount,
-        frequency=frequency,
-    )
-
-
-def add_insurance(member: HouseholdMember, **kwargs) -> Insurance:
-    """Replace a member's insurance.
-
-    `add_member` already gave them an uninsured record, so this overwrites it in place.
-    Name only what the scenario needs — `medicaid=True, none=False` for a member already
-    covered.
-    """
-    insurance, _ = Insurance.objects.update_or_create(household_member=member, defaults=kwargs)
-
-    return insurance
-
-
-def make_program(
-    white_label_code: str = "test",
-    name_abbreviated: str = "test_program",
-    year: str = "2025",
-    state_code: str = "TS",
-) -> Program:
-    """Create the `Program` row a calculator reads.
-
-    `year` becomes `program.year`, which supplies the FPL table for any calculator doing
-    a percent-of-poverty test. A calculator that reads `self.program.year.period` fails on
-    an unsaved `Program`, which is why this returns a real row.
-
-    The white label is created first because `Program.objects.new_program` looks it up
-    rather than creating it.
-    """
-    make_white_label(white_label_code, state_code)
-    fpl, _ = FederalPoveryLimit.objects.get_or_create(year=year, defaults={"period": year})
-
-    program = Program.objects.new_program(white_label=white_label_code, name_abbreviated=name_abbreviated)
-    program.year = fpl
-    program.save()
-
-    return program
 
 
 class CustomCalculatorTestCase(TestCase):
@@ -211,11 +120,21 @@ class CustomCalculatorTestCase(TestCase):
     needs_program_row: bool = True
 
     # convenience re-exports so a subclass needs one import
-    make_screen = staticmethod(make_screen)
     add_member = staticmethod(add_member)
     add_income = staticmethod(add_income)
     add_expense = staticmethod(add_expense)
     add_insurance = staticmethod(add_insurance)
+
+    def make_screen(self, household_size: int = 1, **kwargs) -> Screen:
+        """A household in this test case's white label.
+
+        The white label and state come from the class attributes, so a scenario names only
+        what makes it distinct — its size, county, or assets.
+        """
+        kwargs.setdefault("white_label_code", self.white_label_code)
+        kwargs.setdefault("state_code", self.state_code)
+
+        return make_screen(household_size=household_size, **kwargs)
 
     @classmethod
     def setUpTestData(cls):
@@ -254,3 +173,29 @@ class CustomCalculatorTestCase(TestCase):
         unpacking the single return value fails loudly rather than silently.
         """
         return self.make_calculator(screen, data, missing).calc()
+
+
+def eligible_result(value: int = 0) -> Eligibility:
+    """An upstream program's verdict, for a calculator that gates on one.
+
+    `value` lands on `household_value`, since `Eligibility.value` sums that with the members
+    and is read-only.
+
+    `ProgramCalculator.program_eligible` reads the results of programs already calculated,
+    which the screener passes down as `data`. A test for a gated program supplies that
+    verdict rather than calculating the upstream program for real:
+
+        self.calculate(screen, data={"ks_medicaid": eligible_result()})
+    """
+    eligibility = Eligibility()
+    eligibility.household_value = value
+
+    return eligibility
+
+
+def ineligible_result() -> Eligibility:
+    """An upstream program the household did not qualify for. See `eligible_result`."""
+    eligibility = Eligibility()
+    eligibility.eligible = False
+
+    return eligibility

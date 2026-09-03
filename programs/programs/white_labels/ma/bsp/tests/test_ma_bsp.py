@@ -60,10 +60,9 @@ class MaBabyStepsTestCase(CustomCalculatorTestCase):
         self.addCleanup(patcher.stop)
 
     def make_screen(self, zipcode="02101", county="Boston", household_size=2):
-        # MA stores city name in the county field (see MFB-548).
-        return super().make_screen(
-            "ma", "MA", household_size=household_size, zipcode=zipcode, county=county, agree_to_tos=True
-        )
+        # MA stores city name in the county field (see MFB-548), so the defaults differ
+        # from the base class's empty ones.
+        return super().make_screen(household_size=household_size, zipcode=zipcode, county=county)
 
     def make_member(self, screen, relationship, birth_year_month=None, monthly_income=0):
         age = None
@@ -78,12 +77,6 @@ class MaBabyStepsTestCase(CustomCalculatorTestCase):
             add_income(household_member, monthly_income)
 
         return household_member
-
-    def calculate_with_calculator(self, screen):
-        """Both the calculator and its result, for assertions on post-`calc()` state."""
-        calculator = self.make_calculator(screen)
-
-        return calculator, calculator.calc()
 
 
 class TestMaBabyStepsClassAttributes(MaBabyStepsTestCase):
@@ -181,7 +174,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         older_sibling = self.make_member(screen, "child", date(2018, 9, 1))
         newborn = self.make_member(screen, "child", date(2026, 2, 1))
 
-        calculator, eligibility = self.calculate_with_calculator(screen)
+        calculator = self.make_calculator(screen)
+        eligibility = calculator.calc()
 
         self.assertTrue(eligibility.eligible)
         # $50, not $100 — the older sibling is past the cutoff.
@@ -236,7 +230,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 5, 1))
         child = self.make_member(screen, "child", date(2025, 7, 1))
 
-        calculator, eligibility = self.calculate_with_calculator(screen)
+        calculator = self.make_calculator(screen)
+        eligibility = calculator.calc()
 
         self.assertTrue(calculator.birth_pathway_eligible(child))
         self.assertTrue(eligibility.eligible)
@@ -251,7 +246,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         child = self.make_member(screen, "child", date(2025, 6, 1))
 
-        calculator, eligibility = self.calculate_with_calculator(screen)
+        calculator = self.make_calculator(screen)
+        eligibility = calculator.calc()
 
         self.assertFalse(calculator.birth_pathway_eligible(child))
         self.assertFalse(eligibility.eligible)
@@ -271,7 +267,8 @@ class TestMaBabyStepsScenarios(MaBabyStepsTestCase):
         foster_infant = self.make_member(screen, "fosterChild", date(2025, 10, 1))
         two_year_old = self.make_member(screen, "child", date(2024, 5, 1))
 
-        calculator, eligibility = self.calculate_with_calculator(screen)
+        calculator = self.make_calculator(screen)
+        eligibility = calculator.calc()
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 100)
@@ -329,7 +326,8 @@ class TestBirthPathwayBoundaries(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         child = self.make_member(screen, "child", None)
 
-        calculator, eligibility = self.calculate_with_calculator(screen)
+        calculator = self.make_calculator(screen)
+        eligibility = calculator.calc()
 
         self.assertFalse(calculator.birth_pathway_eligible(child))
         self.assertFalse(eligibility.eligible)
@@ -459,7 +457,8 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1975, 3, 1))
         teenager = self.make_member(screen, "child", date(2009, 5, 1))
 
-        calculator, eligibility = self.calculate_with_calculator(screen)
+        calculator = self.make_calculator(screen)
+        eligibility = calculator.calc()
 
         self.assertFalse(calculator.birth_pathway_eligible(teenager))
         self.assertFalse(eligibility.eligible)
@@ -474,7 +473,8 @@ class TestDataGapDefaults(MaBabyStepsTestCase):
         self.make_member(screen, "headOfHousehold", date(1990, 3, 1))
         self.make_member(screen, "child", date(2026, 2, 1))
 
-        calculator, eligibility = self.calculate_with_calculator(screen)
+        calculator = self.make_calculator(screen)
+        eligibility = calculator.calc()
 
         self.assertTrue(eligibility.eligible)
         self.assertEqual(calculator.dependencies, ["relationship", "birth_year"])

@@ -23,7 +23,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
 
     def setUp(self):
         super().setUp()
-        self.screen = self.make_screen("il", "IL", household_size=1, zipcode="60601", county="Cook", agree_to_tos=True)
+        self.screen = self.make_screen(household_size=1, zipcode="60601", county="Cook")
 
     # Household Eligibility Tests
     def test_household_eligible_income_below_300_fpl(self):

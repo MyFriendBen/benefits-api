@@ -14,12 +14,9 @@ class TestWaNslp(CustomCalculatorTestCase):
     white_label_code = "wa"
     state_code = "WA"
 
-    def _screen_base(self, **kwargs) -> Screen:
-        return self.make_screen("wa", "WA", household_size=kwargs.pop("household_size", 3), agree_to_tos=True, **kwargs)
-
     def test_eligible_by_income_below_free_tier(self):
         """Spec / validation: HH 3, one school-age child, income below reduced cap."""
-        screen = self._screen_base(zipcode="98101", county="King County")
+        screen = self.make_screen(household_size=3, zipcode="98101", county="King County")
         self.add_income(self.add_member(screen, "headOfHousehold", 36, has_income=True), 2000, frequency="monthly")
         self.add_member(screen, "spouse", 34)
         self.add_member(screen, "child", 7)
@@ -30,7 +27,7 @@ class TestWaNslp(CustomCalculatorTestCase):
 
     def test_ineligible_monthly_income_cents_over_reduced_cap(self):
         """HH3 monthly cap $4,109 — cents must not be truncated (CodeRabbit / Decimal)."""
-        screen = self._screen_base(zipcode="98103", county="King County", household_size=3)
+        screen = self.make_screen(zipcode="98103", county="King County", household_size=3)
         head = self.add_member(screen, "headOfHousehold", 39, has_income=True)
         self.add_income(head, Decimal("4109.99"), frequency="monthly")
         self.add_member(screen, "spouse", 37)
@@ -46,7 +43,7 @@ class TestWaNslp(CustomCalculatorTestCase):
         Medicaid as presumptive — it stays ineligible because Medicaid isn't in
         `presumptive_eligibility`. ($4,110/mo > $4,109 monthly reduced-price cap.)"""
         seed_program(self.white_label, "wa_medicaid")
-        screen = self._screen_base(
+        screen = self.make_screen(
             zipcode="98103",
             county="King County",
             household_size=3,
@@ -63,7 +60,7 @@ class TestWaNslp(CustomCalculatorTestCase):
 
     def test_eligible_at_reduced_monthly_cap_exact(self):
         """Regression: frequency-matched monthly must not always annualize (+$5 error)."""
-        screen = self._screen_base(zipcode="98103", county="King County")
+        screen = self.make_screen(household_size=3, zipcode="98103", county="King County")
         head = self.add_member(screen, "headOfHousehold", 39, has_income=True)
         self.add_income(head, 4109, frequency="monthly")
         self.add_member(screen, "spouse", 37)
@@ -75,7 +72,8 @@ class TestWaNslp(CustomCalculatorTestCase):
 
     def test_eligible_snap_categorical_high_income(self):
         seed_program(self.white_label, "wa_snap")
-        screen = self._screen_base(
+        screen = self.make_screen(
+            household_size=3,
             zipcode="99201",
             county="Spokane County",
             has_benefits="true",
@@ -92,7 +90,7 @@ class TestWaNslp(CustomCalculatorTestCase):
 
     def test_eligible_tanf_categorical(self):
         seed_program(self.white_label, "wa_tanf")
-        screen = self._screen_base(zipcode="98901", county="Yakima County", has_benefits="true")
+        screen = self.make_screen(household_size=3, zipcode="98901", county="Yakima County", has_benefits="true")
         _write_current_benefits(screen, ["wa_tanf"])
         head = self.add_member(screen, "headOfHousehold", 36, has_income=True)
         self.add_income(head, 5500, frequency="monthly")
@@ -105,7 +103,7 @@ class TestWaNslp(CustomCalculatorTestCase):
 
     def test_ineligible_snap_but_no_school_age_child(self):
         seed_program(self.white_label, "wa_snap")
-        screen = self._screen_base(zipcode="98103", county="King County", household_size=2)
+        screen = self.make_screen(zipcode="98103", county="King County", household_size=2)
         _write_current_benefits(screen, ["wa_snap"])
         head = self.add_member(screen, "headOfHousehold", 40, has_income=True)
         self.add_income(head, 1800, frequency="monthly")
@@ -116,7 +114,8 @@ class TestWaNslp(CustomCalculatorTestCase):
 
     def test_eligible_head_start_categorical_high_income(self):
         seed_program(self.white_label, "wa_head_start")
-        screen = self._screen_base(
+        screen = self.make_screen(
+            household_size=3,
             zipcode="98402",
             county="Pierce County",
             has_benefits="true",
@@ -133,7 +132,8 @@ class TestWaNslp(CustomCalculatorTestCase):
 
     def test_snap_categorical_uses_presumed_eligibility_pass_message_not_income(self):
         seed_program(self.white_label, "wa_snap")
-        screen = self._screen_base(
+        screen = self.make_screen(
+            household_size=3,
             zipcode="99201",
             county="Spokane County",
             has_benefits="true",
@@ -150,7 +150,7 @@ class TestWaNslp(CustomCalculatorTestCase):
         self.assertFalse(any("Household makes" in str(m) for m in result.pass_messages))
 
     def test_eligible_foster_child_categorical(self):
-        screen = self._screen_base(household_size=3)
+        screen = self.make_screen(household_size=3)
         head = self.add_member(screen, "headOfHousehold", 35, has_income=True)
         self.add_income(head, 8000, frequency="monthly")
         self.add_member(screen, "spouse", 34)
@@ -161,7 +161,7 @@ class TestWaNslp(CustomCalculatorTestCase):
         self.assertEqual(result.value, 828)
 
     def test_two_school_age_children_value_scales(self):
-        screen = self._screen_base(zipcode="99201", county="Spokane County", household_size=6)
+        screen = self.make_screen(zipcode="99201", county="Spokane County", household_size=6)
         head = self.add_member(screen, "headOfHousehold", 40, has_income=True)
         self.add_income(head, 2400, frequency="monthly")
         spouse = self.add_member(screen, "spouse", 38, has_income=True)
@@ -176,7 +176,7 @@ class TestWaNslp(CustomCalculatorTestCase):
         self.assertEqual(result.value, 828 * 3)
 
     def test_mixed_frequency_uses_annual_limit(self):
-        screen = self._screen_base(household_size=3)
+        screen = self.make_screen(household_size=3)
         head = self.add_member(screen, "headOfHousehold", 39, has_income=True)
         self.add_income(head, 2000, frequency="monthly")
         self.add_income(head, 500, frequency="yearly")
@@ -187,13 +187,13 @@ class TestWaNslp(CustomCalculatorTestCase):
         self.assertTrue(calc._income_at_or_below_reduced_cap())
 
     def test_member_eligible_false_for_head(self):
-        calc = self.make_calculator(self._screen_base())
+        calc = self.make_calculator(self.make_screen(household_size=3))
         e = MemberEligibility(HouseholdMember(relationship="headOfHousehold", age=30))
         calc.member_eligible(e)
         self.assertFalse(e.eligible)
 
     def test_grandchild_counts(self):
-        screen = self._screen_base(household_size=3)
+        screen = self.make_screen(household_size=3)
         self.add_income(self.add_member(screen, "headOfHousehold", 55, has_income=True), 2500, frequency="monthly")
         self.add_member(screen, "spouse", 54)
         self.add_member(screen, "grandChild", 10)
