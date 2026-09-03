@@ -97,9 +97,10 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 ## Acceptance Criteria
 
 - [ ] A household with countable annual income (per Criterion 2's rules) ≤ the WPN 25-3 200%-of-poverty amount for its `household_size` is eligible for `mo_wap` at $370/year.
-- [ ] A household with countable income exactly $1 over its household-size limit, with no current `sSI`/`cashAssistance`/`cashAssistanceOther` receipt or Section 8, is ineligible.
+- [ ] A household with countable income exactly $1 over its household-size limit, with no current `sSI`/`cashAssistance`/`cashAssistanceOther` receipt, no LIHEAP receipt and no Section 8, is ineligible.
 - [ ] Current `sSI` income-stream receipt independently establishes eligibility regardless of income.
 - [ ] Current `cashAssistance` income-stream receipt independently establishes eligibility regardless of income.
+- [ ] Current `cashAssistanceOther` income-stream receipt independently establishes eligibility regardless of income.
 - [ ] Reported LIHEAP receipt independently establishes eligibility regardless of income.
 - [ ] SNAP receipt alone does not establish eligibility, even though it does for TX's implementation of this same program.
 - [ ] Child support received or paid does not affect countable income.
