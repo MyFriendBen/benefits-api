@@ -14,7 +14,7 @@ class AgeDependency(Member):
 
 class AgeAtEndOfClaimYearDependency(Member):
     """
-    Age as of December 31 of ``claim_year``.
+    Age as of December 31 of the year being claimed.
 
     ``AgeDependency`` reports age on the screening date, which understates by one year
     anybody whose birthday falls later in the calendar year. A rule that awards a benefit
@@ -22,24 +22,33 @@ class AgeAtEndOfClaimYearDependency(Member):
     age, or a household screened in August qualifies only if it screens again in
     December.
 
-    Subclasses set ``claim_year``. Falls back to the screening-date age when the member's
-    birth year is unknown.
+    The claim year is the period the variable is being sent at, which comes from the
+    program's configured year, so this follows a program rolled forward to a new year
+    without anybody remembering to change a constant here. It used to be a class attribute
+    on a subclass hardcoded to 2026, which would have gone on sending 2026 ages under a
+    2027 period.
+
+    Both this and ``AgeDependency`` write ``age``, so a screen carrying both splits into two
+    PolicyEngine requests for any member whose birthday falls later in the year (see
+    ``build_pe_input``). That is the intended cost: age on the screening date is the right
+    input for a program whose eligibility is judged today, and the end-of-year age is right
+    for one judged over a tax year, and no single value serves both.
+
+    Falls back to the screening-date age when the member's birth year is unknown, or when
+    there is no period to read a year from.
     """
 
     field = "age"
     dependencies = ("age",)
-    claim_year = None
 
     def value(self):
         birth_year = self.member.birth_year
-        if birth_year is None or self.claim_year is None:
+        claim_year = self.period_year
+
+        if birth_year is None or claim_year is None:
             return self.member.calc_age()
 
-        return self.claim_year - birth_year
-
-
-class AgeAtEndOf2026Dependency(AgeAtEndOfClaimYearDependency):
-    claim_year = 2026
+        return claim_year - birth_year
 
 
 class PregnancyDependency(Member):
@@ -551,13 +560,16 @@ class TotalHoursWorkedDependency(Member):
     (MFB-1637).
 
     The floor reaches every consumer of this field on purpose. All programs in a screen
-    share one payload, so two dependencies writing different values to this field raise
-    ``DependencyError`` in ``update_unit`` -- from ``pe_input()``, outside
-    ``calc_pe_eligibility``'s try/except, so a 500 rather than a degraded result. That
-    makes one value per member per screen a hard constraint, and it costs accuracy on
-    the field's other readers: ``tx_ccs``'s work requirement and the MA TAFDC/EAEDC
-    dependent-care deductions both read hours and both get more generous. Accepted
-    deliberately; modelling the SNAP work test properly is follow-up work.
+    share one payload, so one value per member per screen was a hard constraint when this
+    was written, and it costs accuracy on the field's other readers: ``tx_ccs``'s work
+    requirement and the MA TAFDC/EAEDC dependent-care deductions both read hours and both
+    get more generous. Accepted deliberately; modelling the SNAP work test properly is
+    follow-up work.
+
+    Payload assembly can now answer disagreeing programs with a second request rather than
+    failing, so the constraint is a cost rather than a wall -- but a per-reader value would
+    buy accuracy with a round trip, which is a trade to make deliberately and not a reason to
+    split this field today.
     """
 
     field = "weekly_hours_worked_before_lsr"
@@ -618,9 +630,9 @@ class MaTotalHoursWorkedDependency(TotalHoursWorkedDependency):
     Massachusetts approximation, at the state minimum wage.
 
     Every MA calculator sending this field must use this subclass. Two dependencies
-    writing different values to the same field and period raise ``DependencyError``
-    in ``update_unit``, so mixing this with the base class inside one MA screen
-    fails the request build.
+    writing different values to the same field and period cannot share a payload, so
+    mixing this with the base class inside one MA screen costs a second PolicyEngine
+    request for the programs on the losing side.
     """
 
     minimum_wage = 15

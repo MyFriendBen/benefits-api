@@ -7,11 +7,11 @@ and `meets_snap_abawd_work_requirements` (20 hrs) — both ANDed into `is_snap_e
 the whole SPM unit, with no categorical-eligibility override. See MFB-1637.
 
 The second half is the trap. One PolicyEngine request carries every program on the screen,
-so two dependencies writing different values to one field and period raise `DependencyError`
-in `update_unit` — raised from `pe_input()`, which runs outside `calc_pe_eligibility`'s
-try/except, so the screen 500s instead of losing one program. MA is where that bites: TAFDC
-and EAEDC approximate at the $15 state minimum wage while the base class uses the $7.25
-federal floor.
+so two dependencies writing different values to one field and period cannot both be served
+by it — payload assembly answers the disagreeing programs with a second request instead
+(`build_pe_input`). MA is where that bites: TAFDC and EAEDC approximate at the $15 state
+minimum wage while the base class uses the $7.25 federal floor. MaSnap swaps the class so
+one MA screen stays one request; the split is the safety net, not the plan.
 
 `pe_input` takes calculator classes here, as the other payload tests do — `pe_period` is a
 property needing a configured `Program.year`, and every calculator inherits the same
@@ -23,8 +23,7 @@ from django.test import TestCase, override_settings
 from benefits.tests.cache_override import LOCAL_CACHE
 from integrations.clients.policyengine.registry import all_calculators
 from programs.framework.pe_dependencies import member as member_dependency
-from programs.framework.pe_dependencies.base import DependencyError
-from programs.framework.pe_dependencies.payload import pe_input
+from programs.framework.pe_dependencies.payload import build_pe_input, pe_input
 from programs.programs.cross_white_label.snap.base import SNAP_HOURS_INPUT, Snap
 from programs.programs.cross_white_label.snap.co import CoSnap
 from programs.programs.cross_white_label.snap.il import IlSnap
@@ -224,10 +223,21 @@ class TestMaHoursPayload(HoursPayloadTestBase):
         self.assertEqual(hours_inputs(MaSnap), [MA_HOURS])
 
     def test_the_base_class_would_have_conflicted(self):
-        """Guards the reason for the swap: this is the 500 MaSnap exists to avoid. The
-        earner's $2,000/mo reads 68.9 hours federally against MA's floored 40."""
-        with self.assertRaises(DependencyError):
-            pe_input(self.screen, [TxSnap, MaTafdc])
+        """Guards the reason for the swap: the earner's $2,000/mo reads 68.9 hours federally
+        against MA's floored 40, so the two programs cannot share a payload.
+
+        This used to 500 the whole eligibility response. It now costs a second PolicyEngine
+        request, which is why MaSnap still swaps the class rather than leaning on the split.
+        """
+        plan = build_pe_input(self.screen, [TxSnap, MaTafdc])
+
+        self.assertEqual([b.program_indexes for b in plan.buckets], [[0], [1]])
+        # These two never share a real screen, so they also disagree about `state_code`.
+        # The hours disagreement is the one this test is about.
+        self.assertTrue(
+            any("weekly_hours_worked_before_lsr" in conflict for conflict in plan.conflicts),
+            plan.conflicts,
+        )
 
 
 class TestTxHoursPayload(HoursPayloadTestBase):

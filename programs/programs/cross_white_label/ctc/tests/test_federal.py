@@ -7,7 +7,7 @@ from django.test import TestCase
 from programs.framework.pe_dependencies import irs_gross_income
 from programs.framework.pe_dependencies import member
 from programs.framework.pe_dependencies import tax
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 
 
 class TestFederalCtc(TestCase):

@@ -7,6 +7,7 @@
   },
   "program": {
     "name_abbreviated": "mo_pts",
+    "active": true,
     "year": 2026,
     "legal_status_required": [
       "citizen",

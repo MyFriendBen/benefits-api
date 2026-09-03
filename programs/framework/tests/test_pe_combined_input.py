@@ -7,7 +7,7 @@ and CHIP are per-member, EITC and ACA are tax-unit — since that is where a nai
 merge drops a field.
 """
 
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT
 from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.cross_white_label.snap.tx import TxSnap

@@ -17,7 +17,7 @@ from programs.framework.pe_dependencies.member import SsiIfTakesUp
 from programs.framework.pe_dependencies.member import SsiUnearnedIncomeDependency
 from django.test import TestCase
 from screener.models import WhiteLabel
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 from programs.framework.pe_dependencies import household
 
 
