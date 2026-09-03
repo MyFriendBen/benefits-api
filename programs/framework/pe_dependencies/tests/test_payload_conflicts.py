@@ -312,8 +312,40 @@ class TestTheConflictReport(PayloadConflictTestBase):
         )
 
         report = plan.conflicts[0]
-        self.assertNotIn("40", report)
-        self.assertNotIn("41", report)
+        # Word-boundary match, not a substring: the report names the entity as
+        # people/<pk>, and a primary key like 404 contains "40". A bare
+        # assertNotIn passes or fails on whatever id the sequence happened to
+        # hand out, which varies with how xdist distributes the suite -- so it
+        # would fail for a reason that has nothing to do with a leaked age.
+        self.assertNotRegex(report, r"\b40\b")
+        self.assertNotRegex(report, r"\b41\b")
+
+    def test_an_id_containing_the_age_does_not_look_like_a_leak(self):
+        """Regression: the privacy check must key on values, not on digits anywhere.
+
+        The report names the entity as people/<pk>. A member whose pk contains 40
+        -- 404, 1400, 40 itself -- used to trip the substring assertion, so the
+        test failed or passed depending on what the sequence handed out, which
+        shifts whenever xdist redistributes the suite.
+        """
+        self.head.delete()
+        self.head = HouseholdMember.objects.create(id=404, screen=self.screen, relationship="headOfHousehold", age=40)
+        self.head_id = str(self.head.id)
+
+        plan = build_pe_input(
+            self.screen,
+            [fake_program("wants_forty", [FortyYearOld]), fake_program("wants_forty_one", [FortyOneYearOld])],
+        )
+
+        report = plan.conflicts[0]
+        self.assertIn("people/404", report, "precondition: the id must be in the report")
+        self.assertNotRegex(report, r"\b40\b")
+        self.assertNotRegex(report, r"\b41\b")
+
+    def test_the_privacy_check_would_catch_a_real_leak(self):
+        """Guards the guard: \b40\b has to still match an age printed as a value."""
+        self.assertRegex("age at 2026 for people/7: 40 vs 41", r"\b40\b")
+        self.assertRegex("age at 2026 for people/7: 40 vs 41", r"\b41\b")
 
     def test_an_agreeing_screen_reports_nothing(self):
         plan = build_pe_input(self.screen, [fake_program("a", [FortyYearOld])])
