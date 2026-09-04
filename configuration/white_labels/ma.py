@@ -13,10 +13,10 @@ class MaConfigurationData(ConfigurationData):
     state = {"name": "Massachusetts"}
 
     public_charge_rule = {
-        "link": "https://www.mass.gov/info-details/information-about-the-public-charge-rule-and-how-it-may-impact-you#information-about-the-public-charge-rule-",
+        "link": "https://miracoalition.org/news/public-charge-rule-new-community-update-july-2026/",
         "text": {
             "_label": "landingPage.publicChargeLinkMA",
-            "_default_message": "Massachusetts Department of Health and Human Services",
+            "_default_message": "MIRA Coalition's public charge update",
         },
     }
 
