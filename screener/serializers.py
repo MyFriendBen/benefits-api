@@ -124,6 +124,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "visually_impaired",
             "disabled",
             "long_term_disability",
+            "was_in_foster_care",
             "veteran",
             "medicaid",
             "disability_medicaid",

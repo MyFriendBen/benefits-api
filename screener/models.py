@@ -525,6 +525,10 @@ class HouseholdMember(models.Model):
     visually_impaired = models.BooleanField(blank=True, null=True)
     disabled = models.BooleanField(blank=True, null=True)
     long_term_disability = models.BooleanField(blank=True, null=True)
+    # "Ever in foster care, even briefly" - a history fact, not a current status. Named to
+    # match PolicyEngine's `was_in_foster_care` input, which pairs it with `age` to derive
+    # the several former-foster-youth age windows (Medicaid to 26, SNAP ABAWD, CO EITC).
+    was_in_foster_care = models.BooleanField(blank=True, null=True)
     veteran = models.BooleanField(blank=True, null=True)
     medicaid = models.BooleanField(blank=True, null=True)
     disability_medicaid = models.BooleanField(blank=True, null=True)

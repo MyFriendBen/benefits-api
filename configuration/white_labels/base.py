@@ -437,6 +437,13 @@ class ConfigurationData:
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
                 },
             },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
+                },
+            },
         },
         "them": {
             "student": {
@@ -463,7 +470,10 @@ class ConfigurationData:
             "disabled": {
                 "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "conditionOptions.disabled",
+                    # Distinct label from the "you" page: Translation.label is globally
+                    # unique, so sharing one label makes both pages render whichever
+                    # pronoun that single row happens to hold.
+                    "_label": "conditionOptions.disabled.them",
                     "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
                 },
             },
@@ -472,6 +482,13 @@ class ConfigurationData:
                 "text": {
                     "_label": "conditionOptions.longTermDisability",
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
+                },
+            },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
                 },
             },
         },
