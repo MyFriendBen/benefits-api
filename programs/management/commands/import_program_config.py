@@ -921,8 +921,14 @@ class Command(BaseCommand):
         if "year" in configuration:
             year_value = configuration["year"]
             try:
-                year_obj = FederalPoveryLimit.objects.get(year=year_value, period=year_value)
+                year_obj = FederalPoveryLimit.objects.get(year=year_value)
                 program.year = year_obj
+                # A dynamic row's `year` FK must agree with `year_type`, or the program
+                # looks "hardcoded" in the admin while actually riding the shared row.
+                if year_value == "THIS_YEAR_CALENDAR":
+                    program.year_type = "calendar_year"
+                elif year_value == "THIS_YEAR_FISCAL":
+                    program.year_type = "fiscal_year"
                 self.stdout.write(f"  Year: {year_value}")
             except FederalPoveryLimit.DoesNotExist:
                 self.stdout.write(self.style.WARNING(f"  Warning: Year '{year_value}' not found"))
