@@ -122,3 +122,16 @@ care, asked about an existing household member with `relationship == "fosterChil
   cost the former-foster-youth Medicaid and CO EITC pathways, but **neither is a current beneficiary** —
   PolicyEngine's Medicaid does not read the field and CO never receives it — so that is a forward-looking
   argument, not a present cost. Live only in `il`/`ks`/`ma`/`mo`/`tx`.
+
+- **Head Start / Early Head Start foster categorical reads *historical* care, not current placement.**
+  45 CFR § 1302.12(c)(1) is present tense — "the child **is** in foster care" — but the tile asks "Ever in
+  foster care, even briefly." `FosterCareDependency` ORs the tile into `relationship == "fosterChild"`, so a
+  3–5-year-old who was in care and has since been adopted or reunified still reads as categorically
+  eligible, bypassing the income test. That is a real false positive on a high-value program (measured:
+  `mo_head_start` $0 → $16,314 when the tile is set on a 3-year-old). Accepted for the same reasons as the
+  NSLP spillover: it runs in the inclusivity direction MFB applies throughout, and the grantee verifies
+  placement at enrollment. Note this is also PolicyEngine's own modelling choice —
+  `is_head_start_categorically_eligible` reads the historical boolean — so we cannot narrow it without
+  dropping the input entirely, which would make the field reach PolicyEngine nowhere (the `HeadStart` and
+  `EarlyHeadStart` bases are its only declarers). Resolving it properly needs the exit-type follow-up in the
+  table above, not a change here.
