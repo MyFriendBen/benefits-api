@@ -742,6 +742,16 @@ class Program(models.Model):
         null=True,
         on_delete=models.SET_NULL,
     )
+    YEAR_TYPE_CHOICES = [
+        ("hardcoded", "Hardcoded"),
+        ("fiscal_year", "Fiscal Year"),
+        ("calendar_year", "Calendar Year"),
+    ]
+    year_type = models.CharField(
+        max_length=32,
+        default="hardcoded",
+        choices=YEAR_TYPE_CHOICES,
+    )
     category = models.ForeignKey(
         ProgramCategory,
         related_name="programs",
@@ -873,6 +883,19 @@ class Program(models.Model):
         # convention.
         if self.name_abbreviated:
             self.name_abbreviated = self.name_abbreviated.lower()
+
+        # Keep `year` in sync with `year_type` so the two can never drift,
+        # regardless of whether this save comes from the admin, a script, or a
+        # management command. Dynamic year types always point at the shared
+        # sentinel FederalPoveryLimit row; "hardcoded" programs manage their own
+        # `year` FK by hand, so leave it untouched in that case. Note: this only
+        # fires on .save(), a bulk .update() bypasses it, same caveat as the
+        # name_abbreviated normalization above.
+        if self.year_type == "calendar_year":
+            self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_CALENDAR")
+        elif self.year_type == "fiscal_year":
+            self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_FISCAL")
+
         super().save(*args, **kwargs)
 
     class Meta:
