@@ -7,6 +7,9 @@ class IlConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="il")
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Illinois"}
 
     public_charge_rule = {
@@ -166,8 +169,12 @@ class IlConfigurationData(ConfigurationData):
         "government": {
             **ConfigurationData.income_options_by_category["government"],
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance.il",
-                "_default_message": "Government Cash Assistance (including TANF)",
+                "_label": "incomeOptions.cashAssistanceTanf.il",
+                "_default_message": "Cash Assistance - TANF",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.il",
+                "_default_message": "Cash Assistance - Other",
             },
             "iLStateDisability": {
                 "_label": "incomeOptions.stateDisability",
@@ -304,95 +311,6 @@ class IlConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.va",
                     "_default_message": "VA health care benefits",
-                },
-            },
-        },
-    }
-
-    condition_options = {
-        "you": {
-            "student": {
-                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.student",
-                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
-                },
-            },
-            "pregnant": {
-                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.pregnant",
-                    "_default_message": "Pregnant",
-                },
-            },
-            "blindOrVisuallyImpaired": {
-                "icon": {
-                    "_icon": "BlindOrVisuallyImpaired",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "conditionOptions.blindOrVisuallyImpaired",
-                    "_default_message": "Blind or visually impaired",
-                },
-            },
-            "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.disabled",
-                    "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
-                },
-            },
-            "longTermDisability": {
-                "icon": {
-                    "_icon": "LongTermDisability",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "conditionOptions.longTermDisability",
-                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
-                },
-            },
-        },
-        "them": {
-            "student": {
-                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.student",
-                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
-                },
-            },
-            "pregnant": {
-                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.pregnant",
-                    "_default_message": "Pregnant",
-                },
-            },
-            "blindOrVisuallyImpaired": {
-                "icon": {
-                    "_icon": "BlindOrVisuallyImpaired",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "conditionOptions.blindOrVisuallyImpaired",
-                    "_default_message": "Blind or visually impaired",
-                },
-            },
-            "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.disabled.them",
-                    "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
-                },
-            },
-            "longTermDisability": {
-                "icon": {
-                    "_icon": "LongTermDisability",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "conditionOptions.longTermDisability",
-                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
                 },
             },
         },

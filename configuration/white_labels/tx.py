@@ -7,6 +7,9 @@ class TxConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="tx")
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Texas"}
 
     public_charge_rule = {
@@ -126,8 +129,12 @@ class TxConfigurationData(ConfigurationData):
         "government": {
             **ConfigurationData.income_options_by_category["government"],
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance.tx",
-                "_default_message": "Government Cash Assistance (including TANF)",
+                "_label": "incomeOptions.cashAssistanceTanf.tx",
+                "_default_message": "Cash Assistance - TANF",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.tx",
+                "_default_message": "Cash Assistance - Other",
             },
             "stateDisability": {
                 "_label": "incomeOptions.stateDisability",

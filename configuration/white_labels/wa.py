@@ -11,10 +11,13 @@ class WaConfigurationData(ConfigurationData):
     # BASIC INFORMATION
     # ==========================================================================================
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Washington"}
 
     public_charge_rule = {
-        "link": "https://www.dshs.wa.gov/esa/community-services-offices/public-charge",
+        "link": "https://www.dshs.wa.gov/esa/csd-office-refugee-and-immigration-assistance/public-charge-information",
         "text": {
             "_label": "landingPage.publicChargeLinkWA",
             "_default_message": "Washington State Department of Social and Health Services",

@@ -5,7 +5,7 @@ from screener.models import HouseholdMember
 from screener.models import IncomeStream
 from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT
 from screener.models import Screen
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 from programs.programs.testing_fixtures.pe_input_test_base import TxPeInputTestBase
 from django.test import TestCase
 from programs.programs.cross_white_label.eitc.tx import TxEitc

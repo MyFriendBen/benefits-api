@@ -1,5 +1,10 @@
 from screener.models import Screen, HouseholdMember
-from typing import List
+import re
+from typing import List, Optional
+
+#: The period shapes PolicyEngine accepts, and the only two `period_for` produces: a bare
+#: year for an annual variable, ``YYYY-MM`` for a monthly one.
+_PERIOD_PATTERN = re.compile(r"^(\d{4})(?:-(0[1-9]|1[0-2]))?$")
 
 
 class PolicyEngineScreenInput:
@@ -29,10 +34,48 @@ class PolicyEngineScreenInput:
     min_pe_version: tuple = ()
     max_pe_version: tuple = ()
 
-    def __init__(self, screen: Screen, members: List[HouseholdMember], relationship_map):
+    #: The period this variable is being sent at, as PolicyEngine spells it: ``YYYY`` for an
+    #: annual variable, ``YYYY-MM`` for a monthly one. `pe_input` resolves it per variable
+    #: (see `PolicyEngineCalulator.period_for`) and passes it in, so `value` can return a
+    #: value that depends on the period it is being asked about -- an age, for instance, is
+    #: only meaningful relative to a period. None when a caller constructs the dependency
+    #: outside payload assembly; `value` implementations that read it must handle that.
+    period: Optional[str] = None
+
+    def __init__(
+        self,
+        screen: Screen,
+        members: List[HouseholdMember],
+        relationship_map,
+        period: Optional[str] = None,
+    ):
         self.screen = screen
         self.members = members
         self.relationship_map = relationship_map
+        self.period = period
+
+    @property
+    def period_year(self) -> Optional[int]:
+        """The calendar year of `period`, or None when there is no usable period.
+
+        Accepts only the two shapes `PolicyEngineCalulator.period_for` produces -- ``YYYY``
+        annual and ``YYYY-MM`` monthly, month 01 through 12 -- and returns None for anything
+        else. Reading the leading digits of whatever it was handed would turn a malformed
+        period into a confidently wrong year (``"20260"`` becomes year 20260, and an age
+        computed from it), where None sends a dependency to whatever it does without a
+        period. A malformed period is also the payload's period key, so such a request is
+        already doomed; this only keeps it from being doomed *and* nonsensical.
+
+        Returns None rather than raising, because the payload-shape tests pass a calculator
+        class whose `pe_period` is an unevaluated property object. A dependency that cannot
+        resolve a year should fall back, not break payload assembly.
+        """
+        if self.period is None:
+            return None
+
+        match = _PERIOD_PATTERN.match(str(self.period))
+
+        return int(match.group(1)) if match else None
 
     def value(self) -> object:
         """
@@ -74,16 +117,43 @@ class Member(PolicyEngineScreenInput):
 
     unit = "people"
 
-    def __init__(self, screen: Screen, member: HouseholdMember, relationship_map):
+    def __init__(
+        self,
+        screen: Screen,
+        member: HouseholdMember,
+        relationship_map,
+        period: Optional[str] = None,
+    ):
         self.screen = screen
         self.member = member
         self.relationship_map = relationship_map
+        self.period = period
 
 
-class DependencyError(Exception):
+class ConflictingDependencyError(Exception):
+    """Two dependencies wrote different values to one PolicyEngine payload slot.
+
+    Named apart from `programs.util.DependencyError` on purpose. That one means "a screen is
+    missing a field this program needs" and takes no arguments; this one means "two programs
+    disagree about what to send" and takes four. They used to share a name across one call
+    graph, so the catch site in ``screener.views`` imported the missing-dependency class and
+    this one propagated uncaught, taking down every program's results over one program's
+    disagreement.
+
+    Payload assembly now partitions disagreeing programs into separate requests before any
+    value is written, so a raise from here means the partition itself is wrong rather than
+    that two programs disagree. `calc_pe_eligibility` still catches it as a backstop.
     """
-    Dependency conflict error
-    """
 
-    def __init__(self, field, value_1, value_2) -> None:
-        super().__init__(f"Confilcting Policy Engine Dependencies in {field}: {value_1} and {value_2}")
+    def __init__(self, field, value_1, value_2, period=None, member=None) -> None:
+        self.field = field
+        self.value_1 = value_1
+        self.value_2 = value_2
+        self.period = period
+        self.member = member
+
+        where = f"{field} at {period}" if period is not None else field
+        if member is not None:
+            where = f"{where} for member {member}"
+
+        super().__init__(f"Conflicting Policy Engine dependencies in {where}: {value_1} and {value_2}")

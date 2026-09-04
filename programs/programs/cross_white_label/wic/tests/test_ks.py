@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock
 from django.test import TestCase
 
 import programs.framework.pe_dependencies as dependency
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_deps
 from programs.framework.pe_dependencies.household import KsStateCodeDependency

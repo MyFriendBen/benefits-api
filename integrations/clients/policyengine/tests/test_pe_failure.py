@@ -13,6 +13,7 @@ from screener.models import Screen, HouseholdMember, WhiteLabel
 from integrations.clients.policyengine import policy_engine as pe
 from integrations.clients.policyengine import engines as pe_engines_module
 from integrations.clients.policyengine.engines import PolicyEngineAPIError, PrivateApiSim
+from programs.framework.pe_dependencies.payload import Bucket, PayloadPlan
 from integrations.external_api_status import (
     POLICY_ENGINE,
     get_external_api_failures,
@@ -63,8 +64,10 @@ class TestCalcPeEligibilityFailure(TestCase):
         constructed = []
         engine_classes = [_make_engine(name, constructed, raises=raises) for name, raises in engines]
 
+        plan = PayloadPlan(payload={}, buckets=[Bucket(program_indexes=[0])])
+
         with patch.object(pe, "pe_engines", engine_classes), patch.object(
-            pe, "pe_input", return_value={}
+            pe, "build_pe_input", return_value=plan
         ), patch.object(pe, "all_eligibility", return_value={"prog": MagicMock()}), patch.object(
             pe, "capture_message"
         ) as capture_message, patch.object(

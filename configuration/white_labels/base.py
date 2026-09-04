@@ -15,6 +15,15 @@ For detailed documentation on how to configure each section, see:
 class ConfigurationData:
     is_default = False
 
+    # Whether this white label is a state screener the state dropdown can offer.
+    is_state = True
+
+    # Whether this state appears in the public state dropdown, as opposed to being reachable only
+    # by link. Opt in, so a state under construction cannot reach the public dropdown by omission:
+    # a launched state missing from the dropdown is reported quickly, while a pre-launch state
+    # exposed there sends real users into an unfinished screener.
+    publicly_launched = False
+
     @classmethod
     def get_white_label(self) -> WhiteLabel:
         raise NotImplemented()
@@ -220,7 +229,17 @@ class ConfigurationData:
                 "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
             },
             "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
-            "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
+            # Two adjacent options so the screener can tell the household's own TANF grant from
+            # any other cash aid. `cashAssistance` is the TANF field (PE excludes it from TANF's
+            # own gates); `cashAssistanceOther` is ordinary countable unearned income.
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistanceTanf",
+                "_default_message": "Cash Assistance - TANF",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther",
+                "_default_message": "Cash Assistance - Other",
+            },
             "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
             "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         },
@@ -413,6 +432,13 @@ class ConfigurationData:
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
                 },
             },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
+                },
+            },
         },
         "them": {
             "student": {
@@ -439,7 +465,10 @@ class ConfigurationData:
             "disabled": {
                 "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "conditionOptions.disabled",
+                    # Distinct label from the "you" page: Translation.label is globally
+                    # unique, so sharing one label makes both pages render whichever
+                    # pronoun that single row happens to hold.
+                    "_label": "conditionOptions.disabled.them",
                     "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
                 },
             },
@@ -448,6 +477,13 @@ class ConfigurationData:
                 "text": {
                     "_label": "conditionOptions.longTermDisability",
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
+                },
+            },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
                 },
             },
         },
@@ -523,6 +559,8 @@ class ConfigurationData:
             ],
         },
         "uiOptions": {"default": []},
+        # State codes this referrer's dropdown offers; empty means every publicly launched state.
+        "stateOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": ""},
         "noResultMessage": {

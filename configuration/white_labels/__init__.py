@@ -24,3 +24,18 @@ white_label_config: dict[str, ConfigurationData] = {
     "tx": TxConfigurationData,
     "wa": WaConfigurationData,
 }
+
+
+def state_options() -> list[dict]:
+    """Every state the state dropdown can offer, in display order, flagged by whether it is public."""
+    states = [
+        {
+            "code": code,
+            "name": data.state["name"],
+            "public": data.publicly_launched,
+        }
+        for code, data in white_label_config.items()
+        if data.is_state and not data.is_default
+    ]
+
+    return sorted(states, key=lambda state: state["name"])

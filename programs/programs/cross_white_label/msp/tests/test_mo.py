@@ -9,7 +9,7 @@ from programs.programs.cross_white_label.msp.base import Msp
 from screener.models import Screen
 from django.test import TestCase
 from screener.models import WhiteLabel
-from integrations.clients.policyengine.policy_engine import pe_input
+from programs.framework.pe_dependencies.payload import pe_input
 
 
 class TestMoMspWiring(TestCase):

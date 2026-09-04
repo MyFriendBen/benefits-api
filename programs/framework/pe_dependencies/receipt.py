@@ -42,8 +42,9 @@ does not get credited for.
 
 from screener.models import HouseholdMember, Screen
 
-# The income options that carry these benefits' dollar amounts. Note the `sSI` casing,
-# and that TANF is captured as `cashAssistance` rather than a `tanf` income type.
+# The income options that carry these benefits' dollar amounts. Note the `sSI` casing, and
+# that TANF is captured as `cashAssistance` rather than a `tanf` income type. Cash aid from
+# any other program is a separate option, `cashAssistanceOther`, and is not TANF receipt.
 SSI_INCOME_TYPE = "sSI"
 TANF_INCOME_TYPE = "cashAssistance"
 
@@ -60,9 +61,9 @@ def screen_reports_tanf(screen: Screen) -> bool:
     Whether the household reports receiving TANF — the tile, or a reported cash-assistance
     amount.
 
-    Read here rather than derived into the CurrentBenefit table on purpose: that would feed
-    the results layer's ``already_has`` filter, and "Cash Assistance Grant" is a broader label
-    than TANF, so mislabelling it would drop the state's TANF program from their results.
+    Read here rather than derived into the CurrentBenefit table on purpose: that would feed the
+    results layer's ``already_has`` filter, so a household whose only cash aid is non-TANF would
+    lose the state's TANF program from their results.
     """
     return screen.has_base_benefit("tanf") or screen.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
 

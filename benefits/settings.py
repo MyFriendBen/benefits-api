@@ -91,6 +91,8 @@ REST_FRAMEWORK = {
         # (60s) per message, on AllowAny endpoints. Generous enough for a real
         # conversation, tight enough to bound cost and worker exhaustion.
         "assistant_start": "30/hour",
+        # Reads are cheap and frequent (the widget opens on nearly every results page).
+        "assistant_history": "120/hour",
         "assistant_message": "120/hour",
     },
 }

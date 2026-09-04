@@ -235,6 +235,27 @@ referrer_data = {
 }
 ```
 
+`stateOptions` behaves differently from the other referrer keys: an empty list means every
+publicly launched state, while a non-empty list per referrer code names the states that referrer
+sees, launched publicly or not.
+
+The dropdown reads whichever config is loaded, so the entry belongs in the config for the state
+path the referrer is handed out under — `/ks/step-1?referrer=code` reads `ks.py`, not `_default.py`.
+A referrer spanning several states, as `uwgkc` does for the Kansas City metro, needs the same entry
+in each of them; see `ks.py` and `mo.py`.
+
+Keep partner entries out of `_default.py`. It stays the generic every-public-state list, since it
+backs the state-agnostic `/select-state` route rather than any one partner. The tradeoff is that a
+bare `/?referrer=code` link cannot narrow the dropdown — a referrer that needs one should be given
+state-scoped links instead.
+
+The dropdown's catalog of states is not hand-maintained — `add_config` derives the `state_options`
+config from the white label registry, using each state's `state["name"]`, `is_state` and
+`publicly_launched`. It writes an identical copy of that catalog to **every** white label's row,
+and the frontend reads the row for whichever label is loaded (`GET /api/configuration/ks/`), so
+`add_config --all` is required. A single-label run leaves every other row stale, which renders the
+dropdown from out-of-date data — or empty, if the row was never written.
+
 ### 5. Experiments (A/B Testing)
 
 Controls A/B test variant assignment. The frontend reads the variants list and uses a UUID hash to deterministically assign each user a variant.

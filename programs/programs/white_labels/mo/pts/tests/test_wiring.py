@@ -37,7 +37,8 @@ from django.test import TestCase
 import programs.framework.pe_dependencies as dependency
 from integrations.clients.policyengine.registry import all_calculators
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
-from programs.framework.pe_dependencies.payload import pe_input
+from programs.framework.pe_dependencies.payload import bucket_payload, build_pe_input, pe_input
+from programs.programs.cross_white_label.ssi.mo import MoSsi
 from programs.models import WhiteLabel
 from screener.models import Expense, HouseholdMember, IncomeStream, Screen
 from programs.programs.white_labels.mo.pts.calculator import MoPts
@@ -244,14 +245,31 @@ class TestVeteranIncomeRouting(MoPtsScenarioTestCase):
 
 
 class TestAgeIsMeasuredAtYearEnd(MoPtsScenarioTestCase):
-    """Age comes from ``AgeAtEndOf2026Dependency``, not the screening date."""
+    """Age comes from ``AgeAtEndOfClaimYearDependency``, not the screening date."""
 
     def test_uses_the_end_of_claim_year_age_dependency(self):
-        self.assertIn(dependency.member.AgeAtEndOf2026Dependency, MoPts.pe_inputs)
+        self.assertIn(dependency.member.AgeAtEndOfClaimYearDependency, MoPts.pe_inputs)
         self.assertNotIn(dependency.member.AgeDependency, MoPts.pe_inputs)
 
-    def test_claim_year_is_the_program_year(self):
-        self.assertEqual(dependency.member.AgeAtEndOf2026Dependency.claim_year, CLAIM_YEAR)
+    def test_claim_year_follows_the_period_the_program_is_configured_for(self):
+        """The claim year is read off the period, so a program rolled to a new year sends
+        that year's ages without anybody editing a dependency.
+
+        Asserted by moving the period rather than against a constant: a claim year compared
+        to a literal defined alongside it passes whatever both are set to.
+        """
+        screen = self.build_screen(
+            [{"birth": (1961, 9), "relationship": "headOfHousehold", "incomes": {"pension": 12_000}}],
+            "homeowner",
+            "propertyTax",
+            1_200,
+        )
+        program = Mock()
+        program.year.period = "2027"
+        payload = pe_input(screen, [MoPts(screen, program, screen.missing_fields())])
+        ages = {person["age"]["2027"] for person in payload["household"]["people"].values()}
+
+        self.assertEqual(ages, {66})
 
     def test_later_in_year_birthday_reports_the_attained_age(self):
         """A September 1961 claimant attains 65 during 2026. ``AgeDependency`` would report
@@ -263,6 +281,98 @@ class TestAgeIsMeasuredAtYearEnd(MoPtsScenarioTestCase):
             1_200,
         )
         self.assertEqual(set(self.people_values(screen, "age").values()), {65})
+
+
+class TestSharingAScreenWithOtherMoPrograms(MoPtsScenarioTestCase):
+    """The incident this ticket closes.
+
+    Every program on a Missouri screen is answered from one PolicyEngine payload, and `age`
+    is one slot per member. MO PTS wants the age attained during the claim year; every other
+    program wants the age on the screening date. For a member whose birthday falls later in
+    the year those differ by one, and payload assembly used to raise on the disagreement from
+    outside `calc_pe_eligibility`'s try/except -- a 500 on `/api/eligibility/{id}` for the
+    whole screen, which is why `mo_pts` was deactivated in prod on 2026-08-24.
+
+    Assembly now answers the two sides with two requests. The screening-date age stays in the
+    first payload, so the other programs read exactly what they read before MO PTS existed.
+    """
+
+    def build_screen_with_a_later_in_year_birthday(self):
+        screen = self.build_screen(
+            [{"birth": (1961, 12), "relationship": "headOfHousehold", "incomes": {"pension": 12_000}}],
+            "homeowner",
+            "propertyTax",
+            1_200,
+        )
+        # A December birthday is 65 at the end of 2026 and 64 on any screening date before
+        # December, so the two age bases disagree for most of the year. Pinned rather than
+        # computed: `calc_age` reads the wall clock, and the disagreement this test is about
+        # has to exist in every month the suite runs in.
+        member = screen.household_members.first()
+        member.age = 64
+        member.save()
+
+        return screen
+
+    def plan(self, screen):
+        program = Mock()
+        program.year.period = PERIOD
+        return build_pe_input(
+            screen,
+            [
+                MoSsi(screen, program, screen.missing_fields()),
+                MoPts(screen, program, screen.missing_fields()),
+            ],
+        )
+
+    def test_the_two_age_bases_are_answered_by_two_requests(self):
+        plan = self.plan(self.build_screen_with_a_later_in_year_birthday())
+
+        self.assertEqual([bucket.program_indexes for bucket in plan.buckets], [[0], [1]])
+        self.assertEqual(plan.dropped_program_indexes, [])
+
+    def test_the_other_program_still_reads_the_screening_date_age(self):
+        screen = self.build_screen_with_a_later_in_year_birthday()
+        plan = self.plan(screen)
+
+        ages = {person["age"][PERIOD] for person in plan.payload["household"]["people"].values()}
+        self.assertEqual(ages, {64})
+
+    def test_mo_pts_gets_the_age_it_asked_for(self):
+        screen = self.build_screen_with_a_later_in_year_birthday()
+        plan = self.plan(screen)
+
+        payload = bucket_payload(plan, plan.buckets[1])
+        ages = {person["age"][PERIOD] for person in payload["household"]["people"].values()}
+        self.assertEqual(ages, {65})
+
+    def test_mo_pts_still_sees_the_rest_of_the_household(self):
+        """It is the same payload with one slot rewritten, so nothing MO PTS reads today
+        depends on which sibling programs happened to be on the screen."""
+        screen = self.build_screen_with_a_later_in_year_birthday()
+        plan = self.plan(screen)
+
+        first = plan.payload["household"]["people"]
+        second = bucket_payload(plan, plan.buckets[1])["household"]["people"]
+
+        for member_id, person in first.items():
+            differing = {field for field, periods in person.items() if second[member_id][field] != periods}
+            self.assertEqual(differing, {"age"})
+
+    def test_one_request_when_the_birthday_has_already_passed(self):
+        """The split is decided on values, not on which dependency classes the programs
+        declare. A January birthday makes both bases agree, so the screen stays one request.
+        """
+        screen = self.build_screen(
+            [{"birth": (1961, 1), "relationship": "headOfHousehold", "incomes": {"pension": 12_000}}],
+            "homeowner",
+            "propertyTax",
+            1_200,
+        )
+        plan = self.plan(screen)
+
+        self.assertEqual([bucket.program_indexes for bucket in plan.buckets], [[0, 1]])
+        self.assertEqual(plan.conflicts, [])
 
 
 class TestSurvivorBenefitsRouting(MoPtsScenarioTestCase):

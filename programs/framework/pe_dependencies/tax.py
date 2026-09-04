@@ -88,8 +88,8 @@ class PellGrantPrimaryIncomeDependency(TaxUnit):
     def value(self):
         total = 0
         for member in self.screen.household_members.all():
-            is_head = TaxUnitHeadDependency(self.screen, member, self.relationship_map).value()
-            is_spouse = TaxUnitSpouseDependency(self.screen, member, self.relationship_map).value()
+            is_head = TaxUnitHeadDependency(self.screen, member, self.relationship_map, self.period).value()
+            is_spouse = TaxUnitSpouseDependency(self.screen, member, self.relationship_map, self.period).value()
             if is_head or is_spouse:
                 total += int(member.calc_gross_income("yearly", ["all"]))
 

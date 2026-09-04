@@ -55,7 +55,9 @@ class ChildCareAssistance(ProgramCalculator):
         # income — only calculated if county is in CCCAP limits
         if in_county_limits:
             frequency = "yearly"
-            gross_income = self.screen.calc_gross_income(frequency, ["all"], ["cashAssistance", "nurturingFutures"])
+            gross_income = self.screen.calc_gross_income(
+                frequency, ["all"], ["cashAssistance", "cashAssistanceOther", "nurturingFutures"]
+            )
             deductions = self.screen.calc_expenses(frequency, ["childSupport"])
             net_income = gross_income - deductions
             fpl_percent = cccap_county_limits[county_name] / 100

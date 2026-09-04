@@ -40,6 +40,10 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
 
     # TODO: Set your state/region name
+    # TODO: Flip to True only when the state is ready for the public dropdown. Until then it stays
+    # reachable by direct link and by any referrer that names it in "stateOptions".
+    publicly_launched = False
+
     state = {"name": "{{name}}"}
 
     # Banner messages (optional - uncomment if needed)
@@ -258,7 +262,8 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #
     # theme: CSS theme name (usually "default")
     #   - Used to apply custom styling/themes
-    #   - Available themes: "default", "twoOneOne", "twoOneOneNC", "nc_lanc"
+    #   - The available names are the keys of `themes` in the frontend's
+    #     src/Assets/styleController.ts; an unlisted name silently falls back to "default"
     #
     # logoSource: Logo filename from public/locales folder
     #   - Displayed in header throughout screener
@@ -295,6 +300,14 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     * "nc_show_211_link" - Show 2-1-1 link in NC
     #     * "white_multi_select_tile_icon" - White icons on multi-select tiles
     #     * "dont_show_category_values" - Hide dollar amounts on category headings
+    #
+    # stateOptions: State codes this referrer's "What is your state?" dropdown offers
+    #   - Empty list = every publicly launched state (see publicly_launched below)
+    #   - A non-empty list may name states that are not public yet, e.g.
+    #     {"uwgkc": ["ks", "mo"]} for a referrer serving both sides of the KS/MO line
+    #   - The dropdown reads whichever config is loaded, so a referrer reachable from more than
+    #     one state path needs the same entry in each of those states' configs. Keep partner
+    #     entries out of "_default", which stays the generic every-public-state list
     #
     # noResultMessage: Message shown when user has no eligible programs
     #   - Format: {"_label": "translation.key", "_default_message": "Message text"}

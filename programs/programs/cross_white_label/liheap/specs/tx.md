@@ -97,6 +97,8 @@ The benefit is a variable annual amount based on household income as a percentag
 
 **Income counting:** `tx_ceap` countable income follows the TDHCA state-plan income sources list — full Social Security, pension, and alimony are counted; capital gains and child support are excluded (10 TAC §6.4 / State Plan §1.9). SSI is counted using the household's reported amount. Requires PolicyEngine **≥ 1.742.0**.
 
+**Known gap — non-TANF cash assistance is not counted.** `tx_ceap_countable_income` is `tx_ceap_countable_income_person + tanf`, and the person-level source list counts `general_assistance` but not `financial_assistance`. The screener sends `cashAssistanceOther` ("Cash Assistance - Other" — General Assistance, another state's TANF, a local fund) as `financial_assistance`, so it reaches no CEAP gate: measured, `tx_ceap_countable_income` is $0 for a household reporting $200/month of it. Because the benefit is tiered by FPG, this can place a household one tier too high — measured at a $4,000 electricity expense, $9,000 of wages plus $200/month cash aid returns $1,800/year where the correct tier pays $1,500. Reported cash aid did reach this gate before the `cashAssistance` split, via the `tanf` input. Supplying `tx_ceap_countable_income` ourselves would mean taking over the whole aggregate — wages, self-employment, Social Security, the `ssi` take-up nuance above, pensions, rental, dividends and veterans' benefits — so the fix belongs upstream in the TDHCA sources list.
+
 **Methodology — income tier maximums (2026):**
 
 - 0–50% FPG → maximum **$1,800/year**

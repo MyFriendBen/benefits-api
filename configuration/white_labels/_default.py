@@ -52,6 +52,9 @@ class DefaultConfigurationData(ConfigurationData):
             ]
         },
         "uiOptions": {"default": []},
+        # Empty means every publicly launched state. Referrers that narrow the dropdown declare it
+        # in the config for the state path they are handed out under, not here.
+        "stateOptions": {"default": []},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

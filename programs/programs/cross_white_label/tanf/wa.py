@@ -38,6 +38,9 @@ class WaTanf(Tanf):
         dependency.member.SelfEmploymentIncomeBeforeLsrDependency,
         dependency.member.SocialSecurityIncomeDependency,
         dependency.member.UnemploymentIncomeDependency,
+        # Non-TANF cash aid is in TANF's unearned source list; the named income inputs above
+        # would otherwise drop it from every gate.
+        dependency.member.NonTanfCashAssistanceIncomeDependency,
         dependency.spm.CashAssetsDependency,
         dependency.spm.WaShowAllCashAssistanceProgramsDependency,
     ]

@@ -47,6 +47,101 @@ class TestAgeDependency(TestCase):
         self.assertEqual(dep.field, "is_disabled")
 
 
+class TestAgeAtEndOfClaimYearDependency(TestCase):
+    """The age a tax-year rule means: attained by December 31 of the year being claimed.
+
+    The claim year comes from the period the variable is sent at, which is the program's
+    configured year. It used to be a constant on a subclass hardcoded to 2026, which would
+    have gone on sending 2026 ages under a 2027 period, understating every claimant by a year
+    and reintroducing the disagreement with `AgeDependency` for a wider slice of
+    households.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+
+    def setUp(self):
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Cole County",
+            household_size=1,
+            completed=False,
+        )
+
+    def member_born(self, year, month, age=None):
+        return HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=age if age is not None else datetime.date.today().year - year,
+            birth_year_month=datetime.date(year, month, 1),
+        )
+
+    def test_reports_the_age_attained_during_the_period(self):
+        """A September 1961 claimant is 65 for all of 2026 as the statute counts it, whatever
+        month the screen runs in."""
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, self.member_born(1961, 9), {}, period="2026")
+
+        self.assertEqual(dep.value(), 65)
+
+    def test_the_year_follows_the_period(self):
+        household_member = self.member_born(1961, 9)
+
+        self.assertEqual(
+            [
+                member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {}, period=period).value()
+                for period in ("2026", "2027")
+            ],
+            [65, 66],
+        )
+
+    def test_a_monthly_period_still_yields_the_year(self):
+        """Nothing sends age monthly today, but the period shape is per variable, so reading
+        the year rather than assuming ``YYYY`` keeps this correct if something does."""
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, self.member_born(1961, 9), {}, period="2026-09")
+
+        self.assertEqual(dep.value(), 65)
+
+    def test_falls_back_to_the_screening_date_age_without_a_birth_month(self):
+        """Most screens report an age and no birth date. There is no year to subtract from,
+        so the reported age is the only answer available."""
+        household_member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=64)
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {}, period="2026")
+
+        self.assertEqual(dep.value(), 64)
+
+    def test_falls_back_to_the_screening_date_age_without_a_period(self):
+        """Constructed outside payload assembly — a dependency with no period cannot know
+        which year to measure against, and must not guess one."""
+        household_member = self.member_born(1961, 9, age=64)
+        dep = member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {})
+
+        self.assertEqual(dep.value(), household_member.calc_age())
+
+    def test_a_malformed_period_falls_back_instead_of_inventing_a_year(self):
+        """`period` is a free-text ``FederalPoveryLimit.period``, so a typo can reach here.
+        Reading the leading digits of ``"20260"`` would send PolicyEngine an age of 18299;
+        falling back sends the screening-date age. Such a request is already doomed -- the
+        same string is the payload's period key -- but it should not also be nonsensical.
+        """
+        household_member = self.member_born(1961, 9)
+        screening_date_age = household_member.calc_age()
+
+        self.assertEqual(
+            [
+                member.AgeAtEndOfClaimYearDependency(self.screen, household_member, {}, period=period).value()
+                for period in ("20260", "2026-13", "2026-9", "")
+            ],
+            [screening_date_age] * 4,
+        )
+
+    def test_it_writes_the_same_field_as_the_screening_date_age(self):
+        """Which is why a screen carrying both splits into two PolicyEngine requests: one
+        payload slot cannot hold both answers."""
+        self.assertEqual(member.AgeAtEndOfClaimYearDependency.field, member.AgeDependency.field)
+
+
 class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
     """Tests for MeetsSsiDisabilityCriteriaDependency, required by PolicyEngine frontier
     to classify a person as SSI-disabled (MFB-1102)."""
@@ -1230,7 +1325,8 @@ class TestIsMedicaidEligibleDependency(TestCase):
 
 
 class TestFosterCareDependency(TestCase):
-    """Tests for FosterCareDependency which maps fosterChild relationship to was_in_foster_care."""
+    """Tests for FosterCareDependency, which maps the fosterChild relationship OR the
+    self-reported was_in_foster_care tile to PolicyEngine's was_in_foster_care."""
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
@@ -1264,6 +1360,44 @@ class TestFosterCareDependency(TestCase):
         """Returns None for the head of household (not a foster child)."""
         dep = member.FosterCareDependency(self.screen, self.head, {})
         self.assertIsNone(dep.value())
+
+    def test_value_returns_true_for_self_reported_head_of_household(self):
+        """Returns True for an adult who ticked the tile, whom the relationship misses.
+
+        This is the case the relationship proxy cannot reach at all: a young adult who
+        aged out of care is their own head of household, never a `fosterChild`.
+        """
+        self.head.was_in_foster_care = True
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_true_for_self_reported_child(self):
+        """Returns True for a child reported as `child` whose caregiver ticked the tile."""
+        self.biological_child.was_in_foster_care = True
+        dep = member.FosterCareDependency(self.screen, self.biological_child, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_none_when_tile_explicitly_false(self):
+        """An unticked tile stays None, not False.
+
+        Sending False would assert a negative on a question the member may never have
+        been shown; None lets PolicyEngine apply its own default.
+        """
+        self.head.was_in_foster_care = False
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_true_for_foster_child_with_tile_false(self):
+        """The relationship still wins when the tile is unticked."""
+        self.foster_child.was_in_foster_care = False
+        dep = member.FosterCareDependency(self.screen, self.foster_child, {})
+        self.assertTrue(dep.value())
+
+    def test_dependencies_includes_both_sources(self):
+        """Both source fields are declared so `can_calc` sees them."""
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertIn("relationship", dep.dependencies)
+        self.assertIn("was_in_foster_care", dep.dependencies)
 
 
 class TestEmploymentIncomeBeforeLsrDependency(TestCase):
@@ -2176,7 +2310,7 @@ class TestMaTotalHoursWorkedDependency(TestCase):
 
     def test_shares_the_field_with_the_base_class(self):
         """Same field and period as the base class, which is why an MA calculator that
-        sends both raises DependencyError."""
+        sends both splits the screen across two PolicyEngine requests."""
         self.assertEqual(
             member.MaTotalHoursWorkedDependency.field,
             member.TotalHoursWorkedDependency.field,

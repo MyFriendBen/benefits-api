@@ -75,7 +75,7 @@ SENT_FIELD_TO_SOURCE = {
     "long_term_capital_gains": CAPITAL_GAINS_TERM,
 }
 
-# The 11 sources we never populate. Grouped by *why*, because "unreachable" alone is
+# The 10 sources we never populate. Grouped by *why*, because "unreachable" alone is
 # misleading — for most of these the household's money is still counted, just under a
 # different source. See the wic_income comment for the full reasoning.
 UNREACHABLE_SOURCES = {
@@ -92,7 +92,6 @@ UNREACHABLE_SOURCES = {
     "interest_income",
     # Not collected by the screener at all.
     "educational_assistance",
-    "financial_assistance",
     "gi_cash_assistance",
     "military_service_income",
     "railroad_benefits",
@@ -230,6 +229,16 @@ class TestFederalWicIncomeMapping(TestCase):
         self.assertEqual(member.ChildSupportReceivedDependency.field, "child_support_received")
         self.assertEqual(member.SnapChildSupportDependency.field, "child_support_expense")
         self.assertNotIn(member.SnapChildSupportDependency, Wic.pe_inputs)
+
+    def test_both_cash_assistance_types_are_wic_income_sources(self):
+        """WIC counts public-assistance payments, and its own self-exclusion does not apply:
+        the household's TANF grant is income here. `cashAssistance` reaches WIC via the `tanf`
+        input and `cashAssistanceOther` via `financial_assistance`."""
+        self.assertIn(member.NonTanfCashAssistanceIncomeDependency, Wic.pe_inputs)
+        self.assertEqual(member.NonTanfCashAssistanceIncomeDependency.field, "financial_assistance")
+        self.assertEqual(member.NonTanfCashAssistanceIncomeDependency.income_types, ["cashAssistanceOther"])
+        self.assertIn("financial_assistance", _sources_reached(Wic))
+        self.assertIn(spm.Tanf, Wic.pe_inputs)
 
     def test_ssi_and_tanf_are_wic_income_sources(self):
         """Both are in WIC's source list and both are dual-role inputs: they send the

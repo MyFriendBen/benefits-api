@@ -7,13 +7,16 @@ class MaConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="ma")
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Massachusetts"}
 
     public_charge_rule = {
-        "link": "https://www.mass.gov/info-details/information-about-the-public-charge-rule-and-how-it-may-impact-you#information-about-the-public-charge-rule-",
+        "link": "https://miracoalition.org/news/public-charge-rule-new-community-update-july-2026/",
         "text": {
             "_label": "landingPage.publicChargeLinkMA",
-            "_default_message": "Massachusetts Department of Health and Human Services",
+            "_default_message": "MIRA Coalition's public charge update",
         },
     }
 
@@ -182,9 +185,15 @@ class MaConfigurationData(ConfigurationData):
         **ConfigurationData.income_options_by_category,
         "government": {
             **ConfigurationData.income_options_by_category["government"],
+            # EAEDC is not TANF, and the old single label named both — so the split has to name
+            # each side or the ambiguity survives the rename.
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance.ma",
-                "_default_message": "Government Cash Assistance (including TAFDC and EAEDC)",
+                "_label": "incomeOptions.cashAssistanceTanf.ma",
+                "_default_message": "Cash Assistance - TAFDC",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.ma",
+                "_default_message": "Cash Assistance - Other (including EAEDC)",
             },
             "stateDisability": {
                 "_label": "incomeOptions.stateDisability.ma",
@@ -299,83 +308,6 @@ class MaConfigurationData(ConfigurationData):
             "subsidizedRent": {
                 "_label": "expenseOptions.subsidizedRent",
                 "_default_message": "Rent (Public / Subsidized Housing)",
-            },
-        },
-    }
-
-    condition_options = {
-        "you": {
-            "student": {
-                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.student",
-                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
-                },
-            },
-            "pregnant": {
-                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.pregnant",
-                    "_default_message": "Pregnant",
-                },
-            },
-            "blindOrVisuallyImpaired": {
-                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.blindOrVisuallyImpaired",
-                    "_default_message": "Blind or visually impaired",
-                },
-            },
-            "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.disabled",
-                    "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
-                },
-            },
-            "longTermDisability": {
-                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.longTermDisability",
-                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
-                },
-            },
-        },
-        "them": {
-            "student": {
-                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.student",
-                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
-                },
-            },
-            "pregnant": {
-                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.pregnant",
-                    "_default_message": "Pregnant",
-                },
-            },
-            "blindOrVisuallyImpaired": {
-                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.blindOrVisuallyImpaired",
-                    "_default_message": "Blind or visually impaired",
-                },
-            },
-            "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.disabled.them",
-                    "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
-                },
-            },
-            "longTermDisability": {
-                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.longTermDisability",
-                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
-                },
             },
         },
     }

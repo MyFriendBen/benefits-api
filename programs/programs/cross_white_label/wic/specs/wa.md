@@ -19,6 +19,7 @@
 2. **Income eligibility: Household gross income at or below 185% of the Federal Poverty Level (FPL)**
    * Note: **Income is NOT used as a disqualifying criterion when any household member is enrolled in SNAP, Medicaid, or TANF** (see Criterion 3). The income check must be bypassed entirely when adjunctive eligibility applies -- do not fail eligibility based on income in those cases.
    * Note: Per WA DOH: "If you are pregnant, include each unborn child in household size." This means a pregnant single woman expecting one child uses HH of 2 thresholds; a pregnant woman expecting twins uses HH of 3 thresholds; etc.
+   * Note: `7 CFR 246.7(d)(2)(ii)(A)` counts public-assistance payments, so both cash-assistance income types count: `cashAssistance` ("Cash Assistance - TANF") via PolicyEngine's `tanf`, and `cashAssistanceOther` ("Cash Assistance - Other") via `financial_assistance`. TANF's own self-exclusion does not apply here — WIC counts a household's TANF grant as income.
    * Screener fields:
      * `household_size`
      * `income_streams`

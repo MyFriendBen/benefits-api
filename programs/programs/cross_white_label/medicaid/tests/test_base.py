@@ -1,38 +1,48 @@
-"""
-Unit tests for federal Medicaid calculator eligibility logic.
+"""Unit tests for the shared Medicaid calculator's value routing.
 
-These tests verify that:
-1. Seniors (65+) and disabled individuals are correctly routed through the
-   aged/disabled pathway and not the ACA expansion pathway
-2. Non-senior, non-disabled members are routed through the appropriate
-   Medicaid category (ADULT, PARENT, PREGNANT, INFANT, CHILD, etc.)
+PolicyEngine answers Medicaid over two pathways and a member can clear either: the ordinary
+MAGI pathway (``medicaid`` plus ``medicaid_category``, naming the group that applied) and the
+optional aged/blind/disabled pathway (``is_optional_senior_or_disabled_for_medicaid``). These
+tests pin which of the two decides a member's value, and which rate that produces.
 
-ACA Medicaid expansion (138% FPL) only applies to adults under 65.
-Seniors must qualify through the aged/disabled pathway which uses
-state-specific FPL thresholds (typically 74-100%).
+PolicyEngine's own routing wins wherever it has an answer. The ABD pathway is the fallback for
+the members it does not reach, not an override applied ahead of it — reading it first is what
+produced the production failures the regression tests at the bottom of this file cover.
 """
 
 from django.test import TestCase
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock
 
-from programs.framework.pe_dependencies import member as member_dependency
+from programs.framework.pe_dependencies import member as member_deps
 from programs.programs.cross_white_label.medicaid.base import Medicaid
-from programs.framework.pe_dependencies import member
 
 
-class TestMedicaidSeniorEligibility(TestCase):
-    """Tests for Medicaid calculator senior eligibility routing."""
+class MedicaidValueTestCase(TestCase):
+    """Shared setup: one calculator, one member, and a stand-in for PolicyEngine."""
 
-    def _create_calculator_with_mocks(self):
-        """Helper to create a Medicaid calculator with mocked dependencies."""
+    # Distinct rates so an assertion names exactly one category.
+    RATES = {
+        "NONE": 0,
+        "ADULT": 400,
+        "YOUNG_ADULT": 410,
+        "PARENT": 420,
+        "PREGNANT": 430,
+        "INFANT": 440,
+        "YOUNG_CHILD": 450,
+        "OLDER_CHILD": 460,
+        "SSI_RECIPIENT": 470,
+        "AGED": 480,
+        "DISABLED": 490,
+    }
+
+    def calculator(self, senior_value_takes_precedence=False):
         calculator = Medicaid(Mock(), Mock(), Mock())
         calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
+        calculator.medicaid_categories = dict(self.RATES)
+        calculator.senior_value_takes_precedence = senior_value_takes_precedence
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
-        """Helper to create a mock member."""
+    def member(self, age, is_disabled=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -40,594 +50,279 @@ class TestMedicaidSeniorEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_senior_who_qualifies_via_aged_pathway_returns_aged_category(self):
+    def policyengine_says(self, calculator, medicaid=0, category="NONE", abd=False):
+        """Stand in for PolicyEngine's answer about one member.
+
+        Both variables are modelled on every call, not just the one a test is about: they are
+        read together, and stubbing only one lets a test pass against a combination
+        PolicyEngine would never return.
         """
-        Test that a senior (65+) who qualifies via the aged/disabled pathway
-        returns the AGED category value.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"AGED": 474, "ADULT": 474}
+        calculator.get_member_variable = Mock(return_value=medicaid)
 
-        # Senior qualifies via aged/disabled pathway
-        calculator.get_member_dependency_value.return_value = True
+        def dependency_value(dependency, member_id):
+            if dependency is member_deps.MedicaidSeniorOrDisabled:
+                return abd
+            if dependency is member_deps.MedicaidCategory:
+                return category
+            raise AssertionError(f"unexpected dependency read: {dependency}")
 
-        member = self._create_member(age=71)
-
-        result = calculator.member_value(member)
-
-        # Should return AGED category * 12
-        self.assertEqual(result, 474 * 12)
-
-        # Should have checked the aged/disabled pathway
-        calculator.get_member_dependency_value.assert_called_once_with(member_dependency.MedicaidSeniorOrDisabled, 1)
-
-    def test_senior_who_fails_aged_pathway_returns_zero(self):
-        """
-        Test that a senior (65+) who fails the aged/disabled pathway
-        returns 0 and does NOT fall through to ACA expansion.
-
-        This is the key bug fix - previously seniors could fall through
-        to the 138% FPL ACA adult pathway.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"AGED": 474, "ADULT": 474}
-
-        # Senior fails aged/disabled pathway (e.g., income > 100% FPL)
-        calculator.get_member_dependency_value.return_value = False
-
-        # Even if regular medicaid would return positive (138% FPL)
-        calculator.get_member_variable.return_value = 500
-
-        member = self._create_member(age=71)
-
-        result = calculator.member_value(member)
-
-        # Should return 0, NOT fall through to ACA adult pathway
-        self.assertEqual(result, 0)
-
-        # Should NOT have called get_member_variable (no ACA fallback)
-        calculator.get_member_variable.assert_not_called()
-
-    def test_senior_at_age_65_boundary_uses_aged_pathway(self):
-        """
-        Test that exactly 65 years old uses the aged/disabled pathway.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"AGED": 474, "ADULT": 474}
-
-        calculator.get_member_dependency_value.return_value = True
-
-        member = self._create_member(age=65)
-
-        result = calculator.member_value(member)
-
-        # Should use AGED pathway
-        self.assertEqual(result, 474 * 12)
-        calculator.get_member_dependency_value.assert_called_once()
-
-    def test_adult_age_64_uses_aca_pathway_not_aged(self):
-        """
-        Test that 64-year-old uses ACA expansion pathway, not aged pathway.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"AGED": 474, "ADULT": 474}
-
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "ADULT"
-
-        member = self._create_member(age=64)
-
-        result = calculator.member_value(member)
-
-        # Should return ADULT category * 12
-        self.assertEqual(result, 474 * 12)
-
-        # Should have called get_member_variable for ACA check
-        calculator.get_member_variable.assert_called_once_with(1)
-
-    def test_member_with_none_age_uses_aca_pathway(self):
-        """
-        Test that members with None age are treated as non-seniors
-        and use the ACA expansion pathway.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"ADULT": 474}
-
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "ADULT"
-
-        member = self._create_member(age=None)
-
-        result = calculator.member_value(member)
-
-        # Should use ACA pathway (not crash on None comparison)
-        self.assertEqual(result, 474 * 12)
-        calculator.get_member_variable.assert_called_once()
-
-
-class TestMedicaidDisabledEligibility(TestCase):
-    """Tests for Medicaid calculator disabled eligibility routing."""
-
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
+        calculator.get_member_dependency_value = Mock(side_effect=dependency_value)
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
+    def annual(self, category):
+        return self.RATES[category] * 12
 
-    def test_disabled_adult_uses_disabled_pathway(self):
+
+class TestOrdinaryPathway(MedicaidValueTestCase):
+    """A member PolicyEngine prices through ``medicaid_category``."""
+
+    def test_adult_is_valued_at_the_adult_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="ADULT")
+
+        self.assertEqual(calculator.member_value(self.member(age=35)), self.annual("ADULT"))
+
+    def test_parent_is_valued_at_the_parent_rate_not_the_adult_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="PARENT")
+
+        self.assertEqual(calculator.member_value(self.member(age=35)), self.annual("PARENT"))
+
+    def test_pregnant_member_is_valued_at_the_pregnant_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="PREGNANT")
+
+        self.assertEqual(calculator.member_value(self.member(age=30)), self.annual("PREGNANT"))
+
+    def test_each_child_category_is_valued_at_its_own_rate(self):
+        for category, age in (("INFANT", 0), ("YOUNG_CHILD", 4), ("OLDER_CHILD", 12)):
+            with self.subTest(category=category):
+                calculator = self.policyengine_says(self.calculator(), medicaid=500, category=category)
+
+                self.assertEqual(calculator.member_value(self.member(age=age)), self.annual(category))
+
+    def test_young_adult_is_valued_at_the_young_adult_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="YOUNG_ADULT")
+
+        self.assertEqual(calculator.member_value(self.member(age=20)), self.annual("YOUNG_ADULT"))
+
+    def test_member_with_unknown_age_is_treated_as_non_senior(self):
+        """``calc_age`` returns None when birth date is missing; it must not crash or age them up."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="ADULT")
+
+        self.assertEqual(calculator.member_value(self.member(age=None)), self.annual("ADULT"))
+
+    def test_ineligible_member_is_worth_nothing(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE")
+
+        self.assertEqual(calculator.member_value(self.member(age=50)), 0)
+
+    def test_none_category_is_worth_nothing(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="NONE")
+
+        self.assertEqual(calculator.member_value(self.member(age=35)), 0)
+
+    def test_unpriced_category_is_worth_nothing_rather_than_raising(self):
+        """PolicyEngine's enum is larger than any state prices and grows over time.
+
+        A KeyError here would fail the whole eligibility request for the household, not just
+        this program, so an unrecognised category has to read as $0 like any other ineligible
+        answer.
         """
-        Test that disabled adults (any age under 65) use the aged/disabled pathway.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"DISABLED": 474, "ADULT": 474}
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="MEDICALLY_NEEDY")
 
-        calculator.get_member_dependency_value.return_value = True
+        self.assertEqual(calculator.member_value(self.member(age=35)), 0)
 
-        member = self._create_member(age=45, is_disabled=True)
 
-        result = calculator.member_value(member)
+class TestAbdPathway(MedicaidValueTestCase):
+    """Members eligible on an age or disability basis."""
 
-        # Should return DISABLED category * 12
-        self.assertEqual(result, 474 * 12)
+    def test_senior_on_the_abd_pathway_is_valued_at_the_aged_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=True)
 
-    def test_disabled_adult_who_fails_disabled_pathway_returns_zero(self):
-        """
-        Test that disabled adults who fail the aged/disabled pathway
-        return 0 and do NOT fall through to ACA expansion.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"DISABLED": 474, "ADULT": 474}
+        self.assertEqual(calculator.member_value(self.member(age=66)), self.annual("AGED"))
 
-        # Disabled person fails aged/disabled pathway
-        calculator.get_member_dependency_value.return_value = False
+    def test_age_65_is_the_senior_boundary(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=True)
 
-        # Even if ACA would pass
-        calculator.get_member_variable.return_value = 500
+        self.assertEqual(calculator.member_value(self.member(age=65)), self.annual("AGED"))
 
-        member = self._create_member(age=45, is_disabled=True)
+    def test_age_64_is_not_a_senior(self):
+        """One year under the boundary, the ABD pathway pays the disabled rate, not the aged one."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=True)
 
-        result = calculator.member_value(member)
+        self.assertEqual(calculator.member_value(self.member(age=64, is_disabled=True)), self.annual("DISABLED"))
 
-        # Should return 0, NOT fall through
-        self.assertEqual(result, 0)
-        calculator.get_member_variable.assert_not_called()
+    def test_disabled_adult_on_the_abd_pathway_is_valued_at_the_disabled_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=True)
 
-    def test_disabled_senior_returns_disabled_not_aged(self):
-        """
-        Test that a disabled senior (65+) returns DISABLED category,
-        not AGED category. Disability takes priority.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"DISABLED": 500, "AGED": 474}
+        self.assertEqual(calculator.member_value(self.member(age=45, is_disabled=True)), self.annual("DISABLED"))
 
-        calculator.get_member_dependency_value.return_value = True
+    def test_disabled_child_on_the_abd_pathway_is_valued_at_the_disabled_rate(self):
+        """The disabled rate, not the child rate — the child's own facts decide the tier."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=True)
 
-        member = Mock()
-        member.id = 1
-        member.age = 70
-        member.calc_age = Mock(return_value=70)
-        member.has_disability = Mock(return_value=True)
+        self.assertEqual(calculator.member_value(self.member(age=10, is_disabled=True)), self.annual("DISABLED"))
 
-        result = calculator.member_value(member)
+    def test_senior_who_fails_the_abd_pathway_is_worth_nothing(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=False)
 
-        # Should return DISABLED (500 * 12), not AGED (474 * 12)
-        self.assertEqual(result, 500 * 12)
+        self.assertEqual(calculator.member_value(self.member(age=71)), 0)
 
-    def test_disabled_child_uses_disabled_pathway(self):
-        """
-        Test that a disabled child uses the aged/disabled pathway.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"DISABLED": 474, "OLDER_CHILD": 200}
+    def test_disabled_adult_who_fails_the_abd_pathway_is_worth_nothing(self):
+        """Failing ABD with nothing on the ordinary pathway either leaves them ineligible."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=False)
 
-        calculator.get_member_dependency_value.return_value = True
+        self.assertEqual(calculator.member_value(self.member(age=45, is_disabled=True)), 0)
 
-        member = self._create_member(age=10, is_disabled=True)
+    def test_neither_senior_nor_disabled_never_reads_the_abd_pathway(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=True)
 
-        result = calculator.member_value(member)
+        self.assertEqual(calculator.member_value(self.member(age=35)), 0)
 
-        # Should return DISABLED category * 12
-        self.assertEqual(result, 474 * 12)
 
+class TestAbdCategories(MedicaidValueTestCase):
+    """``SENIOR_OR_DISABLED`` and ``SSI_RECIPIENT`` carry no aged/disabled distinction.
 
-class TestMedicaidAdultEligibility(TestCase):
-    """Tests for Medicaid calculator adult (non-senior, non-disabled) eligibility."""
+    PolicyEngine reports both for members it found eligible on an age or disability basis
+    without saying which, so the value tier comes from the member's own age and disability
+    flags rather than from a rate keyed on the category name.
+    """
 
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
+    def test_senior_or_disabled_category_for_a_senior_is_the_aged_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="SENIOR_OR_DISABLED")
 
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
+        self.assertEqual(calculator.member_value(self.member(age=70)), self.annual("AGED"))
 
-    def test_adult_who_qualifies_returns_adult_category(self):
-        """
-        Test that an adult who qualifies via ACA expansion returns ADULT category.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"ADULT": 474}
+    def test_senior_or_disabled_category_for_a_disabled_child_is_the_disabled_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="SENIOR_OR_DISABLED")
 
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "ADULT"
+        self.assertEqual(calculator.member_value(self.member(age=11, is_disabled=True)), self.annual("DISABLED"))
 
-        member = self._create_member(age=35)
+    def test_ssi_recipient_category_for_a_disabled_adult_is_the_disabled_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="SSI_RECIPIENT")
 
-        result = calculator.member_value(member)
+        self.assertEqual(calculator.member_value(self.member(age=41, is_disabled=True)), self.annual("DISABLED"))
 
-        self.assertEqual(result, 474 * 12)
+    def test_ssi_recipient_category_with_no_disability_flag_is_the_disabled_rate(self):
+        """SSI receipt is itself the disability signal, so a working-age recipient who set no
+        screener flag must not fall to the aged rate."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="SSI_RECIPIENT")
 
-    def test_adult_who_fails_aca_returns_zero(self):
-        """
-        Test that adults who fail ACA expansion (income > 138% FPL) return 0.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"ADULT": 474}
+        self.assertEqual(calculator.member_value(self.member(age=41)), self.annual("DISABLED"))
 
-        # ACA expansion returns 0 (income > 138% FPL)
-        calculator.get_member_variable.return_value = 0
+    def test_ssi_recipient_category_for_a_senior_is_the_aged_rate(self):
+        """A 66-year-old on SSI is a senior enrollee, not a disabled one, whatever the route in."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="SSI_RECIPIENT")
 
-        member = self._create_member(age=50)
+        self.assertEqual(calculator.member_value(self.member(age=66)), self.annual("AGED"))
 
-        result = calculator.member_value(member)
+    def test_abd_category_for_a_child_with_no_disability_flag_is_the_disabled_rate(self):
+        """Neither senior nor flagged: the aged rate would be plainly wrong for a minor."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="SENIOR_OR_DISABLED")
 
-        self.assertEqual(result, 0)
+        self.assertEqual(calculator.member_value(self.member(age=11)), self.annual("DISABLED"))
 
+    def test_abd_category_is_not_read_off_the_rate_table(self):
+        """The category names have no key of their own; pricing them would be dead config."""
+        self.assertNotIn("SENIOR_OR_DISABLED", Medicaid.medicaid_categories)
+        self.assertEqual(Medicaid.abd_categories, ("SENIOR_OR_DISABLED", "SSI_RECIPIENT"))
 
-class TestMedicaidParentEligibility(TestCase):
-    """Tests for Medicaid calculator parent/caretaker eligibility."""
 
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
+class TestSeniorAndDisabledPrecedence(MedicaidValueTestCase):
+    """Which rate a member who is both 65+ and disability-eligible gets.
 
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
+    The two committed specs disagree and each is right about its own source table, so this is
+    per-state rather than uniform: specs/ks.md reads its per-enrollee groups as disjoint with
+    disability taking precedence, while MO follows KFF's Seniors definition of 65+ regardless
+    of disability.
+    """
 
-    def test_parent_who_qualifies_returns_parent_category(self):
-        """
-        Test that a parent/caretaker who qualifies returns PARENT category value.
-        PolicyEngine determines PARENT category based on having qualifying children.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"PARENT": 474, "ADULT": 400}
+    def test_disability_wins_by_default(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=0, category="NONE", abd=True)
 
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "PARENT"
+        value = calculator.member_value(self.member(age=68, is_disabled=True))
 
-        member = self._create_member(age=35)
+        self.assertEqual(value, self.annual("DISABLED"))
+        self.assertNotEqual(value, self.annual("AGED"))
 
-        result = calculator.member_value(member)
+    def test_age_wins_when_the_state_opts_in(self):
+        calculator = self.calculator(senior_value_takes_precedence=True)
+        self.policyengine_says(calculator, medicaid=0, category="NONE", abd=True)
 
-        # Should return PARENT category * 12
-        self.assertEqual(result, 474 * 12)
+        value = calculator.member_value(self.member(age=68, is_disabled=True))
 
-    def test_parent_category_has_different_value_than_adult(self):
-        """
-        Test that PARENT and ADULT categories can have different values.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"PARENT": 500, "ADULT": 400}
+        self.assertEqual(value, self.annual("AGED"))
+        self.assertNotEqual(value, self.annual("DISABLED"))
 
-        calculator.get_member_variable.return_value = 100
-        calculator.get_member_dependency_value.return_value = "PARENT"
+    def test_the_flag_only_affects_members_who_are_both(self):
+        """A senior who is not disabled, and a disabled member who is not a senior, are unmoved."""
+        for takes_precedence in (False, True):
+            calculator = self.calculator(senior_value_takes_precedence=takes_precedence)
+            self.policyengine_says(calculator, medicaid=0, category="NONE", abd=True)
 
-        member = self._create_member(age=30)
+            with self.subTest(senior_value_takes_precedence=takes_precedence):
+                self.assertEqual(calculator.member_value(self.member(age=70)), self.annual("AGED"))
+                self.assertEqual(
+                    calculator.member_value(self.member(age=40, is_disabled=True)), self.annual("DISABLED")
+                )
 
-        result = calculator.member_value(member)
+    def test_default_is_disability_first(self):
+        self.assertFalse(Medicaid.senior_value_takes_precedence)
 
-        self.assertEqual(result, 500 * 12)
 
+class TestExpansionIsNotForSeniors(MedicaidValueTestCase):
+    """ACA expansion is a 19-64 group (42 CFR 435.119)."""
 
-class TestMedicaidPregnantEligibility(TestCase):
-    """Tests for Medicaid calculator pregnant eligibility."""
+    def test_senior_is_never_valued_at_an_expansion_rate(self):
+        """Even if PolicyEngine hands back an expansion category for a 65+ member."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="ADULT", abd=False)
 
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
+        self.assertEqual(calculator.member_value(self.member(age=71)), 0)
 
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
+    def test_senior_routed_to_expansion_still_gets_the_abd_pathway(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="ADULT", abd=True)
 
-    def test_pregnant_member_who_qualifies_returns_pregnant_category(self):
-        """
-        Test that a pregnant member who qualifies returns PREGNANT category value.
-        PolicyEngine uses higher FPL thresholds for pregnant members (e.g., 213% for IL).
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"PREGNANT": 474, "ADULT": 400}
+        self.assertEqual(calculator.member_value(self.member(age=71)), self.annual("AGED"))
 
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "PREGNANT"
+    def test_senior_may_still_hold_a_magi_category_with_no_age_ceiling(self):
+        """Sec. 1931 parent/caretaker has no upper age bound, so it is not excluded."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="PARENT")
 
-        member = self._create_member(age=28)
+        self.assertEqual(calculator.member_value(self.member(age=66)), self.annual("PARENT"))
 
-        result = calculator.member_value(member)
+    def test_adult_just_under_the_boundary_is_valued_at_the_expansion_rate(self):
+        calculator = self.policyengine_says(self.calculator(), medicaid=500, category="ADULT")
 
-        self.assertEqual(result, 474 * 12)
+        self.assertEqual(calculator.member_value(self.member(age=64)), self.annual("ADULT"))
 
-    def test_pregnant_senior_uses_aged_pathway_not_pregnant(self):
-        """
-        Test that a pregnant senior (65+) still uses aged/disabled pathway.
-        Age routing takes precedence over pregnancy status.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"AGED": 474, "PREGNANT": 500}
 
-        calculator.get_member_dependency_value.return_value = True
+class TestProductionRegressions(MedicaidValueTestCase):
+    """Four routing failures found in production QA, as the shapes PolicyEngine returned.
 
-        member = self._create_member(age=66)
+    Each combination below was read off a production PolicyEngine payload for a Missouri screen,
+    so these fail against the routing that shipped and pass against this one. Scenario numbers
+    refer to the Test Scenarios in ``specs/mo.md``.
+    """
 
-        result = calculator.member_value(member)
+    def test_disabled_adult_who_fails_abd_falls_through_to_expansion(self):
+        """Scenario 6. PE: ADULT, ABD false. Shipped $0 — the program vanished from results."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=12_559, category="ADULT", abd=False)
 
-        # Should return AGED, not PREGNANT
-        self.assertEqual(result, 474 * 12)
+        self.assertEqual(calculator.member_value(self.member(age=40, is_disabled=True)), self.annual("ADULT"))
 
+    def test_disabled_adult_routed_to_expansion_is_not_repriced_as_disabled(self):
+        """Scenario 19. PE: ADULT, ABD true. Shipped the disabled rate over PE's own routing."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=12_559, category="ADULT", abd=True)
 
-class TestMedicaidChildEligibility(TestCase):
-    """Tests for Medicaid calculator child eligibility."""
+        self.assertEqual(calculator.member_value(self.member(age=40, is_disabled=True)), self.annual("ADULT"))
 
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
+    def test_blind_adult_routed_to_expansion_is_not_repriced_as_disabled(self):
+        """Scenario 21. Same shape as 19, reached through the blindness flag."""
+        calculator = self.policyengine_says(self.calculator(), medicaid=12_559, category="ADULT", abd=True)
 
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
+        self.assertEqual(calculator.member_value(self.member(age=46, is_disabled=True)), self.annual("ADULT"))
 
-    def test_infant_who_qualifies_returns_infant_category(self):
-        """
-        Test that an infant who qualifies returns INFANT category value.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"INFANT": 0, "YOUNG_CHILD": 0}
+    def test_disabled_senior_takes_the_aged_rate_where_the_state_says_age_wins(self):
+        """Scenario 24. PE: SENIOR_OR_DISABLED, ABD true. Shipped the under-65 disabled rate."""
+        calculator = self.calculator(senior_value_takes_precedence=True)
+        self.policyengine_says(calculator, medicaid=12_559, category="SENIOR_OR_DISABLED", abd=True)
 
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "INFANT"
-
-        member = self._create_member(age=0)
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 0 * 12)
-
-    def test_young_child_who_qualifies_returns_young_child_category(self):
-        """
-        Test that a young child who qualifies returns YOUNG_CHILD category value.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"YOUNG_CHILD": 200}
-
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "YOUNG_CHILD"
-
-        member = self._create_member(age=3)
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 200 * 12)
-
-    def test_older_child_who_qualifies_returns_older_child_category(self):
-        """
-        Test that an older child who qualifies returns OLDER_CHILD category value.
-        PolicyEngine uses higher FPL thresholds for children (e.g., 318% for IL).
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"OLDER_CHILD": 284}
-
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "OLDER_CHILD"
-
-        member = self._create_member(age=12)
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 284 * 12)
-
-    def test_child_who_fails_income_returns_zero(self):
-        """
-        Test that a child who fails the income test returns 0.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"OLDER_CHILD": 284}
-
-        calculator.get_member_variable.return_value = 0
-
-        member = self._create_member(age=15)
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 0)
-
-
-class TestMedicaidYoungAdultEligibility(TestCase):
-    """Tests for Medicaid calculator young adult eligibility."""
-
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
-
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
-
-    def test_young_adult_who_qualifies_returns_young_adult_category(self):
-        """
-        Test that a young adult (typically 19-20) who qualifies returns YOUNG_ADULT category.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"YOUNG_ADULT": 300, "ADULT": 474}
-
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "YOUNG_ADULT"
-
-        member = self._create_member(age=19)
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 300 * 12)
-
-
-class TestMedicaidSSIRecipientEligibility(TestCase):
-    """Tests for Medicaid calculator SSI recipient eligibility."""
-
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
-
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
-
-    def test_ssi_recipient_returns_ssi_recipient_category(self):
-        """
-        Test that an SSI recipient returns SSI_RECIPIENT category value.
-        SSI recipients are categorically eligible for Medicaid.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"SSI_RECIPIENT": 474, "ADULT": 400}
-
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "SSI_RECIPIENT"
-
-        member = self._create_member(age=55)
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 474 * 12)
-
-
-class TestMedicaidNoneCategory(TestCase):
-    """Tests for Medicaid calculator when no category applies."""
-
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
-
-    def _create_member(self, age, is_disabled=False):
-        member = Mock()
-        member.id = 1
-        member.age = age
-        member.calc_age = Mock(return_value=age)
-        member.has_disability = Mock(return_value=is_disabled)
-        return member
-
-    def test_none_category_returns_zero(self):
-        """
-        Test that NONE category returns 0 (no Medicaid eligibility).
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"NONE": 0, "ADULT": 474}
-
-        calculator.get_member_variable.return_value = 500
-        calculator.get_member_dependency_value.return_value = "NONE"
-
-        member = self._create_member(age=40)
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 0 * 12)
-
-
-class TestMedicaidUnknownCategory(TestCase):
-    """Tests for categories PolicyEngine can return that medicaid_categories does not price."""
-
-    def _create_calculator_with_mocks(self):
-        calculator = Medicaid(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_member_variable = Mock()
-        calculator.get_member_dependency_value = Mock()
-        return calculator
-
-    def _create_member(self):
-        """A non-senior, non-disabled member, so member_value reaches the category lookup."""
-        member = Mock()
-        member.id = 1
-        member.age = 40
-        member.calc_age = Mock(return_value=40)
-        member.has_disability = Mock(return_value=False)
-        return member
-
-    def test_unpriced_category_returns_zero_instead_of_raising(self):
-        """An unrecognized category is worth 0, not a KeyError.
-
-        PolicyEngine's medicaid_category enum is larger than the set of categories we price
-        and it grows over time. A KeyError here propagates out of member_value and fails the
-        entire eligibility request rather than just this program, so an unknown category has
-        to degrade to "no value" the same way any other ineligible answer does.
-        """
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"ADULT": 532}
-        calculator.get_member_variable.return_value = 12_559
-        calculator.get_member_dependency_value.return_value = "SECTION_1115_MEC_ADULT"
-
-        result = calculator.member_value(self._create_member())
-
-        self.assertEqual(result, 0)
-
-    def test_known_category_is_still_priced(self):
-        """The fallback doesn't swallow categories we do price."""
-        calculator = self._create_calculator_with_mocks()
-        calculator.medicaid_categories = {"ADULT": 532}
-        calculator.get_member_variable.return_value = 12_559
-        calculator.get_member_dependency_value.return_value = "ADULT"
-
-        result = calculator.member_value(self._create_member())
-
-        self.assertEqual(result, 532 * 12)
+        self.assertEqual(calculator.member_value(self.member(age=70, is_disabled=True)), self.annual("AGED"))

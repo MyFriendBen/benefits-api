@@ -42,7 +42,9 @@
 4. **Child is in foster care**
    - Screener fields:
      - `household_member.relationship`
+     - `household_member.was_in_foster_care`
    - Source: 45 CFR § 1302.12(c)(1)(iii)
+   - Note: `relationship == "fosterChild"` alone misses a child whose caregiver reported them as `child`, so the per-member `was_in_foster_care` tile ("Ever in foster care, even briefly") is OR'd in. `FosterCareDependency` sends True when either holds, and None otherwise so PolicyEngine keeps its own default. ⚠️ This widens the criterion from *current* placement (the regulation is present tense) to *ever* in care, so a child since adopted or reunified still bypasses the income test — an accepted inclusivity trade-off, recorded under "Accepted, not a gap to close" in `programs/programs/FOSTER_CARE_SCREENER_GAPS.md`.
 
 5. **Child experiencing homelessness (McKinney-Vento definition)** ⚠️ *data gap*
    - Note: Children (and pregnant women) experiencing homelessness are categorically eligible regardless of income. The screener has a `housing_situation` field in the data model but it is not collected from users. The `needs_housing_help` field indicates desire for housing assistance, not current housing status. Cannot evaluate homelessness status. Same accepted gap as WA Head Start.
@@ -160,8 +162,6 @@ Early Head Start eligibility can be substantially evaluated with current screene
 - **Current Benefits**: Select `SNAP`
 
 **Why this matters**: Validates that SNAP categorical eligibility (45 CFR § 1302.12(a)(1)(ii)(B)) independently qualifies a family regardless of income. At ~136% FPL, this family is well above the 100% FPL income limit PolicyEngine enforces (`is_early_head_start_eligible` requires `AGI ≤ 100% FPG` or categorical eligibility), so income is not a valid pathway on its own. Eligibility flows solely from SNAP receipt. Tests a distinct code branch from Scenario 1. The same logic applies to TANF and SSI.
-
-**Known limitation** (same as shipped HS, PR #1622): PolicyEngine determines categorical eligibility from *calculated* SNAP/TANF/SSI, not reported receipt. A household that reports receiving SNAP but whose income is above PolicyEngine's calculated SNAP threshold is not caught by this path, so this scenario is not satisfied by the current PolicyEngine implementation unless the household's income also clears PE's own SNAP calculation.
 
 ---
 
