@@ -45,6 +45,30 @@ runs:
           exit $STATUS
         fi
 
+    - name: Sync FPL values
+      id: fpl-values
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        # FederalPovertyLimitValue mirrors the _FPL_DEFAULTS constant into a table
+        # so SQL-only consumers (the analytics pipeline) can compute a
+        # percent-of-FPL band. Migration 0173 does the initial fill, but a
+        # migration only runs once -- adding a year to the constant later would
+        # leave the table behind, and the dashboard would band households against
+        # stale thresholds. Syncing on every deploy means that cannot be
+        # forgotten. Idempotent: a no-op when nothing changed.
+        echo "Syncing FPL values..."
+        set +e
+        OUTPUT=$(heroku run --exit-code -a ${{ inputs.heroku-app-name }} "python manage.py sync_fpl_values" 2>&1)
+        STATUS=$?
+        set -e
+        echo "$OUTPUT"
+
+        if [ $STATUS -ne 0 ]; then
+          exit $STATUS
+        fi
+
     - name: Sync feature flags
       id: feature-flags
       shell: bash
