@@ -6,6 +6,7 @@ from django.test import TestCase
 from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.framework.base import ProgramCalculator
 from programs.models import FederalPoveryLimit, Program
+from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.il.cbrap.calculator import IlCbrap
 from programs.util import Dependencies, DependencyError
 from screener.models import Expense, HouseholdMember, IncomeStream, Screen, WhiteLabel
@@ -100,10 +101,7 @@ class IlCbrapTestBase(TestCase):
     def eligibility(self, screen, missing_dependencies=None):
         """Run the calculator end to end with the argument-reading HUD stub."""
         calc = self.calculator(screen, missing_dependencies)
-        with patch(
-            "programs.programs.white_labels.il.cbrap.calculator.hud_client.get_screen_il_ami",
-            side_effect=hud_il_ami_stub,
-        ):
+        with hud_ami(IlCbrap, hud_il_ami_stub):
             return calc.calc()
 
     def family_of_four(self, county="Cook", zipcode="60601", needs_housing_help=False):
@@ -294,13 +292,10 @@ class TestIlCbrapIncomeTest(IlCbrapTestBase):
         self.add_expense(screen, head, "rent", 1_100)
         calc = self.calculator(screen)
 
-        with patch(
-            "programs.programs.white_labels.il.cbrap.calculator.hud_client.get_screen_il_ami",
-            side_effect=hud_il_ami_stub,
-        ) as mock_lookup:
+        with hud_ami(IlCbrap, hud_il_ami_stub) as hud:
             calc.calc()
 
-        mock_lookup.assert_called_once_with(screen, "80%", AMI_VINTAGE)
+        hud.get_screen_il_ami.assert_called_once_with(screen, "80%", AMI_VINTAGE)
 
     def test_income_counts_unearned_streams(self):
         """A household under the limit on wages alone fails once unearned income is added."""

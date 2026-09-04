@@ -90,10 +90,6 @@ class TestMaMiddleIncomeRentalLocationEligibility(TestCase):
 
         return MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_80=80000):
-        """Helper to mock HUD client returning 80% AMI."""
-        mock_hud_client.get_screen_il_ami.return_value = ami_80
-
     def test_cambridge_resident_passes_location_check(self):
         """Test that Cambridge residents pass the location eligibility check."""
         with hud_ami(MaMiddleIncomeRental, {"80%": 80000}):
