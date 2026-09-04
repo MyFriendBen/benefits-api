@@ -1,12 +1,17 @@
 from django.db import migrations
 
 # Standard "how did you hear about us" options every white label should have.
-# Mirrors GENERIC_REFERRER_CODES in 0145_seed_referrer_rows_from_referral_options.py,
-# which only seeded white labels that existed at the time it ran. White labels
-# created afterward (il, tx, wa, ks, mo) never got these rows.
+# Based on GENERIC_REFERRER_CODES in 0145_seed_referrer_rows_from_referral_options.py,
+# which only seeded white labels that existed at the time it ran (white labels
+# created afterward — il, tx, wa, ks, mo — never got these rows), plus "merit":
+# 0145 treated it as a named partner (is_partner=True) despite a comment there
+# calling it "intentionally generic", and configuration/white_labels/README.md
+# has always listed it as a standard generic code. Confirmed with the team
+# that Merit America should be generic — included here as such.
 GENERIC_REFERRERS = {
     "flyers": "Flyer",
     "friend": "Friend / Family / Word of Mouth",
+    "merit": "Merit America",
     "other": "Other",
     "searchEngine": "Google or other search engine",
     "socialMedia": "Social Media",
@@ -35,6 +40,15 @@ def backfill_generic_referrers(apps, schema_editor):
                     """,
                     [wl.id, code, name, True, False],
                 )
+
+    # merit may already exist as a Referrer row from
+    # 0145_seed_referrer_rows_from_referral_options.py, which classified it as
+    # a partner (is_partner=True) for any white label that already had it in
+    # referral_options config. ON CONFLICT DO NOTHING above wouldn't touch
+    # that existing row, so correct its classification explicitly now that
+    # it's confirmed generic.
+    with db.cursor() as cursor:
+        cursor.execute("UPDATE programs_referrer SET is_partner = FALSE WHERE referrer_code = 'merit' AND is_partner = TRUE")
 
 
 def reverse_backfill(apps, schema_editor):
