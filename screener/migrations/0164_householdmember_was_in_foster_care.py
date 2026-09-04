@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('screener', '0161_screen_needs_medical_expenses_and_debt'),
+        ('screener', '0163_assistant_message_db_cascade'),
     ]
 
     operations = [
