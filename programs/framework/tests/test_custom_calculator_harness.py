@@ -275,3 +275,37 @@ class TestDefaultLocation(CustomCalculatorTestCase):
 
         self.assertEqual(screen.county, "Malden")
         self.assertEqual(screen.zipcode, "02101")
+
+    def test_a_yearly_income_is_not_divided_down(self):
+        """An annual figure stays annual, so a boundary test is not lost to rounding."""
+        screen = self.make_screen()
+        self.add_member(screen, yearly_income=146_500)
+
+        self.assertEqual(int(screen.calc_gross_income("yearly", ["all"])), 146_500)
+
+    def test_both_frequencies_can_describe_one_member(self):
+        screen = self.make_screen()
+        self.add_member(screen, monthly_income=1_000, yearly_income=6_000)
+
+        self.assertEqual(int(screen.calc_gross_income("yearly", ["all"])), 18_000)
+
+
+class TestProgramCodeGuard(CustomCalculatorTestCase):
+    """A `program_code` that disagrees with the calculator's fails at setup, not later."""
+
+    calculator_class = _Uninsured
+    program_code = "test_uninsured"
+    needs_program_row = False
+
+    def test_the_code_defaults_from_the_calculator(self):
+        self.assertEqual(self.program_code, _Uninsured.program_code)
+
+    def test_a_mismatched_code_is_rejected(self):
+        class Mismatched(CustomCalculatorTestCase):
+            calculator_class = _Uninsured
+            program_code = "something_else"
+
+        with self.assertRaises(AssertionError) as caught:
+            Mismatched.setUpTestData()
+
+        self.assertIn("something_else", str(caught.exception))

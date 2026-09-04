@@ -72,13 +72,16 @@ def add_member(
     relationship: str = "headOfHousehold",
     age: float = 30,
     monthly_income: int = 0,
+    yearly_income: int = 0,
+    income_type: str = "wages",
     **kwargs,
 ) -> HouseholdMember:
     """Add a household member, and their income when the scenario states one.
 
-    `monthly_income` is the common case — a member described by what they earn. Call
-    `add_income` directly for anything else: a second stream, another frequency, or an
-    income type other than wages.
+    `monthly_income` and `yearly_income` describe a member by what they earn, at whichever
+    frequency the scenario states — an annual figure is not divided down, because a limit
+    tested at the boundary rarely survives the rounding. Both may be given. Call
+    `add_income` directly for a second stream or a frequency other than these two.
 
     `age` is stated as the scenario states it and may be fractional — `3.5` is three years
     six months, for the calculators that read `fraction_age()` rather than a whole-year age.
@@ -101,7 +104,10 @@ def add_member(
     Insurance.objects.create(household_member=household_member)
 
     if monthly_income:
-        add_income(household_member, monthly_income)
+        add_income(household_member, monthly_income, income_type=income_type)
+
+    if yearly_income:
+        add_income(household_member, yearly_income, income_type=income_type, frequency="yearly")
 
     return household_member
 
@@ -177,6 +183,20 @@ class CustomCalculatorTestCase(TestCase):
         Neither row is mutated by a test, so one per class is enough.
         """
         super().setUpTestData()
+
+        # The row this builds is what `has_benefit` and `program_eligible` look the program
+        # up by, so a code that disagrees with the calculator's fails somewhere far from
+        # here. Take the calculator's, and reject a subclass that contradicts it.
+        expected = getattr(cls.calculator_class, "program_code", None)
+        if expected:
+            if cls.program_code == CustomCalculatorTestCase.program_code:
+                cls.program_code = expected
+            elif cls.program_code != expected:
+                raise AssertionError(
+                    f"{cls.__name__}.program_code is {cls.program_code!r} but "
+                    f"{cls.calculator_class.__name__}.program_code is {expected!r}."
+                )
+
         cls.white_label = make_white_label(cls.white_label_code, cls.state_code)
         if cls.needs_program_row:
             cls.program = make_program(cls.white_label_code, cls.program_code, cls.fpl_year, cls.state_code)
