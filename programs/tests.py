@@ -6,7 +6,6 @@ from django.apps import apps as global_apps
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db.utils import IntegrityError
-from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase
 
 from programs.fpl_values import MAX_MATERIALIZED_SIZE, limits_for_period, sync_fpl_values
@@ -304,6 +303,22 @@ class ProgramYearTypeSaveTests(TestCase):
         program.save()
         program.refresh_from_db()
         self.assertEqual(program.year_id, self.fiscal_fpl.id)
+
+    def test_demoting_to_hardcoded_clears_year(self):
+        """A program demoted back to hardcoded must not keep riding whatever
+        shared dynamic row it was last synced to, or it silently keeps moving
+        every time an admin rolls that row's year forward while looking
+        "hardcoded" (and therefore fixed) in the admin."""
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "calendar_year"
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, self.calendar_fpl.id)
+
+        program.year_type = "hardcoded"
+        program.save()
+        program.refresh_from_db()
+        self.assertIsNone(program.year_id)
 
 
 class FederalPovertyLimitPeriodValidationTests(TestCase):
