@@ -3,6 +3,7 @@ from io import StringIO
 from unittest.mock import patch
 
 from django.apps import apps as global_apps
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db.utils import IntegrityError
 from django.core.management.base import CommandError
@@ -356,3 +357,64 @@ class SetYearTypeCommandTests(TestCase):
     def test_neither_all_nor_programs_is_rejected(self):
         with self.assertRaises(CommandError):
             call_command("set_year_type", "calendar_year")
+
+
+class FederalPovertyLimitPeriodValidationTests(TestCase):
+    """FederalPoveryLimit.save() validates `period` up front (MFB-564 finding #5).
+    Without this, an unrecognised period saves fine and only fails later, as a bare
+    KeyError, deep inside eligibility calculation for every program on that row."""
+
+    def test_known_period_saves(self):
+        fpl = FederalPoveryLimit(year="2099", period="2026")
+        fpl.save()
+        self.assertTrue(FederalPoveryLimit.objects.filter(year="2099").exists())
+
+    def test_unknown_period_is_rejected_at_save(self):
+        fpl = FederalPoveryLimit(year="2099", period="1899")
+        with self.assertRaises(ValidationError):
+            fpl.save()
+        self.assertFalse(FederalPoveryLimit.objects.filter(year="2099").exists())
+
+
+class ProgramDataControllerDynamicFplTests(TestCase):
+    """ProgramDataController.from_model_data must not let one program's
+    (possibly stale) exported snapshot roll back a shared dynamic FPL row's
+    period for every other program pointing at it (MFB-564 finding #6)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.calendar_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
+        )
+        self.program = Program.objects.new_program(self.white_label.code, "snap")
+        self.program.year = self.calendar_fpl
+        self.program.save()
+
+    def test_stale_snapshot_does_not_roll_back_shared_period(self):
+        builder = self.program.TranslationExportBuilder(self.program)
+        data = builder.to_model_data()
+        # Simulate re-importing a snapshot exported back when the shared row's
+        # period was still "2025".
+        data["fpl"]["period"] = "2025"
+
+        builder.from_model_data(data)
+
+        self.calendar_fpl.refresh_from_db()
+        self.assertEqual(self.calendar_fpl.period, "2026")
+        self.program.refresh_from_db()
+        self.assertEqual(self.program.year_id, self.calendar_fpl.id)
+
+    def test_hardcoded_row_period_can_still_be_corrected(self):
+        hardcoded_fpl = FederalPoveryLimit.objects.create(year="2024", period="2024")
+        self.program.year_type = "hardcoded"
+        self.program.year = hardcoded_fpl
+        self.program.save()
+
+        builder = self.program.TranslationExportBuilder(self.program)
+        data = builder.to_model_data()
+        data["fpl"]["period"] = "2023"
+
+        builder.from_model_data(data)
+
+        hardcoded_fpl.refresh_from_db()
+        self.assertEqual(hardcoded_fpl.period, "2023")
