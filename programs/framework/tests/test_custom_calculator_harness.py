@@ -309,3 +309,35 @@ class TestProgramCodeGuard(CustomCalculatorTestCase):
             Mismatched.setUpTestData()
 
         self.assertIn("something_else", str(caught.exception))
+
+
+class TestInsuranceIsVisibleImmediately(CustomCalculatorTestCase):
+    """`add_insurance` updates the member a test is holding, not just the database row."""
+
+    calculator_class = _Uninsured
+    needs_program_row = False
+
+    def test_the_member_in_hand_sees_the_new_record(self):
+        member = self.add_member(self.make_screen())
+
+        add_insurance(member, medicare=True, none=False)
+
+        self.assertTrue(member.insurance.medicare)
+        self.assertFalse(member.insurance.none)
+
+
+class TestHasIncomeFollowsTheIncome(CustomCalculatorTestCase):
+    calculator_class = _Uninsured
+    needs_program_row = False
+
+    def test_a_member_given_income_has_income(self):
+        self.assertTrue(self.add_member(self.make_screen(), monthly_income=1_000).has_income)
+
+    def test_a_member_without_income_does_not(self):
+        self.assertFalse(self.add_member(self.make_screen()).has_income)
+
+    def test_a_scenario_may_say_otherwise(self):
+        """A screener answer that disagrees with the streams is a real shape to test."""
+        member = self.add_member(self.make_screen(), monthly_income=1_000, has_income=False)
+
+        self.assertFalse(member.has_income)
