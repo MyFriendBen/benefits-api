@@ -10,6 +10,16 @@ window itself by pairing it with `age` (`medicaid_work_requirement_eligible`,
 `is_snap_abawd_exempt`, `co_eitc`). Nothing in PolicyEngine consumes age at entry, exit
 type, or state of care, so one boolean is the whole PolicyEngine contract.
 
+⚠️ **`medicaid_work_requirement_eligible` does not confer Medicaid eligibility, and we never read it.**
+It is a work-*requirement exemption*, not the federal former-foster-youth categorical pathway
+(42 U.S.C. § 1396a(a)(10)(A)(i)(IX)) — an exemption cannot make an otherwise-ineligible person
+eligible. The variable appears nowhere in this codebase and is in no calculator's `pe_outputs`.
+Measured on a KS screen (22-year-old, `was_in_foster_care=true` confirmed in the payload):
+`medicaid` stayed `0.0`, `medicaid_category` stayed `"NONE"`, `is_medicaid_eligible` stayed `false`,
+and no program's value moved. PolicyEngine's `medicaid_category` enum has no foster-care value at
+all. Treat every Medicaid foster claim below as **not delivered by PolicyEngine today**, independent
+of the white-label delivery gap.
+
 The gaps below are the cost of that scoping. **A later iteration adding granularity to the
 foster care question is expected** — most of these resolve together, so treat this file as
 the shared list rather than re-deriving it per program.
@@ -28,17 +38,44 @@ the shared list rather than re-deriving it per program.
 
 ## Open gaps by spec
 
-**Resolved or largely resolved by the boolean**
+**Resolved or largely resolved by the boolean** — but only in `il`, `ks`, `ma`, `mo`, `tx`; see the
+delivery gap below before treating any of these as closed.
 
-- `cross_white_label/medicaid/specs/ks.md` criterion 12 — current + former foster youth to 26
-- `cross_white_label/medicaid/specs/wa.md` criterion 13 — Foster Care Alumni sub-gap
+- `cross_white_label/medicaid/specs/ks.md` criterion 12 — current + former foster youth to 26 (**still open** — PolicyEngine's Medicaid does not read the field; see the warning above)
+- `cross_white_label/medicaid/specs/wa.md` criterion 13 — Foster Care Alumni sub-gap (**still open** — WA never receives the value, *and* PolicyEngine's Medicaid would not read it if it did)
 - `cross_white_label/head_start/specs/*.md`, `early_head_start/specs/*.md` — foster categorical now catches children reported as `child` and young adults who are their own head of household
 
-⚠️ Both Medicaid pathways are **coupled to Head Start**: neither Medicaid calculator declares
-`FosterCareDependency`, so the value only reaches PolicyEngine because Head Start declares it and all
-programs share one merged household payload per screen. Deactivating Head Start in a white label would
-silently break them. Unlikely in practice, but the durable fix is declaring the dependency explicitly on
-Medicaid's `pe_inputs`.
+### ⚠️ Delivery gap: the field reaches PolicyEngine in only 5 of 8 white labels
+
+`FosterCareDependency` is declared in exactly two places — the PolicyEngine `HeadStart` and
+`EarlyHeadStart` bases. No other program declares it and no other program borrows their `pe_inputs`.
+Every PolicyEngine consumer of `was_in_foster_care` therefore depends on a Head Start calculator that
+subclasses the PE base being in the same request:
+
+| White label | Head Start implementation | `was_in_foster_care` sent? |
+| --- | --- | --- |
+| `il`, `ks`, `ma`, `mo`, `tx` | subclasses PE `HeadStart` | yes |
+| `co` | `CoHeadStart(ProgramCalculator)` | **no** |
+| `nc` | `NCHeadStart(ProgramCalculator)` | **no** |
+| `wa` | `WaHeadStart(ProgramCalculator)` | **no** |
+
+Those three are custom calculators with no `pe_inputs` at all, so in `co`, `nc` and `wa` the tile is
+collected, stored and sent to no one. Verified against live payloads: a WA screen with the tile ticked
+on both a 22-year-old and a 4-year-old yields `was_in_foster_care=ABSENT` for both people, while
+`wa_head_start`, `wa_nslp`, `wa_apple_health_medicaid` and `wa_eitc` all appear in the results.
+
+Consequences, all of which need their own tickets:
+
+- **Medicaid** (`ks.md` criterion 12, `wa.md` criterion 13) is coupled to Head Start even where it works:
+  neither Medicaid calculator declares the dependency, so the value arrives only via the shared
+  per-screen payload. In `il`/`ks`/`ma`/`mo`/`tx` that makes declaring it on Medicaid's `pe_inputs`
+  durable hardening; in `co`/`nc`/`wa` it is the *only* thing that would make the pathway work.
+- **CO EITC** never receives the adult foster signal, so the CO former-foster-youth pathway is inert.
+- **NSLP**'s whole-unit spillover (documented as an accepted over-widening in `nslp/specs/wa.md`) does
+  not occur in `co`, `nc` or `wa`.
+
+Do not read "PolicyEngine derives the age window itself" as "the pathway works" without first checking
+that the white label in question ships a PE-based Head Start.
 
 **Field now suffices, calculator not yet wired** — each needs its own ticket, because reading the
 field changes results
