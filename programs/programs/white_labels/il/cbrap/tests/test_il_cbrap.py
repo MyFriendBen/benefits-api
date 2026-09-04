@@ -6,7 +6,12 @@ from django.test import TestCase
 from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.framework.base import ProgramCalculator
 from programs.models import FederalPoveryLimit, Program
-from programs.programs.testing_fixtures.custom_calculator import hud_ami
+from programs.programs.testing_fixtures.custom_calculator import (
+    CustomCalculatorTestCase,
+    add_expense,
+    add_income,
+    hud_ami,
+)
 from programs.programs.white_labels.il.cbrap.calculator import IlCbrap
 from programs.util import Dependencies, DependencyError
 from screener.models import Expense, HouseholdMember, IncomeStream, Screen, WhiteLabel
@@ -45,58 +50,29 @@ def hud_il_ami_stub(screen, percent, year, county_override=None):
     return FY2025_IL_80_PERCENT_LIMITS[key]
 
 
-class IlCbrapTestBase(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
-        cls.ami_year = FederalPoveryLimit.objects.create(year=AMI_VINTAGE, period=AMI_VINTAGE)
-        cls.program = Program.objects.new_program(white_label="il", name_abbreviated="il_cbrap")
-        cls.program.year = cls.ami_year
-        cls.program.save()
-
-    def make_screen(self, county="Cook", zipcode="60601", household_size=4, needs_housing_help=False):
-        return Screen.objects.create(
-            agree_to_tos=True,
-            zipcode=zipcode,
-            county=county,
-            household_size=household_size,
-            white_label=self.white_label,
-            needs_housing_help=needs_housing_help,
-            completed=False,
-        )
+class IlCbrapTestBase(CustomCalculatorTestCase):
+    calculator_class = IlCbrap
+    white_label_code = "il"
+    state_code = "IL"
+    fpl_year = AMI_VINTAGE
+    default_zipcode = "60601"
+    default_county = "Cook"
 
     def add_member(self, screen, relationship, birth_year, birth_month, age, **flags):
-        return HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
-            birth_year_month=date(birth_year, birth_month, 1),
-            has_income=False,
-            **flags,
-        )
+        """A member described by a literal birth month, which some scenarios pin."""
+        return super().add_member(screen, relationship, age, birth_year_month=date(birth_year, birth_month, 1), **flags)
 
     def add_income(self, screen, member, amount, frequency, income_type="wages"):
         member.has_income = True
         member.save()
-        return IncomeStream.objects.create(
-            screen=screen,
-            household_member=member,
-            type=income_type,
-            amount=amount,
-            frequency=frequency,
-        )
+
+        return add_income(member, amount, income_type=income_type, frequency=frequency)
 
     def add_expense(self, screen, member, expense_type, amount, frequency="monthly"):
-        return Expense.objects.create(
-            screen=screen,
-            household_member=member,
-            type=expense_type,
-            amount=amount,
-            frequency=frequency,
-        )
+        return add_expense(member, amount, expense_type=expense_type, frequency=frequency)
 
     def calculator(self, screen, missing_dependencies=None):
-        return IlCbrap(screen, self.program, {}, missing_dependencies or Dependencies())
+        return self.make_calculator(screen, missing=missing_dependencies or ())
 
     def eligibility(self, screen, missing_dependencies=None):
         """Run the calculator end to end with the argument-reading HUD stub."""
@@ -391,5 +367,5 @@ class TestIlCbrapFailurePaths(IlCbrapTestBase):
             self.eligibility(screen)
 
     def restore_program_year(self):
-        self.program.year = self.ami_year
+        self.program.year = self.program_year
         self.program.save()

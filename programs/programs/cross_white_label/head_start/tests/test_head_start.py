@@ -1,8 +1,6 @@
-from django.test import TestCase
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_expense, add_income
 from programs.programs.cross_white_label.head_start.nc import NCHeadStart
-from screener.models import Screen, HouseholdMember, IncomeStream, Expense, WhiteLabel
 from programs.models import Program, FederalPoveryLimit
-from programs.util import Dependencies
 from unittest.mock import patch
 from datetime import datetime
 from django.utils import timezone
@@ -10,7 +8,7 @@ from typing import ClassVar
 from programs.framework.pe_dependencies import member
 
 
-class TestNCHeadStart(TestCase):
+class TestNCHeadStart(CustomCalculatorTestCase):
     """
     Test cases for NC Head Start Program Calculator
 
@@ -22,6 +20,10 @@ class TestNCHeadStart(TestCase):
     - Age eligibility (0-5, 6-17 with disability, pregnant)
     - Value calculation (estimated annual savings by county and age)
     """
+
+    calculator_class = NCHeadStart
+    white_label_code = "nc"
+    state_code = "NC"
 
     # 2025 Market rates from Google Sheet for 4-star child care centers
     MARKET_RATES_DATA: ClassVar[dict] = {
@@ -55,25 +57,6 @@ class TestNCHeadStart(TestCase):
         },
     }
 
-    @classmethod
-    def setUpTestData(cls):
-        """Set up data for the entire TestCase - runs once for all tests"""
-        # Create white label for North Carolina
-        cls.nc_white_label = WhiteLabel.objects.create(name="North Carolina", code="nc", state_code="NC")
-
-        # Create FPL year for testing
-        cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
-
-        # Create the NC Head Start program
-        cls.program = Program.objects.new_program(white_label="nc", name_abbreviated="nc_head_start")
-        cls.program.year = cls.fpl_year
-        cls.program.save()
-
-    def setUp(self):
-        """Set up data for each individual test - runs before each test method"""
-        # This will be overridden in each test
-        pass
-
     def create_household_member(
         self,
         screen,
@@ -94,10 +77,10 @@ class TestNCHeadStart(TestCase):
             current_year = timezone.now().year
             birth_year_month = datetime(year=current_year - age, month=1, day=1).date()
 
-        member = HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
+        member = self.add_member(
+            screen,
+            relationship,
+            age,
             pregnant=pregnant,
             disabled=disabled,
             has_income=has_income,
@@ -107,16 +90,10 @@ class TestNCHeadStart(TestCase):
         return member
 
     def add_income(self, screen, member, income_type, amount, frequency="monthly"):
-        """Helper method to add income to a household member"""
-        return IncomeStream.objects.create(
-            screen=screen, household_member=member, type=income_type, amount=amount, frequency=frequency
-        )
+        return add_income(member, amount, income_type=income_type, frequency=frequency)
 
     def add_expense(self, screen, member, expense_type, amount, frequency="monthly"):
-        """Helper method to add expenses to a household member"""
-        return Expense.objects.create(
-            screen=screen, household_member=member, type=expense_type, amount=amount, frequency=frequency
-        )
+        return add_expense(member, amount, expense_type=expense_type, frequency=frequency)
 
     # ============================================================================
     # TEST CASE 1: Pregnant with SSI (Presumptive Eligibility)
@@ -135,15 +112,7 @@ class TestNCHeadStart(TestCase):
         """
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27805",
-            county="Bertie County",
-            household_size=2,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="27805", county="Bertie County", household_assets=0)
 
         # Person 1: Pregnant person with wages
         person1 = self.create_household_member(
@@ -163,7 +132,7 @@ class TestNCHeadStart(TestCase):
         )
         self.add_income(screen, person2, "ssi", 393, "monthly")
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Should be eligible due to SSI (presumptive eligibility)
@@ -188,15 +157,7 @@ class TestNCHeadStart(TestCase):
         """
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27805",
-            county="Bertie County",
-            household_size=2,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="27805", county="Bertie County", household_assets=0)
 
         # Person 1: Pregnant person with wages above 130% FPL
         person1 = self.create_household_member(
@@ -215,7 +176,7 @@ class TestNCHeadStart(TestCase):
             screen=screen, relationship="spouse", age=25, has_income=False, birth_year=2000, birth_month=1
         )
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Should NOT be eligible - income too high (132% FPL > 130% FPL)
@@ -247,15 +208,7 @@ class TestNCHeadStart(TestCase):
         """
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27706",
-            county="Durham County",
-            household_size=3,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=3, zipcode="27706", county="Durham County", household_assets=0)
 
         # Person 1: Parent with wages and child support
         person1 = self.create_household_member(
@@ -276,7 +229,7 @@ class TestNCHeadStart(TestCase):
             screen=screen, relationship="child", age=3, birth_year=2022, birth_month=1
         )
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Should NOT be eligible - rent adjustment not enough
@@ -316,15 +269,7 @@ class TestNCHeadStart(TestCase):
         """
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27706",
-            county="Durham County",
-            household_size=3,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=3, zipcode="27706", county="Durham County", household_assets=0)
 
         # Person 1: Parent with wages and child support
         person1 = self.create_household_member(
@@ -344,7 +289,7 @@ class TestNCHeadStart(TestCase):
             screen=screen, relationship="child", age=3, birth_year=2022, birth_month=1
         )
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Should be ELIGIBLE due to housing cost adjustment
@@ -380,21 +325,13 @@ class TestNCHeadStart(TestCase):
 
         for age, _ in ages_to_test.items():
             with self.subTest(age=age):
-                screen = Screen.objects.create(
-                    agree_to_tos=True,
-                    zipcode="27706",
-                    county="Durham County",
-                    household_size=1,
-                    household_assets=0,
-                    white_label=self.nc_white_label,
-                    completed=False,
-                )
+                screen = self.make_screen(household_size=1, zipcode="27706", county="Durham County", household_assets=0)
 
                 child = self.create_household_member(
                     screen=screen, relationship="child", age=age, birth_year=2025 - age, birth_month=1
                 )
 
-                calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+                calculator = self.make_calculator(screen)
                 eligibility = calculator.calc()
 
                 # Check that child is eligible
@@ -405,22 +342,14 @@ class TestNCHeadStart(TestCase):
         """Test that pregnant household member is eligible regardless of age"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27706",
-            county="Durham County",
-            household_size=1,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=1, zipcode="27706", county="Durham County", household_assets=0)
 
         # Pregnant 25-year-old (outside normal age range for Head Start)
         pregnant_person = self.create_household_member(
             screen=screen, relationship="headOfHousehold", age=25, pregnant=True, birth_year=2000, birth_month=1
         )
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Should have 1 eligible member (the pregnant person using infant rate)
@@ -434,15 +363,7 @@ class TestNCHeadStart(TestCase):
         """Test value calculation with multiple children at different ages"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27806",
-            county="Alamance County",
-            household_size=3,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=3, zipcode="27806", county="Alamance County", household_assets=0)
 
         # Parent
         parent = self.create_household_member(screen=screen, relationship="headOfHousehold", age=30)
@@ -463,7 +384,7 @@ class TestNCHeadStart(TestCase):
             screen=screen, relationship="child", age=4, birth_year=2021, birth_month=1
         )
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Expected value: (956 + 942 + 844) * 12 = 2742 * 12 = $32,904
@@ -482,15 +403,7 @@ class TestNCHeadStart(TestCase):
             "Alexander County": self.MARKET_RATES_DATA["Alexander County"],
         }
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27701",
-            county="Wake County",  # Not in market rates
-            household_size=2,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="27701", county="Wake County", household_assets=0)
 
         # Parent
         parent = self.create_household_member(screen=screen, relationship="headOfHousehold", age=30)
@@ -498,7 +411,7 @@ class TestNCHeadStart(TestCase):
         # Eligible child
         child = self.create_household_member(screen=screen, relationship="child", age=4, birth_year=2021, birth_month=1)
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Should NOT be eligible - county not in market rates
@@ -509,15 +422,7 @@ class TestNCHeadStart(TestCase):
         """Test that only specific income types are counted"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27806",
-            county="Alamance County",
-            household_size=2,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="27806", county="Alamance County", household_assets=0)
 
         # Parent with income
         parent = self.create_household_member(screen=screen, relationship="headOfHousehold", age=30, has_income=True)
@@ -531,7 +436,7 @@ class TestNCHeadStart(TestCase):
         # Child
         child = self.create_household_member(screen=screen, relationship="child", age=4, birth_year=2021, birth_month=1)
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
         eligibility = calculator.calc()
 
         # Should be eligible because only wages count ($2,000 × 12 = $24,000)
@@ -547,15 +452,7 @@ class TestNCHeadStart(TestCase):
         """Test that member_value returns 0 (all value at household level)"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27806",
-            county="Alamance County",
-            household_size=2,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
+        screen = self.make_screen(household_size=2, zipcode="27806", county="Alamance County", household_assets=0)
 
         # Parent
         parent = self.create_household_member(screen=screen, relationship="headOfHousehold", age=30)
@@ -563,7 +460,7 @@ class TestNCHeadStart(TestCase):
         # Child
         child = self.create_household_member(screen=screen, relationship="child", age=4, birth_year=2021, birth_month=1)
 
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
+        calculator = self.make_calculator(screen)
 
         # member_value should return 0 to avoid double-counting
         self.assertEqual(

@@ -100,6 +100,9 @@ def add_member(
     if "birth_year_month" not in kwargs and age is not None:
         kwargs["birth_year_month"] = birth_year_month_for_age(age, screen.get_reference_date())
 
+    # A member given income has income, unless the scenario says otherwise on purpose.
+    kwargs.setdefault("has_income", bool(monthly_income or yearly_income))
+
     household_member = HouseholdMember.objects.create(screen=screen, relationship=relationship, age=age, **kwargs)
     Insurance.objects.create(household_member=household_member)
 
@@ -200,8 +203,12 @@ class CustomCalculatorTestCase(TestCase):
         cls.white_label = make_white_label(cls.white_label_code, cls.state_code)
         if cls.needs_program_row:
             cls.program = make_program(cls.white_label_code, cls.program_code, cls.fpl_year, cls.state_code)
+            #: The FPL row `program.year` points at, for a test that clears the year to
+            #: assert on the failure and has to put it back afterwards.
+            cls.program_year = cls.program.year
         else:
             cls.program = Mock()
+            cls.program_year = None
 
     def setUp(self):
         """Freeze `Screen.get_reference_date` when the subclass pinned one."""

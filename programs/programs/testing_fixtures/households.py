@@ -86,6 +86,10 @@ def add_insurance(member: HouseholdMember, **kwargs) -> Insurance:
     """
     insurance, _ = Insurance.objects.update_or_create(household_member=member, defaults=kwargs)
 
+    # `add_member` already read `member.insurance` into the relation cache, so a caller
+    # asserting on it after this would otherwise still see the uninsured record.
+    member.insurance = insurance
+
     return insurance
 
 
