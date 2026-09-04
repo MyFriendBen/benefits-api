@@ -376,3 +376,30 @@ class TestPublicChargeRuleConfiguration(SimpleTestCase):
                     "into a FormattedMessage; an empty _label renders as a FormattedMessage "
                     "with an empty id.",
                 )
+
+    # URLs known to 404. Reachability is not asserted -- that needs a live request, which
+    # would make this suite flaky and depend on the network. This list is the cheap half:
+    # a URL already found dead must not come back, which is exactly how WA and MA
+    # regressed. Both were fixed in the production database only, so `add_config` kept
+    # serving these from the Python config until they were reconciled here.
+    KNOWN_DEAD_LINKS = {
+        "https://www.dshs.wa.gov/esa/community-services-offices/public-charge",
+        "https://www.mass.gov/info-details/information-about-the-public-charge-rule-and-how-it-may-impact-you#information-about-the-public-charge-rule-",
+    }
+
+    def test_no_white_label_uses_a_known_dead_link(self):
+        """A public charge URL already confirmed dead must not reappear in the config."""
+        for code, white_label_data in white_label_config.items():
+            if white_label_data.is_default:
+                continue
+
+            link = white_label_data.public_charge_rule.get("link", "")
+
+            with self.subTest(white_label=code):
+                self.assertNotIn(
+                    link,
+                    self.KNOWN_DEAD_LINKS,
+                    f'White label "{code}" points its public charge link at {link!r}, which is '
+                    "known to return 404. Find the agency's current page rather than restoring "
+                    "this one.",
+                )
