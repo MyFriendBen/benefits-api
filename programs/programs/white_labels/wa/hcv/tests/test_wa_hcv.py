@@ -1,6 +1,7 @@
 from django.test import TestCase
 from unittest.mock import Mock, patch
 
+from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.wa.hcv.calculator import WaHcv
 from programs.framework.base import ProgramCalculator, Eligibility
 from programs.framework.pe_dependencies import member
@@ -77,31 +78,6 @@ def make_calculator(
     return calc
 
 
-def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_error=False):
-    """Return a context manager that patches both HUD client methods.
-
-    ``fmr_value`` / ``fmr_error`` feed the payment standard returned by
-    ``get_screen_payment_standard`` (ZIP-level SAFMR or metro FMR).
-    """
-    from integrations.clients.hud_income_limits import HudIncomeClientError
-
-    def il_side_effect(*args, **kwargs):
-        if il_error:
-            raise HudIncomeClientError("test error")
-        return il_ami_value
-
-    def payment_standard_side_effect(*args, **kwargs):
-        if fmr_error:
-            raise HudIncomeClientError("test error")
-        return fmr_value
-
-    return patch.multiple(
-        "programs.programs.white_labels.wa.hcv.calculator.hud_client",
-        get_screen_il_ami=Mock(side_effect=il_side_effect),
-        get_screen_payment_standard=Mock(side_effect=payment_standard_side_effect),
-    )
-
-
 class TestWaHcvClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(WaHcv, ProgramCalculator))
@@ -127,7 +103,7 @@ class TestWaHcvEligibility(TestCase):
     def test_income_below_vli_is_eligible(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
-        with patch_hud_client(il_ami_value=50000):
+        with hud_ami(WaHcv, limit=50000):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
@@ -135,7 +111,7 @@ class TestWaHcvEligibility(TestCase):
     def test_income_above_vli_is_ineligible(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=55000)
-        with patch_hud_client(il_ami_value=50000):
+        with hud_ami(WaHcv, limit=50000):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
@@ -143,7 +119,7 @@ class TestWaHcvEligibility(TestCase):
     def test_income_at_vli_is_eligible(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=50000)
-        with patch_hud_client(il_ami_value=50000):
+        with hud_ami(WaHcv, limit=50000):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
@@ -151,7 +127,7 @@ class TestWaHcvEligibility(TestCase):
     def test_assets_above_100k_is_ineligible(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_assets=150000, gross_income=21600)
-        with patch_hud_client(il_ami_value=50000):
+        with hud_ami(WaHcv, limit=50000):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
@@ -159,7 +135,7 @@ class TestWaHcvEligibility(TestCase):
     def test_assets_at_100k_is_eligible(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_assets=100000, gross_income=21600)
-        with patch_hud_client(il_ami_value=50000):
+        with hud_ami(WaHcv, limit=50000):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
@@ -167,7 +143,7 @@ class TestWaHcvEligibility(TestCase):
     def test_none_assets_treated_as_zero(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_assets=None, gross_income=21600)
-        with patch_hud_client(il_ami_value=50000):
+        with hud_ami(WaHcv, limit=50000):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
@@ -175,7 +151,7 @@ class TestWaHcvEligibility(TestCase):
     def test_hud_api_error_makes_ineligible(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
-        with patch_hud_client(il_error=True):
+        with hud_ami(WaHcv, unavailable=True):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
@@ -186,7 +162,7 @@ class TestWaHcvPregnancyRule(TestCase):
         head = make_member(age=31, pregnant=True)
         calc = make_calculator(members=[head], household_size=1, gross_income=28800)
 
-        with patch_hud_client(il_ami_value=35000) as mocks:
+        with hud_ami(WaHcv, limit=35000) as mocks:
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
@@ -287,7 +263,7 @@ class TestWaHcvBenefitValue(TestCase):
         # TTP = max(0.30 * 1800, 0.10 * 1800, 50) = max(540, 180, 50) = 540
         # HAP = 1605 - 540 = 1065
         # Annual = 1065 * 12 = 12780
-        with patch_hud_client(fmr_value=1605):
+        with hud_ami(WaHcv, payment_standard=1605):
             value = calc.household_value()
             self.assertEqual(value, 12780)
 
@@ -297,7 +273,7 @@ class TestWaHcvBenefitValue(TestCase):
         calc = make_calculator(members=[head], household_size=1, gross_income=21600, reported_rent=600)
         # TTP = 540 (as in basic case). gross_rent = min(1605, 600) = 600
         # HAP = max(0, 600 - 540) = 60 → annual = 720
-        with patch_hud_client(fmr_value=1605):
+        with hud_ami(WaHcv, payment_standard=1605):
             self.assertEqual(calc.household_value(), 720)
 
     def test_reported_rent_above_payment_standard_uses_payment_standard(self):
@@ -305,7 +281,7 @@ class TestWaHcvBenefitValue(TestCase):
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=21600, reported_rent=3000)
         # gross_rent = min(1605, 3000) = 1605 → same as no-rent basic case (12780)
-        with patch_hud_client(fmr_value=1605):
+        with hud_ami(WaHcv, payment_standard=1605):
             self.assertEqual(calc.household_value(), 12780)
 
     def test_hap_with_dependents(self):
@@ -319,7 +295,7 @@ class TestWaHcvBenefitValue(TestCase):
         # TTP = max(0.30 * 1720, 0.10 * 1800, 50) = max(516, 180, 50) = 516
         # HAP = 2502 - 516 = 1986
         # Annual = 1986 * 12 = 23832
-        with patch_hud_client(fmr_value=2502):
+        with hud_ami(WaHcv, payment_standard=2502):
             value = calc.household_value()
             self.assertEqual(value, 23832)
 
@@ -332,7 +308,7 @@ class TestWaHcvBenefitValue(TestCase):
         # TTP = max(0.30 * 1156.25, 0.10 * 1200, 50) = max(346.875, 120, 50) = 346.875
         # HAP = 1400 - 346.875 = 1053.125
         # Annual = int(1053.125 * 12) = 12637
-        with patch_hud_client(fmr_value=1400):
+        with hud_ami(WaHcv, payment_standard=1400):
             value = calc.household_value()
             self.assertEqual(value, 12637)
 
@@ -342,14 +318,14 @@ class TestWaHcvBenefitValue(TestCase):
         calc = make_calculator(members=[head], household_size=1, gross_income=60000)
         # monthly_gross = 5000, TTP = max(1500, 500, 50) = 1500
         # HAP = max(0, 800 - 1500) = 0
-        with patch_hud_client(fmr_value=800):
+        with hud_ami(WaHcv, payment_standard=800):
             value = calc.household_value()
             self.assertEqual(value, 0)
 
     def test_fmr_api_error_returns_zero(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=21600)
-        with patch_hud_client(fmr_error=True):
+        with hud_ami(WaHcv, payment_standard_unavailable=True):
             value = calc.household_value()
             self.assertEqual(value, 0)
 
@@ -360,7 +336,7 @@ class TestWaHcvCalc(TestCase):
         child1 = make_member(age=9, relationship="child")
         child2 = make_member(age=5, relationship="child")
         calc = make_calculator(members=[head, child1, child2], household_size=3, gross_income=21600)
-        with patch_hud_client(il_ami_value=50000, fmr_value=2502):
+        with hud_ami(WaHcv, limit=50000, payment_standard=2502):
             e = calc.calc()
             self.assertTrue(e.eligible)
             self.assertEqual(e.value, 23832)
@@ -369,7 +345,7 @@ class TestWaHcvCalc(TestCase):
         # Income above the 50% AMI limit → ineligible → value 0.
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=60000)
-        with patch_hud_client(il_ami_value=50000, fmr_value=2000):
+        with hud_ami(WaHcv, limit=50000, payment_standard=2000):
             e = calc.calc()
             self.assertFalse(e.eligible)
             self.assertEqual(e.value, 0)
@@ -382,7 +358,7 @@ class TestWaHcvCalc(TestCase):
         # TTP = max(0.30 * 2400, 0.10 * 2400, 50) = max(720, 240, 50) = 720
         # HAP = 1605 - 720 = 885
         # Annual = 885 * 12 = 10620
-        with patch_hud_client(il_ami_value=35000, fmr_value=1605):
+        with hud_ami(WaHcv, limit=35000, payment_standard=1605):
             e = calc.calc()
             self.assertTrue(e.eligible)
             self.assertEqual(e.value, 10620)
@@ -392,7 +368,7 @@ class TestWaHcvCalc(TestCase):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         calc.program.year = None
-        with patch_hud_client(il_ami_value=50000, fmr_value=2000):
+        with hud_ami(WaHcv, limit=50000, payment_standard=2000):
             e = calc.calc()
             self.assertFalse(e.eligible)
 
@@ -400,7 +376,7 @@ class TestWaHcvCalc(TestCase):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         calc.program.year = None
-        with patch_hud_client(fmr_value=2000):
+        with hud_ami(WaHcv, payment_standard=2000):
             self.assertEqual(calc.household_value(), 0)
 
     def test_household_value_unexpected_error_returns_zero(self):

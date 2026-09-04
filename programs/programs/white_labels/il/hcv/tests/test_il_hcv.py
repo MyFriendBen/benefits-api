@@ -17,6 +17,7 @@ from unittest.mock import Mock, patch
 
 from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.framework.base import ProgramCalculator
+from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.il.hcv.calculator import IlHcv
 
 EARNED_TYPES = frozenset(("wages", "selfEmployment"))
@@ -100,23 +101,6 @@ def make_calculator(members=None, household_size=DERIVE, county="Cook", zipcode=
     missing_deps.has.return_value = False
 
     return IlHcv(screen, program, {}, missing_deps)
-
-
-def hud_mocks(income_limit=10_000_000, payment_standard=0):
-    """The two HUD lookups the calculator makes, and a patcher over both. Returns
-    the mocks so a test can assert on the call as well as stub it."""
-    income_mock = Mock(return_value=income_limit)
-    payment_mock = Mock(return_value=payment_standard)
-    patcher = patch.multiple(
-        "programs.programs.white_labels.il.hcv.calculator.hud_client",
-        get_screen_il_ami=income_mock,
-        get_screen_payment_standard=payment_mock,
-    )
-    return patcher, income_mock, payment_mock
-
-
-def patch_hud(income_limit=10_000_000, payment_standard=0):
-    return hud_mocks(income_limit, payment_standard)[0]
 
 
 class TestIlHcvClassAttributes(TestCase):
@@ -443,59 +427,57 @@ class TestIlHcvIncomeGate(TestCase):
     def test_income_at_the_limit_is_eligible(self):
         """The regulation phrases the test as "does not exceed", so it is inclusive."""
         calc = make_calculator(members=[make_member(income={"wages": 42_550})], household_size=1)
-        with patch_hud(income_limit=CHICAGO_VLI[1], payment_standard=CHICAGO_FMR[1]):
+        with hud_ami(IlHcv, limit=CHICAGO_VLI[1], payment_standard=CHICAGO_FMR[1]):
             self.assertTrue(calc.eligible().eligible)
 
     def test_one_dollar_over_the_limit_is_not_eligible(self):
         calc = make_calculator(members=[make_member(income={"wages": 42_551})], household_size=1)
-        with patch_hud(income_limit=CHICAGO_VLI[1]):
+        with hud_ami(IlHcv, limit=CHICAGO_VLI[1]):
             self.assertFalse(calc.eligible().eligible)
 
     def test_the_limit_is_looked_up_for_the_household_size_and_county(self):
         calc = make_calculator(members=[make_member(income={"wages": 18_000})], county="Peoria", zipcode="61604")
-        patcher, income_mock, _ = hud_mocks(income_limit=PEORIA_VLI[1], payment_standard=PEORIA_FMR[1])
-        with patcher:
+        with hud_ami(IlHcv, limit=PEORIA_VLI[1], payment_standard=PEORIA_FMR[1]) as hud:
             calc.eligible()
-        income_mock.assert_called_once_with(calc.screen, "50%", "2026")
+        hud.get_screen_il_ami.assert_called_once_with(calc.screen, "50%", "2026")
 
     def test_null_household_size_passes_the_gate_inclusively(self):
         """Committed treatment: a null size is not compared against a limit. Normally
         unreachable — `household_size` is a declared dependency."""
         calc = make_calculator(members=[make_member(income={"wages": 500_000})], household_size=None)
-        patcher, income_mock, _ = hud_mocks(income_limit=CHICAGO_VLI[4])
-        with patcher:
+        with hud_ami(IlHcv, limit=CHICAGO_VLI[4]) as hud:
             self.assertTrue(calc.eligible().eligible)
-        income_mock.assert_not_called()
+        hud.get_screen_il_ami.assert_not_called()
 
     def test_no_asset_gate_is_applied(self):
         """Data gap 4: a household reporting assets far above the § 5.618 threshold is
         still eligible, because `household_assets` is not HUD's net family assets."""
         calc = make_calculator(members=[make_member(income={"wages": 18_000})], household_size=1)
         calc.screen.household_assets = 500_000
-        with patch_hud(income_limit=CHICAGO_VLI[1], payment_standard=CHICAGO_FMR[1]):
+        with hud_ami(IlHcv, limit=CHICAGO_VLI[1], payment_standard=CHICAGO_FMR[1]):
             self.assertTrue(calc.eligible().eligible)
 
     def test_a_head_under_18_is_not_gated(self):
         """Data gap 5: the rule turns on legal capacity to lease, which no numeric age
         gate can substitute for, so it is assumed met."""
         calc = make_calculator(members=[make_member(age=17, income={"wages": 12_000})], household_size=1)
-        with patch_hud(income_limit=CHICAGO_VLI[1], payment_standard=CHICAGO_FMR[1]):
+        with hud_ami(IlHcv, limit=CHICAGO_VLI[1], payment_standard=CHICAGO_FMR[1]):
             self.assertTrue(calc.eligible().eligible)
 
 
 class TestIlHcvSpecScenarios(TestCase):
     """One test per Test Scenario in spec.md, asserting eligibility and value."""
 
-    def _assert_eligible(self, members, income_limit, payment_standard, expected_value, **kwargs):
+    def _assert_eligible(self, members, limit, payment_standard, expected_value, **kwargs):
         calc = make_calculator(members=members, **kwargs)
-        with patch_hud(income_limit=income_limit, payment_standard=payment_standard):
+        with hud_ami(IlHcv, limit=limit, payment_standard=payment_standard):
             e = calc.calc()
         self.assertTrue(e.eligible, "expected eligible")
         self.assertEqual(e.value, expected_value)
 
-    def _assert_ineligible(self, members, income_limit, **kwargs):
+    def _assert_ineligible(self, members, limit, **kwargs):
         calc = make_calculator(members=members, **kwargs)
-        with patch_hud(income_limit=income_limit):
+        with hud_ami(IlHcv, limit=limit):
             e = calc.calc()
         self.assertFalse(e.eligible)
 
@@ -510,7 +492,7 @@ class TestIlHcvSpecScenarios(TestCase):
     def test_scenario_1_cook_family_at_the_extremely_low_income_limit(self):
         self._assert_eligible(
             self._cook_family_of_four(),
-            income_limit=CHICAGO_VLI[4],
+            limit=CHICAGO_VLI[4],
             payment_standard=CHICAGO_FMR[2],
             expected_value=10_740,
             rent=1_900,
@@ -520,7 +502,7 @@ class TestIlHcvSpecScenarios(TestCase):
         # $2,531.25/month each — the mock takes annual amounts, so ×12.
         self._assert_eligible(
             self._cook_family_of_four(head_income=30_375, spouse_income=30_375),
-            income_limit=CHICAGO_VLI[4],
+            limit=CHICAGO_VLI[4],
             payment_standard=CHICAGO_FMR[2],
             expected_value=3_444,
             rent=1_900,
@@ -529,14 +511,14 @@ class TestIlHcvSpecScenarios(TestCase):
     def test_scenario_3_cook_family_one_dollar_over_the_modelled_gate(self):
         self._assert_ineligible(
             self._cook_family_of_four(head_income=60_751),
-            income_limit=CHICAGO_VLI[4],
+            limit=CHICAGO_VLI[4],
             rent=1_900,
         )
 
     def test_scenario_4_single_adult_in_peoria(self):
         self._assert_eligible(
             [make_member(age=30, income={"wages": 18_000})],
-            income_limit=PEORIA_VLI[1],
+            limit=PEORIA_VLI[1],
             payment_standard=PEORIA_FMR[1],
             expected_value=4_416,
             county="Peoria",
@@ -549,7 +531,7 @@ class TestIlHcvSpecScenarios(TestCase):
         lookup is what this pins."""
         self._assert_ineligible(
             [make_member(age=30, income={"wages": 40_000})],
-            income_limit=PEORIA_VLI[1],
+            limit=PEORIA_VLI[1],
             county="Peoria",
             zipcode="61604",
             rent=900,
@@ -565,7 +547,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=CHICAGO_VLI[5],
+            limit=CHICAGO_VLI[5],
             payment_standard=CHICAGO_FMR[3],
             expected_value=16_152,
             rent=2_400,
@@ -583,7 +565,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=CHICAGO_VLI[7],
+            limit=CHICAGO_VLI[7],
             payment_standard=CHICAGO_FMR[4],
             expected_value=17_568,
             rent=2_800,
@@ -592,7 +574,7 @@ class TestIlHcvSpecScenarios(TestCase):
     def test_scenario_8_rent_below_the_payment_standard(self):
         self._assert_eligible(
             self._cook_family_of_four(),
-            income_limit=CHICAGO_VLI[4],
+            limit=CHICAGO_VLI[4],
             payment_standard=CHICAGO_FMR[2],
             expected_value=7_368,
             rent=1_500,
@@ -603,7 +585,7 @@ class TestIlHcvSpecScenarios(TestCase):
         not drop a household that genuinely qualifies (spec amended 2026-09-01)."""
         self._assert_eligible(
             self._cook_family_of_four(head_income=60_750),
-            income_limit=CHICAGO_VLI[4],
+            limit=CHICAGO_VLI[4],
             payment_standard=CHICAGO_FMR[2],
             expected_value=1,
             rent=1_200,
@@ -612,7 +594,7 @@ class TestIlHcvSpecScenarios(TestCase):
     def test_scenario_10_elderly_single_adult_in_cook_with_income(self):
         self._assert_eligible(
             [make_member(age=70, income={"wages": 18_000})],
-            income_limit=CHICAGO_VLI[1],
+            limit=CHICAGO_VLI[1],
             payment_standard=CHICAGO_FMR[1],
             expected_value=13_740,
             rent=1_700,
@@ -621,7 +603,7 @@ class TestIlHcvSpecScenarios(TestCase):
     def test_scenario_11_elderly_single_adult_in_peoria_with_no_income(self):
         self._assert_eligible(
             [make_member(age=70)],
-            income_limit=PEORIA_VLI[1],
+            limit=PEORIA_VLI[1],
             payment_standard=PEORIA_FMR[1],
             expected_value=9_816,
             county="Peoria",
@@ -638,7 +620,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=CHICAGO_VLI[4],
+            limit=CHICAGO_VLI[4],
             payment_standard=CHICAGO_FMR[2],
             expected_value=5_172,
             rent=1_900,
@@ -658,7 +640,7 @@ class TestIlHcvSpecScenarios(TestCase):
         self.assertEqual(raw_gross, 64_000)
         self.assertGreater(raw_gross, CHICAGO_VLI[4])
         self.assertEqual(calc._annual_income(), 55_000)
-        with patch_hud(income_limit=CHICAGO_VLI[4], payment_standard=CHICAGO_FMR[2]):
+        with hud_ami(IlHcv, limit=CHICAGO_VLI[4], payment_standard=CHICAGO_FMR[2]):
             self.assertTrue(calc.eligible().eligible)
 
     def test_scenario_13_dependent_full_time_student_earning_above_the_cap(self):
@@ -669,7 +651,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=CHICAGO_VLI[3],
+            limit=CHICAGO_VLI[3],
             payment_standard=CHICAGO_FMR[2],
             expected_value=12_516,
             rent=1_900,
@@ -682,7 +664,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=CHICAGO_VLI[2],
+            limit=CHICAGO_VLI[2],
             payment_standard=CHICAGO_FMR[1],
             expected_value=12_084,
             rent=1_700,
@@ -697,7 +679,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=CHICAGO_VLI[4],
+            limit=CHICAGO_VLI[4],
             payment_standard=CHICAGO_FMR[2],
             expected_value=15_372,
             rent=1_900,
@@ -713,7 +695,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=CHICAGO_VLI[5],
+            limit=CHICAGO_VLI[5],
             payment_standard=CHICAGO_FMR[3],
             expected_value=17_772,
             rent=2_400,
@@ -726,7 +708,7 @@ class TestIlHcvSpecScenarios(TestCase):
         ]
         self._assert_eligible(
             members,
-            income_limit=PEORIA_VLI[8],
+            limit=PEORIA_VLI[8],
             payment_standard=PEORIA_FMR[4],
             expected_value=16_776,
             county="Peoria",

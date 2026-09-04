@@ -16,7 +16,7 @@ household → assertion.
 
 from contextlib import contextmanager
 from datetime import date
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 from unittest.mock import Mock, patch
 
 from django.test import TestCase
@@ -195,9 +195,9 @@ class CustomCalculatorTestCase(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def hud_ami(self, limit: Union[int, dict, None] = None, unavailable: bool = False):
+    def hud_ami(self, *args, **kwargs):
         """`hud_ami` for this test case's calculator. See the module-level function."""
-        return hud_ami(self.calculator_class, limit, unavailable)
+        return hud_ami(self.calculator_class, *args, **kwargs)
 
     def make_calculator(self, screen: Screen, data: dict[str, Eligibility] = None, missing=()):
         """Build the calculator without running it.
@@ -226,8 +226,10 @@ class CustomCalculatorTestCase(TestCase):
 @contextmanager
 def hud_ami(
     calculator_class: type,
-    limit: Union[int, dict, None] = None,
+    limit: Union[int, dict, Callable, None] = None,
+    payment_standard: Union[int, None] = None,
     unavailable: bool = False,
+    payment_standard_unavailable: bool = False,
 ):
     """Stand in for the HUD income-limit client while a calculator runs.
 
@@ -244,8 +246,16 @@ def hud_ami(
     — for a calculator that compares a household against several bands. Any percentage not
     named returns 0.
 
-    `unavailable=True` raises `HudIncomeClientError` instead, for the tests covering what a
-    calculator does when HUD is down.
+    `limit` may also be a callable, which becomes the lookup's `side_effect` — for a test
+    where what HUD was *asked* matters as much as what it returned.
+
+    `payment_standard` is the ZIP-level SAFMR or metro FMR a voucher calculator reads
+    through `get_screen_payment_standard`, which is a separate lookup from the AMI bands.
+
+    `unavailable=True` raises `HudIncomeClientError` from the AMI lookups, and
+    `payment_standard_unavailable=True` from the payment-standard lookup, for the tests
+    covering what a calculator does when HUD is down. They are separate because a voucher
+    calculator can survive losing one and not the other.
 
     Yields the mock, so a test can still assert on the call:
 
@@ -257,22 +267,32 @@ def hud_ami(
     `integrations/clients/hud_income_limits/tests`, not here.
     """
     client = Mock()
-    lookups = ("get_screen_il_ami", "get_screen_mtsp_ami", "approximate_screen_mtsp_ami")
+    ami_lookups = ("get_screen_il_ami", "get_screen_mtsp_ami", "approximate_screen_mtsp_ami")
 
     if unavailable:
         error = HudIncomeClientError("HUD unavailable")
-        for lookup in lookups:
+        for lookup in ami_lookups:
             getattr(client, lookup).side_effect = error
+    elif callable(limit):
+        # A stub that reads its arguments, for scenarios where the county, household size
+        # or vintage HUD was asked about is itself the thing under test.
+        for lookup in ami_lookups:
+            getattr(client, lookup).side_effect = limit
     elif isinstance(limit, dict):
         # A calculator comparing a household against several AMI bands asks for each one.
         def by_percent(_screen, percent, *_args, **_kwargs):
             return limit.get(percent, 0)
 
-        for lookup in lookups:
+        for lookup in ami_lookups:
             getattr(client, lookup).side_effect = by_percent
     else:
-        for lookup in lookups:
+        for lookup in ami_lookups:
             getattr(client, lookup).return_value = limit
+
+    if payment_standard_unavailable:
+        client.get_screen_payment_standard.side_effect = HudIncomeClientError("HUD unavailable")
+    else:
+        client.get_screen_payment_standard.return_value = payment_standard
 
     with patch(f"{calculator_class.__module__}.hud_client", client):
         yield client

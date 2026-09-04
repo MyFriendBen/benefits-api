@@ -2,6 +2,7 @@ from django.test import TestCase
 from unittest.mock import Mock, patch
 
 from integrations.clients.hud_income_limits import HudIncomeClientError
+from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.tx.hcv.calculator import TxHcv
 from programs.framework.base import ProgramCalculator, Eligibility
 from programs.framework.pe_dependencies import member
@@ -71,21 +72,6 @@ def make_calculator(
     missing_deps.has.return_value = False
 
     return TxHcv(screen, program, {}, missing_deps)
-
-
-def patch_hud(il_ami=10_000_000, payment_standard=0, il_error=False):
-    """Patch both HUD lookups the calculator uses."""
-
-    def il_side_effect(*args, **kwargs):
-        if il_error:
-            raise HudIncomeClientError("test error")
-        return il_ami
-
-    return patch.multiple(
-        "programs.programs.white_labels.tx.hcv.calculator.hud_client",
-        get_screen_il_ami=Mock(side_effect=il_side_effect),
-        get_screen_payment_standard=Mock(return_value=payment_standard),
-    )
 
 
 class TestTxHcvClassAttributes(TestCase):
@@ -225,56 +211,56 @@ class TestTxHcvHelpers(TestCase):
 class TestTxHcvEligibility(TestCase):
     def test_eligible_when_income_at_or_below_limit(self):
         calc = make_calculator(members=[make_member(age=35, earned=21_600)])
-        with patch_hud(il_ami=46_800):
+        with hud_ami(TxHcv, limit=46_800):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
     def test_ineligible_when_income_above_limit(self):
         calc = make_calculator(members=[make_member(age=35, earned=75_000)])
-        with patch_hud(il_ami=47_050):
+        with hud_ami(TxHcv, limit=47_050):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
 
     def test_income_exactly_at_limit_is_eligible(self):
         calc = make_calculator(members=[make_member(age=35, earned=47_050)])
-        with patch_hud(il_ami=47_050):
+        with hud_ami(TxHcv, limit=47_050):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
     def test_assets_above_100k_ineligible(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)], household_assets=150_000)
-        with patch_hud(il_ami=46_800):
+        with hud_ami(TxHcv, limit=46_800):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
 
     def test_assets_exactly_100k_eligible(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)], household_assets=100_000)
-        with patch_hud(il_ami=46_800):
+        with hud_ami(TxHcv, limit=46_800):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
     def test_none_assets_treated_as_zero(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)], household_assets=None)
-        with patch_hud(il_ami=46_800):
+        with hud_ami(TxHcv, limit=46_800):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
     def test_head_under_18_ineligible(self):
         calc = make_calculator(members=[make_member(age=17, earned=14_400)])
-        with patch_hud(il_ami=46_800):
+        with hud_ami(TxHcv, limit=46_800):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
 
     def test_hud_error_makes_ineligible(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)])
-        with patch_hud(il_error=True):
+        with hud_ami(TxHcv, unavailable=True):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
@@ -284,14 +270,14 @@ class TestTxHcvBenefitValue(TestCase):
     def test_zero_income_uses_minimum_rent_floor(self):
         """Scenario 14 mechanic: TTP floors at the $25 minimum rent, not $0."""
         calc = make_calculator(members=[make_member(age=30, earned=0)], household_size=1)
-        with patch_hud(payment_standard=773):
+        with hud_ami(TxHcv, payment_standard=773):
             # TTP = max(0, 0, 25) = 25; HAP = 773 - 25 = 748; annual = 8976
             self.assertEqual(calc.household_value(), 8976)
 
     def test_reported_rent_below_payment_standard_caps_gross_rent(self):
         """Scenario 19 mechanic: HAP uses min(payment standard, reported rent)."""
         calc = make_calculator(members=[make_member(age=35, earned=18_000)], household_size=1, reported_rent=600)
-        with patch_hud(payment_standard=821):
+        with hud_ami(TxHcv, payment_standard=821):
             # TTP = 450; gross rent = min(821, 600) = 600; HAP = 150; annual = 1800
             self.assertEqual(calc.household_value(), 1800)
 
@@ -302,7 +288,7 @@ class TestTxHcvBenefitValue(TestCase):
             make_member(age=65, relationship="spouse", unearned=12_000),
         ]
         calc = make_calculator(members=members, household_size=2)
-        with patch_hud(payment_standard=870):
+        with hud_ami(TxHcv, payment_standard=870):
             self.assertEqual(calc.household_value(), 0)
 
     def test_hud_error_returns_zero_value(self):
@@ -331,14 +317,14 @@ class TestTxHcvScenarios(TestCase):
 
     def _assert_scenario(self, members, il_ami, payment_standard, expected_value, **calc_kwargs):
         calc = make_calculator(members=members, **calc_kwargs)
-        with patch_hud(il_ami=il_ami, payment_standard=payment_standard):
+        with hud_ami(TxHcv, limit=il_ami, payment_standard=payment_standard):
             e = calc.calc()
             self.assertTrue(e.eligible, "expected eligible")
             self.assertEqual(e.value, expected_value)
 
     def _assert_ineligible(self, members, il_ami, payment_standard=0, **calc_kwargs):
         calc = make_calculator(members=members, **calc_kwargs)
-        with patch_hud(il_ami=il_ami, payment_standard=payment_standard):
+        with hud_ami(TxHcv, limit=il_ami, payment_standard=payment_standard):
             e = calc.calc()
             self.assertFalse(e.eligible)
 
@@ -370,7 +356,7 @@ class TestTxHcvScenarios(TestCase):
         ]
         # Eligible for the voucher, but $0 net benefit.
         calc = make_calculator(members=members, county="Bexar", zipcode="78207")
-        with patch_hud(il_ami=40_250, payment_standard=870):
+        with hud_ami(TxHcv, limit=40_250, payment_standard=870):
             e = calc.calc()
             self.assertTrue(e.eligible)
             self.assertEqual(e.value, 0)
