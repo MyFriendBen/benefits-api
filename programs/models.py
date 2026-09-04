@@ -926,7 +926,8 @@ class Program(models.Model):
             self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_CALENDAR")
         elif self.year_type == "fiscal_year":
             self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_FISCAL")
-
+        elif self.year_type == "hardcoded" and self.year_id and self.year.year in DYNAMIC_FPL_YEARS:
+            self.year = None
         super().save(*args, **kwargs)
 
     class Meta:

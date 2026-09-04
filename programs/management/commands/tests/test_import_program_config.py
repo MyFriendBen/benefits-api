@@ -113,6 +113,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             call_command("import_program_config", config_file, stdout=out)
             program = Program.objects.get(name_abbreviated="test_program")
             self.assertEqual(program.year_id, fpl.id)
+            self.assertEqual(program.year_type, "calendar_year")
             self.assertNotIn("Warning: Year", out.getvalue())
         finally:
             Path(config_file).unlink()
