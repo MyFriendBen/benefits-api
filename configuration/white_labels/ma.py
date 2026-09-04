@@ -16,7 +16,7 @@ class MaConfigurationData(ConfigurationData):
         "link": "https://miracoalition.org/news/public-charge-rule-new-community-update-july-2026/",
         "text": {
             "_label": "landingPage.publicChargeLinkMA",
-            "_default_message": "Massachusetts Department of Health and Human Services",
+            "_default_message": "MIRA Coalition's public charge update",
         },
     }
 
