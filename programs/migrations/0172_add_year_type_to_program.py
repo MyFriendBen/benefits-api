@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0170_seed_dynamic_fpl_rows"),
+        ("programs", "0171_seed_dynamic_fpl_rows"),
     ]
 
     operations = [

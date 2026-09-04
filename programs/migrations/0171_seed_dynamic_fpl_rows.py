@@ -21,7 +21,7 @@ def seed_dynamic_fpl_rows(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0169_drop_refugee_from_mo_snap"),
+        ("programs", "0170_deactivate_il_rent_asst"),
     ]
     operations = [
         migrations.RunPython(seed_dynamic_fpl_rows, migrations.RunPython.noop),
