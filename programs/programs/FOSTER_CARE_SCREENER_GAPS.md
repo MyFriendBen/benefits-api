@@ -118,5 +118,7 @@ care, asked about an existing household member with `relationship == "fosterChil
 - `cross_white_label/nslp/specs/wa.md` criterion 5 — PolicyEngine puts `was_in_foster_care` in the
   **SPMUnit-level** `gov.usda.school_meals.categorical_eligibility` adds-list, so any one member's flag makes
   the whole unit free-meal eligible. Federal rule makes the pathway individual to the child. Accepted:
-  inclusivity direction, the school verifies at application, and narrowing it would cost the Medicaid and
-  CO EITC pathways that need the adult signal.
+  inclusivity direction, and the school verifies at application. Narrowing it (age-scoping the flag) would
+  cost the former-foster-youth Medicaid and CO EITC pathways, but **neither is a current beneficiary** —
+  PolicyEngine's Medicaid does not read the field and CO never receives it — so that is a forward-looking
+  argument, not a present cost. Live only in `il`/`ks`/`ma`/`mo`/`tx`.
