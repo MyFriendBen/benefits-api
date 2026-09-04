@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -74,11 +75,33 @@ def _get_fpl_data() -> dict:
     return _FPL_DEFAULTS
 
 
+# Sentinel FederalPoveryLimit.year values shared by every calendar_year/fiscal_year
+# Program (and, potentially, UrgentNeed). Their `period` is rolled forward by
+# set_year_type/the yearly FPL update, not owned by any single program, so code
+# importing per-program data must never blindly overwrite `period` on these rows.
+DYNAMIC_FPL_YEARS = {"THIS_YEAR_CALENDAR", "THIS_YEAR_FISCAL"}
+
+
 class FederalPoveryLimit(models.Model):
     year = models.CharField(max_length=32, unique=True)
     period = models.CharField(max_length=32)
 
     MAX_DEFINED_SIZE = 8
+
+    def clean(self):
+        if self.period not in _get_fpl_data():
+            raise ValidationError(
+                {"period": f"No FPL data defined for period '{self.period}'. Add it to _FPL_DEFAULTS first."}
+            )
+
+    def save(self, *args, **kwargs):
+        # Fail here, at write time, with a clear message instead of deep inside
+        # eligibility calculation: as_dict()/get_limit() do a bare
+        # _get_fpl_data()[self.period] lookup and raise a bare KeyError, which
+        # otherwise only surfaces later when some program using this row gets
+        # screened, crashing the results endpoint for every program on it.
+        self.clean()
+        super().save(*args, **kwargs)
 
     def get_limit(self, household_size: int):
         limits = self.as_dict()
@@ -626,8 +649,13 @@ class ProgramDataController(ModelDataController["Program"]):
         if fpl is not None:
             try:
                 fpl_instance = FederalPoveryLimit.objects.get(year=fpl["year"])
-                fpl_instance.period = fpl["period"]
-                fpl_instance.save()
+                # Dynamic rows are shared by every program/need pointing at them, so
+                # importing one program's (possibly stale) exported snapshot must
+                # not silently roll the shared period back for everyone else on it.
+                # Only a genuinely per-row hardcoded year is safe to overwrite here.
+                if fpl["year"] not in DYNAMIC_FPL_YEARS:
+                    fpl_instance.period = fpl["period"]
+                    fpl_instance.save()
             except FederalPoveryLimit.DoesNotExist:
                 fpl_instance = FederalPoveryLimit.objects.create(year=fpl["year"], period=fpl["period"])
             program.year = fpl_instance
@@ -1203,8 +1231,13 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
         if fpl is not None:
             try:
                 fpl_instance = FederalPoveryLimit.objects.get(year=fpl["year"])
-                fpl_instance.period = fpl["period"]
-                fpl_instance.save()
+                # Dynamic rows are shared by every program/need pointing at them, so
+                # importing one program's (possibly stale) exported snapshot must
+                # not silently roll the shared period back for everyone else on it.
+                # Only a genuinely per-row hardcoded year is safe to overwrite here.
+                if fpl["year"] not in DYNAMIC_FPL_YEARS:
+                    fpl_instance.period = fpl["period"]
+                    fpl_instance.save()
             except FederalPoveryLimit.DoesNotExist:
                 fpl_instance = FederalPoveryLimit.objects.create(year=fpl["year"], period=fpl["period"])
             need.year = fpl_instance

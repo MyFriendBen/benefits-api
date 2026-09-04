@@ -921,7 +921,7 @@ class Command(BaseCommand):
         if "year" in configuration:
             year_value = configuration["year"]
             try:
-                year_obj = FederalPoveryLimit.objects.get(year=year_value, period=year_value)
+                year_obj = FederalPoveryLimit.objects.get(year=year_value)
                 program.year = year_obj
                 self.stdout.write(f"  Year: {year_value}")
             except FederalPoveryLimit.DoesNotExist:
