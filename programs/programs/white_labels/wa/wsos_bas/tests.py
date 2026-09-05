@@ -1,14 +1,9 @@
-from unittest.mock import Mock
-
-from django.test import TestCase
-
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.wa.wsos_bas.calculator import WaWsosBas
-from programs.util import Dependencies
-from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
-from programs.framework.pe_dependencies import member
+from screener.models import HouseholdMember, IncomeStream
 
 
-class TestWaWsosBas(TestCase):
+class TestWaWsosBas(CustomCalculatorTestCase):
     """
     Unit tests for the WA WSOS Baccalaureate (BaS) Scholarship calculator.
 
@@ -23,43 +18,10 @@ class TestWaWsosBas(TestCase):
     and 3 against the live screener layer.
     """
 
-    def setUp(self):
-        """Create a WA white label and a mock Program for each test."""
-        self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
-        self.mock_program = Mock()
-
-    def _make_screen(self, household_size=1, zipcode="98101", county="King"):
-        """Build an in-memory `Screen` for the WA white label with the given size."""
-        return Screen.objects.create(
-            white_label=self.white_label,
-            agree_to_tos=True,
-            zipcode=zipcode,
-            county=county,
-            household_size=household_size,
-            completed=False,
-        )
-
-    def _add_member(self, screen, *, age=20, relationship="headOfHousehold", student=False, monthly_wages=0):
-        """Add a `HouseholdMember` (and optional monthly wages) to the screen."""
-        member = HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
-            student=student,
-        )
-        if monthly_wages:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type="wages",
-                amount=monthly_wages,
-                frequency="monthly",
-            )
-        return member
-
-    def _calc(self, screen):
-        """Construct a `WaWsosBas` calculator bound to the given screen."""
-        return WaWsosBas(screen, self.mock_program, {}, Dependencies())
+    calculator_class = WaWsosBas
+    program_code = "wa_wsos_bas"
+    white_label_code = "wa"
+    state_code = "WA"
 
     # --- Class wiring --------------------------------------------------------
 
@@ -80,10 +42,10 @@ class TestWaWsosBas(TestCase):
         spec.md Scenario 1: WA student, 1-person household, $2k/mo wages
         ($24k/yr) — well below the 1-person 125% MFI cap of $90,500/yr.
         """
-        screen = self._make_screen()
-        self._add_member(screen, student=True, monthly_wages=2000)
+        screen = self.make_screen(zipcode="98101", county="King")
+        self.add_member(screen, student=True, monthly_income=2000, age=20)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -93,10 +55,10 @@ class TestWaWsosBas(TestCase):
         ($96k/yr) — above the 1-person 125% MFI cap of $90,500/yr.
         BaS has no expanded / hardship band, so this fails income.
         """
-        screen = self._make_screen()
-        self._add_member(screen, student=True, monthly_wages=8000)
+        screen = self.make_screen(zipcode="98101", county="King")
+        self.add_member(screen, student=True, monthly_income=8000, age=20)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -106,13 +68,13 @@ class TestWaWsosBas(TestCase):
         $14,541/mo wages ($174,492/yr) -- just under the 4-person 125%
         MFI cap of $174,500/yr (monthly rounding edge).
         """
-        screen = self._make_screen(household_size=4, zipcode="98501", county="Thurston")
-        self._add_member(screen, age=46, monthly_wages=14541)
-        self._add_member(screen, relationship="spouse", age=44, student=False)
-        self._add_member(screen, relationship="child", age=17, student=True)
-        self._add_member(screen, relationship="child", age=13, student=False)
+        screen = self.make_screen(household_size=4, zipcode="98501", county="Thurston")
+        self.add_member(screen, age=46, monthly_income=14541)
+        self.add_member(screen, relationship="spouse", age=44, student=False)
+        self.add_member(screen, relationship="child", age=17, student=True)
+        self.add_member(screen, relationship="child", age=13, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -121,13 +83,13 @@ class TestWaWsosBas(TestCase):
         spec.md Scenario 4: same 4-person family, but $16k/mo
         ($192k/yr) -- well above the 4-person 125% MFI cap of $174,500/yr.
         """
-        screen = self._make_screen(household_size=4, zipcode="98501", county="Thurston")
-        self._add_member(screen, age=46, monthly_wages=16000)
-        self._add_member(screen, relationship="spouse", age=44, student=False)
-        self._add_member(screen, relationship="child", age=17, student=True)
-        self._add_member(screen, relationship="child", age=13, student=False)
+        screen = self.make_screen(household_size=4, zipcode="98501", county="Thurston")
+        self.add_member(screen, age=46, monthly_income=16000)
+        self.add_member(screen, relationship="spouse", age=44, student=False)
+        self.add_member(screen, relationship="child", age=17, student=True)
+        self.add_member(screen, relationship="child", age=13, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -138,12 +100,12 @@ class TestWaWsosBas(TestCase):
         household size and income. $4k/mo wages ($48k/yr) -- well under
         the 3-person 125% MFI cap of $146,500/yr.
         """
-        screen = self._make_screen(household_size=3, zipcode="99201", county="Spokane")
-        self._add_member(screen, age=28, student=True, monthly_wages=4000)
-        self._add_member(screen, relationship="spouse", age=30, student=False)
-        self._add_member(screen, relationship="child", age=4, student=False)
+        screen = self.make_screen(household_size=3, zipcode="99201", county="Spokane")
+        self.add_member(screen, age=28, student=True, monthly_income=4000)
+        self.add_member(screen, relationship="spouse", age=30, student=False)
+        self.add_member(screen, relationship="child", age=4, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -155,10 +117,10 @@ class TestWaWsosBas(TestCase):
         ProgramCalculator auto-marks the household ineligible when no
         member passes member_eligible().
         """
-        screen = self._make_screen()
-        self._add_member(screen, age=46, student=False, monthly_wages=2000)
+        screen = self.make_screen(zipcode="98101", county="King")
+        self.add_member(screen, age=46, student=False, monthly_income=2000)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -169,7 +131,7 @@ class TestWaWsosBas(TestCase):
         this explicitly catches a future refactor that might confuse `is False`
         with a generic falsy check.
         """
-        screen = self._make_screen()
+        screen = self.make_screen(zipcode="98101", county="King")
         member = HouseholdMember.objects.create(
             screen=screen,
             relationship="headOfHousehold",
@@ -184,7 +146,7 @@ class TestWaWsosBas(TestCase):
             frequency="monthly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -194,18 +156,18 @@ class TestWaWsosBas(TestCase):
         with zero household income. Lower-side income boundary, complementing
         `test_eligible_at_exact_125_pct_mfi_boundary` on the upper side.
         """
-        screen = self._make_screen()
-        self._add_member(screen, age=18, student=True)  # no income stream
+        screen = self.make_screen(zipcode="98101", county="King")
+        self.add_member(screen, age=18, student=True)  # no income stream
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
     def test_eligible_at_exact_125_pct_mfi_boundary(self):
         """`<=` boundary: income exactly equal to the 125% MFI cap is eligible."""
         # 1-person cap is $90,500/yr -> use a yearly stream to hit it exactly.
-        screen = self._make_screen()
-        member = self._add_member(screen, student=True)
+        screen = self.make_screen(zipcode="98101", county="King")
+        member = self.add_member(screen, student=True, age=20)
         IncomeStream.objects.create(
             screen=screen,
             household_member=member,
@@ -214,14 +176,14 @@ class TestWaWsosBas(TestCase):
             frequency="yearly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
     def test_ineligible_one_dollar_above_125_pct_mfi_boundary(self):
         """`<=` boundary: $1 above the 125% MFI cap is ineligible."""
-        screen = self._make_screen()
-        member = self._add_member(screen, student=True)
+        screen = self.make_screen(zipcode="98101", county="King")
+        member = self.add_member(screen, student=True, age=20)
         IncomeStream.objects.create(
             screen=screen,
             household_member=member,
@@ -230,7 +192,7 @@ class TestWaWsosBas(TestCase):
             frequency="yearly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -238,10 +200,10 @@ class TestWaWsosBas(TestCase):
 
     def test_value_is_22500_lump_sum_when_eligible(self):
         """Eligible household returns the published $22,500 lump-sum scholarship."""
-        screen = self._make_screen()
-        self._add_member(screen, student=True, monthly_wages=2000)
+        screen = self.make_screen(zipcode="98101", county="King")
+        self.add_member(screen, student=True, monthly_income=2000, age=20)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -249,10 +211,10 @@ class TestWaWsosBas(TestCase):
 
     def test_value_is_0_when_ineligible(self):
         """Ineligible household reports value 0 (the base class skips value() when not eligible)."""
-        screen = self._make_screen()
-        self._add_member(screen, student=True, monthly_wages=8000)
+        screen = self.make_screen(zipcode="98101", county="King")
+        self.add_member(screen, student=True, monthly_income=8000, age=20)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -264,11 +226,11 @@ class TestWaWsosBas(TestCase):
         award is reported at the household level. Confirms the scholarship
         does not multiply across multiple students in the same household.
         """
-        screen = self._make_screen(household_size=2)
-        self._add_member(screen, student=True, monthly_wages=2000)
-        self._add_member(screen, relationship="spouse", age=21, student=True)
+        screen = self.make_screen(zipcode="98101", county="King", household_size=2)
+        self.add_member(screen, student=True, monthly_income=2000, age=20)
+        self.add_member(screen, relationship="spouse", age=21, student=True)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -281,8 +243,8 @@ class TestWaWsosBas(TestCase):
     def test_income_limit_table_lookup(self):
         """All 6 published table sizes return the documented 125% MFI value verbatim."""
         for size, expected in WaWsosBas.MFI_125_BY_SIZE.items():
-            screen = self._make_screen(household_size=size)
-            self.assertEqual(self._calc(screen).income_limit_125(), expected)
+            screen = self.make_screen(zipcode="98101", county="King", household_size=size)
+            self.assertEqual(self.make_calculator(screen).income_limit_125(), expected)
 
     def test_income_limit_extension_above_table(self):
         """
@@ -290,9 +252,9 @@ class TestWaWsosBas(TestCase):
         per-person increment so a 7+ person household is not silently
         denied or crashed.
         """
-        screen = self._make_screen(household_size=8)
+        screen = self.make_screen(zipcode="98101", county="King", household_size=8)
         expected = WaWsosBas.MFI_125_BY_SIZE[6] + 2 * WaWsosBas.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
-        self.assertEqual(self._calc(screen).income_limit_125(), expected)
+        self.assertEqual(self.make_calculator(screen).income_limit_125(), expected)
 
     def test_mfi_table_values_match_spec(self):
         """

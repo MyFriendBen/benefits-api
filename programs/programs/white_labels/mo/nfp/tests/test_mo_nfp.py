@@ -1,3 +1,5 @@
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+
 """
 Unit tests for the Missouri Nurse-Family Partnership (NFP) calculator.
 
@@ -11,11 +13,7 @@ cannot attribute a child to a specific parent, so the spec applies the inclusive
 default. `test_existing_child_does_not_disqualify` locks that decision in.
 """
 
-from django.test import TestCase
 from programs.programs.white_labels.mo.nfp.calculator import MoNurseFamilyPartnership
-from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
-from programs.models import Program, FederalPoveryLimit
-from programs.util import Dependencies
 
 EXPECTED_VALUE = 6_000 / 2.5  # $2,400/year, per eligible member
 
@@ -24,62 +22,14 @@ FPL_185_SIZE_1 = 29_526  # 15,960 * 1.85, exactly
 FPL_185_SIZE_3 = 50_542  # 27,320 * 1.85, exactly
 
 
-class TestMoNurseFamilyPartnership(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.mo_white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
-        cls.fpl_year = FederalPoveryLimit.objects.create(year="2026", period="2026")
-        cls.program = Program.objects.new_program(white_label="mo", name_abbreviated="mo_nfp")
-        cls.program.year = cls.fpl_year
-        cls.program.save()
-
-    def make_screen(self, county="St. Louis County", household_size=1, zipcode="63121"):
-        return Screen.objects.create(
-            agree_to_tos=True,
-            zipcode=zipcode,
-            county=county,
-            household_size=household_size,
-            white_label=self.mo_white_label,
-            completed=False,
-        )
-
-    def add_member(
-        self,
-        screen,
-        relationship="headOfHousehold",
-        age=25,
-        pregnant=False,
-        monthly_income=0,
-        yearly_income=0,
-        income_type="wages",
-    ):
-        member = HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
-            pregnant=pregnant,
-            has_income=(monthly_income > 0 or yearly_income > 0),
-        )
-        if monthly_income > 0:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type=income_type,
-                amount=monthly_income,
-                frequency="monthly",
-            )
-        if yearly_income > 0:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type=income_type,
-                amount=yearly_income,
-                frequency="yearly",
-            )
-        return member
-
-    def calculator(self, screen):
-        return MoNurseFamilyPartnership(screen, self.program, {}, Dependencies())
+class TestMoNurseFamilyPartnership(CustomCalculatorTestCase):
+    calculator_class = MoNurseFamilyPartnership
+    program_code = "mo_nfp"
+    white_label_code = "mo"
+    state_code = "MO"
+    fpl_year = "2026"
+    default_zipcode = "63121"
+    default_county = "St. Louis County"
 
     def eligible_member_count(self, eligibility):
         return sum(1 for m in eligibility.eligible_members if m.eligible)
@@ -143,7 +93,7 @@ class TestMoNurseFamilyPartnership(TestCase):
     def test_scenario_1_golden_path_st_louis_county(self):
         screen = self.make_screen(county="St. Louis County", zipcode="63121")
         self.add_member(screen, age=24, pregnant=True, monthly_income=1_500)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)
 
@@ -153,7 +103,7 @@ class TestMoNurseFamilyPartnership(TestCase):
     def test_scenario_2_kansas_city_region_jackson_county(self):
         screen = self.make_screen(county="Jackson County", zipcode="64106")
         self.add_member(screen, age=23, pregnant=True, monthly_income=1_200)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)
 
@@ -163,7 +113,7 @@ class TestMoNurseFamilyPartnership(TestCase):
     def test_scenario_3_southeast_region_butler_county(self):
         screen = self.make_screen(county="Butler County", zipcode="63901")
         self.add_member(screen, age=22, pregnant=True, monthly_income=900)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)
 
@@ -174,7 +124,7 @@ class TestMoNurseFamilyPartnership(TestCase):
         screen = self.make_screen(county="St. Louis City", household_size=2, zipcode="63101")
         self.add_member(screen, relationship="headOfHousehold", age=30, monthly_income=2_500)
         self.add_member(screen, relationship="spouse", age=28)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertFalse(eligibility.eligible)
         self.assertEqual(self.eligible_member_count(eligibility), 0)
 
@@ -184,7 +134,7 @@ class TestMoNurseFamilyPartnership(TestCase):
     def test_scenario_5_outside_service_area_greene_county(self):
         screen = self.make_screen(county="Greene County", zipcode="65806")
         self.add_member(screen, age=24, pregnant=True, monthly_income=1_200)
-        self.assertFalse(self.calculator(screen).calc().eligible)
+        self.assertFalse(self.make_calculator(screen).calc().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 6: income exactly at 185% FPL for a household of 1 -> eligible.
@@ -193,7 +143,7 @@ class TestMoNurseFamilyPartnership(TestCase):
     def test_scenario_6_income_exactly_at_fpl_boundary(self):
         screen = self.make_screen(county="St. Louis County", zipcode="63121")
         self.add_member(screen, age=25, pregnant=True, yearly_income=FPL_185_SIZE_1)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)
 
@@ -201,7 +151,7 @@ class TestMoNurseFamilyPartnership(TestCase):
         """$2,460.50/month annualizes to exactly $29,526 — the spec's stated input."""
         screen = self.make_screen(county="St. Louis County", zipcode="63121")
         self.add_member(screen, age=25, pregnant=True, monthly_income=2_460.50)
-        self.assertTrue(self.calculator(screen).calc().eligible)
+        self.assertTrue(self.make_calculator(screen).calc().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 7: income just above 185% FPL -> not eligible
@@ -209,12 +159,12 @@ class TestMoNurseFamilyPartnership(TestCase):
     def test_scenario_7_income_just_above_fpl_boundary(self):
         screen = self.make_screen(county="St. Louis County", zipcode="63121")
         self.add_member(screen, age=25, pregnant=True, monthly_income=2_500)  # $30,000/yr
-        self.assertFalse(self.calculator(screen).calc().eligible)
+        self.assertFalse(self.make_calculator(screen).calc().eligible)
 
     def test_income_one_dollar_above_boundary_not_eligible(self):
         screen = self.make_screen(county="St. Louis County", zipcode="63121")
         self.add_member(screen, age=25, pregnant=True, yearly_income=FPL_185_SIZE_1 + 1)
-        self.assertFalse(self.calculator(screen).calc().eligible)
+        self.assertFalse(self.make_calculator(screen).calc().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 8: mixed household, one pregnant member -> eligible for that member
@@ -226,7 +176,7 @@ class TestMoNurseFamilyPartnership(TestCase):
         self.add_member(screen, relationship="spouse", age=26, pregnant=True)
         self.add_member(screen, relationship="other", age=60, monthly_income=1_200, income_type="sSRetirement")
 
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(self.eligible_member_count(eligibility), 1)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)
@@ -245,7 +195,7 @@ class TestMoNurseFamilyPartnership(TestCase):
         self.add_member(screen, relationship="spouse", age=27, monthly_income=2_800)
         self.add_member(screen, relationship="other", age=2)
 
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(self.eligible_member_count(eligibility), 2)
         self.assertEqual(eligibility.value, EXPECTED_VALUE * 2)  # $4,800
@@ -258,7 +208,7 @@ class TestMoNurseFamilyPartnership(TestCase):
             with self.subTest(county=county):
                 screen = self.make_screen(county=county)
                 self.add_member(screen, age=24, pregnant=True, monthly_income=1_000)
-                self.assertTrue(self.calculator(screen).calc().eligible)
+                self.assertTrue(self.make_calculator(screen).calc().eligible)
 
     def test_unserved_counties_are_not_eligible(self):
         # Boone (Columbia) and Greene (Springfield) are outside all three
@@ -268,7 +218,7 @@ class TestMoNurseFamilyPartnership(TestCase):
             with self.subTest(county=county):
                 screen = self.make_screen(county=county)
                 self.add_member(screen, age=24, pregnant=True, monthly_income=1_000)
-                self.assertFalse(self.calculator(screen).calc().eligible)
+                self.assertFalse(self.make_calculator(screen).calc().eligible)
 
     # ------------------------------------------------------------------ #
     # Data-gap decisions (inclusive default)
@@ -282,12 +232,12 @@ class TestMoNurseFamilyPartnership(TestCase):
         screen = self.make_screen(county="St. Louis County", household_size=2, zipcode="63121")
         self.add_member(screen, relationship="headOfHousehold", age=29, pregnant=True, monthly_income=1_200)
         self.add_member(screen, relationship="child", age=4)
-        self.assertTrue(self.calculator(screen).calc().eligible)
+        self.assertTrue(self.make_calculator(screen).calc().eligible)
 
     def test_pregnant_member_with_no_income_is_eligible(self):
         screen = self.make_screen(county="Ray County", zipcode="64085")
         self.add_member(screen, age=20, pregnant=True)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)
 
@@ -296,7 +246,7 @@ class TestMoNurseFamilyPartnership(TestCase):
         self.add_member(screen, relationship="headOfHousehold", age=30, pregnant=True, monthly_income=1_000)
         self.add_member(screen, relationship="spouse", age=32)
 
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         values = {m.member.relationship: m.value for m in eligibility.eligible_members}
         self.assertEqual(values["headOfHousehold"], EXPECTED_VALUE)
         self.assertEqual(values["spouse"], 0)
@@ -307,13 +257,13 @@ class TestMoNurseFamilyPartnership(TestCase):
     def test_failing_county_produces_a_location_message(self):
         screen = self.make_screen(county="Greene County", zipcode="65806")
         self.add_member(screen, age=24, pregnant=True, monthly_income=1_000)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(len(eligibility.fail_messages) >= 1)
 
     def test_failing_income_produces_an_income_message(self):
         screen = self.make_screen(county="St. Louis County", zipcode="63121")
         self.add_member(screen, age=24, pregnant=True, monthly_income=5_000)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(len(eligibility.fail_messages) >= 1)
 
     # ------------------------------------------------------------------ #

@@ -343,9 +343,11 @@ Optional:
 
 Before importing a program, you need to create the eligibility calculator:
 
-1. **Create calculator directory**: `programs/programs/{white_label}/program_name/`
-2. **Create calculator.py**: Implement your eligibility logic, declaring the
-   `Program` row the calculator backs
+1. **Pick the directory.** A white label's share of a benefit that two or more offer
+   goes in the family: `programs/programs/cross_white_label/{benefit}/{wl}.py`. A program
+   only one white label offers gets its own directory:
+   `programs/programs/white_labels/{wl}/{program}/calculator.py`.
+2. **Write the calculator**, declaring the `Program` row it backs
 
 Example for IL CSFP:
 ```python
@@ -366,7 +368,46 @@ class HeadStart(PolicyEngineMembersCalculator, abstract=True):
     ...
 ```
 
-### Step 2: Create the JSON Config File
+### Step 2: Write the Tests
+
+Tests live beside the calculator — `cross_white_label/{benefit}/tests/test_{wl}.py` for a
+family member, `white_labels/{wl}/{program}/tests/` for a standalone program. Shared
+fixtures are in `programs/programs/testing_fixtures/`, and which base class you inherit
+depends on the engine:
+
+**A custom (MFB) calculator** computes locally, so it needs a household and an assertion:
+
+```python
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
+
+
+class TestIlCsfp(CustomCalculatorTestCase):
+    calculator_class = IlCommoditySupplementalFoodProgram
+    program_code = "il_csfp"
+    white_label_code = "il"
+    state_code = "IL"
+
+    def test_eligible_household(self):
+        screen = self.make_screen(household_size=2, county="Cook")
+        add_income(self.add_member(screen, age=65), 1_200)
+
+        self.assertTrue(self.calculate(screen).eligible)
+```
+
+**A PolicyEngine calculator** calls out to PolicyEngine, so its test replays a recorded
+cassette instead:
+
+```python
+from programs.programs.testing_fixtures.pe_integration import PeIntegrationTestCase, make_screen
+```
+
+Both paths, including how to record a cassette and what to do when PolicyEngine promotes a
+new version, are covered in [`docs/TESTING.md`](../../../../docs/TESTING.md).
+
+Write one test per scenario in the program's `spec.md`, asserting eligibility **and**
+value — a test that only checks eligibility passes while the amount is wrong.
+
+### Step 3: Create the JSON Config File
 
 1. Copy an existing config file from `data/` as a template
 2. Update all required fields:
@@ -375,7 +416,7 @@ class HeadStart(PolicyEngineMembersCalculator, abstract=True):
    - Set year, legal statuses, and other config
    - Add documents and navigators as needed
 
-### Step 3: Validate and Import
+### Step 4: Validate and Import
 
 1. Run with `--dry-run` to validate:
    ```bash

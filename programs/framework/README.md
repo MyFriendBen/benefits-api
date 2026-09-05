@@ -19,7 +19,6 @@ Only code that every calculator needs, regardless of white label or engine.
 | `pe_dependencies/` | The `Screen` → PolicyEngine input translation layer. One module per PE entity (member, spm, household, tax) |
 | `registry.py` | Builds the `program_code` → calculator mapping by walking `programs.programs` |
 | `eligibility_messages.py` | The translatable strings a calculator passes to `Eligibility.condition()` to explain why a household met or missed a rule. Keyed `eligibility_message.*` in the Translation table |
-| `helpers.py` | `medicaid_eligible()` and `STATE_MEDICAID_OPTIONS`. Read by sixteen calculators across four families and three white labels, and by `screener/views.py` for calculation ordering |
 | `tests/` | Tests of framework code and repo-wide invariants — not of any program's behavior |
 
 Naming: an unprefixed name means both engines use it; a `pe_` prefix means the file is
