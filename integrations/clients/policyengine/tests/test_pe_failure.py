@@ -9,10 +9,12 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
+from programs.util import ProgramConfigurationError
 from screener.models import Screen, HouseholdMember, WhiteLabel
 from integrations.clients.policyengine import policy_engine as pe
 from integrations.clients.policyengine import engines as pe_engines_module
 from integrations.clients.policyengine.engines import PolicyEngineAPIError, PrivateApiSim
+from programs.framework.pe_dependencies.base import ConflictingDependencyError
 from programs.framework.pe_dependencies.payload import Bucket, PayloadPlan
 from integrations.external_api_status import (
     POLICY_ENGINE,
@@ -154,3 +156,148 @@ class TestCalcPeEligibilityFailure(TestCase):
         # Lock the removal of the public fallback: the private household.api is the only
         # configured engine.
         self.assertEqual(pe_engines_module.pe_engines, [PrivateApiSim])
+
+    def test_status_code_is_in_the_sentry_message(self):
+        # PolicyEngineAPIError has always carried the status; it belongs in the message so a
+        # 400 (our payload) is distinguishable from a 5xx (theirs) in the Sentry issue list.
+        _, _, capture_message, _ = self._run(
+            [("Private Policy Engine API", PolicyEngineAPIError("bad payload", status_code=400))]
+        )
+
+        self.assertIn("(HTTP 400)", self._error_messages(capture_message)[0].args[0])
+
+    def test_no_status_code_leaves_the_message_clean(self):
+        # A timeout or DNS failure never got a response, so there is no status to report.
+        _, _, capture_message, _ = self._run([("Private Policy Engine API", PolicyEngineAPIError("timed out"))])
+
+        self.assertNotIn("HTTP", self._error_messages(capture_message)[0].args[0])
+
+
+class TestPayloadAssemblyFailure(TestCase):
+    """Payload assembly failing degrades like any other PolicyEngine failure.
+
+    It used to escape `calc_pe_eligibility` and 500 the whole response, so a screen lost even
+    the programs that never touch PolicyEngine.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+
+    def setUp(self):
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=1,
+            completed=False,
+        )
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+        calc = MagicMock()
+        calc.can_calc.return_value = True
+        self.calculators = {"prog": calc}
+
+    def _run(self, error):
+        """Run calc_pe_eligibility with payload assembly raising `error`."""
+        with patch.object(pe, "build_pe_input", side_effect=error), patch.object(
+            pe, "capture_message"
+        ) as capture_message, patch.object(pe, "capture_exception"), track_external_api_failures():
+            result = pe.calc_pe_eligibility(self.screen, self.calculators)
+            failures = get_external_api_failures()
+
+        return result, capture_message, failures
+
+    def test_unexpected_error_degrades_instead_of_500ing(self):
+        result, capture_message, failures = self._run(KeyError("snap_if_takes_up"))
+
+        self.assertEqual(result["eligibility"], {})  # caller still runs the custom calcs
+        self.assertTrue([c for c in capture_message.call_args_list if c.kwargs.get("level") == "error"])
+        self.assertEqual(failures, [POLICY_ENGINE])  # -> banner on the results page
+
+    def test_misconfigured_program_degrades(self):
+        # The typed guard a program with no FederalPoveryLimit hits if it ever reaches
+        # payload assembly (the pre-filter should have dropped it first).
+        result, _, failures = self._run(ProgramConfigurationError("no period"))
+
+        self.assertEqual(result["eligibility"], {})
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_dependency_conflict_is_reported_to_the_frontend(self):
+        # The conflict arm logged loudly but did not record the failure, so the user got a
+        # short results page with no banner explaining it.
+        result, capture_message, failures = self._run(ConflictingDependencyError("age", 35, 36))
+
+        self.assertEqual(result["eligibility"], {})
+        self.assertTrue([c for c in capture_message.call_args_list if c.kwargs.get("level") == "error"])
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_worker_teardown_still_propagates(self):
+        # SystemExit is BaseException: `except Exception` must not turn a dying worker into a
+        # logged payload failure.
+        with patch.object(pe, "build_pe_input", side_effect=SystemExit()), patch.object(
+            pe, "capture_message"
+        ), patch.object(pe, "capture_exception"), track_external_api_failures():
+            with self.assertRaises(SystemExit):
+                pe.calc_pe_eligibility(self.screen, self.calculators)
+
+
+class TestUnconfiguredProgramIsDropped(TestCase):
+    """A PolicyEngine program with no FederalPoveryLimit costs only itself.
+
+    Every variable it asks for is keyed by period, and there is no period without a year, so
+    it cannot be part of a request. Dropping it before assembly keeps the failure the size of
+    the misconfiguration; reaching `pe_period` instead would raise mid-build and cost every
+    PolicyEngine program on the screen its result.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+
+    def setUp(self):
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=1,
+            completed=False,
+        )
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    @staticmethod
+    def _calculator(year):
+        calc = MagicMock()
+        calc.can_calc.return_value = True
+        calc.program.year = year
+        return calc
+
+    def test_unconfigured_program_is_dropped_and_reported(self):
+        calculators = {"broken": self._calculator(None)}
+
+        with patch.object(pe, "build_pe_input") as build, patch.object(
+            pe, "capture_message"
+        ) as capture_message, track_external_api_failures():
+            result = pe.calc_pe_eligibility(self.screen, calculators)
+            failures = get_external_api_failures()
+
+        self.assertEqual(result["eligibility"], {})
+        build.assert_not_called()  # no request is built at all
+        self.assertIn("broken", capture_message.call_args_list[0].args[0])
+        # Not an external-API failure: PolicyEngine was never asked. The program is simply
+        # absent, which the caller already reports as `missing_programs`.
+        self.assertEqual(failures, [])
+
+    def test_its_siblings_still_calculate(self):
+        calculators = {"broken": self._calculator(None), "fine": self._calculator(MagicMock())}
+        plan = PayloadPlan(payload={}, buckets=[Bucket(program_indexes=[0])])
+
+        with patch.object(pe, "build_pe_input", return_value=plan) as build, patch.object(
+            pe, "pe_engines", [_make_engine("Private Policy Engine API", [])]
+        ), patch.object(pe, "all_eligibility", return_value={"fine": MagicMock()}), patch.object(
+            pe, "capture_message"
+        ), track_external_api_failures():
+            result = pe.calc_pe_eligibility(self.screen, calculators)
+
+        self.assertEqual(list(result["eligibility"]), ["fine"])
+        self.assertEqual(len(build.call_args.args[1]), 1)  # only the configured program

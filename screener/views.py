@@ -803,6 +803,12 @@ def eligibility_results(
     ProgramEligibilitySnapshot.objects.bulk_create(program_snapshots)
     snapshot.had_error = False
     snapshot.dropped_programs = dropped_programs
+    # Same signal the response carries to the frontend as `external_api_failures`, persisted
+    # so a degraded screen stays identifiable after the fact. Both callers that write
+    # snapshots users see — `all_results` and the batch_snapshots command — open a tracking
+    # context; without one this reads [], so a caller that never opted in (the validation
+    # harness) writes the same snapshot it always did.
+    snapshot.had_external_api_failure = bool(get_external_api_failures())
     snapshot.save()
 
     eligible_programs = []

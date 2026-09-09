@@ -1069,6 +1069,20 @@ class EligibilitySnapshot(models.Model):
     #: A displayed program's calculator raised something other than `DependencyError`: a
     #: bug, or screen data it could not handle. Reported to Sentry.
     DROPPED_CALCULATOR_ERROR = "calculator_error"
+    #: The run finished and this snapshot is complete as far as it goes, but an external
+    #: dependency failed while computing it, so programs are missing from it.
+    #:
+    #: Distinct from `had_error`, which means the run never finished at all (it is set True
+    #: at creation and flipped False on success). A degraded run reaches the user — the
+    #: results page renders, with a banner — and so it is persisted as a real snapshot; this
+    #: flag is the only thing that tells it apart from a clean one afterwards. Without it a
+    #: screen that lost every PolicyEngine program counts as a normal result in any analytics
+    #: over EligibilitySnapshot, and the only trace is a Sentry event that ages out.
+    #:
+    #: Deliberately not wired into the `had_error=False` filters that pick the latest usable
+    #: snapshot (`views.py`, `serializers.py`, `assistant.py`): a degraded run is still the
+    #: user's most recent real result, so the assistant and NPS should keep seeing it.
+    had_external_api_failure = models.BooleanField(default=False)
 
 
 class NPSScore(models.Model):
