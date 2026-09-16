@@ -73,7 +73,7 @@ def create_or_fix_gap_tracking_programs(apps, schema_editor):
             continue
 
         existing = Program.objects.filter(
-            white_label__code=p["white_label_code"],
+            white_label=white_label,
             name_abbreviated=p["name_abbreviated"],
         ).first()
 
