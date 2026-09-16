@@ -929,6 +929,8 @@ class Command(BaseCommand):
                     program.year_type = "calendar_year"
                 elif year_value == "THIS_YEAR_FISCAL":
                     program.year_type = "fiscal_year"
+                else:
+                    program.year_type = "hardcoded"
                 self.stdout.write(f"  Year: {year_value}")
             except FederalPoveryLimit.DoesNotExist:
                 self.stdout.write(self.style.WARNING(f"  Warning: Year '{year_value}' not found"))

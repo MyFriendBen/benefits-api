@@ -349,7 +349,7 @@ class ProgramDataControllerDynamicFplTests(TestCase):
             year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
         )
         self.program = Program.objects.new_program(self.white_label.code, "snap")
-        self.program.year = self.calendar_fpl
+        self.program.year_type = "calendar_year"
         self.program.save()
 
     def test_stale_snapshot_does_not_roll_back_shared_period(self):
