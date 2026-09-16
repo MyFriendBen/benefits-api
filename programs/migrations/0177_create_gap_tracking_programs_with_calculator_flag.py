@@ -94,8 +94,17 @@ def create_or_fix_gap_tracking_programs(apps, schema_editor):
                 no_auto=(field in NO_AUTO_FIELDS),
             )
 
-        external_name_exists = Program.objects.filter(external_name=name_abbreviated).exists()
-        external_name = name_abbreviated if not external_name_exists else None
+        # external_name is required and unique (0148_alter_program_external_name)
+        # — unlike when 0141 was written, None is no longer a legal fallback
+        # here. Mirror ProgramManager.new_program()'s collision convention
+        # (programs/models.py:529-543) instead: namespace by white label, and
+        # raise rather than silently insert a non-unique value.
+        if not Program.objects.filter(external_name=name_abbreviated).exists():
+            external_name = name_abbreviated
+        else:
+            external_name = f"{p['white_label_code']}_{name_abbreviated}"
+            if Program.objects.filter(external_name=external_name).exists():
+                raise ValueError(f"Cannot generate unique external_name. Conflict on '{external_name}'")
         base_program = p.get("base_program")
 
         # Raw SQL, not the ORM: apps.get_model() returns a frozen historical
