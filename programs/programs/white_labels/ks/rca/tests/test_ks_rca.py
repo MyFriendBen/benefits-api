@@ -81,29 +81,39 @@ class TestRegistration(TestCase):
 
 
 class TestValueTable(TestCase):
-    """Scenarios 1-6: the payment standard across tabulated and extrapolated case sizes."""
+    """Scenarios 1-6: the payment standard across tabulated and extrapolated case sizes.
+
+    spec.md states each award monthly; the calculator reports annually, as every value
+    on the results page is. The expectations are written as `monthly * 12` so the
+    scenario's own figure stays readable next to it.
+    """
 
     def test_scenario_1_single_adult(self):
-        self.assertEqual(run(members=[make_member()]), (True, 168))
+        self.assertEqual(run(members=[make_member()]), (True, 168 * 12))
 
     def test_scenario_2_two_adults(self):
-        self.assertEqual(run(members=[make_member() for _ in range(2)]), (True, 263))
+        self.assertEqual(run(members=[make_member() for _ in range(2)]), (True, 263 * 12))
 
     def test_scenario_3_three_adults_with_earned_income(self):
         """Income neither gates eligibility nor reduces the figure shown: Kansas's income
         standard and its monthly reduction formula are both unpublished (Data Gap 1)."""
         earner = make_member()
         earner.calc_gross_income.side_effect = lambda frequency, types: (24_000 if "sSI" not in types else 0)
-        self.assertEqual(run(members=[earner, make_member(), make_member()]), (True, 349))
+        self.assertEqual(run(members=[earner, make_member(), make_member()]), (True, 349 * 12))
 
     def test_scenario_4_four_adults_last_tabulated_size(self):
-        self.assertEqual(run(members=[make_member() for _ in range(4)]), (True, 421))
+        self.assertEqual(run(members=[make_member() for _ in range(4)]), (True, 421 * 12))
 
     def test_scenario_5_five_adults_first_increment(self):
-        self.assertEqual(run(members=[make_member() for _ in range(5)]), (True, 482))
+        self.assertEqual(run(members=[make_member() for _ in range(5)]), (True, 482 * 12))
 
     def test_scenario_6_nine_adults_repeated_increment(self):
-        self.assertEqual(run(members=[make_member() for _ in range(9)]), (True, 726))
+        self.assertEqual(run(members=[make_member() for _ in range(9)]), (True, 726 * 12))
+
+    def test_value_is_annual(self):
+        """The award is reported annually, not as the monthly payment standard. A bare
+        monthly figure renders as a twelfth of the real award on the results page."""
+        self.assertEqual(run(members=[make_member()])[1], KsRca.payment_standard[1] * 12)
 
     def test_every_tabulated_size_matches_the_increment_rule(self):
         """Sizes 5-8 are in the table and also reachable by extrapolation; they must agree,
@@ -152,21 +162,21 @@ class TestSsiExclusion(TestCase):
 
     def test_scenario_10_one_of_two_members_receiving_ssi(self):
         """The regression test for member scope: a household-wide exclusion returns
-        ineligible here, and a value read off household_size returns $263."""
+        ineligible here, and a value read off household_size returns $263/month."""
         members = [make_member(), make_member(ssi_amount=700)]
-        self.assertEqual(run(members=members), (True, 168))
+        self.assertEqual(run(members=members), (True, 168 * 12))
 
     def test_scenario_11_ssi_tile_without_amount_in_a_two_member_household(self):
         """The tile names no recipient and nothing tells the two members apart, so it
         excludes nobody."""
         members = [make_member(), make_member()]
-        self.assertEqual(run(members=members, ssi_tile=True), (True, 263))
+        self.assertEqual(run(members=members, ssi_tile=True), (True, 263 * 12))
 
     def test_scenario_12_ssi_eligible_but_not_receiving(self):
         """SSI disqualifies on receipt only. A dependency on SSI *eligibility* would deny
         RCA to every applicant awaiting a determination, which 45 CFR 400.51(b)(1)(ii)
         forbids."""
-        self.assertEqual(run(members=[make_member()]), (True, 168))
+        self.assertEqual(run(members=[make_member()]), (True, 168 * 12))
 
     def test_scenario_13_ssi_tile_without_amount_in_a_one_member_household(self):
         """The other side of the boundary: with one member the tile identifies them."""
