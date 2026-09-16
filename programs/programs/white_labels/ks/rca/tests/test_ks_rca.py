@@ -83,9 +83,7 @@ class TestRegistration(TestCase):
 class TestValueTable(TestCase):
     """Scenarios 1-6: the payment standard across tabulated and extrapolated case sizes.
 
-    spec.md states each award monthly; the calculator reports annually, as every value
-    on the results page is. The expectations are written as `monthly * 12` so the
-    scenario's own figure stays readable next to it.
+    Written as `monthly * 12` so the scenario's own monthly figure stays readable.
     """
 
     def test_scenario_1_single_adult(self):
@@ -111,8 +109,7 @@ class TestValueTable(TestCase):
         self.assertEqual(run(members=[make_member() for _ in range(9)]), (True, 726 * 12))
 
     def test_value_is_annual(self):
-        """The award is reported annually, not as the monthly payment standard. A bare
-        monthly figure renders as a twelfth of the real award on the results page."""
+        """Returning the monthly standard unmultiplied shows a twelfth of the award."""
         self.assertEqual(run(members=[make_member()])[1], KsRca.payment_standard[1] * 12)
 
     def test_every_tabulated_size_matches_the_increment_rule(self):

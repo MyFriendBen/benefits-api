@@ -87,7 +87,7 @@ class KsRca(ProgramCalculator):
         e.condition(not can_get_tanf)
 
     def household_value(self) -> int:
-        """The annual award. `payment_standard` is monthly, and values are reported annually."""
+        """The annual award: `payment_standard` is monthly."""
         monthly = self.payment_standard.get(
             self._case_size(),
             self.payment_standard[self.largest_tabulated_size]

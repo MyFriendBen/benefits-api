@@ -116,8 +116,7 @@ None identified as of 2026-09-04.
 ## Benefit Value
 
 - Value: **the lowest Kansas TANF payment standard for the size of the RCA case**, monthly — $168 (1), $263 (2), $349 (3), $421 (4), $482 (5), $543 (6), $604 (7), $665 (8), plus $61 for each additional person beyond 8. The case is the household's members minus any member excluded under criterion 3.
-- `value_format`: `null` — "Default (Monthly)". This names how the **card renders** the value, not what the calculator returns: the default format divides by 12 and appends "/month" (`FormattedValue.tsx`), so the backend contract carries the **annual** figure (`visiblePrograms.ts`). The calculator therefore returns the monthly standard × 12; the card shows the monthly amount. A calculator that returns the bare monthly figure renders as a twelfth of the award.
-- RCA is a recurring monthly payment, time-limited to the ORR eligibility period. The annual figure is the display contract rather than a claim about how many months a household receives, which depends on an ORR eligibility date MFB does not collect (Data Gap 2).
+- Returned annually: the monthly standard × 12. `value_format`: `null`, so the card shows the monthly amount.
 - Variation axes: RCA case size
 - Source: 45 CFR 400.60(b) — "States and local resettlement agencies may not make payments to refugees that are lower than the State's TANF payment for the same sized family unit." — [snapshot `2026-09-02--45-cfr-400-60`](../../../sources/ks/ks_rca/2026-09-02--45-cfr-400-60/content.md), accessed 2026-09-02
 - Source (corroborative — plan content, not the operative rule): 45 CFR 400.58(a)(3) — "Assurance that the payment levels established are not lower than the comparable State TANF amounts;" — [snapshot `2026-09-02--45-cfr-400-58`](../../../sources/ks/ks_rca/2026-09-02--45-cfr-400-58/content.md), accessed 2026-09-02
@@ -132,9 +131,7 @@ None identified as of 2026-09-04.
 
 ## Test Scenarios
 
-Scenario dollar figures are **monthly** — the amount the card shows. The calculator returns
-the annual value (monthly × 12) per Benefit Value, so a unit test asserts `168 * 12` where a
-scenario reads $168.
+Scenario dollar figures are monthly, as the card shows them; the calculator returns × 12.
 
 **Coverage map**
 
@@ -163,7 +160,7 @@ scenario reads $168.
 * Location: ZIP `67214`, county `Sedgwick County`
 * Person 1: `birth_year` 1994, `birth_month` 3 (born March 1994), head of household, no income
 * Current benefits: none
-**Why this matters**: kills a calculator that returns $0, that returns the bare monthly figure instead of the annual contract value, or that reads the wrong column of the Kansas TANF table.
+**Why this matters**: kills a calculator that returns $0, that returns the monthly figure unmultiplied, or that reads the wrong column of the Kansas TANF table.
 
 ---
 
