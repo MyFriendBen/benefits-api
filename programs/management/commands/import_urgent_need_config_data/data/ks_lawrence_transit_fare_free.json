@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_lawrence_transit_fare_free",
+    "category_type": {
+      "external_name": "ks_transportation"
+    },
+    "type_short": [
+      "transportation"
+    ],
+    "translations": {
+      "name": "Lawrence Transit Fare-Free Service",
+      "description": "Lawrence Transit offers fare-free fixed-route bus service in Lawrence. Anyone can ride the regular buses without applying. T Lift offers free rides to people with disabilities who cannot use regular bus routes. Riders must apply and qualify for T Lift. On Demand is a shared-ride service for evenings and Sundays that you book through an app or online for $3 each way.",
+      "link": "https://lawrencetransit.org/",
+      "warning": "",
+      "website_description": "Find fare-free bus routes, schedules, and transit services in Lawrence.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Douglas County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

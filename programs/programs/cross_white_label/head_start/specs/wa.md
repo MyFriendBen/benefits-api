@@ -64,9 +64,11 @@ Additionally, two **discretionary enrollment pathways** exist outside the federa
 
 **4. Child is in foster care.**
 
-   - Screener fields: `relationship (HouseholdMember)` — count members where `relationship == "fosterChild"`
+   - Screener fields: `relationship (HouseholdMember)` — count members where `relationship == "fosterChild"`; `was_in_foster_care (HouseholdMember)` — the Step 5 "Ever in foster care, even briefly" tile
    - Source: [45 CFR § 1302.12(c)(1)(iv)](https://headstart.gov/policy/45-cfr-chap-xiii/1302-12-determining-verifying-documenting-eligibility); [Head Start FAQs](https://headstart.gov/about-us/article/head-start-faqs)
    - Note: WA `relationship` enum confirmed to include a `fosterChild` option. Foster care eligibility applies regardless of income.
+   - Note: the relationship alone misses a child whose caregiver reported them as `child`, so `was_in_foster_care` is OR'd in. `FosterCareDependency` sends True when either holds, and None otherwise so PolicyEngine keeps its own default. ⚠️ This widens the criterion from *current* placement (the regulation is present tense) to *ever* in care, so a child since adopted or reunified still bypasses the income test — an accepted inclusivity trade-off, recorded under "Accepted, not a gap to close" in `programs/programs/FOSTER_CARE_SCREENER_GAPS.md`.
+   - ⚠️ **Not wired in WA.** The paragraph above describes the shared `HeadStart` PolicyEngine base. WA does not use it: `WaHeadStart` is a custom `ProgramCalculator` with no `pe_inputs`, so it never sends `was_in_foster_care` to PolicyEngine and gets no benefit from the tile. Closing this criterion in WA means either reading the field directly in `WaHeadStart` or moving WA onto the PE base. Same situation in `co` and `nc`; the field reaches PolicyEngine only in `il`, `ks`, `ma`, `mo`, `tx`.
 
 ---
 

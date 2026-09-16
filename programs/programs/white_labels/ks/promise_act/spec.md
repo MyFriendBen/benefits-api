@@ -29,8 +29,14 @@
      benefit under the Kansas Foster Child Educational Assistance Act
 
    ⚠️ **Data gap** — Screener fields: none. The screener does not capture educational
-   history, graduation date, length of Kansas residency, military dependent status, or
-   foster care history. For the calculator, we assume all households meet the qualifying
+   history, graduation date, length of Kansas residency, or military dependent status.
+   Foster care history *is* now captured, as `household_member.was_in_foster_care`
+   ("Ever in foster care, even briefly"), but it is deliberately **not** wired in here:
+   in this program foster care appears as an **exclusion**, not a qualifying pathway, so
+   reading the field would *narrow* eligibility — the opposite direction from every other
+   consumer of it. That needs a product decision, not a code change. It also cannot
+   distinguish Kansas care from out-of-state care, which the exclusion turns on. See
+   `programs/programs/FOSTER_CARE_SCREENER_GAPS.md`. For the calculator, we assume all households meet the qualifying
    educational history requirement (inclusivity assumption). The program description
    should note that applicants must meet one of these educational history requirements.
 

@@ -201,9 +201,9 @@ class TestStateOptionsConfiguration(SimpleTestCase):
     EXPECTED_CATALOG = {
         "co": True,
         "il": True,
-        "ks": False,
+        "ks": True,
         "ma": True,
-        "mo": False,
+        "mo": True,
         "nc": True,
         "tx": True,
         "wa": True,

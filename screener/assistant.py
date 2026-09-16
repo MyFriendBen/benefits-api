@@ -21,14 +21,17 @@ from typing import Optional
 
 import requests
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, views
 from rest_framework.request import Request
 from rest_framework.response import Response
 from sentry_sdk import capture_message
 
-from programs.models import Program
+from programs.framework.base import Eligibility
+from programs.models import Document, Program, WarningMessage
+from programs.util import Dependencies
+from programs.warnings import warning_calculators
 from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
@@ -41,6 +44,9 @@ from .throttles import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Keys already reported by `_report_once`, for the life of the process.
+_REPORTED: set[str] = set()
 
 # Where mfb-ai-service lives, and the shared service token (must match the
 # service's SERVICE_AUTH_TOKEN). Both come from the environment.
@@ -61,6 +67,41 @@ MAX_PROGRAM_VALUE = 1_000_000
 # highest-trust position in the request.
 MAX_PROMPT_FIELD_LEN = 160
 
+# The same cap for fields that are sentences rather than labels: document lines and
+# warning messages. 160 is sized for a program name and clips real copy mid-sentence —
+# tx_lifeline's warning ("...you should enroll in SNAP before applying for Lifeline")
+# would lose the instruction that makes it worth sending. Still bounded, for the same
+# prompt-injection reason MAX_PROMPT_FIELD_LEN exists.
+#
+# 800 rather than 400 because 400 was already clipping production: the longest live
+# warning we actually forward is 562 chars (cccap_jeffco, CO), and the seed configs
+# hold warnings up to 706. Documents top out at 338. A clipped warning is the failure
+# `_apply_url` refuses for links — a half-sentence instruction delivered with full
+# authority — so anything that does hit this is reported rather than silently cut.
+MAX_PROMPT_TEXT_LEN = 800
+
+# Per-program ceilings on those lists, so a misconfigured program can't crowd out the
+# rest of the prompt. Same role as MAX_VISIBLE_PROGRAMS.
+#
+# Sized against production, NOT the seed configs — most of this data is created through
+# the Django admin and never appears in a *_initial_config.json. As of 2026-09-10 the
+# real maxima are 16 documents on one program (mo_tanf, MO) and 5 warnings on one.
+# These must stay above those: truncating a checklist would break the parity with the
+# results page that this feature exists to provide, and it would do it silently, on
+# whichever program happens to have the most documents. Headroom is deliberate — the
+# document count grows whenever a program's config is revised.
+#
+# There is deliberately no cap on programs x documents. The absolute ceiling, measured
+# against production, is a household eligible for every active program in the largest
+# white label: 43 programs, 207 document lines, ~13,000 characters (~3,300 tokens). A
+# total budget that dropped lines past a threshold would buy a smaller worst case at the
+# price of silently handing someone a short checklist — the same failure this file just
+# fixed by raising the per-program cap, and the one thing the results-page parity in
+# MFB-1788 cannot tolerate. If the budget ever needs enforcing, the honest lever is
+# fewer programs in the prompt (inject on demand), not fewer documents per program.
+MAX_DOCUMENTS_PER_PROGRAM = 24
+MAX_WARNINGS_PER_PROGRAM = 10
+
 # Apply links are dropped rather than truncated past this, so it's a reject threshold
 # and not a clip point. Comfortably above the longest link in the seed config (~200).
 MAX_URL_LEN = 500
@@ -69,12 +110,30 @@ MAX_URL_LEN = 500
 # gap loudly (see _insurance_program_names).
 _LOOKS_LIKE_INSURANCE = re.compile(r"medicaid|chip|medicare|mass_health|apple_health")
 
-# Relations _build_context reads per program. Both are per-program lookups, so without
-# these the query count grows with the number of eligible programs:
-#   current_benefits__program -> screen.has_benefit()
+# Relations _build_context reads per program or per member, so without these the query
+# count grows with the number of eligible programs or household members:
+#   current_benefits__program -> screen.has_benefit(), and screen.has_base_benefit()
+#       from the co_snap_student warning calculator
 #   household_members__insurance -> screen.has_insurance_types() (and the reverse
 #       OneToOne `member.insurance`, which hasattr() would otherwise query per member)
-CONTEXT_PREFETCH = ("current_benefits__program", "household_members__insurance")
+# The rest are what screen.missing_fields() walks to build the Dependencies set the
+# warning calculators gate on (see _warning_messages). Each is a reverse relation that
+# `hasattr`/`.all()` would otherwise hit once per member or per call.
+#
+# This list is NOT the whole story, and adding to it is not always the fix: the warning
+# calculators themselves read further than missing_fields() does. `_tax_unit` reaches
+# Screen.has_members_outside_of_tax_unit -> is_dependent -> get_reference_date, whose
+# `validations.order_by(...)` builds a fresh queryset and so cannot be prefetched from
+# here at all — that one is solved by memoizing on the model. If a new calculator
+# regresses the query count, check what it reads before reaching for this tuple.
+CONTEXT_PREFETCH = (
+    "current_benefits__program",
+    "household_members__insurance",
+    "household_members__income_streams",
+    "household_members__energy_calculator",
+    "expenses",
+    "energy_calculator",
+)
 
 
 def _ai_headers() -> dict:
@@ -82,6 +141,50 @@ def _ai_headers() -> dict:
     if AI_SERVICE_TOKEN:
         headers["Authorization"] = f"Bearer {AI_SERVICE_TOKEN}"
     return headers
+
+
+def _report_once(key: str, message: str, *, level: str = "warning") -> None:
+    """Report a config-level condition once per process rather than once per request.
+
+    These conditions are properties of the configuration, not of the request: an
+    unregistered calculator, a calculator the snapshot cannot satisfy, a warning too
+    long for the prompt. They are unchanging until someone edits the admin, but they are
+    evaluated inside a per-program, per-warning loop on every assistant start — so
+    reporting them per request turns one static fact into the highest-volume event this
+    module emits, and buries the ones that are actionable.
+
+    Deduping in-process (not globally) is deliberate: a fresh dyno re-reports, so the
+    signal survives a deploy and cannot be permanently silenced by one early request.
+    """
+    if key in _REPORTED:
+        return
+    _REPORTED.add(key)
+    if level == "info":
+        logger.info(message)
+    else:
+        capture_message(message, level=level)
+
+
+def _clipped(text: str, what: str) -> str:
+    """Bound a document line or warning message, reporting rather than silently cutting.
+
+    Truncation here is not cosmetic: these are instructions ("enroll in SNAP before
+    applying for Lifeline"), and half of one is the same class of failure `_apply_url`
+    refuses for links — authoritative-looking and wrong. The text is still clipped
+    rather than dropped, because most of a checklist item is worth more than none of it,
+    but the condition is a config problem someone should fix, so it is reported.
+
+    Resolves at full length (`max_len=None`) so the check sees the real length; going
+    through `_translated`'s own cap would make over-long text indistinguishable from
+    text that happens to end at the limit.
+    """
+    if len(text) <= MAX_PROMPT_TEXT_LEN:
+        return text
+    _report_once(
+        f"clipped:{what}",
+        f"Clipping {what} for the assistant: {len(text)} chars exceeds " f"MAX_PROMPT_TEXT_LEN={MAX_PROMPT_TEXT_LEN}",
+    )
+    return text[:MAX_PROMPT_TEXT_LEN]
 
 
 def _translated(
@@ -104,7 +207,7 @@ def _translated(
     `max_len=None` disables truncation. Names are capped because they're interpolated
     into ai-service's *system* prompt and `Translation` rows are admin-editable, so a
     name carrying newlines plus instruction-shaped text could forge a prompt block. URLs
-    must NOT be capped — see `_apply_urls_by_name`.
+    must NOT be capped — see `_apply_url`.
     """
     if translation is None:
         return ""
@@ -148,8 +251,63 @@ def _latest_snapshot(screen: Screen):
         return None
 
 
-def _apply_urls_by_name(screen: Screen, name_abbreviations: list[str], language_code: str) -> dict[str, str]:
-    """Map name_abbreviated -> apply link for the given programs (one query).
+def _documents_prefetch() -> Prefetch:
+    """Prefetch each program's documents with their text translation resolved.
+
+    `select_related("text")` on the inner queryset folds the Translation parent into
+    the document fetch, the way `select_related("apply_button_link")` does for the FK
+    that hangs directly off Program — a plain "documents__text__translations" string
+    costs an extra query for that hop.
+    """
+    return Prefetch(
+        "documents",
+        queryset=(Document.objects.select_related("text").prefetch_related("text__translations").order_by("id")),
+    )
+
+
+def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str, Program]:
+    """Map name_abbreviated -> Program for the rows _build_context annotates (one query).
+
+    Apply links, documents and warnings all hang off the same `Program` rows for the same
+    name set, so they share one fetch rather than issuing three identical
+    `name_abbreviated__in` queries.
+
+    Only the translations we actually render are prefetched. `Document` and
+    `WarningMessage` each also carry `link_url` and `link_text`, and the prompt's LINKS
+    rule is absolute: apply links are the only URLs the assistant may share. Fetching
+    just `text`/`message` means a document or warning URL is never loaded into the
+    process at all, so it cannot reach the prompt through a later edit here — structural
+    rather than a promise. (`Document.objects.translated_fields` would pull all three.)
+    """
+    if not name_abbreviations:
+        return {}
+
+    programs = (
+        Program.objects.filter(
+            white_label=screen.white_label,
+            name_abbreviated__in=name_abbreviations,
+        )
+        .select_related("apply_button_link")
+        .prefetch_related(
+            "apply_button_link__translations",
+            _documents_prefetch(),
+            Prefetch(
+                "warning_messages",
+                queryset=(
+                    WarningMessage.objects.select_related("message")
+                    .prefetch_related("message__translations")
+                    .order_by("id")
+                ),
+            ),
+            "warning_messages__counties",
+            "warning_messages__legal_statuses",
+        )
+    )
+    return {program.name_abbreviated: program for program in programs}
+
+
+def _apply_url(program: Program, language_code: str) -> str:
+    """This program's apply link, or "" if there isn't a usable one.
 
     apply_button_link is a translated field, resolved through `_translated` so
     blank/placeholder links come back empty — the assistant must never receive an empty
@@ -162,32 +320,130 @@ def _apply_urls_by_name(screen: Screen, name_abbreviations: list[str], language_
     the current seed config already exceed the name cap (tx_wic at 198 chars, il_ibccp at
     174), so truncating here would have shipped two dead links.
     """
-    if not name_abbreviations:
-        return {}
-
-    programs = (
-        Program.objects.filter(
-            white_label=screen.white_label,
-            name_abbreviated__in=name_abbreviations,
+    link = _translated(program.apply_button_link, language_code, max_len=None)
+    if not link:
+        return ""
+    if len(link) > MAX_URL_LEN:
+        capture_message(
+            f"Dropping {program.name_abbreviated} apply link: {len(link)} chars exceeds MAX_URL_LEN={MAX_URL_LEN}",
+            level="warning",
         )
-        .select_related("apply_button_link")
-        .prefetch_related("apply_button_link__translations")
-    )
+        return ""
+    return link
 
-    urls: dict[str, str] = {}
-    for program in programs:
-        link = _translated(program.apply_button_link, language_code, max_len=None)
-        if not link:
-            continue
-        if len(link) > MAX_URL_LEN:
-            capture_message(
-                f"Dropping {program.name_abbreviated} apply link: {len(link)} chars exceeds "
-                f"MAX_URL_LEN={MAX_URL_LEN}",
-                level="warning",
+
+def _document_texts(program: Program, language_code: str) -> list[str]:
+    """The documents the results page lists for this program.
+
+    Static per program — no household gating, unlike warnings — so these are read
+    straight off `Program` with no reconstruction.
+
+    Ordered explicitly by id, matching the `order_by` added to the results page's own
+    prefetch in `screener.views`. Neither `Document` nor the auto-created M2M declares
+    an ordering, and Postgres guarantees no row order between two separate queries
+    against the same join table — so "the default order" was not a shared order at all,
+    and the checklist could read back in a different sequence from the "more info"
+    panel beside it. Both sides now sort the same way by construction.
+    """
+    texts = []
+    for document in program.documents.all():
+        # Blank and [PLACEHOLDER] rows come back "" — an untranslated document is
+        # dropped rather than rendered as an empty checklist line.
+        text = _clipped(
+            _translated(document.text, language_code, max_len=None),
+            f"document {document.external_name or document.id} on {program.name_abbreviated}",
+        )
+        if text:
+            texts.append(text)
+    return texts[:MAX_DOCUMENTS_PER_PROGRAM]
+
+
+def _warning_messages(
+    program: Program,
+    screen: Screen,
+    eligible: bool,
+    missing_dependencies: Dependencies,
+    language_code: str,
+) -> list[str]:
+    """The warning messages this household would see on this program's results panel.
+
+    Warnings are not a static field: each is evaluated per household by a calculator in
+    `programs/warnings/`, gated on county, on missing screen fields, and on custom
+    `eligible()` logic. `screener.views.eligibility_results` runs that evaluation inline
+    and does NOT persist the result, so there is nothing on the snapshot to read.
+
+    Rather than add a snapshot column, we re-run the gates here. That's cheap because
+    six of the seven registered calculators need only `screen` — county, member data,
+    `energy_calculator`, `num_adults`. `screen.missing_fields()` is pure screen data (no
+    PolicyEngine), and `Eligibility()` takes no constructor args, so the only input we
+    cannot reproduce is `eligible_members`, which no snapshot stores. Calculators that
+    read it declare `needs_full_eligibility` and are skipped loudly below.
+
+    Because the gates read the screen as it is *now* while the program list comes from
+    the last snapshot, a screen edited since that run could yield warnings the results
+    page didn't show. In practice the results page recomputes eligibility on load, so
+    the snapshot is fresh — the same premise `_latest_snapshot` rests on — and every
+    gate input is screen-side, so an unchanged screen gives the run's own answer.
+
+    Two deliberate divergences from the results-page evaluation:
+
+    1. Warnings carrying `legal_statuses` are dropped. The results page filters those
+       client-side against the citizenship dropdown (Results/ProgramPage.tsx), which
+       defaults to 'citizen' and is never persisted to the Screen — so we cannot
+       reproduce the selection, and we won't take it from the payload for the same
+       reason `_visible_programs` is limited to names. All six such warnings in the seed
+       config are immigration-status-scoped and none lists 'citizen', so none of them
+       render on a default results page anyway. Under-reporting here is the safe
+       direction: it never surfaces immigration-status content to a household that
+       didn't ask for it.
+    2. An unknown calculator name is skipped, where the eligibility run raises. A config
+       typo should not take the assistant down with it.
+    """
+    warnings = program.warning_messages.all()
+    if not warnings:
+        return []
+
+    # The minimum the gates read. Nothing consults pass_messages/fail_messages, so the
+    # snapshot's failed_tests/passed_tests (stored as JSON *strings*, not lists) are
+    # left alone rather than parsed back.
+    eligibility = Eligibility()
+    eligibility.eligible = eligible
+
+    messages = []
+    for warning in warnings:
+        calculator = warning_calculators.get(warning.calculator)
+        if calculator is None:
+            _report_once(
+                f"unknown-calculator:{warning.calculator}",
+                f"Skipping warning {warning.external_name or warning.id} on "
+                f"{program.name_abbreviated}: '{warning.calculator}' is not a valid calculator name",
             )
             continue
-        urls[program.name_abbreviated] = link
-    return urls
+        if calculator.needs_full_eligibility:
+            # A documented, accepted limitation rather than an incident, so it goes to
+            # the log and not to Sentry — see `_report_once`.
+            _report_once(
+                f"needs-full-eligibility:{warning.calculator}",
+                f"Skipping warning {warning.external_name or warning.id} on "
+                f"{program.name_abbreviated} for the assistant: '{warning.calculator}' needs "
+                "member-level eligibility, which the snapshot does not store",
+                level="info",
+            )
+            continue
+        if warning.legal_statuses.all():
+            continue
+
+        if not calculator(screen, warning, eligibility, missing_dependencies).calc():
+            continue
+
+        message = _clipped(
+            _translated(warning.message, language_code, max_len=None),
+            f"warning {warning.external_name or warning.id} on {program.name_abbreviated}",
+        )
+        if message:
+            messages.append(message)
+
+    return messages[:MAX_WARNINGS_PER_PROGRAM]
 
 
 def _insurance_program_names(screen: Screen) -> set[str]:
@@ -252,6 +508,11 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     Deliberately carries no estimated_value (the screening estimates what they
     *would* get, which is misleading for a benefit already in payment) and no
     apply_url (the assistant must never send them to apply again).
+
+    Documents ARE included: recertification needs them too ("what do I need to renew
+    my SNAP"), and a document list is neither of the two things this shape is thin to
+    avoid. Warnings are not — they're application caveats evaluated for programs the
+    household is being told to apply for, and this list is the opposite of that.
     """
     # One joined query through the CurrentBenefit table (unioned with the
     # insurance-derived names), plus one prefetch for the translation rows. `name` is
@@ -260,7 +521,7 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     # row. `currentbenefit` is the default reverse accessor; CurrentBenefit.program
     # declares no related_name.
     #
-    # White-label scoped like its sibling _apply_urls_by_name: the write path in
+    # White-label scoped like its sibling _context_programs: the write path in
     # serializers._write_current_benefits is scoped too, so this is belt-and-braces,
     # but a foreign program leaking into a list the prompt calls a closed universe
     # is worth one extra WHERE clause. Deactivated programs are intentionally NOT
@@ -273,21 +534,25 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
         Program.objects.filter(criteria, white_label=screen.white_label)
         # distinct() is required now that the Q() union can match a program by both
         # arms; the CurrentBenefit join alone couldn't duplicate (unique_together).
-        .distinct()
-        .select_related("name")
-        .prefetch_related("name__translations")
+        .distinct().select_related("name")
+        # Documents ride this query rather than a second one — same rows, and
+        # `_document_texts` needs nothing else. Text only, no link translations, for
+        # the reason in `_context_programs`.
+        .prefetch_related("name__translations", _documents_prefetch())
     )
 
     current = []
     for program in programs:
-        current.append(
-            {
-                "external_name": program.name_abbreviated,
-                # Fall back to the abbreviation so the assistant can still name the
-                # program when the translation is missing or blank.
-                "name": _translated(program.name, language_code) or program.name_abbreviated,
-            }
-        )
+        entry = {
+            "external_name": program.name_abbreviated,
+            # Fall back to the abbreviation so the assistant can still name the
+            # program when the translation is missing or blank.
+            "name": _translated(program.name, language_code) or program.name_abbreviated,
+        }
+        documents = _document_texts(program, language_code)
+        if documents:
+            entry["documents"] = documents
+        current.append(entry)
 
     # casefold, because names that fell back to `name_abbreviated` are lowercase and
     # would otherwise all sort after every translated name.
@@ -413,7 +678,10 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
 
         # Sort by what the user sees, so "your biggest one" agrees with their screen.
         rows.sort(key=lambda p: values.get(p.name_abbreviated) or 0, reverse=True)
-        apply_urls = _apply_urls_by_name(screen, [p.name_abbreviated for p in rows], language_code)
+        programs_by_name = _context_programs(screen, [p.name_abbreviated for p in rows])
+        # Only built if some program actually carries a warning: it walks every member,
+        # expense and income stream, and most white labels configure no warnings at all.
+        missing_dependencies: Optional[Dependencies] = None
         for p in rows:
             # The snapshot's `name` was captured as `program.name.text` under whatever
             # language was active when eligibility ran (screener.views, unpinned), and
@@ -433,10 +701,29 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
                 # prompt asserts.
                 "estimated_value": values.get(p.name_abbreviated),
                 "estimated_application_time": p.estimated_application_time,
+                # Already on the snapshot and already sent to the results page; answers
+                # "how long until I actually get this". Carries the same wart as
+                # estimated_application_time — captured under whatever language was
+                # active when eligibility ran.
+                "estimated_delivery_time": p.estimated_delivery_time,
             }
-            apply_url = apply_urls.get(p.name_abbreviated)
-            if apply_url:
-                program["apply_url"] = apply_url
+            row_program = programs_by_name.get(p.name_abbreviated)
+            if row_program is not None:
+                apply_url = _apply_url(row_program, language_code)
+                if apply_url:
+                    program["apply_url"] = apply_url
+                # Omitted rather than sent empty: ai-service defaults both to [], and
+                # the prompt distinguishes "we have no list for this program" from
+                # "this program needs nothing".
+                documents = _document_texts(row_program, language_code)
+                if documents:
+                    program["documents"] = documents
+                if row_program.warning_messages.all():
+                    if missing_dependencies is None:
+                        missing_dependencies = screen.missing_fields()
+                    warnings = _warning_messages(row_program, screen, p.eligible, missing_dependencies, language_code)
+                    if warnings:
+                        program["warnings"] = warnings
             eligible_programs.append(program)
 
     # Disjointness is enforced HERE, not merely asserted. The insurance gate above is

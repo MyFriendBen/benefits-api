@@ -11,8 +11,8 @@ class MoConfigurationData(ConfigurationData):
     # BASIC INFORMATION
     # ==========================================================================================
 
-    # Reachable at /mo and offered to the 2-1-1 referrers, but not yet in the public dropdown.
-    publicly_launched = False
+    # Offered in the public state dropdown.
+    publicly_launched = True
 
     state = {"name": "Missouri"}
 

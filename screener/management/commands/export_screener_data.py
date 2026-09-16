@@ -420,6 +420,7 @@ class Command(BaseCommand):
             "household_member.visually_impaired": "Whether member is visually impaired",
             "household_member.disabled": "Whether member has a disability",
             "household_member.long_term_disability": "Whether member has long-term disability",
+            "household_member.was_in_foster_care": "Whether member was ever in foster care",
             "household_member.veteran": "Whether member is a veteran",
             "household_member.medicaid": "Whether member has Medicaid",
             "household_member.disability_medicaid": "Whether member has disability-based Medicaid",

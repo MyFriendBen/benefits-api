@@ -140,11 +140,26 @@ class Screen(models.Model):
         Get the reference date for age calculations.
         For frozen screens (with validations), use the earliest validation's created_date
         to keep ages consistent over time. For non-frozen screens, use current date.
+
+        Memoized per instance. `order_by()` builds a fresh queryset, so this read can
+        never be served by `prefetch_related` — and callers reach it once per household
+        member, from inside per-program calculators (`is_dependent`, and the SSDI/BSP
+        family), so uncached it is an N+1 on members x programs. Nothing invalidates the
+        cache: an instance lives for one request, and a reference date that shifts
+        mid-request is a bug in its own right, since the whole point is to keep ages
+        consistent (two calls either side of midnight would otherwise disagree on an
+        unfrozen screen).
         """
+        cached = getattr(self, "_reference_date", None)
+        if cached is not None:
+            return cached
+
         earliest_validation = self.validations.order_by("created_date").first()
         if earliest_validation and earliest_validation.created_date:
-            return earliest_validation.created_date.date()
-        return timezone.now().date()
+            self._reference_date = earliest_validation.created_date.date()
+        else:
+            self._reference_date = timezone.now().date()
+        return self._reference_date
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
@@ -525,6 +540,10 @@ class HouseholdMember(models.Model):
     visually_impaired = models.BooleanField(blank=True, null=True)
     disabled = models.BooleanField(blank=True, null=True)
     long_term_disability = models.BooleanField(blank=True, null=True)
+    # "Ever in foster care, even briefly" - a history fact, not a current status. Named to
+    # match PolicyEngine's `was_in_foster_care` input, which pairs it with `age` to derive
+    # the several former-foster-youth age windows (Medicaid to 26, SNAP ABAWD, CO EITC).
+    was_in_foster_care = models.BooleanField(blank=True, null=True)
     veteran = models.BooleanField(blank=True, null=True)
     medicaid = models.BooleanField(blank=True, null=True)
     disability_medicaid = models.BooleanField(blank=True, null=True)

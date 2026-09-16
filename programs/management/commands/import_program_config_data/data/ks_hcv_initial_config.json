@@ -1,0 +1,96 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "ks_hcv",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Housing Choice Voucher Program (Section 8)",
+    "description": "The Housing Choice Voucher (Section 8) program helps low-income households pay rent. You find your own place to live, and the program covers part of the cost each month.\n\nYour local housing authority pays its share straight to your landlord, and you pay the rest. You can use the voucher for a rental home that meets program and safety rules. How much help you get depends on your income, local payment rules, and the home you choose.\n\nEach Kansas housing authority keeps its own waiting list. Some move certain households up the list, such as people who are homeless or displaced. Ask your local housing authority which priorities it uses.\n\nThis estimate uses the income limit that applies to most applicants. Some households with higher income still qualify. One example is if you already receive federal housing assistance. So it is worth asking even if your income looks too high. Your housing authority makes the final decision. It may also check other rules, like an asset or homeownership limit.\n\nTo apply, select “Find your local housing authority.”",
+    "description_short": "Help paying rent for low-income families",
+    "learn_more_link": "https://www.hud.gov/helping-americans/housing-choice-vouchers-tenants",
+    "apply_button_link": "https://www.hud.gov/program_offices/public_indian_housing/pha/contacts",
+    "apply_button_description": "Find your local housing authority",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "has_calculator": true,
+    "value_format": "estimated_annual",
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": true,
+    "active": true,
+    "base_program": "section_8",
+    "website_description": "Help paying rent for low-income families"
+  },
+  "warning_messages": [
+    {
+      "external_name": "ks_hcv_waitlist",
+      "calculator": "_show",
+      "message": "Waiting lists are often long, and many are closed to new applicants. Lists can reopen with little notice, so it is worth checking back. Ask your local housing authority whether its list is open, and apply to more than one if you can.",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn",
+      "text": "Social Security numbers for all household members",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of current earnings (e.g. W-2 forms, pay stubs, or self-employment tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_unearned_income",
+      "text": "Proof of unearned income, if any (ex: child support, Social Security, unemployment, or pension)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_hcv_asset_proof",
+      "text": "Asset documents, if requested (ex: bank statements, savings or investment account statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_birth_certificate",
+      "text": "Birth certificate or other proof of birth",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}

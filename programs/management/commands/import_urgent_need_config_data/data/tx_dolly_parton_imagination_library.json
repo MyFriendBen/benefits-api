@@ -1,0 +1,29 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "need": {
+    "external_name": "tx_dolly_parton_imagination_library",
+    "category_type": {
+      "external_name": "tx_child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Dolly Parton's Imagination Library",
+      "description": "Dolly Parton's Imagination Library gives free books to children. In areas with a local program partner, any child from birth to age five can receive a free book every month.",
+      "link": "https://imaginationlibrary.com/usa/",
+      "warning": "",
+      "website_description": "Check if your area takes part and sign up for free monthly books.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "+18654289606",
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

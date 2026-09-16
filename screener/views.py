@@ -65,6 +65,7 @@ import math
 import json
 from datetime import datetime, timezone
 from django.conf import settings
+from django.db.models import Prefetch
 
 
 def index(request):
@@ -411,6 +412,9 @@ CALC_ORDER = (
     "cesn_eoc",
     "cesn_cowap",
     "cesn_care",
+    # ks_rca is defined as the program for refugees TANF cannot reach, so it gates on
+    # ks_tanf strictly and needs it resolved first.
+    "ks_tanf",
 )
 
 
@@ -441,7 +445,12 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             "program_navigators__navigator__languages",
             "program_navigators__navigator__eligibility_programs",
             *translations_prefetch_name("program_navigators__navigator__", Navigator.objects.translated_fields),
-            "documents",
+            # Ordered explicitly so this and the assistant context (screener.assistant,
+            # `_documents_prefetch`) render the same sequence. Neither Document nor the
+            # auto-created M2M declares an ordering, so without this the two queries
+            # could return the same checklist in different orders — and the assistant is
+            # meant to read back exactly what this panel shows.
+            Prefetch("documents", queryset=Document.objects.order_by("id")),
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
             "warning_messages",
             "warning_messages__counties",

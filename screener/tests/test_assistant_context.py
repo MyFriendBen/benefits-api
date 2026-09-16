@@ -30,13 +30,15 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
-from programs.models import Program
+from programs.models import LegalStatus, Program
 from screener.assistant import (
     CONTEXT_PREFETCH,
     AssistantMessageRateThrottle,
     AssistantStartRateThrottle,
     AssistantStartView,
+    MAX_DOCUMENTS_PER_PROGRAM,
     MAX_PROGRAM_VALUE,
+    MAX_PROMPT_TEXT_LEN,
     MAX_VISIBLE_PROGRAMS,
     _build_context,
     _visible_programs,
@@ -50,7 +52,7 @@ from screener.models import (
     Screen,
     WhiteLabel,
 )
-from screener.tests.helpers import seed_program
+from screener.tests.helpers import seed_document, seed_program, seed_warning
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER
 
 
@@ -65,7 +67,13 @@ def set_translation(translated_field, text: str) -> None:
     seed_program() leaves every translation at BLANK_TRANSLATION_PLACEHOLDER, which
     the context builder treats as "no value" — so tests that care about a real name
     or apply link have to fill it in.
+
+    The language is pinned rather than assumed: `Translation.objects.add_translation`
+    writes a row per supported language and leaves parler's active language on the last
+    one it touched, so an object handed straight back from a `new_*` manager method
+    would otherwise take the text into that language instead of this one.
     """
+    translated_field.set_current_language(settings.LANGUAGE_CODE)
     translated_field.text = text
     translated_field.save()
 
@@ -299,6 +307,344 @@ class BuildContextTests(TestCase):
             context = self.context()
 
         self.assertEqual(context["current_programs"][0]["name"], "Basic Food (SNAP)")
+
+    # --- documents ----------------------------------------------------------
+
+    def test_documents_are_included_in_results_page_order(self):
+        """The whole point of MFB-1788: asked "what do I need to apply", the assistant
+        should read back the same checklist the "more info" panel shows."""
+        self.add_snapshot_row("snap")
+        for external_name, text in (
+            ("proof_of_address", "Proof of address"),
+            ("photo_id", "Photo ID"),
+            ("proof_of_income", "Proof of income"),
+        ):
+            seed_document(self.programs["snap"], external_name, text)
+
+        context = self.context()
+
+        self.assertEqual(
+            context["eligible_programs"][0]["documents"],
+            ["Proof of address", "Photo ID", "Proof of income"],
+        )
+
+    def test_documents_key_is_omitted_when_the_program_has_none(self):
+        """Absent rather than [] — ai-service defaults it, and the prompt distinguishes
+        "we have no list for this program" from "this program needs nothing"."""
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertNotIn("documents", context["eligible_programs"][0])
+
+    def test_blank_and_placeholder_documents_are_dropped(self):
+        """`new_document` leaves text="" and the translation machinery writes
+        [PLACEHOLDER]; either would render as an empty checklist line."""
+        self.add_snapshot_row("snap")
+        seed_document(self.programs["snap"], "real", "Proof of address")
+        seed_document(self.programs["snap"], "blank", "")
+        seed_document(self.programs["snap"], "placeholder", BLANK_TRANSLATION_PLACEHOLDER)
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["documents"], ["Proof of address"])
+
+    def test_document_urls_never_reach_the_payload(self):
+        """Document carries link_url/link_text, and the prompt's LINKS rule is absolute:
+        apply links are the only URLs the assistant may share. They are not merely
+        unrendered — they are never fetched."""
+        self.add_snapshot_row("snap")
+        document = seed_document(self.programs["snap"], "proof_of_address", "Proof of address")
+        set_translation(document.link_url, "https://example.gov/documents")
+        set_translation(document.link_text, "See the document list")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["documents"], ["Proof of address"])
+        self.assertNotIn("example.gov", str(context))
+        self.assertNotIn("See the document list", str(context))
+
+    def test_documents_are_capped_per_program(self):
+        """A misconfigured program shouldn't be able to crowd out the rest of the
+        prompt."""
+        self.add_snapshot_row("snap")
+        for i in range(MAX_DOCUMENTS_PER_PROGRAM + 3):
+            seed_document(self.programs["snap"], f"doc_{i}", f"Document {i}")
+
+        context = self.context()
+
+        self.assertEqual(len(context["eligible_programs"][0]["documents"]), MAX_DOCUMENTS_PER_PROGRAM)
+
+    def test_document_cap_clears_the_largest_real_program(self):
+        """A guard on the constant, not on behavior.
+
+        The cap was originally 12, chosen against the seed configs — where the largest
+        documents block is 8. Most of this data is created through the Django admin and
+        never reaches a *_initial_config.json, and production (checked 2026-09-10) has
+        16 documents on mo_tanf. At 12 the assistant would have handed that household a
+        silently short checklist, breaking the results-page parity this feature exists
+        for. Lowering the constant below the real maximum must fail a test rather than
+        show up as a missing document.
+        """
+        self.assertGreaterEqual(MAX_DOCUMENTS_PER_PROGRAM, 16)
+
+    def test_over_long_warning_is_clipped_and_reported(self):
+        """400 was already clipping production (cccap_jeffco is 562 chars). Clipping an
+        instruction mid-sentence is the failure `_apply_url` refuses for links, so if it
+        happens at all it must be visible rather than silent."""
+        self.add_snapshot_row("snap")
+        long_message = "A" * (MAX_PROMPT_TEXT_LEN + 200)
+        seed_warning(self.programs["snap"], "_show", long_message)
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as reported:
+                context = self.context()
+
+        self.assertEqual(len(context["eligible_programs"][0]["warnings"][0]), MAX_PROMPT_TEXT_LEN)
+        self.assertEqual(reported.call_count, 1)
+        self.assertIn("exceeds MAX_PROMPT_TEXT_LEN", reported.call_args.args[0])
+
+    def test_text_at_the_limit_is_not_reported(self):
+        """Resolving at full length is what distinguishes over-long text from text that
+        happens to end exactly at the cap; going through _translated's own cap could not
+        tell them apart."""
+        self.add_snapshot_row("snap")
+        seed_warning(self.programs["snap"], "_show", "A" * MAX_PROMPT_TEXT_LEN)
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as reported:
+                context = self.context()
+
+        self.assertEqual(len(context["eligible_programs"][0]["warnings"][0]), MAX_PROMPT_TEXT_LEN)
+        reported.assert_not_called()
+
+    def test_a_static_config_condition_is_reported_once_per_process(self):
+        """These conditions are properties of the config, not the request, but they're
+        evaluated in a per-program loop on every assistant start. Reporting per request
+        would make one unchanging fact the loudest event this module emits."""
+        self.add_snapshot_row("snap")
+        seed_warning(self.programs["snap"], "not_a_real_calculator", "Should not appear.")
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as reported:
+                self.context()
+                self.context()
+                self.context()
+
+        self.assertEqual(reported.call_count, 1)
+
+    def test_documents_are_ordered_deterministically(self):
+        """Document declares no Meta.ordering and the M2M is auto-created, so without an
+        explicit order_by the sequence is whatever Postgres returns — which need not
+        match the results page reading the same rows in a separate query."""
+        self.add_snapshot_row("snap")
+        first = seed_document(self.programs["snap"], "aaa_last_alphabetically", "Zebra document")
+        second = seed_document(self.programs["snap"], "zzz_first_alphabetically", "Apple document")
+
+        documents = self.context()["eligible_programs"][0]["documents"]
+
+        # id order, not insertion-coincidence and not alphabetical by either field.
+        self.assertEqual(documents, ["Zebra document", "Apple document"])
+        self.assertLess(first.id, second.id)
+
+    def test_documents_use_the_screen_language_not_the_request_language(self):
+        """Same reason program names do: `get_language()` reflects the browser's
+        Accept-Language, so an English session in a Spanish browser would otherwise get
+        a Spanish checklist."""
+        self.add_snapshot_row("snap")
+        document = seed_document(self.programs["snap"], "proof_of_address", "Proof of address")
+        document.text.set_current_language("es")
+        document.text.text = "Comprobante de domicilio"
+        document.text.save()
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        with translation.override("en-us"):
+            context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["documents"], ["Comprobante de domicilio"])
+
+    def test_current_programs_carry_documents(self):
+        """Recertification needs a document list too ("what do I need to renew my
+        SNAP"). Safe on this thinner shape: no dollar value, no apply link."""
+        self.receives("snap")
+        seed_document(self.programs["snap"], "proof_of_income", "Proof of income")
+
+        context = self.context()
+
+        self.assertEqual(context["current_programs"][0]["documents"], ["Proof of income"])
+
+    # --- warnings -----------------------------------------------------------
+
+    def test_warning_is_included(self):
+        self.add_snapshot_row("lifeline")
+        seed_warning(
+            self.programs["lifeline"],
+            "_show",
+            "If you are eligible for SNAP, enroll in SNAP before applying for Lifeline.",
+        )
+
+        context = self.context()
+
+        self.assertEqual(
+            context["eligible_programs"][0]["warnings"],
+            ["If you are eligible for SNAP, enroll in SNAP before applying for Lifeline."],
+        )
+
+    def test_warnings_key_is_omitted_when_the_program_has_none(self):
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+
+    def test_dont_show_warning_is_excluded(self):
+        """`_dont_show` is how a warning is switched off in config without deleting it,
+        so honouring the calculator matters even for the trivial ones."""
+        self.add_snapshot_row("snap")
+        seed_warning(self.programs["snap"], "_dont_show", "Should never be shown.")
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+
+    def test_county_gated_warning_is_included_in_a_matching_county(self):
+        self.screen.county = "Denver County"
+        self.screen.save()
+        self.add_snapshot_row("snap")
+        seed_warning(
+            self.programs["snap"],
+            "_show",
+            "Denver applications are processed locally.",
+            county_names=("Denver County",),
+        )
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["warnings"], ["Denver applications are processed locally."])
+
+    def test_county_gated_warning_is_excluded_outside_that_county(self):
+        """The county gate is the main reason warnings are per-household rather than a
+        static field, so bypassing it would show people other counties' instructions."""
+        self.screen.county = "Boulder County"
+        self.screen.save()
+        self.add_snapshot_row("snap")
+        seed_warning(
+            self.programs["snap"],
+            "_show",
+            "Denver applications are processed locally.",
+            county_names=("Denver County",),
+        )
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+
+    def test_warning_blocked_by_a_missing_dependency_is_excluded(self):
+        """`can_calc()` is False when a declared dependency is missing from the screen,
+        which is how the results page avoids showing a warning it couldn't evaluate.
+        co_snap_student declares `age`; a member with no age puts it in
+        `screen.missing_fields()`."""
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=None, student=True)
+        self.add_snapshot_row("snap")
+        seed_warning(self.programs["snap"], "co_snap_student", "Students face extra SNAP rules.")
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+
+    def test_warning_with_legal_statuses_is_dropped(self):
+        """The results page filters these client-side against the citizenship dropdown,
+        which defaults to 'citizen' and is never persisted to the Screen. We can't
+        reproduce the selection, so we under-report rather than surface
+        immigration-status content to a household that didn't ask for it."""
+        self.add_snapshot_row("snap")
+        warning = seed_warning(self.programs["snap"], "_show", "Green card holders under 18 are exempt.")
+        status_row, _ = LegalStatus.objects.get_or_create(status="gc_under18_no5")
+        warning.legal_statuses.add(status_row)
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+
+    def test_unknown_calculator_is_skipped_rather_than_raising(self):
+        """The eligibility run raises on an unrecognized calculator name. Doing that
+        here would take the assistant down over a config typo."""
+        self.add_snapshot_row("snap")
+        seed_warning(self.programs["snap"], "not_a_real_calculator", "Should not appear.")
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+        self.assertEqual(self.eligible_names(context), ["snap"])
+
+    def test_calculator_needing_member_eligibility_is_skipped(self):
+        """co_upk reads `eligibility.eligible_members`, which the snapshot has no
+        breakdown for. It declares `needs_full_eligibility` so it's skipped
+        explicitly instead of silently evaluating against an empty list."""
+        HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
+        self.add_snapshot_row("snap")
+        seed_warning(self.programs["snap"], "co_upk", "Three-year-olds have a separate application.")
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+
+    def test_warning_urls_never_reach_the_payload(self):
+        """Same rule as documents: WarningMessage carries link_url/link_text and neither
+        is fetched."""
+        self.add_snapshot_row("snap")
+        warning = seed_warning(self.programs["snap"], "_show", "Applications take 6 to 8 months.")
+        set_translation(warning.link_url, "https://example.gov/warnings")
+        set_translation(warning.link_text, "Read more about delays")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["warnings"], ["Applications take 6 to 8 months."])
+        self.assertNotIn("example.gov", str(context))
+        self.assertNotIn("Read more about delays", str(context))
+
+    def test_warnings_use_the_screen_language_not_the_request_language(self):
+        self.add_snapshot_row("snap")
+        warning = seed_warning(self.programs["snap"], "_show", "Applications take 6 to 8 months.")
+        warning.message.set_current_language("es")
+        warning.message.text = "Las solicitudes tardan de 6 a 8 meses."
+        warning.message.save()
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        with translation.override("en-us"):
+            context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["warnings"], ["Las solicitudes tardan de 6 a 8 meses."])
+
+    def test_current_programs_carry_no_warnings(self):
+        """Warnings are application caveats for programs the household is being told to
+        apply for. This list is the opposite of that."""
+        self.receives("snap")
+        seed_warning(self.programs["snap"], "_show", "Applications take 6 to 8 months.")
+
+        context = self.context()
+
+        self.assertNotIn("warnings", context["current_programs"][0])
+
+    # --- estimated_delivery_time --------------------------------------------
+
+    def test_estimated_delivery_time_is_forwarded(self):
+        """Already on the snapshot and already sent to the results page; answers "how
+        long until I actually get this"."""
+        ProgramEligibilitySnapshot.objects.create(
+            eligibility_snapshot=self.snapshot,
+            name="SNAP",
+            name_abbreviated="snap",
+            estimated_value=Decimal("1200"),
+            eligible=True,
+            estimated_delivery_time="30 days",
+        )
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_delivery_time"], "30 days")
 
     # --- visible_programs intersection --------------------------------------
 
@@ -629,11 +975,27 @@ class BuildContextTests(TestCase):
         self.add_snapshot_row("snap")
         self.receives("tanf")
         set_translation(self.programs["tanf"].name, "TANF")
+        # Documents and warnings hang off Program the same way, and are resolved
+        # per program — so they belong on both sides of this comparison, or the
+        # constant-query claim only covers the fields that existed before MFB-1788.
+        seed_document(self.programs["snap"], "snap_id", "Photo ID")
+        seed_document(self.programs["tanf"], "tanf_id", "Photo ID")
+        # _tax_unit, not just _show: _show reads nothing, so it cannot exercise the
+        # axis that scales. _tax_unit reaches Screen.has_members_outside_of_tax_unit ->
+        # is_dependent -> get_reference_date, which is unprefetchable by construction
+        # (order_by builds a fresh queryset) and was an N+1 on members x programs until
+        # that method was memoized.
+        seed_warning(self.programs["snap"], "_tax_unit", "SNAP has tax-unit rules.")
+        seed_warning(self.programs["tanf"], "_show", "TANF applications take a while.")
         with_one = query_count()
 
         self.add_snapshot_row("wic")
         self.receives("lifeline")
         set_translation(self.programs["lifeline"].name, "Lifeline")
+        seed_document(self.programs["wic"], "wic_id", "Photo ID")
+        seed_document(self.programs["lifeline"], "lifeline_id", "Photo ID")
+        seed_warning(self.programs["wic"], "_tax_unit", "WIC has tax-unit rules.")
+        seed_warning(self.programs["lifeline"], "_show", "Lifeline takes a while.")
         with_two = query_count()
 
         self.assertEqual(with_one, with_two)
@@ -641,7 +1003,8 @@ class BuildContextTests(TestCase):
     def test_context_build_does_not_scale_queries_with_member_count(self):
         """The insurance check walks household_members (and each member's reverse
         OneToOne `insurance`) once per program, so it's an N+1 on two axes at once
-        unless household_members__insurance is prefetched."""
+        unless household_members__insurance is prefetched. Warning evaluation walks
+        them again through screen.missing_fields()."""
 
         def query_count() -> int:
             screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
@@ -651,16 +1014,30 @@ class BuildContextTests(TestCase):
 
         self.add_snapshot_row("snap")
         self.add_snapshot_row("wic")
-        member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
-        Insurance.objects.create(household_member=member, employer=True)
-        with_one_member = query_count()
+        # Evaluating a warning calls screen.missing_fields(), which walks every member
+        # plus each member's reverse `insurance`/`energy_calculator` and their income
+        # streams — a third N+1 axis unless CONTEXT_PREFETCH covers them.
+        # _tax_unit walks every member (see the sibling test); _show would keep this
+        # flat no matter how badly the member axis regressed.
+        seed_warning(self.programs["snap"], "_tax_unit", "SNAP has tax-unit rules.")
+        seed_warning(self.programs["wic"], "_show", "WIC applications take a while.")
 
-        for age in (38, 10, 12):
+        # The baseline needs a member who is neither head nor spouse. `is_in_tax_unit`
+        # short-circuits on those two, so a head-only household never reaches
+        # `is_dependent` and never reads the reference date — measuring from there would
+        # compare a run that skips a branch against one that takes it, and report the
+        # branch as growth.
+        for relationship, age in (("headOfHousehold", 40), ("child", 10)):
+            member = HouseholdMember.objects.create(screen=self.screen, relationship=relationship, age=age)
+            Insurance.objects.create(household_member=member, employer=True)
+        with_two_members = query_count()
+
+        for age in (38, 12, 14):
             extra = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=age)
             Insurance.objects.create(household_member=extra, employer=True)
-        with_four_members = query_count()
+        with_five_members = query_count()
 
-        self.assertEqual(with_one_member, with_four_members)
+        self.assertEqual(with_two_members, with_five_members)
 
 
 class VisibleProgramsParsingTests(SimpleTestCase):
@@ -764,6 +1141,14 @@ class AssistantStartViewTests(APITestCase):
                 estimated_value=Decimal(value),
                 eligible=True,
             )
+        # Documents and warnings are populated so the query bound below covers the
+        # prefetches they need. Django skips a nested prefetch whose parent set is
+        # empty, so a fixture without them silently exempts the whole chain from the
+        # ceiling — which is exactly the coverage this class exists to provide.
+        snap, wic = (Program.objects.get(white_label=self.white_label, name_abbreviated=n) for n in ("snap", "wic"))
+        for program in (snap, wic):
+            seed_document(program, f"{program.name_abbreviated}_id", "Photo ID")
+            seed_warning(program, "_show", f"{program.name_abbreviated} applications take a while.")
         self.url = reverse("assistant-start", args=[self.screen.uuid])
 
     def _post(self, body):
@@ -798,14 +1183,19 @@ class AssistantStartViewTests(APITestCase):
     # Ceiling rather than an exact count: an exact number makes an unambiguous
     # improvement (adding a select_related) look like a regression, which is what
     # happened when `white_label` was added to the view's queryset.
-    MAX_START_QUERIES = 10
+    #
+    # Raised from 10 for MFB-1788: the four CONTEXT_PREFETCH entries that feed
+    # screen.missing_fields(), plus documents and warnings (each with their counties,
+    # legal statuses and translations) on the one Program fetch _build_context already
+    # made. All flat in program and member count — the sibling tests assert that.
+    MAX_START_QUERIES = 16
 
     def test_query_count_is_bounded(self):
         """Bounded here so CONTEXT_PREFETCH disappearing from the view is caught, even
         though the unit-level N+1 tests supply the prefetch themselves and so can't see
         the constant going missing.
 
-        Roughly: screen (+white_label joined), the two CONTEXT_PREFETCH prefetches,
+        Roughly: screen (+white_label joined), the CONTEXT_PREFETCH prefetches,
         snapshot, its program_snapshots prefetch, the insurance name/base_program lookup,
         the apply-link programs + their translations prefetch, and current_programs. All
         flat in program and member count — which is what the sibling tests assert.

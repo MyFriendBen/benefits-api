@@ -21,7 +21,7 @@ is_age_eligible & (is_income_eligible | is_categorically_eligible)
 
 - **Age** — ages 3–5 (`gov.hhs.head_start.age_range`), per 45 CFR § 1302.12(c).
 - **Income** — household income at or below 100% FPL.
-- **Categorical** — SNAP, TANF, or SSI receipt, or foster care status, qualifies regardless of income (45 CFR § 1302.12(a)(1)(ii)(B), (c)(1)(iii)).
+- **Categorical** — SNAP, TANF, or SSI receipt, or foster care status, qualifies regardless of income (45 CFR § 1302.12(a)(1)(ii)(B), (c)(1)(iii)). Foster care status comes from either `relationship == "fosterChild"` or the per-member `was_in_foster_care` tile ("Ever in foster care, even briefly"); the relationship alone misses a child whose caregiver reported them as `child`.
 
 Illinois sets no eligibility parameters of its own — hence the `Fed (value varies)` tier rather than `Fed (elig varies)`.
 

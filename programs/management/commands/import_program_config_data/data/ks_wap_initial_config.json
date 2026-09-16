@@ -1,0 +1,77 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "housing"
+  },
+  "program": {
+    "name_abbreviated": "ks_wap",
+    "base_program": "wap",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Weatherization Assistance Program (WAP)",
+    "description": "The Weatherization Assistance Program (WAP) offers free home energy upgrades. These can cut your energy bills and make your home safer and more comfortable. A local provider will check your home and see what work could help you save energy. Some home conditions may need to be fixed first.\n\nYou may qualify if you get LIEAP, help from certain HUD programs, or USDA rural housing help. You may also qualify if someone in your home got SSI, TANF, or other qualifying cash assistance in the past year. Tell your provider if any of these apply. They will also confirm who lives in the home.\n\nThe provider may look at recent income or a longer income history. They may count self-employment, rental, or investment income differently. For Social Security, they use the amount after Medicare is taken out.\n\nYou can get help whether you own or rent your home, but you must live there. If you rent, your landlord must agree to the work. Homes that received weatherization in the last 15 years usually cannot get it again.\n\nOlder adults, people with disabilities, and families with children get priority. Households with high energy use or high energy costs may also get priority. To apply, fill out the Kansas Weatherization application. Your county's provider will contact you about next steps.",
+    "description_short": "Free home energy upgrades to lower your bills",
+    "learn_more_link": "https://kshousingcorp.org/weatherization-assistance/",
+    "apply_button_link": "https://kansasepp.formstack.com/forms/weatherization_application_ps",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "website_description": "Free home energy upgrades to lower your bills",
+    "active": true,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "warning_message": {
+    "external_name": "ks_wap_warning",
+    "calculator": "_show",
+    "message": "Weatherization services may have a waiting list, so help may not be immediate. If your furnace does not work or is unsafe, contact your county provider right away. Emergencies may receive priority."
+  },
+  "navigators": [
+    {
+      "external_name": "ks_wap_211",
+      "name": "Kansas 211",
+      "email": "",
+      "description": "Kansas 211 helps you find local utility, housing, and other support. This is useful while you wait for weatherization services.",
+      "assistance_link": "https://211.org/get-help",
+      "counties": [],
+      "languages": []
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "ks_wap_income_proof",
+      "text": "Proof of income for all household members (ex: pay stubs or benefit letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_wap_fuel_release",
+      "text": "Signed Fuel Information Release Form",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_wap_landlord_permission",
+      "text": "Signed Landlord Permission Form, if you rent or rent to own",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_wap_no_income_affidavit",
+      "text": "Notarized statement for anyone age 19 or older with no income or income without proof",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}

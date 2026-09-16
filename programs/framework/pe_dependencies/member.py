@@ -1160,11 +1160,22 @@ class IsMedicaidEligibleDependency(Member):
 
 
 class FosterCareDependency(Member):
+    """Foster care history, from either the self-reported tile or the relationship.
+
+    The `fosterChild` relationship only catches a foster child listed as a household
+    member under that exact value; it misses a child whose caregiver picked `child`, and
+    every young adult who is themselves the head of household. `was_in_foster_care` is the
+    Special Circumstances tile ("Ever in foster care, even briefly"), which catches both.
+
+    Returns None rather than False when neither holds, so PolicyEngine computes its own
+    default instead of us asserting a negative we never asked about.
+    """
+
     field = "was_in_foster_care"
-    dependencies = ("relationship",)
+    dependencies = ("relationship", "was_in_foster_care")
 
     def value(self):
-        if self.member.relationship == "fosterChild":
+        if self.member.relationship == "fosterChild" or self.member.was_in_foster_care:
             return True
         return None
 

@@ -76,6 +76,10 @@ class HudIncomeClient:
             "Beaumont-Port Arthur, TX MSA",
             # Washington (WA HCV / Seattle)
             "Seattle-Bellevue, WA HUD Metro FMR Area",
+            # Kansas (KS HCV). Kansas City spans MO and KS under one HUD area name,
+            # so the entry also covers a Missouri-side ZIP once MO HCV ships.
+            "Wichita, KS HUD Metro FMR Area",
+            "Kansas City, MO-KS HUD Metro FMR Area",
         }
     )
 

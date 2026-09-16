@@ -96,6 +96,54 @@ class FederalPoveryLimit(models.Model):
         return self.year
 
 
+class FederalPovertyLimitValue(models.Model):
+    """A database mirror of FederalPoveryLimit.get_limit(), one row per size.
+
+    The canonical explanation of this table lives here; other modules point back
+    rather than restate it.
+
+    WHY: FederalPoveryLimit stores a year and a period, while the dollar
+    thresholds live in the _FPL_DEFAULTS constant above. A consumer that can only
+    read the database -- the dbt/Metabase analytics pipeline -- therefore cannot
+    compute a percent-of-FPL band. This table is for those consumers.
+
+    NOT A SECOND SOURCE OF TRUTH: the constant stays authoritative and the
+    calculators keep reading it through get_limit(). sync_fpl_values() rewrites
+    this table from the constant and runs on every deploy, so adding a year to
+    the constant cannot leave the table behind. Unit tests verify sync produces a
+    table matching get_limit(); they cannot verify a given environment has been
+    synced, which is why the deploy hook rather than the tests is what keeps prod
+    honest.
+
+    CONTRACT WITH CONSUMERS:
+      * Sizes beyond MAX_DEFINED_SIZE are materialized with the
+        per-additional-person amount already applied, so a join does not have to
+        reimplement that arithmetic.
+      * Rows stop at fpl_values.MAX_MATERIALIZED_SIZE. get_limit() extrapolates
+        without limit, so a household larger than the cap has no row. Consumers
+        must clamp to the largest available size rather than joining loosely and
+        reading a NULL as "no band". The dbt bridge model does this.
+      * Keyed on `period`, deliberately not a FK. FederalPoveryLimit.period is
+        not unique (only `year` is), so there is no single row to point at, and
+        an analytics mirror should not gain a write-path constraint. The cost is
+        that a FederalPoveryLimit whose period has no rows here is possible;
+        as_dict() already raises KeyError for that case.
+    """
+
+    period = models.CharField(max_length=32, db_index=True)
+    household_size = models.PositiveSmallIntegerField()
+    annual_limit = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["period", "household_size"], name="unique_fpl_value_per_size"),
+        ]
+        ordering = ("period", "household_size")
+
+    def __str__(self):
+        return f"{self.period} / {self.household_size} person: ${self.annual_limit:,}"
+
+
 class LegalStatus(models.Model):
     status = models.CharField(max_length=256)
     parent = models.ForeignKey(
