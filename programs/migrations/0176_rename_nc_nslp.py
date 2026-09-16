@@ -40,7 +40,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0174_consolidate_missed_program_categories"),
+        ("programs", "0175_ks_lieap_on_has_benefits_step"),
     ]
 
     operations = [
