@@ -4,7 +4,7 @@ from django.db import migrations
 # That migration skips creating a program when its white label doesn't exist
 # yet (WhiteLabel.DoesNotExist: continue) — true on a fresh database, since
 # these white labels didn't exist when 0141 first ran. This migration runs
-# after 0175_create_state_white_labels, which guarantees they now do, so it
+# after 0176_create_state_white_labels, which guarantees they now do, so it
 # can finish the job 0141 couldn't. It also corrects has_calculator on any
 # row that already exists with the wrong value (from 0141's own "existing
 # row" branch, or from bulk_import creating it fresh — bulk_import's
@@ -64,9 +64,12 @@ def create_or_fix_gap_tracking_programs(apps, schema_editor):
     db = schema_editor.connection
 
     for p in GAP_TRACKING_PROGRAMS:
-        try:
-            white_label = WhiteLabel.objects.get(code=p["white_label_code"])
-        except WhiteLabel.DoesNotExist:
+        # code has no unique constraint at the DB level (screener/models.py),
+        # so .get() could raise MultipleObjectsReturned on a drifted database.
+        # Match the same defensive read configuration/views.py:46 and
+        # 0176_create_state_white_labels.py use.
+        white_label = WhiteLabel.objects.filter(code=p["white_label_code"]).order_by("id").first()
+        if white_label is None:
             continue
 
         existing = Program.objects.filter(

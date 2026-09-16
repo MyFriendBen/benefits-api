@@ -33,14 +33,20 @@ def create_state_white_labels(apps, schema_editor):
     db = schema_editor.connection
 
     for code, (name, state_code) in STATE_WHITE_LABELS.items():
-        white_label, _ = WhiteLabel.objects.get_or_create(
-            code=code,
-            defaults={"name": name, "state_code": state_code, "feature_flags": {}},
-        )
+        # code has no unique constraint at the DB level (screener/models.py),
+        # and bulk_import creates WhiteLabel rows via bare .objects.create()
+        # in several places, so a drifted database could have duplicates —
+        # get_or_create's .get() would raise MultipleObjectsReturned and fail
+        # the deploy. Since this migration exists specifically to repair
+        # drifted databases, don't assume the column is clean: match the same
+        # defensive read configuration/views.py:46 already uses.
+        white_label = WhiteLabel.objects.filter(code=code).order_by("id").first()
+        if white_label is None:
+            white_label = WhiteLabel.objects.create(name=name, code=code, state_code=state_code, feature_flags={})
 
-        # get_or_create's defaults are ignored when the row already existed
-        # (e.g. created earlier by bulk_import, which never sets state_code) —
-        # backfill it explicitly in that case.
+        # A pre-existing row (however it was created) may be missing
+        # state_code (e.g. created earlier by bulk_import, which never sets
+        # it) — backfill it explicitly in that case.
         if not white_label.state_code:
             white_label.state_code = state_code
             white_label.save()
