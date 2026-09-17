@@ -15,7 +15,9 @@ admins create to the Screen columns the immediate-needs step writes.
 from django.test import TestCase
 
 from programs.models import UrgentNeedCategory
+from screener.assistant import CONTEXT_PREFETCH, _build_context
 from screener.models import Screen, WhiteLabel
+from screener.views import urgent_need_results
 from screener.tests.helpers import seed_urgent_need
 from screener.urgent_needs import (
     NEED_CATEGORY_FIELDS,
@@ -130,3 +132,105 @@ class EligibleUrgentNeedsTests(TestCase):
 
         with self.assertRaises(KeyError):
             eligible_urgent_needs(self.screen, [])
+
+
+def _resources_for(screen: Screen) -> list[dict]:
+    reloaded = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=screen.pk)
+    return _build_context(reloaded)["additional_resources"]
+
+
+class OrderMatchesTheResultsPageTests(TestCase):
+    """The two consumers must hand out the same order, in every language.
+
+    This is the assertion behind the docstring claim that "the first one on the list"
+    means the same organization to Benji and to the person reading the tab. It is tested
+    across the seam rather than on either side, because both sides looked individually
+    correct while disagreeing: `Needs.tsx` sorts ONLY by the English category name, with
+    a stable sort, so it preserves whatever order the API sent within a category — and an
+    assistant-side sort by `(translated category, name)` therefore diverged twice over,
+    within a category always and between categories on any non-English screen.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            household_size=2,
+            completed=True,
+            needs_food=True,
+            needs_housing_help=True,
+        )
+        # Two resources in one category, deliberately seeded Zebra-then-Alpha so that
+        # insertion order and alphabetical order disagree — that gap is where a
+        # within-category sort on one side and a stable sort on the other diverge.
+        # The categories are "Food" and "Shelter", translated below to "Verduras" and
+        # "Refugio", which invert their relative order in Spanish. That inversion is what
+        # catches an assistant-side sort keyed on the translated name.
+        self.food = seed_urgent_need(
+            self.white_label, "pantry_z", category="food", category_type="Food", name="Zebra Pantry"
+        )
+        self.food_a = seed_urgent_need(
+            self.white_label, "pantry_a", category="food", category_type="Food", name="Alpha Pantry"
+        )
+        self.shelter = seed_urgent_need(
+            self.white_label, "shelter", category="housing", category_type="Shelter", name="Night Shelter"
+        )
+
+    def page_order(self) -> list[str]:
+        """What `Needs.tsx` would render: the API's order, stably sorted by English
+        category. Reproduced here rather than asserted against the component, because the
+        component lives in another repo."""
+        screen = Screen.objects.get(pk=self.screen.pk)
+        needs = urgent_need_results(screen, [])
+        return [
+            n["name"]["default_message"] for n in sorted(needs, key=lambda n: n["category_type"]["default_message"])
+        ]
+
+    def assistant_order(self) -> list[str]:
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        return [r["name"] for r in _build_context(screen)["additional_resources"]]
+
+    def test_orders_match_in_english(self):
+        self.assertEqual(self.assistant_order(), self.page_order())
+
+    def test_within_a_category_the_api_order_is_what_both_sides_use(self):
+        """The page cannot re-order inside a category, so the API's order IS the page's
+        order — which is why the shared function has to be the one that decides it."""
+        order = self.page_order()
+
+        self.assertEqual(order.index("Alpha Pantry"), order.index("Zebra Pantry") - 1)
+        self.assertEqual(self.assistant_order(), order)
+
+    def test_orders_match_on_a_non_english_screen(self):
+        """The page sorts by `default_message`, which `screener.views.default_message`
+        pins to LANGUAGE_CODE — so category order stays ENGLISH whatever the household
+        reads in. Ordering the assistant's list by the translated name put the two in
+        different orders outright."""
+        for need, spanish in (
+            (self.food, "Despensa Zebra"),
+            (self.food_a, "Despensa Alpha"),
+            (self.shelter, "Refugio"),
+        ):
+            need.name.set_current_language("es")
+            need.name.text = spanish
+            need.name.save()
+        # "Vivienda" < "Comida" is false, but "Alimentos" < "Vivienda" is true in both —
+        # so translate the CATEGORIES to invert their relative order against English
+        # ("Food" < "Shelter", but "Refugio" < "Verduras").
+        self.food.category_type.name.set_current_language("es")
+        self.food.category_type.name.text = "Verduras"
+        self.food.category_type.name.save()
+        self.shelter.category_type.name.set_current_language("es")
+        self.shelter.category_type.name.text = "Refugio"
+        self.shelter.category_type.name.save()
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        assistant = self.assistant_order()
+
+        # Spanish names, but ENGLISH category order — Food before Shelter.
+        self.assertEqual(assistant, ["Despensa Alpha", "Despensa Zebra", "Refugio"])
+        # And the page agrees: its category key is English too, so it groups Food
+        # before Shelter exactly as the assistant does.
+        self.assertEqual([r["name"] for r in _resources_for(self.screen)], assistant)

@@ -18,6 +18,9 @@ list now share.)
 
 from typing import Iterable, Optional
 
+from django.conf import settings
+from parler.models import TranslationDoesNotExist
+
 from programs.models import UrgentNeed
 from programs.urgent_needs import urgent_need_functions
 from programs.urgent_needs.base import UrgentNeedFunction
@@ -62,6 +65,25 @@ def selected_need_categories(screen: Screen) -> list[str]:
 
 def _translations_prefetch(prefix: str, fields: Iterable[str]) -> list[str]:
     return [f"{prefix}{f}__translations" for f in fields]
+
+
+def _english(translation) -> str:
+    """A Translation's text in the DEFAULT language, for ordering only.
+
+    English rather than the screen's language on purpose. The results page sorts its
+    resource cards by `default_message(need.category_type.name)`, which
+    `screener.views.default_message` pins to `settings.LANGUAGE_CODE` — so the page's
+    category order is the ENGLISH order whatever language the household is reading in.
+    Ordering here by the translated name would put the two lists in different orders on
+    every non-English screen.
+    """
+    if translation is None:
+        return ""
+    try:
+        translation.set_current_language(settings.LANGUAGE_CODE)
+        return (translation.text or "").strip().casefold()
+    except (TranslationDoesNotExist, AttributeError):
+        return ""
 
 
 def eligible_urgent_needs(
@@ -118,4 +140,20 @@ def eligible_urgent_needs(
         if all(Calculator(screen, need, missing_dependencies, program_data).calc() for Calculator in calculators):
             eligible.append(need)
 
+    # Ordering is part of what is shared, not a detail each consumer picks.
+    #
+    # `Needs.tsx` sorts the cards by English category name with `Array.prototype.sort`,
+    # which is stable — so within a category the page shows whatever order the API sent,
+    # and that order was previously a queryset with no `order_by`, i.e. arbitrary and
+    # free to differ between two requests. Sorting here by the same English category key
+    # the page uses makes the page's own sort a no-op, so both consumers end up with
+    # byte-identical order: "the first one on the list" names the same organization to
+    # Benji and to the person reading the tab, in every language.
+    #
+    # It also makes `MAX_ADDITIONAL_RESOURCES` deterministic. Capping an arbitrarily
+    # ordered list would drop an arbitrary subset, so above the cap the two lists would
+    # differ in membership rather than merely in order.
+    #
+    # `id` last so two resources with the same category and name still order stably.
+    eligible.sort(key=lambda need: (_english(need.category_type.name), _english(need.name), need.id))
     return eligible

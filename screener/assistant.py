@@ -690,8 +690,12 @@ def _additional_resources(
     results page uses, so the two lists cannot drift — which matters because the prompt
     describes this one to the model in closed-world terms.
 
-    Sorted by category then name to match `Needs.tsx`'s client-side `sortByCategory`, so
-    "the first one on the list" means the same thing to both of us.
+    Order comes from that same function and is NOT re-sorted here. An earlier version
+    sorted by `(translated category, name)`, which quietly broke the parity it claimed:
+    `Needs.tsx` sorts only by the ENGLISH category name and its sort is stable, so it
+    preserves API order within a category, and on a non-English screen it orders the
+    categories themselves differently from a translated key. "The first one on the list"
+    named a different organization on each side. The shared function now owns the order.
 
     `warning` and `notification_message` are deliberately not forwarded. Neither appears
     on a resource card (`NeedCard.tsx` renders category, name, description, phone and
@@ -736,12 +740,9 @@ def _additional_resources(
             entry["link"] = link
         resources.append(entry)
 
-    # Sort BEFORE the cap, not after. `eligible_urgent_needs` returns an unordered
-    # queryset, so truncating first would take an arbitrary subset and then sort it —
-    # the list would be internally tidy while silently missing resources that belong in
-    # the sorted first 60, and which ones changed between requests. Sorting first makes
-    # the cap deterministic: it always keeps the same entries for the same screen.
-    resources.sort(key=lambda r: (r.get("category", "").casefold(), r["name"].casefold()))
+    # The cap applies to an already-ordered list (`eligible_urgent_needs` sorts), so it
+    # keeps the same head the results page shows rather than an arbitrary subset — above
+    # the cap the two lists would otherwise differ in membership, not just in order.
     if len(resources) > MAX_ADDITIONAL_RESOURCES:
         capture_message(
             f"Screen {screen.uuid} has {len(resources)} additional resources, over "
