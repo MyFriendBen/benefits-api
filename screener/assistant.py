@@ -14,11 +14,13 @@ or tells them to apply for benefits they already have (MFB-1427).
 See the ai-service repo's docs/ for the full API contract.
 """
 
+import json
 import logging
 import os
 import re
 from typing import Optional
 
+import phonenumbers
 import requests
 from django.conf import settings
 from django.db.models import Prefetch, Q
@@ -28,8 +30,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from sentry_sdk import capture_message
 
+from configuration.models import Configuration
 from programs.framework.base import Eligibility
-from programs.models import Document, Program, WarningMessage
+from programs.models import Document, Program, UrgentNeed, WarningMessage
 from programs.util import Dependencies
 from programs.warnings import warning_calculators
 from parler.models import TranslationDoesNotExist
@@ -37,6 +40,7 @@ from parler.models import TranslationDoesNotExist
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
 from .models import EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .urgent_needs import eligible_urgent_needs
 from .throttles import (
     AssistantHistoryRateThrottle,
     AssistantMessageRateThrottle,
@@ -105,6 +109,49 @@ MAX_WARNINGS_PER_PROGRAM = 10
 # Apply links are dropped rather than truncated past this, so it's a reject threshold
 # and not a clip point. Comfortably above the longest link in the seed config (~200).
 MAX_URL_LEN = 500
+
+# Ceiling on the additional-resources list. Sized above the real maximum for the same
+# reason as MAX_DOCUMENTS_PER_PROGRAM: as of 2026-09-17 the largest white label has 43
+# active resources in total (MO), so even a household that ticked every category on the
+# immediate-needs step stays inside this. Truncating would silently break the parity with
+# the Additional Resources tab that this list exists to provide, so hitting it is
+# reported rather than quietly absorbed.
+MAX_ADDITIONAL_RESOURCES = 60
+
+# `acute_condition_options` config key -> the `Screen` field it writes. This mirrors
+# `benefits-calculator/src/Assets/updateScreen.ts`, which is where the mapping has lived
+# alone until now — the browser translates the step's answers into these columns, and the
+# API only ever sees the columns.
+#
+# It is here because Benji may tell someone which category to ADD, and the categories a
+# white label actually offers are config, not code: CO offers 11 of these, TX 12, and
+# "funeral" is a category the resource table has but no white label offers at all. Naming
+# a category that isn't on their step is the same fabrication as naming a button that
+# isn't on their page, so the offered set has to be read from the same config the step
+# renders from.
+#
+# `test_assistant_context.py` asserts every key in every white label's live config
+# resolves to a real Screen field, so a new category added to the config without a column
+# fails a test instead of silently vanishing from Benji's suggestions.
+ACUTE_OPTION_FIELDS = {
+    "food": "needs_food",
+    "babySupplies": "needs_baby_supplies",
+    "housing": "needs_housing_help",
+    "support": "needs_mental_health_help",
+    "childDevelopment": "needs_child_dev_help",
+    "familyPlanning": "needs_family_planning_help",
+    "jobResources": "needs_job_resources",
+    "dentalCare": "needs_dental_care",
+    "legalServices": "needs_legal_services",
+    "savings": "needs_college_savings",
+    "veteranServices": "needs_veteran_services",
+    "disabilityResources": "needs_disability_resources",
+    "agingResources": "needs_aging_resources",
+    "homelessServices": "needs_homeless_services",
+    "freeLowCostMedicalCare": "needs_free_low_cost_medical_care",
+    "transportation": "needs_transportation",
+    "medicalExpensesAndDebt": "needs_medical_expenses_and_debt",
+}
 
 # Program names that look like member-level insurance, used only to report a config
 # gap loudly (see _insurance_program_names).
@@ -560,6 +607,192 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     return current
 
 
+def _resource_url(need: UrgentNeed, language_code: str) -> str:
+    """This resource's website, or "" if there isn't a usable one.
+
+    Validated rather than truncated, exactly like `_apply_url`: the prompt instructs the
+    model to copy the links it is given character-for-character, so a clipped URL becomes
+    an authoritative-looking 404 and is strictly worse than saying nothing. `link` is a
+    `no_auto` translated field, so a blank or placeholder row comes back "" and the
+    resource simply ships without a link.
+    """
+    link = _translated(need.link, language_code, max_len=None)
+    if not link:
+        return ""
+    if len(link) > MAX_URL_LEN:
+        capture_message(
+            f"Dropping resource {need.external_name or need.id} link: {len(link)} chars exceeds "
+            f"MAX_URL_LEN={MAX_URL_LEN}",
+            level="warning",
+        )
+        return ""
+    return link
+
+
+def _resource_phone(need: UrgentNeed) -> str:
+    """The resource's phone number in the same format the card shows it.
+
+    `PhoneNumberField` stores E.164 (+13035551234); the resource card renders
+    `formatNational()` ("(303) 555-1234"). Benji is told these numbers are the only ones
+    it may ever say out loud, so it should say them the way the page prints them —
+    someone reading the card and someone asking Benji must not get two different-looking
+    numbers for the same organization.
+    """
+    number = need.phone_number
+    if not number:
+        return ""
+    try:
+        return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.NATIONAL)
+    except Exception:
+        # A stored number that the library won't format is a config problem, not a reason
+        # to fail the turn. Dropping it costs a contact route; emitting something
+        # malformed would have Benji read out digits that don't dial.
+        _report_once(
+            f"unformattable_phone:{need.external_name or need.id}",
+            f"Dropping an unformattable phone number on resource {need.external_name or need.id}",
+        )
+        return ""
+
+
+def _additional_resources(
+    screen: Screen,
+    program_data: list[dict],
+    missing_dependencies: Optional[Dependencies],
+    language_code: str,
+) -> list[dict]:
+    """The Additional Resources tab, as the assistant sees it.
+
+    Selected through `screener.urgent_needs.eligible_urgent_needs`, the same function the
+    results page uses, so the two lists cannot drift — which matters because the prompt
+    describes this one to the model in closed-world terms.
+
+    Sorted by category then name to match `Needs.tsx`'s client-side `sortByCategory`, so
+    "the first one on the list" means the same thing to both of us.
+
+    `warning` and `notification_message` are deliberately not forwarded. Neither appears
+    on a resource card (`NeedCard.tsx` renders category, name, description, phone and
+    link); the notification drives the banner on the *benefits* tab, and the warning is
+    not rendered anywhere at all. Parity means what the card shows.
+    """
+    resources = []
+    needs = eligible_urgent_needs(screen, program_data, missing_dependencies)
+    if len(needs) > MAX_ADDITIONAL_RESOURCES:
+        capture_message(
+            f"Screen {screen.uuid} has {len(needs)} additional resources, over "
+            f"MAX_ADDITIONAL_RESOURCES={MAX_ADDITIONAL_RESOURCES}; truncating the assistant's list",
+            level="warning",
+        )
+
+    for need in needs[:MAX_ADDITIONAL_RESOURCES]:
+        name = _translated(need.name, language_code)
+        if not name:
+            # An unnamed resource is not something the assistant can offer anyone, and a
+            # blank line in a list it's told is complete is worse than a shorter list.
+            _report_once(
+                f"unnamed_resource:{need.external_name or need.id}",
+                f"Dropping resource {need.external_name or need.id} from the assistant context: no usable name",
+            )
+            continue
+
+        entry = {
+            # UrgentNeed.external_name is nullable and many rows have none, so fall back
+            # to the pk. This is an opaque handle for logs and evals, not something the
+            # model is asked to read out.
+            "external_name": need.external_name or f"urgent_need_{need.id}",
+            "name": name,
+        }
+        category = _translated(need.category_type.name, language_code) if need.category_type_id else ""
+        if category:
+            entry["category"] = category
+        description = _clipped(
+            _translated(need.description, language_code, max_len=None),
+            f"description of resource {need.external_name or need.id}",
+        )
+        if description:
+            entry["description"] = description
+        phone = _resource_phone(need)
+        if phone:
+            entry["phone_number"] = phone
+        link = _resource_url(need, language_code)
+        if link:
+            entry["link"] = link
+        resources.append(entry)
+
+    resources.sort(key=lambda r: (r.get("category", "").casefold(), r["name"].casefold()))
+    return resources
+
+
+def _unselected_need_categories(screen: Screen, language_code: str) -> list[str]:
+    """Resource categories this white label offers that the household did NOT tick.
+
+    The Additional Resources tab carries a link back to the immediate-needs step ("edit
+    your selections in this step"), so a household that never ticked "food" has a real
+    route to food resources — and Benji is allowed to point at it. That route is only
+    safe to name if Benji knows which categories the step actually offers: the options
+    are per-white-label config, and telling someone to pick one their step doesn't have
+    is the same failure as inventing a button.
+
+    Labels only. No counts, and no resource names: nothing here says whether that
+    category has anything in it for this household's county, so the prompt has Benji
+    offer it as "add it and I'll see what's there" rather than as a promise.
+    """
+    config = (
+        Configuration.objects.filter(
+            white_label=screen.white_label,
+            name="acute_condition_options",
+            active=True,
+        )
+        .values_list("data", flat=True)
+        .first()
+    )
+    # `Configuration.data` comes back as a JSON *string*, not a dict. `OrderedJSONField`
+    # json.dumps() on the way in and the column then encodes that string as jsonb, so one
+    # decode leaves the payload still encoded — `configuration/admin.py` carries the same
+    # `isinstance(..., str)` unwrap for the same reason. Both shapes are accepted here
+    # because the field would start returning dicts the day that double-encoding is fixed,
+    # and this feature should not be what breaks.
+    if isinstance(config, str):
+        try:
+            config = json.loads(config)
+        except ValueError:
+            _report_once(
+                f"unparseable_acute_options:{screen.white_label.code}",
+                f"acute_condition_options for {screen.white_label.code} is not valid JSON; "
+                "the assistant cannot offer any resource categories",
+            )
+            return []
+    if not isinstance(config, dict):
+        return []
+
+    labels: list[str] = []
+    unknown: list[str] = []
+    for key, option in config.items():
+        field = ACUTE_OPTION_FIELDS.get(key)
+        if field is None:
+            unknown.append(key)
+            continue
+        if getattr(screen, field, False):
+            continue
+        label = ((option or {}).get("text") or {}).get("_label") if isinstance(option, dict) else None
+        if label:
+            labels.append(label)
+
+    if unknown:
+        _report_once(
+            f"unmapped_acute_options:{screen.white_label.code}",
+            f"acute_condition_options keys with no Screen field for {screen.white_label.code}: {sorted(unknown)}. "
+            "Benji cannot offer these categories until ACUTE_OPTION_FIELDS covers them.",
+        )
+    if not labels:
+        return []
+
+    # One query for every label, then resolved in the screen's language like every other
+    # user-facing string here — these are the exact words on the tiles they'd be clicking.
+    rows = {t.label: t for t in Translation.objects.filter(label__in=labels).prefetch_related("translations")}
+    names = [_translated(rows[label], language_code) for label in labels if label in rows]
+    return sorted({name for name in names if name}, key=str.casefold)
+
+
 def _displayed_value(row: ProgramEligibilitySnapshot, visible: Optional[dict[str, dict]]) -> Optional[int]:
     """The figure the user is looking at, in whole dollars.
 
@@ -620,11 +853,29 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
     language_code = screen.get_language_code()
 
     eligible_programs = []
+    # Shared with the additional-resources pass below, which runs whether or not there is
+    # a snapshot — the resources tab does not depend on one.
+    #
+    # `missing_dependencies` is lazy because building it walks every member, expense and
+    # income stream; both consumers below take it as an optional argument so it is built
+    # at most once per request and only when something actually gates on it.
+    program_data: list[dict] = []
+    missing_dependencies: Optional[Dependencies] = None
     snapshot = _latest_snapshot(screen)
     if snapshot is not None:
         visible = {p["name_abbreviated"]: p for p in visible_programs} if visible_programs is not None else None
         all_rows = list(snapshot.program_snapshots.all())
         values = {p.name_abbreviated: _displayed_value(p, visible) for p in all_rows}
+
+        # What the urgent-need calculators read out of the eligibility results. Five of
+        # them gate a resource on program eligibility ("show SNAP application help if
+        # they're SNAP-eligible"), and every one touches only these two keys — so the
+        # snapshot reproduces it exactly, with no second call to PolicyEngine.
+        #
+        # Built from ALL rows, not the filtered `rows` below: a resource keyed on SNAP
+        # eligibility must still appear for a household that already receives SNAP, and
+        # that row is filtered out of `eligible_programs` precisely because they have it.
+        program_data = [{"name_abbreviated": p.name_abbreviated, "eligible": p.eligible} for p in all_rows]
 
         insurance_held = _insurance_program_names(screen)
 
@@ -679,9 +930,6 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
         # Sort by what the user sees, so "your biggest one" agrees with their screen.
         rows.sort(key=lambda p: values.get(p.name_abbreviated) or 0, reverse=True)
         programs_by_name = _context_programs(screen, [p.name_abbreviated for p in rows])
-        # Only built if some program actually carries a warning: it walks every member,
-        # expense and income stream, and most white labels configure no warnings at all.
-        missing_dependencies: Optional[Dependencies] = None
         for p in rows:
             # The snapshot's `name` was captured as `program.name.text` under whatever
             # language was active when eligibility ran (screener.views, unpinned), and
@@ -735,10 +983,25 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
     eligible_names = {p["external_name"] for p in eligible_programs}
     current_programs = [p for p in _current_programs(screen, language_code) if p["external_name"] not in eligible_names]
 
+    # Unconditional, and deliberately outside the `snapshot is not None` block: the
+    # Additional Resources tab does not depend on an eligibility snapshot, so a screen
+    # whose snapshot is missing or stale still has resources, and those may be the only
+    # thing the assistant has to offer.
+    additional_resources = _additional_resources(screen, program_data, missing_dependencies, language_code)
+
     return {
         "household": {"size": screen.household_size},
         "eligible_programs": eligible_programs,
         "current_programs": current_programs,
+        # The other half of the results page. These are organizations to contact, not
+        # benefits to apply for, and the prompt keeps that distinction — but they answer
+        # the immediate "I can't feed my kids this week" that no long-term program does.
+        "additional_resources": additional_resources,
+        # Only what this white label's immediate-needs step actually offers, minus what
+        # they already ticked. Lets the assistant name the right category when someone
+        # raises a need with no matching resources, instead of either staying silent or
+        # inventing an option their step doesn't have.
+        "unselected_need_categories": _unselected_need_categories(screen, language_code),
         # The assistant's guardrails offer "your results page" as the fallback when
         # it has nothing it may recommend. That fallback was dead — this key was
         # never sent, so on an empty eligible list the model had no legitimate exit

@@ -31,14 +31,18 @@ from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
 from programs.models import LegalStatus, Program
+from configuration.models import Configuration
 from screener.assistant import (
+    ACUTE_OPTION_FIELDS,
     CONTEXT_PREFETCH,
     AssistantMessageRateThrottle,
     AssistantStartRateThrottle,
     AssistantStartView,
+    MAX_ADDITIONAL_RESOURCES,
     MAX_DOCUMENTS_PER_PROGRAM,
     MAX_PROGRAM_VALUE,
     MAX_PROMPT_TEXT_LEN,
+    MAX_URL_LEN,
     MAX_VISIBLE_PROGRAMS,
     _build_context,
     _visible_programs,
@@ -52,8 +56,8 @@ from screener.models import (
     Screen,
     WhiteLabel,
 )
-from screener.tests.helpers import seed_document, seed_program, seed_warning
-from translations.models import BLANK_TRANSLATION_PLACEHOLDER
+from screener.tests.helpers import seed_document, seed_program, seed_urgent_need, seed_warning
+from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
 
 def visible(name_abbreviated: str, value=None) -> dict:
@@ -1040,6 +1044,324 @@ class BuildContextTests(TestCase):
         self.assertEqual(with_two_members, with_five_members)
 
 
+class AdditionalResourcesTests(TestCase):
+    """The Additional Resources tab, as Benji receives it.
+
+    Same invariant as `eligible_programs`, on the other tab: the prompt describes this
+    list to the model as the complete set of resources this person has, so a resource on
+    their screen that is missing here (or here but not on their screen) is a wrong answer
+    the guardrails cannot catch. The selection is shared with the results page
+    (`screener.urgent_needs`) precisely so there is one filter to get right, and
+    `test_urgent_needs.py` covers that selection directly — these tests cover the
+    ASSISTANT'S view of it: the shape, the sanitization, and the two fields (phone and
+    link) that no other part of this payload is allowed to carry.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            household_size=2,
+            completed=True,
+            needs_food=True,
+        )
+
+    def context(self) -> dict:
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        return _build_context(screen)
+
+    def resources(self) -> list[dict]:
+        return self.context()["additional_resources"]
+
+    def test_resource_in_a_selected_category_is_included(self):
+        seed_urgent_need(
+            self.white_label,
+            "food_bank",
+            category="food",
+            name="Community Food Bank",
+            description="Free groceries, no appointment needed.",
+        )
+
+        [resource] = self.resources()
+
+        self.assertEqual(resource["external_name"], "food_bank")
+        self.assertEqual(resource["name"], "Community Food Bank")
+        self.assertEqual(resource["description"], "Free groceries, no appointment needed.")
+
+    def test_resource_in_an_unselected_category_is_excluded(self):
+        seed_urgent_need(self.white_label, "shelter", category="housing", name="Night Shelter")
+
+        self.assertEqual(self.resources(), [])
+
+    def test_inactive_resource_is_excluded(self):
+        need = seed_urgent_need(self.white_label, "closed", category="food", name="Closed Pantry")
+        need.active = False
+        need.save()
+
+        self.assertEqual(self.resources(), [])
+
+    def test_resource_for_another_white_label_is_excluded(self):
+        other = WhiteLabel.objects.create(name="Elsewhere", code="other", state_code="XX")
+        seed_urgent_need(other, "other_pantry", category="food", name="Someone Else's Pantry")
+
+        self.assertEqual(self.resources(), [])
+
+    def test_county_gated_resource_is_excluded_outside_that_county(self):
+        seed_urgent_need(
+            self.white_label,
+            "denver_meals",
+            category="food",
+            name="Denver Meals",
+            county_names=("Denver County",),
+        )
+        self.screen.county = "Jefferson County"
+        self.screen.save()
+
+        self.assertEqual(self.resources(), [])
+
+    def test_county_gated_resource_is_included_in_that_county(self):
+        seed_urgent_need(
+            self.white_label,
+            "denver_meals",
+            category="food",
+            name="Denver Meals",
+            county_names=("Denver County",),
+        )
+        self.screen.county = "Denver County"
+        self.screen.save()
+
+        self.assertEqual([r["external_name"] for r in self.resources()], ["denver_meals"])
+
+    def test_phone_number_is_formatted_the_way_the_card_shows_it(self):
+        """E.164 in the column, national format on the card — and out of Benji's mouth.
+
+        Benji is told these are the only numbers it may ever say, so someone reading the
+        card and someone asking Benji must not get two different-looking numbers.
+        """
+        seed_urgent_need(
+            self.white_label,
+            "hotline",
+            category="food",
+            name="Food Hotline",
+            phone_number="+13035551234",
+        )
+
+        [resource] = self.resources()
+
+        self.assertEqual(resource["phone_number"], "(303) 555-1234")
+
+    def test_phone_number_key_is_omitted_when_there_is_none(self):
+        seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
+
+        self.assertNotIn("phone_number", self.resources()[0])
+
+    def test_link_is_included_verbatim(self):
+        seed_urgent_need(
+            self.white_label,
+            "pantry",
+            category="food",
+            name="Pantry",
+            link="https://example.org/food?lang=en&ref=mfb",
+        )
+
+        self.assertEqual(self.resources()[0]["link"], "https://example.org/food?lang=en&ref=mfb")
+
+    def test_over_long_link_is_dropped_rather_than_truncated(self):
+        """A clipped URL is an authoritative-looking 404 — the same reason `_apply_url`
+        drops rather than truncates. Saying nothing is the designed fallback."""
+        seed_urgent_need(
+            self.white_label,
+            "pantry",
+            category="food",
+            name="Pantry",
+            link="https://example.org/?q=" + "x" * MAX_URL_LEN,
+        )
+
+        self.assertNotIn("link", self.resources()[0])
+
+    def test_over_long_description_is_clipped(self):
+        seed_urgent_need(
+            self.white_label,
+            "pantry",
+            category="food",
+            name="Pantry",
+            description="d" * (MAX_PROMPT_TEXT_LEN + 50),
+        )
+
+        self.assertEqual(len(self.resources()[0]["description"]), MAX_PROMPT_TEXT_LEN)
+
+    def test_resource_without_a_usable_name_is_dropped(self):
+        """A blank line in a list the prompt calls complete is worse than a shorter list."""
+        seed_urgent_need(self.white_label, "nameless", category="food", description="No name on this one.")
+
+        self.assertEqual(self.resources(), [])
+
+    def test_resources_are_sorted_by_category_then_name(self):
+        """Matches `Needs.tsx`'s client-side sort, so "the first one" means the same
+        thing to Benji and to the user reading the tab."""
+        self.screen.needs_housing_help = True
+        self.screen.save()
+        seed_urgent_need(self.white_label, "rent", category="housing", category_type="Housing", name="Rent Help")
+        seed_urgent_need(self.white_label, "pantry_b", category="food", category_type="Food", name="B Pantry")
+        seed_urgent_need(self.white_label, "pantry_a", category="food", category_type="Food", name="A Pantry")
+
+        self.assertEqual([r["name"] for r in self.resources()], ["A Pantry", "B Pantry", "Rent Help"])
+
+    def test_resource_list_is_capped(self):
+        for i in range(MAX_ADDITIONAL_RESOURCES + 5):
+            seed_urgent_need(self.white_label, f"pantry_{i:03d}", category="food", name=f"Pantry {i:03d}")
+
+        self.assertEqual(len(self.resources()), MAX_ADDITIONAL_RESOURCES)
+
+    def test_resources_survive_a_missing_eligibility_snapshot(self):
+        """The resources tab does not depend on a snapshot, so neither does this list —
+        for a screen whose snapshot is missing or stale, resources may be all Benji has.
+        """
+        seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"], [])
+        self.assertEqual([r["external_name"] for r in context["additional_resources"]], ["pantry"])
+
+    def test_resource_gated_on_program_eligibility_reads_the_snapshot(self):
+        """Five resource calculators gate on eligibility results. `_build_context` feeds
+        them the snapshot rows instead of recomputing eligibility, and this is the test
+        that the substitution actually works end to end."""
+        seed_program(self.white_label, "co_snap")
+        snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
+        ProgramEligibilitySnapshot.objects.create(
+            eligibility_snapshot=snapshot,
+            name="SNAP",
+            name_abbreviated="co_snap",
+            estimated_value=Decimal("1200"),
+            eligible=True,
+        )
+        self.screen.county = "Denver County"
+        self.screen.save()
+        seed_urgent_need(
+            self.white_label,
+            "snap_employment",
+            category="food",
+            name="SNAP Employment Services",
+            functions=("snap_employment",),
+        )
+
+        self.assertEqual([r["external_name"] for r in self.resources()], ["snap_employment"])
+
+    def test_resource_gated_on_program_eligibility_is_excluded_when_ineligible(self):
+        seed_program(self.white_label, "co_snap")
+        snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
+        ProgramEligibilitySnapshot.objects.create(
+            eligibility_snapshot=snapshot,
+            name="SNAP",
+            name_abbreviated="co_snap",
+            estimated_value=Decimal("0"),
+            eligible=False,
+        )
+        self.screen.county = "Denver County"
+        self.screen.save()
+        seed_urgent_need(
+            self.white_label,
+            "snap_employment",
+            category="food",
+            name="SNAP Employment Services",
+            functions=("snap_employment",),
+        )
+
+        self.assertEqual(self.resources(), [])
+
+    def test_query_count_is_flat_in_resource_count(self):
+        """The per-resource work is prefetched, so ten resources cost what one does.
+
+        Without this the translations behind each resource's name, description, link and
+        category heading would be four queries per card.
+        """
+        seed_urgent_need(self.white_label, "pantry_0", category="food", name="Pantry 0")
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        with CaptureQueriesContext(connection) as one:
+            _build_context(screen)
+
+        for i in range(1, 10):
+            seed_urgent_need(self.white_label, f"pantry_{i}", category="food", name=f"Pantry {i}")
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        with CaptureQueriesContext(connection) as ten:
+            _build_context(screen)
+
+        self.assertEqual(len(ten), len(one), f"{len(one)} -> {len(ten)} queries for 1 -> 10 resources")
+
+
+class UnselectedNeedCategoriesTests(TestCase):
+    """What Benji may tell someone to add at the immediate-needs step.
+
+    Benji is allowed to point at the "edit your selections" link the resources tab
+    already renders, and to name the category to pick. That is only safe if the
+    categories it names are ones this white label's step actually offers — naming a
+    missing option is the same failure as inventing a button.
+    """
+
+    OPTIONS = {
+        "food": {"text": {"_label": "acuteConditionOptions.food", "_default_message": "Food or groceries"}},
+        "housing": {"text": {"_label": "acuteConditionOptions.housing", "_default_message": "Housing help"}},
+    }
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            household_size=2,
+            completed=True,
+            needs_food=True,
+        )
+        for label, text in (
+            ("acuteConditionOptions.food", "Food or groceries"),
+            ("acuteConditionOptions.housing", "Housing help"),
+        ):
+            set_translation(Translation.objects.add_translation(label), text)
+        Configuration.objects.create(
+            white_label=self.white_label,
+            name="acute_condition_options",
+            data=self.OPTIONS,
+            active=True,
+        )
+
+    def categories(self) -> list[str]:
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        return _build_context(screen)["unselected_need_categories"]
+
+    def test_offers_only_what_the_household_did_not_tick(self):
+        self.assertEqual(self.categories(), ["Housing help"])
+
+    def test_offers_nothing_when_everything_is_ticked(self):
+        self.screen.needs_housing_help = True
+        self.screen.save()
+
+        self.assertEqual(self.categories(), [])
+
+    def test_offers_nothing_when_the_white_label_has_no_config(self):
+        Configuration.objects.filter(white_label=self.white_label).delete()
+
+        self.assertEqual(self.categories(), [])
+
+    def test_a_category_the_step_does_not_offer_is_never_named(self):
+        """`funeral` is a resource category no white label puts on the step. Benji must
+        not tell anyone to pick it."""
+        self.assertNotIn("funeral", " ".join(self.categories()).lower())
+
+    def test_every_live_config_key_maps_to_a_screen_field(self):
+        """The mapping this asserts lives twice — here and in benefits-calculator's
+        `updateScreen.ts`, which is what actually writes these columns. A category added
+        to the config without a column here would silently never be offered, so the drift
+        fails a test instead."""
+        unmapped = [key for key in self.OPTIONS if key not in ACUTE_OPTION_FIELDS]
+
+        self.assertEqual(unmapped, [])
+        for field in ACUTE_OPTION_FIELDS.values():
+            self.assertTrue(hasattr(self.screen, field), f"Screen has no field {field}")
+
+
 class VisibleProgramsParsingTests(SimpleTestCase):
     """`visible_programs` is untrusted browser input. It can only ever narrow the
     program list (it's intersected with the snapshot), so the risk isn't injection —
@@ -1188,7 +1510,15 @@ class AssistantStartViewTests(APITestCase):
     # screen.missing_fields(), plus documents and warnings (each with their counties,
     # legal statuses and translations) on the one Program fetch _build_context already
     # made. All flat in program and member count — the sibling tests assert that.
-    MAX_START_QUERIES = 16
+    #
+    # Raised again for additional resources: the `acute_condition_options` lookup, and
+    # the one translation fetch for whichever category labels come back from it. This
+    # screen ticks no need categories, so it does NOT include the resource query itself
+    # or its prefetches — `eligible_urgent_needs` returns early before issuing any. That
+    # path is bounded by `AdditionalResourcesTests.test_query_count_is_flat_in_resource_count`,
+    # which is the property that actually matters: the resource work is flat in the
+    # number of resources, not in whether any exist.
+    MAX_START_QUERIES = 18
 
     def test_query_count_is_bounded(self):
         """Bounded here so CONTEXT_PREFETCH disappearing from the view is caught, even
