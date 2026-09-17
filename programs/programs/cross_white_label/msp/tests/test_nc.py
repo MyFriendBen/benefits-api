@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from django.test import SimpleTestCase as TestCase
 
 from programs.framework.base import MemberEligibility
-from programs.programs.nc.medicaid.nc_medicare_savings.calculator import MedicareSavingsNC
+from programs.programs.cross_white_label.msp.nc import MedicareSavingsNC
 
 # Approximate 2026 federal FPL values (48 contiguous states, yearly)
 FPL = {
