@@ -615,9 +615,23 @@ def _resource_url(need: UrgentNeed, language_code: str) -> str:
     an authoritative-looking 404 and is strictly worse than saying nothing. `link` is a
     `no_auto` translated field, so a blank or placeholder row comes back "" and the
     resource simply ships without a link.
+
+    Must be an absolute http(s) URL. `Translation.text` holds arbitrary admin-editable
+    text, and this value is handed to the model as something to reproduce verbatim and
+    is rendered as a clickable link in the chat widget — so a `javascript:` or `data:`
+    value would be an editable-row path to an attacker-controlled href, and a plain-text
+    value ("call them") would be emitted as a broken link. Every one of the 273 live
+    resource links is already http(s), so this rejects nothing real; it closes the shape
+    of the field rather than fixing a present-day row.
     """
     link = _translated(need.link, language_code, max_len=None)
     if not link:
+        return ""
+    if not link.lower().startswith(("http://", "https://")):
+        _report_once(
+            f"non_http_resource_link:{need.external_name or need.id}",
+            f"Dropping resource {need.external_name or need.id} link: not an absolute http(s) URL",
+        )
         return ""
     if len(link) > MAX_URL_LEN:
         capture_message(
@@ -686,14 +700,8 @@ def _additional_resources(
     """
     resources = []
     needs = eligible_urgent_needs(screen, program_data, missing_dependencies)
-    if len(needs) > MAX_ADDITIONAL_RESOURCES:
-        capture_message(
-            f"Screen {screen.uuid} has {len(needs)} additional resources, over "
-            f"MAX_ADDITIONAL_RESOURCES={MAX_ADDITIONAL_RESOURCES}; truncating the assistant's list",
-            level="warning",
-        )
 
-    for need in needs[:MAX_ADDITIONAL_RESOURCES]:
+    for need in needs:
         name = _translated(need.name, language_code)
         if not name:
             # An unnamed resource is not something the assistant can offer anyone, and a
@@ -728,8 +736,19 @@ def _additional_resources(
             entry["link"] = link
         resources.append(entry)
 
+    # Sort BEFORE the cap, not after. `eligible_urgent_needs` returns an unordered
+    # queryset, so truncating first would take an arbitrary subset and then sort it —
+    # the list would be internally tidy while silently missing resources that belong in
+    # the sorted first 60, and which ones changed between requests. Sorting first makes
+    # the cap deterministic: it always keeps the same entries for the same screen.
     resources.sort(key=lambda r: (r.get("category", "").casefold(), r["name"].casefold()))
-    return resources
+    if len(resources) > MAX_ADDITIONAL_RESOURCES:
+        capture_message(
+            f"Screen {screen.uuid} has {len(resources)} additional resources, over "
+            f"MAX_ADDITIONAL_RESOURCES={MAX_ADDITIONAL_RESOURCES}; truncating the assistant's list",
+            level="warning",
+        )
+    return resources[:MAX_ADDITIONAL_RESOURCES]
 
 
 def _unselected_need_categories(screen: Screen, language_code: str) -> list[str]:

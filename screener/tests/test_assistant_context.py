@@ -1180,6 +1180,21 @@ class AdditionalResourcesTests(TestCase):
 
         self.assertEqual(self.resources()[0]["link"], "https://example.org/food?lang=en&ref=mfb")
 
+    def test_non_http_link_is_dropped(self):
+        """`Translation.text` is arbitrary admin-editable text, and this value is handed
+        to the model to reproduce verbatim and rendered as a clickable href in the
+        widget. All 273 live resource links are already http(s), so this closes the shape
+        of the field rather than fixing a present-day row."""
+        for hostile in ("javascript:alert(1)", "data:text/html;base64,PHM+", "call them instead"):
+            with self.subTest(link=hostile):
+                need = seed_urgent_need(
+                    self.white_label, f"r{abs(hash(hostile))}", category="food", name="Pantry", link=hostile
+                )
+
+                self.assertNotIn("link", self.resources()[0])
+
+                need.delete()
+
     def test_over_long_link_is_dropped_rather_than_truncated(self):
         """A clipped URL is an authoritative-looking 404 — the same reason `_apply_url`
         drops rather than truncates. Saying nothing is the designed fallback."""
@@ -1226,6 +1241,24 @@ class AdditionalResourcesTests(TestCase):
             seed_urgent_need(self.white_label, f"pantry_{i:03d}", category="food", name=f"Pantry {i:03d}")
 
         self.assertEqual(len(self.resources()), MAX_ADDITIONAL_RESOURCES)
+
+    def test_the_cap_keeps_the_sorted_head_not_an_arbitrary_subset(self):
+        """The queryset is unordered, so capping before sorting would take an arbitrary
+        subset and then tidy it — a list that looks sorted while silently missing
+        resources that belong in it, with the omissions varying between requests."""
+        # Seeded in REVERSE name order, so insertion order (which is what an unordered
+        # queryset tends to return) and sorted order disagree. Seeded ascending, this
+        # test passes against the bug it exists to catch.
+        names = [f"Pantry {i:03d}" for i in range(MAX_ADDITIONAL_RESOURCES + 5)]
+        for i, name in enumerate(reversed(names)):
+            seed_urgent_need(self.white_label, f"pantry_{i:03d}", category="food", name=name)
+
+        returned = [r["name"] for r in self.resources()]
+
+        self.assertEqual(returned, sorted(names)[:MAX_ADDITIONAL_RESOURCES])
+        # The five dropped entries must be the LAST five by name, not the five that
+        # happened to be inserted first.
+        self.assertNotIn(names[-1], returned)
 
     def test_resources_survive_a_missing_eligibility_snapshot(self):
         """The resources tab does not depend on a snapshot, so neither does this list —
