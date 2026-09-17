@@ -637,11 +637,21 @@ def _resource_phone(need: UrgentNeed) -> str:
     it may ever say out loud, so it should say them the way the page prints them —
     someone reading the card and someone asking Benji must not get two different-looking
     numbers for the same organization.
+
+    The validity check mirrors the card's, and is not decoration. `formatPhoneNumber`
+    in the frontend formats only when `isValid()` and otherwise prints the stored string
+    unchanged, so an invalid-but-stored number (a extension-only entry, a number saved
+    before validation tightened) shows raw on the card. `format_number` does NOT raise on
+    those — it returns a plausible-looking reformat — so without this, the one field this
+    change claims parity for would be the one field where Benji and the card disagree,
+    and only for the rows most likely to be wrong already.
     """
     number = need.phone_number
     if not number:
         return ""
     try:
+        if not phonenumbers.is_valid_number(number):
+            return str(number)
         return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.NATIONAL)
     except Exception:
         # A stored number that the library won't format is a config problem, not a reason

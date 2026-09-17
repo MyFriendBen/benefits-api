@@ -1151,6 +1151,19 @@ class AdditionalResourcesTests(TestCase):
 
         self.assertEqual(resource["phone_number"], "(303) 555-1234")
 
+    def test_invalid_phone_number_is_passed_through_like_the_card_does(self):
+        """`formatPhoneNumber` on the card formats only valid numbers and prints anything
+        else unchanged. `format_number` does not raise on an invalid number — it returns
+        a plausible reformat — so without the validity check this is the one field where
+        Benji and the card would disagree, on exactly the rows most likely to be wrong."""
+        need = seed_urgent_need(self.white_label, "hotline", category="food", name="Food Hotline")
+        need.phone_number = "+1555"
+        need.save()
+
+        [resource] = self.resources()
+
+        self.assertEqual(resource["phone_number"], "+1555")
+
     def test_phone_number_key_is_omitted_when_there_is_none(self):
         seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
 
