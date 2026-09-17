@@ -10,6 +10,8 @@ def make_member(
     disabled=False,
     visually_impaired=False,
     medicare=False,
+    ssdi_income=0,
+    ssi_income=0,
 ):
     member = Mock()
     member.age = age
@@ -17,17 +19,19 @@ def make_member(
     member.visually_impaired = visually_impaired
     member.calc_age = Mock(return_value=age)
     member.has_insurance = Mock(side_effect=lambda name: medicare if name == "medicare" else False)
+
+    def calc_gross_income(freq, types, **kwargs):
+        by_type = {"sSDisability": ssdi_income, "sSI": ssi_income}
+        total = sum(by_type.get(t, 0) for t in types)
+        return total if freq == "yearly" else total / 12
+
+    member.calc_gross_income = Mock(side_effect=calc_gross_income)
     return member
 
 
-def make_calculator(members=None, county="St. Louis City", has_ssdi=False, has_ssi=False):
+def make_calculator(members=None, county="St. Louis City"):
     mock_screen = Mock()
     mock_screen.county = county
-
-    def has_base_benefit(name):
-        return {"ssdi": has_ssdi, "ssi": has_ssi}.get(name, False)
-
-    mock_screen.has_base_benefit = Mock(side_effect=has_base_benefit)
 
     if members is None:
         members = [make_member()]
@@ -124,8 +128,8 @@ class TestMoMtrfpScenarios(TestCase):
         self.assertEqual(eligibility.value, 468)
 
     def test_scenario_7_ssdi_recipient_40_eligible(self):
-        member = make_member(age=40)
-        calculator = make_calculator(members=[member], has_ssdi=True)
+        member = make_member(age=40, ssdi_income=18_000)
+        calculator = make_calculator(members=[member])
 
         eligibility = calculator.calc()
 
@@ -133,8 +137,8 @@ class TestMoMtrfpScenarios(TestCase):
         self.assertEqual(eligibility.value, 468)
 
     def test_scenario_8_ssi_recipient_38_eligible(self):
-        member = make_member(age=38)
-        calculator = make_calculator(members=[member], has_ssi=True)
+        member = make_member(age=38, ssi_income=11_000)
+        calculator = make_calculator(members=[member])
 
         eligibility = calculator.calc()
 
@@ -205,12 +209,12 @@ class TestMoMtrfpPathwayIsolation(TestCase):
         self.assertTrue(member_is_eligible(calculator, make_member(age=30, medicare=True)))
 
     def test_ssdi_pathway_alone(self):
-        calculator = make_calculator(has_ssdi=True)
-        self.assertTrue(member_is_eligible(calculator, make_member(age=30)))
+        calculator = make_calculator()
+        self.assertTrue(member_is_eligible(calculator, make_member(age=30, ssdi_income=18_000)))
 
     def test_ssi_pathway_alone(self):
-        calculator = make_calculator(has_ssi=True)
-        self.assertTrue(member_is_eligible(calculator, make_member(age=30)))
+        calculator = make_calculator()
+        self.assertTrue(member_is_eligible(calculator, make_member(age=30, ssi_income=11_000)))
 
     def test_no_pathway_is_ineligible(self):
         calculator = make_calculator()
@@ -229,20 +233,42 @@ class TestMoMtrfpPathwayIsolation(TestCase):
         self.assertTrue(member_is_eligible(calculator, member))
 
 
-class TestMoMtrfpBenefitReceiptIsHouseholdLevel(TestCase):
-    """SSDI/SSI are read at the household level, so they qualify every member.
+class TestMoMtrfpBenefitReceiptIsPerMember(TestCase):
+    """SSDI/SSI qualify only the member who receives them.
 
-    This is a known over-inclusion: `has_base_benefit` answers "does anyone in
-    the household receive this", and the screener does not attribute a current
-    benefit to a specific member. Recorded here so the behavior is deliberate
-    rather than accidental.
+    The permit is per person and its qualifying document is the applicant's own
+    award letter, so one member's SSDI must not qualify the rest of the
+    household. Reading `screen.has_base_benefit("ssdi")` would, because
+    `CurrentBenefit` is keyed on (screen, program) with no member FK.
     """
 
-    def test_ssdi_qualifies_all_members(self):
-        members = [make_member(age=30), make_member(age=35)]
-        calculator = make_calculator(members=members, has_ssdi=True)
+    def test_ssdi_does_not_qualify_a_child_in_the_same_household(self):
+        parent = make_member(age=45, ssdi_income=18_000)
+        child = make_member(age=8)
+        calculator = make_calculator(members=[parent, child])
 
         eligibility = calculator.calc()
 
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 936)
+        # Only the parent's $468 — the child has no pathway of their own.
+        self.assertEqual(eligibility.value, 468)
+
+    def test_ssi_does_not_qualify_a_non_recipient_adult(self):
+        recipient = make_member(age=35, ssi_income=11_000)
+        other_adult = make_member(age=38)
+        calculator = make_calculator(members=[recipient, other_adult])
+
+        eligibility = calculator.calc()
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(eligibility.value, 468)
+
+    def test_child_receiving_ssi_qualifies_on_their_own(self):
+        """A child can receive SSI in their own right, which is a valid pathway."""
+        child = make_member(age=8, ssi_income=9_000)
+        calculator = make_calculator(members=[child])
+
+        eligibility = calculator.calc()
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(eligibility.value, 468)

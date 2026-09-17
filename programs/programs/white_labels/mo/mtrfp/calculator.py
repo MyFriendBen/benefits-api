@@ -30,13 +30,19 @@ class MoMetroTransitReducedFare(ProgramCalculator):
     """
 
     program_code = "mo_mtrfp"
-    dependencies = ["age", "disabled", "visually_impaired", "health_insurance"]
+    dependencies = ["age", "disabled", "visually_impaired", "health_insurance", "income_type", "income_amount"]
 
     minimum_age = 65
     # $78.00 standard 30-Day Pass less $39.00 reduced, x 12 months
     member_amount = 468
 
-    qualifying_base_benefits = ("ssdi", "ssi")
+    # SSDI and SSI are read from the member's own income streams rather than
+    # from household current benefits. The permit is per person, and its
+    # qualifying document is the applicant's own award letter, so a parent's
+    # SSDI must not qualify their child. `CurrentBenefit` is keyed on
+    # (screen, program) with no member FK, so it cannot answer "who receives
+    # this"; `IncomeStream` is member-scoped and can.
+    qualifying_income_types = ("sSDisability", "sSI")
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
@@ -52,9 +58,7 @@ class MoMetroTransitReducedFare(ProgramCalculator):
 
         # SSDI and SSI award letters are each sufficient proof on their own
         # under Metro's qualifying-document list.
-        receives_qualifying_benefit = any(
-            self.screen.has_base_benefit(benefit) for benefit in self.qualifying_base_benefits
-        )
+        receives_qualifying_benefit = member.calc_gross_income("yearly", self.qualifying_income_types) > 0
 
         e.condition(age_eligible or disability_eligible or has_medicare or receives_qualifying_benefit)
 
