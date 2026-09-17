@@ -165,9 +165,10 @@ python manage.py import_all_urgent_need_configs --override --file ks_harvesters.
 ### `type_short` must have a matching immediate-need tile
 
 An urgent need is only ever returned when its `type_short` matches a box the user checked on the
-immediate-needs step. Valid values are the keys of `possible_needs` in `screener/views.py`
-`urgent_need_results`, and each one is gated on a `Screen.needs_*` field that the frontend only
-sends when the corresponding key exists in that white label's `acute_condition_options`. A
+immediate-needs step. Valid values are the keys of `NEED_CATEGORY_FIELDS` in
+`screener/urgent_needs.py` (formerly `possible_needs` in `screener/views.py`), and each one is
+gated on the `Screen.needs_*` field that map points at — which the frontend only sends when the
+corresponding key exists in that white label's `acute_condition_options`. A
 `type_short` with no tile in the target white label produces a permanently invisible record.
 
 ### County names must match `counties_by_zipcode` exactly
