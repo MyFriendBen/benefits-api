@@ -7,44 +7,24 @@ Tests verify:
 - Correct value calculation ($6,000 / 2.5 years = $2,400/year)
 """
 
-from django.test import TestCase
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.il.nfp.calculator import IlNurseFamilyPartnership
-from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
+from screener.models import HouseholdMember, IncomeStream
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
-from programs.models import Program, FederalPoveryLimit
-from programs.util import Dependencies
 
 
-class TestIlNurseFamilyPartnership(TestCase):
+class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
     """Test cases for Illinois Nurse-Family Partnership calculator."""
 
-    @classmethod
-    def setUpTestData(cls):
-        """Set up test data that doesn't change between tests."""
-        cls.il_white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
-        cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
-
-        cls.program = Program.objects.new_program(white_label="il", name_abbreviated="il_nfp")
-        cls.program.year = cls.fpl_year
-        cls.program.save()
+    calculator_class = IlNurseFamilyPartnership
+    program_code = "il_nfp"
+    white_label_code = "il"
+    state_code = "IL"
 
     def setUp(self):
-        """Set up test fixtures for each test method."""
-        self.screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="60601",
-            county="Cook",
-            household_size=1,
-            white_label=self.il_white_label,
-            completed=False,
-        )
-
-    def create_calculator(self, screen):
-        """Helper method to create calculator instance."""
-        data = {}
-        missing_dependencies = Dependencies()
-        return IlNurseFamilyPartnership(screen, self.program, data, missing_dependencies)
+        super().setUp()
+        self.screen = self.make_screen("il", "IL", household_size=1, zipcode="60601", county="Cook", agree_to_tos=True)
 
     # Household Eligibility Tests
     def test_household_eligible_income_below_300_fpl(self):
@@ -64,7 +44,7 @@ class TestIlNurseFamilyPartnership(TestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -72,7 +52,7 @@ class TestIlNurseFamilyPartnership(TestCase):
     def test_household_eligible_with_wic_regardless_of_income(self):
         """Test household is eligible with WIC (presumed eligibility) regardless of income."""
         # IL ships il_wic, resolved via base_program.
-        seed_program(self.il_white_label, "il_wic", base_program="wic")
+        seed_program(self.white_label, "il_wic", base_program="wic")
         _write_current_benefits(self.screen, ["il_wic"])
 
         parent = HouseholdMember.objects.create(
@@ -91,7 +71,7 @@ class TestIlNurseFamilyPartnership(TestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -114,7 +94,7 @@ class TestIlNurseFamilyPartnership(TestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertFalse(eligibility.eligible)
@@ -137,7 +117,7 @@ class TestIlNurseFamilyPartnership(TestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -161,7 +141,7 @@ class TestIlNurseFamilyPartnership(TestCase):
             frequency="monthly",
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
@@ -195,7 +175,7 @@ class TestIlNurseFamilyPartnership(TestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
@@ -205,13 +185,13 @@ class TestIlNurseFamilyPartnership(TestCase):
     # Value Tests
     def test_value_calculation(self):
         """Test that value is $6,000 / 2.5 years = $2,400/year."""
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         expected_value = 6_000 / 2.5
         self.assertEqual(calc.amount, expected_value)
 
     def test_fpl_percent_is_300(self):
         """Test that FPL threshold is 300%."""
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         self.assertEqual(calc.fpl_percent, 3)
 
     def test_zero_income_eligible(self):
@@ -224,7 +204,7 @@ class TestIlNurseFamilyPartnership(TestCase):
             has_income=False,
         )
 
-        calc = self.create_calculator(self.screen)
+        calc = self.make_calculator(self.screen)
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)

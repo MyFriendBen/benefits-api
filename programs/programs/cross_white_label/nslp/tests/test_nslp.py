@@ -1,67 +1,42 @@
 from decimal import Decimal
 
-from django.test import TestCase
-
-from programs.models import Program, FederalPoveryLimit
 from programs.framework.base import MemberEligibility
 from programs.programs.cross_white_label.nslp.wa import WaNslp
-from programs.util import Dependencies
-from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from screener.models import HouseholdMember, Screen
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
 
 
-class TestWaNslp(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
-        cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
-        cls.program = Program.objects.new_program(white_label="wa", name_abbreviated="wa_nslp")
-        cls.program.year = cls.fpl_year
-        cls.program.save()
-
-    def _calc(self, screen: Screen) -> WaNslp:
-        return WaNslp(screen, self.program, {}, Dependencies())
+class TestWaNslp(CustomCalculatorTestCase):
+    calculator_class = WaNslp
+    program_code = "wa_nslp"
+    white_label_code = "wa"
+    state_code = "WA"
 
     def _screen_base(self, **kwargs) -> Screen:
-        defaults = dict(
-            white_label=self.white_label,
-            agree_to_tos=True,
-            completed=False,
-            household_size=3,
-        )
-        defaults.update(kwargs)
-        return Screen.objects.create(**defaults)
+        return self.make_screen("wa", "WA", household_size=kwargs.pop("household_size", 3), agree_to_tos=True, **kwargs)
 
     def test_eligible_by_income_below_free_tier(self):
         """Spec / validation: HH 3, one school-age child, income below reduced cap."""
         screen = self._screen_base(zipcode="98101", county="King County")
-        HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=screen.household_members.get(relationship="headOfHousehold"),
-            type="wages",
-            amount=2000,
-            frequency="monthly",
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=34, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=7, has_income=False)
+        self.add_income(self.add_member(screen, "headOfHousehold", 36, has_income=True), 2000, frequency="monthly")
+        self.add_member(screen, "spouse", 34)
+        self.add_member(screen, "child", 7)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
     def test_ineligible_monthly_income_cents_over_reduced_cap(self):
         """HH3 monthly cap $4,109 — cents must not be truncated (CodeRabbit / Decimal)."""
         screen = self._screen_base(zipcode="98103", county="King County", household_size=3)
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=Decimal("4109.99"), frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=37, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=12, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 39, has_income=True)
+        self.add_income(head, Decimal("4109.99"), frequency="monthly")
+        self.add_member(screen, "spouse", 37)
+        self.add_member(screen, "child", 12)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertFalse(result.eligible)
 
     def test_medicaid_does_not_confer_categorical_eligibility(self):
@@ -78,27 +53,23 @@ class TestWaNslp(TestCase):
             has_benefits="true",
         )
         _write_current_benefits(screen, ["wa_medicaid"])
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=4110, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=37, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=12, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 39, has_income=True)
+        self.add_income(head, 4110, frequency="monthly")
+        self.add_member(screen, "spouse", 37)
+        self.add_member(screen, "child", 12)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertFalse(result.eligible)
 
     def test_eligible_at_reduced_monthly_cap_exact(self):
         """Regression: frequency-matched monthly must not always annualize (+$5 error)."""
         screen = self._screen_base(zipcode="98103", county="King County")
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=4109, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=37, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=12, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 39, has_income=True)
+        self.add_income(head, 4109, frequency="monthly")
+        self.add_member(screen, "spouse", 37)
+        self.add_member(screen, "child", 12)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
@@ -110,14 +81,12 @@ class TestWaNslp(TestCase):
             has_benefits="true",
         )
         _write_current_benefits(screen, ["wa_snap"])
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=7000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=39, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=10, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 40, has_income=True)
+        self.add_income(head, 7000, frequency="monthly")
+        self.add_member(screen, "spouse", 39)
+        self.add_member(screen, "child", 10)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
@@ -125,14 +94,12 @@ class TestWaNslp(TestCase):
         seed_program(self.white_label, "wa_tanf")
         screen = self._screen_base(zipcode="98901", county="Yakima County", has_benefits="true")
         _write_current_benefits(screen, ["wa_tanf"])
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=5500, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=35, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=9, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 36, has_income=True)
+        self.add_income(head, 5500, frequency="monthly")
+        self.add_member(screen, "spouse", 35)
+        self.add_member(screen, "child", 9)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
@@ -140,13 +107,11 @@ class TestWaNslp(TestCase):
         seed_program(self.white_label, "wa_snap")
         screen = self._screen_base(zipcode="98103", county="King County", household_size=2)
         _write_current_benefits(screen, ["wa_snap"])
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=1800, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 40, has_income=True)
+        self.add_income(head, 1800, frequency="monthly")
+        self.add_member(screen, "child", 3)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertFalse(result.eligible)
 
     def test_eligible_head_start_categorical_high_income(self):
@@ -157,14 +122,12 @@ class TestWaNslp(TestCase):
             has_benefits="true",
         )
         _write_current_benefits(screen, ["wa_head_start"])
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=33, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=5000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=32, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=5, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 33, has_income=True)
+        self.add_income(head, 5000, frequency="monthly")
+        self.add_member(screen, "spouse", 32)
+        self.add_member(screen, "child", 5)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
@@ -176,82 +139,65 @@ class TestWaNslp(TestCase):
             has_benefits="true",
         )
         _write_current_benefits(screen, ["wa_snap"])
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=7000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=39, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=10, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 40, has_income=True)
+        self.add_income(head, 7000, frequency="monthly")
+        self.add_member(screen, "spouse", 39)
+        self.add_member(screen, "child", 10)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertTrue(any("Presumed eligibility" in str(m) for m in result.pass_messages))
         self.assertFalse(any("Household makes" in str(m) for m in result.pass_messages))
 
     def test_eligible_foster_child_categorical(self):
         screen = self._screen_base(household_size=3)
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=8000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=34, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="fosterChild", age=12, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 35, has_income=True)
+        self.add_income(head, 8000, frequency="monthly")
+        self.add_member(screen, "spouse", 34)
+        self.add_member(screen, "fosterChild", 12)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
     def test_two_school_age_children_value_scales(self):
         screen = self._screen_base(zipcode="99201", county="Spokane County", household_size=6)
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=2400, frequency="monthly"
-        )
-        spouse = HouseholdMember.objects.create(screen=screen, relationship="spouse", age=38, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=spouse, type="wages", amount=800, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=15, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=11, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=6, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=2, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 40, has_income=True)
+        self.add_income(head, 2400, frequency="monthly")
+        spouse = self.add_member(screen, "spouse", 38, has_income=True)
+        self.add_income(spouse, 800, frequency="monthly")
+        self.add_member(screen, "child", 15)
+        self.add_member(screen, "child", 11)
+        self.add_member(screen, "child", 6)
+        self.add_member(screen, "child", 2)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828 * 3)
 
     def test_mixed_frequency_uses_annual_limit(self):
         screen = self._screen_base(household_size=3)
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=2000, frequency="monthly"
-        )
-        IncomeStream.objects.create(screen=screen, household_member=head, type="wages", amount=500, frequency="yearly")
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=37, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=12, has_income=False)
+        head = self.add_member(screen, "headOfHousehold", 39, has_income=True)
+        self.add_income(head, 2000, frequency="monthly")
+        self.add_income(head, 500, frequency="yearly")
+        self.add_member(screen, "spouse", 37)
+        self.add_member(screen, "child", 12)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         self.assertTrue(calc._income_at_or_below_reduced_cap())
 
     def test_member_eligible_false_for_head(self):
-        calc = self._calc(self._screen_base())
+        calc = self.make_calculator(self._screen_base())
         e = MemberEligibility(HouseholdMember(relationship="headOfHousehold", age=30))
         calc.member_eligible(e)
         self.assertFalse(e.eligible)
 
     def test_grandchild_counts(self):
         screen = self._screen_base(household_size=3)
-        HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=55, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen,
-            household_member=screen.household_members.get(relationship="headOfHousehold"),
-            type="wages",
-            amount=2500,
-            frequency="monthly",
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=54, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="grandChild", age=10, has_income=False)
+        self.add_income(self.add_member(screen, "headOfHousehold", 55, has_income=True), 2500, frequency="monthly")
+        self.add_member(screen, "spouse", 54)
+        self.add_member(screen, "grandChild", 10)
 
-        result = self._calc(screen).calc()
+        result = self.calculate(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)

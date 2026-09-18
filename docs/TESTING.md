@@ -193,6 +193,120 @@ Anything a *failing* test records is discarded on teardown — the cassette is r
 
 ---
 
+## Custom (MFB) Calculator Tests
+
+A custom calculator computes locally, so its tests need no cassette and no network — a
+household, a `Program` row, and an assertion. `programs/programs/testing_fixtures/custom_calculator.py`
+supplies the household builders and a base test case, paralleling `pe_integration.py` on
+the PolicyEngine side.
+
+### The base test case
+
+`CustomCalculatorTestCase` creates the white label, the FPL year and the `Program` row in
+`setUp`, so a test states only the household:
+
+```python
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
+from programs.programs.white_labels.co.myprogram.calculator import MyProgram
+
+
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    program_code = "co_my_program"
+    white_label_code = "co"
+    state_code = "CO"
+
+    def test_eligible_household(self):
+        screen = self.make_screen("co", "CO", household_size=2, county="Denver County")
+        add_income(self.add_member(screen), 1_500)
+
+        eligibility = self.calculate(screen)
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(eligibility.value, 1_200)
+```
+
+`calculate()` runs `calc()`, so it raises `DependencyError` when the calculator declares a
+dependency the screen does not supply — pass `missing=("income_amount",)` to assert that a
+program is skipped rather than valued wrongly. It returns the `Eligibility` alone; a few
+older suites define a local `calculate()` returning `(calculator, eligibility)`, so check
+before migrating a file that has its own helper of the same name.
+
+To assert on one step instead of the final result, `make_calculator()` returns the
+calculator without running it — `eligible()` for the household and member rules alone, or a
+program-specific method:
+
+```python
+calculator = self.make_calculator(screen)
+
+self.assertTrue(calculator.eligible().eligible)
+self.assertEqual(calculator.income_limit_125(), 31_000)
+```
+
+### Skipping the program row
+
+`setUpTestData` builds a real `Program` row, because a calculator doing a percent-of-poverty
+test reads `self.program.year`. That row costs a `Translation` per translated field per
+language, so a calculator that never touches `self.program` should opt out:
+
+```python
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    needs_program_row = False        # self.program is a Mock
+```
+
+Most existing custom tests are in this group — they stand up a `Mock()` program today.
+
+### When to use this fixture, and when to mock instead
+
+Two strategies coexist deliberately. Measured over ten identical tests:
+
+| | per test | when |
+| -- | -- | -- |
+| mock the `Screen` outright | ~1ms | the calculator reads a handful of attributes and no related rows |
+| this fixture, `needs_program_row = False` | ~3ms | the calculator walks `household_members`, income streams, or insurance |
+| this fixture with a real `Program` | ~33ms | the calculator reads `program.year` for an FPL or SMI limit |
+
+The cost is the `Program` row, not the fixture: it writes a `Translation` per translated
+field per language. Between the first two rows the difference is single-digit
+milliseconds, so prefer the fixture whenever a test would otherwise hand-assemble a
+`Screen` and its members — a real household that raises the way production raises is
+worth 2ms.
+
+Around 50 test modules mock the `Screen` and never touch the database. Those are correct
+as they stand: their calculators take a few scalars, and rewriting them against the
+database would make them slower without making them stronger. Migrate a file when it is
+already building a DB household by hand, not on principle.
+
+### The builders
+
+| builder | what it makes |
+| -- | -- |
+| `make_screen(white_label_code, state_code, household_size=…, zipcode=…, county=…)` | the household. `household_size` drives FPL and SMI lookups and is **not** derived from the members added afterwards |
+| `add_member(screen, relationship, age, **kwargs)` | a member, with an uninsured `Insurance` record — the relation is non-null, so a calculator reading `member.insurance` raises without it. Pass `birth_year_month` as well when a scenario turns on a birthday rather than a whole-year age |
+| `add_income(member, amount, income_type="wages", frequency="monthly")` | an income stream, stated as the scenario states it — `calc_gross_income` annualizes by frequency |
+| `add_expense(member, amount, expense_type="rent")` | an expense, for programs that net it out of income |
+| `add_insurance(member, medicaid=True, none=False)` | replaces the member's insurance. Name only what the scenario needs |
+| `make_program(white_label_code, name_abbreviated, year)` | the `Program` row. A calculator reading `self.program.year.period` fails on an unsaved one |
+
+### Gating on another program
+
+A calculator that reads another program's result calls `self.program_eligible("co_medicaid")`,
+which raises `DependencyError` when the upstream has not been calculated. Pass the upstream's
+verdict through `calculate()`:
+
+```python
+upstream = Eligibility()
+upstream.condition(True)
+
+eligibility = self.calculate(screen, data={"co_medicaid": upstream})
+```
+
+Omitting it asserts the other half of the contract — that an uncalculated upstream raises
+rather than resolving to "not eligible."
+
+---
+
 ## Cassette Management
 
 ### Cassette Storage

@@ -1,14 +1,9 @@
-from unittest.mock import Mock
-
-from django.test import TestCase
-
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.wa.wsos_bas.calculator import WaWsosBas
-from programs.util import Dependencies
-from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
-from programs.framework.pe_dependencies import member
+from screener.models import HouseholdMember, IncomeStream
 
 
-class TestWaWsosBas(TestCase):
+class TestWaWsosBas(CustomCalculatorTestCase):
     """
     Unit tests for the WA WSOS Baccalaureate (BaS) Scholarship calculator.
 
@@ -23,43 +18,22 @@ class TestWaWsosBas(TestCase):
     and 3 against the live screener layer.
     """
 
-    def setUp(self):
-        """Create a WA white label and a mock Program for each test."""
-        self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
-        self.mock_program = Mock()
+    calculator_class = WaWsosBas
+    program_code = "wa_wsos_bas"
+    white_label_code = "wa"
+    state_code = "WA"
 
     def _make_screen(self, household_size=1, zipcode="98101", county="King"):
-        """Build an in-memory `Screen` for the WA white label with the given size."""
-        return Screen.objects.create(
-            white_label=self.white_label,
-            agree_to_tos=True,
-            zipcode=zipcode,
-            county=county,
-            household_size=household_size,
-            completed=False,
+        return self.make_screen(
+            "wa", "WA", household_size=household_size, zipcode=zipcode, county=county, agree_to_tos=True
         )
 
     def _add_member(self, screen, *, age=20, relationship="headOfHousehold", student=False, monthly_wages=0):
-        """Add a `HouseholdMember` (and optional monthly wages) to the screen."""
-        member = HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
-            student=student,
-        )
+        """Add a member, and wages when the scenario states them."""
+        household_member = self.add_member(screen, relationship, age, student=student)
         if monthly_wages:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type="wages",
-                amount=monthly_wages,
-                frequency="monthly",
-            )
-        return member
-
-    def _calc(self, screen):
-        """Construct a `WaWsosBas` calculator bound to the given screen."""
-        return WaWsosBas(screen, self.mock_program, {}, Dependencies())
+            add_income(household_member, monthly_wages)
+        return household_member
 
     # --- Class wiring --------------------------------------------------------
 
@@ -83,7 +57,7 @@ class TestWaWsosBas(TestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=2000)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -96,7 +70,7 @@ class TestWaWsosBas(TestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=8000)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -112,7 +86,7 @@ class TestWaWsosBas(TestCase):
         self._add_member(screen, relationship="child", age=17, student=True)
         self._add_member(screen, relationship="child", age=13, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -127,7 +101,7 @@ class TestWaWsosBas(TestCase):
         self._add_member(screen, relationship="child", age=17, student=True)
         self._add_member(screen, relationship="child", age=13, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -143,7 +117,7 @@ class TestWaWsosBas(TestCase):
         self._add_member(screen, relationship="spouse", age=30, student=False)
         self._add_member(screen, relationship="child", age=4, student=False)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -158,7 +132,7 @@ class TestWaWsosBas(TestCase):
         screen = self._make_screen()
         self._add_member(screen, age=46, student=False, monthly_wages=2000)
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -184,7 +158,7 @@ class TestWaWsosBas(TestCase):
             frequency="monthly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -197,7 +171,7 @@ class TestWaWsosBas(TestCase):
         screen = self._make_screen()
         self._add_member(screen, age=18, student=True)  # no income stream
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -214,7 +188,7 @@ class TestWaWsosBas(TestCase):
             frequency="yearly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertTrue(eligibility.eligible)
 
@@ -230,7 +204,7 @@ class TestWaWsosBas(TestCase):
             frequency="yearly",
         )
 
-        eligibility = self._calc(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
 
@@ -241,7 +215,7 @@ class TestWaWsosBas(TestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=2000)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -252,7 +226,7 @@ class TestWaWsosBas(TestCase):
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=8000)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -268,7 +242,7 @@ class TestWaWsosBas(TestCase):
         self._add_member(screen, student=True, monthly_wages=2000)
         self._add_member(screen, relationship="spouse", age=21, student=True)
 
-        calc = self._calc(screen)
+        calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         calc.value(eligibility)
 
@@ -282,7 +256,7 @@ class TestWaWsosBas(TestCase):
         """All 6 published table sizes return the documented 125% MFI value verbatim."""
         for size, expected in WaWsosBas.MFI_125_BY_SIZE.items():
             screen = self._make_screen(household_size=size)
-            self.assertEqual(self._calc(screen).income_limit_125(), expected)
+            self.assertEqual(self.make_calculator(screen).income_limit_125(), expected)
 
     def test_income_limit_extension_above_table(self):
         """
@@ -292,7 +266,7 @@ class TestWaWsosBas(TestCase):
         """
         screen = self._make_screen(household_size=8)
         expected = WaWsosBas.MFI_125_BY_SIZE[6] + 2 * WaWsosBas.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
-        self.assertEqual(self._calc(screen).income_limit_125(), expected)
+        self.assertEqual(self.make_calculator(screen).income_limit_125(), expected)
 
     def test_mfi_table_values_match_spec(self):
         """
