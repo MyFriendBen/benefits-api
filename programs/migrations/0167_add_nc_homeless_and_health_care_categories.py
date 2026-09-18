@@ -4,10 +4,13 @@
 #
 # 0165 already created the two UrgentNeedType ("Type") rows used for admin
 # categorization, but that field is separate from the one that actually drives
-# results-page matching: screener/views.py's urgent_need_results() filters
-# UrgentNeed.type_short__name against a fixed set of strings, and neither of
-# the two new strings ("homeless services", "free low cost medical care")
-# existed as UrgentNeedCategory rows anywhere in the system.
+# results-page matching: the resource selection filters UrgentNeed.type_short__name
+# against a fixed set of strings, and neither of the two new strings ("homeless
+# services", "free low cost medical care") existed as UrgentNeedCategory rows
+# anywhere in the system. (That selection lived in screener/views.py's
+# urgent_need_results() when this migration was written; it now lives in
+# screener/urgent_needs.py, keyed on NEED_CATEGORY_FIELDS, and is shared with the
+# assistant's context builder.)
 #
 # UrgentNeedCategory has no white_label field (it's a shared, platform-wide
 # list), so creating new rows through the admin is restricted to superusers.

@@ -1,0 +1,70 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "child_care",
+    "name": "Child Care and Youth",
+    "icon": "child_care"
+  },
+  "program": {
+    "name_abbreviated": "ks_ccap",
+    "base_program": "ccap",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Child Care Assistance Program",
+    "description": "Child Care Assistance pays for part of the cost of child care. The Kansas Department for Children and Families (DCF) sets a benefit amount for each child, and you pay a co-pay. You must choose a child care provider enrolled with DCF. Benefits are issued on the first day of every month on a Kansas Benefits Card, which works like a debit card.\n\nTo qualify you need a child under 13 who needs care, or a child aged 13 to 18 who cannot care for themselves. Every parent or caretaker on your child care case must work an average of at least 20 hours a week and earn at least the federal minimum wage. Exceptions include an adult who cannot work that much because of a documented health condition, teen parents finishing high school or a GED, Job Corps participants, and families getting TANF. Child care can also be approved if you are in school or job training or facing a crisis. Your income must be at or under the limit for your family size, and your family cannot have more than $10,000 in countable assets unless you get TANF.\n\nThe child who receives the care must be a U.S. citizen or a qualifying immigrant. Your own immigration status does not affect whether your child qualifies. When child care funds are limited, DCF serves families in priority order.\n\nThe amount shown is an estimate from MyFriendBen, not an amount DCF has promised you. Your actual amount depends on your family size and income, the provider you choose, your child's age, your county, and the hours of care DCF approves. Apply online at any time through the DCF Self-Service Portal.",
+    "description_short": "Help paying for child care",
+    "website_description": "Help paying for child care for Kansas families who are working, in school, or in training",
+    "learn_more_link": "https://www.dcf.ks.gov/services/ees/Pages/Child_Care/ChildCareSubsidy.aspx",
+    "apply_button_link": "https://www.dcfapp.kees.ks.gov/",
+    "apply_button_description": "Apply for Benefits",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "active": false,
+    "low_confidence": false,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_earned_income"
+    },
+    {
+      "external_name": "ks_adult_identity_proof",
+      "text": "Proof of identity for every adult in the home (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_child_citizenship_and_birth_proof",
+      "text": "Proof of citizenship or immigration status and date of birth for each child who needs care (ex: birth certificate, passport, immigration document)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_assets"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_dcf_child_care",
+      "name": "Kansas DCF — Child Care Assistance",
+      "email": "DCF.CustomerService@ks.gov",
+      "phone_number": "+18883694777",
+      "description": "DCF Service Centers answer questions about Child Care Assistance, help you complete the application, and can send you a paper application. Call toll-free or visit your local Service Center.",
+      "assistance_link": "https://www.dcf.ks.gov/services/ees/Pages/Child_Care/ChildCareSubsidy.aspx"
+    }
+  ],
+  "warning_messages": []
+}

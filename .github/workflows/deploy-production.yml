@@ -2,14 +2,16 @@ name: Deploy to Production
 
 on:
   release:
-    types: [created, published]
+    types: [published]
 
 jobs:
-  test:
-    name: Run Tests with Real API Calls
+  verify:
+    name: Verify Release Tag
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: github.event.release.draft == true
+
+    outputs:
+      sha: ${{ steps.resolve_sha.outputs.sha }}
 
     env:
       SECRET_KEY: django-insecure-test-key-ci-github-actions-only
@@ -20,8 +22,11 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       ENABLE_GOOGLE_INTEGRATIONS: false
-      VCR_MODE: all
-      HUD_API_TOKEN: ${{ secrets.HUD_API_TOKEN }}
+      # Mirrors deploy-staging. Without this, settings.py takes the LocMemCache
+      # branch, TestRedisBackend skips itself, and the whole django_redis path
+      # goes untested -- the gap that let a Redis config error reach staging
+      # with a green build.
+      REDIS_URL: redis://localhost:6379/0
 
     services:
       postgres:
@@ -38,21 +43,80 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
+          # No later step performs an authenticated Git operation, and this job
+          # runs repository test code, so don't leave a usable token behind.
+          persist-credentials: false
 
-      - name: Run tests with real API calls
+      # Pin the commit the tag resolved to and hand it to `deploy`. Tags are
+      # mutable: resolving `tag_name` independently in both jobs would let a tag
+      # moved mid-run ship a commit that was never tested.
+      - name: Resolve release commit
+        id: resolve_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Fail loudly rather than quietly thinning the suite. Wiring the input
+      # does not prove the secret has a value, and pytest_collection_modifyitems
+      # skips the HUD integration tests when it is empty -- so an unset secret
+      # would deploy on a green run with that coverage silently missing.
+      # Checked here rather than in the shared run-tests action, where fork PRs
+      # are meant to pass with no secrets at all.
+      - name: Require a HUD API token
+        env:
+          HUD_API_TOKEN: ${{ secrets.HUD_API_TOKEN }}
+        run: |
+          if [ -z "$HUD_API_TOKEN" ]; then
+            echo "::error::HUD_API_TOKEN is empty - the HUD integration tests would be skipped."
+            exit 1
+          fi
+
+      # Django system checks and migrations (the build equivalent -- a config or
+      # import error otherwise surfaces only at the push to Heroku) plus the full
+      # test suite, run against the tag being shipped rather than the branch the
+      # PR gate saw.
+      - name: Run tests
         uses: ./.github/actions/run-tests
         with:
-          vcr-mode: all
+          # Strict playback, same as PR validation and staging. Recording live
+          # here would 422 rather than gate anything: the private PolicyEngine
+          # API serves only `current` and `frontier`, and most cassettes are
+          # pinned to versions it has since rolled past.
+          vcr-mode: none
           upload-coverage: 'false'
+          # Guarded as non-empty above, since an absent token silently skips
+          # the HUD integration tests rather than failing.
           hud-api-token: ${{ secrets.HUD_API_TOKEN }}
 
+      - name: Send verification failure notification to Slack
+        if: failure()
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          status: failure
+          environment: production
+          release-tag: ${{ github.event.release.tag_name }}
+          release-url: ${{ github.event.release.html_url }}
+
   deploy:
-    if: github.event.action == 'published'
+    needs: [verify]
+    # `published` fires for prereleases too. Keeping them off production also
+    # makes a throwaway prerelease a safe way to exercise `verify` -- it runs,
+    # this job skips, production is untouched.
+    if: github.event.release.prerelease == false
     name: Deploy Backend to Heroku Production
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -61,10 +125,11 @@ jobs:
       url: https://cobenefits-api.herokuapp.com
 
     steps:
-      - name: Checkout release tag
+      # The exact commit `verify` tested, not the tag it came from.
+      - name: Checkout verified commit
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ needs.verify.outputs.sha }}
 
       - name: Deploy to Heroku
         uses: ./.github/actions/deploy-to-heroku

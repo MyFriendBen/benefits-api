@@ -74,7 +74,12 @@ class PeBucketTestBase(TestCase):
             household_size=1,
             completed=False,
         )
-        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        # Explicit pk. The conflict message addresses the slot as ``people/<member id>``,
+        # and an auto-assigned id eventually lands on one containing "40" or "41" -- 407, say
+        # -- which makes the redaction assertion below fail on a sequence value rather than
+        # on anything the message actually leaked. Sequences are not reset between tests, so
+        # which id this gets depends on how many rows the rest of the suite created first.
+        self.head = HouseholdMember.objects.create(id=9, screen=self.screen, relationship="headOfHousehold", age=40)
         self.head_id = str(self.head.id)
 
     def calculator(self, inputs, period=PERIOD):
