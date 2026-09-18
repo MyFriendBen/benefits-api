@@ -7,7 +7,7 @@
     },
     "program": {
         "name_abbreviated": "tx_aca",
-        "year": "2025",
+        "year": "2026",
         "legal_status_required": ["citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
         "name": "ACA Premium Tax Credit",
         "description_short": "Health insurance marketplace and premium tax credit.",
