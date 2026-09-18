@@ -20,6 +20,7 @@ from typing import Iterable, Optional
 
 from django.conf import settings
 from parler.models import TranslationDoesNotExist
+from sentry_sdk import capture_message
 
 from programs.models import UrgentNeed
 from programs.urgent_needs import urgent_need_functions
@@ -27,6 +28,32 @@ from programs.urgent_needs.base import UrgentNeedFunction
 from programs.util import Dependencies
 
 from .models import Screen
+
+# Config-level conditions reported once per process. Same reasoning as
+# `screener.assistant._REPORTED`: an unregistered calculator is a property of the admin
+# configuration, not of the request, but it is evaluated inside a per-resource loop on
+# every results page and every assistant start. Reporting per request would bury the
+# actionable signal under its own volume. Deduping in-process rather than globally means
+# a fresh dyno re-reports, so the signal survives a deploy.
+#
+# Defined here rather than imported from `screener.assistant`: assistant imports THIS
+# module, so the reverse import would be a startup cycle.
+_REPORTED: set[str] = set()
+
+
+def _report_missing_calculator(need, function_name: str) -> None:
+    """Report an `UrgentNeedFunction` row naming a calculator that no longer exists."""
+    key = f"urgent-need-calculator:{need.pk}:{function_name}"
+    if key in _REPORTED:
+        return
+    _REPORTED.add(key)
+    capture_message(
+        f"Urgent need {need.pk} names unregistered calculator {function_name!r}; "
+        f"the resource is hidden from both the results page and the assistant "
+        f"until the row is corrected.",
+        level="warning",
+    )
+
 
 # `UrgentNeedCategory.name` -> the `Screen` field that says the household asked to see
 # that category. The category names are DB rows written by admins, and the fields are
@@ -133,9 +160,33 @@ def eligible_urgent_needs(
 
     eligible = []
     for need in resources:
-        calculators = [urgent_need_functions[f.name] for f in need.functions.all()]
-        if not calculators:
+        # `.get()`, not `[...]`: `UrgentNeedFunction` rows are admin-editable and outlive
+        # the classes they name, so a renamed or removed calculator is a config typo, not
+        # an impossible state. A bare subscript turned that typo into a KeyError on every
+        # results page AND every assistant start for the whole white label.
+        #
+        # Same shape as `screener.assistant._warning_messages`, which skips an
+        # unregistered calculator and reports it once rather than failing the request.
+        # Skipping is the safe direction here too: the resource drops out of BOTH
+        # consumers together, so the page and Benji stay in agreement, which is the
+        # invariant this module exists to hold.
+        declared = list(need.functions.all())
+        if not declared:
+            # No declared gates means "always show", which is a real configuration and
+            # must stay distinct from "gates we could not resolve" below.
             calculators = [UrgentNeedFunction]
+        else:
+            calculators = [urgent_need_functions.get(f.name) for f in declared]
+            if any(c is None for c in calculators):
+                # This resource declared a gate we cannot evaluate. Drop it rather than
+                # falling back to the permissive default: the alternative shows a
+                # resource whose eligibility condition was never checked, which for a
+                # gated resource ("show SNAP application help if they're SNAP-eligible")
+                # is a wrong answer rather than a generous one.
+                for f, c in zip(declared, calculators):
+                    if c is None:
+                        _report_missing_calculator(need, f.name)
+                continue
 
         if all(Calculator(screen, need, missing_dependencies, program_data).calc() for Calculator in calculators):
             eligible.append(need)

@@ -56,7 +56,11 @@ _REPORTED: set[str] = set()
 # service's SERVICE_AUTH_TOKEN). Both come from the environment.
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://localhost:8080")
 AI_SERVICE_TOKEN = os.getenv("AI_SERVICE_TOKEN", "")
-AI_SERVICE_TIMEOUT = 60
+# 25s, not 60: Heroku's router terminates any request at 30 seconds and nothing in this
+# path streams, so a 60s budget was unreachable — the browser got an H12 HTML page rather
+# than the JSON error shape the widget handles, while this worker stayed blocked on a
+# request no one was waiting for. 25 leaves room to return our own 502 first.
+AI_SERVICE_TIMEOUT = 25
 
 # Upper bound on the client-supplied visible-programs list. Comfortably above the
 # largest white label's active program count; exists to bound untrusted input.
@@ -1264,6 +1268,16 @@ class AssistantMessageView(views.APIView):
 
         body = _body(request)
         payload = {
+            # `conversation_id` comes from the URL and was, on its own, enough to
+            # continue ANY conversation from ANY screen: nothing tied it to the screen
+            # the caller addressed. Because the benbot check above reads the CALLER's
+            # white label, that also meant a white label with the flag off could still
+            # have its conversations written and read through one that had it on —
+            # defeating both a partial rollout and a per-white-label rollback.
+            #
+            # ai-service compares this against the conversation's stored screen_uuid and
+            # answers 404 on a mismatch, so the pairing is enforced where the row lives.
+            "screen_uuid": str(screen.uuid),
             "text": body.get("text", ""),
             "client_message_id": body.get("client_message_id"),
         }
