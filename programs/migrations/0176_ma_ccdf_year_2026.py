@@ -7,25 +7,42 @@ NEW_YEAR = "2026"
 OLD_YEAR = "2025"
 
 
-def _ma_ccdf_on(apps, year):
-    """The `ma_ccdf` rows sitting on `year`.
+def _ma_ccdf_on(apps, period):
+    """The `ma_ccdf` rows running at `period`.
 
-    Each direction selects on the year it is moving *from*, so the two undo each other
-    and a row that has since been moved somewhere else, or left null, is not touched.
+    Selects on `period`, not `year`. `period` is what `pe_period` reads, and the two are
+    allowed to differ: `year` is unique while `period` is free text, and `from_model_data`
+    rewrites the `period` of an existing `year` row.
     """
     Program = apps.get_model("programs", "Program")
 
-    return Program.objects.filter(name_abbreviated="ma_ccdf", year__year=year)
+    return Program.objects.filter(name_abbreviated="ma_ccdf", year__period=period)
 
 
-def _fpl(apps, year):
-    """The FederalPoveryLimit row for `year`, or None if it has not been imported."""
+def _ma_ccdf_off(apps, period):
+    """The `ma_ccdf` rows with a period set that is not `period`.
+
+    The forward direction selects on this rather than on `OLD_YEAR`, so a row left on
+    2023 or 2024 moves too -- every period before 2026 applies the 50% limit, not just
+    2025. A null `year` is left alone: `pe_period` raises on it, so it cannot silently
+    apply the wrong limit.
+    """
+    Program = apps.get_model("programs", "Program")
+
+    return Program.objects.filter(name_abbreviated="ma_ccdf", year__isnull=False).exclude(
+        year__period=period
+    )
+
+
+def _fpl(apps, period):
+    """The FederalPoveryLimit row running at `period`, or None if it has not been imported.
+
+    Requires `year == period`, which is what `import_program_config` accepts, so the
+    migration cannot leave the program on a row a later config import would reject.
+    """
     FederalPoveryLimit = apps.get_model("programs", "FederalPoveryLimit")
 
-    try:
-        return FederalPoveryLimit.objects.get(year=year, period=year)
-    except FederalPoveryLimit.DoesNotExist:
-        return None
+    return FederalPoveryLimit.objects.filter(year=period, period=period).first()
 
 
 def set_ma_ccdf_year_2026(apps, schema_editor):
@@ -44,21 +61,21 @@ def set_ma_ccdf_year_2026(apps, schema_editor):
     `year` is set through the admin -- so the bump ships here rather than as an import that
     could lag the deploy.
 
-    Fails the deploy if the program is on 2025 and the 2026 row is missing. Landing the
-    calculator while the program still reads the 2025 period is the one outcome worth
+    Fails the deploy if the program is on an earlier period and the 2026 row is missing.
+    Landing the calculator while the program still reads an earlier period is the one worth
     stopping for: it is silent, and it applies the 50% limit to every Massachusetts
     family screening for childcare. A database that has never imported a config has
     neither the program nor any FederalPoveryLimit row, so there is nothing to move and
     nothing to raise about -- `migrate` on a fresh checkout is unaffected.
     """
-    programs = _ma_ccdf_on(apps, OLD_YEAR)
+    programs = _ma_ccdf_off(apps, NEW_YEAR)
     if not programs.exists():
         return
 
     fpl = _fpl(apps, NEW_YEAR)
     if fpl is None:
         raise RuntimeError(
-            f"ma_ccdf is on the {OLD_YEAR} period and no FederalPoveryLimit row exists for "
+            f"ma_ccdf is on a period before {NEW_YEAR} and no FederalPoveryLimit row exists for "
             f"{NEW_YEAR}. Import the {NEW_YEAR} config first: leaving the program on {OLD_YEAR} "
             "applies CCFA's 50%-of-SMI new-applicant limit instead of 85%."
         )
