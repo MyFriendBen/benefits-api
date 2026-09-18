@@ -62,10 +62,16 @@ class ACASubsidiesNC(ProgramCalculator):
         Carolina shows no ACA estimate at all.
         """
         configured = self.program.year
+        if configured is None:
+            # Distinct from an unreadable period: there is no configured coverage year to
+            # lag from, so there is nothing to fall back to. Raising names the misconfigured
+            # program, where letting None reach get_limit() would surface as an AttributeError
+            # several frames away. `tx_hcv` fails the same way for the same reason.
+            raise ValueError("ACASubsidiesNC: no coverage year configured for nc_aca_mfb_version")
 
         try:
             coverage_year = int(configured.period)
-        except (TypeError, ValueError):
+        except ValueError:
             logger.warning(
                 "ACASubsidiesNC: non-numeric FederalPoveryLimit period %r; "
                 "banding against it directly rather than the prior year's guideline.",

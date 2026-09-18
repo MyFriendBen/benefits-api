@@ -125,3 +125,17 @@ class TestACASubsidiesNCFplEdition(SimpleTestCase):
         calc = self._calculator("not-a-year")
 
         self.assertEqual(calc._fpl_edition().period, "not-a-year")
+
+    def test_missing_coverage_year_raises_with_the_program_named(self):
+        """No configured year means nothing to lag from, so there is no sane fallback.
+
+        Raising here names the misconfigured program; letting None through would surface
+        as an AttributeError inside get_limit() several frames away.
+        """
+        calc = ACASubsidiesNC.__new__(ACASubsidiesNC)
+        calc.program = type("Program", (), {"year": None})()
+
+        with self.assertRaises(ValueError) as caught:
+            calc._fpl_edition()
+
+        self.assertIn("nc_aca_mfb_version", str(caught.exception))
