@@ -36,7 +36,13 @@ class SnapMonthTestCase(TestCase):
         )
 
     def calculator(self, period, calculator=CoSnap):
-        fpl, _ = FederalPoveryLimit.objects.get_or_create(year=period, defaults={"period": period})
+        fpl = FederalPoveryLimit.objects.filter(year=period).first()
+        if fpl is None:
+            # bulk_create bypasses FederalPoveryLimit.save()'s validation that `period`
+            # has real FPL data (MFB-564 #5): these tests deliberately use synthetic,
+            # future, or invalid periods to exercise pe_period_month's date logic, not
+            # real eligibility math, so they don't need real FPL data to exist.
+            [fpl] = FederalPoveryLimit.objects.bulk_create([FederalPoveryLimit(year=period, period=period)])
         program = self._programs.get(calculator.program_code)
         if program is None:
             program = Program.objects.filter(
