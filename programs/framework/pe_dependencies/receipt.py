@@ -80,6 +80,16 @@ def member_reports_ssi_amount(member: HouseholdMember) -> bool:
     return member.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0
 
 
+def member_reports_tanf_amount(member: HouseholdMember) -> bool:
+    """
+    Whether this member reports a TANF (``cashAssistance``) dollar amount of their own —
+    the per-member twin of ``member_reports_ssi_amount``, for callers that gate a member's
+    own case on their own reported TANF receipt rather than on household-level receipt
+    (``screen_reports_tanf``).
+    """
+    return member.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
+
+
 def screen_reports_ssi_without_amount(screen: Screen) -> bool:
     """
     Whether the household ticked the SSI tile but reported no SSI amount for anyone.
