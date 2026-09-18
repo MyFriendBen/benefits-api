@@ -12,6 +12,8 @@ is covered here is the selection itself, plus the mapping that ties the category
 admins create to the Screen columns the immediate-needs step writes.
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 
 from programs.models import UrgentNeedCategory
@@ -122,16 +124,45 @@ class EligibleUrgentNeedsTests(TestCase):
 
         self.assertEqual(self.names(), [])
 
-    def test_unknown_calculator_name_raises_rather_than_silently_dropping(self):
+    def test_unknown_calculator_name_drops_the_resource_and_reports_it(self):
         """A `UrgentNeedFunction` row naming a calculator that no longer exists is a
-        config error, and `urgent_need_functions[...]` has always raised on it. Pinned
-        so the extraction didn't quietly turn it into a missing resource — that failure
-        would show up as an empty tab for real households and nothing in Sentry."""
+        config error. It used to raise `KeyError`, which was pinned here on the grounds
+        that silently dropping the resource would surface as an empty tab "and nothing
+        in Sentry".
+
+        The reporting is now the thing that carries that concern, so the failure mode no
+        longer has to. Raising took down the whole Additional Resources tab AND every
+        assistant start for the entire white label over one stale admin row; dropping the
+        single affected resource keeps the two consumers in agreement — which is the
+        invariant this module exists to hold — and `_report_missing_calculator` makes the
+        typo visible. Same shape as `screener.assistant._warning_messages`.
+        """
         need = seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
         need.functions.create(name="no_such_calculator")
 
-        with self.assertRaises(KeyError):
-            eligible_urgent_needs(self.screen, [])
+        with patch("screener.urgent_needs.capture_message") as capture:
+            self.assertEqual(self.names(), [])
+
+        capture.assert_called_once()
+        message = capture.call_args.args[0]
+        self.assertIn("no_such_calculator", message)
+        self.assertIn(str(need.pk), message)
+
+    def test_a_broken_calculator_does_not_take_the_other_resources_with_it(self):
+        """The reason dropping beats raising: one stale row is not an outage."""
+        broken = seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
+        broken.functions.create(name="no_such_calculator")
+        seed_urgent_need(self.white_label, "hot_meals", category="food", name="Hot Meals")
+
+        with patch("screener.urgent_needs.capture_message"):
+            self.assertEqual(self.names(), ["hot_meals"])
+
+    def test_a_resource_with_no_calculators_is_still_always_shown(self):
+        """ "No gates declared" is a real configuration and must stay distinct from
+        "gates we could not resolve" — the fix must not collapse the two."""
+        seed_urgent_need(self.white_label, "hot_meals", category="food", name="Hot Meals")
+
+        self.assertEqual(self.names(), ["hot_meals"])
 
 
 def _resources_for(screen: Screen) -> list[dict]:

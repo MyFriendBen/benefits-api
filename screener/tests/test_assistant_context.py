@@ -1771,3 +1771,59 @@ class AssistantHistoryViewTests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(request.call_args.args[0], "GET")
+
+
+class AssistantMessageViewTests(APITestCase):
+    """The message path has to say WHICH screen it is acting for.
+
+    The URL carries both ids — `/screens/<screen_uuid>/assistant/conversations/
+    <conversation_id>/messages/` — but the view used to forward only the conversation
+    id, and ai-service looks a conversation up by that id alone. Nothing checked the two
+    belonged together, so any screen could continue any conversation.
+
+    That is not only a data-scoping problem. The `benbot` check above reads the CALLER's
+    white label, so a white label with the flag switched off could still have its
+    conversations written and read through one that had it on — which defeats a partial
+    rollout and a per-white-label rollback, the two levers the release plan relies on.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(
+            name="Test State", code="test", state_code="TS", feature_flags={"benbot": True}
+        )
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=2, completed=True
+        )
+        self.url = reverse("assistant-message", args=[self.screen.uuid, "conv-1"])
+
+    def _post(self, body):
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(
+                status_code=200,
+                json=lambda: {"user_message": {}, "assistant_message": {}},
+            )
+            response = self.client.post(self.url, body, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        return request.call_args.kwargs["json"]
+
+    def test_forwards_the_screen_uuid_so_the_pairing_can_be_checked(self):
+        payload = self._post({"text": "hi"})
+
+        self.assertEqual(payload["screen_uuid"], str(self.screen.uuid))
+
+    def test_screen_uuid_comes_from_the_url_not_the_request_body(self):
+        """Taking it from the body would hand the check straight back to the caller."""
+        payload = self._post({"text": "hi", "screen_uuid": str(uuid.uuid4())})
+
+        self.assertEqual(payload["screen_uuid"], str(self.screen.uuid))
+
+    def test_flag_off_still_refuses_before_reaching_ai_service(self):
+        self.white_label.feature_flags = {"benbot": False}
+        self.white_label.save()
+
+        with mock.patch("screener.assistant.requests.request") as request:
+            response = self.client.post(self.url, {"text": "hi"}, format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"]["code"], "assistant_disabled")
+        request.assert_not_called()
