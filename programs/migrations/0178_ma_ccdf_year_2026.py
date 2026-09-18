@@ -20,29 +20,32 @@ def _ma_ccdf_on(apps, period):
 
 
 def _ma_ccdf_off(apps, period):
-    """The `ma_ccdf` rows with a period set that is not `period`.
+    """The `ma_ccdf` rows sitting on a period earlier than `period`.
 
-    The forward direction selects on this rather than on `OLD_YEAR`, so a row left on
-    2023 or 2024 moves too -- every period before 2026 applies the 50% limit, not just
-    2025. A null `year` is left alone: `pe_period` raises on it, so it cannot silently
-    apply the wrong limit.
+    Selects everything staler than the target rather than everything that is not the
+    target, so a row already moved forward is left where it is instead of being pulled
+    back. Periods are the four-digit years `FederalPoveryLimit` indexes its figures by,
+    so they order lexicographically. A null `year` is left alone: `pe_period` raises on
+    it, and cannot silently apply the wrong limit.
     """
     Program = apps.get_model("programs", "Program")
 
-    return Program.objects.filter(name_abbreviated="ma_ccdf", year__isnull=False).exclude(
-        year__period=period
-    )
+    return Program.objects.filter(name_abbreviated="ma_ccdf", year__period__lt=period)
 
 
 def _fpl(apps, period):
     """The FederalPoveryLimit row running at `period`, or None if it has not been imported.
 
-    Requires `year == period`, which is what `import_program_config` accepts, so the
-    migration cannot leave the program on a row a later config import would reject.
+    Matches on `period`, since that is what the program will read. Prefers the row whose
+    `year` label agrees -- the one every config import creates -- but takes any row at the
+    right period rather than failing a deploy over a label, ordering so the choice is
+    stable when more than one exists.
     """
     FederalPoveryLimit = apps.get_model("programs", "FederalPoveryLimit")
 
-    return FederalPoveryLimit.objects.filter(year=period, period=period).first()
+    rows = FederalPoveryLimit.objects.filter(period=period)
+
+    return rows.filter(year=period).first() or rows.order_by("year").first()
 
 
 def set_ma_ccdf_year_2026(apps, schema_editor):
@@ -99,7 +102,7 @@ def revert_ma_ccdf_year(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0175_ks_lieap_on_has_benefits_step"),
+        ("programs", "0177_create_gap_tracking_programs_with_calculator_flag"),
     ]
     operations = [
         migrations.RunPython(set_ma_ccdf_year_2026, revert_ma_ccdf_year),

@@ -10,9 +10,7 @@ class MaCcdf(PolicyEngineSpmCalulator):
     Massachusetts Child Care Financial Assistance (CCFA).
 
     Reads Massachusetts' own model, ``ma_ccfa_eligible``, rather than the federal CCDF
-    passthrough it replaced. PolicyEngine is retiring the federal CCDF eligibility
-    variables and this was their last consumer here; they also made us assert
-    reason-for-care unconditionally, which the MA model tests for real.
+    passthrough it replaced.
 
     ``program_code`` stays ``ma_ccdf``: it keys the Program row, the ``has_ccdf``
     current-benefit field and every translation. Only the model behind it changed.
