@@ -52,8 +52,7 @@ def set_ma_ccdf_year_2026(apps, schema_editor):
     Massachusetts CCFA reads one of two income limits: 85% of state median income for a
     household already enrolled, and a new-applicant limit that PolicyEngine holds at 50%
     before 2026-01-01 and 85% from it. Screening asks the new-applicant question, so at the
-    2025 period the program applies the 50% limit -- measured, that moves a two-person
-    household's ceiling from $91,139 to $53,611.
+    2025 period the program applies the 50% limit, well under half the ceiling it should.
 
     The federal CCDF variables this program used to read had a single 85% limit at any
     period, so the 2025 period cost nothing while they were in use and costs a large share
