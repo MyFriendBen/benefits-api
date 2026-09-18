@@ -26,7 +26,7 @@ from programs.programs.testing_fixtures.pe_integration import (
     screener_value,
 )
 
-PE_VERSION = "1.821.10"
+PE_VERSION = "2.5.0"
 
 #: The period ``ma_ccdf`` is configured for. It decides which CCFA income limit applies:
 #: PolicyEngine holds the new-applicant limit at 50% of SMI before 2026-01-01 and 85%
@@ -140,13 +140,20 @@ class TestIncomeLimit(MaCcfaTestCase):
         self.assertEqual(screener_value(result), 0)
 
     def test_benefit_income_counts(self):
-        """CCFA counts Social Security; the federal CCDF test this replaced did not.
+        """CCFA counts benefit income; the federal CCDF test this replaced did not.
 
-        ``ccdf_income`` added ``market_income`` alone, so a household living on benefits
-        read as having none. CCFA names its own sources, and this is one of them.
+        The federal gate read ``market_income``, which carried none of the benefit
+        streams, so a household living on them read as having no income at all. CCFA
+        names its own sources and unemployment compensation is one of them.
+
+        Unemployment rather than Social Security on purpose. Both counted when this was
+        written, but PolicyEngine 2.5.0 excludes Social Security from CCFA countable
+        income per EEC policy, so a Social Security household asserts opposite answers
+        either side of that release. Unemployment is counted by both, which keeps this
+        scenario about the federal-to-state widening rather than about a version.
         """
         screen = self.build(2)
-        self.add_parent(screen, wages=96_000, income_type="sSRetirement")
+        self.add_parent(screen, wages=96_000, income_type="unemployment")
         self.add_child(screen, 4)
         result = self.run_ccfa(screen)
         self.assertFalse(result.eligible)
@@ -154,7 +161,12 @@ class TestIncomeLimit(MaCcfaTestCase):
 
 
 class TestAssetLimit(MaCcfaTestCase):
-    """$1,000,000, tested strictly less than."""
+    """$1,000,000, asserted either side rather than on it.
+
+    PolicyEngine 1.824.6 denies a household holding exactly $1,000,000 and 2.5.0 allows
+    it, so the boundary itself answers differently depending on the model version. These
+    two sit above and below it, where every served version agrees.
+    """
 
     screen_id = 7303
 
@@ -166,8 +178,8 @@ class TestAssetLimit(MaCcfaTestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(screener_value(result), 16_572)
 
-    def test_at_the_limit(self):
-        screen = self.build(2, household_assets=1_000_000)
+    def test_just_over_the_limit(self):
+        screen = self.build(2, household_assets=1_000_001)
         self.add_parent(screen)
         self.add_child(screen, 4)
         result = self.run_ccfa(screen)
@@ -248,6 +260,36 @@ class TestActivityTest(MaCcfaTestCase):
         screen = self.build(2)
         self.add_parent(screen, wages=0)
         self.add_child(screen, 4)
+        result = self.run_ccfa(screen)
+        self.assertTrue(result.eligible)
+        self.assertEqual(screener_value(result), 16_572)
+
+
+class TestDependentEarnings(MaCcfaTestCase):
+    """A dependent's earnings do not count toward the income test.
+
+    New in PolicyEngine 2.5.0, per EEC policy; before it a teenager's wages counted like
+    a parent's. This household clears the three-person ceiling on the parent's wages
+    alone and exceeds it once the teenager's are added, so it pins the exclusion itself
+    rather than the ceiling.
+
+    The exclusion does not read the ``is_tax_unit_dependent`` we send -- measured against
+    the private API, PolicyEngine drops the earnings even for a member we report as not a
+    dependent -- so it reaches every household with a working child, not only those our
+    own dependent test claims.
+
+    The teenager is 16 and not disabled, so CCFA cannot be claimed for them and only the
+    four-year-old is priced.
+    """
+
+    screen_id = 7307
+
+    def test_a_working_teenagers_wages_are_excluded(self):
+        screen = self.build(3)
+        self.add_parent(screen, wages=100_000)
+        teen = self.add_child(screen, 16, offset=2)
+        add_income(teen, 40_000, "wages", "yearly")
+        self.add_child(screen, 4, offset=3)
         result = self.run_ccfa(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(screener_value(result), 16_572)

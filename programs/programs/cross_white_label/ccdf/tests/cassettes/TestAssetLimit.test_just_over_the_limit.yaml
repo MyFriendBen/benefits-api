@@ -17,8 +17,8 @@ interactions:
       null}}}, "tax_units": {"main_tax_unit": {"members": ["73031", "73032"]}}, "families":
       {"family": {"members": ["73031", "73032"]}}, "households": {"household": {"members":
       ["73031", "73032"], "state_code": {"2026": "MA"}}}, "spm_units": {"spm_unit":
-      {"members": ["73031", "73032"], "spm_unit_assets": {"2026": 1000000}, "ma_ccfa_eligible":
-      {"2026": null}}}, "marital_units": {}}, "version": "1.821.10"}'
+      {"members": ["73031", "73032"], "spm_unit_assets": {"2026": 1000001}, "ma_ccfa_eligible":
+      {"2026": null}}}, "marital_units": {}}, "version": "2.5.0"}'
     headers:
       Accept:
       - '*/*'
@@ -27,7 +27,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1582'
+      - '1579'
       Content-Type:
       - application/json
       User-Agent:
@@ -54,28 +54,28 @@ interactions:
         true}}}, "tax_units": {"main_tax_unit": {"members": ["73031", "73032"]}},
         "families": {"family": {"members": ["73031", "73032"]}}, "households": {"household":
         {"members": ["73031", "73032"], "state_code": {"2026": "MA"}}}, "spm_units":
-        {"spm_unit": {"members": ["73031", "73032"], "spm_unit_assets": {"2026": 1000000},
+        {"spm_unit": {"members": ["73031", "73032"], "spm_unit_assets": {"2026": 1000001},
         "ma_ccfa_eligible": {"2026": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "1.821.10", "data_version": null, "dataset": null}}'
+        {"model_version": "2.5.0", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '1684'
+      - '1681'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Thu, 10 Sep 2026 23:07:48 GMT
+      - Fri, 18 Sep 2026 20:03:56 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-cc00381243077e22dfc6fddaa67ff3e6-1792b8fdfa278965-00
+      - 00-509d8dae1736e797fb7aa5fc691b4b0c-053e161d8679c29e-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - cc00381243077e22dfc6fddaa67ff3e6
+      - 509d8dae1736e797fb7aa5fc691b4b0c
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -83,9 +83,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - a8be4551-a45e-4a30-bb61-8e77984fba4c
+      - 73912615-30f8-4def-9072-dfac017680b7
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK
