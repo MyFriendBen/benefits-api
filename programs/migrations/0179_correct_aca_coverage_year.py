@@ -90,7 +90,11 @@ def backwards(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0177_create_gap_tracking_programs_with_calculator_flag"),
+        # Sequenced behind the ma_ccdf CCFA migration, which also moves a Program.year
+        # row and is landing first. Two migrations numbered 0178 off the same parent
+        # produce multiple leaf nodes, which fails `migrate` on deploy rather than
+        # conflicting in git -- so this is not something a clean merge would catch.
+        ("programs", "0178_ma_ccdf_year_2026"),
     ]
 
     operations = [
