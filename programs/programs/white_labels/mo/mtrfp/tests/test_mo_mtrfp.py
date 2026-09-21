@@ -63,7 +63,7 @@ class TestMoMtrfpWiring(TestCase):
         self.assertEqual(MoMetroTransitReducedFare.minimum_age, 65)
 
     def test_member_amount_is_annual_pass_differential(self):
-        # $78.00 standard 30-Day Pass less $39.00 reduced, x 12 months
+        # Pinned to spec.md's derivation so a future edit can't change it silently.
         self.assertEqual(MoMetroTransitReducedFare.member_amount, (78 - 39) * 12)
         self.assertEqual(MoMetroTransitReducedFare.member_amount, 468)
 
@@ -178,8 +178,7 @@ class TestMoMtrfpScenarios(TestCase):
         self.assertEqual(eligibility.value, 936)
 
     def test_scenario_13_ssdi_parent_and_child_only_recipient_qualifies(self):
-        """SSDI qualifies its recipient, not the household. Reading it at the
-        household level would report $936.00 — double the real benefit."""
+        """Reading SSDI at the household level would report $936 here."""
         parent = make_member(age=45, ssdi_income=18_000)
         child = make_member(age=8)
         calculator = make_calculator(members=[parent, child])
@@ -212,7 +211,7 @@ class TestMoMtrfpPathwayIsolation(TestCase):
         self.assertFalse(member_is_eligible(calculator, make_member(age=64)))
 
     def test_disability_pathway_has_no_minimum_age(self):
-        """Unlike IL, Metro sets no minimum age for the disability pathway."""
+        """The disability pathway has no minimum age."""
         calculator = make_calculator()
         self.assertTrue(member_is_eligible(calculator, make_member(age=10, disabled=True)))
 
@@ -248,10 +247,8 @@ class TestMoMtrfpPathwayIsolation(TestCase):
 class TestMoMtrfpBenefitReceiptIsPerMember(TestCase):
     """SSDI/SSI qualify only the member who receives them.
 
-    The permit is per person and its qualifying document is the applicant's own
-    award letter, so one member's SSDI must not qualify the rest of the
-    household. Reading `screen.has_base_benefit("ssdi")` would, because
-    `CurrentBenefit` is keyed on (screen, program) with no member FK.
+    Reading `screen.has_base_benefit("ssdi")` would qualify the whole
+    household, because `CurrentBenefit` has no member FK.
     """
 
     def test_ssdi_does_not_qualify_a_child_in_the_same_household(self):
@@ -276,7 +273,7 @@ class TestMoMtrfpBenefitReceiptIsPerMember(TestCase):
         self.assertEqual(eligibility.value, 468)
 
     def test_child_receiving_ssi_qualifies_on_their_own(self):
-        """A child can receive SSI in their own right, which is a valid pathway."""
+        """The per-member rule must not become an age gate."""
         child = make_member(age=8, ssi_income=9_000)
         calculator = make_calculator(members=[child])
 
