@@ -20,7 +20,6 @@ from unittest.mock import Mock, patch
 
 from programs.programs.testing_fixtures.custom_calculator import hud_ami
 
-from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.framework.base import ProgramCalculator
 from programs.programs.white_labels.ks.hcv.calculator import KsHcv
 from screener.models import HouseholdMember

@@ -15,7 +15,6 @@ as birthdays pass.
 from django.test import TestCase
 from unittest.mock import Mock, patch
 
-from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.framework.base import ProgramCalculator
 from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.il.hcv.calculator import IlHcv
@@ -728,11 +727,7 @@ class TestIlHcvNeverRaises(TestCase):
 
     def test_income_lookup_hud_error(self):
         calc = self._calc()
-        with patch.multiple(
-            "programs.programs.white_labels.il.hcv.calculator.hud_client",
-            get_screen_il_ami=Mock(side_effect=HudIncomeClientError("HUD unavailable")),
-            get_screen_payment_standard=Mock(return_value=1_581),
-        ):
+        with hud_ami(IlHcv, unavailable=True, payment_standard=1_581):
             e = calc.calc()
         self.assertFalse(e.eligible)
         self.assertEqual(e.value, 0)
@@ -750,11 +745,7 @@ class TestIlHcvNeverRaises(TestCase):
 
     def test_payment_standard_hud_error_degrades_to_zero(self):
         calc = self._calc()
-        with patch.multiple(
-            "programs.programs.white_labels.il.hcv.calculator.hud_client",
-            get_screen_il_ami=Mock(return_value=CHICAGO_VLI[1]),
-            get_screen_payment_standard=Mock(side_effect=HudIncomeClientError("no FMR")),
-        ):
+        with hud_ami(IlHcv, CHICAGO_VLI[1], payment_standard_unavailable=True):
             e = calc.calc()
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 0)

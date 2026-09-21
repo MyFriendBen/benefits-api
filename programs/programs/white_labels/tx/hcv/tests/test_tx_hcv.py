@@ -293,10 +293,7 @@ class TestTxHcvBenefitValue(TestCase):
 
     def test_hud_error_returns_zero_value(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)], household_size=1)
-        with patch.multiple(
-            "programs.programs.white_labels.tx.hcv.calculator.hud_client",
-            get_screen_payment_standard=Mock(side_effect=HudIncomeClientError("boom")),
-        ):
+        with hud_ami(TxHcv, payment_standard_unavailable=True):
             self.assertEqual(calc.household_value(), 0)
 
     def test_unexpected_error_returns_zero_value(self):
