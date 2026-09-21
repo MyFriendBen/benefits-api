@@ -35,14 +35,9 @@ CHILD_RELATIONSHIPS = frozenset({"child", "stepChild", "fosterChild", "grandChil
 # income-source data gap.
 EXCLUDED_UNEARNED_TYPES = ["cashAssistanceOther", "gifts"]
 
-# The per-member twin of `member_reports_ssi_amount`: whether this member reports a
-# TANF (`cashAssistance`) dollar amount of their own. Local to this calculator since
-# it is the only caller — see spec.md's SSI/TANF removal rule.
+# The income option that carries a member's own reported TANF amount — see spec.md's
+# SSI/TANF removal rule.
 TANF_INCOME_TYPE = "cashAssistance"
-
-
-def _member_reports_tanf_amount(member: HouseholdMember) -> bool:
-    return member.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
 
 
 def rca_max_payment(case_size: int) -> float:
@@ -60,7 +55,7 @@ def _removed_from_case(member: HouseholdMember) -> bool:
     from their own RCA case, taking their income with them. Reported receipt only
     — never eligibility for either program, and never a household-level TANF
     report (spec.md's SSI-pending pathway; see Scenario 19)."""
-    return member_reports_ssi_amount(member) or _member_reports_tanf_amount(member)
+    return member_reports_ssi_amount(member) or member.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
 
 
 def _net_countable_income(member: HouseholdMember) -> float:
