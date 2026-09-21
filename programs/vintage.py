@@ -235,6 +235,22 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         source="ma_ccdf CCFA migration, benefits-api#1767",
     ),
 
+    ("ks", "ks_k40h"): Vintage(
+        edition="2025",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.DEFERRED,
+        # Production has no `year` row at all, which looks like drift and is not. The
+        # calculator is pinned to the 2025 K-40H booklet in four places -- income_limit
+        # 43,389, the whole refund-percentage table, the senior age test, and claim_year's
+        # own fallback -- so the unset row lands it on 2025 consistently with the rest.
+        # Claim year 2025 is what Kansans file during 2026, so that is also the live claim
+        # year today. Setting `year` to 2026 in isolation would be actively wrong: the age
+        # tests would move while the income limit and refund table stayed behind.
+        rule="tax claim year, hardcoded consistently across the calculator; moving it "
+        "requires the 2026 K-40H booklet's income limit and refund table together",
+        source="K.S.A. 79-4501 et seq.; 2025 K-40H booklet",
+    ),
+
     # --- DEFERRED ----------------------------------------------------------------------
     ("cesn", "cesn_care"): Vintage(
         edition="2025",
@@ -390,13 +406,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
         source="",
     ),
-    ("il", "il_hcv"): Vintage(
-        edition="2025",
-        basis=Basis.TABLE_EDITION,
-        status=Status.DEFERRED,
-        rule="the AMI table carries no 2026 edition; rolling forward raises KeyError at calculation time",
-        source="integrations/services/income_limits.py",
-    ),
     ("ks", "ks_ctc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
@@ -431,13 +440,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.DEFERRED,
         rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
         source="",
-    ),
-    ("ma", "ma_cha"): Vintage(
-        edition="2025",
-        basis=Basis.TABLE_EDITION,
-        status=Status.DEFERRED,
-        rule="the AMI table carries no 2026 edition; rolling forward raises KeyError at calculation time",
-        source="integrations/services/income_limits.py",
     ),
     ("ma", "ma_maeitc"): Vintage(
         edition="2024",
@@ -495,13 +497,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
         source="",
     ),
-    ("tx", "tx_hcv"): Vintage(
-        edition="2025",
-        basis=Basis.TABLE_EDITION,
-        status=Status.DEFERRED,
-        rule="the AMI table carries no 2026 edition; rolling forward raises KeyError at calculation time",
-        source="integrations/services/income_limits.py",
-    ),
     ("wa", "wa_ctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
@@ -515,20 +510,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.DEFERRED,
         rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
         source="",
-    ),
-    ("wa", "wa_hcv"): Vintage(
-        edition="2025",
-        basis=Basis.TABLE_EDITION,
-        status=Status.DEFERRED,
-        rule="the AMI table carries no 2026 edition; rolling forward raises KeyError at calculation time",
-        source="integrations/services/income_limits.py",
-    ),
-    ("wa", "wa_seattle_fresh_bucks"): Vintage(
-        edition="2025",
-        basis=Basis.TABLE_EDITION,
-        status=Status.DEFERRED,
-        rule="the AMI table carries no 2026 edition; rolling forward raises KeyError at calculation time",
-        source="integrations/services/income_limits.py",
     ),
     ("wa", "wa_wftc"): Vintage(
         edition="2026",

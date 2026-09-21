@@ -11,7 +11,9 @@ defines, so if the constant stops covering the present the map cannot express a 
 edition and this suite says so in January rather than in a partner's QA session.
 """
 
+import json
 from datetime import date
+from pathlib import Path
 
 from django.test import SimpleTestCase
 
@@ -108,4 +110,48 @@ class TestProgramVintageMap(SimpleTestCase):
             _get_fpl_data(),
             f"_FPL_DEFAULTS has no {current} poverty guideline. Add it (programs/models.py) "
             "before anything can be moved to the current edition.",
+        )
+
+
+class TestConfigJsonMatchesRecordedIntent(SimpleTestCase):
+    """A program config must not pin an edition the map disagrees with.
+
+    This is the half of the guard a unit test can cover. `import_program_config` writes
+    `year` straight from the JSON, so a config pinning a different edition silently reverts
+    whatever the database holds on the next import -- the same shape of regression as the
+    WA/MA public charge URLs, which were fixed in production and then overwritten from the
+    repo. Thirty-five configs currently pin 2025.
+
+    Programs absent from the map are skipped rather than failed: absence means nobody has
+    researched them, which is a gap for the environment audit to report and not a reason to
+    block a release.
+    """
+
+    CONFIG_DIR = Path(__file__).parent / "management" / "commands" / "import_program_config_data" / "data"
+
+    def test_no_config_pins_an_edition_the_map_disagrees_with(self):
+        mismatches = []
+
+        for config_path in sorted(self.CONFIG_DIR.glob("*_initial_config.json")):
+            config = json.loads(config_path.read_text())
+            program = config.get("program", {})
+            year = program.get("year")
+            if year is None:
+                continue
+
+            abbr = config_path.name.removesuffix("_initial_config.json")
+            intents = {key: v for key, v in PROGRAM_VINTAGE.items() if key[1] == abbr}
+            for (white_label, _), intent in intents.items():
+                if str(year) != intent.edition:
+                    mismatches.append(
+                        f"{config_path.name} pins {year!r}, but {white_label}/{abbr} is "
+                        f"recorded as {intent.edition} ({intent.status.value}): {intent.rule}"
+                    )
+
+        self.assertEqual(
+            mismatches,
+            [],
+            "Program configs disagree with programs/vintage.py. Either the config is stale "
+            "and should be repinned, or the edition genuinely changed and the map entry "
+            "needs updating:\n  " + "\n  ".join(mismatches),
         )
