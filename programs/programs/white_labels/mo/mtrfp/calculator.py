@@ -1,4 +1,4 @@
-from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, MemberEligibility
 
 
 class MoMetroTransitReducedFare(ProgramCalculator):
@@ -38,7 +38,3 @@ class MoMetroTransitReducedFare(ProgramCalculator):
         receives_qualifying_benefit = member.calc_gross_income("yearly", self.qualifying_income_types) > 0
 
         e.condition(age_eligible or disability_eligible or has_medicare or receives_qualifying_benefit)
-
-    def household_eligible(self, e: Eligibility):
-        # Every criterion is evaluated per member.
-        pass
