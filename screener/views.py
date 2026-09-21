@@ -281,13 +281,30 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         body = json.loads(request.body.decode())
         screen = Screen.objects.get(uuid=body["screen"])
 
-        message = MessageUser(screen, screen.get_language_code())
+        message = MessageUser(screen, self._message_language(body, screen))
         if "email" in body:
             message.email(body["email"], send_tests=True)
         if "phone" in body:
             message.text(body["phone"], send_tests=True)
 
         return Response({}, status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _message_language(body, screen: Screen) -> str:
+        """The language to compose the results message in.
+
+        Defaults to the language the screener was taken in, which is what every
+        caller relied on before the frontend could ask. An unsupported or
+        unrecognized code falls back to that default instead of erroring: the
+        language only picks which copy to send, and sending the results in the
+        screener's language beats refusing to send them.
+        """
+        requested = str(body.get("language") or "").lower()
+
+        if requested in {code for code, _ in settings.LANGUAGES}:
+            return requested
+
+        return screen.get_language_code()
 
 
 def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
