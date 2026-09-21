@@ -1,7 +1,6 @@
 from typing import ClassVar, Optional
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
-from programs.framework.pe_dependencies.receipt import member_reports_ssi_amount
 from screener.models import HouseholdMember
 
 # A $90 standard work exemption applies once per earning member, then the remaining
@@ -35,8 +34,9 @@ CHILD_RELATIONSHIPS = frozenset({"child", "stepChild", "fosterChild", "grandChil
 # income-source data gap.
 EXCLUDED_UNEARNED_TYPES = ["cashAssistanceOther", "gifts"]
 
-# The income option that carries a member's own reported TANF amount — see spec.md's
-# SSI/TANF removal rule.
+# The income options that carry a member's own reported SSI and TANF amounts — see
+# spec.md's SSI/TANF removal rule. Note the `sSI` casing.
+SSI_INCOME_TYPE = "sSI"
 TANF_INCOME_TYPE = "cashAssistance"
 
 
@@ -55,7 +55,9 @@ def _removed_from_case(member: HouseholdMember) -> bool:
     from their own RCA case, taking their income with them. Reported receipt only
     — never eligibility for either program, and never a household-level TANF
     report (spec.md's SSI-pending pathway; see Scenario 19)."""
-    return member_reports_ssi_amount(member) or member.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
+    reports_ssi = member.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0
+    reports_tanf = member.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
+    return reports_ssi or reports_tanf
 
 
 def _net_countable_income(member: HouseholdMember) -> float:
