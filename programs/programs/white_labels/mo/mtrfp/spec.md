@@ -104,6 +104,7 @@ The 30-Day Pass is the only pass tier with a published reduced price — the One
 [ ] Scenario 10 (Adult Age 35, No Qualifying Category on Any Pathway): User should be **ineligible**
 [ ] Scenario 11 (Mixed Household — Senior and Disabled Adult Qualify; Children Ride Standard Fares): User should be **eligible**
 [ ] Scenario 12 (Multiple Members, Each Qualifying Through a Different Isolated Pathway): User should be **eligible**
+[ ] Scenario 13 (SSDI Parent and a Child — Only the Recipient Qualifies): User should be **eligible**, value $468.00 (not $936.00)
 
 ## Test Scenarios
 
@@ -192,9 +193,11 @@ The 30-Day Pass is the only pass tier with a published reduced price — the One
 **Steps**:
 - **Location**: Enter ZIP code `63101`, Select county `St. Louis City`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Indicate the person does NOT have a disability, Indicate the person does NOT have Medicare, Current benefits: select `Social Security Disability (SSDI)`, Citizenship status: `US Citizen`
+- **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Indicate the person does NOT have a disability, Indicate the person does NOT have Medicare, Has income: Yes — Income category `Government benefits`, type `Social Security Disability (SSDI)`, amount `$1,500` per month, No current benefits selected, Citizenship status: `US Citizen`
 
 **Why this matters**: SSDI recipients are a real, currently-askable pathway that the original spec missed entirely — without this test, a calculator that never checked SSDI would pass every other scenario.
+
+**Note on where SSDI is entered**: as the person's own income stream, not the "Current benefits" checkbox. The permit is issued per person against the applicant's own award letter, so the calculator reads `member.calc_gross_income("yearly", ("sSDisability", "sSI"))`. Household current benefits are keyed on `(screen, program)` with no member link, so they cannot say who receives the benefit — reading them would qualify every member of an SSDI household, including children.
 
 ---
 
@@ -205,9 +208,11 @@ The 30-Day Pass is the only pass tier with a published reduced price — the One
 **Steps**:
 - **Location**: Enter ZIP code `63101`, Select county `St. Louis City`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1988` (age 38), Relationship: `Head of Household`, Indicate the person does NOT have a disability, Indicate the person does NOT have Medicare, Current benefits: select `Supplemental Security Income (SSI)`, Citizenship status: `US Citizen`
+- **Person 1**: Birth month/year: `March 1988` (age 38), Relationship: `Head of Household`, Indicate the person does NOT have a disability, Indicate the person does NOT have Medicare, Has income: Yes — Income category `Government benefits`, type `Supplemental Security Income (SSI)`, amount `$900` per month, No current benefits selected, Citizenship status: `US Citizen`
 
 **Why this matters**: Same rationale as Scenario 7 — SSI is a distinct, currently-askable pathway that needs its own dedicated test rather than being lumped in with the general disability check.
+
+**Note on where SSI is entered**: as the person's own income stream, for the same reason as Scenario 7.
 
 ---
 
@@ -265,6 +270,20 @@ The 30-Day Pass is the only pass tier with a published reduced price — the One
 - **Person 3**: Relationship: `Other related`, Birth month/year: `November 1984` (age 41), Has disability: `Yes`, Has Medicare: `No`, Current benefits: none selected, Has income: `Yes`, Income: none from disability-linked sources, Insurance: `None`, Citizenship: `US Citizen` — qualifies solely via the disability pathway
 
 **Why this matters**: The original version of this scenario gave every person Medicare and gave Person 3 SSDI on top of a disability flag — meaning a broken Medicare check or a broken SSDI check could have gone undetected because age or disability quietly covered for it. This version isolates each pathway so it actually tests what it claims to.
+
+---
+
+### Scenario 13: SSDI Parent and a Child — Only the Recipient Qualifies
+**What we're checking**: SSDI qualifies the member who receives it, not the household. A child in an SSDI household has no pathway of their own and must not be counted.
+**Expected**: Eligible, value: $468.00/year (1 eligible member — Person 1 only)
+
+**Steps**:
+- **Location**: Enter ZIP code `63101`, Select county `St. Louis City`
+- **Household**: Number of people: `2`
+- **Person 1**: Birth month/year: `March 1981` (age 45), Relationship: `Head of Household`, Has a disability: No, Has Medicare: No, Has income: Yes — Income category `Government benefits`, type `Social Security Disability (SSDI)`, amount `$1,500` per month, Citizenship: `US Citizen`
+- **Person 2**: Birth month/year: `January 2018` (age 8), Relationship: `Child`, Has a disability: No, Has Medicare: No, No income, Citizenship: `US Citizen`
+
+**Why this matters**: Metro issues the permit per person against the applicant's own award letter. Reading SSDI at the household level would qualify the child too and report $936.00 — double the real benefit. This is the regression guard for that.
 
 ## Program Configuration
 

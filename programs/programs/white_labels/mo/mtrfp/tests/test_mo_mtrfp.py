@@ -177,6 +177,18 @@ class TestMoMtrfpScenarios(TestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, 936)
 
+    def test_scenario_13_ssdi_parent_and_child_only_recipient_qualifies(self):
+        """SSDI qualifies its recipient, not the household. Reading it at the
+        household level would report $936.00 — double the real benefit."""
+        parent = make_member(age=45, ssdi_income=18_000)
+        child = make_member(age=8)
+        calculator = make_calculator(members=[parent, child])
+
+        eligibility = calculator.calc()
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(eligibility.value, 468)
+
     def test_scenario_12_three_members_isolated_pathways(self):
         """Each member qualifies through exactly one pathway, so a broken branch
         cannot be masked by another branch covering for it."""
