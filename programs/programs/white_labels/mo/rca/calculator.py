@@ -1,38 +1,45 @@
 from typing import ClassVar, Optional
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
-from programs.framework.pe_dependencies.receipt import (
-    member_reports_ssi_amount,
-    member_reports_tanf_amount,
-)
+from programs.framework.pe_dependencies.receipt import member_reports_ssi_amount
 from screener.models import HouseholdMember
 
-# Missouri Refugee Program State Plan FY2024, p. 27-28: a $90 standard work exemption
-# applies once per earning member, then the remaining earnings are subject to a
-# three-fourths disregard, so only a quarter of post-exemption earnings counts.
+# A $90 standard work exemption applies once per earning member, then the remaining
+# earnings are subject to a three-fourths disregard, so only a quarter of
+# post-exemption earnings counts. See spec.md Benefit Value for the source.
 WORK_EXEMPTION = 90
 EARNED_DISREGARD = 0.75
 COUNTABLE_EARNED_FRACTION = 1 - EARNED_DISREGARD
 
-# 91 FR 43107-43108: the ORR eligibility period is 8 months for eligibility dates on
-# or after 2026-01-01. RCA is paid monthly but MFB stores one lump-sum figure, so the
-# stored value is the monthly award for the full period a household can still receive.
+# The ORR eligibility period is 8 months for eligibility dates on or after 2026-01-01.
+# RCA is paid monthly but MFB stores one lump-sum figure, so the stored value is the
+# monthly award for the full period a household can still receive. See spec.md Data
+# Gap 1 and Benefit Value for the source.
 ELIGIBILITY_PERIOD_MONTHS = 8
 
-# Missouri Refugee Program State Plan FY2024, p. 28: the RCA Maximum Payment, tabulated
-# for sizes 1-5 only. Sizes above 5 add $113 per additional member (86 FR 54466).
+# The RCA Maximum Payment, tabulated for sizes 1-5 only. Sizes above 5 add $113 per
+# additional member. See spec.md Benefit Value for the source.
 RCA_MAX_PAYMENT = {1: 537, 2: 726, 3: 915, 4: 1104, 5: 1217}
 ADDITIONAL_MEMBER_AMOUNT = 113
 LARGEST_TABULATED_SIZE = max(RCA_MAX_PAYMENT)
 
-# ORR-PL-21-04 § I.A: an adult child (18+) of a parent in the case forms a separate,
-# single-member RCA case. These four relationship values are MFB's mapping onto the
-# household's `child`-type relationships (spec.md criterion 6), not an ORR enumeration.
+# An adult child (18+) of a parent in the case forms a separate, single-member RCA
+# case. These four relationship values are MFB's mapping onto the household's
+# `child`-type relationships (spec.md criterion 6), not an ORR enumeration.
 CHILD_RELATIONSHIPS = frozenset({"child", "stepChild", "fosterChild", "grandChild"})
 
 # Data Gap 5: a proxy for cash grants MFB cannot otherwise identify (e.g. the Program
 # of Initial Resettlement) — excluded from unearned income, over-inclusively.
 EXCLUDED_UNEARNED_TYPES = ["cashAssistanceOther", "gifts"]
+
+# The per-member twin of `member_reports_ssi_amount`: whether this member reports a
+# TANF (`cashAssistance`) dollar amount of their own. Local to this calculator since
+# it is the only caller — see spec.md criterion 2.
+TANF_INCOME_TYPE = "cashAssistance"
+
+
+def _member_reports_tanf_amount(member: HouseholdMember) -> bool:
+    return member.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
 
 
 def rca_max_payment(case_size: int) -> float:
@@ -50,7 +57,7 @@ def _removed_from_case(member: HouseholdMember) -> bool:
     removed from their own RCA case, taking their income with them. Reported receipt
     only — never eligibility for either program (spec.md criterion 3), and never a
     household-level TANF report (Acceptance Criterion 6, Scenario 19)."""
-    return member_reports_ssi_amount(member) or member_reports_tanf_amount(member)
+    return member_reports_ssi_amount(member) or _member_reports_tanf_amount(member)
 
 
 def _net_countable_income(member: HouseholdMember) -> float:
@@ -99,7 +106,7 @@ class MoRca(ProgramCalculator):
     """
     Missouri Refugee Cash Assistance (RCA) — monthly cash for refugees and other
     ORR-eligible newcomers, administered by the Missouri Office of Refugee
-    Administration (MO-ORA) under the public/private model (45 CFR 400.51-400.63).
+    Administration (MO-ORA) under the public/private model.
 
     Two criteria are evaluated, both at case rather than household scope:
 
