@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember
@@ -82,29 +82,6 @@ def _splits_into_own_case(member: HouseholdMember) -> bool:
     return age is not None and age >= 18 and member.relationship in CHILD_RELATIONSHIPS
 
 
-class _Case:
-    """One RCA assistance unit: `members` is the case as split by the adult-child
-    rule, before the SSI/TANF removal rule takes out anyone reporting SSI or TANF.
-    `remaining` — what is left after that removal — is what the case size, income,
-    and standard are computed against."""
-
-    def __init__(self, members: list[HouseholdMember]):
-        self.members = members
-        self.remaining = [member for member in members if not _removed_from_case(member)]
-        self.size = len(self.remaining)
-        self.net_income = sum(_net_countable_income(member) for member in self.remaining)
-        self.standard = rca_max_payment(self.size) if self.size else 0
-        # Strict: net income equal to the standard is ineligible — spec.md's income
-        # comparison is "under", not "at or under".
-        self.eligible = self.size > 0 and self.net_income < self.standard
-
-    def contains(self, member: HouseholdMember) -> bool:
-        """Matched by `id`, not Python identity: `member_eligible` receives instances
-        from the framework's own `household_members.all()` call, a separate query from
-        the one that built this case."""
-        return any(case_member.id == member.id for case_member in self.members)
-
-
 class MoRca(ProgramCalculator):
     """
     Missouri Refugee Cash Assistance (RCA) — monthly cash for refugees and other
@@ -141,44 +118,54 @@ class MoRca(ProgramCalculator):
 
     dependencies: ClassVar[list[str]] = ["income_type", "income_amount", "income_frequency"]
 
-    def _cases(self) -> list[_Case]:
-        if not hasattr(self, "_cases_cache"):
-            primary_case_members = []
-            split_cases = []
+    def _case_members(self, member: HouseholdMember) -> list[HouseholdMember]:
+        """The RCA case `member` belongs to, before the SSI/TANF removal rule takes
+        anyone out — an adult child's own single-member case, or everyone else who
+        doesn't split. Computed from `member`, not cached, so there is nothing to
+        keep in sync and no reverse lookup from a prebuilt group back to a member."""
+        if _splits_into_own_case(member):
+            return [member]
 
-            for member in self.screen.household_members.all():
-                if _splits_into_own_case(member):
-                    split_cases.append(_Case([member]))
-                else:
-                    primary_case_members.append(member)
+        return [m for m in self.screen.household_members.all() if not _splits_into_own_case(m)]
 
-            cases = split_cases
-            if primary_case_members:
-                cases = [_Case(primary_case_members)] + split_cases
+    def _case_award(self, members: list[HouseholdMember]) -> float:
+        """Monthly award for a case, or 0 if net income doesn't clear the standard
+        (strict — equal to the standard is not eligible) or nobody remains in it."""
+        remaining = [m for m in members if not _removed_from_case(m)]
+        if not remaining:
+            return 0
 
-            self._cases_cache = cases
-
-        return self._cases_cache
-
-    def _case_for_member(self, member: HouseholdMember) -> Optional[_Case]:
-        for case in self._cases():
-            if case.contains(member):
-                return case
-
-        return None
+        net_income = sum(_net_countable_income(m) for m in remaining)
+        standard = rca_max_payment(len(remaining))
+        return standard - net_income if net_income < standard else 0
 
     def member_eligible(self, e: MemberEligibility):
-        case = self._case_for_member(e.member)
-        e.condition(case is not None and case.eligible and not _removed_from_case(e.member))
+        member = e.member
+        if _removed_from_case(member):
+            e.condition(False)
+            return
+
+        e.condition(self._case_award(self._case_members(member)) > 0)
 
     def household_value(self) -> float:
         """The sum, across payable cases, of the monthly award times the number of
         months of RCA eligibility a household can still receive (assumes the full
         period remains — see `ELIGIBILITY_PERIOD_MONTHS`). Committed to the cent —
-        no intermediate rounding."""
-        return sum(
-            (case.standard - case.net_income) * ELIGIBILITY_PERIOD_MONTHS for case in self._cases() if case.eligible
-        )
+        no intermediate rounding. Cases are deduped by member-id set, since every
+        member of a shared case resolves to the same case independently."""
+        seen_cases = set()
+        total = 0.0
+
+        for member in self.screen.household_members.all():
+            members = self._case_members(member)
+            case_key = frozenset(m.id for m in members)
+            if case_key in seen_cases:
+                continue
+
+            seen_cases.add(case_key)
+            total += self._case_award(members) * ELIGIBILITY_PERIOD_MONTHS
+
+        return total
 
     def member_value(self, member: HouseholdMember) -> int:
         """The award is a per-case figure, not a per-member one; it is returned
