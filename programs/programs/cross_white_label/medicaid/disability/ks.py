@@ -36,6 +36,11 @@ class KsWorkingHealthy(ProgramCalculator):
     """
 
     program_code = "ks_working_healthy"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("ks_medicaid",)
 
     min_age = 16
     max_age = 64

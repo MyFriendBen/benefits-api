@@ -5,6 +5,12 @@ from programs.co_county_zips import counties_from_screen
 
 class MySpark(ProgramCalculator):
     program_code = "myspark"
+    # PolicyEngine-backed, and not restateable as an income test. `nslp` is PE's
+    # `school_meal_net_subsidy`, whose tier honors `meets_school_meal_categorical_eligibility`
+    # (SNAP/TANF households keep free meals at any income), derives `is_in_k12_school`
+    # internally from age, and frees a whole SPM unit on one foster child. "Qualifies for
+    # free or reduced lunch" has no equivalent condition on this household's own facts.
+    gates_on = ("nslp",)
     member_amount = 1_000
     max_age = 14
     min_age = 11
