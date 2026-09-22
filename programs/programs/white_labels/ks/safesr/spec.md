@@ -198,10 +198,24 @@ often left blank.
 The gate is the summed amount, **not** `Screen.has_expense(["propertyTax"])`. `has_expense` matches
 on expense type and ignores the amount — which is what criterion 3's ownership test wants, but not
 this. Gating the value on it would hand an eligible household a $0 refund whenever a `propertyTax`
-row was entered at $0, which the expense form permits (`expenseRowSchema` is
-`expenseAmount: z.number().int().min(0)`). `KsK40h._refund_amount` resolves the same fork the same
-way. benefits-calculator applies no zero-value filter to results, so a $0 refund would render on
-the card as `$0/year` rather than being suppressed. Scenario 16 is the test.
+row reached the API at $0. `KsK40h._refund_amount` resolves the same fork the same way.
+benefits-calculator applies no zero-value filter to results, so a $0 refund would render on the
+card as `$0/year` rather than being suppressed. Scenario 16 is the test.
+
+**Corrected 2026-09-22 — a $0 `propertyTax` row cannot reach the API from the screener UI.** This
+paragraph previously justified the fork by saying the expense form permits a zero amount. The form
+permits *typing* one — `expenseAmount` is `z.number().int().min(0)`, and the field defaults to `0`
+(`Expenses.tsx`, `expenseAmount: saved?.expenseAmount ?? 0`) — but the row is then dropped before
+it is sent: both `Expenses.tsx` (`nonZeroExpenses`) and `getExpensesBodies` in
+`Assets/updateScreen.ts` filter `expenseAmount > 0`. So through the screener a zero row is
+indistinguishable from no row, and Scenario 16 collapses into Scenario 14.
+
+The fork is still correct and still worth keeping, for two reasons that do not depend on the UI.
+An API client can persist a `$0` row directly — `ExpenseSerializer` is `fields = "__all__"` over a
+nullable, un-validated column — and that is the path our own API QA tooling takes. And writing it
+this way means the calculator never has to care which of the two shapes it received. Scenario 16
+therefore keeps its committed result ($1,756, identical to Scenario 14) but should be read as an
+API-level guard, not as a reachable user journey.
 
 **Fallback methodology.** $2,342 is the median real estate tax on Kansas owner-occupied units **not
 mortgaged** — the deliberate cohort choice, because outright ownership correlates with the 65+
@@ -523,7 +537,9 @@ underlying fact is not; scenario 20 is that test.
 - **Person 1**: Born March 1955 (age 70 in 2025), `headOfHousehold`, citizen, Social Security Retirement Benefits `$1,200`/month ($14,400/year)
 - **Expenses**: Property Taxes `$0`/year — the row is present with a zero amount; no rent
 
-**Why this matters**: The expense form permits a zero amount (`expenseAmount: z.number().int().min(0)`), and `Screen.has_expense()` matches on expense type while ignoring the amount. A calculator that gates the value branch on `has_expense(["propertyTax"])` computes 75% × $0 and hands an eligible household a $0 refund, which the results page renders as `$0/year` rather than suppressing. Scenarios 14 and 15 both pass that calculator.
+**Why this matters**: `Screen.has_expense()` matches on expense type while ignoring the amount. A calculator that gates the value branch on `has_expense(["propertyTax"])` computes 75% × $0 and hands an eligible household a $0 refund, which the results page renders as `$0/year` rather than suppressing. Scenarios 14 and 15 both pass that calculator.
+
+**Reachability (corrected 2026-09-22)**: this is an **API-level** scenario, not a user journey. The screener drops zero-amount expense rows before sending them (`Expenses.tsx` `nonZeroExpenses`; `getExpensesBodies` in `Assets/updateScreen.ts`, both filtering `expenseAmount > 0`), so a real user cannot produce a `$0` `propertyTax` row — through the UI this case is Scenario 14. Test it at the unit level and via a direct API payload; do not expect to reproduce it in a browser QA pass. See the Benefit Value section for the full correction.
 
 ---
 

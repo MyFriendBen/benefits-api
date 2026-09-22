@@ -216,9 +216,11 @@ class KsSafesr(ProgramCalculator):
     def household_value(self) -> int:
         property_tax = self.screen.calc_expenses("yearly", ["propertyTax"])
 
-        # The fork is the summed amount, not has_expense: the expense form permits
-        # a propertyTax row entered at $0, and gating on the type would hand an
-        # eligible household a $0 refund that the results page renders as $0/year.
+        # The fork is the summed amount, not has_expense: gating on the type would
+        # hand an eligible household a $0 refund that the results page renders as
+        # $0/year. The screener itself cannot send a $0 row — it filters
+        # expenseAmount > 0 before serializing — but an API client can, and this
+        # way the two shapes need not be told apart.
         if property_tax <= 0:
             property_tax = self.fallback_property_tax
 
