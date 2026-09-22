@@ -126,10 +126,16 @@ class KsSafesr(ProgramCalculator):
     # with a null amount makes calc_expenses raise TypeError, and the eligibility
     # loop in screener/views.py catches only DependencyError, so the whole
     # household's response 500s rather than this one program dropping out. Same
-    # reasoning TxFpp records. `expense_amount` fires on a null amount in any row,
-    # not just a propertyTax one, so a household with an unrelated incomplete
-    # expense loses SAFESR — the blunt side of the trade, and still better than a
-    # 500. A null expense *frequency* raises the same way and has no token at all.
+    # reasoning TxFpp records. A null amount is not reachable from the screener UI
+    # — the amount field defaults to 0, zod requires a number, and both
+    # Expenses.tsx and updateScreen.ts drop rows at 0 before sending — so this
+    # guards API-shaped payloads, where ExpenseSerializer is `fields = "__all__"`
+    # over a nullable column and an absent amount, an explicit null and an empty
+    # string all persist as NULL. The token fires on a null amount in any row, so
+    # an unrelated incomplete expense costs SAFESR; that is the blunt side of the
+    # trade, and better than a 500 that takes out every program for the
+    # household. A null expense *frequency* raises the same way and has no token
+    # at all.
     #
     # relationship and household_size are deliberately absent: the minor guard is
     # keyed to birth year and no rule reads household size.
