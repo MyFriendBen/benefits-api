@@ -14,9 +14,10 @@ Every scenario uses claim year 2025.
 """
 
 from django.test import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from programs.framework.base import ProgramCalculator
+from programs.util import Dependencies, DependencyError
 from programs.programs.white_labels.ks.safesr.calculator import KsSafesr
 
 
@@ -96,12 +97,39 @@ class TestClassAttributes(TestCase):
         self.assertEqual(KsSafesr.excluded_types, ("sSDisability", "childSupport", "gifts", "veteran"))
 
     def test_dependencies(self):
+        # expense_type/expense_amount are the tokens Expense.missing_fields actually
+        # emits; a bare "expenses" is never emitted and so never gates anything.
         # relationship and household_size are deliberately absent: the minor guard
         # is keyed to birth year and no rule reads household size.
         self.assertEqual(
             KsSafesr.dependencies,
-            ("age", "income_type", "income_amount", "income_frequency", "expenses"),
+            ("age", "income_type", "income_amount", "income_frequency", "expense_type", "expense_amount"),
         )
+
+    def test_declared_dependencies_are_tokens_the_screener_emits(self):
+        # Guards the whole tuple against the inert-token trap, not just the two
+        # expense entries.
+        emitted = {
+            "zipcode",
+            "county",
+            "household_size",
+            "household_assets",
+            "energy_calculator",
+            "relationship",
+            "age",
+            "student",
+            "pregnant",
+            "visually_impaired",
+            "disabled",
+            "long_term_disability",
+            "insurance",
+            "income_type",
+            "income_amount",
+            "income_frequency",
+            "expense_type",
+            "expense_amount",
+        }
+        self.assertEqual(set(KsSafesr.dependencies) - emitted, set())
 
     def test_2025_ceiling_is_120_percent_of_the_two_person_fpl(self):
         # An annual cross-check on the published figure, not the source of it —
@@ -335,6 +363,62 @@ class TestAgeGate(TestCase):
         # describe different years.
         calc = make_calculator(claim_year=2099)
         self.assertEqual(calc._claim_year(), max(KsSafesr.income_limit_by_year))
+
+
+class TestTaxYearIsTheConfiguredYear(TestCase):
+    """
+    SAFESR is a tax program: the rules follow the tax year, which lags the
+    current year by one. Nothing may read the current year.
+    """
+
+    def test_age_gate_and_ceiling_both_shift_with_the_configured_tax_year(self):
+        # Born 1960 is not 65 for all of 2025 but is for all of 2026, and $25,800
+        # clears a 2026 ceiling of $26,000 while failing the 2025 one. Both flip
+        # together, which a hardcoded year in either rule would not.
+        income = {"sSRetirement": 25_800}
+        self.assertFalse(run(make_calculator([make_member(birth_year=1960, income=income)], property_tax=1_000))[0])
+
+        with patch.dict(KsSafesr.income_limit_by_year, {2026: 26_000}, clear=False):
+            calc = make_calculator([make_member(birth_year=1960, income=income)], property_tax=1_000, claim_year=2026)
+            self.assertEqual(calc._claim_year(), 2026)
+            eligible, value = run(calc)
+            self.assertTrue(eligible)
+            self.assertEqual(value, 750)
+
+    def test_minor_guard_shifts_with_the_configured_tax_year(self):
+        # Born 2007 was not 18 for all of 2025, but was for all of 2026.
+        members = [
+            make_member(birth_year=1950, income={"sSRetirement": 22_800}),
+            make_member(birth_year=2007, income={"wages": 4_800}),
+        ]
+        self.assertEqual(make_calculator(members)._household_income(), 22_800)
+
+        with patch.dict(KsSafesr.income_limit_by_year, {2026: 26_000}, clear=False):
+            self.assertEqual(make_calculator(members, claim_year=2026)._household_income(), 27_600)
+
+
+class TestDependencyGating(TestCase):
+    def test_a_null_expense_amount_drops_the_program_rather_than_crashing(self):
+        # calc_expenses raises TypeError on a null amount, and the eligibility loop
+        # catches only DependencyError, so without this token the whole household's
+        # response 500s.
+        calc = make_calculator(property_tax=1_800)
+        calc.missing_dependencies = Dependencies({"expense_amount"})
+        self.assertFalse(calc.can_calc())
+        with self.assertRaises(DependencyError):
+            calc.calc()
+
+    def test_a_null_expense_type_drops_the_program(self):
+        # An untyped row could be the rent row, so the ownership proxy cannot be
+        # trusted; drop the program rather than guess the household owns.
+        calc = make_calculator(property_tax=1_800)
+        calc.missing_dependencies = Dependencies({"expense_type"})
+        self.assertFalse(calc.can_calc())
+
+    def test_an_unrelated_missing_field_does_not_drop_the_program(self):
+        calc = make_calculator(property_tax=1_800)
+        calc.missing_dependencies = Dependencies({"household_assets", "insurance", "energy_calculator"})
+        self.assertTrue(calc.can_calc())
 
 
 class TestValue(TestCase):

@@ -80,6 +80,21 @@ class KsSafesr(ProgramCalculator):
 
     program_code = "ks_safesr"
 
+    # SAFESR is a tax program, so every year-sensitive rule here is keyed to the
+    # *tax* year — the year the property tax was paid — which is the year before
+    # the one it is claimed in: the 2025 claim is filed 1 Jan - 15 Apr 2026. The
+    # config's `year` therefore lags the current year by one, deliberately. Every
+    # other KS program that pins a year pins the current one; SAFESR is the
+    # exception, and a rollover that "corrects" it to the current year is a bug.
+    #
+    # Nothing rolls the pin forward, and nothing should: the FederalPoveryLimit
+    # sentinel rows ("THIS YEAR", "LAST YEAR") are both stale and neither is used
+    # by any KS program. When KDOR publishes the next K-40PT, add its ceiling to
+    # the table below and bump the config together. Bumping the config alone is
+    # safe but silent — _claim_year falls back to the newest year in the table, so
+    # the program keeps applying the last year of published figures rather than
+    # inventing a ceiling for a year KDOR has not published.
+    #
     # The published K-40PT ceiling, keyed by claim year. Statutorily 120% of the
     # two-person federal poverty level, but KDOR's published figures have not
     # always equalled the formula ($23,700 published against $23,664 derived for
@@ -106,7 +121,26 @@ class KsSafesr(ProgramCalculator):
     # household that enters a real propertyTax expense.
     fallback_property_tax = 2_342
 
-    dependencies = ("age", "income_type", "income_amount", "income_frequency", "expenses")
+    # `expense_type` because the ownership proxy reads has_expense(["rent"]), and
+    # `expense_amount` because household_value reads calc_expenses(): an expense row
+    # with a null amount makes calc_expenses raise TypeError, and the eligibility
+    # loop in screener/views.py catches only DependencyError, so the whole
+    # household's response 500s rather than this one program dropping out. Same
+    # reasoning TxFpp records. `expense_amount` fires on a null amount in any row,
+    # not just a propertyTax one, so a household with an unrelated incomplete
+    # expense loses SAFESR — the blunt side of the trade, and still better than a
+    # 500. A null expense *frequency* raises the same way and has no token at all.
+    #
+    # relationship and household_size are deliberately absent: the minor guard is
+    # keyed to birth year and no rule reads household size.
+    dependencies = (
+        "age",
+        "income_type",
+        "income_amount",
+        "income_frequency",
+        "expense_type",
+        "expense_amount",
+    )
 
     def household_eligible(self, e: Eligibility):
         # Ownership proxy: a rent expense means renter, so ineligible; a mortgage,

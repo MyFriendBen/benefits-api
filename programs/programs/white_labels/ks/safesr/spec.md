@@ -228,7 +228,7 @@ actually receives, not the computed refund):
   - Source: [K.S.A. 79-4502(f)](https://www.ksrevisor.gov/statutes/chapters/ch79/079_045_0002.html) — the statutory definition counts property taxes "exclusive of special assessments, delinquent interest and charges for service" — accessed 2026-09-20
 
 **Calculator dependencies.** Declare
-`dependencies = ("age", "income_type", "income_amount", "income_frequency", "expenses")`.
+`dependencies = ("age", "income_type", "income_amount", "income_frequency", "expense_type", "expense_amount")`.
 `ProgramCalculator.can_calc` returns `not self.missing_dependencies.has(*self.dependencies)`, and a
 program whose declared dependency is missing is left out of the results rather than reported
 ineligible — so the tuple is binding, not documentation. `relationship` and `household_size` are
@@ -236,6 +236,23 @@ deliberately **not** dependencies: the minor guard is keyed to birth year (crite
 reads household size. Note that `"age"` is the only token `HouseholdMember.missing_fields` offers
 for birth data and does not guarantee `birth_year_month` is set; a member without it has
 `birth_year` `None` and silently fails criterion 1, which stays the only handling there.
+
+**Corrected 2026-09-22 — this paragraph previously said `"expenses"`, which is inert.** The only
+expense tokens anything emits are `expense_type` and `expense_amount`, prefixed in
+`Expense.missing_fields`; a bare `"expenses"` is never added to the `Dependencies` set and so
+gates nothing, which made the "binding, not documentation" claim false for that one entry.
+`ks_k40h` and `cross_white_label/medicaid/disability/mo` carry the same dead token. The working
+precedents are `co/dptr`, which reads only `has_expense()` and declares `expense_type`, and
+`TxFpp`, which also calls `calc_expenses()` and declares both.
+
+Both are needed here. `expense_type` because the ownership proxy reads `has_expense(["rent"])`,
+and an untyped row could be the rent row. `expense_amount` because `household_value` reads
+`calc_expenses()`, which raises `TypeError` on a row with a null amount — and the eligibility loop
+in `screener/views.py` catches only `DependencyError`, so the uncaught crash 500s the whole
+household's response rather than dropping this one program. Two limits of the fix, both accepted:
+`expense_amount` fires on a null amount in *any* row, so a household with an unrelated incomplete
+expense loses SAFESR; and a null expense **frequency** raises `UnboundLocalError` the same way but
+has no token at all, since `Expense.missing_fields` checks only `type` and `amount`.
 
 ## Test Scenarios
 
@@ -579,7 +596,7 @@ all 20 pass and the following hold:
 [ ] Household income counts all four Social Security streams — `sSRetirement`, `sSSurvivor`, `sSI`, `sSDependent` — at 100%, not K-40H's 50%
 [ ] Household income excludes `sSDisability`, `childSupport`, `gifts`, and the whole `veteran` bucket — the last as a committed proxy for a split the screener cannot make, documented as such in code comments rather than as the Kansas rule
 [ ] Household income skips members whose `birth_year >= claim_year - 18`, keyed to birth year rather than to `relationship`, and counts every other member — an adult `child` included
-[ ] The calculator declares `dependencies = ("age", "income_type", "income_amount", "income_frequency", "expenses")` — not `relationship`, not `household_size`
+[ ] The calculator declares `dependencies = ("age", "income_type", "income_amount", "income_frequency", "expense_type", "expense_amount")` — not `relationship`, not `household_size`, and not the inert `"expenses"` this spec originally named
 [ ] The refund is rounded to the nearest whole dollar
 [ ] The fallback applies whenever `calc_expenses("yearly", ["propertyTax"])` is zero, including when a `propertyTax` row exists at $0, and is $2,342/year (Census B25103, ACS 2020–2024, Kansas not-mortgaged), documented in code comments as an MFB estimate, producing $1,756
 
@@ -602,6 +619,26 @@ all 20 pass and the following hold:
 ## Program Configuration
 
 File: `ks_safesr_initial_config.json`
+
+`active` is `false` **deliberately**. The import script runs against staging and production, and
+shipping the config active would release the program the moment it imports; the flag is the
+failsafe against that. Activate the `Program` row by hand once the program has been QA'd in the
+target environment.
+
+**The claim year is the tax year, which is the year *before* the one it is claimed in** — the 2025
+claim is filed 1 Jan – 15 Apr 2026. SAFESR's `year` therefore lags the current year by one, and it
+is the only KS program not pinned to the current year (every other KS row is on 2026 as of
+2026-09-22). Three rules read it and all three shift together through `_claim_year()`: the age gate
+(criterion 1), the income ceiling (criterion 4), and the minor guard (criterion 4). None of the
+three reads `member.age` or the wall clock — `birth_year` derives from the stored
+`birth_year_month`, so it does not drift, which is why criterion 1 rejects `age >= 65`.
+
+Nothing rolls the pin forward. The `FederalPoveryLimit` sentinel rows — `"LAST YEAR"` (period
+2023) and `"THIS YEAR"` (period 2025) — are both stale as of 2026-09-22 and neither is used by any
+KS program, so this is maintained by hand: when KDOR publishes the next K-40PT, add its ceiling to `income_limit_by_year` and bump
+the config's `year` together. Bumping the config alone is safe but silent — `_claim_year()` falls
+back to the newest year in the table, so the program keeps applying the last year of published
+figures rather than inventing a ceiling for a year KDOR has not published.
 
 `year` is set to `"2025"` **deliberately, even though SAFESR has no FPL-based income test.**
 The Program Researcher handbook says to include `year` only for FPL-based thresholds and warns
