@@ -28,7 +28,7 @@ from programs.framework.pe_dependencies.payload import (
     build_pe_input,
     pe_input,
 )
-from screener.models import HouseholdMember, Screen, WhiteLabel
+from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
 PERIOD = "2026"
 
@@ -434,6 +434,58 @@ class TestWhichDisagreementsAreASurprise(PayloadConflictTestBase):
 
         self.assertEqual(plan.unexpected_conflicts, plan.conflicts)
         self.assertTrue(plan.unexpected_conflicts)
+
+
+class TestSchoolMealsAndCsfpIncome(PayloadConflictTestBase):
+    """NSLP and CSFP both fill ``school_meal_countable_income``, under different income
+    definitions. When a household has income only CSFP counts, CSFP is served by its own
+    request carrying its total, and the disagreement is expected rather than a surprise."""
+
+    def setUp(self):
+        super().setUp()
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1800, frequency="monthly"
+        )
+
+    def plan(self):
+        return build_pe_input(
+            self.screen,
+            [
+                fake_program("nslp", [dependency.spm.SchoolMealCountableIncomeDependency]),
+                fake_program("csfp", [dependency.spm.CsfpCountableIncomeDependency]),
+            ],
+        )
+
+    def income(self, payload):
+        return payload["household"]["spm_units"]["spm_unit"]["school_meal_countable_income"]
+
+    def test_agreeing_totals_share_one_request(self):
+        plan = self.plan()
+
+        self.assertEqual([bucket.program_indexes for bucket in plan.buckets], [[0, 1]])
+        self.assertEqual(self.income(plan.payload), {PERIOD: 21600})
+
+    def test_income_only_csfp_counts_splits_csfp_out(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="workersComp", amount=250, frequency="monthly"
+        )
+
+        plan = self.plan()
+
+        self.assertEqual(len(plan.buckets), 2)
+        self.assertEqual(plan.dropped_program_indexes, [])
+        csfp_bucket = next(bucket for bucket in plan.buckets if 1 in bucket.program_indexes)
+        self.assertEqual(self.income(bucket_payload(plan, csfp_bucket)), {PERIOD: 24600})
+
+    def test_the_split_is_a_known_pairing(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="alimony", amount=250, frequency="monthly"
+        )
+
+        plan = self.plan()
+
+        self.assertEqual(len(plan.conflicts), 1)
+        self.assertEqual(plan.unexpected_conflicts, [])
 
 
 class TestTheWriteInvariant(PayloadConflictTestBase):
