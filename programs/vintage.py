@@ -251,6 +251,103 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         source="K.S.A. 79-4501 et seq.; 2025 K-40H booklet",
     ),
 
+    ("co", "ssi"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="current year; the federal benefit rate is adjusted by COLA each January and "
+        "SSI is federally administered, so there is no state adoption step to lag behind",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
+        "$994 individual / $1,491 couple",
+    ),
+    ("il", "ssi"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="current year; the federal benefit rate is adjusted by COLA each January and "
+        "SSI is federally administered, so there is no state adoption step to lag behind",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
+        "$994 individual / $1,491 couple",
+    ),
+    ("ma", "ssi"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="current year; the federal benefit rate is adjusted by COLA each January and "
+        "SSI is federally administered, so there is no state adoption step to lag behind",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
+        "$994 individual / $1,491 couple",
+    ),
+    ("tx", "tx_ssi"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="current year; the federal benefit rate is adjusted by COLA each January and "
+        "SSI is federally administered, so there is no state adoption step to lag behind",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
+        "$994 individual / $1,491 couple",
+    ),
+    ("il", "il_msp"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        # Established by observation, not by citation. The spec states the thresholds as
+        # percentages and never says which edition they apply against, so PolicyEngine is
+        # the source of truth for now -- see the data-gap section in msp/specs/tx.md, which
+        # records what still needs establishing.
+        rule="current year, per PolicyEngine: probed at period 2026 the outer boundary is "
+        "135% of the 2026 guideline plus SSI's $240/yr exclusion, and no 2025 threshold fits",
+        source="qa/MFB-1786-threshold-probe.py; msp/specs/tx.md data-gap section",
+    ),
+    ("tx", "tx_medicare_savings_program"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        # Established by observation, not by citation. The spec states the thresholds as
+        # percentages and never says which edition they apply against, so PolicyEngine is
+        # the source of truth for now -- see the data-gap section in msp/specs/tx.md, which
+        # records what still needs establishing.
+        rule="current year, per PolicyEngine: probed at period 2026 the outer boundary is "
+        "135% of the 2026 guideline plus SSI's $240/yr exclusion, and no 2025 threshold fits",
+        source="qa/MFB-1786-threshold-probe.py; msp/specs/tx.md data-gap section",
+    ),
+    ("tx", "tx_csfp"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        # Edition only. The spec says the limit is 150% of the guideline and PolicyEngine
+        # applies 130% -- a $3,192 difference in who qualifies, unresolved and recorded in
+        # the data-gap section of csfp/specs/wa.md. This entry settles which edition is in
+        # use, not which percentage is right.
+        rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
+        "the 2026 guideline; the percentage itself is disputed against the spec",
+        source="qa/MFB-1786-threshold-probe.py; csfp/specs/wa.md data-gap section",
+    ),
+    ("ma", "ma_csfp"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        # Edition only. The spec says the limit is 150% of the guideline and PolicyEngine
+        # applies 130% -- a $3,192 difference in who qualifies, unresolved and recorded in
+        # the data-gap section of csfp/specs/wa.md. This entry settles which edition is in
+        # use, not which percentage is right.
+        rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
+        "the 2026 guideline; the percentage itself is disputed against the spec",
+        source="qa/MFB-1786-threshold-probe.py; csfp/specs/wa.md data-gap section",
+    ),
+    ("il", "il_csfp"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        # Edition only. The spec says the limit is 150% of the guideline and PolicyEngine
+        # applies 130% -- a $3,192 difference in who qualifies, unresolved and recorded in
+        # the data-gap section of csfp/specs/wa.md. This entry settles which edition is in
+        # use, not which percentage is right.
+        rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
+        "the 2026 guideline; the percentage itself is disputed against the spec",
+        source="qa/MFB-1786-threshold-probe.py; csfp/specs/wa.md data-gap section",
+    ),
+
     # --- DEFERRED ----------------------------------------------------------------------
     ("cesn", "cesn_care"): Vintage(
         edition="2025",

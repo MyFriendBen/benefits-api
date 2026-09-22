@@ -3,7 +3,7 @@
     "program_category": {"external_name": "health_care"},
     "program": {
         "name_abbreviated": "il_msp",
-        "year": "2025",
+        "year": "2026",
         "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
         "name": "Medicare Savings Program (MSP)",
         "description": "People pay a monthly fee called a premium to keep their Medicare. MSP helps pay these premiums if you have a low income.\n\nHow much help you get depends on your income:\n- Very low income: MSP pays your premium, plus your deductibles (the amount you pay before Medicare starts paying) and the copayments and coinsurance you pay when you get care.\n- A little higher income: MSP pays your premium only.\n\nThe estimated savings shown above only includes what you save on premiums. Your actual savings could be much higher if you qualify for the very low income level, which also covers your deductibles and other costs when you get care.\n\nThe estimated savings assumes you or your spouse worked at least 10 years. If not, your savings may be slightly lower.\n\nTo apply, you must already be enrolled in Medicare. Click 'Apply Now' to learn how to apply online, by mail, by phone, or in person.",

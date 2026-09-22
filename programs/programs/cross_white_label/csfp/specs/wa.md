@@ -263,3 +263,27 @@
 
 * [https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp)](https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp))
 * [https://agr.wa.gov/services/food-access/hunger-relief-agency-hub/csfp/csfp-plan/section-2](https://agr.wa.gov/services/food-access/hunger-relief-agency-hub/csfp/csfp-plan/section-2)
+
+## Data gap: the income limit percentage disagrees with the engine
+
+**Unresolved, and material.** This spec records USDA revising the CSFP income limit from
+130% to 150% of the poverty guideline effective 1 January 2025, and every scenario is built
+at 150%. PolicyEngine applies **130%**.
+
+Probed at request period 2026, the eligibility boundary for a single 68-year-old lands at
+**$20,753/year**, which is 130% of the 2026 guideline ($20,748). At 150% it would be
+$23,940 — a $3,192 difference in who qualifies. Reproduce with
+`qa/MFB-1786-threshold-probe.py`.
+
+One of the two is wrong, and which one matters: at 150% the screener tells a band of
+seniors they qualify when PolicyEngine will return nothing for them, and at 130% it is
+turning away seniors USDA would serve.
+
+**Interim position: PolicyEngine is treated as the source of truth**, so the program is
+configured for the 2026 edition on the strength of the probe. That settles the *edition*
+only — it does not settle the *percentage*, which needs USDA's current guidance checked
+against PolicyEngine's parameter before the scenarios here can be trusted.
+
+**Also note:** the vintage is stated inconsistently within this spec. The boundary scenarios
+describe $23,475 as 150% of the 2026 guidelines in one place and of the 2025 guidelines in
+another. $23,475 is 150% of the 2025 guideline; the 2026 equivalent is $23,940.
