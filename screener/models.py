@@ -1103,6 +1103,24 @@ class AssistantMessage(models.Model):
     completion_tokens = models.IntegerField(blank=True, null=True)
     latency_ms = models.IntegerField(blank=True, null=True)
     error = models.TextField(blank=True, null=True)
+    # --- user feedback on the reply; NULL on user turns and on unrated replies ---
+    # Deliberately +1/-1 rather than a boolean, because NULL has to stay available as
+    # a third state: "nobody rated this" is the overwhelming majority of rows and is a
+    # different fact from "rated badly". A nullable boolean would carry the same three
+    # states, but the integer sums — AVG(rating) over a white label or a
+    # prompt_version is the report query, and it needs no CASE.
+    #
+    # Clearing a rating writes NULL back, so a rated-then-cleared row is
+    # indistinguishable from a never-rated one in this column alone. `rated_at` is what
+    # separates them: it is set on every write INCLUDING the clear, and never reset. So
+    # `rating IS NULL AND rated_at IS NULL` is "never touched", and `rating IS NULL AND
+    # rated_at IS NOT NULL` is "rated, then withdrawn" — which is a real signal about
+    # the reply and not the same as silence.
+    RATING_UP = 1
+    RATING_DOWN = -1
+    RATING_CHOICES = ((RATING_UP, "Thumbs up"), (RATING_DOWN, "Thumbs down"))
+    rating = models.SmallIntegerField(choices=RATING_CHOICES, blank=True, null=True)
+    rated_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -1122,6 +1140,23 @@ class AssistantMessage(models.Model):
                 fields=["conversation", "client_message_id"],
                 condition=models.Q(client_message_id__isnull=False),
                 name="assistant_msg_client_id_unique",
+            ),
+            # The rating API validates its input, but this table has two writers —
+            # ai-service inserts every row, benefits-api updates this column — and a
+            # column the weekly report AVERAGES cannot be left to whichever of them
+            # happens to be right. A stray 5 would not error anywhere; it would just
+            # quietly move the mean.
+            models.CheckConstraint(
+                check=models.Q(rating__isnull=True) | models.Q(rating__in=(1, -1)),
+                name="assistant_msg_rating_valid",
+            ),
+            # Only assistant turns are rateable. The buttons are rendered on assistant
+            # bubbles only, so a rating on a user turn means a hand-crafted request or
+            # a bug — and either way it would be counted as feedback on a reply that
+            # the household wrote themselves.
+            models.CheckConstraint(
+                check=models.Q(rating__isnull=True) | models.Q(role="assistant"),
+                name="assistant_msg_rating_assistant_only",
             ),
         ]
 
