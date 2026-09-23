@@ -291,12 +291,20 @@ class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
         self.reference_date = date(2026, 6, 15)
         self.assert_eligible(self.baseline(child_born=(2020, 8)), 11_340)
 
-    def test_tanf_with_an_excluded_ssi_stream_is_still_the_only_income(self):
+    def test_tanf_with_an_excluded_ssi_stream_is_not_the_only_income(self):
+        # SSI is excluded from the income test but is still a second source of income,
+        # so the daily fee applies: $1,000 at size 4 is the $0.75 band.
         screen = self.baseline(wages=0)
         self.add_income(self.head, 1_000, income_type="cashAssistance")
         # On the spouse: SSI on a child would make them a special-needs eligible child.
         self.add_income(self.person_3, 700, income_type="sSI")
-        self.assert_eligible(screen, 12_599)
+        self.assert_eligible(screen, 12_411)
+
+    def test_tanf_with_a_childs_excluded_earnings_is_not_the_only_income(self):
+        screen = self.baseline(wages=0)
+        self.add_income(self.head, 1_000, income_type="cashAssistance")
+        self.add_income(self.person_4, 200)
+        self.assert_eligible(screen, 12_411)
 
     def test_tanf_alongside_wages_is_not_the_only_income(self):
         screen = self.baseline(wages=500)

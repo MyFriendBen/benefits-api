@@ -450,10 +450,11 @@ class MoChildCareSubsidy(ProgramCalculator):
         Manual 9.1's categorical limb of the `$1`-a-year fee. `cashAssistance` is the
         TANF-specific option, so the mapping is exact.
 
-        Read over the counted streams, so an excluded SSI payment or child's earnings
-        does not stop TANF from being the unit's only income.
+        Read over every stream, not the counted ones: income excluded from the income
+        test, such as SSI or a child's earnings, is still a second source of income.
         """
-        streams = [stream for stream in self.counted_streams() if stream.amount]
+        streams = [stream for member in self.screen.household_members.all() for stream in member.income_streams.all()]
+        streams = [stream for stream in streams if stream.amount]
         return bool(streams) and all(stream.type == "cashAssistance" for stream in streams)
 
     def pays_annual_fee(self) -> bool:

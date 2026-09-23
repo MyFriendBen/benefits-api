@@ -667,7 +667,7 @@ are applied in a fixed order. This precedence is binding on every scenario below
    obligation is Missouri's **`$1` annually**, expressed for MFB's monthly estimate as
    **`$1 ÷ 12` subtracted once per household**. (Manual 9.1's 25%-SMI trigger is not used — see
    the conflict noted under the sliding fee below.)
-   Captured via `IncomeStream` `type` `cashAssistance`. That option is **TANF-specific** — its label is "Cash Assistance - TANF", with a separate `cashAssistanceOther` carrying any other cash aid — so the mapping onto Manual 9.1's "only income is Temporary Assistance" is **exact**. The mapping is stated because it was wider than the sourced rule under the earlier generic cash-assistance option, and the committed treatment depends on which of the two options a Missouri screen presents.
+   Captured via `IncomeStream` `type` `cashAssistance`. That option is **TANF-specific** — its label is "Cash Assistance - TANF", with a separate `cashAssistanceOther` carrying any other cash aid — so the mapping onto Manual 9.1's "only income is Temporary Assistance" is **exact**. "Only income" is read over **every** income stream on the screen, not the counted ones: income excluded from criterion 7's test — SSI, or a child's earnings — is still a second source of income, so a unit receiving TANF and SSI does not reach rule 2 by this limb. The mapping is stated because it was wider than the sourced rule under the earlier generic cash-assistance option, and the committed treatment depends on which of the two options a Missouri screen presents.
 3. **Otherwise** → the applicable full-, half- or part-day sliding-fee amount from the current
    chart, per child in care, for each of the 21 care days.
 
