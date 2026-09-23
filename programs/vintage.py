@@ -62,6 +62,14 @@ class Status(Enum):
     """How much is actually known about a row's edition."""
 
     #: Established against a published rule or a validated case, with the citation in `source`.
+    #:
+    #: Some entries rest on an OBSERVATION of PolicyEngine rather than a citation, where no
+    #: spec states the rule. Those record the model version they were observed against,
+    #: because production never pins a version -- the private API serves only what
+    #: `current` and `frontier` point at, so a pinned production would start 422ing the
+    #: week PolicyEngine promoted past it. `current` therefore moves roughly weekly, and an
+    #: observation is a snapshot: if PolicyEngine changes the rule, the entry needs
+    #: re-probing rather than trusting.
     CONFIRMED = "confirmed"
 
     #: Deliberately left alone, for a reason `rule` states. Not an unknown -- a decision.
@@ -297,7 +305,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         # records what still needs establishing.
         rule="current year, per PolicyEngine: probed at period 2026 the outer boundary is "
         "135% of the 2026 guideline plus SSI's $240/yr exclusion, and no 2025 threshold fits",
-        source="qa/MFB-1786-threshold-probe.py; msp/specs/tx.md data-gap section",
+        source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
+        "on 2026-09-18; msp/specs/tx.md data-gap section",
     ),
     ("tx", "tx_medicare_savings_program"): Vintage(
         edition="2026",
@@ -309,7 +318,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         # records what still needs establishing.
         rule="current year, per PolicyEngine: probed at period 2026 the outer boundary is "
         "135% of the 2026 guideline plus SSI's $240/yr exclusion, and no 2025 threshold fits",
-        source="qa/MFB-1786-threshold-probe.py; msp/specs/tx.md data-gap section",
+        source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
+        "on 2026-09-18; msp/specs/tx.md data-gap section",
     ),
     ("tx", "tx_csfp"): Vintage(
         edition="2026",
@@ -321,7 +331,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         # use, not which percentage is right.
         rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
         "the 2026 guideline; the percentage itself is disputed against the spec",
-        source="qa/MFB-1786-threshold-probe.py; csfp/specs/wa.md data-gap section",
+        source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
+        "on 2026-09-18; csfp/specs/wa.md data-gap section",
     ),
     ("ma", "ma_csfp"): Vintage(
         edition="2026",
@@ -333,7 +344,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         # use, not which percentage is right.
         rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
         "the 2026 guideline; the percentage itself is disputed against the spec",
-        source="qa/MFB-1786-threshold-probe.py; csfp/specs/wa.md data-gap section",
+        source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
+        "on 2026-09-18; csfp/specs/wa.md data-gap section",
     ),
     ("il", "il_csfp"): Vintage(
         edition="2026",
@@ -345,7 +357,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         # use, not which percentage is right.
         rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
         "the 2026 guideline; the percentage itself is disputed against the spec",
-        source="qa/MFB-1786-threshold-probe.py; csfp/specs/wa.md data-gap section",
+        source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
+        "on 2026-09-18; csfp/specs/wa.md data-gap section",
     ),
 
     # --- DEFERRED ----------------------------------------------------------------------
