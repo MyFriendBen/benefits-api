@@ -36,7 +36,7 @@ class MaTaxiDiscount(ProgramCalculator):
         member = e.member
 
         # Age 60+ OR has a disability
-        is_senior = member.age >= self.min_age
+        is_senior = member.calc_age() >= self.min_age
         has_disability = member.has_disability()
 
         e.condition(is_senior or has_disability)

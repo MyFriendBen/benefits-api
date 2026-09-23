@@ -26,5 +26,5 @@ class CoCollegeInvestFirstStep(ProgramCalculator):
         member = e.member
 
         e.condition(member.relationship in self.child_relationships)
-        e.condition(member.age is not None and member.age <= self.max_age)
+        e.condition(member.calc_age() is not None and member.calc_age() <= self.max_age)
         e.condition(member.birth_year is not None and member.birth_year >= self.min_birth_year)

@@ -33,7 +33,7 @@ class TxHtw(ProgramCalculator):
         member = e.member
 
         # Age 15-44
-        e.condition(member.age is not None and self.min_age <= member.age <= self.max_age)
+        e.condition(member.calc_age() is not None and self.min_age <= member.calc_age() <= self.max_age)
 
         # Not pregnant (pregnant women referred to Medicaid for Pregnant Women)
         e.condition(not member.pregnant)

@@ -49,4 +49,4 @@ class IlSilverAccess(ProgramCalculator):
         e.condition(member.insurance.has_insurance_types(self.eligible_insurance_types))
 
         # Members 65+ are Medicare-eligible by age even without reported coverage
-        e.condition(member.age is None or member.age < self.medicare_age)
+        e.condition(member.calc_age() is None or member.calc_age() < self.medicare_age)

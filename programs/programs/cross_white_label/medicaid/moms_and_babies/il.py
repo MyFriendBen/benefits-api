@@ -13,10 +13,10 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
     def _is_eligible_newborn(self, member: HouseholdMember) -> bool:
-        return member.age <= self.max_newborn_age_months
+        return member.calc_age() <= self.max_newborn_age_months
 
     def _is_eligible_adult(self, member: HouseholdMember) -> bool:
-        is_old_enough = member.age >= self.min_adult_age
+        is_old_enough = member.calc_age() >= self.min_adult_age
         is_parent = member.relationship in self.parent_relationships
         is_pregnant = member.pregnant
         has_eligible_newborn = self.screen.num_children(age_max=self.max_newborn_age_months) > 0

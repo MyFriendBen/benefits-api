@@ -21,7 +21,7 @@ class Tabor(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age >= Tabor.min_age)
+        e.condition(member.calc_age() >= Tabor.min_age)
 
     def member_value(self, member: HouseholdMember) -> int:
         income = member.calc_gross_income("yearly", ["all"])

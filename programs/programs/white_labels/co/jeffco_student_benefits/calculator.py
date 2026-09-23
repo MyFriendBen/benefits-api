@@ -20,4 +20,4 @@ class JeffcoStudentBenefits(ProgramCalculator):
         member = e.member
 
         # Age: must be between 3 and 19
-        e.condition(JeffcoStudentBenefits.child_age_min <= member.age <= JeffcoStudentBenefits.child_age_max)
+        e.condition(JeffcoStudentBenefits.child_age_min <= member.calc_age() <= JeffcoStudentBenefits.child_age_max)

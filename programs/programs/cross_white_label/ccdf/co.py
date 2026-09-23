@@ -77,11 +77,11 @@ class ChildCareAssistance(ProgramCalculator):
 
         # age
         child_eligible = False
-        if member.age < ChildCareAssistance.max_age_afterschool:
+        if member.calc_age() < ChildCareAssistance.max_age_afterschool:
             child_eligible = True
         elif (
-            member.age >= ChildCareAssistance.max_age_afterschool
-            and member.age <= ChildCareAssistance.max_age_afterschool_disabled
+            member.calc_age() >= ChildCareAssistance.max_age_afterschool
+            and member.calc_age() <= ChildCareAssistance.max_age_afterschool_disabled
             and member.has_disability()
         ):
             child_eligible = True
@@ -89,13 +89,13 @@ class ChildCareAssistance(ProgramCalculator):
         e.condition(child_eligible)
 
     def member_value(self, member: HouseholdMember):
-        if member.age <= ChildCareAssistance.max_age_preschool:
+        if member.calc_age() <= ChildCareAssistance.max_age_preschool:
             return ChildCareAssistance.preschool_value
-        elif member.age < ChildCareAssistance.max_age_afterschool:
+        elif member.calc_age() < ChildCareAssistance.max_age_afterschool:
             return ChildCareAssistance.afterschool_value
         elif (
-            member.age >= ChildCareAssistance.max_age_afterschool
-            and member.age <= ChildCareAssistance.max_age_afterschool_disabled
+            member.calc_age() >= ChildCareAssistance.max_age_afterschool
+            and member.calc_age() <= ChildCareAssistance.max_age_afterschool_disabled
             and member.has_disability()
         ):
             return ChildCareAssistance.afterschool_value

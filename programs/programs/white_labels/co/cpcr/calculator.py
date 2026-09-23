@@ -41,12 +41,12 @@ class PropertyCreditRebate(ProgramCalculator):
         is_surviving_spouse = self._is_surviving_spouse(member)
 
         # age
-        is_old_enough = member.age >= self.min_age
+        is_old_enough = member.calc_age() >= self.min_age
 
         e.condition(is_disabled or is_old_enough or is_surviving_spouse)
 
     def _member_is_disabled(self, member: HouseholdMember):
-        return member.has_disability() and member.age > self.disabled_min_age
+        return member.has_disability() and member.calc_age() > self.disabled_min_age
 
     def _is_surviving_spouse(self, member: HouseholdMember):
         # we don't ask this question in the normal MFB route

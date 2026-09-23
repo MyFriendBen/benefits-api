@@ -37,8 +37,8 @@ class Ssdi(ProgramCalculator):
         e.condition(member_income < income_limit)
 
         # age
-        e.condition(member.age >= Ssdi.min_age or self._child_eligible(member))
-        e.condition(member.age <= Ssdi.max_age)
+        e.condition(member.calc_age() >= Ssdi.min_age or self._child_eligible(member))
+        e.condition(member.calc_age() <= Ssdi.max_age)
 
         if e.eligible:
             self.eligible_members.append(member)
@@ -54,7 +54,7 @@ class Ssdi(ProgramCalculator):
 
     def _is_parent_with_disability(self, member: HouseholdMember):
         # min parent age
-        if member.age < Ssdi.min_age:
+        if member.calc_age() < Ssdi.min_age:
             return False
 
         # parent relationship
@@ -98,7 +98,7 @@ class Ssdi(ProgramCalculator):
         adult_value = 0
         child_ssdi_value = (self._parents_with_disability_ssdi_value() or Ssdi.amount) / 2
         for member in self.eligible_members:
-            if member.age >= Ssdi.min_age:
+            if member.calc_age() >= Ssdi.min_age:
                 adult_value += Ssdi.amount
             else:
                 child_value += child_ssdi_value

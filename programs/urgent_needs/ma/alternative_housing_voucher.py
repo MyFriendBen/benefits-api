@@ -16,7 +16,7 @@ class AlternativeHousingVoucher(UrgentNeedFunction):
         # disability
         member_eligible = False
         for member in self.screen.household_members.all():
-            if member.has_disability() and member.age < self.max_age:
+            if member.has_disability() and member.calc_age() < self.max_age:
                 member_eligible = True
 
         return member_eligible and income_eligible

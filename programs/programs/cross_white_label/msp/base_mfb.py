@@ -65,7 +65,7 @@ class MedicareSavings(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age >= self.min_age)
+        e.condition(member.calc_age() >= self.min_age)
 
         # insurance
         e.condition(member.insurance.has_insurance_types(self.eligible_insurance_types))
