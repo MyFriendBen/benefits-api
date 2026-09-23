@@ -24,4 +24,4 @@ class MySpark(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(MySpark.min_age <= member.age <= MySpark.max_age)
+        e.condition(MySpark.min_age <= member.calc_age() <= MySpark.max_age)

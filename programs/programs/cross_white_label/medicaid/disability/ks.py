@@ -77,7 +77,7 @@ class KsWorkingHealthy(ProgramCalculator):
         member = e.member
 
         # Age 16 through 64.
-        e.condition(member.age is not None and self.min_age <= member.age <= self.max_age)
+        e.condition(member.calc_age() is not None and self.min_age <= member.calc_age() <= self.max_age)
 
         # Qualifying disability or blindness (not the generic short-term flag).
         e.condition(member.long_term_disability or member.visually_impaired)
@@ -120,7 +120,7 @@ class KsWorkingHealthy(ProgramCalculator):
         if member.is_married()["is_married"]:
             return 2
 
-        if member.age is not None and member.age < 18 and self._minor_lives_with_parent(member):
+        if member.calc_age() is not None and member.calc_age() < 18 and self._minor_lives_with_parent(member):
             return 2
 
         return 1

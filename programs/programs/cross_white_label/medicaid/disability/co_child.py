@@ -31,7 +31,7 @@ class MedicaidChildWithDisability(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age <= MedicaidChildWithDisability.max_age)
+        e.condition(member.calc_age() <= MedicaidChildWithDisability.max_age)
 
         # disability
         e.condition(member.long_term_disability or member.visually_impaired)
@@ -43,6 +43,6 @@ class MedicaidChildWithDisability(ProgramCalculator):
         e.condition(
             not (
                 member.calc_gross_income("yearly", ["earned"]) >= 0
-                and member.age >= MedicaidChildWithDisability.min_employment_age
+                and member.calc_age() >= MedicaidChildWithDisability.min_employment_age
             )
         )

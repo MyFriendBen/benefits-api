@@ -22,10 +22,10 @@ class EnergyCalculatorPropertyCreditRebate(PropertyCreditRebate):
 
     def _member_is_disabled(self, member: HouseholdMember):
         has_disability = member.has_disability()
-        disability_age_eligible = member.age > self.disabled_min_age
+        disability_age_eligible = member.calc_age() > self.disabled_min_age
         receives_ssi = member.energy_calculator.receives_ssi
 
         return has_disability and disability_age_eligible and receives_ssi
 
     def _is_surviving_spouse(self, member: HouseholdMember):
-        return member.energy_calculator.surviving_spouse and member.age >= self.surviving_spouse_age
+        return member.energy_calculator.surviving_spouse and member.calc_age() >= self.surviving_spouse_age

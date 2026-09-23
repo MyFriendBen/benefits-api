@@ -46,4 +46,4 @@ class NCFamilyPlanningServices(ProgramCalculator):
         e.condition(member.is_head() or member.is_spouse())
 
         # Member must meet minimum age requirement
-        e.condition(member.age >= NCFamilyPlanningServices.min_age)
+        e.condition(member.calc_age() >= NCFamilyPlanningServices.min_age)

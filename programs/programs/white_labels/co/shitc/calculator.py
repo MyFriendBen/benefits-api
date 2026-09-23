@@ -27,7 +27,7 @@ class SeniorHousingIncomeTaxCredit(ProgramCalculator):
 
         # head or spouse
         e.condition(member.is_head() or member.is_spouse())
-        e.condition(member.age >= self.age_eligible)
+        e.condition(member.calc_age() >= self.age_eligible)
 
     def household_value(self):
         reduction_per_interval = (

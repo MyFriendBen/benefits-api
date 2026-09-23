@@ -35,9 +35,9 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
         member = e.member
         county = self.screen.county
 
-        age_eligible = member.age >= self.minimum_age_by_county.get(county, self.minimum_age)
+        age_eligible = member.calc_age() >= self.minimum_age_by_county.get(county, self.minimum_age)
 
-        has_minimum_age_with_disability = member.age >= self.minimum_age_with_disability
+        has_minimum_age_with_disability = member.calc_age() >= self.minimum_age_with_disability
         has_eligible_disability = member.visually_impaired or member.disabled
         disability_eligible = has_minimum_age_with_disability and has_eligible_disability
 

@@ -34,7 +34,7 @@ class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         member = e.member
 
         # Must be age 19-64
-        e.condition(member.age >= self.min_age and member.age <= self.max_age)
+        e.condition(member.calc_age() >= self.min_age and member.calc_age() <= self.max_age)
 
         # Must NOT be pregnant
         e.condition(not member.pregnant)

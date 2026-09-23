@@ -153,7 +153,9 @@ class KsK40h(ProgramCalculator):
         for member in self.screen.household_members.all():
             # Dependent minors/incapacitated members without title are excluded;
             # approximate as: exclude dependent children's income (spec criterion 2).
-            if member.relationship in ("child", "stepChild", "fosterChild") and (member.age is None or member.age < 18):
+            if member.relationship in ("child", "stepChild", "fosterChild") and (
+                member.calc_age() is None or member.calc_age() < 18
+            ):
                 continue
 
             # Everything except the excluded and half-counted types, at full value.
