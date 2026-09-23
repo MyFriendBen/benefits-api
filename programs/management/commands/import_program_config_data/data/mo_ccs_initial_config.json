@@ -1,0 +1,102 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "child_care"
+  },
+  "program": {
+    "name_abbreviated": "mo_ccs",
+    "external_name": "mo_ccs",
+    "name": "Child Care Subsidy",
+    "description_short": "Help paying for child care",
+    "description": "Missouri's Child Care Subsidy helps families pay for child care. This support is available while a parent works, studies, trains, or looks for work. It can also help when a parent cannot work because of a disability, or when a child has a special need.\n\nThe state pays your child care provider directly, and you pay part of the cost, called the sliding fee. Families with less income pay less. You can choose your provider, but it must have a contract with the Subsidy Program. Ask your provider about any extra cost.\n\nMissouri decides how many care days each child can get. The amount shown here is an estimate; yours may vary. Once you are approved, your authorization letter will tell you your care days and your fee. Missouri will also check whether you owe money from past child care help. But your own immigration status does not affect whether your child qualifies.\n\nMissouri helps some families first. This includes families who have a child with special needs, are homeless, or have very low income. If your family is homeless, tell the Subsidy Program when you apply. You can get full-time care with no fee, but for a school-age child, care follows their school schedule.\n\nTo apply, go to Missouri's Parent Portal. Create an account and submit your application.",
+    "website_description": "Help paying for child care",
+    "learn_more_link": "https://dese.mo.gov/childhood/child-care-subsidy/families",
+    "apply_button_link": "https://childcare.mo.gov/parent/s/programs",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "year": "2026",
+    "base_program": "ccap",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "active": false,
+    "low_confidence": false,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false
+  },
+  "warning_message": {
+    "external_name": "mo_ccs_waitlist",
+    "calculator": "_show",
+    "message": "Missouri put the Child Care Subsidy on a waiting list on March 1, 2026. You may be placed on the list instead of starting care right away. Your place is set by the date you apply and your priority group. Child Care Aware of Missouri can help you find care while you wait.",
+    "link_url": "https://mochildcareaware.org/cckmw-cc-referral/",
+    "link_text": "Find child care while you wait"
+  },
+  "navigators": [
+    {
+      "external_name": "mo_child_care_aware",
+      "name": "Child Care Aware of Missouri",
+      "email": "",
+      "description": "Child Care Aware of Missouri helps families find child care and apply for the subsidy. The service is free and statewide.",
+      "assistance_link": "https://mochildcareaware.org/cckmw-cc-referral/",
+      "phone_number": "+15734158605"
+    },
+    {
+      "external_name": "mo_211"
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "mo_ccs_id_proof",
+      "text": "Photo ID (driver's license, state ID, or passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ccs_earned_income",
+      "text": "Proof of earned income (2 paystubs from the last 60 days, or a tax return)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ccs_unearned_income",
+      "text": "Proof of other income (child support, unemployment, SSI, or a pension)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ccs_reason_for_care",
+      "text": "Proof of why you need care (school schedule, employer letter, or DESE form)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ccs_provider_information",
+      "text": "Child care provider details (name, address, and DVN)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ccs_disability_proof",
+      "text": "Proof of a disability or special need (medical letter, or DESE's Special Needs Form for a child)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ccs_homelessness_verification",
+      "text": "Homelessness proof (shelter, school, or agency letter)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
