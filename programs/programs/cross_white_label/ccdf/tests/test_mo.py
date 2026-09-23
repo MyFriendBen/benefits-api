@@ -271,6 +271,17 @@ class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
         self.add_medical(screen, 200, frequency=None)
         self.assert_ineligible(screen)
 
+    def test_null_amount_medical_expense_is_skipped_rather_than_raising(self):
+        screen = self.baseline(location=GREENE, wages=4_100)
+        Expense.objects.create(screen=screen, type="medical", amount=None, frequency="monthly")
+        self.assert_ineligible(screen)
+
+    def test_income_message_reports_annual_figures(self):
+        # The message reads "per year", so the monthly test is annualized for display.
+        eligibility = self.assert_ineligible(self.baseline(location=GREENE, wages=4_020))
+        self.assertEqual(eligibility.fail_messages[0][1], " $48240 ")
+        self.assertEqual(eligibility.fail_messages[0][3], " $48228")
+
     def test_null_birth_month_five_year_old_is_held_at_preschool(self):
         screen = self.baseline()
         self.child.birth_year_month = None

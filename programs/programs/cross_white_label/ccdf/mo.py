@@ -348,7 +348,8 @@ class MoChildCareSubsidy(ProgramCalculator):
         # neither can screen a household out on the data the screener collects.
         income = self.adjusted_monthly_income()
         limit = self.income_limit()
-        e.condition(income <= limit, messages.income(int(income), int(limit)))
+        # The comparison is monthly, but the message reads "per year".
+        e.condition(income <= limit, messages.income(int(income * 12), int(limit * 12)))
 
     def is_eligible_child(self, member: HouseholdMember) -> bool:
         """Criteria 4 and 6. Also the set the value sums over, so the two cannot drift."""
@@ -425,13 +426,14 @@ class MoChildCareSubsidy(ProgramCalculator):
         """
         income = sum((stream.monthly() for stream in self.counted_streams()), Decimal(0))
 
-        # `Expense.missing_fields` does not require `frequency`, and `monthly()` raises
-        # on a null one, so such an expense is skipped rather than failing the response.
+        # `monthly()` raises on a null `frequency` or `amount`, and this calculator does
+        # not declare the expense dependencies, so such an expense is skipped rather
+        # than failing the response.
         deduction = sum(
             (
                 Decimal(expense.monthly())
                 for expense in self.screen.expenses.all()
-                if expense.type == "medical" and expense.frequency
+                if expense.type == "medical" and expense.frequency and expense.amount is not None
             ),
             Decimal(0),
         )

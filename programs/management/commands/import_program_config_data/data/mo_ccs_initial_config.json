@@ -82,7 +82,7 @@
     },
     {
       "external_name": "mo_ccs_provider_information",
-      "text": "Child care provider details (name, address, and DVN)",
+      "text": "Child care provider details, if you have chosen one (name, address, and DVN)",
       "link_url": "",
       "link_text": ""
     },
