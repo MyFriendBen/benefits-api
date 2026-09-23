@@ -48,6 +48,8 @@ from screener.assistant import (
     _visible_programs,
 )
 from screener.models import (
+    AssistantConversation,
+    AssistantMessage,
     CurrentBenefit,
     EligibilitySnapshot,
     HouseholdMember,
@@ -1826,4 +1828,294 @@ class AssistantMessageViewTests(APITestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["error"]["code"], "assistant_disabled")
+        request.assert_not_called()
+
+
+class AssistantMessageRatingViewTests(APITestCase):
+    """Thumbs up / thumbs down on one assistant reply (MFB-1915).
+
+    This is the one assistant endpoint that writes our own table instead of proxying,
+    so the checks the proxy gets from ai-service — does this conversation belong to
+    this screen, does this message belong to this conversation — have to be made here.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(
+            name="Test State", code="test", state_code="TS", feature_flags={"benbot": True}
+        )
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=2, completed=True
+        )
+        self.conversation = AssistantConversation.objects.create(
+            conversation_id=uuid.uuid4(),
+            screen_uuid=self.screen.uuid,
+            white_label=self.white_label.code,
+            prompt_version="v5",
+        )
+        self.reply = AssistantMessage.objects.create(
+            message_id=uuid.uuid4(),
+            conversation=self.conversation,
+            seq=1,
+            role="assistant",
+            text="Here is what I found.",
+        )
+        self.question = AssistantMessage.objects.create(
+            message_id=uuid.uuid4(),
+            conversation=self.conversation,
+            seq=0,
+            role="user",
+            text="What should I apply for?",
+        )
+
+    def _url(self, message=None, conversation=None, screen_uuid=None):
+        return reverse(
+            "assistant-message-rating",
+            args=[
+                screen_uuid or self.screen.uuid,
+                (conversation or self.conversation).conversation_id,
+                (message or self.reply).message_id,
+            ],
+        )
+
+    def _put(self, rating, reason=None, **kwargs):
+        body = {"rating": rating}
+        if reason is not None:
+            body["reason"] = reason
+        return self.client.put(self._url(**kwargs), body, format="json")
+
+    # --- the happy path: set, change, clear ---
+
+    def test_sets_a_rating(self):
+        response = self._put(1)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["rating"], 1)
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, 1)
+
+    def test_changing_to_the_other_thumb_replaces_rather_than_appends(self):
+        self._put(1)
+        self._put(-1)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, -1)
+
+    def test_clearing_writes_null(self):
+        self._put(1)
+        response = self._put(None)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data["rating"])
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_rated_then_cleared_is_distinguishable_from_never_rated(self):
+        """The acceptance criterion `rating` alone cannot satisfy.
+
+        Both rows end with `rating IS NULL`. `rated_at` is what says one of them was
+        rated and had it withdrawn — a real signal about the reply, and not the same
+        as the silence of a reply nobody touched.
+        """
+        self._put(1)
+        self._put(None)
+
+        self.reply.refresh_from_db()
+        self.question.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+        self.assertIsNotNone(self.reply.rated_at)
+        self.assertIsNone(self.question.rating)
+        self.assertIsNone(self.question.rated_at)
+
+    # --- input validation ---
+
+    def test_rejects_a_rating_that_is_neither_thumb(self):
+        response = self._put(5)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_rating")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_rejects_a_json_boolean(self):
+        """`True == 1` in Python, so a membership test alone stores `true` as a thumbs up."""
+        response = self._put(True)
+
+        self.assertEqual(response.status_code, 400)
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_a_missing_rating_key_is_not_read_as_a_clear(self):
+        """An omitted key is a malformed request, not an instruction to un-rate."""
+        self._put(1)
+        response = self.client.put(self._url(), {}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, 1)
+
+    # --- scoping: the same failures AssistantMessageView exists to prevent ---
+
+    def test_a_user_turn_cannot_be_rated(self):
+        response = self._put(1, message=self.question)
+
+        self.assertEqual(response.status_code, 404)
+        self.question.refresh_from_db()
+        self.assertIsNone(self.question.rating)
+
+    def test_another_screens_conversation_cannot_be_rated(self):
+        other = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=1, completed=True)
+
+        response = self._put(1, screen_uuid=other.uuid)
+
+        self.assertEqual(response.status_code, 404)
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_a_message_from_another_conversation_cannot_be_rated(self):
+        other = AssistantConversation.objects.create(
+            conversation_id=uuid.uuid4(),
+            screen_uuid=self.screen.uuid,
+            white_label=self.white_label.code,
+            prompt_version="v5",
+            status="closed",
+        )
+
+        response = self._put(1, conversation=other)
+
+        self.assertEqual(response.status_code, 404)
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_flag_off_refuses(self):
+        self.white_label.feature_flags = {"benbot": False}
+        self.white_label.save()
+
+        response = self._put(1)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"]["code"], "assistant_disabled")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    # --- reason codes (MFB-1915) ---
+
+    def test_records_a_reason_with_a_thumbs_down(self):
+        response = self._put(-1, reason=AssistantMessage.REASON_NOT_MY_RESULTS)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["reason"], "not_my_results")
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "not_my_results")
+
+    def test_a_thumbs_down_without_a_reason_is_the_normal_case(self):
+        """The chips are offered AFTER the rating is saved, so most calls carry none."""
+        response = self._put(-1)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data["reason"])
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, -1)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_picking_a_chip_after_the_fact_updates_the_reason(self):
+        self._put(-1)
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "inaccurate")
+
+    def test_choosing_a_different_chip_replaces_rather_than_appends(self):
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(-1, reason=AssistantMessage.REASON_HARD_TO_FOLLOW)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "hard_to_follow")
+
+    def test_switching_to_a_thumbs_up_drops_the_reason(self):
+        """A reason stranded on a positive row reads as a complaint nobody made."""
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(1)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, 1)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_clearing_the_rating_drops_the_reason(self):
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(None)
+
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_rejects_an_unknown_reason_code(self):
+        response = self._put(-1, reason="because_i_said_so")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_reason")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_rejects_a_reason_on_a_thumbs_up(self):
+        """A client sending this has a bug; swallowing it would hide that."""
+        response = self._put(1, reason=AssistantMessage.REASON_INACCURATE)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_reason")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_every_offered_code_is_accepted(self):
+        """The UI renders this list; a code the API refuses would be a dead chip."""
+        for code, _label in AssistantMessage.RATING_REASON_CHOICES:
+            with self.subTest(code=code):
+                response = self._put(-1, reason=code)
+
+                self.assertEqual(response.status_code, 200, response.data)
+                self.reply.refresh_from_db()
+                self.assertEqual(self.reply.rating_reason, code)
+
+    def test_the_database_refuses_a_reason_on_a_thumbs_up(self):
+        """The API validates, but two services write this table; the constraint is the
+        backstop, and it is what makes stranded reasons impossible rather than unlikely."""
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            AssistantMessage.objects.filter(pk=self.reply.pk).update(
+                rating=1, rating_reason=AssistantMessage.REASON_INACCURATE
+            )
+
+    def test_the_database_refuses_a_reason_on_an_UNRATED_row(self):
+        """The case the first version of this constraint let straight through.
+
+        A Postgres CHECK passes unless it evaluates to FALSE, and NULL is not FALSE.
+        With `rating IS NULL`, `rating = -1` is NULL, so `rating_reason IS NULL OR
+        rating = -1` came out NULL and the row was ACCEPTED — the exact thing the
+        constraint exists to refuse. The thumbs-up case above does fail, which is why
+        testing only that one hid this.
+        """
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            AssistantMessage.objects.filter(pk=self.reply.pk).update(
+                rating=None, rating_reason=AssistantMessage.REASON_INACCURATE
+            )
+
+    def test_a_structured_reason_is_a_400_not_a_500(self):
+        """`VALID_REASONS` is a frozenset, so an unhashable body value raises TypeError
+        on the membership test — a 500 where this endpoint owes a 400."""
+        for bad in ([AssistantMessage.REASON_INACCURATE], {"code": "inaccurate"}, 7, True):
+            with self.subTest(reason=bad):
+                response = self.client.put(self._url(), {"rating": -1, "reason": bad}, format="json")
+
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertEqual(response.data["error"]["code"], "invalid_reason")
+                self.reply.refresh_from_db()
+                self.assertIsNone(self.reply.rating_reason)
+
+    def test_does_not_call_ai_service(self):
+        """The whole point of writing directly: no second service in the path."""
+        with mock.patch("screener.assistant.requests.request") as request:
+            self._put(1)
+
         request.assert_not_called()

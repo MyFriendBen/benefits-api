@@ -24,6 +24,7 @@ import phonenumbers
 import requests
 from django.conf import settings
 from django.db.models import Prefetch, Q
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, views
 from rest_framework.request import Request
@@ -39,11 +40,12 @@ from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
-from .models import EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .models import AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
 from .urgent_needs import eligible_urgent_needs
 from .throttles import (
     AssistantHistoryRateThrottle,
     AssistantMessageRateThrottle,
+    AssistantRatingRateThrottle,
     AssistantStartRateThrottle,
 )
 
@@ -1282,3 +1284,136 @@ class AssistantMessageView(views.APIView):
             "client_message_id": body.get("client_message_id"),
         }
         return _proxy("POST", f"/v1/conversations/{conversation_id}/messages", payload)
+
+
+class AssistantMessageRatingView(views.APIView):
+    """PUT: set, change, or clear the thumbs up/down on one assistant reply (MFB-1915).
+
+    The one endpoint in this file that does NOT proxy to ai-service. Everything else
+    here is a passthrough because the thing being asked for is a model completion or
+    the transcript that ai-service assembles; a rating is neither. It is a scalar on a
+    row whose schema this repo owns, needing no LLM, no `seq` assignment and no
+    conversation row lock — so proxying it would put a second service and a second
+    network hop in front of a single UPDATE, and take thumbs-up with it whenever
+    ai-service is down even though the database is fine.
+
+    ai-service still READS the column (it serves `GET /v1/conversations/{id}`, which is
+    how a rating survives a page reload), so the two repos ship together. See the
+    rating fields on `AssistantMessage` and `store_postgres._EXPECTED_COLUMNS`.
+
+    One verb rather than three, because "rate", "change my rating" and "un-rate" are
+    the same statement about the same message — `{"rating": 1 | -1 | null}` — and the
+    widget toggles between them freely. PUT also makes the double-click that a slow
+    network turns into two requests land on the same value instead of racing.
+
+    PUT REPLACES BOTH FIELDS. The body states the whole feedback, so a call carrying
+    `rating` and no `reason` clears any reason already stored. That is what makes
+    picking a different chip, switching thumbs and un-rating all the same operation,
+    and it is why the widget always sends the reason it wants kept rather than relying
+    on the server to remember one.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [AssistantRatingRateThrottle]
+
+    VALID_RATINGS = (AssistantMessage.RATING_UP, AssistantMessage.RATING_DOWN)
+    VALID_REASONS = frozenset(code for code, _ in AssistantMessage.RATING_REASON_CHOICES)
+
+    def put(self, request, screen_uuid, conversation_id, message_id):
+        screen = get_object_or_404(Screen.objects.select_related("white_label"), uuid=screen_uuid)
+        if not screen.white_label.has_feature("benbot"):
+            return Response({"error": {"code": "assistant_disabled"}}, status=status.HTTP_403_FORBIDDEN)
+
+        body = _body(request)
+        if "rating" not in body:
+            return Response(
+                {"error": {"code": "invalid_rating", "message": "A 'rating' key is required (1, -1 or null)."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        rating = body["rating"]
+        # `True == 1` in Python, so a JSON `true` would otherwise sail through the
+        # membership test below and be stored as a thumbs up.
+        if rating is not None and (isinstance(rating, bool) or rating not in self.VALID_RATINGS):
+            return Response(
+                {"error": {"code": "invalid_rating", "message": "rating must be 1, -1 or null."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # `reason` is optional in a way `rating` is not: the chips are offered AFTER the
+        # thumbs-down is already saved, so most calls legitimately carry no reason at
+        # all. Absent means "not answered" and is not an error.
+        reason = body.get("reason")
+        # `isinstance(reason, str)` before the membership test, not as belt-and-braces:
+        # VALID_REASONS is a frozenset, and a JSON array or object body value is
+        # unhashable, so `reason not in VALID_REASONS` raises TypeError and the caller
+        # gets a 500 instead of the 400 this branch exists to produce. Same class of
+        # trap as the `isinstance(rating, bool)` guard above.
+        if reason is not None and (not isinstance(reason, str) or reason not in self.VALID_REASONS):
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_reason",
+                        "message": f"reason must be null or one of: {', '.join(sorted(self.VALID_REASONS))}.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # A reason only means anything against a thumbs-down. Rejecting rather than
+        # silently dropping it: a client sending one with a thumbs-up has a bug, and
+        # swallowing it would hide that while looking like it worked.
+        if reason is not None and rating != AssistantMessage.RATING_DOWN:
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_reason",
+                        "message": "reason is only valid with rating -1.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # All three of screen, conversation and message are matched in one query, for
+        # the reason spelled out in AssistantMessageView: a conversation_id alone was
+        # once enough to reach ANY conversation from ANY screen, which also let a white
+        # label with the benbot flag off have its rows written through one that had it
+        # on. A rating is a smaller write than a message, but it lands on the same rows
+        # and would defeat a per-white-label rollback in the same way.
+        #
+        # `role="assistant"` is part of the lookup rather than a separate 400: a user
+        # turn is not a thing this endpoint can rate, so it is simply not found. The
+        # matching database constraint is the backstop.
+        message = (
+            AssistantMessage.objects.filter(
+                message_id=message_id,
+                conversation_id=conversation_id,
+                conversation__screen_uuid=screen.uuid,
+                role="assistant",
+            )
+            .only("message_id", "rating", "rated_at", "rating_reason")
+            .first()
+        )
+        if message is None:
+            return Response(
+                {"error": {"code": "message_not_found", "message": "No such assistant message."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # `rated_at` is stamped on a clear as well as on a set, and never reset. It is
+        # the only thing that distinguishes "rated, then withdrawn" from "never rated"
+        # once `rating` is back to NULL, and those are different facts about the reply.
+        message.rating = rating
+        message.rated_at = timezone.now()
+        # Switching to a thumbs-up, or clearing, takes any previous reason with it. A
+        # reason stranded on a positive or unrated row would be read as a complaint
+        # about a reply nobody complained about — and the DB constraint refuses it
+        # anyway, so not doing this would turn an ordinary re-rate into a 500.
+        message.rating_reason = reason if rating == AssistantMessage.RATING_DOWN else None
+        message.save(update_fields=["rating", "rated_at", "rating_reason"])
+
+        return Response(
+            {
+                "message_id": str(message.message_id),
+                "rating": message.rating,
+                "reason": message.rating_reason,
+            }
+        )
