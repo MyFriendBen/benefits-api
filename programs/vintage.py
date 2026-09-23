@@ -230,7 +230,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="current benefit year; PolicyEngine re-bases the BBCE limit within the year off fpg_year_start_month, so the month carries the schedule, not the year",
         source="cross_white_label/snap/base.py",
     ),
-
     ("ma", "ma_ccdf"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
@@ -242,7 +241,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="coverage year; moved with the migration onto Massachusetts' CCFA rules",
         source="ma_ccdf CCFA migration, benefits-api#1767",
     ),
-
     ("ks", "ks_k40h"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
@@ -258,15 +256,13 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         "requires the 2026 K-40H booklet's income limit and refund table together",
         source="K.S.A. 79-4501 et seq.; 2025 K-40H booklet",
     ),
-
     ("co", "ssi"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
-        "$994 individual / $1,491 couple",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
     ),
     ("il", "ssi"): Vintage(
         edition="2026",
@@ -274,8 +270,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
-        "$994 individual / $1,491 couple",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
     ),
     ("ma", "ssi"): Vintage(
         edition="2026",
@@ -283,8 +278,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
-        "$994 individual / $1,491 couple",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
     ),
     ("tx", "tx_ssi"): Vintage(
         edition="2026",
@@ -292,8 +286,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at "
-        "$994 individual / $1,491 couple",
+        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
     ),
     ("il", "il_msp"): Vintage(
         edition="2026",
@@ -360,7 +353,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
         "on 2026-09-18; csfp/specs/wa.md data-gap section",
     ),
-
     # --- DEFERRED ----------------------------------------------------------------------
     ("cesn", "cesn_care"): Vintage(
         edition="2025",
@@ -628,5 +620,4 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
         source="",
     ),
-
 }

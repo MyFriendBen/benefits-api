@@ -114,8 +114,7 @@ class Command(BaseCommand):
 
             if intent.edition != period:
                 findings[DISAGREES].append(
-                    f"{label}: on {period}, recorded as {intent.edition} "
-                    f"({intent.status.value}) — {intent.rule}"
+                    f"{label}: on {period}, recorded as {intent.edition} " f"({intent.status.value}) — {intent.rule}"
                 )
 
         return self._report(findings, options["check"])

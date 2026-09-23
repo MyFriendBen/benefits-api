@@ -49,17 +49,13 @@ def _repoint(apps, corrections, to_period):
     Program = apps.get_model("programs", "Program")
     FederalPoveryLimit = apps.get_model("programs", "FederalPoveryLimit")
 
-    target = FederalPoveryLimit.objects.filter(year=to_period, period=to_period).first()
-    if target is None:
-        # Matched on year AND period: production carries a row whose year is '2022' and
-        # whose period resolves to 2024, so selecting by label alone lands on the wrong
-        # edition.
-        raise RuntimeError(
-            f"No FederalPoveryLimit row with year=period={to_period!r}. Create it before "
-            "running this migration; repointing programs at a missing edition makes "
-            "as_dict() raise inside eligibility calculation."
-        )
-
+    # Work out what there is to move BEFORE requiring the destination to exist. A missing
+    # target row is only a problem if something needs moving onto it, and migrations also
+    # run against an empty database -- every CI test run builds one from scratch, where
+    # there are no programs and no FederalPoveryLimit rows because both arrive through
+    # config imports rather than migrations. Demanding the row up front turned that empty
+    # case into a hard failure and took down the whole test job.
+    pending = []
     for white_label, abbr, expected in corrections:
         program = (
             Program.objects.filter(white_label__code=white_label, name_abbreviated=abbr)
@@ -76,10 +72,28 @@ def _repoint(apps, corrections, to_period):
             print(f"  {white_label}/{abbr}: on {current!r}, expected {expected!r} — leaving it alone")
             continue
 
+        pending.append((white_label, abbr, expected, program.pk))
+
+    if not pending:
+        print("  nothing to move")
+        return
+
+    # Matched on year AND period: production carries a row whose year is '2022' and whose
+    # period resolves to 2024, so selecting by label alone lands on the wrong edition.
+    target = FederalPoveryLimit.objects.filter(year=to_period, period=to_period).first()
+    if target is None:
+        raise RuntimeError(
+            f"{len(pending)} program(s) need moving to edition {to_period!r}, but no "
+            f"FederalPoveryLimit row has year=period={to_period!r}. Create it first; "
+            "repointing programs at a missing edition makes as_dict() raise inside "
+            "eligibility calculation."
+        )
+
+    for white_label, abbr, expected, pk in pending:
         # queryset.update() rather than instance.save(): Program is a parler
         # TranslatableModel and the historical model apps.get_model() returns carries no
         # parler metadata, so save() dies in save_translations with a bare TypeError.
-        Program.objects.filter(pk=program.pk).update(year=target)
+        Program.objects.filter(pk=pk).update(year=target)
         print(f"  {white_label}/{abbr}: {expected} -> {to_period}")
 
 
