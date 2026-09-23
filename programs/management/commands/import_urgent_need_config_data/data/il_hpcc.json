@@ -1,0 +1,31 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_hpcc",
+    "category_type": {
+      "external_name": "il_managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Homelessness Prevention Contact Center (HPCC)",
+      "description": "Had a recent crisis? 211 Metro Chicago can help you pay rent or utility bills. Call 311 if you might be evicted or if the utility company has shut off your heat or electricity.",
+      "link": "https://211metrochicago.org/hpcc/",
+      "warning": "",
+      "website_description": "Help paying rent or utility bills after a crisis.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "311",
+    "counties": [
+      "Cook"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

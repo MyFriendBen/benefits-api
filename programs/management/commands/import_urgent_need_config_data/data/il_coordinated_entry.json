@@ -1,0 +1,31 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_coordinated_entry",
+    "category_type": {
+      "external_name": "il_managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Coordinated Entry",
+      "description": "Chicago's Coordinated Entry System (CES) helps people who are homeless find housing. First, CES asks you questions to learn what you need. Then it decides who gets housing first, based on need. This program helps young people, adults, and families.",
+      "link": "https://allchicago.org/coordinated-entry-system/",
+      "warning": "",
+      "website_description": "How to get assessed for housing if you are homeless in Chicago.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "+13129714178",
+    "counties": [
+      "Cook"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
