@@ -566,7 +566,7 @@ class ConfigurationData:
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
-                "_default_message": 'It looks like you may not qualify for benefits included in MyFriendBen at this time. If you have an urgent need, please click on the "Additional Resources" tab. You can also click the "Immediate Help" tab to find other local resources.',
+                "_default_message": 'It looks like you may not qualify for benefits included in MyFriendBen at this time. You can find other support matched to your needs in the Additional Resources tab. If you need help right away, go to the Immediate Help tab',
             },
         },
     }
