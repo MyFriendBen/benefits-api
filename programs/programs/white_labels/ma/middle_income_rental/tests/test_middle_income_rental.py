@@ -20,6 +20,14 @@ from programs.programs.white_labels.ma.middle_income_rental.calculator import Ma
 from programs.framework.base import ProgramCalculator, Eligibility
 
 
+def _ami_80_only(_screen, percent, _year, county_override=None):
+    """An 80% AMI of $80,000, asserting the calculator never asks HUD for another tier."""
+    if percent != "80%":
+        raise AssertionError(f"Expected '80%' AMI request but got '{percent}'")
+
+    return 80_000
+
+
 class TestMaMiddleIncomeRentalCalculator(TestCase):
     """Tests for MaMiddleIncomeRental calculator class attributes and registration."""
 
@@ -221,21 +229,10 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
 
         return MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_80_only(self, mock_hud_client, ami_80=80_000):
-        """Mock HUD client and assert the calculator always requests the 80% AMI tier."""
-
-        def _side_effect(_screen, percent, _year, county_override=None):
-            self.assertEqual(percent, "80%", f"Expected '80%' AMI request but got '{percent}'")
-            return ami_80
-
-        mock_hud_client.get_screen_il_ami.side_effect = _side_effect
-
     def test_income_at_80_percent_ami_is_eligible(self):
         """Test that income exactly at 80% AMI is eligible."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             # 80% AMI = 80000, so 120% AMI = 80000 * 1.5 = 120000
-            self._mock_ami_80_only(mock_hud_client)
-
             calculator = self._create_calculator(income=80000)
             eligibility = Eligibility()
 
@@ -245,10 +242,8 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
 
     def test_income_at_120_percent_ami_is_eligible(self):
         """Test that income exactly at 120% AMI is eligible."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             # 80% AMI = 80000, so 120% AMI = 80000 * 1.5 = 120000
-            self._mock_ami_80_only(mock_hud_client)
-
             calculator = self._create_calculator(income=120000)
             eligibility = Eligibility()
 
@@ -258,9 +253,7 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
 
     def test_income_between_80_and_120_percent_ami_is_eligible(self):
         """Test that income between 80% and 120% AMI is eligible."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
-            self._mock_ami_80_only(mock_hud_client)
-
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             calculator = self._create_calculator(income=100000)
             eligibility = Eligibility()
 
@@ -270,9 +263,7 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
 
     def test_income_below_80_percent_ami_is_ineligible(self):
         """Test that income below 80% AMI is not eligible."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
-            self._mock_ami_80_only(mock_hud_client)
-
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             calculator = self._create_calculator(income=70000)
             eligibility = Eligibility()
 
@@ -282,10 +273,8 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
 
     def test_income_above_120_percent_ami_is_ineligible(self):
         """Test that income above 120% AMI is not eligible."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             # 80% AMI = 80000, so 120% AMI = 120000; income of 130000 exceeds ceiling
-            self._mock_ami_80_only(mock_hud_client)
-
             calculator = self._create_calculator(income=130000)
             eligibility = Eligibility()
 
@@ -327,21 +316,10 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
 
         return MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_80_only(self, mock_hud_client, ami_80=80_000):
-        """Mock HUD client and assert the calculator always requests the 80% AMI tier."""
-
-        def _side_effect(_screen, percent, _year, county_override=None):
-            self.assertEqual(percent, "80%", f"Expected '80%' AMI request but got '{percent}'")
-            return ami_80
-
-        mock_hud_client.get_screen_il_ami.side_effect = _side_effect
-
     def test_voucher_holder_below_80_pct_floor_is_eligible(self):
         """Voucher holders skip the 80% floor and are eligible even with low income."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             # 80% AMI = 80000; income of 50000 is below floor but voucher exempts from it
-            self._mock_ami_80_only(mock_hud_client)
-
             calculator = self._create_calculator(income=50000, has_section_8=True)
             eligibility = Eligibility()
 
@@ -351,10 +329,8 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
 
     def test_voucher_holder_above_120_pct_ceiling_is_ineligible(self):
         """Voucher holders are still subject to the 120% income ceiling."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             # 80% AMI = 80000, so 120% AMI = 120000; income of 130000 exceeds ceiling
-            self._mock_ami_80_only(mock_hud_client)
-
             calculator = self._create_calculator(income=130000, has_section_8=True)
             eligibility = Eligibility()
 
@@ -364,9 +340,7 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
 
     def test_non_voucher_holder_below_80_pct_floor_is_ineligible(self):
         """Non-voucher holders must meet the 80% income floor."""
-        with hud_ami(MaMiddleIncomeRental, None) as mock_hud_client:
-            self._mock_ami_80_only(mock_hud_client)
-
+        with hud_ami(MaMiddleIncomeRental, _ami_80_only):
             calculator = self._create_calculator(income=50000, has_section_8=False)
             eligibility = Eligibility()
 

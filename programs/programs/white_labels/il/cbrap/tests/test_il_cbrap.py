@@ -52,6 +52,7 @@ def hud_il_ami_stub(screen, percent, year, county_override=None):
 
 class IlCbrapTestBase(CustomCalculatorTestCase):
     calculator_class = IlCbrap
+    stores_age = False
     white_label_code = "il"
     state_code = "IL"
     fpl_year = AMI_VINTAGE

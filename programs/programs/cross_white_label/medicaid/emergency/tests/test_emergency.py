@@ -24,6 +24,7 @@ class TestIlEmergencyMedicaid(CustomCalculatorTestCase):
     """Test cases for Illinois Emergency Medicaid calculator."""
 
     calculator_class = IlEmergencyMedicaid
+    stores_age = False
     white_label_code = "il"
     state_code = "IL"
     default_zipcode = "60601"

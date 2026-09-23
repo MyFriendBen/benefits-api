@@ -56,14 +56,22 @@ def add_income(
 
     `calc_gross_income` annualizes by frequency, so converting to a yearly figure here
     would hide what the scenario actually says.
+
+    Sets `has_income`, as the screener does for any member with a stream.
     """
-    return IncomeStream.objects.create(
+    income = IncomeStream.objects.create(
         screen=member.screen,
         household_member=member,
         type=income_type,
         amount=amount,
         frequency=frequency,
     )
+
+    if not member.has_income:
+        member.has_income = True
+        member.save(update_fields=["has_income"])
+
+    return income
 
 
 def add_expense(member: HouseholdMember, amount: int, expense_type: str = "rent", frequency: str = "monthly"):

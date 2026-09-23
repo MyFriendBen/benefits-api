@@ -24,6 +24,7 @@ FPL_185_SIZE_3 = 50_542  # 27,320 * 1.85, exactly
 
 class TestMoNurseFamilyPartnership(CustomCalculatorTestCase):
     calculator_class = MoNurseFamilyPartnership
+    stores_age = False
     program_code = "mo_nfp"
     white_label_code = "mo"
     state_code = "MO"

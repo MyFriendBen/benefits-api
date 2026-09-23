@@ -203,7 +203,7 @@ the PolicyEngine side.
 ### The base test case
 
 `CustomCalculatorTestCase` creates the white label, the FPL year and the `Program` row in
-`setUp`, so a test states only the household:
+`setUpTestData`, so a test states only the household:
 
 ```python
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
@@ -217,7 +217,7 @@ class TestMyProgram(CustomCalculatorTestCase):
     state_code = "CO"
 
     def test_eligible_household(self):
-        screen = self.make_screen("co", "CO", household_size=2, county="Denver County")
+        screen = self.make_screen(household_size=2, county="Denver County")
         add_income(self.add_member(screen), 1_500)
 
         eligibility = self.calculate(screen)
@@ -257,6 +257,27 @@ class TestMyProgram(CustomCalculatorTestCase):
 
 Most existing custom tests are in this group — they stand up a `Mock()` program today.
 
+### Proving the stored `age` is unused
+
+The `age` column is being retired in favour of `calc_age()` / `fraction_age()`. A calculator
+that reads age only through those sets `stores_age = False`: members are then saved with a
+null `age`, as they will be once the column is dropped, so a stray `member.age` fails in the
+calculator's own tests instead of in production.
+
+```python
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    stores_age = False
+```
+
+### HUD income limits
+
+`self.hud_ami(...)` stubs the HUD client for this calculator's module. `limit` is a number,
+a dict keyed by AMI band (`{"60%": 60_000}`), or a callable; `payment_standard` is the
+monthly SAFMR/FMR in dollars a voucher calculator reads. A lookup the test did not supply
+fails the test on exit — it cannot raise in place, because the voucher calculators catch
+every exception and report $0.
+
 ### When to use this fixture, and when to mock instead
 
 Two strategies coexist deliberately. Measured over ten identical tests:
@@ -283,8 +304,9 @@ already building a DB household by hand, not on principle.
 | builder | what it makes |
 | -- | -- |
 | `make_screen(white_label_code, state_code, household_size=…, zipcode=…, county=…)` | the household. `household_size` drives FPL and SMI lookups and is **not** derived from the members added afterwards |
-| `add_member(screen, relationship, age, **kwargs)` | a member, with an uninsured `Insurance` record — the relation is non-null, so a calculator reading `member.insurance` raises without it. Pass `birth_year_month` as well when a scenario turns on a birthday rather than a whole-year age |
-| `add_income(member, amount, income_type="wages", frequency="monthly")` | an income stream, stated as the scenario states it — `calc_gross_income` annualizes by frequency |
+| `add_member(screen, relationship, age, **kwargs)` | a member, with an uninsured `Insurance` record — the relation is non-null, so a calculator reading `member.insurance` raises without it. The age is written as a `birth_year_month`; pass `birth_year_month` instead (with `age=None`) when a scenario turns on a calendar date, and pin `reference_date` so it does not drift. Both at once must agree |
+| `set_age(member, age)` | changes an existing member's age. Never assign `member.age` directly — `calc_age()` reads the birth month, which would still say the old age |
+| `add_income(member, amount, income_type="wages", frequency="monthly")` | an income stream, stated as the scenario states it — `calc_gross_income` annualizes by frequency. Sets `has_income`, as the screener does |
 | `add_expense(member, amount, expense_type="rent")` | an expense, for programs that net it out of income |
 | `add_insurance(member, medicaid=True, none=False)` | replaces the member's insurance. Name only what the scenario needs |
 | `make_program(white_label_code, name_abbreviated, year)` | the `Program` row. A calculator reading `self.program.year.period` fails on an unsaved one |

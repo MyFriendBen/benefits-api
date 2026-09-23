@@ -17,6 +17,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
     """Test cases for Illinois Nurse-Family Partnership calculator."""
 
     calculator_class = IlNurseFamilyPartnership
+    stores_age = False
     program_code = "il_nfp"
     white_label_code = "il"
     state_code = "IL"

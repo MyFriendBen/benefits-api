@@ -18,6 +18,7 @@ class TestWaWsosGrd(CustomCalculatorTestCase):
     """
 
     calculator_class = WaWsosGrd
+    stores_age = False
     program_code = "wa_wsos_grd"
     white_label_code = "wa"
     state_code = "WA"

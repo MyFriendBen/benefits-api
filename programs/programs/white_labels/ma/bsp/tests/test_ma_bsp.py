@@ -45,10 +45,12 @@ class MaBabyStepsTestCase(CustomCalculatorTestCase):
     """The shared fixture, plus the two things BabySteps needs on top of it.
 
     Every scenario is evaluated as of a fixed date, and members are described by birth month
-    rather than whole-year age — `age` is derived from it so both agree.
+    rather than whole-year age. BabySteps reads only the birth month, so the stored `age` is
+    left null.
     """
 
     calculator_class = MaBabySteps
+    stores_age = False
     program_code = "ma_bsp"
     white_label_code = "ma"
     state_code = "MA"

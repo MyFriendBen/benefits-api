@@ -74,6 +74,7 @@ def add_member(
     monthly_income: int = 0,
     yearly_income: int = 0,
     income_type: str = "wages",
+    stored_age: bool = True,
     **kwargs,
 ) -> HouseholdMember:
     """Add a household member, and their income when the scenario states one.
@@ -85,25 +86,48 @@ def add_member(
 
     `age` is stated as the scenario states it and may be fractional — `3.5` is three years
     six months, for the calculators that read `fraction_age()` rather than a whole-year age.
-    Both `age` and a matching `birth_year_month` are set, so a calculator reading either
-    field sees the same person.
+    `birth_year_month` is what the member's age is: `calc_age()` and `fraction_age()` derive
+    it, and the stored `age` column is only a copy.
 
-    Pass `birth_year_month` explicitly instead when the scenario turns on an absolute
-    calendar date rather than an age — a program start date or an enrollment window — since
-    a birth month derived from today would drift out of that window as the calendar moves.
-    Doing so leaves `age` alone, so pass that too if the calculator reads it.
+    Pass `birth_year_month` instead when the scenario turns on an absolute calendar date
+    rather than an age — a program start date or an enrollment window — since a birth month
+    derived from today would drift out of that window as the calendar moves. The stored
+    `age` is then derived from it. Passing both is allowed only when they agree, so a member
+    can never be two different people.
+
+    `stored_age=False` saves the member with a null `age`, as every member will be once the
+    column is dropped, so a calculator still reading it fails in its own tests.
 
     An `Insurance` row comes with the member, defaulting to uninsured, because the
     relation is one-to-one and non-null: a calculator reading `member.insurance` raises
     `RelatedObjectDoesNotExist` without it. Override with `add_insurance`.
     """
+    reference_date = screen.get_reference_date()
+    birth_year_month = kwargs.get("birth_year_month")
+
     if "birth_year_month" not in kwargs and age is not None:
-        kwargs["birth_year_month"] = birth_year_month_for_age(age, screen.get_reference_date())
+        kwargs["birth_year_month"] = birth_year_month_for_age(age, reference_date)
+    elif birth_year_month is not None:
+        derived = HouseholdMember.age_from_date(birth_year_month, reference_date)
+        if age is None:
+            age = derived
+        elif int(age) != derived:
+            raise ValueError(
+                f"age={age} disagrees with birth_year_month={birth_year_month}, which is {derived} "
+                f"on {reference_date}. Pass one of them."
+            )
 
-    # A member given income has income, unless the scenario says otherwise on purpose.
-    kwargs.setdefault("has_income", bool(monthly_income or yearly_income))
+    # The screener sets `has_income` from the streams, which `add_income` mirrors. An explicit
+    # value is reapplied afterwards, for a row written through the API that disagrees.
+    explicit_has_income = kwargs.pop("has_income", None)
 
-    household_member = HouseholdMember.objects.create(screen=screen, relationship=relationship, age=age, **kwargs)
+    household_member = HouseholdMember.objects.create(
+        screen=screen,
+        relationship=relationship,
+        age=age if stored_age else None,
+        has_income=False,
+        **kwargs,
+    )
     Insurance.objects.create(household_member=household_member)
 
     if monthly_income:
@@ -112,7 +136,24 @@ def add_member(
     if yearly_income:
         add_income(household_member, yearly_income, income_type=income_type, frequency="yearly")
 
+    if explicit_has_income is not None and household_member.has_income != explicit_has_income:
+        household_member.has_income = explicit_has_income
+        household_member.save(update_fields=["has_income"])
+
     return household_member
+
+
+def set_age(member: HouseholdMember, age: Optional[float], stored_age: bool = True) -> HouseholdMember:
+    """Change an existing member's age, keeping `birth_year_month` in step.
+
+    Assigning `member.age` alone leaves the birth month saying otherwise, and `calc_age()`
+    reads the birth month. `None` clears both, for a member whose age the screener lacks.
+    """
+    member.birth_year_month = None if age is None else birth_year_month_for_age(age, member.screen.get_reference_date())
+    member.age = age if stored_age else None
+    member.save(update_fields=["age", "birth_year_month"])
+
+    return member
 
 
 class CustomCalculatorTestCase(TestCase):
@@ -143,7 +184,7 @@ class CustomCalculatorTestCase(TestCase):
 
     #: Where a household sits when the scenario does not say. Set these when a white label's
     #: programs are all local to one place, so a scenario names a location only to move away
-    #: from it. Note that some white labels put a city in `county` — MA does (MFB-548).
+    #: from it. Note that some white labels put a city in `county` — MA does.
     default_zipcode: str = ""
     default_county: str = ""
 
@@ -158,8 +199,11 @@ class CustomCalculatorTestCase(TestCase):
     #: fields a real `Program` row writes per language.
     needs_program_row: bool = True
 
+    #: Set False once the calculator reads age only through `calc_age()` / `fraction_age()`.
+    #: Members are then saved with a null `age`, so a read of the stored column fails here.
+    stores_age: bool = True
+
     # convenience re-exports so a subclass needs one import
-    add_member = staticmethod(add_member)
     add_income = staticmethod(add_income)
     add_expense = staticmethod(add_expense)
     add_insurance = staticmethod(add_insurance)
@@ -176,6 +220,15 @@ class CustomCalculatorTestCase(TestCase):
         kwargs.setdefault("county", self.default_county)
 
         return make_screen(household_size=household_size, **kwargs)
+
+    def add_member(self, screen: Screen, *args, **kwargs) -> HouseholdMember:
+        """`add_member`, honouring `stores_age`. See the module-level function."""
+        kwargs.setdefault("stored_age", self.stores_age)
+        return add_member(screen, *args, **kwargs)
+
+    def set_age(self, member: HouseholdMember, age: Optional[float]) -> HouseholdMember:
+        """`set_age`, honouring `stores_age`. See the module-level function."""
+        return set_age(member, age, stored_age=self.stores_age)
 
     @classmethod
     def setUpTestData(cls):
@@ -270,8 +323,7 @@ def hud_ami(
     standard and the approximated limit is asserting on which one it called.
 
     `limit` may instead be a dict keyed by AMI percentage — `{"60%": 60_000, "80%": 80_000}`
-    — for a calculator that compares a household against several bands. Any percentage not
-    named returns 0.
+    — for a calculator that compares a household against several bands.
 
     `limit` may also be a callable, which becomes the lookup's `side_effect` — for a test
     where what HUD was *asked* matters as much as what it returned.
@@ -284,6 +336,11 @@ def hud_ami(
     covering what a calculator does when HUD is down. They are separate because a voucher
     calculator can survive losing one and not the other.
 
+    A lookup the test left unanswered — an AMI band missing from the dict, an AMI lookup with
+    no `limit`, the payment standard with no `payment_standard` — fails the test on exit. It
+    cannot raise where it happens: the voucher calculators catch every exception and value
+    the household at $0, so the test would pass for the wrong reason.
+
     Yields the mock, so a test can still assert on the call:
 
         with hud_ami(MaCha, 50_000) as hud:
@@ -295,6 +352,13 @@ def hud_ami(
     """
     client = Mock()
     ami_lookups = ("get_screen_il_ami", "get_screen_mtsp_ami", "approximate_screen_mtsp_ami")
+    unanswered = []
+
+    def unanswered_lookup(lookup: str):
+        def record(*_args, **_kwargs):
+            unanswered.append(lookup)
+
+        return record
 
     if unavailable:
         error = HudIncomeClientError("HUD unavailable")
@@ -308,21 +372,34 @@ def hud_ami(
     elif isinstance(limit, dict):
         # A calculator comparing a household against several AMI bands asks for each one.
         def by_percent(_screen, percent, *_args, **_kwargs):
-            return limit.get(percent, 0)
+            if percent not in limit:
+                unanswered.append(f"the {percent} AMI band")
+            return limit.get(percent)
 
         for lookup in ami_lookups:
             getattr(client, lookup).side_effect = by_percent
+    elif limit is None:
+        for lookup in ami_lookups:
+            getattr(client, lookup).side_effect = unanswered_lookup(lookup)
     else:
         for lookup in ami_lookups:
             getattr(client, lookup).return_value = limit
 
     if payment_standard_unavailable:
         client.get_screen_payment_standard.side_effect = HudIncomeClientError("HUD unavailable")
+    elif payment_standard is None:
+        client.get_screen_payment_standard.side_effect = unanswered_lookup("get_screen_payment_standard")
     else:
         client.get_screen_payment_standard.return_value = payment_standard
 
     with patch(f"{calculator_class.__module__}.hud_client", client):
         yield client
+
+    if unanswered:
+        raise AssertionError(
+            f"{calculator_class.__name__} asked HUD for {', '.join(sorted(set(unanswered)))}, "
+            "which this hud_ami() call does not supply."
+        )
 
 
 def eligible_result(value: int = 0) -> Eligibility:

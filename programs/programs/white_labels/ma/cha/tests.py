@@ -17,7 +17,7 @@ class TestCha(CustomCalculatorTestCase):
     program_code = "ma_cha"
     white_label_code = "ma"
     state_code = "MA"
-    # MA stores the city name in the county field (MFB-548).
+    # MA stores the city name in the county field.
     default_zipcode = "02138"
     default_county = "Cambridge"
 

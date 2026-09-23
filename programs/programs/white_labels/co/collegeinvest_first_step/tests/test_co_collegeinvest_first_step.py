@@ -1,5 +1,8 @@
-from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from datetime import date
+from unittest.mock import patch
+
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from screener.models import Screen
 
 
 from programs.programs.white_labels.co.collegeinvest_first_step.calculator import CoCollegeInvestFirstStep
@@ -12,6 +15,9 @@ class TestCoCollegeInvestFirstStep(CustomCalculatorTestCase):
     needs_program_row = False
     default_zipcode = "80202"
     default_county = "Denver County"
+
+    # The scenarios pair literal birth months with the ages they have in early 2026.
+    reference_date = date(2026, 3, 1)
 
     # --- class attributes ---
 
@@ -33,12 +39,14 @@ class TestCoCollegeInvestFirstStep(CustomCalculatorTestCase):
 
     def test_eligible_child_age_7_boundary(self):
         """Child exactly age 7 is still eligible."""
-        screen = self.make_screen(household_size=2)
-        self.add_member(screen, "headOfHousehold", 35)
-        self.add_member(screen, "child", 7, birth_year_month=date(2020, 1, 1))
+        # A child born in 2020 first turns 7 in 2027.
+        with patch.object(Screen, "get_reference_date", lambda _self: date(2027, 1, 1)):
+            screen = self.make_screen(household_size=2)
+            self.add_member(screen, "headOfHousehold", 35)
+            self.add_member(screen, "child", 7, birth_year_month=date(2020, 1, 1))
 
-        calc = self.make_calculator(screen)
-        eligibility = calc.eligible()
+            calc = self.make_calculator(screen)
+            eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
 

@@ -19,6 +19,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
     """
 
     calculator_class = WaWsosBas
+    stores_age = False
     program_code = "wa_wsos_bas"
     white_label_code = "wa"
     state_code = "WA"

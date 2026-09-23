@@ -10,6 +10,7 @@ from screener.serializers import _write_current_benefits
 
 class TestWaNslp(CustomCalculatorTestCase):
     calculator_class = WaNslp
+    stores_age = False
     program_code = "wa_nslp"
     white_label_code = "wa"
     state_code = "WA"

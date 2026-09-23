@@ -2,8 +2,7 @@ from programs.programs.testing_fixtures.custom_calculator import CustomCalculato
 from programs.programs.cross_white_label.head_start.nc import NCHeadStart
 from programs.models import Program, FederalPoveryLimit
 from unittest.mock import patch
-from datetime import datetime
-from django.utils import timezone
+from datetime import date
 from typing import ClassVar
 from programs.framework.pe_dependencies import member
 
@@ -24,6 +23,9 @@ class TestNCHeadStart(CustomCalculatorTestCase):
     calculator_class = NCHeadStart
     white_label_code = "nc"
     state_code = "NC"
+
+    # Scenarios give literal 2025 birth years alongside the ages they had then.
+    reference_date = date(2025, 6, 1)
 
     # 2025 Market rates from Google Sheet for 4-star child care centers
     MARKET_RATES_DATA: ClassVar[dict] = {
@@ -70,12 +72,10 @@ class TestNCHeadStart(CustomCalculatorTestCase):
         birth_month=None,
     ):
         """Helper method to create household members"""
-        # Calculate birth_year_month from age if not provided
         if birth_year and birth_month:
-            birth_year_month = datetime(year=birth_year, month=birth_month, day=1).date()
+            kwargs = {"birth_year_month": date(birth_year, birth_month, 1)}
         else:
-            current_year = timezone.now().year
-            birth_year_month = datetime(year=current_year - age, month=1, day=1).date()
+            kwargs = {}
 
         member = self.add_member(
             screen,
@@ -84,7 +84,7 @@ class TestNCHeadStart(CustomCalculatorTestCase):
             pregnant=pregnant,
             disabled=disabled,
             has_income=has_income,
-            birth_year_month=birth_year_month,
+            **kwargs,
         )
 
         return member

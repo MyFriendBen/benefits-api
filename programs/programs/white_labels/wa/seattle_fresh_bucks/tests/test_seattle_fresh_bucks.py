@@ -56,29 +56,25 @@ class TestWaSeattleFreshBucks(CustomCalculatorTestCase):
 
     def test_eligible_head_age_18(self):
         with self.hud_ami(100_000):
-            self.head.age = 18
-            self.head.save()
+            self.set_age(self.head, 18)
             calc = self.create_calculator()
             self.assertTrue(calc.eligible().eligible)
 
     def test_ineligible_head_age_17(self):
         with self.hud_ami(100_000):
-            self.head.age = 17
-            self.head.save()
+            self.set_age(self.head, 17)
             calc = self.create_calculator()
             self.assertFalse(calc.eligible().eligible)
 
     def test_eligible_senior_head(self):
         with self.hud_ami(100_000):
-            self.head.age = 72
-            self.head.save()
+            self.set_age(self.head, 72)
             calc = self.create_calculator()
             self.assertTrue(calc.eligible().eligible)
 
     def test_ineligible_head_age_none(self):
         with self.hud_ami(100_000):
-            self.head.age = None
-            self.head.save()
+            self.set_age(self.head, None)
             calc = self.create_calculator()
             self.assertFalse(calc.eligible().eligible)
 

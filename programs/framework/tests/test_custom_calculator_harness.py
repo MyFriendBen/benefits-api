@@ -9,6 +9,7 @@ absent, the fields FPL lookups read, and the two entry points a test calls.
 from datetime import date
 from unittest.mock import Mock
 
+from integrations.clients.hud_income_limits import hud_client  # noqa: F401 -- hud_ami patches it here
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember, Insurance
 from programs.programs.testing_fixtures.custom_calculator import (
@@ -17,6 +18,7 @@ from programs.programs.testing_fixtures.custom_calculator import (
     birth_year_month_for_age,
     add_income,
     add_insurance,
+    hud_ami,
 )
 
 
@@ -43,6 +45,23 @@ class _OverFpl(ProgramCalculator):
 
     def household_value(self):
         return self.amount
+
+
+class _Voucher(ProgramCalculator):
+    """Asks HUD for a band and a payment standard, and degrades to $0 on any error.
+
+    The swallowing is what the HCV calculators do, and why `hud_ami` reports a lookup it
+    was not given on exit rather than raising where the calculator could catch it.
+    """
+
+    program_code = "test_voucher"
+
+    def household_value(self):
+        try:
+            limit = hud_client.get_screen_il_ami(self.screen, "50%", "2025")
+            return hud_client.get_screen_payment_standard(self.screen, 1, "2025") if limit else 0
+        except Exception:
+            return 0
 
 
 class TestMemberBuilders(CustomCalculatorTestCase):
@@ -171,9 +190,10 @@ class TestProgramRowOptOut(CustomCalculatorTestCase):
 class TestAgeDerivation(CustomCalculatorTestCase):
     """`add_member(age=...)` sets a `birth_year_month` that reads back as the same age.
 
-    Calculators read age two ways — the stored `age` field, and `calc_age()`/`fraction_age()`
-    derived from `birth_year_month` against the current date. A member built from an age has
-    to satisfy both, on whatever day the suite happens to run.
+    `birth_year_month` is the member's age: `calc_age()`/`fraction_age()` derive it against the
+    screen's reference date, and the stored `age` column is a copy kept only while calculators
+    still read it. A member built from an age has to satisfy both, on whatever day the suite
+    happens to run.
     """
 
     calculator_class = _Uninsured
@@ -222,9 +242,62 @@ class TestAgeDerivation(CustomCalculatorTestCase):
         """Scenarios pinned to a calendar window supply the date themselves."""
         birth = date(2020, 3, 1)
 
-        member = self.add_member(self.make_screen(), age=5, birth_year_month=birth)
+        member = self.add_member(self.make_screen(), age=None, birth_year_month=birth)
 
         self.assertEqual(member.birth_year_month, birth)
+
+    def test_the_stored_age_is_derived_from_an_explicit_birth_month(self):
+        birth = date(2020, 3, 1)
+
+        member = self.add_member(self.make_screen(), age=None, birth_year_month=birth)
+
+        self.assertEqual(member.age, member.calc_age())
+
+    def test_an_age_contradicting_the_birth_month_is_rejected(self):
+        screen = self.make_screen()
+        birth = birth_year_month_for_age(7, screen.get_reference_date())
+
+        with self.assertRaises(ValueError):
+            self.add_member(screen, age=30, birth_year_month=birth)
+
+    def test_set_age_moves_the_birth_month_too(self):
+        """Assigning `member.age` alone would leave `calc_age()` reading the old birth month."""
+        member = self.add_member(self.make_screen(), age=30)
+
+        self.set_age(member, 17)
+        member.refresh_from_db()
+
+        self.assertEqual(member.age, 17)
+        self.assertEqual(member.calc_age(), 17)
+
+    def test_set_age_none_clears_both_fields(self):
+        member = self.add_member(self.make_screen(), age=30)
+
+        self.set_age(member, None)
+        member.refresh_from_db()
+
+        self.assertIsNone(member.age)
+        self.assertIsNone(member.calc_age())
+
+
+class TestWithoutStoredAge(CustomCalculatorTestCase):
+    """`stores_age = False` builds members as they will be once the `age` column is gone."""
+
+    calculator_class = _Uninsured
+    needs_program_row = False
+    stores_age = False
+
+    def test_the_stored_age_is_null(self):
+        self.assertIsNone(self.add_member(self.make_screen(), age=7).age)
+
+    def test_the_derived_age_is_unaffected(self):
+        self.assertEqual(self.add_member(self.make_screen(), age=7).calc_age(), 7)
+
+    def test_set_age_leaves_it_null(self):
+        member = self.set_age(self.add_member(self.make_screen(), age=7), 17)
+
+        self.assertIsNone(member.age)
+        self.assertEqual(member.calc_age(), 17)
 
     def test_a_fractional_age_survives_a_database_round_trip(self):
         """`age` is a PositiveIntegerField, so the fraction lives in `birth_year_month`."""
@@ -336,8 +409,80 @@ class TestHasIncomeFollowsTheIncome(CustomCalculatorTestCase):
     def test_a_member_without_income_does_not(self):
         self.assertFalse(self.add_member(self.make_screen()).has_income)
 
+    def test_income_added_afterwards_sets_has_income(self):
+        """The screener sets `has_income` from the streams, however the test adds them."""
+        member = self.add_member(self.make_screen())
+
+        add_income(member, 1_000)
+        member.refresh_from_db()
+
+        self.assertTrue(member.has_income)
+
     def test_a_scenario_may_say_otherwise(self):
-        """A screener answer that disagrees with the streams is a real shape to test."""
+        """A row written through the API can disagree with its streams; the screener's never do."""
         member = self.add_member(self.make_screen(), monthly_income=1_000, has_income=False)
+        member.refresh_from_db()
 
         self.assertFalse(member.has_income)
+
+
+class TestHudAmi(CustomCalculatorTestCase):
+    """`hud_ami` answers only what the test states, and says so when asked for more."""
+
+    calculator_class = _Voucher
+    needs_program_row = False
+
+    def household(self):
+        screen = self.make_screen()
+        self.add_member(screen)
+
+        return screen
+
+    def test_a_scalar_limit_answers_every_band(self):
+        with hud_ami(_Voucher, 50_000, payment_standard=900):
+            self.assertEqual(self.calculate(self.household()).value, 900)
+
+    def test_a_dict_limit_answers_by_band(self):
+        with hud_ami(_Voucher, {"50%": 50_000}, payment_standard=900) as hud:
+            self.assertEqual(self.calculate(self.household()).value, 900)
+
+        hud.get_screen_il_ami.assert_called_once()
+
+    def test_a_band_missing_from_the_dict_fails(self):
+        with self.assertRaisesRegex(AssertionError, "50% AMI band"):
+            with hud_ami(_Voucher, {"80%": 80_000}, payment_standard=900):
+                self.calculate(self.household())
+
+    def test_an_ami_lookup_with_no_limit_fails(self):
+        with self.assertRaisesRegex(AssertionError, "get_screen_il_ami"):
+            with hud_ami(_Voucher, payment_standard=900):
+                self.calculate(self.household())
+
+    def test_a_payment_standard_lookup_with_none_given_fails(self):
+        """The calculator would swallow a raise here and report $0, so it is caught on exit."""
+        with self.assertRaisesRegex(AssertionError, "get_screen_payment_standard"):
+            with hud_ami(_Voucher, 50_000):
+                self.calculate(self.household())
+
+    def test_an_unasked_lookup_needs_no_value(self):
+        """A test asserting HUD is not consulted can leave `limit` unset."""
+        with hud_ami(_Voucher) as hud:
+            pass
+
+        hud.get_screen_il_ami.assert_not_called()
+
+    def test_an_outage_is_not_an_unanswered_lookup(self):
+        with hud_ami(_Voucher, unavailable=True):
+            self.assertEqual(self.calculate(self.household()).value, 0)
+
+    def test_a_callable_limit_sees_what_hud_was_asked(self):
+        asked = []
+
+        def limit(_screen, percent, _year, **_kwargs):
+            asked.append(percent)
+            return 50_000
+
+        with hud_ami(_Voucher, limit, payment_standard=900):
+            self.calculate(self.household())
+
+        self.assertEqual(asked, ["50%"])

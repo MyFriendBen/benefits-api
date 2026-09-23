@@ -10,6 +10,7 @@ class TestWaWsosCts(CustomCalculatorTestCase):
     """Unit tests for WA WSOS Career & Technical Scholarship (CTS)."""
 
     calculator_class = WaWsosCts
+    stores_age = False
     program_code = "wa_wsos_cts"
     white_label_code = "wa"
     state_code = "WA"

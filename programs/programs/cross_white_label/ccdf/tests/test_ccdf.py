@@ -14,7 +14,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         super().setUp()
 
         # Basic eligible household: employed parent, one 3-year-old, income below 225% FPL
-        self.eligible_screen = self.make_screen(zipcode="60601", county="Cook")
+        self.eligible_screen = self.make_screen(household_size=2, zipcode="60601", county="Cook")
         self.parent = self.add_member(self.eligible_screen, "headOfHousehold", 30, student=False, has_income=True)
         self.add_income(self.parent, 2000)
         self.child = self.add_member(self.eligible_screen, "child", 3)
