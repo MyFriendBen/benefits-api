@@ -88,10 +88,10 @@ class TestMaMiddleIncomeRentalLocationEligibility(TestCase):
         mock_screen.calc_gross_income = Mock(return_value=income)
         mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_head = Mock()
-        mock_head.age = 30
+        mock_head.calc_age = Mock(return_value=30)
         mock_screen.get_head = Mock(return_value=mock_head)
         mock_member = Mock()
-        mock_member.age = 30
+        mock_member.calc_age = Mock(return_value=30)
         mock_member.has_disability = Mock(return_value=False)
         mock_screen.household_members = Mock()
         mock_screen.household_members.all = Mock(return_value=[mock_member])
@@ -152,10 +152,10 @@ class TestMaMiddleIncomeRentalHoHAge(TestCase):
         mock_screen.calc_gross_income = Mock(return_value=income)
         mock_screen.has_benefit = Mock(return_value=False)
         mock_head = Mock()
-        mock_head.age = head_age
+        mock_head.calc_age = Mock(return_value=head_age)
         mock_screen.get_head = Mock(return_value=mock_head)
         mock_member = Mock()
-        mock_member.age = head_age
+        mock_member.calc_age = Mock(return_value=head_age)
         mock_member.has_disability = Mock(return_value=False)
         mock_screen.household_members = Mock()
         mock_screen.household_members.all = Mock(return_value=[mock_member])
@@ -219,10 +219,10 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
             side_effect=lambda name: has_section_8 if name == "ma_section_8" else has_benefit
         )
         mock_head = Mock()
-        mock_head.age = 35
+        mock_head.calc_age = Mock(return_value=35)
         mock_screen.get_head = Mock(return_value=mock_head)
         mock_member = Mock()
-        mock_member.age = 35
+        mock_member.calc_age = Mock(return_value=35)
         mock_member.has_disability = Mock(return_value=False)
         mock_screen.household_members = Mock()
         mock_screen.household_members.all = Mock(return_value=[mock_member])
@@ -306,10 +306,10 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
         mock_screen.calc_gross_income = Mock(return_value=income)
         mock_screen.has_benefit = Mock(side_effect=lambda name: has_section_8 if name == "ma_section_8" else False)
         mock_head = Mock()
-        mock_head.age = 35
+        mock_head.calc_age = Mock(return_value=35)
         mock_screen.get_head = Mock(return_value=mock_head)
         mock_member = Mock()
-        mock_member.age = 35
+        mock_member.calc_age = Mock(return_value=35)
         mock_member.has_disability = Mock(return_value=False)
         mock_screen.household_members = Mock()
         mock_screen.household_members.all = Mock(return_value=[mock_member])
@@ -371,13 +371,13 @@ class TestMaMiddleIncomeRentalAssetEligibility(TestCase):
         mock_screen.calc_gross_income = Mock(return_value=income)
         mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_head = Mock()
-        mock_head.age = member_ages[0] if member_ages else 35
+        mock_head.calc_age = Mock(return_value=member_ages[0] if member_ages else 35)
         mock_screen.get_head = Mock(return_value=mock_head)
 
         members = []
         for age in member_ages or [35, 33]:
             m = Mock()
-            m.age = age
+            m.calc_age = Mock(return_value=age)
             m.has_disability = Mock(return_value=all_disabled)
             members.append(m)
         mock_screen.household_members = Mock()
@@ -439,13 +439,13 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
         mock_screen.calc_gross_income = Mock(return_value=income)
         mock_screen.has_benefit = Mock(return_value=False)
         mock_head = Mock()
-        mock_head.age = member_ages[0]
+        mock_head.calc_age = Mock(return_value=member_ages[0])
         mock_screen.get_head = Mock(return_value=mock_head)
 
         members = []
         for age in member_ages:
             m = Mock()
-            m.age = age
+            m.calc_age = Mock(return_value=age)
             m.has_disability = Mock(return_value=all_disabled)
             members.append(m)
         mock_screen.household_members = Mock()
@@ -500,13 +500,13 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
             mock_screen.calc_gross_income = Mock(return_value=90000)
             mock_screen.has_benefit = Mock(return_value=False)
             mock_head = Mock()
-            mock_head.age = 40
+            mock_head.calc_age = Mock(return_value=40)
             mock_screen.get_head = Mock(return_value=mock_head)
             disabled_member = Mock()
-            disabled_member.age = 40
+            disabled_member.calc_age = Mock(return_value=40)
             disabled_member.has_disability = Mock(return_value=True)
             able_member = Mock()
-            able_member.age = 38
+            able_member.calc_age = Mock(return_value=38)
             able_member.has_disability = Mock(return_value=False)
             mock_screen.household_members = Mock()
             mock_screen.household_members.all = Mock(return_value=[disabled_member, able_member])
@@ -551,10 +551,10 @@ class TestMaMiddleIncomeRentalHudApiError(TestCase):
         mock_screen.calc_gross_income = Mock(return_value=income)
         mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_head = Mock()
-        mock_head.age = 35
+        mock_head.calc_age = Mock(return_value=35)
         mock_screen.get_head = Mock(return_value=mock_head)
         mock_member = Mock()
-        mock_member.age = 35
+        mock_member.calc_age = Mock(return_value=35)
         mock_member.has_disability = Mock(return_value=False)
         mock_screen.household_members = Mock()
         mock_screen.household_members.all = Mock(return_value=[mock_member])
@@ -594,10 +594,10 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
         mock_screen.calc_gross_income = Mock(return_value=income)
         mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_head = Mock()
-        mock_head.age = 35
+        mock_head.calc_age = Mock(return_value=35)
         mock_screen.get_head = Mock(return_value=mock_head)
         mock_member = Mock()
-        mock_member.age = 35
+        mock_member.calc_age = Mock(return_value=35)
         mock_member.has_disability = Mock(return_value=False)
         mock_screen.household_members = Mock()
         mock_screen.household_members.all = Mock(return_value=[mock_member])
