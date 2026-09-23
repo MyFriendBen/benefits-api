@@ -8,7 +8,7 @@ from programs.framework.pe_dependencies import member
 
 def make_member(age=30, pregnant=False, relationship="headOfHousehold"):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.pregnant = pregnant
     member.relationship = relationship
     return member

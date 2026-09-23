@@ -31,7 +31,7 @@ def make_calculator(reference_date=None):
 def make_member(age=1, birth_year_month=None, pregnant=False):
     """Create a mock HouseholdMember."""
     mock_member = Mock()
-    mock_member.age = age
+    mock_member.calc_age = Mock(return_value=age)
     mock_member.birth_year_month = birth_year_month
     mock_member.pregnant = pregnant
     return mock_member

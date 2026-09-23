@@ -44,7 +44,7 @@ def make_calculator(
 def make_member(age, disabled=False, long_term_disability=False, visually_impaired=False, ssi_income=0, medicaid=False):
     """Create a mock household member."""
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.disabled = disabled
     member.long_term_disability = long_term_disability
     member.visually_impaired = visually_impaired

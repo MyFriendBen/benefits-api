@@ -81,7 +81,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Create a mock member aged 19
         member = Mock()
         member.id = 1
-        member.age = 19
+        member.calc_age = Mock(return_value=19)
         member.has_insurance_types = Mock(return_value=True)
         member.has_disability = Mock(return_value=False)
 
@@ -108,7 +108,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Create a mock member under 19 with insurance
         member = Mock()
         member.id = 1
-        member.age = 10
+        member.calc_age = Mock(return_value=10)
         member.has_insurance_types = Mock(return_value=False)  # has_insurance_types(("none",)) returns False
         member.has_disability = Mock(return_value=False)
 
@@ -137,7 +137,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Create a mock member under 19 without insurance
         member = Mock()
         member.id = 1
-        member.age = 12
+        member.calc_age = Mock(return_value=12)
         member.has_insurance_types = Mock(return_value=True)  # has_insurance_types(("none",)) returns True
 
         # Call member_value
@@ -164,7 +164,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Create a mock member aged 18 without insurance
         member = Mock()
         member.id = 1
-        member.age = 18
+        member.calc_age = Mock(return_value=18)
         member.has_insurance_types = Mock(return_value=True)
 
         # Call member_value
@@ -186,7 +186,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Create a mock member aged 25
         member = Mock()
         member.id = 1
-        member.age = 25
+        member.calc_age = Mock(return_value=25)
         member.has_insurance_types = Mock()  # Should not be called
 
         # Call member_value
@@ -215,7 +215,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Create a mock infant without insurance
         member = Mock()
         member.id = 1
-        member.age = 0
+        member.calc_age = Mock(return_value=0)
         member.has_insurance_types = Mock(return_value=True)
 
         # Call member_value

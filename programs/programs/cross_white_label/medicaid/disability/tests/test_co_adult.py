@@ -58,7 +58,7 @@ def make_calculator(household_size=1):
 
 def make_member(income):
     member = Mock()
-    member.age = 40
+    member.calc_age = Mock(return_value=40)
     member.long_term_disability = True
     member.visually_impaired = False
     member.insurance.has_insurance_types.return_value = True

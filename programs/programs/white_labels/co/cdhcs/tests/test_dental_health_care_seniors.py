@@ -32,7 +32,7 @@ FPL_2025 = _FPL_DEFAULTS["2025"]
 
 def make_member(age=65, **insurance_flags):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.insurance = Insurance(**{"none": False, **insurance_flags})
     return member
 
