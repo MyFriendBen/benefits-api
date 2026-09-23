@@ -29,6 +29,7 @@ from programs.programs.testing_fixtures.households import (
     add_expense,
     add_income,
     add_insurance,
+    SCREENER_MEMBER_DEFAULTS,
     birth_year_month_for_age,
     make_program,
     make_white_label,
@@ -95,6 +96,9 @@ def add_member(
     `age` is then derived from it. Passing both is allowed only when they agree, so a member
     can never be two different people.
 
+    The condition checkboxes (`student`, `pregnant`, `disabled`, …) default to False, as the
+    screener sends them when none is ticked. Pass `None` explicitly for a row that lacks one.
+
     `stored_age=False` saves the member with a null `age`, as every member will be once the
     column is dropped, so a calculator still reading it fails in its own tests.
 
@@ -102,6 +106,9 @@ def add_member(
     relation is one-to-one and non-null: a calculator reading `member.insurance` raises
     `RelatedObjectDoesNotExist` without it. Override with `add_insurance`.
     """
+    for field, default in SCREENER_MEMBER_DEFAULTS.items():
+        kwargs.setdefault(field, default)
+
     reference_date = screen.get_reference_date()
     birth_year_month = kwargs.get("birth_year_month")
 

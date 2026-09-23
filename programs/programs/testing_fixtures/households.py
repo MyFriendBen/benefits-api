@@ -17,6 +17,19 @@ from django.utils import timezone
 from programs.models import FederalPoveryLimit, Program
 from screener.models import Expense, HouseholdMember, IncomeStream, Insurance, WhiteLabel
 
+#: What the screener sends for a member's condition checkboxes when none is ticked. The
+#: model defaults them to null, which the screener never produces — and `missing_fields()`
+#: reports a null as a missing dependency. The student follow-ups (`student_full_time`, …)
+#: are left null, as the screener does for a member who is not a student.
+SCREENER_MEMBER_DEFAULTS = {
+    "student": False,
+    "pregnant": False,
+    "visually_impaired": False,
+    "disabled": False,
+    "long_term_disability": False,
+    "was_in_foster_care": False,
+}
+
 
 def make_white_label(code: str = "test", state_code: str = "TS") -> WhiteLabel:
     """The white label a screen belongs to, created once and reused."""

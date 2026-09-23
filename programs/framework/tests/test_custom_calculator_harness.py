@@ -6,12 +6,16 @@ pin the parts a calculator actually depends on: the one-to-one rows that raise w
 absent, the fields FPL lookups read, and the two entry points a test calls.
 """
 
+import uuid
 from datetime import date
 from unittest.mock import Mock
+
+from django.utils import timezone
 
 from integrations.clients.hud_income_limits import hud_client  # noqa: F401 -- hud_ami patches it here
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember, Insurance
+from screener.serializers import ScreenSerializer
 from programs.programs.testing_fixtures.custom_calculator import (
     CustomCalculatorTestCase,
     add_expense,
@@ -486,3 +490,112 @@ class TestHudAmi(CustomCalculatorTestCase):
             self.calculate(self.household())
 
         self.assertEqual(asked, ["50%"])
+
+
+class TestMatchesTheScreener(CustomCalculatorTestCase):
+    """A fixture member is the member the screener would have saved for the same answers.
+
+    The payload mirrors `getScreensBody` in benefits-calculator (`src/Assets/updateScreen.ts`):
+    birth month and year always sent, `age` null for a new member, every condition checkbox
+    false unless ticked, the student follow-ups null for a non-student. If the fixture drifts
+    from it, a test exercises a household no user can submit.
+    """
+
+    calculator_class = _Uninsured
+    needs_program_row = False
+
+    MEMBER_FIELDS = (
+        "relationship",
+        "age",
+        "birth_year_month",
+        "student",
+        "student_full_time",
+        "student_job_training_program",
+        "student_has_work_study",
+        "student_works_20_plus_hrs",
+        "pregnant",
+        "visually_impaired",
+        "disabled",
+        "long_term_disability",
+        "was_in_foster_care",
+        "has_income",
+    )
+    INSURANCE_FIELDS = ("none", "employer", "private", "medicaid", "medicare", "chp")
+
+    def screener_screen(self, age: int, monthly_income: int = 0):
+        birth = birth_year_month_for_age(age, timezone.now().date())
+        income_streams = (
+            [{"type": "wages", "amount": monthly_income, "frequency": "monthly", "hours_worked": None}]
+            if monthly_income
+            else []
+        )
+        payload = {
+            "white_label": self.white_label_code,
+            "is_test": True,
+            "agree_to_tos": True,
+            "is_13_or_older": True,
+            "zipcode": "",
+            "county": "",
+            "household_size": 1,
+            "household_assets": 0,
+            "expenses": [],
+            "energy_calculator": None,
+            "household_members": [
+                {
+                    "frontend_id": str(uuid.uuid4()),
+                    "age": None,
+                    "birth_year": birth.year,
+                    "birth_month": birth.month,
+                    "relationship": "headOfHousehold",
+                    "student": False,
+                    "student_full_time": None,
+                    "student_job_training_program": None,
+                    "student_has_work_study": None,
+                    "student_works_20_plus_hrs": None,
+                    "pregnant": False,
+                    "visually_impaired": False,
+                    "disabled": False,
+                    "long_term_disability": False,
+                    "was_in_foster_care": False,
+                    "has_income": bool(monthly_income),
+                    "income_streams": income_streams,
+                    "energy_calculator": None,
+                    "insurance": {field: field == "none" for field in self.INSURANCE_FIELDS},
+                }
+            ],
+        }
+
+        serializer = ScreenSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+
+        return serializer.save()
+
+    def assert_same_member(self, age: int, monthly_income: int = 0):
+        screener = self.screener_screen(age, monthly_income)
+        fixture = self.make_screen()
+        self.add_member(fixture, "headOfHousehold", age, monthly_income=monthly_income)
+
+        screener_member = screener.household_members.get()
+        fixture_member = fixture.household_members.get()
+
+        for field in self.MEMBER_FIELDS:
+            with self.subTest(field=field):
+                self.assertEqual(getattr(fixture_member, field), getattr(screener_member, field))
+
+        for field in self.INSURANCE_FIELDS:
+            with self.subTest(insurance=field):
+                self.assertEqual(getattr(fixture_member.insurance, field), getattr(screener_member.insurance, field))
+
+        self.assertEqual(
+            list(fixture_member.income_streams.values_list("type", "amount", "frequency")),
+            list(screener_member.income_streams.values_list("type", "amount", "frequency")),
+        )
+
+        # What production hands the calculator as `missing_dependencies`.
+        self.assertEqual(fixture.missing_fields(), screener.missing_fields())
+
+    def test_an_adult_with_income(self):
+        self.assert_same_member(34, monthly_income=1_500)
+
+    def test_a_child_without_income(self):
+        self.assert_same_member(4)
