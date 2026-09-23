@@ -120,7 +120,7 @@ class TestOneHoursClassPerState(TestCase):
             state = code.split("_")[0]
             by_state.setdefault(state, {})[code] = declared[0]
 
-        # MA (SNAP, TAFDC, EAEDC, MBTA) and TX (SNAP, CCS) are the states with more than one
+        # MA (SNAP, TAFDC, EAEDC, MBTA, CCFA) and TX (SNAP, CCS) are the states with more than one
         # hours-sending program today; the assertion is on whatever the registry holds, so a
         # new one is covered on arrival.
         self.assertIn("ma", by_state)

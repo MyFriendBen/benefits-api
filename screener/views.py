@@ -9,7 +9,6 @@ from integrations.services.communications import MessageUser
 from integrations.clients.policyengine import versions as pe_versions
 from programs.models import Referrer
 from integrations.clients.policyengine.registry import all_calculators
-from programs.urgent_needs.base import UrgentNeedFunction
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
 from screener.models import (
@@ -42,12 +41,10 @@ from screener.serializers import (
 from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies
-from programs.urgent_needs import urgent_need_functions
 from programs.models import (
     Document,
     Navigator,
     ProgramCategory,
-    UrgentNeed,
     UrgentNeedType,
     Program,
     Referrer,
@@ -60,6 +57,7 @@ from programs.warnings import warning_calculators
 from programs.serializers import HasBenefitsProgramSerializer
 from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
+from .urgent_needs import eligible_urgent_needs
 from drf_yasg.utils import swagger_auto_schema
 import math
 import json
@@ -283,13 +281,30 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         body = json.loads(request.body.decode())
         screen = Screen.objects.get(uuid=body["screen"])
 
-        message = MessageUser(screen, screen.get_language_code())
+        message = MessageUser(screen, self._message_language(body, screen))
         if "email" in body:
             message.email(body["email"], send_tests=True)
         if "phone" in body:
             message.text(body["phone"], send_tests=True)
 
         return Response({}, status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _message_language(body, screen: Screen) -> str:
+        """The language to compose the results message in.
+
+        Defaults to the language the screener was taken in, which is what every
+        caller relied on before the frontend could ask. An unsupported or
+        unrecognized code falls back to that default instead of erroring: the
+        language only picks which copy to send, and sending the results in the
+        screener's language beats refusing to send them.
+        """
+        requested = str(body.get("language") or "").lower()
+
+        if requested in {code for code, _ in settings.LANGUAGES}:
+            return requested
+
+        return screen.get_language_code()
 
 
 def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
@@ -412,6 +427,9 @@ CALC_ORDER = (
     "cesn_eoc",
     "cesn_cowap",
     "cesn_care",
+    # ks_rca is defined as the program for refugees TANF cannot reach, so it gates on
+    # ks_tanf strictly and needs it resolved first.
+    "ks_tanf",
 )
 
 
@@ -708,80 +726,28 @@ def serialized_document(document):
 
 
 def urgent_need_results(screen: Screen, data):
+    """The additional resources this screen qualifies for, serialized for the browser.
+
+    Selection lives in `screener.urgent_needs` because Benji reads the same list
+    through `screener.assistant` and the two must not drift — see that module. What
+    stays here is the shape the frontend wants: `default_message` translation dicts
+    it resolves against its own locale, rather than resolved text.
     """
-    These keys are used to determine which urgent needs
-    programs to show based on the selected options in the
-    immediate needs page.
-    """
-    possible_needs = {
-        "food": screen.needs_food,
-        "baby supplies": screen.needs_baby_supplies,
-        "housing": screen.needs_housing_help,
-        "mental health": screen.needs_mental_health_help,
-        "child dev": screen.needs_child_dev_help,
-        "funeral": screen.needs_funeral_help,
-        "family planning": screen.needs_family_planning_help,
-        "job resources": screen.needs_job_resources,
-        "dental care": screen.needs_dental_care,
-        "legal services": screen.needs_legal_services,
-        "veteran services": screen.needs_veteran_services,
-        "savings": screen.needs_college_savings,
-        "disability resources": screen.needs_disability_resources,
-        "aging resources": screen.needs_aging_resources,
-        "homeless services": screen.needs_homeless_services,
-        "free low cost medical care": screen.needs_free_low_cost_medical_care,
-        "transportation": screen.needs_transportation,
-        "medical expenses and debt": screen.needs_medical_expenses_and_debt,
-    }
+    eligible = eligible_urgent_needs(screen, data)
 
-    missing_dependencies = screen.missing_fields()
-
-    list_of_needs = []
-    for need, has_need in possible_needs.items():
-        if has_need:
-            list_of_needs.append(need)
-
-    urgent_need_resources = (
-        UrgentNeed.objects.prefetch_related(
-            "functions", "counties", *translations_prefetch_name("", UrgentNeed.objects.translated_fields)
-        )
-        .filter(
-            type_short__name__in=list_of_needs, category_type__isnull=False, active=True, white_label=screen.white_label
-        )
-        .distinct()
-    )
-
-    eligible_urgent_needs = []
-    for need in urgent_need_resources:
-        eligible = True
-
-        calculators = [urgent_need_functions[f.name] for f in need.functions.all()]
-
-        if len(calculators) == 0:
-            calculators = [UrgentNeedFunction]
-
-        for Calculator in calculators:
-            calculator = Calculator(screen, need, missing_dependencies, data)
-
-            if not calculator.calc():
-                eligible = False
-        if eligible:
-            phone_number = str(need.phone_number) if need.phone_number else None
-            need_data = {
-                "name": default_message(need.name),
-                "description": default_message(need.description),
-                "link": default_message(need.link),
-                "category_type": default_message(need.category_type.name),
-                "icon": need.category_type.icon_name,
-                "warning": default_message(need.warning),
-                "phone_number": phone_number,
-                "notification_message": (
-                    default_message(need.notification_message) if need.notification_message else None
-                ),
-            }
-            eligible_urgent_needs.append(need_data)
-
-    return eligible_urgent_needs
+    return [
+        {
+            "name": default_message(need.name),
+            "description": default_message(need.description),
+            "link": default_message(need.link),
+            "category_type": default_message(need.category_type.name),
+            "icon": need.category_type.icon_name,
+            "warning": default_message(need.warning),
+            "phone_number": str(need.phone_number) if need.phone_number else None,
+            "notification_message": (default_message(need.notification_message) if need.notification_message else None),
+        }
+        for need in eligible
+    ]
 
 
 # Throttles now live in screener/throttles.py so `assistant.py` can use the base class

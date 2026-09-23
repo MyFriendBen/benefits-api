@@ -17,7 +17,7 @@
 
 Early Head Start eligibility is determined by PolicyEngine using the federal eligibility rules (45 CFR § 1302.12: a child under age 3 or a pregnant woman, with family income at/below the federal poverty guideline, categorical eligibility via TANF/SNAP/SSI, homelessness, or foster care). No Missouri-specific eligibility rule was identified — Missouri DESE's EHS page describes the same federal framework with no MO-specific carve-out.
 
-This light spec does not reimplement or exhaustively test federal eligibility. Its scenarios isolate Missouri's state-specific benefit value, person-level calculation, and MFB's aggregation behavior — see Implementation Coverage below.
+This light spec does not reimplement or exhaustively test federal eligibility. Its scenarios isolate Missouri's state-specific benefit value, person-level calculation, and MFB's aggregation behavior, plus the one piece of eligibility that is MFB's own wiring rather than PE's rule — the actual-receipt categorical contract below. See Implementation Coverage.
 
 **Screener-to-PE field mapping** (verified against `screener/models.py` and `screener/serializers.py` on `benefits-api`'s `origin/main`):
 
@@ -33,6 +33,21 @@ This light spec does not reimplement or exhaustively test federal eligibility. I
 | SSI | `HouseholdMember.income_streams` row of type `"sSI"` — no dedicated `receivesSsi` field. Also auto-written into `Screen.current_benefits` (`_write_current_benefits()` OR's in an SSI-implied benefit name whenever an `"sSI"` income stream is present, independent of whether the SSI tile was ticked) | The `Ssi` PE dependency (`programs/framework/pe_dependencies/member.py`) reads the income stream directly, not `current_benefits`. |
 
 One federal pathway — homelessness — cannot currently be evaluated by MFB's PE integration; see Implementation Coverage below for the limitation and its scope.
+
+### Categorical Eligibility Is Actual Receipt, Not Simulated Eligibility (verified)
+
+The SNAP/TANF/SSI categorical pathway keys off **reported receipt** (`receives_snap`, `receives_tanf`, `receives_ssi`, each with its take-up flag), not off a benefit PolicyEngine simulated the household as eligible for. `EarlyHeadStart.pe_inputs` carries the full `receipt_contract` bundle, so MFB sends the distinction. Verified in both directions at PolicyEngine **1.821.2**:
+
+| PolicyEngine / MFB result | No SNAP reported | SNAP reported |
+|---|---:|---:|
+| `is_snap_eligible` | True | True |
+| `snap_if_takes_up` | $2,765.17 | $2,765.17 |
+| `snap` | **$0** | **$2,765.17** |
+| `mo_early_head_start` | **$0** | **$19,616.668** |
+
+Stripping the receipt/take-up inputs from the payload — the pre-#1685 request shape — makes the non-reporter eligible for $19,616.668 again, which is the false positive this pathway corrects.
+
+**Scenario-design constraint.** The negative case only tests receipt-versus-simulation while the household sits in a narrow income band: **above** the EHS income test (`spm_unit_fpg` = $27,320 for a household of three) so the ordinary pathway is closed, and **below** Missouri SNAP's simulated-eligibility ceiling so PolicyEngine still returns a would-be SNAP benefit to suppress. Raise the income and PolicyEngine stops simulating SNAP at all — the scenario then returns $0 under both the old and new contracts and passes for the wrong reason. Any future edit to Scenarios 4 and 5 has to keep them inside that band.
 
 ---
 
@@ -51,6 +66,8 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 5. The result applies to each PE-eligible person who takes up EHS (take-up defaults true).
 6. PE does not round in the `early_head_start` variable — it returns the raw, uprated, unrounded float. MFB sums PE's raw person-level outputs and truncates the aggregated value once at serialization ($19,616.668 + $19,616.668 = $39,233.336 → truncate once to $39,233, for a two-participant household), confirmed through source inspection (`rest_framework/fields.py`'s `int()` truncation, `programs/calc.py`'s float summation with no intermediate rounding) and the live integrated run.
 
+**Re-verified 2026-09-09 at PolicyEngine 1.821.2**: the per-participant figure is unchanged at **$19,616.668**. No benefit-value edit was required.
+
 **Person-level values (live-confirmed, 2026-07-27)**:
 - Missouri, single participant: **$19,616** (raw $19,616.668, truncated)
 - Missouri, two participants: **$39,233** (raw $19,616.668 × 2 = $39,233.336, summed then truncated once)
@@ -68,7 +85,7 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 
 - ✅ Evaluable criteria: age (under 3) or pregnancy, income at/below FPL, categorical via TANF/SNAP/SSI (self-report), foster care (from `relationship == "fosterChild"` or the per-member `was_in_foster_care` tile).
 - ⚠️ Data gap: homelessness. The screener doesn't collect current housing status, and PE's `is_homeless` variable defaults to `false` when not provided — the same as every shipped Head Start/EHS sibling. A household that qualifies *solely* through the homelessness pathway will not be found eligible by this integration; a household that qualifies through any other pathway is unaffected. This is a shared PE/MFB limitation across the whole Head Start/EHS program family, not a Missouri-specific gap.
-- This is a **light spec**: eligibility is federal and trusted to PolicyEngine, so the scenario suite below isolates Missouri's state-specific *value* and its aggregation rather than re-testing every federal eligibility branch. No negative federal-eligibility scenario is included — a household with no child under 3 and no pregnancy isn't a Missouri state-value isolation test, and federal eligibility branch coverage is PE's responsibility, not this spec's.
+- This is a **light spec**: eligibility is federal and trusted to PolicyEngine, so Scenarios 1-3 isolate Missouri's state-specific *value* and its aggregation rather than re-testing every federal eligibility branch. The one exception is the actual-receipt contract (Scenarios 4 and 5): that is MFB's own input wiring rather than PE's rule, it has regressed once, and no wiring test can catch it — so it is asserted behaviorally. Beyond that, no negative federal-eligibility scenario is included; a household with no child under 3 and no pregnancy isn't a Missouri state-value isolation test.
 
 ---
 
@@ -86,6 +103,8 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 - [x] Scenario 1 (Missouri, single participant — golden path): User should be **eligible** — $19,616/year
 - [x] Scenario 2 (Missouri, two eligible participants — aggregation test): User should be **eligible** — $39,233/year
 - [x] Scenario 3 (Missouri, pregnant-only applicant — `PregnancyDependency` integration check): User should be **eligible** — $19,616/year
+- [x] Scenario 4 (SNAP not reported, income above the test): User should be **not eligible** — $0
+- [x] Scenario 5 (SNAP reported, same household): User should be **eligible** — $19,616/year
 
 ---
 
@@ -98,7 +117,7 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 
 **Why this matters**: Missouri's spending/enrollment parameters are the only thing this ticket adds — eligibility itself is entirely federal. If a future PE parameter update changes Missouri's EHS spending or enrollment figures, this is what catches it: a passing scenario with a wrong dollar amount would mean MO's value has silently drifted from its source, decoupled from any change in eligibility logic.
 
-- **Location**: ZIP `65101`, County `Cole`, State `MO`
+- **Location**: ZIP `65101`, County `Cole County`, State `MO`
 - **Household**: 2 people
 - **Person 1**: Head of household, birth_year 1996, birth_month 3 (age 30), employment income $1,000/month, citizen, no current benefits
 - **Person 2**: Child, birth_year 2025, birth_month 3 (age 1), no income
@@ -111,7 +130,7 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 **Expected**: Eligible. Value = **$39,233** (MFB sums the raw per-person floats, $19,616.668 × 2 = $39,233.336, and truncates once at serialization; integrated MFB-to-PE path — see `mo_ehs_pe_delta_report.md`).
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 4 people
 - **Person 1**: Head of household, birth_year 1996, birth_month 3 (age 30), employment income $1,200/month, citizen, no current benefits
 - **Person 2**: Spouse, birth_year 1998, birth_month 3 (age 28), no income
@@ -119,6 +138,32 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 - **Person 4**: Child, birth_year 2025, birth_month 3 (age 1), no income
 
 **Why this matters**: 4-person household (2 adults, 2 age-eligible children) with income far below the 100% FPL threshold for a household of 4, so the income gate is not in question — only the per-participant value and aggregation are being tested.
+
+---
+
+### Scenario 4: SNAP Not Reported, Income Above the Test
+**What we're checking**: A household PolicyEngine would pay SNAP to, that reports no SNAP, with income above the EHS income test. The receipt contract has to suppress the would-be SNAP benefit so it confers no categorical eligibility.
+**Expected**: **Not eligible**. Value = **$0**.
+
+**Steps**:
+- **Location**: ZIP `65101`, County `Cole County`
+- **Household**: 3 people
+- **Person 1**: Head of household, age 30, employment income $2,600/month ($31,200/year)
+- **Person 2**: Child, age 4 (Head Start's participant, not EHS's; present so one household serves this spec and Head Start's)
+- **Person 3**: Child, age 1 (the only possible EHS participant here)
+- **Current Benefits**: none
+
+**Why this matters**: Before #1685 this household was found eligible for $19,616 on the strength of a SNAP benefit it was not receiving. The income pathway is closed at $31,200, so categorical eligibility is the only way in and reported receipt is the only thing that should open it.
+
+---
+
+### Scenario 5: SNAP Reported, Same Household
+**What we're checking**: The positive half of the contract, and — since exactly one participant qualifies — Missouri's per-participant value at income above the test.
+**Expected**: Eligible. Value = **$19,616** (raw $19,616.668, truncated at MFB serialization).
+
+**Steps**: identical to Scenario 4, plus **Current Benefits**: SNAP.
+
+**Why this matters**: Asserted alongside Scenario 4 so a change that simply denies everyone cannot pass both. One participant, so the expected figure is the single-participant value rather than an aggregate.
 
 ---
 
@@ -131,7 +176,7 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 **Expected**: Eligible (federal financial/categorical eligibility). Value = **$19,616** (same single-person figure as Scenario 1; integrated MFB-to-PE path). Display copy should note this reflects federal eligibility only — local prenatal-service availability should be confirmed with the specific grantee.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: Head of household, birth_year 1996, birth_month 3 (age 30), pregnant, employment income $1,000/month (clearly below the 100% FPL threshold for a household of 1), no current benefits
 

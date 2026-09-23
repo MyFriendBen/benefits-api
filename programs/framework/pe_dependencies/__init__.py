@@ -92,6 +92,25 @@ tanf_income = [
     member.NonTanfCashAssistanceIncomeDependency,
 ]
 
+# The dependencies covering PolicyEngine's
+# `gov.states.ma.eec.ccfa.income.countable_income.sources` that the screener collects, a
+# wider base than the federal CCDF test this replaced, which read no benefit income at all.
+# Veterans' benefits, military retirement pay and dividend/interest income are deliberately
+# absent: the first already counts through `pension_income`, the second the screener never
+# asks for, and CCFA exempts the capital gains our single `investment` stream becomes.
+ma_ccfa_income = [
+    member.EmploymentIncomeDependency,
+    member.SelfEmploymentIncomeDependency,
+    member.RentalIncomeDependency,
+    member.PensionIncomeDependency,
+    member.SocialSecurityIncomeDependency,
+    member.UnemploymentIncomeDependency,
+    member.WorkersCompensationDependency,
+    member.AlimonyIncomeDependency,
+    member.ChildSupportReceivedDependency,
+    member.Ssi,
+]
+
 # PolicyEngine's actual-receipt contract: countable income and categorical eligibility follow
 # the benefits a household reports receiving, not the ones PolicyEngine simulates them as
 # eligible for. See dependencies/receipt.py.
