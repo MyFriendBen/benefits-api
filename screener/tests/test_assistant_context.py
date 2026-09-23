@@ -2075,7 +2075,7 @@ class AssistantMessageRatingViewTests(APITestCase):
                 self.reply.refresh_from_db()
                 self.assertEqual(self.reply.rating_reason, code)
 
-    def test_the_database_refuses_a_reason_without_a_thumbs_down(self):
+    def test_the_database_refuses_a_reason_on_a_thumbs_up(self):
         """The API validates, but two services write this table; the constraint is the
         backstop, and it is what makes stranded reasons impossible rather than unlikely."""
         from django.db import IntegrityError, transaction
@@ -2084,6 +2084,34 @@ class AssistantMessageRatingViewTests(APITestCase):
             AssistantMessage.objects.filter(pk=self.reply.pk).update(
                 rating=1, rating_reason=AssistantMessage.REASON_INACCURATE
             )
+
+    def test_the_database_refuses_a_reason_on_an_UNRATED_row(self):
+        """The case the first version of this constraint let straight through.
+
+        A Postgres CHECK passes unless it evaluates to FALSE, and NULL is not FALSE.
+        With `rating IS NULL`, `rating = -1` is NULL, so `rating_reason IS NULL OR
+        rating = -1` came out NULL and the row was ACCEPTED — the exact thing the
+        constraint exists to refuse. The thumbs-up case above does fail, which is why
+        testing only that one hid this.
+        """
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            AssistantMessage.objects.filter(pk=self.reply.pk).update(
+                rating=None, rating_reason=AssistantMessage.REASON_INACCURATE
+            )
+
+    def test_a_structured_reason_is_a_400_not_a_500(self):
+        """`VALID_REASONS` is a frozenset, so an unhashable body value raises TypeError
+        on the membership test — a 500 where this endpoint owes a 400."""
+        for bad in ([AssistantMessage.REASON_INACCURATE], {"code": "inaccurate"}, 7, True):
+            with self.subTest(reason=bad):
+                response = self.client.put(self._url(), {"rating": -1, "reason": bad}, format="json")
+
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertEqual(response.data["error"]["code"], "invalid_reason")
+                self.reply.refresh_from_db()
+                self.assertIsNone(self.reply.rating_reason)
 
     def test_does_not_call_ai_service(self):
         """The whole point of writing directly: no second service in the path."""

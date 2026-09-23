@@ -1343,7 +1343,12 @@ class AssistantMessageRatingView(views.APIView):
         # thumbs-down is already saved, so most calls legitimately carry no reason at
         # all. Absent means "not answered" and is not an error.
         reason = body.get("reason")
-        if reason is not None and reason not in self.VALID_REASONS:
+        # `isinstance(reason, str)` before the membership test, not as belt-and-braces:
+        # VALID_REASONS is a frozenset, and a JSON array or object body value is
+        # unhashable, so `reason not in VALID_REASONS` raises TypeError and the caller
+        # gets a 500 instead of the 400 this branch exists to produce. Same class of
+        # trap as the `isinstance(rating, bool)` guard above.
+        if reason is not None and (not isinstance(reason, str) or reason not in self.VALID_REASONS):
             return Response(
                 {
                     "error": {

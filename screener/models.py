@@ -1208,8 +1208,17 @@ class AssistantMessage(models.Model):
             # thumbs-up, or clearing the rating, must take the reason with it — a reason
             # left stranded on a positive or unrated row would be counted as a
             # complaint about a reply nobody complained about.
+            #
+            # The `rating__isnull=False` term is load-bearing and is NOT redundant with
+            # `rating=-1`, however much it reads that way. A CHECK passes in Postgres
+            # unless it evaluates to FALSE, and NULL is not FALSE: with a stranded
+            # reason on a row where `rating IS NULL`, `rating = -1` evaluates to NULL,
+            # so `FALSE OR NULL` is NULL and the constraint ACCEPTS the row. That is the
+            # exact case this constraint exists to refuse, and the first version of it
+            # let that row straight through. Spelling the null check out makes the
+            # disjunct FALSE instead of NULL.
             models.CheckConstraint(
-                check=models.Q(rating_reason__isnull=True) | models.Q(rating=-1),
+                check=models.Q(rating_reason__isnull=True) | (models.Q(rating__isnull=False) & models.Q(rating=-1)),
                 name="assistant_msg_reason_needs_thumbs_down",
             ),
         ]
