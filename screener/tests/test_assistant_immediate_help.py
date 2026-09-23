@@ -197,6 +197,45 @@ class ImmediateHelpContextTests(TestCase):
 
         self.assertEqual(result["resources"][0]["contact"], "Dial 2-1-1")
 
+    def test_a_blank_translation_row_falls_back_to_the_config_default(self):
+        """A row that EXISTS but is empty must not beat the config's own English.
+
+        `add_translation` creates non-default rows with `text=""`, and
+        `add_translations --no-translate` writes blank rows deliberately — so a blank row
+        is a real state, not a corrupted one. `_translated` already falls back to
+        LANGUAGE_CODE, so this only fires when the default language is blank too, and at
+        that point the `_default_message` sitting in the config beats dropping the entry.
+        """
+        Translation.objects.add_translation("moreHelp.211.name.ks", "")
+        self._config("more_help_options", more_help_config(KS_211))
+
+        result = _immediate_help(self.screen, "en-us")
+
+        self.assertEqual(result["resources"][0]["name"], "Kansas 211 (United Way of Kansas)")
+
+    def test_a_blank_translation_does_not_silently_empty_the_list(self):
+        """The consequence of getting the above wrong: a tenant with a perfectly good
+        configured resource hands Benji nothing to offer."""
+        Translation.objects.add_translation("moreHelp.211.name.ks", "")
+        self._config("more_help_options", more_help_config(KS_211))
+
+        result = _immediate_help(self.screen, "en-us")
+
+        self.assertEqual(result["entry_point"], IMMEDIATE_HELP_TAB)
+        self.assertEqual(len(result["resources"]), 1)
+
+    def test_a_scheme_with_no_host_is_not_a_link(self):
+        """`https://` passes a startswith check and reaches the model as a link it is
+        told to copy character-for-character — which the widget renders as a clickable
+        href that goes nowhere. A dead link is the same failure as a truncated one."""
+        entry = {**KS_211, "link": "https://"}
+        self._config("more_help_options", more_help_config(entry))
+
+        result = _immediate_help(self.screen, "en-us")
+
+        self.assertNotIn("link", result["resources"][0])
+        self.assertEqual(result["resources"][0]["name"], "Kansas 211 (United Way of Kansas)")
+
     def test_an_unnamed_entry_is_dropped(self):
         """A blank line in a list the prompt calls complete is worse than a short list."""
         self._config("more_help_options", more_help_config({"link": "https://example.org"}, KS_211))

@@ -20,6 +20,8 @@ import os
 import re
 from typing import Optional
 
+from urllib.parse import urlsplit
+
 import phonenumbers
 import requests
 from django.conf import settings
@@ -613,6 +615,26 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     return current
 
 
+def _is_shareable_url(url: str) -> bool:
+    """An absolute http(s) URL with an actual host.
+
+    The scheme prefix alone is not enough, and `"https://"` is the case that proves it:
+    it passes a `startswith` check and reaches the model as a link it is told to
+    reproduce character-for-character, which the widget then renders as a clickable
+    href that goes nowhere. A link that cannot be opened is the same failure as a
+    truncated one — an authoritative-looking dead end — and the designed fallback
+    ("the link is on your results page") is strictly better.
+
+    `urlsplit` rather than a regex: it is the parser the value will actually be read
+    by, and it treats userinfo, ports and IPv6 literals the way a browser does.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    return parts.scheme in ("http", "https") and bool(parts.hostname)
+
+
 def _resource_url(need: UrgentNeed, language_code: str) -> str:
     """This resource's website, or "" if there isn't a usable one.
 
@@ -633,10 +655,10 @@ def _resource_url(need: UrgentNeed, language_code: str) -> str:
     link = _translated(need.link, language_code, max_len=None)
     if not link:
         return ""
-    if not link.lower().startswith(("http://", "https://")):
+    if not _is_shareable_url(link):
         _report_once(
             f"non_http_resource_link:{need.external_name or need.id}",
-            f"Dropping resource {need.external_name or need.id} link: not an absolute http(s) URL",
+            f"Dropping resource {need.external_name or need.id} link: not an absolute http(s) URL with a host",
         )
         return ""
     if len(link) > MAX_URL_LEN:
@@ -822,13 +844,23 @@ def _immediate_help(screen: Screen, language_code: str) -> dict:
         field = option.get(key)
         if not isinstance(field, dict):
             return ""
-        row = rows.get(field.get("_label"))
-        # Fall back to the config's own English when no Translation row exists — these
-        # are seeded by `add_config`, so a fresh environment can legitimately have the
-        # config without the rows, and a nameless entry is worse than an English one.
-        return (
-            _translated(row, language_code) if row else str(field.get("_default_message") or "")[:MAX_PROMPT_FIELD_LEN]
-        )
+        text = _translated(row, language_code) if (row := rows.get(field.get("_label"))) else ""
+        if text:
+            return text
+        # Fall back to the config's own English when the Translation gives us nothing —
+        # whether because no row exists, or because a row exists and is BLANK.
+        #
+        # The blank case is not hypothetical: `add_translation` creates non-default rows
+        # with `text=""`, and `add_translations --no-translate` writes blank rows on
+        # purpose. `_translated` already falls back to LANGUAGE_CODE, so this only fires
+        # when the default language is empty too — and then the `_default_message` sitting
+        # right there in the config is better than dropping the entry, which is what an
+        # `if row else` would do.
+        #
+        # Whitespace collapsed before the cap so the default takes the same shape a
+        # translated value does; ai-service sanitizes again, but a name should not
+        # depend on which branch produced it.
+        return " ".join(str(field.get("_default_message") or "").split())[:MAX_PROMPT_FIELD_LEN]
 
     resources = []
     for option in options:
@@ -848,10 +880,11 @@ def _immediate_help(screen: Screen, language_code: str) -> dict:
             entry["contact"] = contact
         link = option.get("link")
         if isinstance(link, str) and link:
-            if not link.lower().startswith(("http://", "https://")):
+            if not _is_shareable_url(link):
                 _report_once(
                     f"non_http_more_help_link:{screen.white_label.code}:{name}",
-                    f"Dropping more_help link for {screen.white_label.code}/{name}: not an absolute http(s) URL",
+                    f"Dropping more_help link for {screen.white_label.code}/{name}: "
+                    "not an absolute http(s) URL with a host",
                 )
             elif len(link) > MAX_URL_LEN:
                 _report_once(
