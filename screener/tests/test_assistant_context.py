@@ -1566,6 +1566,17 @@ class AssistantStartViewTests(APITestCase):
     # path is bounded by `AdditionalResourcesTests.test_query_count_is_flat_in_resource_count`,
     # which is the property that actually matters: the resource work is flat in the
     # number of resources, not in whether any exist.
+    #
+    # MFB-1931 added the Immediate Help context and did NOT raise this. It needs two
+    # white-label configs (`more_help_options`, `referrer_data`) plus a translation fetch
+    # for whichever labels come back, and `_config_data` takes both config names in one
+    # `name__in` query precisely so it fits. This screen has no more_help config, so the
+    # translation fetch does not fire here — the contents path is covered by
+    # `test_assistant_immediate_help.py`.
+    #
+    # THIS IS NOW EXACTLY AT THE CEILING (18 of 18), so the next addition trips it. That
+    # is the ceiling working, not a problem to route around: batch the new lookup the way
+    # `_config_data` does, or raise this with a reason, but don't do either by reflex.
     MAX_START_QUERIES = 18
 
     def test_query_count_is_bounded(self):

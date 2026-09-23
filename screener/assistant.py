@@ -20,6 +20,8 @@ import os
 import re
 from typing import Optional
 
+from urllib.parse import urlsplit
+
 import phonenumbers
 import requests
 from django.conf import settings
@@ -613,6 +615,26 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     return current
 
 
+def _is_shareable_url(url: str) -> bool:
+    """An absolute http(s) URL with an actual host.
+
+    The scheme prefix alone is not enough, and `"https://"` is the case that proves it:
+    it passes a `startswith` check and reaches the model as a link it is told to
+    reproduce character-for-character, which the widget then renders as a clickable
+    href that goes nowhere. A link that cannot be opened is the same failure as a
+    truncated one — an authoritative-looking dead end — and the designed fallback
+    ("the link is on your results page") is strictly better.
+
+    `urlsplit` rather than a regex: it is the parser the value will actually be read
+    by, and it treats userinfo, ports and IPv6 literals the way a browser does.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    return parts.scheme in ("http", "https") and bool(parts.hostname)
+
+
 def _resource_url(need: UrgentNeed, language_code: str) -> str:
     """This resource's website, or "" if there isn't a usable one.
 
@@ -633,10 +655,10 @@ def _resource_url(need: UrgentNeed, language_code: str) -> str:
     link = _translated(need.link, language_code, max_len=None)
     if not link:
         return ""
-    if not link.lower().startswith(("http://", "https://")):
+    if not _is_shareable_url(link):
         _report_once(
             f"non_http_resource_link:{need.external_name or need.id}",
-            f"Dropping resource {need.external_name or need.id} link: not an absolute http(s) URL",
+            f"Dropping resource {need.external_name or need.id} link: not an absolute http(s) URL with a host",
         )
         return ""
     if len(link) > MAX_URL_LEN:
@@ -682,6 +704,219 @@ def _resource_phone(need: UrgentNeed) -> str:
             f"Dropping an unformattable phone number on resource {need.external_name or need.id}",
         )
         return ""
+
+
+# How the household reaches the Immediate Help resources (2-1-1 and the like).
+#
+# Four shapes, not one, which is why this is computed per screen rather than described
+# once in the prompt: see `_immediate_help`.
+IMMEDIATE_HELP_TAB = "tab"
+IMMEDIATE_HELP_BUTTON = "button"
+IMMEDIATE_HELP_ABSENT = "absent"
+
+# Ceiling on the Immediate Help list. Sized well above reality — the largest configured
+# `more_help_options` holds a handful of entries (most tenants have exactly one, a 2-1-1
+# line) — and exists for the same reason as the other caps: to bound a list that reaches
+# the system prompt.
+MAX_IMMEDIATE_HELP_RESOURCES = 16
+
+# A referrer carrying this in its `uiOptions` hides the Immediate Help route entirely.
+# Per REFERRER, not per white label: NC sets it on 211nc, hfed, lanc and ccla but not on
+# its default, so two households on the same white label genuinely see different pages.
+NO_IMMEDIATE_HELP_UI_OPTION = "no_results_more_help"
+
+# The one white label that renders no tab bar at all. Its Immediate Help resources live
+# on a standalone page reached from a button (`211Button.tsx`: "CESN renders no tab bar,
+# so this is its only entry point to that page").
+NO_TAB_BAR_WHITE_LABEL = "cesn"
+
+
+def _config_data(screen: Screen, *names: str) -> dict[str, dict]:
+    """Several of a white label's `Configuration.data` payloads, decoded, in ONE query.
+
+    Takes a list rather than a single name because `_immediate_help` needs two
+    (`more_help_options` and `referrer_data`) and the start endpoint's query count is
+    bounded by a test that is deliberately hard to raise — two lookups where one will do
+    is exactly what that bound exists to catch.
+
+    `Configuration.data` comes back as a JSON *string*, not a dict: `OrderedJSONField`
+    json.dumps() on the way in and the column then encodes that string as jsonb, so one
+    decode leaves the payload still encoded. Both shapes are accepted because the field
+    would start returning dicts the day that double-encoding is fixed.
+
+    Names with no active row, or with unparseable data, are simply absent from the
+    result — every caller here treats a missing config as "this tenant offers nothing",
+    which is the safe reading.
+    """
+    out: dict[str, dict] = {}
+    rows = Configuration.objects.filter(white_label=screen.white_label, name__in=names, active=True).values_list(
+        "name", "data"
+    )
+    for name, data in rows:
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                _report_once(
+                    f"unparseable_config:{screen.white_label.code}:{name}",
+                    f"{name} for {screen.white_label.code} is not valid JSON; the assistant cannot use it",
+                )
+                continue
+        if isinstance(data, dict):
+            out[name] = data
+    return out
+
+
+def _immediate_help_entry_point(screen: Screen, referrer_data: dict, has_resources: bool) -> str:
+    """Whether this household sees Immediate Help as a tab, a button, or not at all.
+
+    THE RESULTS PAGE IS NOT ONE SHAPE, which is the whole reason this is in the context
+    rather than stated once in the prompt. `buildTabs.ts` adds the tab only when it is
+    neither suppressed nor empty, and CESN renders no tab bar at all — so a prompt that
+    asserted "three tabs" would be wrong for at least three different populations, and
+    naming a tab that is not there is the same failure as inventing a button (MFB-1872).
+
+    Suppression is read from the screen's OWN referrer, not the white label's default:
+    NC turns it off for 211nc, hfed, lanc and ccla while leaving its default on.
+
+    EMPTY BEATS CESN, and the order of these checks is the whole of it. An earlier
+    version returned `button` for CESN whenever the route was not suppressed, including
+    with nothing behind it — but `Results.tsx` redirects `results/more-help` back to the
+    benefits list when there are no resources, and that branch runs BEFORE the CESN one
+    ("Must run before the CESN branch below, so this redirects CESN too"). The button is
+    still painted, so it looks like a route and is not one; telling Benji to point
+    someone at it sends them in a circle.
+    """
+    if _immediate_help_suppressed(screen, referrer_data) or not has_resources:
+        return IMMEDIATE_HELP_ABSENT
+    # CESN renders no tab bar, so its route is the button on the results page.
+    if screen.white_label.code == NO_TAB_BAR_WHITE_LABEL:
+        return IMMEDIATE_HELP_BUTTON
+    return IMMEDIATE_HELP_TAB
+
+
+def _immediate_help_suppressed(screen: Screen, referrer_data: dict) -> bool:
+    """Does this screen's referrer switch the Immediate Help route off?"""
+    ui_options = referrer_data.get("uiOptions")
+    if not isinstance(ui_options, dict):
+        return False
+    # `getReferrer` in the frontend falls back to "default" when the code has no entry.
+    options = ui_options.get(screen.referrer_code) if screen.referrer_code else None
+    if not isinstance(options, list):
+        options = ui_options.get("default")
+    return isinstance(options, list) and NO_IMMEDIATE_HELP_UI_OPTION in options
+
+
+def _immediate_help(screen: Screen, language_code: str) -> dict:
+    """The Immediate Help tab, as the assistant sees it.
+
+    Deliberately a sibling of `additional_resources` rather than part of it. They are
+    different things and the prompt must not blur them: additional resources are matched
+    to what this household said they needed, while these are a fixed per-tenant list
+    (2-1-1, state help lines) shown to everyone — so a count on them "would falsely
+    imply personalization", which is exactly why the tab carries none.
+
+    Name and phone are Translation-backed labels (`{_label, _default_message}`) resolved
+    in the screen's language, because these are the words on the household's own screen.
+    `link` is a plain config string, validated the same way `_resource_url` validates a
+    resource link: absolute http(s) or dropped, never truncated.
+    """
+    configs = _config_data(screen, "more_help_options", "referrer_data")
+    options = configs.get("more_help_options", {}).get("moreHelpOptions")
+    if not isinstance(options, list):
+        options = []
+
+    labels = []
+    for option in options:
+        if not isinstance(option, dict):
+            continue
+        for key in ("name", "phone"):
+            label = (option.get(key) or {}).get("_label") if isinstance(option.get(key), dict) else None
+            if label:
+                labels.append(label)
+    rows = (
+        {t.label: t for t in Translation.objects.filter(label__in=labels).prefetch_related("translations")}
+        if labels
+        else {}
+    )
+
+    def _text(option: dict, key: str) -> str:
+        field = option.get(key)
+        if not isinstance(field, dict):
+            return ""
+        text = _translated(row, language_code) if (row := rows.get(field.get("_label"))) else ""
+        if text:
+            return text
+        # Fall back to the config's own English when the Translation gives us nothing —
+        # whether because no row exists, or because a row exists and is BLANK.
+        #
+        # The blank case is not hypothetical: `add_translation` creates non-default rows
+        # with `text=""`, and `add_translations --no-translate` writes blank rows on
+        # purpose. `_translated` already falls back to LANGUAGE_CODE, so this only fires
+        # when the default language is empty too — and then the `_default_message` sitting
+        # right there in the config is better than dropping the entry, which is what an
+        # `if row else` would do.
+        #
+        # Whitespace collapsed before the cap so the default takes the same shape a
+        # translated value does; ai-service sanitizes again, but a name should not
+        # depend on which branch produced it.
+        return " ".join(str(field.get("_default_message") or "").split())[:MAX_PROMPT_FIELD_LEN]
+
+    resources = []
+    for option in options:
+        if not isinstance(option, dict):
+            continue
+        name = _text(option, "name")
+        if not name:
+            # An unnamed entry is not something the assistant can offer anyone, and a
+            # blank line in a list it is told is complete is worse than a shorter list.
+            continue
+        entry = {"name": name}
+        # `contact`, not `phone_number`: the live value is "Dial 2-1-1", an instruction
+        # rather than a dialable number, and it is translated per language. ai-service
+        # sanitizes it as text for that reason.
+        contact = _text(option, "phone")
+        if contact:
+            entry["contact"] = contact
+        link = option.get("link")
+        if isinstance(link, str) and link:
+            if not _is_shareable_url(link):
+                _report_once(
+                    f"non_http_more_help_link:{screen.white_label.code}:{name}",
+                    f"Dropping more_help link for {screen.white_label.code}/{name}: "
+                    "not an absolute http(s) URL with a host",
+                )
+            elif len(link) > MAX_URL_LEN:
+                _report_once(
+                    f"long_more_help_link:{screen.white_label.code}:{name}",
+                    f"Dropping more_help link for {screen.white_label.code}/{name}: over MAX_URL_LEN={MAX_URL_LEN}",
+                )
+            else:
+                entry["link"] = link
+        resources.append(entry)
+
+    if len(resources) > MAX_IMMEDIATE_HELP_RESOURCES:
+        capture_message(
+            f"White label {screen.white_label.code} has {len(resources)} more_help options, over "
+            f"MAX_IMMEDIATE_HELP_RESOURCES={MAX_IMMEDIATE_HELP_RESOURCES}; truncating the assistant's list",
+            level="warning",
+        )
+        resources = resources[:MAX_IMMEDIATE_HELP_RESOURCES]
+
+    # Deliberately the RAW option count, not `len(resources)`. The frontend's
+    # `useImmediateHelpEmpty` tests `(moreHelpOptions ?? []).length`, before any name
+    # resolution — so a tenant whose entries all resolve to empty names still gets the
+    # tab on screen. Keying this off the filtered list would report "absent" while the
+    # household is looking at the tab: the page-matching rule this function exists to
+    # uphold, broken from the other side. When that happens the route is real and the
+    # contents are not, and `_render_immediate_help` says exactly that.
+    entry_point = _immediate_help_entry_point(screen, configs.get("referrer_data", {}), has_resources=bool(options))
+    # No resources reach the model when there is no route to them: naming help the
+    # household cannot get to on their screen is the closed-world break in reverse.
+    return {
+        "entry_point": entry_point,
+        "resources": resources if entry_point != IMMEDIATE_HELP_ABSENT else [],
+    }
 
 
 def _additional_resources(
@@ -1033,6 +1268,12 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
         # benefits to apply for, and the prompt keeps that distinction — but they answer
         # the immediate "I can't feed my kids this week" that no long-term program does.
         "additional_resources": additional_resources,
+        # The THIRD tab (MFB-824), and the one whose very existence varies: it is a tab
+        # for most households, a button on CESN, and absent when the referrer suppresses
+        # it or the tenant configured nothing. `entry_point` carries which, so the prompt
+        # can describe the page this household is actually looking at instead of
+        # asserting one shape for everyone.
+        "immediate_help": _immediate_help(screen, language_code),
         # Only what this white label's immediate-needs step actually offers, minus what
         # they already ticked. Lets the assistant name the right category when someone
         # raises a need with no matching resources, instead of either staying silent or
