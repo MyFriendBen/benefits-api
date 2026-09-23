@@ -1305,12 +1305,19 @@ class AssistantMessageRatingView(views.APIView):
     the same statement about the same message — `{"rating": 1 | -1 | null}` — and the
     widget toggles between them freely. PUT also makes the double-click that a slow
     network turns into two requests land on the same value instead of racing.
+
+    PUT REPLACES BOTH FIELDS. The body states the whole feedback, so a call carrying
+    `rating` and no `reason` clears any reason already stored. That is what makes
+    picking a different chip, switching thumbs and un-rating all the same operation,
+    and it is why the widget always sends the reason it wants kept rather than relying
+    on the server to remember one.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [AssistantRatingRateThrottle]
 
     VALID_RATINGS = (AssistantMessage.RATING_UP, AssistantMessage.RATING_DOWN)
+    VALID_REASONS = frozenset(code for code, _ in AssistantMessage.RATING_REASON_CHOICES)
 
     def put(self, request, screen_uuid, conversation_id, message_id):
         screen = get_object_or_404(Screen.objects.select_related("white_label"), uuid=screen_uuid)
@@ -1332,6 +1339,34 @@ class AssistantMessageRatingView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # `reason` is optional in a way `rating` is not: the chips are offered AFTER the
+        # thumbs-down is already saved, so most calls legitimately carry no reason at
+        # all. Absent means "not answered" and is not an error.
+        reason = body.get("reason")
+        if reason is not None and reason not in self.VALID_REASONS:
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_reason",
+                        "message": f"reason must be null or one of: {', '.join(sorted(self.VALID_REASONS))}.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # A reason only means anything against a thumbs-down. Rejecting rather than
+        # silently dropping it: a client sending one with a thumbs-up has a bug, and
+        # swallowing it would hide that while looking like it worked.
+        if reason is not None and rating != AssistantMessage.RATING_DOWN:
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_reason",
+                        "message": "reason is only valid with rating -1.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # All three of screen, conversation and message are matched in one query, for
         # the reason spelled out in AssistantMessageView: a conversation_id alone was
         # once enough to reach ANY conversation from ANY screen, which also let a white
@@ -1349,7 +1384,7 @@ class AssistantMessageRatingView(views.APIView):
                 conversation__screen_uuid=screen.uuid,
                 role="assistant",
             )
-            .only("message_id", "rating", "rated_at")
+            .only("message_id", "rating", "rated_at", "rating_reason")
             .first()
         )
         if message is None:
@@ -1363,6 +1398,17 @@ class AssistantMessageRatingView(views.APIView):
         # once `rating` is back to NULL, and those are different facts about the reply.
         message.rating = rating
         message.rated_at = timezone.now()
-        message.save(update_fields=["rating", "rated_at"])
+        # Switching to a thumbs-up, or clearing, takes any previous reason with it. A
+        # reason stranded on a positive or unrated row would be read as a complaint
+        # about a reply nobody complained about — and the DB constraint refuses it
+        # anyway, so not doing this would turn an ordinary re-rate into a 500.
+        message.rating_reason = reason if rating == AssistantMessage.RATING_DOWN else None
+        message.save(update_fields=["rating", "rated_at", "rating_reason"])
 
-        return Response({"message_id": str(message.message_id), "rating": message.rating})
+        return Response(
+            {
+                "message_id": str(message.message_id),
+                "rating": message.rating,
+                "reason": message.rating_reason,
+            }
+        )

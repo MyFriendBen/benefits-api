@@ -120,6 +120,7 @@ class AssistantMessageInline(admin.TabularInline):
         "role",
         "text",
         "rating",
+        "rating_reason",
         "rated_at",
         "model",
         "prompt_tokens",

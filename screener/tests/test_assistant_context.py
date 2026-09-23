@@ -1877,8 +1877,11 @@ class AssistantMessageRatingViewTests(APITestCase):
             ],
         )
 
-    def _put(self, rating, **kwargs):
-        return self.client.put(self._url(**kwargs), {"rating": rating}, format="json")
+    def _put(self, rating, reason=None, **kwargs):
+        body = {"rating": rating}
+        if reason is not None:
+            body["reason"] = reason
+        return self.client.put(self._url(**kwargs), body, format="json")
 
     # --- the happy path: set, change, clear ---
 
@@ -1993,6 +1996,94 @@ class AssistantMessageRatingViewTests(APITestCase):
         self.assertEqual(response.data["error"]["code"], "assistant_disabled")
         self.reply.refresh_from_db()
         self.assertIsNone(self.reply.rating)
+
+    # --- reason codes (MFB-1915) ---
+
+    def test_records_a_reason_with_a_thumbs_down(self):
+        response = self._put(-1, reason=AssistantMessage.REASON_NOT_MY_RESULTS)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["reason"], "not_my_results")
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "not_my_results")
+
+    def test_a_thumbs_down_without_a_reason_is_the_normal_case(self):
+        """The chips are offered AFTER the rating is saved, so most calls carry none."""
+        response = self._put(-1)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data["reason"])
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, -1)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_picking_a_chip_after_the_fact_updates_the_reason(self):
+        self._put(-1)
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "inaccurate")
+
+    def test_choosing_a_different_chip_replaces_rather_than_appends(self):
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(-1, reason=AssistantMessage.REASON_WRONG_TONE)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "wrong_tone")
+
+    def test_switching_to_a_thumbs_up_drops_the_reason(self):
+        """A reason stranded on a positive row reads as a complaint nobody made."""
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(1)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, 1)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_clearing_the_rating_drops_the_reason(self):
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(None)
+
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_rejects_an_unknown_reason_code(self):
+        response = self._put(-1, reason="because_i_said_so")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_reason")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_rejects_a_reason_on_a_thumbs_up(self):
+        """A client sending this has a bug; swallowing it would hide that."""
+        response = self._put(1, reason=AssistantMessage.REASON_INACCURATE)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_reason")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_every_offered_code_is_accepted(self):
+        """The UI renders this list; a code the API refuses would be a dead chip."""
+        for code, _label in AssistantMessage.RATING_REASON_CHOICES:
+            with self.subTest(code=code):
+                response = self._put(-1, reason=code)
+
+                self.assertEqual(response.status_code, 200, response.data)
+                self.reply.refresh_from_db()
+                self.assertEqual(self.reply.rating_reason, code)
+
+    def test_the_database_refuses_a_reason_without_a_thumbs_down(self):
+        """The API validates, but two services write this table; the constraint is the
+        backstop, and it is what makes stranded reasons impossible rather than unlikely."""
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            AssistantMessage.objects.filter(pk=self.reply.pk).update(
+                rating=1, rating_reason=AssistantMessage.REASON_INACCURATE
+            )
 
     def test_does_not_call_ai_service(self):
         """The whole point of writing directly: no second service in the path."""

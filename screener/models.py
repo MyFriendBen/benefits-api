@@ -1121,6 +1121,52 @@ class AssistantMessage(models.Model):
     RATING_CHOICES = ((RATING_UP, "Thumbs up"), (RATING_DOWN, "Thumbs down"))
     rating = models.SmallIntegerField(choices=RATING_CHOICES, blank=True, null=True)
     rated_at = models.DateTimeField(blank=True, null=True)
+    # Why the reply was rated down. NULL means either "not rated down" or "rated down
+    # and the household skipped the question", which is the common case — the chips are
+    # offered after the thumbs-down is already saved, so declining them costs nothing.
+    #
+    # A bare thumbs-down says someone was unhappy and nothing about what to change. This
+    # column is what makes the signal actionable, and the codes are drawn from the
+    # failure modes `_SHARED_GUARDRAILS` in ai-service's prompts.py already names —
+    # fabricated rules, programs outside the closed list, invented links — rather than
+    # from a generic list.
+    #
+    # STORED CODE, NOT DISPLAYED TEXT. The frontend renders a translated label per code
+    # (`chatbot.reason.*`), so the wording can be revised, or translated differently per
+    # locale, without a migration and without splitting a code's history in two. Codes
+    # are therefore append-only in spirit: retire one by dropping it from the UI, not by
+    # renaming it, or old rows stop meaning what they said.
+    #
+    # NEGATIVE RATINGS ONLY, enforced below. Positive reasons were considered and
+    # dropped: they are far less diagnostic, and a second step on the cheap positive
+    # action suppresses the volume that makes the positive signal worth having.
+    REASON_INACCURATE = "inaccurate"
+    REASON_NOT_MY_RESULTS = "not_my_results"
+    REASON_BAD_LINK = "bad_link"
+    REASON_UNANSWERED = "unanswered"
+    REASON_HARD_TO_FOLLOW = "hard_to_follow"
+    REASON_WRONG_TONE = "wrong_tone"
+    REASON_OTHER = "other"
+    RATING_REASON_CHOICES = (
+        # Fabricated rules or numbers — the class the trap suite in ai-service's evals/
+        # exists to measure, and the highest-severity one.
+        (REASON_INACCURATE, "This isn't right"),
+        # The closed-world break: a program outside the list it was given, or one the
+        # household already receives. MFB-1427 / MFB-1788.
+        (REASON_NOT_MY_RESULTS, "This isn't about my results"),
+        # Invented or mangled URLs and phone numbers. Concrete, checkable, and costly —
+        # a bad link is a household making a wasted trip.
+        (REASON_BAD_LINK, "A link or phone number didn't work"),
+        (REASON_UNANSWERED, "It didn't answer what I asked"),
+        # Length and formatting, which a household experiences as one thing.
+        (REASON_HARD_TO_FOLLOW, "Hard to follow, or too long"),
+        # Tone, and the case where a heads-up reads as "you don't qualify".
+        (REASON_WRONG_TONE, "It felt wrong for my situation"),
+        # Kept deliberately. On its own it teaches little, but ITS RATE is the signal
+        # that the taxonomy above is wrong and needs revisiting.
+        (REASON_OTHER, "Something else"),
+    )
+    rating_reason = models.CharField(max_length=32, choices=RATING_REASON_CHOICES, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -1157,6 +1203,14 @@ class AssistantMessage(models.Model):
             models.CheckConstraint(
                 check=models.Q(rating__isnull=True) | models.Q(role="assistant"),
                 name="assistant_msg_rating_assistant_only",
+            ),
+            # A reason is only meaningful against a thumbs-down. Switching to a
+            # thumbs-up, or clearing the rating, must take the reason with it — a reason
+            # left stranded on a positive or unrated row would be counted as a
+            # complaint about a reply nobody complained about.
+            models.CheckConstraint(
+                check=models.Q(rating_reason__isnull=True) | models.Q(rating=-1),
+                name="assistant_msg_reason_needs_thumbs_down",
             ),
         ]
 
