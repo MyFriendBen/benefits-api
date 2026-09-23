@@ -756,13 +756,20 @@ def _immediate_help_entry_point(screen: Screen, referrer_data: dict, has_resourc
 
     Suppression is read from the screen's OWN referrer, not the white label's default:
     NC turns it off for 211nc, hfed, lanc and ccla while leaving its default on.
+
+    EMPTY BEATS CESN, and the order of these checks is the whole of it. An earlier
+    version returned `button` for CESN whenever the route was not suppressed, including
+    with nothing behind it — but `Results.tsx` redirects `results/more-help` back to the
+    benefits list when there are no resources, and that branch runs BEFORE the CESN one
+    ("Must run before the CESN branch below, so this redirects CESN too"). The button is
+    still painted, so it looks like a route and is not one; telling Benji to point
+    someone at it sends them in a circle.
     """
-    suppressed = _immediate_help_suppressed(screen, referrer_data)
-    if screen.white_label.code == NO_TAB_BAR_WHITE_LABEL:
-        # The button is rendered unless suppressed; suppressed means no route at all.
-        return IMMEDIATE_HELP_ABSENT if suppressed else IMMEDIATE_HELP_BUTTON
-    if suppressed or not has_resources:
+    if _immediate_help_suppressed(screen, referrer_data) or not has_resources:
         return IMMEDIATE_HELP_ABSENT
+    # CESN renders no tab bar, so its route is the button on the results page.
+    if screen.white_label.code == NO_TAB_BAR_WHITE_LABEL:
+        return IMMEDIATE_HELP_BUTTON
     return IMMEDIATE_HELP_TAB
 
 
@@ -863,7 +870,14 @@ def _immediate_help(screen: Screen, language_code: str) -> dict:
         )
         resources = resources[:MAX_IMMEDIATE_HELP_RESOURCES]
 
-    entry_point = _immediate_help_entry_point(screen, configs.get("referrer_data", {}), has_resources=bool(resources))
+    # Deliberately the RAW option count, not `len(resources)`. The frontend's
+    # `useImmediateHelpEmpty` tests `(moreHelpOptions ?? []).length`, before any name
+    # resolution — so a tenant whose entries all resolve to empty names still gets the
+    # tab on screen. Keying this off the filtered list would report "absent" while the
+    # household is looking at the tab: the page-matching rule this function exists to
+    # uphold, broken from the other side. When that happens the route is real and the
+    # contents are not, and `_render_immediate_help` says exactly that.
+    entry_point = _immediate_help_entry_point(screen, configs.get("referrer_data", {}), has_resources=bool(options))
     # No resources reach the model when there is no route to them: naming help the
     # household cannot get to on their screen is the closed-world break in reverse.
     return {

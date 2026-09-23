@@ -86,6 +86,39 @@ class ImmediateHelpContextTests(TestCase):
 
         self.assertEqual(result["entry_point"], IMMEDIATE_HELP_BUTTON)
 
+    def test_cesn_with_no_resources_is_absent_not_a_button(self):
+        """The button is painted but leads nowhere.
+
+        `Results.tsx` redirects `results/more-help` back to the benefits list when there
+        are no resources, and that branch runs BEFORE the CESN one — its comment says so
+        explicitly. Reporting `button` here would have Benji point a household at a
+        control that bounces them straight back to where they started.
+        """
+        cesn = WhiteLabel.objects.create(name="CESN", code="cesn", state_code="CO", feature_flags={})
+        screen = Screen.objects.create(white_label=cesn, zipcode="80014", household_size=1, completed=True)
+        self._config("more_help_options", more_help_config(), white_label=cesn)
+
+        result = _immediate_help(screen, "en-us")
+
+        self.assertEqual(result["entry_point"], IMMEDIATE_HELP_ABSENT)
+
+    def test_entries_that_all_resolve_to_nothing_still_report_the_tab(self):
+        """The route and its contents are separate facts, and the frontend decides the
+        route on the RAW count.
+
+        `useImmediateHelpEmpty` tests `(moreHelpOptions ?? []).length` before any name
+        resolution, so a tenant whose entries all come out nameless still gets the tab on
+        screen. Reporting `absent` would tell a household there is no Immediate Help tab
+        while they are looking at one — the page-matching rule broken from the other side.
+        """
+        nameless = {"link": "https://example.org"}
+        self._config("more_help_options", more_help_config(nameless, nameless))
+
+        result = _immediate_help(self.screen, "en-us")
+
+        self.assertEqual(result["entry_point"], IMMEDIATE_HELP_TAB)
+        self.assertEqual(result["resources"], [])
+
     # --- per-referrer suppression: the reason this is context, not prompt ---
 
     def test_a_referrer_can_switch_the_route_off(self):
