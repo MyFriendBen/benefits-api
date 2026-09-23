@@ -1131,6 +1131,18 @@ class AssistantMessage(models.Model):
     # fabricated rules, programs outside the closed list, invented links — rather than
     # from a generic list.
     #
+    # FIVE, not the seven this started with. Seven chips stacked to seven lines in a
+    # panel capped at 45vh, which is a lot of furniture under every thumbs-down. The two
+    # cut:
+    #
+    #   bad_link  — the only failure mode here we can detect WITHOUT asking anyone. The
+    #               guardrails forbid inventing URLs and phone numbers, and a sweep over
+    #               stored replies finds them directly, so spending a chip on it buys a
+    #               signal we can already get.
+    #   wrong_tone — real, and it matters for this population, but it is the least often
+    #               articulated as a distinct complaint; it lands in `other`, whose rate
+    #               is what will say if that was wrong.
+    #
     # STORED CODE, NOT DISPLAYED TEXT. The frontend renders a translated label per code
     # (`chatbot.reason.*`), so the wording can be revised, or translated differently per
     # locale, without a migration and without splitting a code's history in two. Codes
@@ -1142,28 +1154,22 @@ class AssistantMessage(models.Model):
     # action suppresses the volume that makes the positive signal worth having.
     REASON_INACCURATE = "inaccurate"
     REASON_NOT_MY_RESULTS = "not_my_results"
-    REASON_BAD_LINK = "bad_link"
     REASON_UNANSWERED = "unanswered"
     REASON_HARD_TO_FOLLOW = "hard_to_follow"
-    REASON_WRONG_TONE = "wrong_tone"
     REASON_OTHER = "other"
     RATING_REASON_CHOICES = (
         # Fabricated rules or numbers — the class the trap suite in ai-service's evals/
         # exists to measure, and the highest-severity one.
-        (REASON_INACCURATE, "This isn't right"),
+        (REASON_INACCURATE, "Not accurate"),
         # The closed-world break: a program outside the list it was given, or one the
         # household already receives. MFB-1427 / MFB-1788.
-        (REASON_NOT_MY_RESULTS, "This isn't about my results"),
-        # Invented or mangled URLs and phone numbers. Concrete, checkable, and costly —
-        # a bad link is a household making a wasted trip.
-        (REASON_BAD_LINK, "A link or phone number didn't work"),
-        (REASON_UNANSWERED, "It didn't answer what I asked"),
-        # Length and formatting, which a household experiences as one thing.
-        (REASON_HARD_TO_FOLLOW, "Hard to follow, or too long"),
-        # Tone, and the case where a heads-up reads as "you don't qualify".
-        (REASON_WRONG_TONE, "It felt wrong for my situation"),
+        (REASON_NOT_MY_RESULTS, "Not about my results"),
+        # The commonest complaint about any assistant, and the one with no narrower home.
+        (REASON_UNANSWERED, "Didn't answer me"),
+        # Length, formatting and readability, which a household experiences as one thing.
+        (REASON_HARD_TO_FOLLOW, "Confusing or too long"),
         # Kept deliberately. On its own it teaches little, but ITS RATE is the signal
-        # that the taxonomy above is wrong and needs revisiting.
+        # that the four above are the wrong four.
         (REASON_OTHER, "Something else"),
     )
     rating_reason = models.CharField(max_length=32, choices=RATING_REASON_CHOICES, blank=True, null=True)

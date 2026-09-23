@@ -2026,10 +2026,10 @@ class AssistantMessageRatingViewTests(APITestCase):
 
     def test_choosing_a_different_chip_replaces_rather_than_appends(self):
         self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
-        self._put(-1, reason=AssistantMessage.REASON_WRONG_TONE)
+        self._put(-1, reason=AssistantMessage.REASON_HARD_TO_FOLLOW)
 
         self.reply.refresh_from_db()
-        self.assertEqual(self.reply.rating_reason, "wrong_tone")
+        self.assertEqual(self.reply.rating_reason, "hard_to_follow")
 
     def test_switching_to_a_thumbs_up_drops_the_reason(self):
         """A reason stranded on a positive row reads as a complaint nobody made."""
