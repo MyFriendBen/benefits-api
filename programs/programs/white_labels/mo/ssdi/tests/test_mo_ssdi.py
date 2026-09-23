@@ -18,7 +18,7 @@ def make_member(
     ss_retirement_yearly=0,
 ):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.birth_year = birth_year
     member.birth_month = birth_month
     member.long_term_disability = long_term_disability
