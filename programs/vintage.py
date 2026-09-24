@@ -318,40 +318,32 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
         status=Status.CONFIRMED,
-        # Edition only. The spec says the limit is 150% of the guideline and PolicyEngine
-        # applies 130% -- a $3,192 difference in who qualifies, unresolved and recorded in
-        # the data-gap section of csfp/specs/wa.md. This entry settles which edition is in
-        # use, not which percentage is right.
+        # Texas runs its own income test (`tx_dta_csfp_income_eligible`) at 130%; every
+        # other state is on the federal 150%. See csfp/specs/wa.md.
         rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
-        "the 2026 guideline; the percentage itself is disputed against the spec",
+        "the 2026 guideline, Texas' own limit",
         source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
-        "on 2026-09-18; csfp/specs/wa.md data-gap section",
+        "on 2026-09-18; qa/MFB-1786-csfp-limit-probe.py",
     ),
     ("ma", "ma_csfp"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
         status=Status.CONFIRMED,
-        # Edition only. The spec says the limit is 150% of the guideline and PolicyEngine
-        # applies 130% -- a $3,192 difference in who qualifies, unresolved and recorded in
-        # the data-gap section of csfp/specs/wa.md. This entry settles which edition is in
-        # use, not which percentage is right.
-        rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
-        "the 2026 guideline; the percentage itself is disputed against the spec",
-        source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
-        "on 2026-09-18; csfp/specs/wa.md data-gap section",
+        # Federal limit, 150% of the guideline (`gov.usda.csfp.fpg_limit`, from 2025). The
+        # 130% boundary the original probe observed is Texas' own test. See csfp/specs/wa.md.
+        rule="current year, per PolicyEngine: the federal limit is 150% of the guideline at "
+        "the request period, and no 2025 threshold fits",
+        source="policyengine-us gov/usda/csfp/fpg_limit.yaml; qa/MFB-1786-csfp-limit-probe.py",
     ),
     ("il", "il_csfp"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
         status=Status.CONFIRMED,
-        # Edition only. The spec says the limit is 150% of the guideline and PolicyEngine
-        # applies 130% -- a $3,192 difference in who qualifies, unresolved and recorded in
-        # the data-gap section of csfp/specs/wa.md. This entry settles which edition is in
-        # use, not which percentage is right.
-        rule="current year, per PolicyEngine: probed at period 2026 the boundary is 130% of "
-        "the 2026 guideline; the percentage itself is disputed against the spec",
-        source="qa/MFB-1786-threshold-probe.py observed against PolicyEngine 1.824.6 "
-        "on 2026-09-18; csfp/specs/wa.md data-gap section",
+        # Custom calculator at the federal 150% (`fpl_percent` in csfp/il.py), matching
+        # PolicyEngine's `gov.usda.csfp.fpg_limit`. Follows the family's edition.
+        rule="current year: the federal limit is 150% of the current guideline, as for "
+        "the PolicyEngine-backed members of the family",
+        source="cross_white_label/csfp/il.py; policyengine-us gov/usda/csfp/fpg_limit.yaml",
     ),
     # --- DEFERRED ----------------------------------------------------------------------
     ("cesn", "cesn_care"): Vintage(

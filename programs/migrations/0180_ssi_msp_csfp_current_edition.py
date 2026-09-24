@@ -15,11 +15,10 @@ from django.db import migrations
 #           $240/year general exclusion; no 2025 threshold fits. The data gap is recorded
 #           in msp/specs/tx.md for the next maintenance pass.
 #
-#   CSFP -- same method, same answer for the edition. Note the spec and the engine disagree
-#           about the PERCENTAGE: the spec records USDA revising the limit to 150% while
-#           PolicyEngine applies 130%, a $3,192 difference in who qualifies. That is
-#           unresolved and recorded in csfp/specs/wa.md. This migration settles the edition
-#           only and does not depend on which percentage turns out to be right.
+#   CSFP -- same method, same answer for the edition. The probed boundary is 130% of the
+#           2026 guideline, which is Texas' own test (`tx_dta_csfp_income_eligible`); the
+#           federal limit everywhere else is 150% (`gov.usda.csfp.fpg_limit`, from 2025).
+#           Either way no 2025 threshold fits. See csfp/specs/wa.md.
 #
 # ma_csfp and il_csfp did not move enough in the evidence harness to clear the materiality
 # threshold on their own, but a family-wide rule applies to the whole family -- materiality
