@@ -933,10 +933,18 @@ class EligibilitySnapshot(models.Model):
     #: is outside our control. Recording them per program is what makes the difference
     #: answerable from production data instead of by reading the calculator tree.
     #:
-    #: Reasons are the ``DROPPED_*`` constants below. Empty dict rather than null when
-    #: nothing was dropped, so "no programs dropped" and "written before this field
-    #: existed" stay distinguishable.
-    dropped_programs = models.JSONField(default=dict, blank=True)
+    #: Reasons are the ``DROPPED_*`` constants below. Code that knows this field always
+    #: writes a dict — empty when nothing was dropped — so an empty dict and a null mean
+    #: different things: "nothing was dropped" against "written by code that predates this
+    #: field".
+    #:
+    #: Nullable for deploy safety, which is the only reason it is not simply NOT NULL.
+    #: Django applies ``default`` in Python and drops the database default after adding the
+    #: column, so a NOT NULL column is written only by code that declares the field. The
+    #: release phase migrates before the new dynos take over, so for that window — and for
+    #: the whole of any code rollback that leaves the migration applied — the old code
+    #: inserts no value at all and every eligibility calculation fails on the constraint.
+    dropped_programs = models.JSONField(default=dict, blank=True, null=True)
 
     #: The program's own `can_calc` failed: a screener field it needs is missing. Not a
     #: failure — the household was never asked.

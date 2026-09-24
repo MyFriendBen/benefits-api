@@ -242,6 +242,35 @@ class TestDroppedProgramsAreRecordedWithAReason(ForceCalculatedUpstreamTestCase)
 
         self.assertEqual(self.snapshot().dropped_programs, {})
 
+    def test_the_column_tolerates_code_that_does_not_know_the_field(self):
+        """The column has to be nullable, and the reason is deployment rather than data.
+
+        Django applies `default` in Python and drops the database default once the column
+        exists, so a NOT NULL column can only be written by code that declares the field.
+        The release phase migrates before the new dynos take over, so for that window — and
+        for the whole of any rollback that leaves the migration applied — the previous code
+        inserts no value and every eligibility calculation fails on the constraint. This is
+        the insert that previous code emits.
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO screener_eligibilitysnapshot "
+                "(screen_id, submission_date, is_batch, had_error) VALUES (%s, NOW(), false, false) "
+                "RETURNING id",
+                [self.screen.id],
+            )
+            inserted_id = cursor.fetchone()[0]
+
+        # Null and empty are different answers: nothing was dropped, against written before
+        # this field existed.
+        self.assertIsNone(EligibilitySnapshot.objects.get(pk=inserted_id).dropped_programs)
+
+    def test_code_that_knows_the_field_always_writes_a_dict(self):
+        """So a null can only ever mean the row predates the field, never "we forgot"."""
+        self.run_results()
+
+        self.assertIsInstance(self.snapshot().dropped_programs, dict)
+
     def test_a_missing_screener_field_is_distinguished_from_an_absent_upstream(self):
         result = self.run_results({DEPENDENT: DependencyError()})
 

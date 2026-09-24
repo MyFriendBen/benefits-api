@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='eligibilitysnapshot',
             name='dropped_programs',
-            field=models.JSONField(blank=True, default=dict),
+            field=models.JSONField(blank=True, default=dict, null=True),
         ),
     ]
