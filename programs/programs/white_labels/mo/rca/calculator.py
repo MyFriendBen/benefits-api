@@ -54,7 +54,7 @@ def _removed_from_case(member: HouseholdMember) -> bool:
     """A member with a reported SSI or TANF (`cashAssistance`) payment is removed
     from their own RCA case, taking their income with them. Reported receipt only
     — never eligibility for either program, and never a household-level TANF
-    report (spec.md's SSI-pending pathway; see Scenario 19)."""
+    report."""
     reports_ssi = member.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0
     reports_tanf = member.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
     return reports_ssi or reports_tanf
