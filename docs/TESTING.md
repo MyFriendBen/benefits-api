@@ -79,11 +79,11 @@ Controlled by the `VCR_MODE` environment variable:
 |------------|----------|----------|-----------|
 | **PRs** (`pr-validation`) | `none` | **Read-only:** Replays only. A request with no matching cassette fails the build rather than being recorded live, so a PR cannot pass by reaching a real API. | ❌ No (never records) |
 | **Push to main** (`deploy-staging`) | `none` | Same as PRs: replay-only, parallel. Every commit here already passed the PR gate. | ❌ No (never records) |
-| **Release** (`deploy-production`) | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. PolicyEngine spec-scenario tests skip (see below). | ✅ Yes (every non-skipped test hits the live API) |
+| **Release** (`deploy-production`) | `none` | Same as PRs: replay-only, run against the release tag. Deploy is blocked unless it passes. | ❌ No (never records) |
 | **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** In a parallel run (the default) this is downgraded to `none`, so a missing cassette fails instead of recording. | Only if entire cassette file missing, and only when running serially |
 | **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
 
-Re-recording in CI is never committed — no workflow commits cassettes — so a CI run in `new_episodes` or `all` mode does not refresh what's in the repo. It only changes what that run tests against.
+Re-recording in CI is never committed — no workflow commits cassettes — and every CI job runs `none`, so CI never refreshes what's in the repo and never reaches a live API.
 
 ### Running Integration Tests Locally
 
@@ -396,18 +396,16 @@ from passing against a live API.
 `deploy-staging` runs the same strict playback as PR validation. Every commit reaching
 main has already passed that gate, so there is nothing left to record.
 
-### Release / Production Deploy (VCR_MODE=all)
-```yaml
-- Re-records ALL cassettes
-- Makes real API calls for every test
-- Validates actual API integrations
-- Ensures API interface hasn't changed
-- Requires HUD_API_TOKEN secret
-```
+### Release / Production Deploy (VCR_MODE=none)
 
-**Purpose**: Catch API breaking changes before a production release.
+`deploy-production` runs the same strict playback against the release tag, and `deploy`
+needs it to pass. It does not record: the private PolicyEngine API serves only `current`
+and `frontier`, so re-recording pinned cassettes on a release would 422 rather than gate
+anything. `HUD_API_TOKEN` must be set — the job fails if it is empty, since an unset token
+silently skips the HUD integration tests.
 
-**PolicyEngine spec-scenario tests skip in this mode.** `all` never replays, and these cassettes pin an exact model version that PolicyEngine stops serving as soon as it promotes past it (`422 unsupported_version`) — so re-recording them on a release could only ever fail, and it would make a production deploy depend on live PolicyEngine with no drift report besides. Live PE re-runs belong in a scheduled, non-blocking drift job that bumps the pin deliberately (see MFB-1565). HUD cassettes still re-record here as before.
+No CI job reaches a live API. Live PolicyEngine re-runs belong in a scheduled, non-blocking
+drift job that bumps the pin deliberately.
 
 ---
 
