@@ -508,7 +508,7 @@ class BuildContextTests(TestCase):
         self.programs["snap"].save()
         seed_warning(self.programs["snap"], "_prior_tax_year", "These results are for the {priorYear} tax year.")
 
-        with mock.patch.object(Screen, "get_reference_date", return_value=date(2026, 9, 23)):
+        with mock.patch("django.utils.timezone.localdate", return_value=date(2026, 9, 23)):
             context = self.context()
 
         self.assertEqual(context["eligible_programs"][0]["warnings"], ["These results are for the 2025 tax year."])
@@ -521,7 +521,7 @@ class BuildContextTests(TestCase):
         self.programs["snap"].save()
         seed_warning(self.programs["snap"], "_prior_tax_year", "These results are for the {priorYear} tax year.")
 
-        with mock.patch.object(Screen, "get_reference_date", return_value=date(2026, 9, 23)):
+        with mock.patch("django.utils.timezone.localdate", return_value=date(2026, 9, 23)):
             context = self.context()
 
         self.assertNotIn("warnings", context["eligible_programs"][0])
