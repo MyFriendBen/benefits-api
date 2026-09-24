@@ -17,13 +17,26 @@ rather than any program's rule.
 
 from unittest.mock import patch
 
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 
 from programs.framework.base import Eligibility
 from programs.framework.gates import force_calculated_codes
 from programs.models import Navigator, Program, ProgramCategory, ProgramNavigator
 from programs.util import DependencyError, UpstreamAbsentError
-from screener.models import EligibilitySnapshot, HouseholdMember, Screen, WhiteLabel
+from integrations.services.income_limits import Smi
+from programs.models import FederalPoveryLimit
+from programs.programs.cross_white_label.liheap.co import LeapValueCache
+from screener.models import (
+    EligibilitySnapshot,
+    EnergyCalculatorMember,
+    EnergyCalculatorScreen,
+    HouseholdMember,
+    IncomeStream,
+    Screen,
+    WhiteLabel,
+)
 from screener.tests.helpers import seed_program
 from screener.views import eligibility_results
 
@@ -46,6 +59,7 @@ class ForceCalculatedUpstreamTestCase(TestCase):
         self.category = ProgramCategory.objects.new_program_category(
             white_label="cesn", external_name="energy_savings", icon=""
         )
+        self.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
         self.screen = Screen.objects.create(
             white_label=self.white_label, zipcode="80202", county="Denver County", household_size=1, completed=False
         )
@@ -59,7 +73,22 @@ class ForceCalculatedUpstreamTestCase(TestCase):
             program.active = True
             program.has_calculator = True
             program.category = self.category
+            program.year = self.fpl_year
             program.save()
+
+    def withhold_extra(self, code):
+        """Seed another force-calculated code and deactivate it, configured like the rest.
+
+        A `year` matters: the FK access in `fake_eligibility` only costs a query when there
+        is a row to fetch, so a null one would hide a missing `select_related`.
+        """
+        seed_program(self.white_label, code)
+        program = Program.objects.get(white_label=self.white_label, name_abbreviated=code)
+        program.active = False
+        program.category = self.category
+        program.year = self.fpl_year
+        program.save()
+        return program
 
     def run_results(self, calculated=None):
         """Run the loop with every calculator stubbed, recording which rows it ran.
@@ -72,6 +101,10 @@ class ForceCalculatedUpstreamTestCase(TestCase):
 
         def fake_eligibility(program_self, screen, data, missing_dependencies):
             ran.append(program_self.name_abbreviated)
+            # Every force-calculated calculator reads `self.program.year` (the SMI/FPL
+            # vintage), so the stub does too. Without that access the query-count test
+            # below cannot see a missing `select_related("year")` on the unfiltered fetch.
+            program_self.year
             outcome = calculated.get(program_self.name_abbreviated, eligible())
             if isinstance(outcome, Exception):
                 raise outcome
@@ -330,3 +363,168 @@ class TestWithheldUpstreamsDoNotReachDisplayConsumers(ForceCalculatedUpstreamTes
         for codes in seen:
             self.assertNotIn(UPSTREAM, codes)
             self.assertIn(DEPENDENT, codes)
+
+
+class TestTheExtraFetchDoesNotScale(ForceCalculatedUpstreamTestCase):
+    """One query for every withheld upstream, not one each.
+
+    The unfiltered fetch is a single `name_abbreviated__in` with `select_related("year")`,
+    and a withheld row is skipped before warnings are read. All three are easy to lose —
+    dropping the `select_related` gives an N+1 on `Program.year`, which every one of these
+    calculators reads — so this pins the property rather than an absolute count that any
+    unrelated query would break.
+    """
+
+    def withhold(self, *codes):
+        for code in codes:
+            if code in (UPSTREAM, DEPENDENT):
+                program = Program.objects.get(white_label=self.white_label, name_abbreviated=code)
+                program.active = False
+                program.save()
+            else:
+                self.withhold_extra(code)
+
+    def queries_for(self, *withheld):
+        """Query count for one run, measured from a state where a previous snapshot exists.
+
+        The first run of a screen has no `EligibilitySnapshot` to diff against and so skips
+        a query the second run makes. Warming up first is what makes two measurements
+        comparable — without it this compares snapshot history, not the fetch.
+        """
+        self.withhold(*withheld)
+        self.run_results()
+
+        with CaptureQueriesContext(connection) as captured:
+            self.run_results()
+
+        return list(captured)
+
+    def test_a_second_withheld_upstream_adds_no_queries(self):
+        """The property, rather than an absolute count any unrelated query would break.
+
+        A missing `select_related("year")` would add one per withheld row, as would losing
+        the `not skip` guard on warning messages or fetching the upstreams individually.
+        """
+        one = len(self.queries_for(UPSTREAM))
+        two = len(self.queries_for("cesn_eoc"))
+
+        self.assertEqual(two, one)
+
+    def test_a_withheld_upstream_costs_no_warning_message_query(self):
+        """Warnings are read before the display gate, so the `not skip` guard is the only
+        thing keeping a withheld row from querying for messages nobody will render."""
+        with_upstream = self.queries_for(UPSTREAM)
+        warnings = [q for q in with_upstream if "warning" in q["sql"].lower()]
+
+        self.assertEqual(
+            [q for q in warnings if str(self.upstream.id) in q["sql"]],
+            [],
+        )
+
+
+class TestARealCalculatorRunsThroughTheUnfilteredPath(TestCase):
+    """The rest of this module stubs `Program.eligibility` to test the loop's bookkeeping.
+
+    Nothing there proves a real calculator survives being reached that way — the unfiltered
+    fetch carries only `select_related("year")`, and all six force-calculated calculators
+    read `self.program.year`. So this runs CESN's LEAP for real, from an inactive row, and
+    lets `cesn_eoccip` read the result through its gate.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="CESN", code="cesn", state_code="CO")
+        self.category = ProgramCategory.objects.new_program_category(
+            white_label="cesn", external_name="energy_savings", icon=""
+        )
+        self.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="80202",
+            county="Denver County",
+            household_size=1,
+            household_assets=0,
+            path="homeowner",
+            completed=False,
+        )
+        self.member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        # Both halves of `energy_calculator` are required: `Screen.missing_fields` reads the
+        # screen row and `HouseholdMember.missing_fields` the member one, and either
+        # missing makes `cesn_eoccip` uncalculable before its gate is ever reached.
+        EnergyCalculatorScreen.objects.create(screen=self.screen, needs_hvac=True)
+        EnergyCalculatorMember.objects.create(household_member=self.member)
+
+        seed_program(self.white_label, UPSTREAM, DEPENDENT)
+        self.upstream = Program.objects.get(white_label=self.white_label, name_abbreviated=UPSTREAM)
+        self.dependent = Program.objects.get(white_label=self.white_label, name_abbreviated=DEPENDENT)
+        for program in (self.upstream, self.dependent):
+            program.active = True
+            program.has_calculator = True
+            program.category = self.category
+            program.year = self.fpl_year
+            program.save()
+
+        # LEAP is deactivated: the state force-calculation exists to survive.
+        self.upstream.active = False
+        self.upstream.save()
+
+    def set_income(self, monthly):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.member, type="wages", amount=monthly, frequency="monthly"
+        )
+
+    def run_results(self):
+        # 60% of $50,000 SMI = $30,000/yr, the only condition CESN's LEAP applies.
+        smi = {"2025": {"CO": {1: 50_000}}}
+        with patch.object(Smi, "get_data", return_value=smi), patch.object(
+            LeapValueCache, "get_data", return_value=[]
+        ), patch("screener.views.calc_pe_eligibility", return_value={"eligibility": {}, "_pe_data": {}}):
+            data, missing_programs, _, _ = eligibility_results(self.screen)
+
+        return {
+            # `data` carries ineligible programs too, so presence is not the same as being
+            # offered — `eligible` is the assertion that matters for the gate.
+            "published": sorted(entry["name_abbreviated"] for entry in data),
+            "eligible": sorted(entry["name_abbreviated"] for entry in data if entry["eligible"]),
+            "missing_programs": missing_programs,
+            "dropped": EligibilitySnapshot.objects.filter(screen=self.screen)
+            .latest("submission_date")
+            .dropped_programs,
+        }
+
+    def test_the_dependent_is_offered_on_a_real_leap_pass(self):
+        self.set_income(1_000)  # $12,000/yr, under the limit
+
+        result = self.run_results()
+
+        self.assertIn(DEPENDENT, result["eligible"])
+        self.assertNotIn(UPSTREAM, result["published"])
+        self.assertEqual(result["dropped"], {})
+
+    def test_the_dependent_is_withheld_on_a_real_leap_fail(self):
+        """The negative control: without it, a stubbed-looking pass could come from the
+        gate never being evaluated rather than from LEAP's income test."""
+        self.set_income(5_000)  # $60,000/yr, over the limit
+
+        result = self.run_results()
+
+        # Still returned, and correctly marked ineligible — which is the point. A gate that
+        # could not be evaluated would have dropped it from the response entirely instead.
+        self.assertIn(DEPENDENT, result["published"])
+        self.assertNotIn(DEPENDENT, result["eligible"])
+        self.assertEqual(result["dropped"], {})
+
+    def test_the_upstream_computing_needs_its_year_which_the_fetch_selects(self):
+        """`self.program.year.period` keys the SMI table. A row fetched without it raises
+        `AttributeError`, which the broad `except` turns into a dropped upstream rather
+        than a 500 — so the failure would be silent without this."""
+        self.set_income(1_000)
+        self.upstream.year = None
+        self.upstream.save()
+
+        with patch("screener.views.capture_exception"), patch("screener.views.capture_message"):
+            result = self.run_results()
+
+        self.assertEqual(result["dropped"][UPSTREAM], EligibilitySnapshot.DROPPED_UPSTREAM_ERROR)
+        self.assertEqual(result["dropped"][DEPENDENT], EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT)
+        self.assertNotIn(DEPENDENT, result["published"])
