@@ -664,3 +664,18 @@ class WaShowAllCashAssistanceProgramsDependency(SpmUnit):
 
     def value(self):
         return True
+
+
+class MaCcfaEligible(SpmUnit):
+    """
+    Massachusetts Child Care Financial Assistance eligibility.
+
+    Defined per month, but read at the annual period like every other output: the
+    annual read returns a real boolean rather than a twelve-month sum (measured), and
+    the unit's answer does not turn over mid-year the way a rate schedule does.
+
+    ``defined_for = StateCode.MA``, so a request that omits ``MaStateCodeDependency``
+    reads False for every household rather than erroring.
+    """
+
+    field = "ma_ccfa_eligible"
