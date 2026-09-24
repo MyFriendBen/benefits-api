@@ -242,21 +242,17 @@ class TestStateOptionsConfiguration(SimpleTestCase):
                     f'White label "{code}" is not a state screener but is offered as a state.',
                 )
 
-    def test_default_white_label_declares_state_options(self):
-        """
-        The "_default" config backs the state-agnostic /select-state route, so it stays the
-        generic every-public-state list. A partner narrowing the dropdown belongs in the config
-        for the state path it is handed out under, where the screener actually reads it.
-        """
+    def test_default_white_label_offers_every_launched_state_by_default(self):
+        """The "_default" config backs the state-agnostic /select-state route, so its unreferred dropdown stays generic."""
         state_options_config = white_label_config["_default"].referrer_data.get("stateOptions")
 
         self.assertIsNotNone(state_options_config, '"_default" must declare "stateOptions".')
         self.assertEqual(
-            state_options_config,
-            {"default": []},
-            '"_default" should offer every publicly launched state and nothing partner-specific. '
-            f"Found {state_options_config!r}; move any referrer entry to that referrer's state "
-            "config.",
+            state_options_config.get("default"),
+            [],
+            "Someone entering /select-state with no referrer must be offered every publicly "
+            f'launched state, but "_default" narrows it to {state_options_config.get("default")!r}. '
+            "A referrer key alongside it is fine; this is only about the unreferred default.",
         )
 
     def test_multi_state_referrers_are_configured_in_every_state_they_offer(self):

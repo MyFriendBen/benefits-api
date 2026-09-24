@@ -52,9 +52,9 @@ class DefaultConfigurationData(ConfigurationData):
             ]
         },
         "uiOptions": {"default": []},
-        # Empty means every publicly launched state. Referrers that narrow the dropdown declare it
-        # in the config for the state path they are handed out under, not here.
-        "stateOptions": {"default": []},
+        # "default" stays empty so the public dropdown offers every launched state; a referrer key
+        # here narrows the state-agnostic /select-state route, which loads no state config.
+        "stateOptions": {"default": [], "uwgkc": ["ks", "mo"]},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
