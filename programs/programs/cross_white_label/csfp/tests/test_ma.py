@@ -42,11 +42,14 @@ class TestMaCsfp(TestCase):
         self.assertIn(AgeDependency, MaCsfp.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
-        from programs.framework.pe_dependencies.spm import SchoolMealCountableIncomeDependency
+    def test_pe_inputs_includes_csfp_countable_income_dependency(self):
+        from programs.framework.pe_dependencies.spm import (
+            CsfpCountableIncomeDependency,
+            SchoolMealCountableIncomeDependency,
+        )
 
-        self.assertIn(SchoolMealCountableIncomeDependency, MaCsfp.pe_inputs)
-        self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
+        self.assertIn(CsfpCountableIncomeDependency, MaCsfp.pe_inputs)
+        self.assertNotIn(SchoolMealCountableIncomeDependency, MaCsfp.pe_inputs)
 
     def test_has_same_pe_outputs_as_parent(self):
         self.assertEqual(MaCsfp.pe_outputs, CommoditySupplementalFoodProgram.pe_outputs)
