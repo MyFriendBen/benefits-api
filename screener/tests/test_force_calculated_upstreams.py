@@ -21,7 +21,7 @@ from django.test import TestCase
 
 from programs.framework.base import Eligibility
 from programs.framework.gates import force_calculated_codes
-from programs.models import Program, ProgramCategory
+from programs.models import Navigator, Program, ProgramCategory, ProgramNavigator
 from programs.util import DependencyError, UpstreamAbsentError
 from screener.models import EligibilitySnapshot, HouseholdMember, Screen, WhiteLabel
 from screener.tests.helpers import seed_program
@@ -86,6 +86,7 @@ class ForceCalculatedUpstreamTestCase(TestCase):
             "ran": ran,
             "published": sorted(entry["name_abbreviated"] for entry in data),
             "missing_programs": missing_programs,
+            "data": data,
         }
 
 
@@ -276,3 +277,56 @@ class TestTheFetchIsScopedToGatedCustomUpstreams(ForceCalculatedUpstreamTestCase
         result = self.run_results()
 
         self.assertNotIn("il_family_care", result["ran"])
+
+
+class TestWithheldUpstreamsDoNotReachDisplayConsumers(ForceCalculatedUpstreamTestCase):
+    """A withheld upstream stays readable by gates but is invisible to what renders.
+
+    Before force-calculation, an inactive or removed upstream was absent from the
+    eligibility map entirely, so a navigator requiring it was filtered out and no category
+    cap counted it. Force-calculating it must not change either.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.navigator = Navigator.objects.new_navigator("cesn", "leap_only_navigator")
+        self.navigator.eligibility_programs.set([self.upstream])
+        ProgramNavigator.objects.create(program=self.dependent, navigator=self.navigator)
+
+    def navigator_ids(self, result):
+        entry = next(e for e in result["data"] if e["name_abbreviated"] == DEPENDENT)
+        return [navigator["id"] for navigator in entry["navigators"]]
+
+    def test_a_navigator_requiring_a_withheld_upstream_is_not_shown(self):
+        self.upstream.active = False
+        self.upstream.save()
+
+        result = self.run_results()
+
+        self.assertIn(UPSTREAM, result["ran"])
+        self.assertNotIn(self.navigator.id, self.navigator_ids(result))
+
+    def test_a_navigator_requiring_a_displayed_upstream_is_shown(self):
+        result = self.run_results()
+
+        self.assertIn(self.navigator.id, self.navigator_ids(result))
+
+    def test_category_caps_do_not_see_a_withheld_upstream(self):
+        self.upstream.active = False
+        self.upstream.save()
+        seen = []
+
+        class RecordingCapCalculator:
+            def __init__(self, eligibility):
+                seen.append(set(eligibility))
+
+            def caps(self):
+                return []
+
+        with patch("screener.views.ProgramCategoryCapCalculator", RecordingCapCalculator):
+            self.run_results()
+
+        self.assertTrue(seen)
+        for codes in seen:
+            self.assertNotIn(UPSTREAM, codes)
+            self.assertIn(DEPENDENT, codes)

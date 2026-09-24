@@ -556,6 +556,11 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     force_calculated = force_calculated_codes()
 
+    # Force-calculated upstreams that were withheld from the response. They stay in
+    # `program_eligibility` for the gates that read them, but display consumers below
+    # (navigator eligibility, category caps) must not see them.
+    withheld_programs: set[str] = set()
+
     for program in ordered_programs:
         # `upstream_only_ids` rows were fetched past the display filters, so being active is
         # not enough to publish one — a row removed for a referrer is active.
@@ -622,6 +627,8 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             eligibility = pe_eligibility[program.name_abbreviated]
 
         program_eligibility[program.name_abbreviated] = eligibility
+        if skip:
+            withheld_programs.add(program.name_abbreviated)
 
         if previous_snapshot is not None:
             new = True
@@ -716,7 +723,11 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             if eligibility.eligible:
                 eligible_program_data.append((program, len(data) - 1))
 
-    update_navigators(eligible_program_data, program_eligibility, data, screen.county, referrer)
+    displayed_eligibility = {
+        code: eligibility for code, eligibility in program_eligibility.items() if code not in withheld_programs
+    }
+
+    update_navigators(eligible_program_data, displayed_eligibility, data, screen.county, referrer)
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]
@@ -733,7 +744,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         if category.calculator is not None and category.calculator != "":
             CategoryCalculator = category_cap_calculators[category.calculator]
 
-        calculator = CategoryCalculator(program_eligibility)
+        calculator = CategoryCalculator(displayed_eligibility)
 
         caps = []
         for cap in calculator.caps():
