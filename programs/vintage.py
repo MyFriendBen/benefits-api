@@ -345,6 +345,17 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         "the PolicyEngine-backed members of the family",
         source="cross_white_label/csfp/il.py; policyengine-us gov/usda/csfp/fpg_limit.yaml",
     ),
+    ("co", "ede"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        # Everyday Eats, Colorado's CSFP: the same PolicyEngine calculator as ma_csfp with a
+        # fixed $600 value, so it follows the family's edition. Probed at 150% on CO rows.
+        rule="current year, per PolicyEngine: the federal limit is 150% of the guideline at "
+        "the request period, as for ma_csfp",
+        source="cross_white_label/csfp/co.py; qa/MFB-1786-csfp-limit-probe.py observed against "
+        "PolicyEngine current and frontier on 2026-09-24",
+    ),
     # --- DEFERRED ----------------------------------------------------------------------
     ("cesn", "cesn_care"): Vintage(
         edition="2025",

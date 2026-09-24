@@ -23,6 +23,10 @@ from django.db import migrations
 # ma_csfp and il_csfp did not move enough in the evidence harness to clear the materiality
 # threshold on their own, but a family-wide rule applies to the whole family -- materiality
 # decides what gets researched, not what the conclusion covers.
+#
+# That includes CO's `ede` (Everyday Eats), which is CSFP under another name -- it subclasses
+# the same CommoditySupplementalFoodProgram -- and was missed only because the abbreviation
+# doesn't say so. It has no config JSON, so this migration is the only thing that moves it.
 CORRECTIONS = [
     ("co", "ssi", "2025", "2026"),
     ("il", "ssi", "2025", "2026"),
@@ -33,6 +37,7 @@ CORRECTIONS = [
     ("tx", "tx_csfp", "2025", "2026"),
     ("ma", "ma_csfp", "2025", "2026"),
     ("il", "il_csfp", "2025", "2026"),
+    ("co", "ede", "2025", "2026"),
 ]
 
 
