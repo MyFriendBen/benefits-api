@@ -115,7 +115,19 @@ class AssistantMessageInline(admin.TabularInline):
     extra = 0
     can_delete = False
     ordering = ("seq",)
-    fields = ("seq", "role", "text", "model", "prompt_tokens", "completion_tokens", "latency_ms", "error")
+    fields = (
+        "seq",
+        "role",
+        "text",
+        "rating",
+        "rating_reason",
+        "rated_at",
+        "model",
+        "prompt_tokens",
+        "completion_tokens",
+        "latency_ms",
+        "error",
+    )
     readonly_fields = fields
 
     def has_add_permission(self, request, obj=None):

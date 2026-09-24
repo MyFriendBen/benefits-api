@@ -53,6 +53,19 @@ class AssistantMessageRateThrottle(HashedIPAnonRateThrottle):
     scope = "assistant_message"
 
 
+class AssistantRatingRateThrottle(HashedIPAnonRateThrottle):
+    """Rating a Benbot reply (thumbs up/down).
+
+    Cheaper than any of the above — one indexed UPDATE, no context assembly and no
+    LLM — but the most clickable: the buttons sit on every assistant bubble, and
+    re-clicking is how a rating is changed or cleared, so a single user legitimately
+    spends several of these on one reply while making up their mind. Budgeted well
+    above that and still far below what a script would want.
+    """
+
+    scope = "assistant_rating"
+
+
 class AssistantHistoryRateThrottle(HashedIPAnonRateThrottle):
     """Reading a Benbot transcript back.
 

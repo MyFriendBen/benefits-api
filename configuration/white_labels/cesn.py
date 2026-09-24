@@ -2204,7 +2204,7 @@ class CesnConfigurationData(ConfigurationData):
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage.coEnergy",
-                "_default_message": 'It looks like you may not qualify for programs in this tool at this time. To see other resources, click the "More Help" link below.',
+                "_default_message": 'It looks like you may not qualify for programs in this tool at this time. To see other resources, click the "Immediate Help" link below.',
             },
         },
         "defaultLanguage": {"default": "en-us"},
