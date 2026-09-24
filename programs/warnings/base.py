@@ -1,7 +1,22 @@
-from programs.models import WarningMessage
+from datetime import date
+from typing import Optional
+
+from django.utils import timezone
+
+from programs.models import Program, WarningMessage
 from programs.framework.base import Eligibility
 from programs.util import Dependencies
 from screener.models import Screen
+
+
+def fill_warning_placeholders(text: str, today: Optional[date] = None) -> str:
+    """Fill the year placeholders a warning message may use, e.g. "the {priorYear} tax year".
+
+    The results page fills these in the browser (`WarningMessage.tsx`); this is the same
+    substitution for server-side readers of the raw text, such as the assistant context.
+    """
+    year = (today or timezone.localdate()).year
+    return text.replace("{priorYear}", str(year - 1)).replace("{currentYear}", str(year))
 
 
 class WarningCalculator:
@@ -25,12 +40,21 @@ class WarningCalculator:
     needs_full_eligibility = False
 
     def __init__(
-        self, screen: Screen, warning: WarningMessage, eligibility: Eligibility, missing_dependencies: Dependencies
+        self,
+        screen: Screen,
+        warning: WarningMessage,
+        eligibility: Eligibility,
+        missing_dependencies: Dependencies,
+        program: Optional[Program] = None,
     ):
         self.screen = screen
         self.warning = warning
         self.eligibility = eligibility
         self.missing_dependencies = missing_dependencies
+        # The program this warning is being shown on. A warning can be attached to
+        # several programs, so it can't be read off `warning`; None when a caller
+        # evaluates a warning without one.
+        self.program = program
 
     def calc(self) -> bool:
         """

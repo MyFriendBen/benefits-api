@@ -651,7 +651,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
                     raise Exception(f"{warning.calculator} is not a valid calculator name")
 
                 warning_calculator = warning_calculators[warning.calculator](
-                    screen, warning, eligibility, missing_dependencies
+                    screen, warning, eligibility, missing_dependencies, program=program
                 )
 
                 if warning_calculator.calc():
