@@ -2296,7 +2296,11 @@ class IlConfigurationData(ConfigurationData):
     # override only the keys IL customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        "theme": {"default": "default"},
+        # twoOneOneChicago is registered in styleController.ts as an exact copy of
+        # `default` until 211 Metro Chicago's palette arrives, so this is a no-op
+        # visually today. Pointing at it now means the brand swap is a one-file
+        # frontend change rather than a config change too.
+        "theme": {"default": "default", "211chicago": "twoOneOneChicago"},
         "logoSource": {
             "default": "MFB_ILLogo",
         },
@@ -2313,6 +2317,9 @@ class IlConfigurationData(ConfigurationData):
         "logoClass": {"default": "logo"},
         "shareLink": {
             "default": "",
+            # Carries the referrer through a share, so a shared screener keeps
+            # the 211 Metro Chicago experience instead of dropping to plain IL.
+            "211chicago": "https://screener.myfriendben.org/il?referrer=211chicago",
         },
         "stepDirectory": {
             "default": [
@@ -2327,6 +2334,27 @@ class IlConfigurationData(ConfigurationData):
                 "referralSource",
                 "signUpInfo",
             ],
+            # 211 Metro Chicago runs its own intake and contact capture, so the
+            # sign-up step is dropped to avoid asking a caller for the same
+            # details twice. referralSource stays, so attribution is unaffected.
+            "211chicago": [
+                "zipcode",
+                # the hhSize and hhData have to be consecutive
+                "householdSize",
+                "householdData",
+                "hasExpenses",
+                "householdAssets",
+                "hasBenefits",
+                "acuteHHConditions",
+                "referralSource",
+            ],
+        },
+        "uiOptions": {
+            "default": [],
+            # il_show_211_link renders the 211 Metro Chicago resource deep links at
+            # the top of the Additional Resources tab; no_zipcode_change_state hides
+            # the "not in Illinois?" prompt on the zipcode step.
+            "211chicago": ["il_show_211_link", "no_zipcode_change_state"],
         },
         "defaultLanguage": {"default": "en-us"},
     }
