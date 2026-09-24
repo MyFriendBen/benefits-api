@@ -22,6 +22,7 @@ from typing import Optional
 
 from django.test import SimpleTestCase
 
+from programs.framework.gates import force_calculated_codes, strict_upstream_fields
 from screener.views import CALC_ORDER, medicaid_program_codes
 
 PROGRAMS_ROOT = Path(__file__).resolve().parents[2] / "programs" / "programs"
@@ -279,9 +280,16 @@ class TestStrictGatesDeclareTheirUpstreamsDependencies(SimpleTestCase):
     where the dependent runs and the upstream did not — so the gate raises and the program
     disappears for a household it could otherwise have answered for.
 
-    Declaring the upstream's dependencies makes the pair drop out together. Tolerant gates
-    are exempt: `any_program_eligible` reads an absent upstream as "no" and degrades instead
-    of vanishing.
+    `ProgramCalculator.all_dependencies` unions a strict upstream's fields automatically, so
+    this now guards the derivation rather than 24 hand-written lists. Tolerant gates are
+    exempt: `any_program_eligible` reads an absent upstream as "no" and degrades instead of
+    vanishing.
+
+    This test used to compare `upstream_cls.dependencies`, which is `()` on every
+    PolicyEngine calculator — they carry dependencies per `pe_input` instead. The
+    subtraction was therefore always empty and the test never checked any of the sixteen
+    strict PolicyEngine edges, thirteen of which were under-declared. `strict_upstream_fields`
+    reads whichever the upstream actually uses.
     """
 
     def test_a_strict_gates_dependencies_cover_its_upstreams(self):
@@ -292,14 +300,28 @@ class TestStrictGatesDeclareTheirUpstreamsDependencies(SimpleTestCase):
             if not _is_strict_gate(path, upstream):
                 continue
             dependent_cls = registries.get(gating)
-            upstream_cls = registries.get(upstream)
-            if dependent_cls is None or upstream_cls is None:
+            if dependent_cls is None or upstream not in registries:
                 continue
-            uncovered = set(upstream_cls.dependencies) - set(dependent_cls.dependencies)
+            uncovered = strict_upstream_fields((upstream,)) - set(dependent_cls.all_dependencies())
             if uncovered:
                 offenders.append(f"{gating} gates on {upstream} but does not declare {sorted(uncovered)}")
 
         self.assertEqual(offenders, [], "; ".join(offenders))
+
+    def test_a_policyengine_upstreams_fields_are_read_off_its_inputs(self):
+        """The specific hole above: a PE upstream's screener fields live on its `pe_inputs`,
+        not on a class attribute. Pins that the helper finds them, so the guard cannot go
+        vacuous again."""
+        registries = _all_calculator_classes()
+        co_medicaid = registries["co_medicaid"]
+
+        self.assertEqual(tuple(co_medicaid.dependencies), ())
+        self.assertIn("household_assets", strict_upstream_fields(("co_medicaid",)))
+
+    def test_strict_upstream_fields_follows_a_custom_upstreams_own_gates(self):
+        """`il_aca_adults` gates on `il_family_care`, which gates in turn on `il_medicaid`.
+        The chain has to be walked or the middle link hides the PE fields at the end."""
+        self.assertIn("household_assets", strict_upstream_fields(("il_family_care",)))
 
 
 class TestMedicaidProgramCodes(SimpleTestCase):
@@ -357,3 +379,115 @@ class TestMedicaidProgramCodes(SimpleTestCase):
         """A duplicate would make index() return the first slot and silently mislead the
         ordering assertions above."""
         self.assertEqual(len(CALC_ORDER), len(set(CALC_ORDER)))
+
+
+class TestDeclarationsMatchTheCalls(SimpleTestCase):
+    """`gates_on` / `gates_on_any` are the graph; this is the only thing keeping them true.
+
+    Production reads the declarations — `can_calc` unions a strict upstream's fields,
+    `screener.views` decides which upstreams to force-calculate, `CALC_ORDER` is checked
+    against them. Nothing at runtime notices a gate that was added to the code and not to
+    the declaration, which is why the `ast` walk stays: it is now a consistency check
+    rather than the graph itself.
+    """
+
+    def _declared(self):
+        registries = _all_calculator_classes()
+        strict, tolerant = {}, {}
+        for code, Calculator in registries.items():
+            strict[code] = set(Calculator.gates_on)
+            tolerant[code] = set(Calculator.gates_on_any)
+        return strict, tolerant
+
+    def _called(self):
+        strict, tolerant = {}, {}
+        for path, gating, upstream in find_program_gates():
+            if gating is None:
+                continue
+            bucket = strict if _is_strict_gate(path, upstream) else tolerant
+            bucket.setdefault(gating, set()).add(upstream)
+        return strict, tolerant
+
+    def test_every_call_is_declared(self):
+        declared_strict, declared_tolerant = self._declared()
+        called_strict, called_tolerant = self._called()
+
+        missing = []
+        for code, upstreams in called_strict.items():
+            for undeclared in sorted(upstreams - declared_strict.get(code, set())):
+                missing.append(f"{code} calls program_eligible({undeclared!r}) but does not declare it in gates_on")
+        for code, upstreams in called_tolerant.items():
+            for undeclared in sorted(upstreams - declared_tolerant.get(code, set())):
+                missing.append(f"{code} reads {undeclared!r} tolerantly but does not declare it in gates_on_any")
+
+        self.assertEqual(missing, [], "; ".join(missing))
+
+    def test_no_declaration_is_stale(self):
+        """A declaration outliving its call is not harmless: it keeps a `CALC_ORDER` slot
+        alive and keeps forcing an upstream to be calculated on every screen."""
+        declared_strict, declared_tolerant = self._declared()
+        called_strict, called_tolerant = self._called()
+
+        stale = []
+        for code, upstreams in declared_strict.items():
+            for orphan in sorted(upstreams - called_strict.get(code, set())):
+                stale.append(f"{code} declares gates_on {orphan!r} but never calls program_eligible for it")
+        for code, upstreams in declared_tolerant.items():
+            for orphan in sorted(upstreams - called_tolerant.get(code, set())):
+                stale.append(f"{code} declares gates_on_any {orphan!r} but never reads it")
+
+        self.assertEqual(stale, [], "; ".join(stale))
+
+    def test_an_undeclared_gate_raises_rather_than_reading_data(self):
+        """The runtime half of the same invariant, for a gate written after this test ran."""
+        from unittest.mock import Mock
+
+        from programs.framework.base import Eligibility, ProgramCalculator
+
+        class Undeclared(ProgramCalculator):
+            program_code = "undeclared_test_only"
+
+        calculator = Undeclared(Mock(), Mock(), {"co_medicaid": Eligibility()}, Mock())
+
+        with self.assertRaises(ValueError):
+            calculator.program_eligible("co_medicaid")
+
+
+class TestForceCalculatedUpstreams(SimpleTestCase):
+    """Which gated upstreams `screener.views` calculates regardless of configuration."""
+
+    def test_every_custom_upstream_is_force_calculated(self):
+        registries = _all_calculator_classes()
+        from integrations.clients.policyengine.registry import all_calculators as pe_calculators
+
+        upstreams = {upstream for _, _, upstream in find_program_gates()}
+        custom = {u for u in upstreams if u in registries and u not in pe_calculators}
+
+        self.assertEqual(custom, set(force_calculated_codes()))
+
+    def test_no_policyengine_upstream_is_force_calculated(self):
+        """Adding one to the batched request would merge its `pe_inputs` into the shared
+        household payload, so it could move an unrelated active program's result."""
+        from integrations.clients.policyengine.registry import all_calculators as pe_calculators
+
+        self.assertEqual(set(force_calculated_codes()) & set(pe_calculators), set())
+
+    def test_the_force_calculated_set_is_the_six_custom_upstreams(self):
+        """Pinned by name so a new gate on a custom upstream is a visible diff here."""
+        self.assertEqual(
+            sorted(force_calculated_codes()),
+            [
+                "cesn_care",
+                "cesn_cowap",
+                "cesn_eoc",
+                "cesn_leap",
+                "il_family_care",
+                "il_moms_and_babies",
+            ],
+        )
+
+    def test_every_force_calculated_upstream_has_a_calc_order_slot(self):
+        """It is calculated in the same loop, so it is subject to the same ordering."""
+        for code in sorted(force_calculated_codes()):
+            with self.subTest(code=code):
+                self.assertIn(code, CALC_ORDER)

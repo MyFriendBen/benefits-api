@@ -26,6 +26,11 @@ class ACACache(GoogleSheetsCache):
 
 class ACASubsidiesNC(ProgramCalculator):
     program_code = "nc_aca_mfb_version"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("nc_medicaid",)
     percent_of_fpl = 4
     dependencies = ["insurance", "income_amount", "income_frequency", "county", "household_size"]
     eligible_insurance_types = ["none", "private"]

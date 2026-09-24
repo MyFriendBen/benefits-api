@@ -16,16 +16,22 @@ class EnergyCalculatorPercentageOfIncomePaymentPlan(ProgramCalculator):
         *EnergyCalculatorWeatherizationAssistance.dependencies,
         "energy_calculator",
     ]
-    presumptive_eligibility = [
+    # Tolerant gate: `any_program_eligible` reads an upstream that was not calculated as
+    # "no", so an absent route costs this household that route, not the program. Every
+    # route is a custom calculator and force-calculated, so they survive a row being
+    # deactivated. The `dependencies` splat above is kept deliberately — a tolerant gate
+    # contributes nothing to `can_calc`, and without it this program would report a
+    # definite "not eligible" on a screen too incomplete to evaluate any route.
+    gates_on_any = (
         "cesn_leap",
         "cesn_eoc",
         "cesn_cowap",
-    ]
+    )
     gas_providers = ["co-atmos-energy"]
 
     def household_eligible(self, e: Eligibility):
         # eligible for another program
-        e.condition(self.any_program_eligible(self.presumptive_eligibility))
+        e.condition(self.any_program_eligible(self.gates_on_any))
 
         # has gas provider
         e.condition(self.screen.energy_calculator.has_gas_provider(self.gas_providers))

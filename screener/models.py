@@ -924,6 +924,45 @@ class EligibilitySnapshot(models.Model):
     is_batch = models.BooleanField(default=False)
     had_error = models.BooleanField(default=False)
 
+    #: Programs left out of this screen's results, as ``{name_abbreviated: reason}``.
+    #:
+    #: The results payload carries a single ``missing_programs`` boolean, which says that
+    #: something was omitted but not what or why. The reasons are not interchangeable — a
+    #: PolicyEngine outage, a screener field the household skipped, and a gated upstream
+    #: whose row was deactivated all look identical from the response, and only the first
+    #: is outside our control. Recording them per program is what makes the difference
+    #: answerable from production data instead of by reading the calculator tree.
+    #:
+    #: Reasons are the ``DROPPED_*`` constants below. Code that knows this field always
+    #: writes a dict — empty when nothing was dropped — so an empty dict and a null mean
+    #: different things: "nothing was dropped" against "written by code that predates this
+    #: field".
+    #:
+    #: Nullable for deploy safety, which is the only reason it is not simply NOT NULL.
+    #: Django applies ``default`` in Python and drops the database default after adding the
+    #: column, so a NOT NULL column is written only by code that declares the field. The
+    #: release phase migrates before the new dynos take over, so for that window — and for
+    #: the whole of any code rollback that leaves the migration applied — the old code
+    #: inserts no value at all and every eligibility calculation fails on the constraint.
+    dropped_programs = models.JSONField(default=dict, blank=True, null=True)
+
+    #: The program's own `can_calc` failed: a screener field it needs is missing. Not a
+    #: failure — the household was never asked.
+    DROPPED_MISSING_FIELD = "missing_screener_field"
+
+    #: A strict gate raised because the program it reads was not calculated.
+    DROPPED_UPSTREAM_ABSENT = "gated_upstream_absent"
+
+    #: A PolicyEngine program absent from the batch result: the call failed, the payload
+    #: could not be assembled, the request was abandoned on the time budget, or the
+    #: resolved model does not define its output.
+    DROPPED_POLICY_ENGINE = "policy_engine_unavailable"
+
+    #: A force-calculated upstream raised something other than `DependencyError`. Never a
+    #: program the household would have seen; recorded because it means a gate that should
+    #: have been decoupled fell back to dropping its dependents.
+    DROPPED_UPSTREAM_ERROR = "force_calculated_upstream_error"
+
 
 class NPSScore(models.Model):
     eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)

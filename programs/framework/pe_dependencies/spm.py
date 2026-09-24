@@ -472,6 +472,14 @@ class SchoolMealCountableIncomeDependency(SpmUnit):
     """
 
     field = "school_meal_countable_income"
+    # Declared for the same reason `SnapGrossIncomeDependency` declares them: `value()`
+    # calls `calc_gross_income`, which raises on an IncomeStream with a NULL amount or
+    # frequency. Omitting them made `nslp` calculable on a screen where every other
+    # income-reading program was correctly dropped.
+    dependencies = (
+        "income_amount",
+        "income_frequency",
+    )
     income_types = [
         "wages",
         "selfEmployment",
