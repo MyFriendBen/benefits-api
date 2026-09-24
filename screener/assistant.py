@@ -494,9 +494,7 @@ def _warning_messages(
             continue
 
         message = _clipped(
-            fill_warning_placeholders(
-                _translated(warning.message, language_code, max_len=None), screen.get_reference_date()
-            ),
+            fill_warning_placeholders(_translated(warning.message, language_code, max_len=None)),
             f"warning {warning.external_name or warning.id} on {program.name_abbreviated}",
         )
         if message:

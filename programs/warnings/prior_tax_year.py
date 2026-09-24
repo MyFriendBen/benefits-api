@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from programs.warnings.base import WarningCalculator
 
 
@@ -7,7 +9,8 @@ class PriorTaxYear(WarningCalculator):
     The message names the year through the `{priorYear}` placeholder, which rolls over on
     January 1. A program's configured year doesn't roll over with it, so this checks the
     two agree: a warning saying "the 2026 tax year" must never appear on results that
-    were calculated for 2025.
+    were calculated for 2025. Today's date is used, as the results page does, not a
+    screen's frozen reference date.
     """
 
     def eligible(self) -> bool:
@@ -19,4 +22,4 @@ class PriorTaxYear(WarningCalculator):
         except (TypeError, ValueError):
             return False
 
-        return program_year == self.screen.get_reference_date().year - 1
+        return program_year == timezone.localdate().year - 1

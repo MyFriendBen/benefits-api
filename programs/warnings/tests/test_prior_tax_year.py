@@ -32,7 +32,7 @@ class TestPriorTaxYear(TestCase):
         calculator = PriorTaxYear(
             self.screen, self.warning, Eligibility(), Dependencies(), program=program or self.program
         )
-        with patch.object(Screen, "get_reference_date", return_value=reference_date):
+        with patch("django.utils.timezone.localdate", return_value=reference_date):
             return calculator.calc()
 
     def test_registered(self):
@@ -64,7 +64,7 @@ class TestPriorTaxYear(TestCase):
 
     def test_hidden_without_a_program(self):
         calculator = PriorTaxYear(self.screen, self.warning, Eligibility(), Dependencies())
-        with patch.object(Screen, "get_reference_date", return_value=date(2026, 9, 23)):
+        with patch("django.utils.timezone.localdate", return_value=date(2026, 9, 23)):
             self.assertFalse(calculator.calc())
 
 

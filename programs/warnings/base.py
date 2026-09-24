@@ -1,19 +1,22 @@
 from datetime import date
 from typing import Optional
 
+from django.utils import timezone
+
 from programs.models import Program, WarningMessage
 from programs.framework.base import Eligibility
 from programs.util import Dependencies
 from screener.models import Screen
 
 
-def fill_warning_placeholders(text: str, reference_date: date) -> str:
+def fill_warning_placeholders(text: str, today: Optional[date] = None) -> str:
     """Fill the year placeholders a warning message may use, e.g. "the {priorYear} tax year".
 
     The results page fills these in the browser (`WarningMessage.tsx`); this is the same
     substitution for server-side readers of the raw text, such as the assistant context.
     """
-    return text.replace("{priorYear}", str(reference_date.year - 1)).replace("{currentYear}", str(reference_date.year))
+    year = (today or timezone.localdate()).year
+    return text.replace("{priorYear}", str(year - 1)).replace("{currentYear}", str(year))
 
 
 class WarningCalculator:
