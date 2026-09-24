@@ -5,14 +5,12 @@ They deliberately do NOT check the map against the database or the config JSONs 
 the environment audit's job, and asserting it here would go red until the correcting
 migration lands.
 
-The one exception is `test_fpl_defaults_covers_the_current_calendar_year`, which is the guard
-that makes the whole scheme safe: every edition in the map has to be a period `_FPL_DEFAULTS`
-defines, so if the constant stops covering the present the map cannot express a current
-edition and this suite says so in January rather than in a partner's QA session.
+Nothing here reads the calendar. Whether `_FPL_DEFAULTS` has caught up with the current year
+is a fact about today, not about the code, so the environment audit reports it; asserting it
+here would fail every build from 1 January until HHS publishes, with nothing to fix.
 """
 
 import json
-from datetime import date
 from pathlib import Path
 
 from django.test import SimpleTestCase
@@ -95,23 +93,6 @@ class TestProgramVintageMap(SimpleTestCase):
 
         self.assertEqual(bases, {Basis.COVERAGE_YEAR, Basis.TABLE_EDITION})
 
-    def test_fpl_defaults_covers_the_current_calendar_year(self):
-        """The guard that keeps the rest honest.
-
-        Every edition in the map has to be a period the constant defines. If the constant
-        stops covering the present, no program can be moved to the current edition and the
-        map silently caps out a year behind -- which is the original defect. Failing here in
-        January is the cheap way to find out.
-        """
-        current = str(date.today().year)
-
-        self.assertIn(
-            current,
-            _get_fpl_data(),
-            f"_FPL_DEFAULTS has no {current} poverty guideline. Add it (programs/models.py) "
-            "before anything can be moved to the current edition.",
-        )
-
 
 class TestConfigJsonMatchesRecordedIntent(SimpleTestCase):
     """A program config must not pin an edition the map disagrees with.
@@ -139,14 +120,17 @@ class TestConfigJsonMatchesRecordedIntent(SimpleTestCase):
             if year is None:
                 continue
 
-            abbr = config_path.name.removesuffix("_initial_config.json")
-            intents = {key: v for key, v in PROGRAM_VINTAGE.items() if key[1] == abbr}
-            for (white_label, _), intent in intents.items():
-                if str(year) != intent.edition:
-                    mismatches.append(
-                        f"{config_path.name} pins {year!r}, but {white_label}/{abbr} is "
-                        f"recorded as {intent.edition} ({intent.status.value}): {intent.rule}"
-                    )
+            # Keyed the way the map is. The filename is not the abbreviation
+            # (co_care_worker_credit holds co_tax_credit_care_worker), and an abbreviation
+            # alone is shared across white labels (ssi, eitc, ctc).
+            white_label = config["white_label"]["code"]
+            abbr = program["name_abbreviated"]
+            intent = PROGRAM_VINTAGE.get((white_label, abbr))
+            if intent is not None and str(year) != intent.edition:
+                mismatches.append(
+                    f"{config_path.name} pins {year!r}, but {white_label}/{abbr} is "
+                    f"recorded as {intent.edition} ({intent.status.value}): {intent.rule}"
+                )
 
         self.assertEqual(
             mismatches,

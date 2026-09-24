@@ -10,10 +10,11 @@ alarm rather than something somebody has to remember to read.
 """
 
 import inspect
+from datetime import date
 
 from django.core.management.base import BaseCommand
 
-from programs.models import Program
+from programs.models import Program, _get_fpl_data
 from programs.vintage import PROGRAM_VINTAGE, Status
 
 #: Severity order, worst first. A null year on a PolicyEngine program is not a lesser form
@@ -24,9 +25,20 @@ from programs.vintage import PROGRAM_VINTAGE, Status
 NO_YEAR_PE = "no year set, PolicyEngine program (500s the whole eligibility response)"
 NO_YEAR_CUSTOM = "no year set, custom calculator reads it"
 DISAGREES = "disagrees with the recorded intent"
+STALE_FPL = "FPL table has no current-year guideline"
+UNVERIFIED = "recorded as production has it, not verified"
 NO_INTENT = "no recorded intent"
 
-SEVERITIES = (NO_YEAR_PE, NO_YEAR_CUSTOM, DISAGREES, NO_INTENT)
+SEVERITIES = (NO_YEAR_PE, NO_YEAR_CUSTOM, DISAGREES, STALE_FPL, UNVERIFIED, NO_INTENT)
+
+#: Printed as warnings. UNVERIFIED also never fails `--check`: it is a known open question,
+#: and failing on it would block every deploy until the question is answered.
+WARNINGS = (UNVERIFIED, NO_INTENT)
+ADVISORY = (UNVERIFIED,)
+
+#: HHS publishes the new guidelines in mid-to-late January. Until this (month, day) a table
+#: that has not caught up is expected and only warned about; from it on, it is a finding.
+FPL_GRACE_ENDS = (3, 1)
 
 
 def _period_matters() -> tuple[dict[str, type], set[str]]:
@@ -116,8 +128,34 @@ class Command(BaseCommand):
                 findings[DISAGREES].append(
                     f"{label}: on {period}, recorded as {intent.edition} " f"({intent.status.value}) — {intent.rule}"
                 )
+            elif intent.status is Status.UNVERIFIED:
+                # Matching production proves nothing when the entry was copied from it.
+                findings[UNVERIFIED].append(f"{label} (on {period})")
+
+        self._check_fpl_table(findings)
 
         return self._report(findings, options["check"])
+
+    def _check_fpl_table(self, findings):
+        """Whether `_FPL_DEFAULTS` has the current year's guideline.
+
+        Without it no program can be moved to the current edition, and the map silently caps
+        out a year behind -- the original defect. This is a fact about today, so it lives
+        here rather than in a unit test that would fail every build until HHS publishes.
+        """
+        today = date.today()
+        latest = max(_get_fpl_data(), key=int)
+        if int(latest) >= today.year:
+            return
+
+        message = (
+            f"_FPL_DEFAULTS stops at {latest}; add the {today.year} HHS guideline "
+            "(programs/models.py) before anything can move to the current edition"
+        )
+        if (today.month, today.day) >= FPL_GRACE_ENDS:
+            findings[STALE_FPL].append(message)
+        else:
+            self.stdout.write(self.style.WARNING(f"{message} (expected until HHS publishes)."))
 
     def _report(self, findings, check):
         total = sum(len(rows) for rows in findings.values())
@@ -130,7 +168,7 @@ class Command(BaseCommand):
             rows = findings[severity]
             if not rows:
                 continue
-            style = self.style.ERROR if severity is not NO_INTENT else self.style.WARNING
+            style = self.style.WARNING if severity in WARNINGS else self.style.ERROR
             self.stdout.write(style(f"\n{severity} ({len(rows)}):"))
             for row in sorted(rows):
                 self.stdout.write(f"  {row}")
@@ -138,7 +176,7 @@ class Command(BaseCommand):
         summary = ", ".join(f"{len(findings[s])} {s.split(',')[0]}" for s in SEVERITIES if findings[s])
         self.stdout.write("")
 
-        if check:
+        if check and any(findings[s] for s in SEVERITIES if s not in ADVISORY):
             # Non-zero so a deploy step or a cron can act on it. A wrong edition is a wrong
             # benefit estimate with nothing else to catch it -- no test sees a live database,
             # and the failure is silent in the direction that matters: a household is shown

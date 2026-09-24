@@ -269,8 +269,9 @@
 The 150% limit matches PolicyEngine's federal parameter, `gov.usda.csfp.fpg_limit` (1.3 from
 2024, 1.5 from 1 January 2025). Texas is the one exception: PolicyEngine routes TX through
 its own `tx_dta_csfp_income_eligible` test at 130%. So a 130% boundary observed at request
-period 2026 ($20,753/year for a single senior, 130% of the 2026 guideline) is the Texas
-rule, not a disagreement with this spec. Verify per state with `qa/MFB-1786-csfp-limit-probe.py`.
+period 2026 (130% × $15,960 = $20,748/year for a single senior; the probe bisects to $12 and
+landed at $20,753, within that resolution) is the Texas rule, not a disagreement with this
+spec. Verify per state with `qa/MFB-1786-csfp-limit-probe.py`.
 
 **Data gap:** the vintage is stated inconsistently within this spec. The boundary scenarios
 describe $23,475 as 150% of the 2026 guidelines in one place and of the 2025 guidelines in

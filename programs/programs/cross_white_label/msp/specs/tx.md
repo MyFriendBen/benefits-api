@@ -371,10 +371,12 @@ the percentage alone does not determine the answer.
 
 **Interim position: PolicyEngine is treated as the source of truth.** Probed at request
 period 2026, the outer eligibility boundary for a single 68-year-old on Social Security
-lands at **$21,784/year**, which is 135% of the **2026** guideline plus SSI's $20/month
-general income exclusion ($21,546 + $240 = $21,786). No 2025-based threshold fits. The
-program is therefore configured for 2026. Reproduce with
-`qa/MFB-1786-threshold-probe.py`.
+is 135% of the **2026** guideline plus SSI's $20/month general income exclusion:
+**$21,546 + $240 = $21,786/year**. The probe bisects to $12 (a dollar a month) and last
+found eligibility at $21,784, within that resolution of $21,786. The 2025-based figure
+($21,128 + $240 = $21,368) is $418 away, so the edition is unambiguous. The program is
+therefore configured for 2026. Build boundary scenarios from $21,786, not from the probe's
+output. Reproduce with `qa/MFB-1786-threshold-probe.py`.
 
 **What still needs establishing:** the governing rule and Texas's adoption date, so the
 edition follows a citation rather than an observation. If PolicyEngine does not model a

@@ -78,7 +78,9 @@ class Status(Enum):
     #: Recorded as production has it. Nobody has established what it should be.
     #:
     #: Retained for a row that needs an entry before it has an answer -- a program under
-    #: active investigation, say. It is NOT how unresearched programs are tracked: those
+    #: active investigation, or the tax credits pending a product decision. The audit lists
+    #: these even when they match, since the match is by construction. It is NOT how
+    #: unresearched programs are tracked: those
     #: are simply absent, and the environment audit reports any active program with no
     #: entry here as having no recorded intent. Restating the database for every
     #: unresearched row would add nothing, go stale on the next edit, and bury the rows
@@ -98,6 +100,17 @@ class Vintage:
     rule: str
     #: Where `rule` comes from: a statute, an agency notice, a validated case, a docstring.
     source: str
+
+
+#: The tax credits are recorded as production has them, not as a decision. `year` is the tax
+#: year, but the same federal credits sit on 2024 in co/il/ma, 2025 in nc/tx/wa and the CO
+#: tax calculator, and 2026 in ks/mo -- a spread no single rule produces. Which tax year the
+#: screener should model is a product decision nobody has made yet, so these are UNVERIFIED
+#: and the audit lists them rather than reading them as settled.
+_TAX_YEAR_UNSETTLED = (
+    "tax year, not calendar year; recorded as production has it -- which tax year the "
+    "screener should model is an open product decision"
+)
 
 
 #: Keyed by ``(white_label.code, Program.name_abbreviated)``.
@@ -381,29 +394,29 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
     ("co", "co_expanded_eitc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co", "coctc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co", "coeitc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co", "ctc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co", "dptr"): Vintage(
@@ -430,197 +443,197 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
     ("co", "eitc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co", "fatc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co_tax_calculator", "co_tax_credit_care_worker"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co_tax_calculator", "coctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co_tax_calculator", "coeitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co_tax_calculator", "ctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co_tax_calculator", "eitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("co_tax_calculator", "fatc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("il", "ctc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("il", "eitc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("il", "il_ctc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("il", "il_eitc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("ks", "ks_ctc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("ks", "ks_eitc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("ma", "ctc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("ma", "eitc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("ma", "ma_cfc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("ma", "ma_maeitc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("mo", "mo_ctc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("mo", "mo_eitc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("mo", "mo_wftc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("nc", "ctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("nc", "eitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("tx", "tx_ctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("tx", "tx_eitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("wa", "wa_ctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("wa", "wa_eitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
     ("wa", "wa_wftc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.DEFERRED,
-        rule="tax year, not calendar year; which filing year the screener should model is a product decision, tracked separately",
+        status=Status.UNVERIFIED,
+        rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
 }
