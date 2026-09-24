@@ -508,6 +508,13 @@ class CsfpCountableIncomeDependency(SpmUnit):
     """
 
     field = "school_meal_countable_income"
+    # Declared for the same reason `SnapGrossIncomeDependency` declares them: `value()`
+    # calls `calc_gross_income`, which raises on an IncomeStream with a NULL amount or
+    # frequency.
+    dependencies = (
+        "income_amount",
+        "income_frequency",
+    )
 
     def value(self):
         return self.screen.calc_gross_income("yearly", ["all"])

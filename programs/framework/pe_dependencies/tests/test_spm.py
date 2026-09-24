@@ -601,6 +601,18 @@ class TestCsfpCountableIncomeDependency(TestCase):
     def test_zero_without_income(self):
         self.assertEqual(spm.CsfpCountableIncomeDependency(self.screen, None, {}).value(), 0)
 
+    def test_declares_the_income_fields_it_reads(self):
+        self.assertEqual(spm.CsfpCountableIncomeDependency.dependencies, ("income_amount", "income_frequency"))
+
+    def test_csfp_cannot_calculate_without_income_amount_or_frequency(self):
+        from programs.programs.cross_white_label.csfp.ma import MaCsfp
+        from programs.util import Dependencies
+
+        for missing in ("income_amount", "income_frequency"):
+            with self.subTest(missing=missing):
+                calculator = MaCsfp(self.screen, None, Dependencies({missing}))
+                self.assertFalse(calculator.can_calc())
+
 
 class TestSnapReceiptDependencies(TestCase):
     """
