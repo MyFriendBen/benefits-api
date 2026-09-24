@@ -2,7 +2,6 @@ from typing import ClassVar
 
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from screener.models import HouseholdMember
 
 
 class WaOrcaLift(ProgramCalculator):
@@ -33,13 +32,8 @@ class WaOrcaLift(ProgramCalculator):
         "household_size",
     ]
 
-    def _member_age(self, member: HouseholdMember) -> int | None:
-        if member.birth_year_month is not None:
-            return member.calc_age()
-        return member.age
-
     def member_eligible(self, e: MemberEligibility):
-        age = self._member_age(e.member)
+        age = e.member.calc_age()
         e.condition(age is not None and self.min_age <= age <= self.max_age)
 
     def household_eligible(self, e: Eligibility):

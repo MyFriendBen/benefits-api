@@ -2,6 +2,7 @@
 Unit tests for Screen, HouseholdMember, and WhiteLabel model methods.
 """
 
+from datetime import date
 from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
@@ -1116,6 +1117,56 @@ class TestHouseholdMember(TestCase):
 
         result = student.is_dependent()
         self.assertFalse(result)
+
+
+class TestStaleStoredAge(TestCase):
+    """
+    The stored `age` is written when the member is created and never refreshed. After a
+    birthday it disagrees with `calc_age()`, and the helpers must follow the birth date.
+    """
+
+    REFERENCE_DATE = date(2026, 9, 15)
+
+    def setUp(self):
+        white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+
+        reference_date = patch.object(Screen, "get_reference_date", return_value=self.REFERENCE_DATE)
+        reference_date.start()
+        self.addCleanup(reference_date.stop)
+
+    def _turned_19(self, **fields):
+        """Stored as 18 at creation; born March 2007, so 19 on the reference date."""
+        return HouseholdMember.objects.create(
+            screen=self.screen, relationship="child", age=18, birth_year_month=date(2007, 3, 1), **fields
+        )
+
+    def test_num_children_follows_the_birth_date(self):
+        self._turned_19()
+        self.assertEqual(self.screen.num_children(), 0)
+
+    def test_num_adults_follows_the_birth_date(self):
+        self._turned_19()
+        self.assertEqual(self.screen.num_adults(), 2)
+
+    def test_is_dependent_follows_the_birth_date(self):
+        member = self._turned_19(student=False, disabled=False)
+        # The child's income is above the qualifying-relative threshold but under half the
+        # household's, so only the qualifying-child age test decides.
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=member, type="wages", amount=6000, frequency="yearly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=50000, frequency="yearly"
+        )
+        self.assertFalse(member.is_dependent())
+
+    def test_member_without_a_birth_date_uses_the_stored_age(self):
+        HouseholdMember.objects.create(screen=self.screen, relationship="child", age=18)
+        self.assertEqual(self.screen.num_children(), 1)
 
 
 TEST_FEATURE_FLAGS = {

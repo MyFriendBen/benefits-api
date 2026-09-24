@@ -18,7 +18,7 @@ def make_member(
     insurance_types=None,
 ):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.relationship = relationship
     member.pregnant = pregnant
     member.student = student

@@ -36,7 +36,7 @@ class RtdLive(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(RtdLive.min_age <= member.age <= RtdLive.max_age)
+        e.condition(RtdLive.min_age <= member.calc_age() <= RtdLive.max_age)
 
         # income
         if member.is_in_tax_unit():

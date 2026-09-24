@@ -43,7 +43,7 @@ def make_member(
     relationship="headOfHousehold",
 ):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.long_term_disability = long_term_disability
     member.visually_impaired = visually_impaired
     member.relationship = relationship

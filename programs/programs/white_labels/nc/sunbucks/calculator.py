@@ -26,6 +26,6 @@ class SunBucks(ProgramCalculator):
         member = e.member
 
         # age eligibility
-        e.condition(SunBucks.min_age <= member.age <= SunBucks.max_age)
+        e.condition(SunBucks.min_age <= member.calc_age() <= SunBucks.max_age)
 
         e.condition(not member.has_insurance("medicaid"))

@@ -22,7 +22,7 @@ class MedicaidAdultWithDisability(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age >= MedicaidAdultWithDisability.min_age)
+        e.condition(member.calc_age() >= MedicaidAdultWithDisability.min_age)
 
         # disability
         e.condition(member.long_term_disability or member.visually_impaired)

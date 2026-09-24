@@ -82,15 +82,10 @@ class WaNslp(ProgramCalculator):
             return self._RED_MO[n]
         return self._RED_MO[8] + (n - 8) * self._RED_MO_STEP
 
-    def _member_age(self, member: HouseholdMember) -> int | None:
-        if member.birth_year_month is not None:
-            return member.calc_age()
-        return member.age
-
     def _is_school_meal_proxy_student(self, member: HouseholdMember) -> bool:
         if member.relationship not in self.SCHOOL_MEAL_RELATIONSHIPS:
             return False
-        age = self._member_age(member)
+        age = member.calc_age()
         if age is None:
             return False
         return self.MIN_SCHOOL_MEAL_AGE <= age <= self.MAX_SCHOOL_MEAL_AGE

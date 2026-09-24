@@ -44,7 +44,7 @@ def make_member(income, age=40, visually_impaired=False):
         return total * (12 if frequency == "yearly" else 1)
 
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.visually_impaired = visually_impaired
     member.has_disability.return_value = True
     member.is_married.return_value = {"is_married": False}

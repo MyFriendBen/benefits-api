@@ -538,7 +538,7 @@ class MaEaedcNonFinancialCriteria(SpmUnit):
         if not (member.is_head() or member.is_spouse()):
             return False
 
-        if not member.age >= self.elderly_min_age:
+        if not member.calc_age() >= self.elderly_min_age:
             return False
 
         return True
@@ -570,13 +570,13 @@ class MaEaedcNonFinancialCriteria(SpmUnit):
         if not (member.is_head() or member.is_spouse()):
             return False
 
-        if not member.age >= self.caretaker_min_age:
+        if not member.calc_age() >= self.caretaker_min_age:
             return False
 
         for other_member in self.members.all():
             if (
                 other_member.is_dependent()
-                and other_member.age < self.dependent_max_age
+                and other_member.calc_age() < self.dependent_max_age
                 and other_member.relationship == "fosterChild"
             ):
                 return True

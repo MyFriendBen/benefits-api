@@ -94,7 +94,7 @@ class WaSeniorDisabledPte(ProgramCalculator):
         member = e.member
 
         # Age pathway: 61+ by December 31 of claim year (RCW 84.36.381(3)(a))
-        age_eligible = member.age is not None and member.age >= self.min_age
+        age_eligible = member.calc_age() is not None and member.calc_age() >= self.min_age
 
         # Disability-retirement pathway: long_term_disability as inclusivity proxy for
         # "retired from regular gainful employment because of disability" (RCW 84.36.381(3)(b))

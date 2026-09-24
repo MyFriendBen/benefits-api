@@ -47,7 +47,7 @@ class IlCommoditySupplementalFoodProgram(ProgramCalculator):
         member = e.member
 
         # 3. age eligible
-        e.condition(member.age >= self.minimum_age)
+        e.condition(member.calc_age() >= self.minimum_age)
 
     def member_value(self, _):
         return self.member_amount

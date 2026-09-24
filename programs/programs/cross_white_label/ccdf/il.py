@@ -92,12 +92,12 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         e.condition(member.relationship in self.child_relationships)
 
         # Check: Child is under 13 years old, or under 19 if they have a disability
-        if member.age is None:
+        if member.calc_age() is None:
             e.condition(False)
         elif member.has_disability():
-            e.condition(member.age < 19)
+            e.condition(member.calc_age() < 19)
         else:
-            e.condition(member.age < 13)
+            e.condition(member.calc_age() < 13)
 
     def calculate_monthly_copayment(self) -> int:
         """
@@ -153,15 +153,15 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         Note: Children 13-19 years old must have a disability to receive subsidy.
         This check is also in member_eligible(), but included here as a defensive check.
         """
-        if member.age is None or self.screen.county is None:
+        if member.calc_age() is None or self.screen.county is None:
             return 0
 
         # Defensive check: Children over 13 must have disability to be eligible for subsidy
-        if member.age >= 13 and not member.has_disability():
+        if member.calc_age() >= 13 and not member.has_disability():
             return 0
 
         county_group = self.get_county_group(self.screen.county)
-        age_months = member.age * 12
+        age_months = member.calc_age() * 12
 
         # Find matching rate in table
         for group, (min_age, max_age), monthly_rate in SUBSIDY_RATE_TABLE:

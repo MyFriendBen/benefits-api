@@ -206,7 +206,11 @@ class Screen(models.Model):
         household_members = self.household_members.all()
         for household_member in household_members:
             has_child_relationship = household_member.relationship in child_relationship or "all" in child_relationship
-            if household_member.age >= age_min and household_member.age <= age_max and has_child_relationship:
+            if (
+                household_member.calc_age() >= age_min
+                and household_member.calc_age() <= age_max
+                and has_child_relationship
+            ):
                 children += 1
             if household_member.pregnant and include_pregnant:
                 children += 1
@@ -217,7 +221,7 @@ class Screen(models.Model):
         adults = 0
         household_members = self.household_members.all()
         for household_member in household_members:
-            if household_member.age >= age_max:
+            if household_member.calc_age() >= age_max:
                 adults += 1
         return adults
 
@@ -320,7 +324,7 @@ class Screen(models.Model):
             return unit
 
         for member in other_tax_unit:
-            if unit["head"] is None or member.age > unit["head"].age:
+            if unit["head"] is None or member.calc_age() > unit["head"].calc_age():
                 unit["head"] = member
 
         spouse_id = self.relationship_map()[unit["head"].id]
@@ -621,7 +625,7 @@ class HouseholdMember(models.Model):
         # Path 1: Qualifying Child
         is_qualifying_child = (
             has_eligible_relationship
-            and (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
+            and (self.calc_age() <= 18 or (self.student and self.calc_age() <= 23) or self.has_disability())
             and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
         )
 

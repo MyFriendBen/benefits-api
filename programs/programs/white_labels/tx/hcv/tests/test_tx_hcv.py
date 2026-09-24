@@ -17,7 +17,7 @@ def make_member(
 ):
     """A mock HouseholdMember. `earned`/`unearned` are ANNUAL dollar amounts."""
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.relationship = relationship
     member.disabled = disabled
     member.student = student_full_time

@@ -29,7 +29,7 @@ def make_member(
 ):
     """Create a mock household member."""
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.pregnant = pregnant
 
     insurance_map = {

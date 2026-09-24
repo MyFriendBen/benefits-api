@@ -21,7 +21,7 @@ class NcEmergencyMedicaid(ProgramCalculator):
 
         for member in self.screen.household_members.all():
             # Pregnant and under 18 years old have a different FPL percentage
-            if member.age <= 18 and member.pregnant:
+            if member.calc_age() <= 18 and member.pregnant:
                 fpl_percent = 2.11
 
         # Medicaid eligibility
@@ -38,4 +38,4 @@ class NcEmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age < self.max_age)
+        e.condition(member.calc_age() < self.max_age)

@@ -28,7 +28,7 @@ def make_member(age=30, medicaid=False, emergency_medicaid=False, employer=False
     `_countable_income`, which exempts the earnings of members under `child_age_threshold`.
     """
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
 
     flags = {
         "medicaid": medicaid,

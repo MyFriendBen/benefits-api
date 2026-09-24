@@ -47,12 +47,12 @@ class MaMiddleIncomeRental(ProgramCalculator):
 
         # Head of household must be at least 18
         head = self.screen.get_head()
-        head_age = head.age
+        head_age = head.calc_age()
         e.condition(head_age is not None and head_age >= self.min_head_age, messages.older_than(self.min_head_age))
 
         # Asset limit - seniors (all 62+) or all-disabled households get $150,000; otherwise $75,000
         members = list(self.screen.household_members.all())
-        all_senior = all(m.age is not None and m.age >= 62 for m in members)
+        all_senior = all(m.calc_age() is not None and m.calc_age() >= 62 for m in members)
         all_disabled = all(m.has_disability() for m in members)
         limit = self.senior_asset_limit if (all_senior or all_disabled) else self.asset_limit
         e.condition(self.screen.household_assets <= limit, messages.assets(limit))

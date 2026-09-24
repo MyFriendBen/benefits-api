@@ -77,9 +77,9 @@ class TestMaCppLocationEligibility(TestCase):
         mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_screen.calc_gross_income.return_value = 10000  # Low income
 
-        members = [Mock(age=35)]  # Parent
+        members = [Mock(calc_age=Mock(return_value=35))]  # Parent
         for age in children_ages:
-            members.append(Mock(age=age))
+            members.append(Mock(calc_age=Mock(return_value=age)))
         mock_screen.household_members.all.return_value = members
 
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
@@ -128,9 +128,9 @@ class TestMaCppMemberEligibility(TestCase):
         mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_screen.calc_gross_income.return_value = gross_income_yearly
 
-        members = [Mock(age=35)]  # Parent
+        members = [Mock(calc_age=Mock(return_value=35))]  # Parent
         for age in children_ages:
-            members.append(Mock(age=age))
+            members.append(Mock(calc_age=Mock(return_value=age)))
         mock_screen.household_members.all.return_value = members
 
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
@@ -224,9 +224,9 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
         # Check per-member results: 3yo ineligible, 4yo eligible
-        child_eligibilities = [m for m in eligibility.eligible_members if m.member.age in [3, 4]]
-        three_yo = next(m for m in child_eligibilities if m.member.age == 3)
-        four_yo = next(m for m in child_eligibilities if m.member.age == 4)
+        child_eligibilities = [m for m in eligibility.eligible_members if m.member.calc_age() in [3, 4]]
+        three_yo = next(m for m in child_eligibilities if m.member.calc_age() == 3)
+        four_yo = next(m for m in child_eligibilities if m.member.calc_age() == 4)
         self.assertFalse(three_yo.eligible)
         self.assertTrue(four_yo.eligible)
 
@@ -272,7 +272,7 @@ class TestMaCppHasBenefit(TestCase):
         mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_screen.calc_gross_income.return_value = 10000
 
-        members = [Mock(age=35), Mock(age=4)]
+        members = [Mock(calc_age=Mock(return_value=35)), Mock(calc_age=Mock(return_value=4))]
         mock_screen.household_members.all.return_value = members
 
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
@@ -301,8 +301,8 @@ class TestMaCppFosterCare(TestCase):
         mock_screen.has_benefit = Mock(return_value=False)
         mock_screen.calc_gross_income.return_value = gross_income_yearly
 
-        parent = Mock(age=35, relationship="headOfHousehold")
-        child = Mock(age=child_age, relationship=relationship)
+        parent = Mock(calc_age=Mock(return_value=35), relationship="headOfHousehold")
+        child = Mock(calc_age=Mock(return_value=child_age), relationship=relationship)
         mock_screen.household_members.all.return_value = [parent, child]
 
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
@@ -356,10 +356,10 @@ class TestMaCppValue(TestCase):
         mock_screen.has_benefit = Mock(return_value=False)
         mock_screen.calc_gross_income.return_value = 10000
 
-        members = [Mock(age=35, id=0)]
+        members = [Mock(calc_age=Mock(return_value=35), id=0)]
         for idx, age in enumerate(children_ages, start=1):
             m = Mock()
-            m.age = age
+            m.calc_age = Mock(return_value=age)
             m.id = idx
             members.append(m)
         mock_screen.household_members.all.return_value = members
@@ -379,7 +379,7 @@ class TestMaCppValue(TestCase):
         mock_screen.county = "Somerville"  # Not Cambridge
         mock_screen.household_size = 2
         mock_screen.has_benefit = Mock(return_value=False)
-        members = [Mock(age=35, id=0), Mock(age=4, id=1)]
+        members = [Mock(calc_age=Mock(return_value=35), id=0), Mock(calc_age=Mock(return_value=4), id=1)]
         mock_screen.household_members.all.return_value = members
 
         calculator = MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)

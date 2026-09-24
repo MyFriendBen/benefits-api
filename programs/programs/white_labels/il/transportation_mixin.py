@@ -18,9 +18,9 @@ class IlTransportationMixin:
     def member_eligible(self, e: MemberEligibility):
         member = e.member
 
-        age_eligible = member.age >= self.minimum_age
+        age_eligible = member.calc_age() >= self.minimum_age
 
-        has_minimum_age_with_disability = member.age >= self.minimum_age_with_disability
+        has_minimum_age_with_disability = member.calc_age() >= self.minimum_age_with_disability
         has_eligible_disability = member.visually_impaired or member.disabled
         disability_eligible = has_minimum_age_with_disability and has_eligible_disability
 

@@ -4,7 +4,7 @@ from screener.models import Screen, HouseholdMember, IncomeStream, Expense, Whit
 from programs.models import Program, FederalPoveryLimit
 from programs.util import Dependencies
 from unittest.mock import patch
-from datetime import datetime
+from datetime import date, datetime
 from django.utils import timezone
 from typing import ClassVar
 from programs.framework.pe_dependencies import member
@@ -71,8 +71,10 @@ class TestNCHeadStart(TestCase):
 
     def setUp(self):
         """Set up data for each individual test - runs before each test method"""
-        # This will be overridden in each test
-        pass
+        # The fixtures pair an age with a birth month; pin the date they were consistent on.
+        reference_date = patch.object(Screen, "get_reference_date", return_value=date(2025, 6, 15))
+        reference_date.start()
+        self.addCleanup(reference_date.stop)
 
     def create_household_member(
         self,

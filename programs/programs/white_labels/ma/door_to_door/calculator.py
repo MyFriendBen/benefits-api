@@ -35,7 +35,7 @@ class MaDoorToDoor(ProgramCalculator):
         member = e.member
 
         # Age 60+ OR has a mobility impairment (disability)
-        is_senior = member.age >= self.min_age
+        is_senior = member.calc_age() >= self.min_age
         has_mobility_impairment = member.has_disability()
 
         e.condition(is_senior or has_mobility_impairment)

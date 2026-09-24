@@ -34,7 +34,7 @@ def make_member(
     income = income or {}
     member = Mock()
     member.birth_year = birth_year
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.relationship = relationship
     member.disabled = disabled
     member.visually_impaired = visually_impaired

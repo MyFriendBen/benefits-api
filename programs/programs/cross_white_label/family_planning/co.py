@@ -39,7 +39,7 @@ class FamilyPlanningServices(ProgramCalculator):
         e.condition(not member.pregnant)
 
         # age
-        e.condition(member.age >= FamilyPlanningServices.min_age)
+        e.condition(member.calc_age() >= FamilyPlanningServices.min_age)
 
         # head or spouse
         e.condition(member.is_head() or member.is_spouse())
