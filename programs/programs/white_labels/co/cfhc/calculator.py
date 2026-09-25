@@ -31,6 +31,14 @@ class CfhCountyValuesCache(GoogleSheetsCache):
 
 class ConnectForHealth(ProgramCalculator):
     program_code = "cfhc"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    # chp is read at member scope and is also PolicyEngine-backed. CHP+ is a real program
+    # with its own eligibility rules, so this is the same kind of "already covered"
+    # exclusion rather than a threshold wearing a program name.
+    gates_on = ("co_medicaid", "chp")
     percent_of_fpl = 4
     dependencies = ["insurance", "income_amount", "income_frequency", "zipcode", "household_size"]
     eligible_insurance_types = ["none", "private"]

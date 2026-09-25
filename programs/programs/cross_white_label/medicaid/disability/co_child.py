@@ -4,6 +4,11 @@ import programs.framework.eligibility_messages as messages
 
 class MedicaidChildWithDisability(ProgramCalculator):
     program_code = "cwd_medicaid"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("co_medicaid",)
     max_age = 18
     min_employment_age = 16
     max_income_percent = 3

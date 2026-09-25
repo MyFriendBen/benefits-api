@@ -72,13 +72,24 @@ class TestUncalculatedLeapRaises(TestCase):
 
 
 class TestDependenciesCoverTheUpstream(TestCase):
-    def test_declares_everything_cesn_leap_needs(self):
+    def test_declares_the_gate(self):
+        self.assertEqual(EnergyCalculatorEnergyEbt.gates_on, ("cesn_leap",))
+
+    def test_requires_everything_cesn_leap_needs(self):
         """The LEAP exclusion reads cesn_leap's result, so this program must not be
         calculable on a screen where cesn_leap is not. LEAP needs `county` and the income
         test here does not, so without it a county-less screen would drop Energy EBT
-        entirely rather than answer for it."""
-        uncovered = set(EnergyCalculatorEnergyAssistance.dependencies) - set(EnergyCalculatorEnergyEbt.dependencies)
+        entirely rather than answer for it.
+
+        The fields used to be splatted into `dependencies`; `all_dependencies` now derives
+        them from `gates_on`, so this reads the derivation."""
+        uncovered = set(EnergyCalculatorEnergyAssistance.dependencies) - set(
+            EnergyCalculatorEnergyEbt.all_dependencies()
+        )
         self.assertEqual(uncovered, set())
 
-    def test_county_is_declared(self):
-        self.assertIn("county", EnergyCalculatorEnergyEbt.dependencies)
+    def test_county_is_required_but_not_declared_directly(self):
+        """`county` is LEAP's field, not this program's: the income test here never reads
+        it. Requiring it without restating it is the point of the derivation."""
+        self.assertNotIn("county", EnergyCalculatorEnergyEbt.dependencies)
+        self.assertIn("county", EnergyCalculatorEnergyEbt.all_dependencies())

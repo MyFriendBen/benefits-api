@@ -104,12 +104,15 @@ class TestTxCsfp(TestCase):
         self.assertIn(AgeDependency, TxCsfp.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
-        """Test that TxCsfp inherits SchoolMealCountableIncomeDependency from parent CommoditySupplementalFoodProgram class."""
-        from programs.framework.pe_dependencies.spm import SchoolMealCountableIncomeDependency
+    def test_pe_inputs_includes_csfp_countable_income_dependency(self):
+        """Test that TxCsfp inherits CsfpCountableIncomeDependency from parent CommoditySupplementalFoodProgram class."""
+        from programs.framework.pe_dependencies.spm import (
+            CsfpCountableIncomeDependency,
+            SchoolMealCountableIncomeDependency,
+        )
 
-        self.assertIn(SchoolMealCountableIncomeDependency, TxCsfp.pe_inputs)
-        self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
+        self.assertIn(CsfpCountableIncomeDependency, TxCsfp.pe_inputs)
+        self.assertNotIn(SchoolMealCountableIncomeDependency, TxCsfp.pe_inputs)
 
     def test_has_same_pe_outputs_as_parent(self):
         """Test that TxCsfp has the same pe_outputs as parent CommoditySupplementalFoodProgram class."""

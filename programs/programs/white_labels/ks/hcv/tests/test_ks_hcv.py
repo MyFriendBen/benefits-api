@@ -18,7 +18,8 @@ from datetime import date
 from django.test import TestCase
 from unittest.mock import Mock, patch
 
-from integrations.clients.hud_income_limits import HudIncomeClientError
+from programs.programs.testing_fixtures.custom_calculator import hud_ami
+
 from programs.framework.base import ProgramCalculator
 from programs.programs.white_labels.ks.hcv.calculator import KsHcv
 from screener.models import HouseholdMember
@@ -140,23 +141,6 @@ def make_calculator(members=None, household_size=DERIVE, county="Sedgwick", zipc
     missing_deps.has.return_value = False
 
     return KsHcv(screen, program, {}, missing_deps)
-
-
-def hud_mocks(income_limit=10_000_000, payment_standard=0):
-    """The two HUD lookups the calculator makes, and a patcher over both. Returns
-    the mocks so a test can assert on the call as well as stub it."""
-    income_mock = Mock(return_value=income_limit)
-    payment_mock = Mock(return_value=payment_standard)
-    patcher = patch.multiple(
-        "programs.programs.white_labels.ks.hcv.calculator.hud_client",
-        get_screen_il_ami=income_mock,
-        get_screen_payment_standard=payment_mock,
-    )
-    return patcher, income_mock, payment_mock
-
-
-def patch_hud(income_limit=10_000_000, payment_standard=0):
-    return hud_mocks(income_limit, payment_standard)[0]
 
 
 class TestKsHcvClassAttributes(TestCase):
@@ -317,10 +301,9 @@ class TestKsHcvPregnancyAdjustment(TestCase):
 
     def test_the_income_limit_still_uses_the_unadjusted_household_size(self):
         calc = make_calculator(members=[make_member(born=(1999, 1), pregnant=True)], household_size=1)
-        patcher, income_mock, _ = hud_mocks(income_limit=WICHITA_VLI[1], payment_standard=910)
-        with patcher:
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard=910) as hud:
             calc.calc()
-        self.assertEqual(income_mock.call_args.args[0].household_size, 1)
+        self.assertEqual(hud.get_screen_il_ami.call_args.args[0].household_size, 1)
 
     def test_a_household_with_no_head_is_not_adjusted(self):
         calc = make_calculator(members=[make_member(born=(1999, 1), relationship="child")], household_size=1)
@@ -557,32 +540,31 @@ class TestKsHcvGrossRentProxy(TestCase):
 class TestKsHcvIncomeGate(TestCase):
     def test_income_at_the_limit_is_eligible(self):
         calc = make_calculator(members=[make_member(born=(1988, 3), income={"wages": 33_800})], household_size=1)
-        with patch_hud(income_limit=WICHITA_VLI[1], payment_standard=840):
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard=840):
             self.assertTrue(calc.calc().eligible)
 
     def test_one_dollar_over_the_limit_is_not_eligible(self):
         calc = make_calculator(members=[make_member(born=(1988, 3), income={"wages": 33_801})], household_size=1)
-        with patch_hud(income_limit=WICHITA_VLI[1], payment_standard=840):
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard=840):
             self.assertFalse(calc.calc().eligible)
 
     def test_the_limit_is_looked_up_at_fifty_percent_for_the_screen_and_year(self):
         calc = make_calculator(members=[make_member(born=(1988, 3), income={"wages": 12_000})], household_size=1)
-        patcher, income_mock, _ = hud_mocks(income_limit=WICHITA_VLI[1], payment_standard=840)
-        with patcher:
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard=840) as hud:
             calc.calc()
-        self.assertEqual(income_mock.call_args.args[1], "50%")
-        self.assertEqual(income_mock.call_args.args[2], "2026")
+        self.assertEqual(hud.get_screen_il_ami.call_args.args[1], "50%")
+        self.assertEqual(hud.get_screen_il_ami.call_args.args[2], "2026")
 
     def test_null_household_size_passes_the_gate_inclusively(self):
         calc = make_calculator(members=[make_member(born=(1988, 3), income={"wages": 999_999})], household_size=None)
-        with patch_hud(income_limit=WICHITA_VLI[1], payment_standard=840):
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard=840):
             self.assertTrue(calc.calc().eligible)
 
     def test_no_asset_gate_is_applied(self):
         """Data gap 6 — `household_assets` is not HUD's net family assets."""
         calc = make_calculator(members=[make_member(born=(1988, 3), income={"wages": 12_000})], household_size=1)
         calc.screen.household_assets = 500_000
-        with patch_hud(income_limit=WICHITA_VLI[1], payment_standard=840):
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard=840):
             self.assertTrue(calc.calc().eligible)
 
     def test_the_gate_runs_on_excluded_income_not_raw_gross(self):
@@ -593,7 +575,7 @@ class TestKsHcvIncomeGate(TestCase):
             make_member(born=(2013, 3), relationship="child", income={"wages": 6_000}),
         ]
         calc = make_calculator(members=members, household_size=2)
-        with patch_hud(income_limit=WICHITA_VLI[2], payment_standard=910):
+        with hud_ami(KsHcv, WICHITA_VLI[2], payment_standard=910):
             self.assertTrue(calc.calc().eligible)
 
 
@@ -602,14 +584,14 @@ class TestKsHcvSpecScenarios(TestCase):
 
     def _assert_eligible(self, members, income_limit, payment_standard, expected_value, **kwargs):
         calc = make_calculator(members=members, **kwargs)
-        with patch_hud(income_limit=income_limit, payment_standard=payment_standard):
+        with hud_ami(KsHcv, income_limit, payment_standard=payment_standard):
             e = calc.calc()
         self.assertTrue(e.eligible, "expected eligible")
         self.assertEqual(e.value, expected_value)
 
     def _assert_ineligible(self, members, income_limit, **kwargs):
         calc = make_calculator(members=members, **kwargs)
-        with patch_hud(income_limit=income_limit):
+        with hud_ami(KsHcv, income_limit):
             e = calc.calc()
         self.assertFalse(e.eligible)
 
@@ -818,13 +800,12 @@ class TestKsHcvSpecScenarios(TestCase):
         """The pregnancy rule moves the bedroom lookup 0BR → 1BR and leaves the
         income-limit household size at 1."""
         calc = make_calculator(members=[make_member(born=(1999, 1), income={"wages": 14_400}, pregnant=True)])
-        patcher, income_mock, payment_mock = hud_mocks(income_limit=WICHITA_VLI[1], payment_standard=WICHITA_SAFMR[1])
-        with patcher:
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard=WICHITA_SAFMR[1]) as hud:
             e = calc.calc()
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 6_600)
-        self.assertEqual(payment_mock.call_args.args[1], 1)
-        self.assertEqual(income_mock.call_args.args[0].household_size, 1)
+        self.assertEqual(hud.get_screen_payment_standard.call_args.args[1], 1)
+        self.assertEqual(hud.get_screen_il_ami.call_args.args[0].household_size, 1)
 
     def test_scenario_17_family_size_is_not_reduced_for_a_foster_member(self):
         """Income sits between the 2- and 3-person limits, so a wrongly reduced
@@ -915,11 +896,7 @@ class TestKsHcvNeverRaises(TestCase):
 
     def test_income_lookup_hud_error(self):
         calc = self._calc()
-        with patch.multiple(
-            "programs.programs.white_labels.ks.hcv.calculator.hud_client",
-            get_screen_il_ami=Mock(side_effect=HudIncomeClientError("HUD unavailable")),
-            get_screen_payment_standard=Mock(return_value=840),
-        ):
+        with hud_ami(KsHcv, unavailable=True, payment_standard=840):
             e = calc.calc()
         self.assertFalse(e.eligible)
         self.assertEqual(e.value, 0)
@@ -937,11 +914,7 @@ class TestKsHcvNeverRaises(TestCase):
 
     def test_payment_standard_hud_error_degrades_to_zero_unfloored(self):
         calc = self._calc()
-        with patch.multiple(
-            "programs.programs.white_labels.ks.hcv.calculator.hud_client",
-            get_screen_il_ami=Mock(return_value=WICHITA_VLI[1]),
-            get_screen_payment_standard=Mock(side_effect=HudIncomeClientError("no FMR")),
-        ):
+        with hud_ami(KsHcv, WICHITA_VLI[1], payment_standard_unavailable=True):
             e = calc.calc()
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 0)

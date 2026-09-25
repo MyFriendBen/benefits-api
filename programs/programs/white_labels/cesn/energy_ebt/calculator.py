@@ -1,22 +1,16 @@
 from programs.framework.base import Eligibility, ProgramCalculator
-from programs.programs.cross_white_label.liheap.cesn import EnergyCalculatorEnergyAssistance
 
 
 class EnergyCalculatorEnergyEbt(ProgramCalculator):
     program_code = "cesn_energy_ebt"
     amount = 21
     max_fpl = 2
-    # Includes cesn_leap's dependencies because the LEAP exclusion below reads its result.
-    # Without them this program can be calculable on a screen where cesn_leap is not — LEAP
-    # needs `county` and this does not — and the gate would then raise on a household this
-    # program could otherwise have answered for. Declaring the upstream's fields makes the
-    # two drop out together.
-    dependencies = [
-        "income_frequency",
-        "income_amount",
-        "household_size",
-        *EnergyCalculatorEnergyAssistance.dependencies,
-    ]
+    # An exclusion, so absence must not read as "no LEAP" — hence the strict accessor. LEAP
+    # is custom and force-calculated, so the gate survives its row being deactivated, and
+    # `all_dependencies` pulls in LEAP's screener fields (this program does not need
+    # `county` on its own) so the two still drop out together on an incomplete screen.
+    gates_on = ("cesn_leap",)
+    dependencies = ["income_frequency", "income_amount", "household_size"]
 
     def household_eligible(self, e: Eligibility):
         # income

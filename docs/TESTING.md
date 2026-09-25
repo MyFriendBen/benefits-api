@@ -79,11 +79,11 @@ Controlled by the `VCR_MODE` environment variable:
 |------------|----------|----------|-----------|
 | **PRs** (`pr-validation`) | `none` | **Read-only:** Replays only. A request with no matching cassette fails the build rather than being recorded live, so a PR cannot pass by reaching a real API. | ❌ No (never records) |
 | **Push to main** (`deploy-staging`) | `none` | Same as PRs: replay-only, parallel. Every commit here already passed the PR gate. | ❌ No (never records) |
-| **Release** (`deploy-production`) | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. PolicyEngine spec-scenario tests skip (see below). | ✅ Yes (every non-skipped test hits the live API) |
+| **Release** (`deploy-production`) | `none` | Same as PRs: replay-only, run against the release tag. Deploy is blocked unless it passes. | ❌ No (never records) |
 | **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** In a parallel run (the default) this is downgraded to `none`, so a missing cassette fails instead of recording. | Only if entire cassette file missing, and only when running serially |
 | **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
 
-Re-recording in CI is never committed — no workflow commits cassettes — so a CI run in `new_episodes` or `all` mode does not refresh what's in the repo. It only changes what that run tests against.
+Re-recording in CI is never committed — no workflow commits cassettes — and every CI job runs `none`, so CI never refreshes what's in the repo and never reaches a live API.
 
 ### Running Integration Tests Locally
 
@@ -193,6 +193,142 @@ Anything a *failing* test records is discarded on teardown — the cassette is r
 
 ---
 
+## Custom (MFB) Calculator Tests
+
+A custom calculator computes locally, so its tests need no cassette and no network — a
+household, a `Program` row, and an assertion. `programs/programs/testing_fixtures/custom_calculator.py`
+supplies the household builders and a base test case, paralleling `pe_integration.py` on
+the PolicyEngine side.
+
+### The base test case
+
+`CustomCalculatorTestCase` creates the white label, the FPL year and the `Program` row in
+`setUpTestData`, so a test states only the household:
+
+```python
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
+from programs.programs.white_labels.co.myprogram.calculator import MyProgram
+
+
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    program_code = "co_my_program"
+    white_label_code = "co"
+    state_code = "CO"
+
+    def test_eligible_household(self):
+        screen = self.make_screen(household_size=2, county="Denver County")
+        add_income(self.add_member(screen), 1_500)
+
+        eligibility = self.calculate(screen)
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(eligibility.value, 1_200)
+```
+
+`calculate()` runs `calc()`, so it raises `DependencyError` when the calculator declares a
+dependency the screen does not supply — pass `missing=("income_amount",)` to assert that a
+program is skipped rather than valued wrongly. It returns the `Eligibility` alone; a few
+older suites define a local `calculate()` returning `(calculator, eligibility)`, so check
+before migrating a file that has its own helper of the same name.
+
+To assert on one step instead of the final result, `make_calculator()` returns the
+calculator without running it — `eligible()` for the household and member rules alone, or a
+program-specific method:
+
+```python
+calculator = self.make_calculator(screen)
+
+self.assertTrue(calculator.eligible().eligible)
+self.assertEqual(calculator.income_limit_125(), 31_000)
+```
+
+### Skipping the program row
+
+`setUpTestData` builds a real `Program` row, because a calculator doing a percent-of-poverty
+test reads `self.program.year`. That row costs a `Translation` per translated field per
+language, so a calculator that never touches `self.program` should opt out:
+
+```python
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    needs_program_row = False        # self.program is a Mock
+```
+
+Most existing custom tests are in this group — they stand up a `Mock()` program today.
+
+### Proving the stored `age` is unused
+
+The `age` column is being retired in favour of `calc_age()` / `fraction_age()`. A calculator
+that reads age only through those sets `stores_age = False`: members are then saved with a
+null `age`, as they will be once the column is dropped, so a stray `member.age` fails in the
+calculator's own tests instead of in production.
+
+```python
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    stores_age = False
+```
+
+### HUD income limits
+
+`self.hud_ami(...)` stubs the HUD client for this calculator's module. `limit` is a number,
+a dict keyed by AMI band (`{"60%": 60_000}`), or a callable; `payment_standard` is the
+monthly SAFMR/FMR in dollars a voucher calculator reads. A lookup the test did not supply
+fails the test on exit — it cannot raise in place, because the voucher calculators catch
+every exception and report $0.
+
+### When to use this fixture, and when to mock instead
+
+Two strategies coexist deliberately. Measured over ten identical tests:
+
+| | per test | when |
+| -- | -- | -- |
+| mock the `Screen` outright | ~1ms | the calculator reads a handful of attributes and no related rows |
+| this fixture, `needs_program_row = False` | ~3ms | the calculator walks `household_members`, income streams, or insurance |
+| this fixture with a real `Program` | ~33ms | the calculator reads `program.year` for an FPL or SMI limit |
+
+The cost is the `Program` row, not the fixture: it writes a `Translation` per translated
+field per language. Between the first two rows the difference is single-digit
+milliseconds, so prefer the fixture whenever a test would otherwise hand-assemble a
+`Screen` and its members — a real household that raises the way production raises is
+worth 2ms.
+
+Around 50 test modules mock the `Screen` and never touch the database. Those are correct
+as they stand: their calculators take a few scalars, and rewriting them against the
+database would make them slower without making them stronger. Migrate a file when it is
+already building a DB household by hand, not on principle.
+
+### The builders
+
+| builder | what it makes |
+| -- | -- |
+| `make_screen(white_label_code, state_code, household_size=…, zipcode=…, county=…)` | the household. `household_size` drives FPL and SMI lookups and is **not** derived from the members added afterwards |
+| `add_member(screen, relationship, age, **kwargs)` | a member, with an uninsured `Insurance` record — the relation is non-null, so a calculator reading `member.insurance` raises without it. The age is written as a `birth_year_month`; pass `birth_year_month` instead (with `age=None`) when a scenario turns on a calendar date, and pin `reference_date` so it does not drift. Both at once must agree. Condition checkboxes (`student`, `pregnant`, `disabled`, …) default to False, as the screener sends them; `TestMatchesTheScreener` holds the fixture to a screener-shaped payload |
+| `set_age(member, age)` | changes an existing member's age. Never assign `member.age` directly — `calc_age()` reads the birth month, which would still say the old age |
+| `add_income(member, amount, income_type="wages", frequency="monthly")` | an income stream, stated as the scenario states it — `calc_gross_income` annualizes by frequency. Sets `has_income`, as the screener does |
+| `add_expense(member, amount, expense_type="rent")` | an expense, for programs that net it out of income |
+| `add_insurance(member, medicaid=True, none=False)` | replaces the member's insurance. Name only what the scenario needs |
+| `make_program(white_label_code, name_abbreviated, year)` | the `Program` row. A calculator reading `self.program.year.period` fails on an unsaved one |
+
+### Gating on another program
+
+A calculator that reads another program's result calls `self.program_eligible("co_medicaid")`,
+which raises `DependencyError` when the upstream has not been calculated. Pass the upstream's
+verdict through `calculate()`:
+
+```python
+upstream = Eligibility()
+upstream.condition(True)
+
+eligibility = self.calculate(screen, data={"co_medicaid": upstream})
+```
+
+Omitting it asserts the other half of the contract — that an uncalculated upstream raises
+rather than resolving to "not eligible."
+
+---
+
 ## Cassette Management
 
 ### Cassette Storage
@@ -260,18 +396,16 @@ from passing against a live API.
 `deploy-staging` runs the same strict playback as PR validation. Every commit reaching
 main has already passed that gate, so there is nothing left to record.
 
-### Release / Production Deploy (VCR_MODE=all)
-```yaml
-- Re-records ALL cassettes
-- Makes real API calls for every test
-- Validates actual API integrations
-- Ensures API interface hasn't changed
-- Requires HUD_API_TOKEN secret
-```
+### Release / Production Deploy (VCR_MODE=none)
 
-**Purpose**: Catch API breaking changes before a production release.
+`deploy-production` runs the same strict playback against the release tag, and `deploy`
+needs it to pass. It does not record: the private PolicyEngine API serves only `current`
+and `frontier`, so re-recording pinned cassettes on a release would 422 rather than gate
+anything. `HUD_API_TOKEN` must be set — the job fails if it is empty, since an unset token
+silently skips the HUD integration tests.
 
-**PolicyEngine spec-scenario tests skip in this mode.** `all` never replays, and these cassettes pin an exact model version that PolicyEngine stops serving as soon as it promotes past it (`422 unsupported_version`) — so re-recording them on a release could only ever fail, and it would make a production deploy depend on live PolicyEngine with no drift report besides. Live PE re-runs belong in a scheduled, non-blocking drift job that bumps the pin deliberately (see MFB-1565). HUD cassettes still re-record here as before.
+No CI job reaches a live API. Live PolicyEngine re-runs belong in a scheduled, non-blocking
+drift job that bumps the pin deliberately.
 
 ---
 

@@ -17,7 +17,8 @@ from django.test import TestCase, override_settings
 import programs.framework.pe_dependencies as dependency
 from benefits.tests.cache_override import LOCAL_CACHE
 from integrations.clients.policyengine import policy_engine as pe
-from programs.framework.pe_dependencies.base import Member
+from integrations.external_api_status import POLICY_ENGINE, get_external_api_failures, track_external_api_failures
+from programs.framework.pe_dependencies.base import ConflictingDependencyError, Member
 from programs.framework.pe_dependencies.payload import build_pe_input
 from screener.models import HouseholdMember, Screen, WhiteLabel
 
@@ -131,6 +132,85 @@ class PeBucketTestBase(TestCase):
 
     def ages(self, payload):
         return payload["household"]["people"][self.head_id]["age"]
+
+
+class TestEveryLossReportsToTheResultsBanner(PeBucketTestBase):
+    """`external_api_failures` drives the results-page banner telling the household their
+    list may be short. It used to be signalled from one site -- the `except Exception` in
+    `_run_bucket` -- so a transport failure reported and four other ways of losing a program
+    did not. `calc_pe_eligibility` now derives it from which programs came back.
+    """
+
+    def run_tracked(self, calculators, **kwargs):
+        with track_external_api_failures():
+            result, log = self.run_eligibility(calculators, **kwargs)
+            failures = get_external_api_failures()
+
+        return result, log, failures
+
+    def test_a_full_result_reports_nothing(self):
+        result, _, failures = self.run_tracked({"only": self.calculator([FortyYearOld])})
+
+        self.assertEqual(sorted(result["eligibility"]), ["only"])
+        self.assertEqual(failures, [])
+
+    def test_a_split_screen_answering_everything_reports_nothing(self):
+        """An extra request is a cost, not a failure: every program still got an answer."""
+        result, log, failures = self.run_tracked(
+            {"first": self.calculator([FortyYearOld]), "second": self.calculator([FortyOneYearOld])}
+        )
+
+        self.assertEqual(len(log), 2)
+        self.assertEqual(failures, [])
+
+    def test_a_program_dropped_for_contradicting_itself_reports(self):
+        """Previously silent: the drop happens in payload assembly, nowhere near
+        `_run_bucket`'s handler."""
+        result, _, failures = self.run_tracked(
+            {
+                "healthy": self.calculator([FortyYearOld]),
+                "contradicts_itself": self.calculator([FortyYearOld, FortyOneYearOld]),
+            }
+        )
+
+        self.assertEqual(sorted(result["eligibility"]), ["healthy"])
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_a_bucket_abandoned_on_the_time_budget_reports(self):
+        """Previously silent: the loop `break`s before any request is attempted."""
+        with patch.object(pe, "PE_BUCKET_TIME_BUDGET_SECONDS", -1):
+            result, _, failures = self.run_tracked(
+                {"first": self.calculator([FortyYearOld]), "second": self.calculator([FortyOneYearOld])}
+            )
+
+        self.assertEqual(sorted(result["eligibility"]), ["first"])
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_payload_assembly_failing_outright_reports(self):
+        """The worst previously-silent case: `ConflictingDependencyError` returns an empty
+        result, so the household loses *every* PolicyEngine program and used to be told
+        nothing."""
+        with track_external_api_failures():
+            with patch.object(pe, "build_pe_input", side_effect=ConflictingDependencyError("people/9", "age", 40, 41)):
+                with patch.object(pe, "capture_message"), patch.object(pe, "capture_exception"):
+                    result = pe.calc_pe_eligibility(self.screen, {"only": self.calculator([FortyYearOld])})
+            failures = get_external_api_failures()
+
+        self.assertEqual(result["eligibility"], {})
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_a_program_dropped_before_the_intended_set_does_not_report(self):
+        """`can_calc` failing is a missing screener answer, not a PolicyEngine failure. The
+        household is not told their results are short because of a question they skipped."""
+        uncalculable = self.calculator([FortyOneYearOld])
+        uncalculable.can_calc.return_value = False
+
+        result, _, failures = self.run_tracked(
+            {"answerable": self.calculator([FortyYearOld]), "uncalculable": uncalculable}
+        )
+
+        self.assertEqual(sorted(result["eligibility"]), ["answerable"])
+        self.assertEqual(failures, [])
 
 
 class TestProgramsThatAgree(PeBucketTestBase):

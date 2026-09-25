@@ -40,7 +40,8 @@ from screener.serializers import (
 )
 from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
-from programs.util import DependencyError, Dependencies
+from programs.util import DependencyError, Dependencies, UpstreamAbsentError
+from programs.framework.gates import force_calculated_codes
 from programs.models import (
     Document,
     Navigator,
@@ -64,6 +65,7 @@ import json
 from datetime import datetime, timezone
 from django.conf import settings
 from django.db.models import Prefetch
+from sentry_sdk import capture_exception, capture_message
 
 
 def index(request):
@@ -281,13 +283,30 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         body = json.loads(request.body.decode())
         screen = Screen.objects.get(uuid=body["screen"])
 
-        message = MessageUser(screen, screen.get_language_code())
+        message = MessageUser(screen, self._message_language(body, screen))
         if "email" in body:
             message.email(body["email"], send_tests=True)
         if "phone" in body:
             message.text(body["phone"], send_tests=True)
 
         return Response({}, status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _message_language(body, screen: Screen) -> str:
+        """The language to compose the results message in.
+
+        Defaults to the language the screener was taken in, which is what every
+        caller relied on before the frontend could ask. An unsupported or
+        unrecognized code falls back to that default instead of erroring: the
+        language only picks which copy to send, and sending the results in the
+        screener's language beats refusing to send them.
+        """
+        requested = str(body.get("language") or "").lower()
+
+        if requested in {code for code, _ in settings.LANGUAGES}:
+            return requested
+
+        return screen.get_language_code()
 
 
 def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
@@ -478,6 +497,28 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     missing_dependencies = screen.missing_fields()
 
     program_by_abbr = {p.name_abbreviated: p for p in all_programs}
+
+    # Gated upstreams the filters above dropped. A strict gate raises when its upstream was
+    # not calculated, and `active=False`, a NULL category, `has_calculator=False` and
+    # `Referrer.remove_programs` all remove a row from `all_programs` — none of which says
+    # anything about this household. These rows are calculated for their result only and
+    # withheld from the response (see `skip` below), which decouples the gate from display
+    # configuration. `remove_programs` is overridden deliberately: it is a display filter,
+    # and a force-calculated upstream is never displayed.
+    #
+    # Built after `program_by_abbr` on purpose. `force_calculated_codes()` contains no
+    # PolicyEngine program, and keeping the two lists separate makes that structural — a
+    # row added here can never reach `pe_calculators` and perturb the shared PE payload.
+    upstream_only_programs = list(
+        Program.objects.filter(
+            white_label=screen.white_label,
+            name_abbreviated__in=force_calculated_codes(),
+        )
+        .exclude(name_abbreviated__in=list(program_by_abbr))
+        .select_related("year")
+    )
+    upstream_only_ids = {program.id for program in upstream_only_programs}
+
     pe_calculators = {}
     for calculator_name, Calculator in all_calculators.items():
         program = program_by_abbr.get(calculator_name)
@@ -501,34 +542,93 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     # make certain benifits calculate first so that they can be used in other benefits
     all_programs = sorted(all_programs, key=sort_first)
+    ordered_programs = sorted([*all_programs, *upstream_only_programs], key=sort_first)
 
     program_snapshots = []
     eligible_program_data: list[tuple] = []  # (program, data_index) for post-loop navigator pass
 
     program_eligibility = {}
 
-    for program in all_programs:
+    # {name_abbreviated: EligibilitySnapshot.DROPPED_*} for every program left out of the
+    # results, written to the snapshot below. `missing_programs` says only that something
+    # was omitted; this says which program and why.
+    dropped_programs: dict[str, str] = {}
+
+    force_calculated = force_calculated_codes()
+
+    # Force-calculated upstreams that were withheld from the response. They stay in
+    # `program_eligibility` for the gates that read them, but display consumers below
+    # (navigator eligibility, category caps) must not see them.
+    withheld_programs: set[str] = set()
+
+    for program in ordered_programs:
+        # `upstream_only_ids` rows were fetched past the display filters, so being active is
+        # not enough to publish one — a row removed for a referrer is active.
+        displayable = program.active and program.has_calculator and program.id not in upstream_only_ids
+
+        # A force-calculated upstream: run it for its result, then withhold it from the
+        # response. Every use of `skip` below is one half of that.
+        skip = not displayable
+
         # Tracking-only programs (has_calculator=False) and disabled programs
-        # (active=False) are skipped before any eligibility lookup. Without this
-        # guard, the loop would fall through and reuse the previous iteration's
-        # `eligibility` value when writing program_snapshots.
-        if not (program.active and program.has_calculator):
+        # (active=False) are skipped before any eligibility lookup. Without this guard, the
+        # loop would fall through and reuse the previous iteration's `eligibility` value
+        # when writing program_snapshots. A gated custom upstream is the exception: not
+        # being displayable is exactly the state it is here to survive, and it always has a
+        # calculator in code whatever `has_calculator` claims.
+        if skip and program.name_abbreviated not in force_calculated:
             continue
-        skip = False
         if program.name_abbreviated not in pe_programs:
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
-            except DependencyError:
-                missing_programs = True
+            except DependencyError as e:
+                # A force-calculated upstream is not part of the household's results, so
+                # its absence is not a missing program — the dependent that gates on it
+                # reports that for itself when its own gate raises.
+                if not skip:
+                    missing_programs = True
+                    dropped_programs[program.name_abbreviated] = (
+                        EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
+                        if isinstance(e, UpstreamAbsentError)
+                        else EligibilitySnapshot.DROPPED_MISSING_FIELD
+                    )
+                continue
+            except Exception as e:
+                # Only reachable for a force-calculated upstream: this row was not being
+                # calculated at all before, so adding it must not be able to make the
+                # response worse than it already was. Leaving the key absent lets the
+                # dependent's gate raise and drop it exactly as it did before.
+                if not skip:
+                    raise
+
+                capture_exception(e, level="error")
+                capture_message(
+                    f"Force-calculated upstream {program.name_abbreviated} raised; programs "
+                    "gating on it drop out as they did before it was force-calculated.",
+                    level="error",
+                )
+                dropped_programs[program.name_abbreviated] = EligibilitySnapshot.DROPPED_UPSTREAM_ERROR
                 continue
         else:
             if program.name_abbreviated not in pe_eligibility:
                 missing_programs = True
+                # `calc_pe_eligibility` filters on `can_calc` before it builds a payload, so
+                # absence here has two causes worth telling apart: a screener field this
+                # program needs and the household did not give, or PolicyEngine not
+                # answering. Only the second is outside our control.
+                calculator = pe_calculators[program.name_abbreviated]
+                dropped_programs[program.name_abbreviated] = (
+                    EligibilitySnapshot.DROPPED_POLICY_ENGINE
+                    if calculator.can_calc()
+                    else EligibilitySnapshot.DROPPED_MISSING_FIELD
+                )
                 continue
 
             eligibility = pe_eligibility[program.name_abbreviated]
 
         program_eligibility[program.name_abbreviated] = eligibility
+        if skip:
+            withheld_programs.add(program.name_abbreviated)
 
         if previous_snapshot is not None:
             new = True
@@ -543,8 +643,9 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
         warnings = []
 
-        # don't calculate warnings for ineligible programs
-        if eligibility.eligible:
+        # don't calculate warnings for ineligible programs, or for a force-calculated
+        # upstream whose warnings will never be rendered
+        if not skip and eligibility.eligible:
             for warning in program.warning_messages.all():
                 if warning.calculator not in warning_calculators:
                     raise Exception(f"{warning.calculator} is not a valid calculator name")
@@ -622,7 +723,11 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             if eligibility.eligible:
                 eligible_program_data.append((program, len(data) - 1))
 
-    update_navigators(eligible_program_data, program_eligibility, data, screen.county, referrer)
+    displayed_eligibility = {
+        code: eligibility for code, eligibility in program_eligibility.items() if code not in withheld_programs
+    }
+
+    update_navigators(eligible_program_data, displayed_eligibility, data, screen.county, referrer)
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]
@@ -639,7 +744,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         if category.calculator is not None and category.calculator != "":
             CategoryCalculator = category_cap_calculators[category.calculator]
 
-        calculator = CategoryCalculator(program_eligibility)
+        calculator = CategoryCalculator(displayed_eligibility)
 
         caps = []
         for cap in calculator.caps():
@@ -659,6 +764,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     ProgramEligibilitySnapshot.objects.bulk_create(program_snapshots)
     snapshot.had_error = False
+    snapshot.dropped_programs = dropped_programs
     snapshot.save()
 
     eligible_programs = []
