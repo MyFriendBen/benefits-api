@@ -7,19 +7,24 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     adult_member_amount = 474 * 12  # $474/month for adults
     newborn_member_amount = 284 * 12  # $284/month for newborns
     fpl_percent = 2.13  # 213% FPL
-    max_newborn_age_months = 2 / 12  # 2 months as fraction of year
+    max_newborn_age_months = 2
     min_adult_age = 19  # Adults must be 19+
     parent_relationships = ["headOfHousehold", "spouse", "domesticPartner", "parent", "fosterParent"]
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
     def _is_eligible_newborn(self, member: HouseholdMember) -> bool:
-        return member.calc_age() <= self.max_newborn_age_months
+        if member.birth_year_month is None:
+            return member.calc_age() == 0
+
+        reference_date = self.screen.get_reference_date()
+        age_months = (reference_date.year - member.birth_year) * 12 + reference_date.month - member.birth_month
+        return 0 <= age_months <= self.max_newborn_age_months
 
     def _is_eligible_adult(self, member: HouseholdMember) -> bool:
         is_old_enough = member.calc_age() >= self.min_adult_age
         is_parent = member.relationship in self.parent_relationships
         is_pregnant = member.pregnant
-        has_eligible_newborn = self.screen.num_children(age_max=self.max_newborn_age_months) > 0
+        has_eligible_newborn = any(self._is_eligible_newborn(m) for m in self.screen.household_members.all())
 
         return is_old_enough and is_parent and (is_pregnant or has_eligible_newborn)
 

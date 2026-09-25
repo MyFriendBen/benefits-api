@@ -108,13 +108,15 @@ class TestCoCollegeInvestFirstStep(CustomCalculatorTestCase):
         self.assertFalse(eligibility.eligible)
 
     def test_ineligible_child_age_8_boundary(self):
-        """Child exactly age 8 is not eligible."""
-        screen = self.make_screen(household_size=2)
-        self.add_member(screen, "headOfHousehold", 35)
-        self.add_member(screen, "child", 8, birth_year_month=date(2018, 1, 1))
+        """Child exactly age 8 is not eligible, even though born after the birth year cutoff."""
+        # A child born in 2020 first turns 8 in 2028.
+        with patch.object(Screen, "get_reference_date", lambda _self: date(2028, 1, 1)):
+            screen = self.make_screen(household_size=2)
+            self.add_member(screen, "headOfHousehold", 35)
+            self.add_member(screen, "child", 8, birth_year_month=date(2020, 1, 1))
 
-        calc = self.make_calculator(screen)
-        eligibility = calc.eligible()
+            calc = self.make_calculator(screen)
+            eligibility = calc.eligible()
 
         self.assertFalse(eligibility.eligible)
 
