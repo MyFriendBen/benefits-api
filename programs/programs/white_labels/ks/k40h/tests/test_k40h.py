@@ -20,6 +20,7 @@ from unittest.mock import Mock
 from programs.programs.white_labels.ks.k40h.calculator import KsK40h
 from programs.framework.base import ProgramCalculator
 from programs.framework.pe_dependencies import member
+from screener.models import HouseholdMember
 
 
 def make_member(
@@ -35,6 +36,7 @@ def make_member(
     member = Mock()
     member.birth_year = birth_year
     member.calc_age = Mock(return_value=age)
+    member.age_at_end_of_year = lambda year: HouseholdMember.age_at_end_of_year(member, year)
     member.relationship = relationship
     member.disabled = disabled
     member.visually_impaired = visually_impaired
@@ -166,6 +168,15 @@ class TestSpecScenarios(TestCase):
         child = make_member(birth_year=2007, age=19, relationship="child")
         eligible, _ = run(make_calculator([p1, child], mortgage=850 * 12))
         self.assertFalse(eligible)
+
+    def test_child_income_excluded_while_under_18_at_end_of_claim_year(self):
+        # Born Nov 2007: 18 today (2026) but 17 at the end of claim year 2025, so a
+        # stale screening-date age would wrongly count their wages.
+        p1 = make_member(birth_year=1958, age=68, income={"pension": 12_000})
+        child = make_member(birth_year=2008, age=18, relationship="child", income={"wages": 30_000})
+        eligible, value = run(make_calculator([p1, child], property_tax=700))
+        self.assertTrue(eligible)
+        self.assertEqual(value, 532)  # income 12000 -> 76%; 700*.76
 
     def test_s14_no_categorical_path_ineligible(self):
         m = make_member(birth_year=1976, age=50, income={"wages": 21_600})

@@ -1,5 +1,5 @@
 from datetime import date
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.test import TestCase
 
@@ -13,6 +13,15 @@ class TestCoCollegeInvestFirstStep(TestCase):
     def setUpTestData(cls):
         cls.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         cls.mock_program = Mock()
+
+    def setUp(self):
+        # The fixtures pair an age with a birth month; pin the date they were consistent on.
+        self._pin_reference_date(date(2026, 4, 15))
+
+    def _pin_reference_date(self, reference_date):
+        pin = patch.object(Screen, "get_reference_date", return_value=reference_date)
+        pin.start()
+        self.addCleanup(pin.stop)
 
     def _make_screen(self, zipcode="80202", county="Denver County", household_size=2):
         return Screen.objects.create(
@@ -47,6 +56,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
     def test_eligible_child_age_7_boundary(self):
         """Child exactly age 7 is still eligible."""
+        self._pin_reference_date(date(2027, 6, 15))
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
         HouseholdMember.objects.create(screen=screen, relationship="child", age=7, birth_year_month=date(2020, 1, 1))
@@ -120,10 +130,11 @@ class TestCoCollegeInvestFirstStep(TestCase):
         self.assertFalse(eligibility.eligible)
 
     def test_ineligible_child_age_8_boundary(self):
-        """Child exactly age 8 is not eligible."""
+        """Child exactly age 8 is not eligible, even though born after the birth year cutoff."""
+        self._pin_reference_date(date(2028, 1, 15))
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=8, birth_year_month=date(2018, 1, 1))
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=8, birth_year_month=date(2020, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()

@@ -18,6 +18,7 @@ Notes:
     `has_disability` is genuinely exercised across all three of its fields.
 """
 
+from datetime import date
 from unittest.mock import Mock
 
 from django.test import TestCase
@@ -29,7 +30,7 @@ from screener.models import HouseholdMember
 from programs.framework.pe_dependencies import member
 
 
-def make_member(age=70, disabled=False, visually_impaired=False, long_term_disability=False):
+def make_member(age=70, disabled=False, visually_impaired=False, long_term_disability=False, birth_year_month=None):
     """
     A real, unsaved `HouseholdMember` so that `has_disability` runs for real. Mocking its
     return value would collapse the three disability fields into one and hide a change to
@@ -37,6 +38,7 @@ def make_member(age=70, disabled=False, visually_impaired=False, long_term_disab
     """
     return HouseholdMember(
         age=age,
+        birth_year_month=birth_year_month,
         disabled=disabled,
         visually_impaired=visually_impaired,
         long_term_disability=long_term_disability,
@@ -49,7 +51,11 @@ def make_calculator(
     has_expense=True,
     members=None,
     missing_dependencies=None,
+    tax_year=2025,
 ):
+    program = Mock()
+    program.year.period = str(tax_year)
+
     mock_screen = Mock()
     mock_screen.calc_gross_income = Mock(return_value=household_income)
     mock_screen.has_expense = Mock(return_value=has_expense)
@@ -58,7 +64,7 @@ def make_calculator(
 
     return PropertyCreditRebate(
         mock_screen,
-        Mock(),
+        program,
         {},
         Dependencies() if missing_dependencies is None else missing_dependencies,
     )
@@ -197,6 +203,14 @@ class TestPropertyCreditRebateMemberEligibility(TestCase):
 
     def test_disabled_child_is_ineligible(self):
         self.assertFalse(self._run(make_member(age=10, disabled=True)))
+
+    def test_age_is_judged_at_the_end_of_the_tax_year(self):
+        # Born Mar 1961: 65 in 2026, but 64 throughout tax year 2025
+        self.assertFalse(self._run(make_member(age=65, birth_year_month=date(1961, 3, 1))))
+
+    def test_turning_65_late_in_the_tax_year_is_eligible(self):
+        # Born Dec 1960: 64 when the 2025 year opened, 65 by its end
+        self.assertTrue(self._run(make_member(age=64, birth_year_month=date(1960, 12, 1))))
 
     def test_surviving_spouse_path_is_always_false(self):
         # the screener has no surviving-spouse question, so the helper is stubbed out

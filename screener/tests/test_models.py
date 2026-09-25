@@ -1168,6 +1168,61 @@ class TestStaleStoredAge(TestCase):
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=18)
         self.assertEqual(self.screen.num_children(), 1)
 
+    def test_age_at_end_of_year_counts_a_later_birthday(self):
+        member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="child", age=17, birth_year_month=date(2008, 11, 1)
+        )
+        self.assertEqual(member.calc_age(), 17)
+        self.assertEqual(member.age_at_end_of_year(2026), 18)
+        self.assertEqual(member.age_at_end_of_year(2025), 17)
+
+    def test_age_at_end_of_year_is_never_negative(self):
+        member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="child", age=0, birth_year_month=date(2026, 2, 1)
+        )
+        self.assertEqual(member.age_at_end_of_year(2025), 0)
+
+    def test_age_at_end_of_year_falls_back_to_calc_age(self):
+        member = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=12)
+        self.assertEqual(member.age_at_end_of_year(2025), 12)
+        self.assertEqual(self.head.age_at_end_of_year(None), 45)
+
+
+class TestUnknownAge(TestCase):
+    """A member with neither a stored age nor a birth date has no age, and must not crash the helpers."""
+
+    def setUp(self):
+        white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+        self.unknown = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=None)
+
+    def test_calc_age_is_none(self):
+        self.assertIsNone(self.unknown.calc_age())
+
+    def test_num_children_skips_the_member(self):
+        self.assertEqual(self.screen.num_children(), 0)
+
+    def test_num_adults_skips_the_member(self):
+        self.assertEqual(self.screen.num_adults(), 1)
+
+    def test_is_dependent_does_not_crash(self):
+        self.assertIsInstance(self.unknown.is_dependent(), bool)
+
+    def test_other_tax_unit_structure_does_not_crash(self):
+        HouseholdMember.objects.create(screen=self.screen, relationship="roommate", age=None)
+        HouseholdMember.objects.create(screen=self.screen, relationship="roommate", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.screen.household_members.get(relationship="roommate", age=30),
+            type="wages",
+            amount=90000,
+            frequency="yearly",
+        )
+        self.screen.other_tax_unit_structure()
+
 
 TEST_FEATURE_FLAGS = {
     "test_flag": FeatureFlagConfig(

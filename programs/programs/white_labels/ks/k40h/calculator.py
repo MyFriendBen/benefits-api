@@ -149,13 +149,13 @@ class KsK40h(ProgramCalculator):
 
     def _household_income(self) -> int:
         """K-40H adjusted household income (see class docstring)."""
+        claim_year = int(self.program.year.period) if self.program.year else 2025
         total = 0.0
         for member in self.screen.household_members.all():
             # Dependent minors/incapacitated members without title are excluded;
             # approximate as: exclude dependent children's income (spec criterion 2).
-            if member.relationship in ("child", "stepChild", "fosterChild") and (
-                member.calc_age() is None or member.calc_age() < 18
-            ):
+            age = member.age_at_end_of_year(claim_year)
+            if member.relationship in ("child", "stepChild", "fosterChild") and (age is None or age < 18):
                 continue
 
             # Everything except the excluded and half-counted types, at full value.

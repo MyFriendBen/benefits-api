@@ -1,14 +1,18 @@
 from django.test import TestCase
+from datetime import date
 from unittest.mock import Mock
 
 from programs.programs.white_labels.wa.senior_disabled_pte.calculator import WaSeniorDisabledPte
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 from programs.framework.pe_dependencies import member
+from screener.models import HouseholdMember
 
 
-def make_member(age=70, long_term_disability=False, disabled=False, veteran=False):
+def make_member(age=70, long_term_disability=False, disabled=False, veteran=False, birth_year=None):
     member = Mock()
     member.calc_age = Mock(return_value=age)
+    member.birth_year = birth_year
+    member.age_at_end_of_year = lambda year: HouseholdMember.age_at_end_of_year(member, year)
     member.long_term_disability = long_term_disability
     member.disabled = disabled
     member.veteran = veteran
@@ -18,6 +22,7 @@ def make_member(age=70, long_term_disability=False, disabled=False, veteran=Fals
 def make_calculator(county="King County", household_income=14_400, property_tax_expense=1_200):
     mock_screen = Mock()
     mock_screen.county = county
+    mock_screen.get_reference_date = Mock(return_value=date(2026, 9, 15))
     mock_screen.calc_gross_income = Mock(return_value=household_income)
     mock_screen.calc_expenses = Mock(return_value=property_tax_expense)
 
@@ -64,6 +69,13 @@ class TestMemberEligibility(TestCase):
 
     def test_age_60_ineligible(self):
         self.assertFalse(self._run(make_member(age=60)))
+
+    def test_turns_61_later_in_claim_year_eligible(self):
+        # Born Nov 1965, screened Sept 2026: 60 today, 61 by December 31.
+        self.assertTrue(self._run(make_member(age=60, birth_year=1965)))
+
+    def test_turns_61_next_year_ineligible(self):
+        self.assertFalse(self._run(make_member(age=60, birth_year=1966)))
 
     def test_age_none_ineligible(self):
         self.assertFalse(self._run(make_member(age=None)))
@@ -140,6 +152,7 @@ class TestEndToEnd(TestCase):
     def _make_full_calc(self, members, county="King County", household_income=14_400, property_tax=1_200):
         mock_screen = Mock()
         mock_screen.county = county
+        mock_screen.get_reference_date = Mock(return_value=date(2026, 9, 15))
         mock_screen.calc_gross_income = Mock(return_value=household_income)
         mock_screen.calc_expenses = Mock(return_value=property_tax)
         mock_screen.household_members.all = Mock(return_value=members)

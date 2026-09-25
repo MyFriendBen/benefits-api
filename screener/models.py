@@ -206,11 +206,8 @@ class Screen(models.Model):
         household_members = self.household_members.all()
         for household_member in household_members:
             has_child_relationship = household_member.relationship in child_relationship or "all" in child_relationship
-            if (
-                household_member.calc_age() >= age_min
-                and household_member.calc_age() <= age_max
-                and has_child_relationship
-            ):
+            age = household_member.calc_age()
+            if age is not None and age_min <= age <= age_max and has_child_relationship:
                 children += 1
             if household_member.pregnant and include_pregnant:
                 children += 1
@@ -221,7 +218,8 @@ class Screen(models.Model):
         adults = 0
         household_members = self.household_members.all()
         for household_member in household_members:
-            if household_member.calc_age() >= age_max:
+            age = household_member.calc_age()
+            if age is not None and age >= age_max:
                 adults += 1
         return adults
 
@@ -324,7 +322,7 @@ class Screen(models.Model):
             return unit
 
         for member in other_tax_unit:
-            if unit["head"] is None or member.calc_age() > unit["head"].calc_age():
+            if unit["head"] is None or (member.calc_age() or 0) > (unit["head"].calc_age() or 0):
                 unit["head"] = member
 
         spouse_id = self.relationship_map()[unit["head"].id]
@@ -621,11 +619,12 @@ class HouseholdMember(models.Model):
             return False
 
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
+        age = self.calc_age()
 
         # Path 1: Qualifying Child
         is_qualifying_child = (
             has_eligible_relationship
-            and (self.calc_age() <= 18 or (self.student and self.calc_age() <= 23) or self.has_disability())
+            and ((age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability())
             and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
         )
 
@@ -660,12 +659,23 @@ class HouseholdMember(models.Model):
 
         return self.birth_year_month.month
 
-    def calc_age(self) -> int:
+    def calc_age(self) -> Optional[int]:
         if self.birth_year_month is None:
             return self.age
 
         reference_date = self.screen.get_reference_date()
         return self.age_from_date(self.birth_year_month, reference_date)
+
+    def age_at_end_of_year(self, year: Optional[int]) -> Optional[int]:
+        """
+        Age on December 31 of ``year``, for rules judged over a tax or claim year
+        rather than on the screening date. Falls back to ``calc_age()`` when the birth
+        year or the year is unknown.
+        """
+        if self.birth_year is None or year is None:
+            return self.calc_age()
+
+        return max(year - self.birth_year, 0)
 
     @staticmethod
     def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
