@@ -30,13 +30,8 @@ from programs.framework.pe_dependencies.household import StateCode
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 import programs.framework.pe_dependencies as dependency
 
-STATES = {"co", "nc", "ma", "il", "tx", "wa", "ks", "mo"}
-
-#: State programs that send no state code of their own. They are listed rather than
-#: exempted by rule so a new one is a decision, not an accident: PolicyEngine takes
-#: `state_code` once per household, so these read it from whichever program on the same
-#: screen supplies it.
-SENDS_NO_STATE_CODE = {"ma_eaedc", "ma_ssp"}
+#: Every state we can send PolicyEngine, one per `StateCode` subclass in `household.py`.
+STATES = {dep.state.lower() for dep in StateCode.__subclasses__()}
 
 #: Variants that read something other than their base's PolicyEngine variable, and what
 #: they read: ``(pe_name, pe_outputs)``. Every other variant reads its base's.
@@ -111,7 +106,7 @@ class StateVariantContractTests(SimpleTestCase):
         variants = {code: base for code, _, base in state_variants()}
 
         for code, calculator in sorted(all_calculators.items()):
-            if state_of(calculator) is None or state_codes(calculator) or code in SENDS_NO_STATE_CODE:
+            if state_of(calculator) is None or state_codes(calculator):
                 continue
             with self.subTest(program=code):
                 base = variants.get(code)
@@ -121,12 +116,6 @@ class StateVariantContractTests(SimpleTestCase):
                     list(base.pe_inputs),
                     f"{calculator.__name__} changes {base.__name__}'s inputs but sends no state code",
                 )
-
-    def test_the_exceptions_still_need_to_be_exceptions(self):
-        """A listed program that starts sending its state code should leave the list."""
-        for code in SENDS_NO_STATE_CODE:
-            with self.subTest(program=code):
-                self.assertEqual(state_codes(all_calculators[code]), set())
 
     def test_a_variant_reads_its_bases_variable_unless_listed(self):
         for code, calculator, base in state_variants():
