@@ -1,0 +1,53 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "cash"
+  },
+  "program": {
+    "name_abbreviated": "mo_rca",
+    "year": "2026",
+    "legal_status_required": [
+      "refugee",
+      "otherWithWorkPermission",
+      "gc_5less"
+    ],
+    "name": "Refugee Cash Assistance (RCA)",
+    "description": "Refugee Cash Assistance (RCA) gives monthly cash to refugees and other newcomers. It can help pay for food, rent, travel, and other basic needs while you look for work.\n\nThe Missouri Office of Refugee Administration (MO-ORA) runs RCA. You apply through a local agency, and that agency pays you each month. The Estimated Value represents what you may be eligible to receive over an 8-month period. The 8-month period starts from the day you arrived or got your status. The agency will tell you how many months you have left. It also checks your exact status. The agency reviews your income each month. It leaves out part of what you earn from work, so a job does not cost you the full benefit.\n\nIf you are eligible for Temporary Assistance (TANF), you will receive TANF instead. The agency's money that you receive to get settled will not lower your payment.\n\nThe agency may not count everyone in your home, so your total may be lower. Select \"Contact Local Agency\" to find a Missouri agency you can ask about applying.",
+    "description_short": "Monthly cash help for refugees and other newcomers",
+    "learn_more_link": "https://moora.org/programs/cash-assistance",
+    "apply_button_link": "https://moora.org/ourpartners",
+    "apply_button_description": "Contact Local Agency",
+    "estimated_application_time": "10 - 15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Monthly cash help for refugees and other newcomers",
+    "value_format": "lump_sum",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "active": false,
+    "low_confidence": false
+  },
+  "documents": [
+    {
+      "external_name": "mo_us_status",
+      "text": "Proof of your immigration status (ex: I-94 or green card)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_moora",
+      "name": "Missouri Office of Refugee Administration (MO-ORA)",
+      "email": "moora@iistl.org",
+      "phone_number": "",
+      "description": "MO-ORA coordinates refugee services in Missouri. They can help you find the right local agency for Refugee Cash Assistance.",
+      "assistance_link": "https://moora.org/contact",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}
