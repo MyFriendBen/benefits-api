@@ -2303,18 +2303,27 @@ class IlConfigurationData(ConfigurationData):
         "theme": {"default": "default", "211chicago": "twoOneOneChicago"},
         "logoSource": {
             "default": "MFB_ILLogo",
+            "211chicago": "TwoOneOneChicago_Logo",
         },
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
             },
+            # The supplied asset is 211 Metro Chicago's mark alone, not a
+            # co-branded lockup, so the alt text describes only what is in the
+            # image. MyFriendBen is represented by the footer logo.
+            "211chicago": {
+                "id": "referrerHook.logoAlts.211chicago",
+                "defaultMessage": "211 Metro Chicago home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
         },
-        "logoClass": {"default": "logo"},
+        # Their horizontal mark is ~3:1, wider than the default .logo rule expects.
+        "logoClass": {"default": "logo", "211chicago": "chicago211-logo-size"},
         "shareLink": {
             "default": "",
             # Carries the referrer through a share, so a shared screener keeps
@@ -2354,7 +2363,11 @@ class IlConfigurationData(ConfigurationData):
             # il_show_211_link renders the 211 Metro Chicago resource deep links at
             # the top of the Additional Resources tab; no_zipcode_change_state hides
             # the "not in Illinois?" prompt on the zipcode step.
-            "211chicago": ["il_show_211_link", "no_zipcode_change_state"],
+            #
+            # white_header is not cosmetic: their logo is blue on transparent, and
+            # the default header bar is filled with --primary-color, which is now
+            # that same brand blue. Without this the mark is near-invisible.
+            "211chicago": ["il_show_211_link", "no_zipcode_change_state", "white_header"],
         },
         "defaultLanguage": {"default": "en-us"},
     }
