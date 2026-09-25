@@ -43,7 +43,8 @@ class FirstStepSavings(UrgentNeedFunction):
                 continue
 
             # Check age eligibility (6-7 years old)
-            if member.calc_age() is not None and 6 <= member.calc_age() <= 7:
+            age = member.calc_age()
+            if age is not None and 6 <= age <= 7:
                 return True
 
         return False
@@ -59,7 +60,8 @@ class FirstStepSavings(UrgentNeedFunction):
                 continue
 
             # Check age eligibility (0-5 years old)
-            if member.calc_age() is not None and member.calc_age() <= NOTIFICATION_MAX_AGE:
+            age = member.calc_age()
+            if age is not None and age <= NOTIFICATION_MAX_AGE:
                 return True
 
         return False
@@ -90,7 +92,8 @@ class FirstStepSavingsNotifiable(FirstStepSavings):
                 continue
 
             # Check age eligibility (0-5 years old for notification)
-            if member.calc_age() is not None and member.calc_age() <= NOTIFICATION_MAX_AGE:
+            age = member.calc_age()
+            if age is not None and age <= NOTIFICATION_MAX_AGE:
                 return True
 
         return False

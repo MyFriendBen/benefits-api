@@ -59,7 +59,8 @@ class IlAccessDuPage(ProgramCalculator):
         member = e.member
 
         # Age 19 or older
-        e.condition(member.calc_age() is not None and member.calc_age() >= self.min_age)
+        age = member.calc_age()
+        e.condition(age is not None and age >= self.min_age)
 
         # Must report being uninsured and not have disqualifying coverage
         e.condition(member.has_insurance_types(["none"]))

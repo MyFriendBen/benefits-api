@@ -95,10 +95,9 @@ class NCHeadStart(ProgramCalculator):
         member = e.member
 
         # age - 0-5 years, or 6-17 with disability, or pregnant
-        is_eligible_age = (member.calc_age() >= NCHeadStart.min_age and member.calc_age() <= NCHeadStart.max_age) or (
-            member.calc_age() > NCHeadStart.max_age
-            and member.calc_age() <= NCHeadStart.max_age_disabled
-            and member.has_disability()
+        age = member.calc_age()
+        is_eligible_age = (age >= NCHeadStart.min_age and age <= NCHeadStart.max_age) or (
+            age > NCHeadStart.max_age and age <= NCHeadStart.max_age_disabled and member.has_disability()
         )
         is_pregnant = member.pregnant
 
@@ -126,12 +125,9 @@ class NCHeadStart(ProgramCalculator):
         # Calculate total market rate for all eligible children
         for member in self.screen.household_members.all():
             # Check if member meets eligibility criteria
-            is_eligible_age = (
-                member.calc_age() >= NCHeadStart.min_age and member.calc_age() <= NCHeadStart.max_age
-            ) or (
-                member.calc_age() > NCHeadStart.max_age
-                and member.calc_age() <= NCHeadStart.max_age_disabled
-                and member.has_disability()
+            age = member.calc_age()
+            is_eligible_age = (age >= NCHeadStart.min_age and age <= NCHeadStart.max_age) or (
+                age > NCHeadStart.max_age and age <= NCHeadStart.max_age_disabled and member.has_disability()
             )
             is_pregnant = member.pregnant
 
@@ -145,15 +141,15 @@ class NCHeadStart(ProgramCalculator):
             # Handle pregnant person - use infant rate
             if is_pregnant:
                 monthly_rate = county_rates["infant"]
-            elif member.calc_age() <= 1:
+            elif age <= 1:
                 monthly_rate = county_rates["infant"]
-            elif member.calc_age() == 2:
+            elif age == 2:
                 monthly_rate = county_rates["toddler"]
-            elif 3 <= member.calc_age() <= 5:
+            elif 3 <= age <= 5:
                 monthly_rate = county_rates["preschool"]
-            elif 12 <= member.calc_age() <= 17 and member.has_disability():
+            elif 12 <= age <= 17 and member.has_disability():
                 monthly_rate = county_rates["teen_disabled"]
-            elif 6 <= member.calc_age() <= 12:
+            elif 6 <= age <= 12:
                 monthly_rate = county_rates["school_age"]
 
             # Annual rate (monthly * 12)

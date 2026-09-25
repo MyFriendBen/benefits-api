@@ -77,10 +77,10 @@ class KsSsdi(ProgramCalculator):
         # birth year nor age as not established to be of working age.
         if member.birth_year is not None:
             under_fra = self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date())
-        elif member.calc_age() is not None:
-            under_fra = member.calc_age() < self.MAX_FRA_YEARS
         else:
-            under_fra = False
+            # without a birth date, calc_age() is the stored age
+            age = member.calc_age()
+            under_fra = age is not None and age < self.MAX_FRA_YEARS
         e.condition(under_fra)
 
         earned_income = int(member.calc_gross_income("monthly", ["earned"]))

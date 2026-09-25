@@ -10,7 +10,8 @@ class SnapStudentWarning(WarningCalculator):
         for member in self.screen.household_members.all():
             if not member.student:
                 continue
-            if member.calc_age() < 18 or member.calc_age() >= 50:
+            age = member.calc_age()
+            if age < 18 or age >= 50:
                 continue
             if member.has_disability():
                 continue

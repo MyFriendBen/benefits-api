@@ -110,11 +110,12 @@ class WaUdp(ProgramCalculator):
         return self.SMI_70_ANNUAL[10] + (size - 10) * self.SMI_70_PER_EXTRA_ANNUAL
 
     def _adult_income_yearly(self) -> float:
-        return sum(
-            member.calc_gross_income("yearly", ["all"])
-            for member in self.screen.household_members.all()
-            if member.calc_age() is not None and member.calc_age() >= 18
-        )
+        total = 0
+        for member in self.screen.household_members.all():
+            age = member.calc_age()
+            if age is not None and age >= 18:
+                total += member.calc_gross_income("yearly", ["all"])
+        return total
 
     def _has_ssi_recipient(self) -> bool:
         return any(member.calc_gross_income("yearly", ["sSI"]) > 0 for member in self.screen.household_members.all())
