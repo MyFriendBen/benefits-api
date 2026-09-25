@@ -2303,26 +2303,23 @@ class IlConfigurationData(ConfigurationData):
         "theme": {"default": "default", "211chicago": "twoOneOneChicago"},
         "logoSource": {
             "default": "MFB_ILLogo",
-            "211chicago": "TwoOneOneChicago_Logo",
+            "211chicago": "Chicago211_MFBLogo",
         },
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
             },
-            # The supplied asset is 211 Metro Chicago's mark alone, not a
-            # co-branded lockup, so the alt text describes only what is in the
-            # image. MyFriendBen is represented by the footer logo.
             "211chicago": {
                 "id": "referrerHook.logoAlts.211chicago",
-                "defaultMessage": "211 Metro Chicago home page button",
+                "defaultMessage": "211 Metro Chicago and MyFriendBen home page button",
             },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
         },
-        # Their horizontal mark is ~3:1, wider than the default .logo rule expects.
+        # The co-brand lockup is ~4:1, wider than the default .logo rule expects.
         "logoClass": {"default": "logo", "211chicago": "chicago211-logo-size"},
         "shareLink": {
             "default": "",
