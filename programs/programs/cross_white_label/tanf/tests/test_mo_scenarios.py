@@ -12,20 +12,23 @@ storage convention as ``specs/ks.md``. So a spec expectation of $292/month is as
 $3,505 — PolicyEngine's exact $292.09 × 12, truncated the way the API truncates it. The
 cents are why these are not always exactly monthly × 12.
 
-Three scenarios are documented PE divergences the spec accepts as-is (AC 30/31). In 8 and 20
+Three scenarios are documented PE divergences the spec accepts as-is (AC 30/31). In 8 and 18
 PolicyEngine computes a $0 grant where strict Missouri regulation denies on the merits;
 ``PolicyEngineCalulator.eligible()`` sets ``eligible = value > 0``, so both are reported not
-eligible and the household's outcome matches the denial. In 32 PolicyEngine passes a Gate 1
+eligible and the household's outcome matches the denial. In 30 PolicyEngine passes a Gate 1
 boundary Missouri would fail, and the household is eligible for a grant. The tests pin
 PolicyEngine's actual answer rather than the regulation's, per the spec.
 
-Scenarios 11, 12 and 34 assert PolicyEngine's answer for a needy non-parent caretaker
-household, which is the *inclusion* branch. Missouri also grants such a caretaker an
-election between being included and excluded, and per AC 20 MFB does not implement it —
-so where the spec's expectation reflects the excluded configuration, the expected value
-here is the included one PolicyEngine returns. See ``specs/mo.md`` AC 20.
+No scenario covers Missouri's non-parent caretaker relative (NPCR) rule. PolicyEngine has no
+NPCR concept — a caretaker meeting the relationship test is always an assistance-unit member —
+and it has confirmed it will not model the neediness test, the mandatory-exclusion branch or
+the election, so MFB ships PolicyEngine's single answer and maintains no override (AC 20). The
+caretaker households that remain assert PolicyEngine's answer for their own reasons: Scenario
+10 for the ``grandParent``/``grandChild`` relationship encoding, Scenario 32 for the SSI-spouse
+exclusion. Neither depends on an NPCR branch. The two verified divergences the limitation
+produces are recorded in ``specs/mo.md`` under "Accepted PolicyEngine limitations".
 
-Scenario 13 is expected to fail and is skipped: the household's only income is the SSI
+Scenario 11 is expected to fail and is skipped: the household's only income is the SSI
 child's, so ``HouseholdMember.is_dependent()`` puts that child in a separate tax unit,
 and PolicyEngine's caretaker test requires a dependent child in the *same* tax unit. That
 is shared screener logic, not a MoTanf concern — see the skip reason.
@@ -57,6 +60,13 @@ class MoTanfScenarioTestCase(PeIntegrationTestCase):
     pe_version = PE_VERSION
 
     # Distinct per subclass so each scenario's cassette pins its own household.
+    #
+    # This is a cassette-identity token, not the scenario number, and the two stopped matching
+    # at MFB-1790. It seeds member primary keys (``screen_id * 100 + offset``) that are part of
+    # the recorded request body, so changing it invalidates the cassette — and re-recording is
+    # only possible at a PolicyEngine version still being served, which these cassettes' pin no
+    # longer is. So the renumbering that removed Scenarios 11 and 12 renamed the classes and
+    # left every ``screen_id`` where it was. Keep them frozen until MFB-1846 re-records.
     screen_id = 0
 
     def build(self, household_size, household_assets=0, on_tanf=False):
@@ -88,7 +98,7 @@ class MoTanfScenarioTestCase(PeIntegrationTestCase):
         The age is derived once, against the spec's own reference year rather than today:
         ``birth_year_month`` would make every age a function of ``timezone.now()``, and VCR
         matches on the exact request body, so the whole suite would break on a calendar
-        boundary — Scenario 33's November birth month first, then the rest each new year.
+        boundary — Scenario 31's November birth month first, then the rest each new year.
         ``birth_month`` is accepted so scenarios read as the spec states them, but it does not
         change the age: the spec evaluates every age against year 2026.
         """
@@ -249,8 +259,13 @@ class TestScenario09NotActiveEarnerSmallerHousehold(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario10KinshipCaretakerIncluded(MoTanfScenarioTestCase):
-    """Grandparent caretaker with two grandchildren, no income → $292/month."""
+class TestScenario10GrandparentHeadedHousehold(MoTanfScenarioTestCase):
+    """Grandparent caretaker with two grandchildren, no income → $292/month.
+
+    Pins the ``grandParent``/``grandChild`` relationship encoding: a grandparent-headed
+    household must produce the same size-3 grant as a parent-headed one. Nothing here turns
+    on Missouri's NPCR rule, which PolicyEngine does not model (AC 20).
+    """
 
     screen_id = 10
 
@@ -264,59 +279,6 @@ class TestScenario10KinshipCaretakerIncluded(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 @pytest.mark.skip(
-    reason="Blocked on PolicyEngine (MFB-1698): no NPCR concept, so a qualifying caretaker is "
-    "always an assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
-    "Missouri's expected grant; PolicyEngine currently returns the caretaker-included result "
-    "($192.09/month). Un-skip when PE models the election."
-)
-class TestScenario11NpcrWithIncome(MoTanfScenarioTestCase):
-    """A needy caretaker with $100/month unearned income → $234/month.
-
-    No spouse in the home, so the NPCR is automatically needy and the election applies:
-    included is size 3 at $292 − $100 = $192, excluded is child-only size 2 at $234, and
-    Missouri takes the higher.
-    """
-
-    screen_id = 11
-
-    def test_election_takes_the_higher_of_the_two_configurations(self):
-        screen = self.build(3)
-        head = self.add_person(screen, 1, "headOfHousehold", 1971)
-        add_income(head, amount=100, income_type="unemployment")
-        self.add_person(screen, 2, "grandChild", 2020)
-        self.add_person(screen, 3, "grandChild", 2018)
-        self.assert_result(screen, True, 2_809)
-
-
-@pytest.mark.integration
-@pytest.mark.skip(
-    reason="Blocked on PolicyEngine (MFB-1698): no NPCR concept, so a qualifying caretaker is "
-    "always an assistance-unit member and no neediness budget or election runs (spec AC 20). The assertion is "
-    "Missouri's expected grant; PolicyEngine currently returns the caretaker-included result "
-    "(ineligible). Un-skip when PE models the election."
-)
-class TestScenario12NpcrNotNeedy(MoTanfScenarioTestCase):
-    """Caretaker with $700/month and a co-resident spouse → $234/month.
-
-    The NPCR/spouse neediness group is size 2 against a $678 Standard of Need, so $700
-    fails it: exclusion is mandatory with no election, leaving the two grandchildren as a
-    size-2 unit.
-    """
-
-    screen_id = 12
-
-    def test_failing_neediness_excludes_the_caretaker(self):
-        screen = self.build(4)
-        head = self.add_person(screen, 1, "headOfHousehold", 1971)
-        add_income(head, amount=700, income_type="unemployment")
-        self.add_person(screen, 2, "spouse", 1973)
-        self.add_person(screen, 3, "grandChild", 2020)
-        self.add_person(screen, 4, "grandChild", 2018)
-        self.assert_result(screen, True, 2_809)
-
-
-@pytest.mark.integration
-@pytest.mark.skip(
     reason="Blocked on MFB-1693, not a MoTanf defect: the SSI child's income is the household's "
     "only income, so HouseholdMember.is_dependent()'s support test (child income <= household "
     "income / 2) can never pass and the child is placed in a separate tax unit. PolicyEngine's "
@@ -325,7 +287,7 @@ class TestScenario12NpcrNotNeedy(MoTanfScenarioTestCase):
     "the spec's $136/month. Fix belongs in shared screener tax-unit logic, which shapes every "
     "PE program's payload (pe_dependencies/payload.py)."
 )
-class TestScenario13SsiChildPayeeOnly(MoTanfScenarioTestCase):
+class TestScenario11SsiChildPayeeOnly(MoTanfScenarioTestCase):
     """SSI child excluded from the unit; payee still receives a size-1 grant → $136/month."""
 
     screen_id = 13
@@ -339,7 +301,7 @@ class TestScenario13SsiChildPayeeOnly(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario14LargerHousehold(MoTanfScenarioTestCase):
+class TestScenario12LargerHousehold(MoTanfScenarioTestCase):
     """Size-5 payment standard → $388/month."""
 
     screen_id = 14
@@ -355,7 +317,7 @@ class TestScenario14LargerHousehold(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario15NonQualifyingSiblingExcluded(MoTanfScenarioTestCase):
+class TestScenario13NonQualifyingSiblingExcluded(MoTanfScenarioTestCase):
     """A 19-year-old is excluded on age alone, leaving a size-2 unit → $234/month."""
 
     screen_id = 15
@@ -369,7 +331,7 @@ class TestScenario15NonQualifyingSiblingExcluded(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario16PregnancyAloneDoesNotQualify(MoTanfScenarioTestCase):
+class TestScenario14PregnancyAloneDoesNotQualify(MoTanfScenarioTestCase):
     """RSMo 208.040 grants TA on behalf of a dependent child; pregnancy alone does not."""
 
     screen_id = 16
@@ -381,7 +343,7 @@ class TestScenario16PregnancyAloneDoesNotQualify(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario17ChildcareBelowCap(MoTanfScenarioTestCase):
+class TestScenario15ChildcareBelowCap(MoTanfScenarioTestCase):
     """$100 actual cost deducts in full, under the $175 cap → $214/month."""
 
     screen_id = 17
@@ -396,7 +358,7 @@ class TestScenario17ChildcareBelowCap(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario18ChildcareCapped(MoTanfScenarioTestCase):
+class TestScenario16ChildcareCapped(MoTanfScenarioTestCase):
     """$300 actual cost is capped at $175 → $109/month."""
 
     screen_id = 18
@@ -411,7 +373,7 @@ class TestScenario18ChildcareCapped(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario19MinimumPaymentFloorBoundary(MoTanfScenarioTestCase):
+class TestScenario17MinimumPaymentFloorBoundary(MoTanfScenarioTestCase):
     """A deficit of exactly $10 still pays → $10/month."""
 
     screen_id = 19
@@ -425,7 +387,7 @@ class TestScenario19MinimumPaymentFloorBoundary(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario20MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
+class TestScenario18MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
     """Accepted PE divergence (AC 31): a $9.33 deficit is below Missouri's $10 floor, so
     PolicyEngine suppresses the payment to $0, which is reported as not eligible."""
 
@@ -441,7 +403,7 @@ class TestScenario20MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
 
 @pytest.mark.integration
 @pytest.mark.skip(
-    reason="Blocked on MFB-1693, same shared-screener defect as Scenario 13: "
+    reason="Blocked on MFB-1693, same shared-screener defect as Scenario 11: "
     "the student child's $15,600/yr is more than half the household's income, so "
     "HouseholdMember.is_dependent() fails them on both the qualifying-child support test and "
     "the qualifying-relative threshold, and they are placed in a separate tax unit. The "
@@ -449,7 +411,7 @@ class TestScenario20MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
     "child's earnings correctly and returns the spec's $234/month for a single tax unit — "
     "verified live, with and without the student flags set."
 )
-class TestScenario21ChildStudentEarningsExcluded(MoTanfScenarioTestCase):
+class TestScenario19ChildStudentEarningsExcluded(MoTanfScenarioTestCase):
     """A full-time student child's $1,300/month is excluded at Gate 1 and in the grant,
     which is the only reason the household is not denied outright → $234/month."""
 
@@ -464,7 +426,7 @@ class TestScenario21ChildStudentEarningsExcluded(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario22TwoEarners(MoTanfScenarioTestCase):
+class TestScenario20TwoEarners(MoTanfScenarioTestCase):
     """The disregard runs per earner, not against combined earnings → $168/month."""
 
     screen_id = 22
@@ -481,7 +443,7 @@ class TestScenario22TwoEarners(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario23UnearnedIncome(MoTanfScenarioTestCase):
+class TestScenario21UnearnedIncome(MoTanfScenarioTestCase):
     """Unearned income gets no earned-income disregard → $34/month."""
 
     screen_id = 23
@@ -495,7 +457,7 @@ class TestScenario23UnearnedIncome(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario24SizeEightPaymentStandard(MoTanfScenarioTestCase):
+class TestScenario22SizeEightPaymentStandard(MoTanfScenarioTestCase):
     """Size-8 payment standard → $514/month."""
 
     screen_id = 24
@@ -509,7 +471,7 @@ class TestScenario24SizeEightPaymentStandard(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario25IncapacitatedCareDeduction(MoTanfScenarioTestCase):
+class TestScenario23IncapacitatedCareDeduction(MoTanfScenarioTestCase):
     """A reported dependentCare cost deducts at the $175 incapacitated-person tier."""
 
     screen_id = 25
@@ -525,7 +487,7 @@ class TestScenario25IncapacitatedCareDeduction(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario26NoDependentCareReported(MoTanfScenarioTestCase):
+class TestScenario24NoDependentCareReported(MoTanfScenarioTestCase):
     """No deduction is invented from a disability flag alone, so the same household with
     no reported cost is denied."""
 
@@ -541,7 +503,7 @@ class TestScenario26NoDependentCareReported(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario27UnderTwoChildcareCap(MoTanfScenarioTestCase):
+class TestScenario25UnderTwoChildcareCap(MoTanfScenarioTestCase):
     """A child under 2 uses the $200 cap, not $175 → $134/month."""
 
     screen_id = 27
@@ -556,7 +518,7 @@ class TestScenario27UnderTwoChildcareCap(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario28SelfEmploymentIsNetProfit(MoTanfScenarioTestCase):
+class TestScenario26SelfEmploymentIsNetProfit(MoTanfScenarioTestCase):
     """Reported self-employment is net profit and runs the same sequence as wages."""
 
     screen_id = 28
@@ -570,7 +532,7 @@ class TestScenario28SelfEmploymentIsNetProfit(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario29AggregateChildcareCap(MoTanfScenarioTestCase):
+class TestScenario27AggregateChildcareCap(MoTanfScenarioTestCase):
     """Per-child caps sum ($200 under-2 + $175 age-2-plus = $375), not one flat cap."""
 
     screen_id = 29
@@ -586,7 +548,7 @@ class TestScenario29AggregateChildcareCap(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario30ChildSupportReceived(MoTanfScenarioTestCase):
+class TestScenario28ChildSupportReceived(MoTanfScenarioTestCase):
     """Child support counts as unearned income at the reported amount → $203/month."""
 
     screen_id = 30
@@ -600,7 +562,7 @@ class TestScenario30ChildSupportReceived(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario31OwnGrantExcluded(MoTanfScenarioTestCase):
+class TestScenario29OwnGrantExcluded(MoTanfScenarioTestCase):
     """A current recipient's own TA grant is excluded from its own recalculation, so the
     result matches a recipient reporting no income → $234/month."""
 
@@ -615,7 +577,7 @@ class TestScenario31OwnGrantExcluded(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario32Gate1EqualityBoundary(MoTanfScenarioTestCase):
+class TestScenario30Gate1EqualityBoundary(MoTanfScenarioTestCase):
     """Accepted PE divergence (AC 31): strict regulation fails Gate 1 at exactly the
     Gross Max; PolicyEngine's formula-based ceiling passes it."""
 
@@ -631,7 +593,7 @@ class TestScenario32Gate1EqualityBoundary(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario33Gate2DeniesAfterRetry(MoTanfScenarioTestCase):
+class TestScenario31Gate2DeniesAfterRetry(MoTanfScenarioTestCase):
     """Gate 2 denies on its own even after the (9)(C)2) $30-plus-⅓ retry."""
 
     screen_id = 33
@@ -648,9 +610,14 @@ class TestScenario33Gate2DeniesAfterRetry(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario34NpcrSpouseOnSsi(MoTanfScenarioTestCase):
+class TestScenario32SsiSpouseExcluded(MoTanfScenarioTestCase):
     """An SSI spouse is excluded from the unit, leaving caretaker plus two grandchildren
-    at size 3 → $292/month."""
+    at size 3 → $292/month.
+
+    Pins the SSI exclusion on both axes at once: the spouse's $750/month stays out of
+    countable income *and* the spouse stays out of the need-unit size. Nothing here turns on
+    Missouri's NPCR rule, which PolicyEngine does not model (AC 20).
+    """
 
     screen_id = 34
 
@@ -665,10 +632,10 @@ class TestScenario34NpcrSpouseOnSsi(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
+class TestScenario33GenericCashAssistanceCounts(MoTanfScenarioTestCase):
     """Non-TANF cash assistance is ordinary unearned income → $34.
 
-    The mirror of Scenario 31, which proves the self-exclusion branch when the amount *is*
+    The mirror of Scenario 29, which proves the self-exclusion branch when the amount *is*
     the household's own MO TA grant. The two are told apart by the income type the household
     picks, not by the Current Benefits tile.
     """
@@ -684,7 +651,7 @@ class TestScenario35GenericCashAssistanceCounts(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-class TestScenario36AgeEighteenDependentChild(MoTanfScenarioTestCase):
+class TestScenario34AgeEighteenDependentChild(MoTanfScenarioTestCase):
     """An 18-year-old dependent child and their caretaker are both in the unit → $234/month.
 
     The only scenario that exercises the secondary-school assumption. Without it PolicyEngine
