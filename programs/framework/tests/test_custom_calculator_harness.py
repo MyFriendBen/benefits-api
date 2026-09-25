@@ -19,11 +19,11 @@ from screener.serializers import ScreenSerializer
 from programs.programs.testing_fixtures.custom_calculator import (
     CustomCalculatorTestCase,
     add_expense,
-    birth_year_month_for_age,
     add_income,
     add_insurance,
     hud_ami,
 )
+from programs.programs.testing_fixtures.households import birth_year_month_for_age
 
 
 class _Uninsured(ProgramCalculator):

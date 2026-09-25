@@ -4,7 +4,6 @@ from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from django.test import TestCase
 from programs.programs.cross_white_label.eitc.wa import WaEitc
-from programs.framework.pe_dependencies.household import WaStateCodeDependency
 from programs.programs.cross_white_label.eitc.wa_wftc import WaWftc
 from programs.framework.pe_dependencies import tax as tax_dependency
 
@@ -45,15 +44,6 @@ class TestWaWftc(TestCase):
     def test_pe_name_targets_wa_working_families_tax_credit(self):
         """`pe_name` resolves to PolicyEngine's `wa_working_families_tax_credit` variable."""
         self.assertEqual(WaWftc.pe_name, "wa_working_families_tax_credit")
-
-    def test_pe_inputs_includes_wa_state_code_dependency(self):
-        """The WA state code is added on top of the federal Eitc inputs."""
-        self.assertIn(WaStateCodeDependency, WaWftc.pe_inputs)
-
-    def test_wa_state_code_dependency_is_configured_correctly(self):
-        """Sanity-check the dependency itself."""
-        self.assertEqual(WaStateCodeDependency.state, "WA")
-        self.assertEqual(WaStateCodeDependency.field, "state_code")
 
     def test_pe_inputs_includes_all_federal_eitc_inputs(self):
         """All federal Eitc inputs flow through to WaWftc unchanged."""

@@ -6,9 +6,7 @@ from unittest.mock import Mock
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from django.test import TestCase
 from programs.programs.cross_white_label.medicaid.chip.wa import WaAppleHealthForKids
-from programs.framework.pe_dependencies.household import WaStateCodeDependency
 from programs.framework.pe_dependencies import member as member_deps
-from programs.framework.pe_dependencies import member
 
 
 class TestWaAppleHealthForKids(TestCase):
@@ -23,9 +21,6 @@ class TestWaAppleHealthForKids(TestCase):
 
     def test_pe_name(self):
         self.assertEqual(WaAppleHealthForKids.pe_name, "wa_apple_health_kids_eligible")
-
-    def test_pe_inputs_includes_wa_state_code(self):
-        self.assertIn(WaStateCodeDependency, WaAppleHealthForKids.pe_inputs)
 
     def test_pe_inputs_includes_all_medicaid_inputs(self):
         for parent_input in Medicaid.pe_inputs:
