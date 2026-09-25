@@ -1,7 +1,6 @@
 """IL tests."""
 
 from programs.programs.cross_white_label.msp.il import IlMsp
-from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from django.test import TestCase
 
@@ -21,7 +20,3 @@ class TestIlMsp(TestCase):
     def test_pe_name_is_msp(self):
         """Test that IlMsp has the correct pe_name for PolicyEngine API calls."""
         self.assertEqual(IlMsp.pe_name, "msp")
-
-    def test_pe_inputs_includes_il_state_code_dependency(self):
-        """Resolves the MSP asset-test-applies parameter, which is true for Illinois."""
-        self.assertIn(IlStateCodeDependency, IlMsp.pe_inputs)

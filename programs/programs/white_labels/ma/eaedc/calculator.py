@@ -25,5 +25,6 @@ class MaEaedc(PolicyEngineSpmCalulator):
         dependency.member.MaTotalHoursWorkedDependency,
         dependency.member.IsDisabledDependency,
         *Ssi.pe_inputs,
+        dependency.household.MaStateCodeDependency,
     ]
     pe_outputs = [dependency.spm.MaEaedc]

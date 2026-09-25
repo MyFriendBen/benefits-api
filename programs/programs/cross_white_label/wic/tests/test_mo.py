@@ -14,8 +14,6 @@ from programs.programs.cross_white_label.wic.base import Wic
 import programs.framework.pe_dependencies as dependency
 from programs.framework.pe_dependencies import member as member_deps
 from programs.framework.pe_dependencies.payload import pe_input
-from programs.framework.pe_dependencies import household
-from programs.framework.pe_dependencies import member
 
 
 class TestMoWicWiring(TestCase):
@@ -29,29 +27,6 @@ class TestMoWicWiring(TestCase):
         """Inherited from the federal calculator, which stays on the ungated ``wic`` — see
         ``Wic``."""
         self.assertEqual(MoWic.pe_name, "wic")
-
-    def test_adds_mo_state_code_dependency(self):
-        self.assertIn(MoStateCodeDependency, MoWic.pe_inputs)
-
-    def test_inherits_all_federal_pe_inputs(self):
-        for dep in Wic.pe_inputs:
-            self.assertIn(dep, MoWic.pe_inputs)
-
-    def test_inherits_the_wic_income_bundle(self):
-        """
-        Regression guard for WIC income-blindness.
-
-        WIC's income term reads ``gov.usda.wic.income.sources``, not the school-meals
-        aggregate the federal calculator used to send. Supplying none of those sources let PE
-        substitute an imputation and find the household categorically (adjunct) eligible, and
-        since ``is_wic_eligible`` is ``demographic & (income_test | categorical) &
-        nutritional_risk`` that alone returned WIC as eligible at any reported income.
-
-        What the bundle covers is asserted in ``federal/pe/tests/test_wic.py``; this only pins
-        that MO gets it.
-        """
-        for dep in dependency.wic_income:
-            self.assertIn(dep, MoWic.pe_inputs)
 
     def test_does_not_re_add_a_local_income_fix(self):
         """

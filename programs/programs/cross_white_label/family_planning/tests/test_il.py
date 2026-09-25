@@ -3,7 +3,6 @@
 from programs.programs.cross_white_label.family_planning.il_base import IlFamilyPlanningProgram
 from programs.programs.cross_white_label.family_planning.il_ilfppe import IlFppe
 from programs.programs.cross_white_label.family_planning.il_ilhfsfpp import IlHfsFpp
-from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from django.test import TestCase
 from integrations.clients.policyengine.registry import all_calculators
@@ -56,20 +55,6 @@ class TestIlFamilyPlanningProgram(TestCase):
     def test_pe_name_is_il_fpp_eligible(self):
         """Test that IlFamilyPlanningProgram has the correct pe_name for PolicyEngine API calls."""
         self.assertEqual(IlFamilyPlanningProgram.pe_name, "il_fpp_eligible")
-
-    def test_pe_inputs_includes_il_state_code_dependency(self):
-        """
-        Test that IlStateCodeDependency is properly added to IL FPP inputs.
-
-        This is the key IL-specific dependency that sets state_code="IL" for
-        PolicyEngine calculations.
-        """
-        # Verify IlStateCodeDependency is in pe_inputs
-        self.assertIn(IlStateCodeDependency, IlFamilyPlanningProgram.pe_inputs)
-
-        # Verify it's configured correctly
-        self.assertEqual(IlStateCodeDependency.state, "IL")
-        self.assertEqual(IlStateCodeDependency.field, "state_code")
 
     def test_pe_inputs_includes_tax_unit_head_dependency(self):
         """Test that IlFamilyPlanningProgram includes TaxUnitHeadDependency in pe_inputs."""

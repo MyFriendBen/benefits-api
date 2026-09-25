@@ -123,6 +123,11 @@ Helpers live in `programs/programs/testing_fixtures/pe_integration.py`; the harn
 
 The harness sits in `framework/` rather than with the PolicyEngine client because it builds `Screen`s and runs calculators. `integrations/clients/policyengine/` is the wire layer only — the POST, the token cache, version resolution — and holds no cassettes.
 
+**State variants share one contract test.** A state's subclass of a federal calculator
+(`CoLifeline`, `TxSnap`) keeps its base's inputs and sends its own state code;
+`programs/framework/tests/test_state_variant_contract.py` asserts that over the registry.
+Test what the state *adds* beside the variant, not the inheritance.
+
 **A program's own tests and cassettes live next to the program**, not here: `programs/programs/{state}/{program}/tests/` with a `cassettes/` directory beside them. `conftest.py` derives `cassette_library_dir` from each test file's own directory, so a test and its cassettes always travel together.
 
 ### Writing one
@@ -197,8 +202,8 @@ Anything a *failing* test records is discarded on teardown — the cassette is r
 
 A custom calculator computes locally, so its tests need no cassette and no network — a
 household, a `Program` row, and an assertion. `programs/programs/testing_fixtures/custom_calculator.py`
-supplies the household builders and a base test case, paralleling `pe_integration.py` on
-the PolicyEngine side.
+supplies a base test case, paralleling `pe_integration.py` on the PolicyEngine side. Both
+build households with the same builders, from `testing_fixtures/households.py`.
 
 ### The base test case
 
@@ -310,6 +315,12 @@ already building a DB household by hand, not on principle.
 | `add_expense(member, amount, expense_type="rent")` | an expense, for programs that net it out of income |
 | `add_insurance(member, medicaid=True, none=False)` | replaces the member's insurance. Name only what the scenario needs |
 | `make_program(white_label_code, name_abbreviated, year)` | the `Program` row. A calculator reading `self.program.year.period` fails on an unsaved one |
+
+`pe_integration.make_screen`/`add_member` are these same builders with the primary key
+required, and with `screener_defaults=False`: the committed cassettes were recorded from
+members without the checkbox defaults, birth month or `Insurance` row, and the request
+body they match on changes with any of them. Turning the defaults on for PolicyEngine
+tests means re-recording their cassettes.
 
 ### Gating on another program
 

@@ -1,7 +1,6 @@
 """KS tests."""
 
 from programs.programs.cross_white_label.msp.ks import KsMsp
-from programs.framework.pe_dependencies.household import KsStateCodeDependency
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.test import TestCase
 from programs.framework.pe_dependencies import member as member_deps
@@ -21,10 +20,6 @@ class TestKsMspWiring(TestCase):
 
     def test_pe_name_is_msp(self):
         self.assertEqual(KsMsp.pe_name, "msp")
-
-    def test_pe_inputs_includes_ks_state_code(self):
-        """Resolves the MSP asset-test-applies parameter, which is true for Kansas."""
-        self.assertIn(KsStateCodeDependency, KsMsp.pe_inputs)
 
     def test_pe_inputs_includes_medicaid_inputs(self):
         """MSP needs *Medicaid.pe_inputs for the QI ~is_medicaid_eligible check and for the

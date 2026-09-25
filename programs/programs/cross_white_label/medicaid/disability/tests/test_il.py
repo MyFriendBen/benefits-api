@@ -2,13 +2,11 @@
 
 from programs.programs.cross_white_label.medicaid.disability.il_aabd import IlAabd
 from programs.programs.cross_white_label.medicaid.disability.il_hbwd import IlHbwd
-from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from django.test import TestCase
 from programs.framework.pe_dependencies import member as member_dependency
-from programs.framework.pe_dependencies import member
 
 HBWD_ELIGIBLE_VALUE = 1
 
@@ -23,10 +21,6 @@ class TestIlAabd(TestCase):
     def test_pe_name_is_il_aabd_person(self):
         """Test that IlAabd has the correct pe_name."""
         self.assertEqual(IlAabd.pe_name, "il_aabd_person")
-
-    def test_pe_inputs_includes_il_state_code_dependency(self):
-        """Test that IlStateCodeDependency is in pe_inputs."""
-        self.assertIn(IlStateCodeDependency, IlAabd.pe_inputs)
 
     def test_pe_inputs_includes_age_dependency(self):
         """Test that AgeDependency is in pe_inputs."""
@@ -60,10 +54,6 @@ class TestIlHbwd(TestCase):
     def test_pe_name_is_il_hbwd_person(self):
         """Test that IlHbwd has the correct pe_name."""
         self.assertEqual(IlHbwd.pe_name, "il_hbwd_person")
-
-    def test_pe_inputs_includes_il_state_code_dependency(self):
-        """Test that IlStateCodeDependency is in pe_inputs."""
-        self.assertIn(IlStateCodeDependency, IlHbwd.pe_inputs)
 
     def test_pe_inputs_includes_age_dependency(self):
         """Test that AgeDependency is in pe_inputs (for age 16-64 requirement)."""

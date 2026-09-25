@@ -36,9 +36,6 @@ class TestKsAcaWiring(TestCase):
     def test_pe_outputs_unchanged_from_federal(self):
         self.assertEqual(KsAca.pe_outputs, Aca.pe_outputs)
 
-    def test_sends_ks_state_code(self):
-        self.assertIn(dependency.household.KsStateCodeDependency, KsAca.pe_inputs)
-
     def test_sends_county(self):
         """PolicyEngine keys the benchmark premium (SLCSP) off ``county_str``, not
         ``zip_code``: ``slcsp_rating_area_default`` looks the county token up in
@@ -52,11 +49,6 @@ class TestKsAcaWiring(TestCase):
         send ``has_esi``; without it a household with job-based coverage scores eligible for
         the full credit."""
         self.assertIn(dependency.member.HasEsiDependency, KsAca.pe_inputs)
-
-    def test_preserves_every_federal_input(self):
-        """KS adds inputs, it never drops one."""
-        for federal_input in Aca.pe_inputs:
-            self.assertIn(federal_input, KsAca.pe_inputs)
 
     def test_adds_exactly_the_three_ks_inputs(self):
         added = [dep for dep in KsAca.pe_inputs if dep not in Aca.pe_inputs]

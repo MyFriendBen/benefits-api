@@ -1,13 +1,11 @@
 """IL tests."""
 
 from programs.programs.cross_white_label.medicaid.presumptive.il import IlMpe
-from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from django.test import TestCase
 from programs.framework.pe_dependencies import member as member_dependency
-from programs.framework.pe_dependencies import member
 
 
 class TestIlMpe(TestCase):
@@ -24,10 +22,6 @@ class TestIlMpe(TestCase):
     def test_pe_category_is_people(self):
         """Test that pe_category is set to 'people'."""
         self.assertEqual(IlMpe.pe_category, "people")
-
-    def test_pe_inputs_includes_il_state_code_dependency(self):
-        """Test that IlStateCodeDependency is in pe_inputs."""
-        self.assertIn(IlStateCodeDependency, IlMpe.pe_inputs)
 
     def test_pe_inputs_includes_pregnancy_dependency(self):
         """Test that PregnancyDependency is in pe_inputs."""
