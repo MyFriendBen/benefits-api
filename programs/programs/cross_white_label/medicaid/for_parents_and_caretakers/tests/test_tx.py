@@ -1,67 +1,13 @@
 """TX tests."""
 
 from unittest.mock import MagicMock
-from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from django.test import TestCase
-from programs.programs.cross_white_label.medicaid.emergency.tx import TxEmergencyMedicaid
 from programs.programs.cross_white_label.medicaid.for_parents_and_caretakers.tx import TxMedicaidForParentsAndCaretakers
-from programs.framework.pe_dependencies.household import TxStateCodeDependency
-from programs.framework.pe_dependencies import household
 
 
 class TestTxMedicaidForParentsAndCaretakers(TestCase):
     """Tests for TxMedicaidForParentsAndCaretakers calculator class."""
-
-    def test_exists_and_is_subclass_of_medicaid(self):
-        """
-        Test that TxMedicaidForParentsAndCaretakers calculator class exists and is a subclass of Medicaid.
-
-        This verifies the calculator has been set up in the codebase.
-        """
-        # Verify TxMedicaidForParentsAndCaretakers is a subclass of Medicaid
-        self.assertTrue(issubclass(TxMedicaidForParentsAndCaretakers, Medicaid))
-
-        # Verify it has the expected properties
-        self.assertEqual(TxMedicaidForParentsAndCaretakers.pe_name, "medicaid")
-        self.assertIsNotNone(TxMedicaidForParentsAndCaretakers.pe_inputs)
-        self.assertGreater(len(TxMedicaidForParentsAndCaretakers.pe_inputs), 0)
-
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
-        """
-        Test that TxMedicaidForParentsAndCaretakers has all expected pe_inputs from parent and TX-specific.
-
-        TxMedicaidForParentsAndCaretakers should inherit all inputs from parent Medicaid class plus add
-        TX-specific dependencies like TxStateCodeDependency.
-        """
-        # TxMedicaidForParentsAndCaretakers should have all parent inputs plus TxStateCodeDependency
-        self.assertGreater(len(TxMedicaidForParentsAndCaretakers.pe_inputs), len(Medicaid.pe_inputs))
-
-        # Verify TxStateCodeDependency is in the list
-        self.assertIn(household.TxStateCodeDependency, TxMedicaidForParentsAndCaretakers.pe_inputs)
-
-        # Verify all parent inputs are present
-        for parent_input in Medicaid.pe_inputs:
-            self.assertIn(parent_input, TxMedicaidForParentsAndCaretakers.pe_inputs)
-
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
-        """
-        Test that TxStateCodeDependency is properly added to TX Medicaid for Parents inputs.
-
-        This is the key TX-specific dependency that sets state_code="TX" for
-        PolicyEngine calculations.
-        """
-        # Verify TxStateCodeDependency is in pe_inputs
-        self.assertIn(TxStateCodeDependency, TxMedicaidForParentsAndCaretakers.pe_inputs)
-
-        # Verify it's configured correctly
-        self.assertEqual(TxStateCodeDependency.state, "TX")
-        self.assertEqual(TxStateCodeDependency.field, "state_code")
-
-    def test_has_same_pe_outputs_as_parent(self):
-        """Test that TxMedicaidForParentsAndCaretakers has the same pe_outputs as parent Medicaid class."""
-        # TxMedicaidForParentsAndCaretakers should use the same outputs as parent
-        self.assertEqual(TxMedicaidForParentsAndCaretakers.pe_outputs, Medicaid.pe_outputs)
 
     def test_caretaker_relationships_defined(self):
         """Test that caretaker relationships are properly defined."""

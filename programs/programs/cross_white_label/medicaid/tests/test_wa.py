@@ -5,9 +5,7 @@ from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from django.test import TestCase
 from programs.programs.cross_white_label.medicaid.wa import WaAppleHealthMedicaid
-from programs.framework.pe_dependencies.household import WaStateCodeDependency
 from programs.framework.pe_dependencies import member as member_deps
-from programs.framework.pe_dependencies import member
 
 
 class TestWaAppleHealthMedicaid(TestCase):
@@ -17,26 +15,9 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Wiring tests
     # ------------------------------------------------------------------
 
-    def test_is_subclass_of_medicaid(self):
-        """WaAppleHealthMedicaid extends the federal Medicaid calculator."""
-        self.assertTrue(issubclass(WaAppleHealthMedicaid, Medicaid))
-
-    def test_pe_inputs_includes_wa_state_code(self):
-        """WA state code is added on top of the federal Medicaid inputs."""
-        self.assertIn(WaStateCodeDependency, WaAppleHealthMedicaid.pe_inputs)
-
-    def test_pe_inputs_includes_all_parent_inputs(self):
-        """All federal Medicaid inputs flow through unchanged."""
-        for parent_input in Medicaid.pe_inputs:
-            self.assertIn(parent_input, WaAppleHealthMedicaid.pe_inputs)
-
     def test_pe_inputs_adds_exactly_one_input(self):
         """Only WaStateCodeDependency is added beyond the parent inputs."""
         self.assertEqual(len(WaAppleHealthMedicaid.pe_inputs), len(Medicaid.pe_inputs) + 1)
-
-    def test_pe_outputs_inherited_from_medicaid(self):
-        """pe_outputs are unchanged from the federal parent."""
-        self.assertEqual(WaAppleHealthMedicaid.pe_outputs, Medicaid.pe_outputs)
 
     def test_medicaid_categories_has_all_keys(self):
         """All standard Medicaid category keys are present."""

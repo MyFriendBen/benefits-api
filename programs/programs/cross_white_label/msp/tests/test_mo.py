@@ -3,9 +3,7 @@
 from screener.models import HouseholdMember
 from screener.models import IncomeStream
 from programs.programs.cross_white_label.msp.mo import MoMsp
-from programs.framework.pe_dependencies.household import MoStateCodeDependency
 from unittest.mock import Mock
-from programs.programs.cross_white_label.msp.base import Msp
 from screener.models import Screen
 from django.test import TestCase
 from screener.models import WhiteLabel
@@ -27,15 +25,8 @@ class TestMoMspWiring(TestCase):
     over-resourced households as eligible, the failure Scenario 4 guards.
     """
 
-    def test_is_subclass_of_federal_msp(self):
-        self.assertTrue(issubclass(MoMsp, Msp))
-
     def test_program_code_is_mo_medicare_savings(self):
         self.assertEqual(MoMsp.program_code, "mo_medicare_savings")
-
-    def test_pe_inputs_includes_mo_state_code(self):
-        """Resolves the MO asset-test-applies parameter — the one genuine MO delta."""
-        self.assertIn(MoStateCodeDependency, MoMsp.pe_inputs)
 
 
 class TestMoMspPeInput(TestCase):

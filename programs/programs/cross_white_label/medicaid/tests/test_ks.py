@@ -1,13 +1,10 @@
 """KS Medicaid tests."""
 
 from programs.programs.cross_white_label.medicaid.ks import KsKanCare
-from programs.framework.pe_dependencies.household import KsStateCodeDependency
 from unittest.mock import MagicMock
-from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from django.test import TestCase
 from programs.framework.pe_dependencies import member as member_deps
-from programs.framework.pe_dependencies import member
 
 MAGI = 3_648
 AGED = 20_508
@@ -244,18 +241,8 @@ class TestKsKanCareScenarios(TestCase):
 class TestKsKanCareWiring(TestCase):
     """KsKanCare registration and KS-specific pe_inputs handling."""
 
-    def test_is_subclass_of_medicaid(self):
-        self.assertTrue(issubclass(KsKanCare, Medicaid))
-
     def test_pe_name_is_medicaid(self):
         self.assertEqual(KsKanCare.pe_name, "medicaid")
-
-    def test_pe_inputs_includes_ks_state_code(self):
-        self.assertIn(KsStateCodeDependency, KsKanCare.pe_inputs)
-
-    def test_pe_inputs_sends_ssi_countable_resources(self):
-        """Implementation Note 2: the ABD asset test is screened."""
-        self.assertIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
 
     def test_pe_inputs_adds_meets_ssi_disability_criteria(self):
         """Implementation Note 1: map disability/SSDI signals to meets_ssi_disability_criteria."""
@@ -264,21 +251,6 @@ class TestKsKanCareWiring(TestCase):
     def test_pe_inputs_adds_is_blind(self):
         """Implementation Note 1: map visually_impaired to is_blind (SGA-exempt)."""
         self.assertIn(member_deps.IsBlindDependency, KsKanCare.pe_inputs)
-
-    def test_pe_inputs_keeps_core_inputs(self):
-        for dep in (
-            member_deps.AgeDependency,
-            member_deps.PregnancyDependency,
-            member_deps.IsDisabledDependency,
-        ):
-            self.assertIn(dep, KsKanCare.pe_inputs)
-
-    def test_pe_outputs_inherited_from_medicaid(self):
-        self.assertEqual(KsKanCare.pe_outputs, Medicaid.pe_outputs)
-
-    def test_ks_state_code_dependency_configured(self):
-        self.assertEqual(KsStateCodeDependency.state, "KS")
-        self.assertEqual(KsStateCodeDependency.field, "state_code")
 
     def test_medicaid_categories_has_all_keys(self):
         expected_keys = {

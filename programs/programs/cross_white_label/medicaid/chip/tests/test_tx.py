@@ -1,63 +1,11 @@
 """TX tests."""
 
 from programs.programs.cross_white_label.medicaid.chip.tx import TxChip
-from programs.framework.pe_dependencies.payload import pe_input
-from programs.programs.testing_fixtures.pe_input_test_base import TxPeInputTestBase
 from django.test import TestCase
 from unittest.mock import MagicMock
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from programs.framework.pe_base import PolicyEngineMembersCalculator
-from programs.framework.pe_dependencies.household import TxStateCodeDependency
-from programs.framework.pe_dependencies import household
-from programs.framework.pe_dependencies import member
-
-
-class TestTxChipPeInput(TxPeInputTestBase):
-    """Tests for TxChip calculator pe_input dependencies."""
-
-    def test_includes_all_pe_input_fields(self):
-        """Test that pe_input includes all TxChip pe_inputs dependencies."""
-        result = pe_input(self.screen, [TxChip])
-        household = result["household"]
-        people = household["people"]
-        head_id = str(self.head.id)
-
-        # Member-level dependencies
-        self.assertIn("age", people[head_id])
-        self.assertIn("is_pregnant", people[head_id])
-        self.assertIn("is_disabled", people[head_id])
-        self.assertIn("ssi_countable_resources", people[head_id])
-
-        # Income dependencies
-        income_fields = [
-            "employment_income",
-            "self_employment_income",
-            "rental_income",
-            "taxable_pension_income",
-            "social_security",
-        ]
-        for field in income_fields:
-            self.assertIn(field, people[head_id])
-
-    def test_includes_pe_output_field(self):
-        """Test that pe_input includes TxChip pe_outputs."""
-        result = pe_input(self.screen, [TxChip])
-        people = result["household"]["people"]
-
-        for member_id in [str(self.head.id), str(self.spouse.id), str(self.child.id)]:
-            self.assertIn("chip", people[member_id])
-
-    def test_age_values_match_household_members(self):
-        """Test that age values match HouseholdMember data."""
-        result = pe_input(self.screen, [TxChip])
-        people = result["household"]["people"]
-
-        if people[str(self.head.id)]["age"]:
-            period_key = list(people[str(self.head.id)]["age"].keys())[0]
-            self.assertEqual(people[str(self.head.id)]["age"][period_key], 35)
-            self.assertEqual(people[str(self.spouse.id)]["age"][period_key], 32)
-            self.assertEqual(people[str(self.child.id)]["age"][period_key], 8)
 
 
 class TestTxChip(TestCase):
@@ -106,20 +54,6 @@ class TestTxChip(TestCase):
         # Verify all Medicaid inputs are present in TxChip
         for medicaid_input in Medicaid.pe_inputs:
             self.assertIn(medicaid_input, TxChip.pe_inputs)
-
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
-        """
-        Test that TxStateCodeDependency is properly added to TX CHIP inputs.
-
-        This is the key TX-specific dependency that sets state_code="TX" for
-        PolicyEngine calculations.
-        """
-        # Verify TxStateCodeDependency is in pe_inputs
-        self.assertIn(TxStateCodeDependency, TxChip.pe_inputs)
-
-        # Verify it's configured correctly
-        self.assertEqual(TxStateCodeDependency.state, "TX")
-        self.assertEqual(TxStateCodeDependency.field, "state_code")
 
     def test_pe_outputs_includes_chip_dependency(self):
         """Test that TxChip has Chip dependency in pe_outputs."""

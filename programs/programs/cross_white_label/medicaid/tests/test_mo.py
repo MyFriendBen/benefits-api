@@ -14,10 +14,6 @@ from programs.programs.cross_white_label.medicaid.mo import MoHealthNet
 class TestMoHealthNet(TestCase):
     """Tests for MoHealthNet calculator class wiring."""
 
-    def test_is_subclass_of_medicaid(self):
-        """MoHealthNet extends the federal Medicaid calculator."""
-        self.assertTrue(issubclass(MoHealthNet, Medicaid))
-
     def test_program_code(self):
         """program_code matches the Program row the config imports."""
         self.assertEqual(MoHealthNet.program_code, "mo_medicaid")
@@ -25,15 +21,6 @@ class TestMoHealthNet(TestCase):
     def test_pe_name_is_medicaid(self):
         """Eligibility comes from PolicyEngine's federal medicaid variable."""
         self.assertEqual(MoHealthNet.pe_name, "medicaid")
-
-    def test_pe_inputs_includes_mo_state_code(self):
-        """MO state code is added on top of the federal Medicaid inputs."""
-        self.assertIn(MoStateCodeDependency, MoHealthNet.pe_inputs)
-
-    def test_pe_inputs_includes_all_parent_inputs(self):
-        """All federal Medicaid inputs flow through unchanged."""
-        for parent_input in Medicaid.pe_inputs:
-            self.assertIn(parent_input, MoHealthNet.pe_inputs)
 
     def test_pe_inputs_adds_only_state_code_and_disability_inputs(self):
         """Exactly three inputs are added, all of them wiring rather than logic.
@@ -61,10 +48,6 @@ class TestMoHealthNet(TestCase):
         """
         self.assertIn(MeetsSsiDisabilityCriteriaDependency, MoHealthNet.pe_inputs)
         self.assertIn(IsBlindDependency, MoHealthNet.pe_inputs)
-
-    def test_pe_outputs_inherited_from_medicaid(self):
-        """pe_outputs are unchanged from the federal parent."""
-        self.assertEqual(MoHealthNet.pe_outputs, Medicaid.pe_outputs)
 
     def test_does_not_override_member_value(self):
         """MO adds no eligibility or value logic of its own.

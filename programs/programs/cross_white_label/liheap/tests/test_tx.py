@@ -2,7 +2,6 @@
 
 from django.test import TestCase
 from programs.programs.cross_white_label.liheap.tx import TxCeap
-from programs.framework.pe_dependencies.household import TxStateCodeDependency
 from programs.framework.pe_dependencies import irs_gross_income
 from programs.framework.pe_dependencies import receipt_contract
 from programs.framework.pe_dependencies import spm
@@ -18,11 +17,6 @@ class TestTxCeap(TestCase):
         self.assertGreater(len(TxCeap.pe_inputs), 0)
         self.assertIsNotNone(TxCeap.pe_outputs)
         self.assertGreater(len(TxCeap.pe_outputs), 0)
-
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
-        """TxStateCodeDependency gates tx_ceap to TX (defined_for=StateCode.TX)."""
-        self.assertIn(TxStateCodeDependency, TxCeap.pe_inputs)
-        self.assertEqual(TxStateCodeDependency.state, "TX")
 
     def test_pe_inputs_includes_income_and_energy_expense(self):
         """

@@ -48,8 +48,9 @@ from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
 from programs.util import Dependencies
-from programs.programs.testing_fixtures.households import add_income, make_program
-from screener.models import HouseholdMember, Screen, WhiteLabel
+from programs.programs.testing_fixtures import households
+from programs.programs.testing_fixtures.households import add_income, make_program  # noqa: F401 -- re-exports
+from screener.models import HouseholdMember, Screen
 
 from integrations.clients.policyengine.engines import _PE_TOKEN_CACHE_KEY, PrivateApiSim
 from programs.framework.pe_dependencies.payload import pe_input
@@ -128,45 +129,31 @@ def make_screen(
     white_label_code: str,
     state_code: str,
     household_size: int,
-    zipcode: str = "",
-    county: str = "",
-    household_assets: int = 0,
     **kwargs,
 ) -> Screen:
-    """Create a Screen with an explicit primary key.
+    """`households.make_screen` with an explicit primary key.
 
     ``screen_id`` is explicit for the same reason member ids are: a cassette is only
     replayable when the household it was recorded from can be rebuilt exactly.
     """
-    white_label, _ = WhiteLabel.objects.get_or_create(
-        code=white_label_code,
-        defaults={"name": white_label_code.upper(), "state_code": state_code},
-    )
-
-    return Screen.objects.create(
-        id=screen_id,
-        white_label=white_label,
-        zipcode=zipcode,
-        county=county,
+    return households.make_screen(
+        white_label_code=white_label_code,
+        state_code=state_code,
         household_size=household_size,
-        household_assets=household_assets,
-        completed=False,
+        id=screen_id,
         **kwargs,
     )
 
 
 def add_member(screen: Screen, member_id: int, relationship: str, age: int, **kwargs) -> HouseholdMember:
-    """Add a household member with an explicit primary key.
+    """`households.add_member` with an explicit primary key.
 
     The id becomes the key for this member in both the PolicyEngine request and response, so
-    it is part of the cassette's contract — never let it be auto-assigned.
+    it is part of the cassette's contract — never let it be auto-assigned. Screener defaults are
+    off because the committed cassettes were recorded without them.
     """
-    return HouseholdMember.objects.create(
-        id=member_id,
-        screen=screen,
-        relationship=relationship,
-        age=age,
-        **kwargs,
+    return households.add_member(
+        screen, relationship=relationship, age=age, id=member_id, screener_defaults=False, **kwargs
     )
 
 

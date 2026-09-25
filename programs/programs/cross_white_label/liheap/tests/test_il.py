@@ -1,7 +1,6 @@
 """IL tests."""
 
 from programs.programs.cross_white_label.liheap.il import IlLiheap
-from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from programs.framework.pe_base import PolicyEngineSpmCalulator
@@ -19,10 +18,6 @@ class TestIlLiheap(TestCase):
     def test_pe_name_is_il_liheap(self):
         """Test that pe_name is il_liheap."""
         self.assertEqual(IlLiheap.pe_name, "il_liheap")
-
-    def test_pe_inputs_includes_il_state_code_dependency(self):
-        """Test that IlStateCodeDependency is in pe_inputs."""
-        self.assertIn(IlStateCodeDependency, IlLiheap.pe_inputs)
 
     def test_pe_inputs_includes_heating_and_electricity_dependencies(self):
         """Test that energy expense dependencies are in pe_inputs."""

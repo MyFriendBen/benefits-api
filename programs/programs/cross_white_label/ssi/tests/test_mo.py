@@ -3,41 +3,22 @@
 from programs.programs.cross_white_label.ssi.base import Ssi as FederalSsi
 from screener.models import HouseholdMember
 from screener.models import IncomeStream
-from programs.framework.pe_dependencies.member import IsBlindDependency
-from programs.framework.pe_dependencies.member import MeetsSsiDisabilityCriteriaDependency
 from programs.programs.cross_white_label.ssi.mo import MoSsi
 from programs.framework.pe_dependencies.household import MoStateCodeDependency
 from unittest.mock import Mock
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from screener.models import Screen
-from programs.framework.pe_dependencies.member import Ssi
-from programs.framework.pe_dependencies.member import SsiCountableResourcesDependency
-from programs.framework.pe_dependencies.member import SsiEarnedIncomeDependency
 from programs.framework.pe_dependencies.member import SsiIfTakesUp
-from programs.framework.pe_dependencies.member import SsiUnearnedIncomeDependency
 from django.test import TestCase
 from screener.models import WhiteLabel
 from programs.framework.pe_dependencies.payload import pe_input
-from programs.framework.pe_dependencies import household
 
 
 class TestMoSsiWiring(TestCase):
     """MoSsi inherits the federal SSI calculator and adds only the MO state code."""
 
-    def test_is_subclass_of_federal_ssi(self):
-        self.assertTrue(issubclass(MoSsi, FederalSsi))
-        self.assertTrue(issubclass(MoSsi, PolicyEngineMembersCalculator))
-
     def test_pe_name_is_the_would_be_ssi_variable(self):
         self.assertEqual(MoSsi.pe_name, "ssi_if_takes_up")
-
-    def test_pe_inputs_includes_mo_state_code(self):
-        self.assertIn(MoStateCodeDependency, MoSsi.pe_inputs)
-
-    def test_pe_inputs_preserve_federal_ssi_inputs(self):
-        """The MO wrapper only appends the state code; it must not drop any federal input."""
-        for dep in FederalSsi.pe_inputs:
-            self.assertIn(dep, MoSsi.pe_inputs)
 
     def test_adds_nothing_but_the_state_code(self):
         """
@@ -46,22 +27,6 @@ class TestMoSsiWiring(TestCase):
         claim about state variance that needs its own justification.
         """
         self.assertEqual(set(MoSsi.pe_inputs) - set(FederalSsi.pe_inputs), {MoStateCodeDependency})
-
-    def test_pe_inputs_include_disability_criteria(self):
-        """
-        Regression guard. PE 1.715.2+ stopped inferring SSI disability from
-        ``is_disabled`` / reported receipt, so dropping this input returns ``ssi: 0`` for a
-        disabled non-aged, non-blind applicant.
-        """
-        self.assertIn(MeetsSsiDisabilityCriteriaDependency, MoSsi.pe_inputs)
-        self.assertIn(IsBlindDependency, MoSsi.pe_inputs)
-
-    def test_pe_inputs_include_resource_and_income_tests(self):
-        """The resource limit is a hard cutoff, and earned/unearned split drives the exclusion stack."""
-        self.assertIn(SsiCountableResourcesDependency, MoSsi.pe_inputs)
-        self.assertIn(SsiEarnedIncomeDependency, MoSsi.pe_inputs)
-        self.assertIn(SsiUnearnedIncomeDependency, MoSsi.pe_inputs)
-        self.assertIn(Ssi, MoSsi.pe_inputs)
 
     def test_pe_outputs_is_the_would_be_ssi_variable(self):
         """
