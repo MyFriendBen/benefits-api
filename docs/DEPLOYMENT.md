@@ -885,3 +885,45 @@ If you need to regenerate the `TRANSLATIONS_REPO_TOKEN`:
 - **Heroku logs**: `heroku logs --tail -a cobenefits-api`
 - **Team discussion**: Post in Slack #deployments channel
 - **File issue**: `gh issue create`
+
+## Annual: rolling programs onto the new poverty guidelines
+
+HHS publishes new poverty guidelines each January. Nothing rolls programs onto them
+automatically, and the failure is silent — a program left on the old edition keeps
+returning a plausible number that is quietly wrong, and no test catches it because no test
+sees a live database.
+
+**1. Add the year to the constant.** `_FPL_DEFAULTS` in `programs/models.py`. Until this
+lands, nothing can be moved to the new edition, and `programs/vintage_tests.py` fails on
+`test_fpl_defaults_covers_the_current_calendar_year` from 1 January — which is the reminder.
+
+**2. Deploy.** `sync_fpl_values` runs on every release and materialises the new year into
+`FederalPovertyLimitValue`, which is what the analytics bands read. It does *not* create a
+`FederalPoveryLimit` row or move any program.
+
+**3. Create the `FederalPoveryLimit` row**, with `year` and `period` both set to the new
+year. They must match: production carries a legacy row whose `year` is `2022` and whose
+`period` resolves to `2024`, and anything selecting by label alone lands on the wrong
+edition.
+
+**4. Decide per program, and record it.** Do not roll everything forward. Several programs
+are deliberately on an older edition because the agency administering them is — ACA
+marketplace subsidies are adjudicated against the guideline in effect when open enrollment
+opened, weatherization follows the Department of Energy's effective-date lag, and Illinois'
+CBRAP uses a per-round parameter. `programs/vintage.py` records which, and why. A program
+absent from that map is one nobody has researched, not one that is fine.
+
+**5. Check what actually happened.**
+
+```bash
+heroku run -a cobenefits-api "python manage.py audit_program_vintage"
+```
+
+Reports any program whose edition disagrees with the recorded intent, has no year set, or
+has no recorded intent. `--check` exits non-zero so it can gate something; the deploy runs
+it report-only with `--ignore-unmapped`.
+
+A program with **no year at all** is the case to treat as urgent rather than untidy. For a
+PolicyEngine program `pe_period` raises, `can_calc()` does not filter it out, and the
+exception escapes both handlers in `calc_pe_eligibility` to reach an unguarded view — so one
+misconfigured program returns a 500 for every program on the screen, not just its own.

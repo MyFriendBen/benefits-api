@@ -69,6 +69,24 @@ runs:
           exit $STATUS
         fi
 
+    - name: Audit program vintages
+      id: vintage-audit
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        # Reports programs whose configured FPL edition disagrees with the intent recorded
+        # in programs/vintage.py, have no year set, or have no recorded intent at all. A
+        # unit test cannot do this: 72 of the rows found behind an edition have no config
+        # JSON, so the database is the only place their edition exists.
+        #
+        # Report-only for now (no --check, `|| true`). Pre-existing drift would otherwise
+        # block every unrelated deploy, and most rows are still unresearched. Once the
+        # classification is finished this becomes `--check` and the step fails.
+        echo "Auditing program vintages..."
+        heroku run --exit-code -a ${{ inputs.heroku-app-name }} \
+          "python manage.py audit_program_vintage --ignore-unmapped" 2>&1 || true
+
     - name: Sync feature flags
       id: feature-flags
       shell: bash

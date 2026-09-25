@@ -263,3 +263,16 @@
 
 * [https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp)](https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp))
 * [https://agr.wa.gov/services/food-access/hunger-relief-agency-hub/csfp/csfp-plan/section-2](https://agr.wa.gov/services/food-access/hunger-relief-agency-hub/csfp/csfp-plan/section-2)
+
+## Note: the 150% limit is federal; Texas alone is on 130%
+
+The 150% limit matches PolicyEngine's federal parameter, `gov.usda.csfp.fpg_limit` (1.3 from
+2024, 1.5 from 1 January 2025). Texas is the one exception: PolicyEngine routes TX through
+its own `tx_dta_csfp_income_eligible` test at 130%. So a 130% boundary observed at request
+period 2026 (130% × $15,960 = $20,748/year for a single senior; the probe bisects to $12 and
+landed at $20,753, within that resolution) is the Texas rule, not a disagreement with this
+spec. Verify per state with `qa/MFB-1786-csfp-limit-probe.py`.
+
+**Data gap:** the vintage is stated inconsistently within this spec. The boundary scenarios
+describe $23,475 as 150% of the 2026 guidelines in one place and of the 2025 guidelines in
+another. $23,475 is 150% of the 2025 guideline; the 2026 equivalent is $23,940.
