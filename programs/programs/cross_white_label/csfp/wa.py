@@ -35,7 +35,8 @@ class WaCsfp(ProgramCalculator):
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
-        e.condition(member.calc_age() is not None and member.calc_age() >= self.min_age)
+        age = member.calc_age()
+        e.condition(age is not None and age >= self.min_age)
 
     def household_eligible(self, e: Eligibility):
         e.condition(

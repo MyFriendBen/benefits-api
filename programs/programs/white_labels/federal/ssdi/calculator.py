@@ -37,8 +37,9 @@ class Ssdi(ProgramCalculator):
         e.condition(member_income < income_limit)
 
         # age
-        e.condition(member.calc_age() >= Ssdi.min_age or self._child_eligible(member))
-        e.condition(member.calc_age() <= Ssdi.max_age)
+        age = member.calc_age()
+        e.condition(age >= Ssdi.min_age or self._child_eligible(member))
+        e.condition(age <= Ssdi.max_age)
 
         if e.eligible:
             self.eligible_members.append(member)

@@ -87,7 +87,8 @@ class TxHcv(ProgramCalculator):
         for member in self.screen.household_members.all():
             if member.relationship == "fosterChild":
                 continue
-            if member.calc_age() is not None and member.calc_age() < 18:
+            age = member.calc_age()
+            if age is not None and age < 18:
                 total += member.calc_gross_income("yearly", ["unearned"])
             else:
                 total += member.calc_gross_income("yearly", ["all"])
@@ -108,10 +109,11 @@ class TxHcv(ProgramCalculator):
                 continue
             if member.relationship == "fosterChild":
                 continue
-            if member.calc_age() is None:
+            age = member.calc_age()
+            if age is None:
                 continue
-            under_18 = member.calc_age() < 18
-            adult_dependent = member.calc_age() >= 18 and (member.has_disability() or member.student_full_time)
+            under_18 = age < 18
+            adult_dependent = age >= 18 and (member.has_disability() or member.student_full_time)
             if under_18 or adult_dependent:
                 count += 1
         return count
@@ -120,7 +122,8 @@ class TxHcv(ProgramCalculator):
         """$525 deduction if head/spouse/co-head is 62+ or disabled (24 CFR 5.611(a)(2))."""
         for member in self.screen.household_members.all():
             if member.relationship in self._elderly_family_relationships:
-                if (member.calc_age() is not None and member.calc_age() >= 62) or member.has_disability():
+                age = member.calc_age()
+                if (age is not None and age >= 62) or member.has_disability():
                     return True
         return False
 
@@ -128,9 +131,10 @@ class TxHcv(ProgramCalculator):
         """Head of household must be at least 18 (24 CFR 5.504(b)). Unknown age
         does not block — the gate only rejects a head known to be under 18."""
         head = self.screen.get_head()
-        if head is None or head.calc_age() is None:
+        head_age = head.calc_age() if head is not None else None
+        if head_age is None:
             return True
-        return head.calc_age() >= self.min_head_age
+        return head_age >= self.min_head_age
 
     def household_eligible(self, e: Eligibility):
         # Criterion 9: HOTMA net-asset limit — only a gate when reported over $100k.

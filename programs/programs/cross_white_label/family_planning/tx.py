@@ -73,7 +73,8 @@ class TxFpp(ProgramCalculator):
         member = e.member
 
         # Age 64 or younger (no minimum age — HHS FPP states only "64 or younger").
-        e.condition(member.calc_age() is not None and member.calc_age() <= self.max_age)
+        age = member.calc_age()
+        e.condition(age is not None and age <= self.max_age)
 
         # §4100: only (full) Medicaid disqualifies. Emergency Medicaid is a separate
         # insurance flag and is intentionally not matched here, so those recipients
@@ -126,11 +127,11 @@ class TxFpp(ProgramCalculator):
         follow-up, not implemented here.
         """
         # Adults only — under-18 (and unknown-age) earnings are exempt.
-        adult_earned = sum(
-            member.calc_gross_income("yearly", ["earned"])
-            for member in self.screen.household_members.all()
-            if member.calc_age() is not None and member.calc_age() >= self.child_age_threshold
-        )
+        adult_earned = 0
+        for member in self.screen.household_members.all():
+            age = member.calc_age()
+            if age is not None and age >= self.child_age_threshold:
+                adult_earned += member.calc_gross_income("yearly", ["earned"])
 
         # Child support received is pulled from the unearned bucket and re-added net of its
         # annualized disregard.

@@ -89,7 +89,8 @@ class IlHcv(ProgramCalculator):
     def _is_minor(self, member) -> bool:
         """A member known to be under 18. An unknown age is treated as an adult, so
         an income exclusion is never applied on a guess."""
-        return member.calc_age() is not None and member.calc_age() < 18
+        age = member.calc_age()
+        return age is not None and age < 18
 
     def _countable_earned_income(self, member, earned: float) -> float:
         """
@@ -165,7 +166,8 @@ class IlHcv(ProgramCalculator):
         for member in self.screen.household_members.all():
             if not self._is_head_or_spouse(member):
                 continue
-            if (member.calc_age() is not None and member.calc_age() >= self.min_elderly_age) or member.has_disability():
+            age = member.calc_age()
+            if (age is not None and age >= self.min_elderly_age) or member.has_disability():
                 return True
         return False
 

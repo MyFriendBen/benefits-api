@@ -94,6 +94,7 @@ class NCLieap(ProgramCalculator):
         Check if any household member is senior (60+) or disabled.
         """
         for member in self.screen.household_members.all():
-            if member.calc_age() is not None and member.calc_age() >= 60 or member.has_disability():
+            age = member.calc_age()
+            if age is not None and age >= 60 or member.has_disability():
                 return True
         return False

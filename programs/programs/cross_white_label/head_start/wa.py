@@ -46,8 +46,9 @@ class WaHeadStart(ProgramCalculator):
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
-        ehs_eligible = (member.calc_age() is not None and member.calc_age() < self.ehs_max_age) or member.pregnant
-        hs_eligible = member.calc_age() is not None and self.hs_min_age <= member.calc_age() <= self.hs_max_age
+        age = member.calc_age()
+        ehs_eligible = (age is not None and age < self.ehs_max_age) or member.pregnant
+        hs_eligible = age is not None and self.hs_min_age <= age <= self.hs_max_age
         e.condition(ehs_eligible or hs_eligible)
 
     def household_eligible(self, e: Eligibility):

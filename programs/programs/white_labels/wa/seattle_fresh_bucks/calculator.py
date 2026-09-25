@@ -75,7 +75,8 @@ class WaSeattleFreshBucks(ProgramCalculator):
 
         # Age: head of household must be at least 18
         head = self.screen.get_head()
-        e.condition(head.calc_age() is not None and head.calc_age() >= self.min_age, messages.older_than(self.min_age))
+        head_age = head.calc_age()
+        e.condition(head_age is not None and head_age >= self.min_age, messages.older_than(self.min_age))
 
         # Income: household gross income must be at or below 80% AMI (King County)
         try:
