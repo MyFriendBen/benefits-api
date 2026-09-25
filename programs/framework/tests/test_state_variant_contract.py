@@ -13,53 +13,62 @@ restated in a test file per state:
 - It sends its state code unless it is a federal passthrough: a class that only relabels
   a federal credit for one white label (``TxEitc``, ``KsCdccFederal``) and sends exactly
   its base's inputs, because PolicyEngine reads no state for it.
-- It reads the variable its base reads — the same ``pe_name`` and ``pe_outputs`` — unless
-  it is listed in ``READS_OWN_VARIABLE`` with the variable it reads instead, as each
-  state's TANF does.
+- It reads its base's variable or its own state's. Each state's TANF reads ``<state>_tanf``
+  in place of the federal ``tanf_if_takes_up``; MassHealth reads the federal ``medicaid``
+  and requests CHIP's category as well. A variable named for another state is a copy.
 
 The two state-code rules hold for every calculator that belongs to a state, variant or
 not — ``IlAabd`` and ``KsChip`` subclass a generic PolicyEngine base but are just as
 state-bound. What a calculator adds beyond that is state policy, and is tested beside it.
+
+A calculator's state comes from where it is filed, the layout the tree is organized by:
+``white_labels/<white label>/`` or ``cross_white_label/<program>/<state>.py``, with the
+federal class in ``base.py``. A calculator filed anywhere else fails here rather than being
+taken for a federal one.
 """
 
 from django.test import SimpleTestCase
 
+from configuration.white_labels import white_label_config
 from integrations.clients.policyengine.registry import all_calculators
 from programs.framework.pe_base import PolicyEngineCalulator
 from programs.framework.pe_dependencies.household import StateCode
-from programs.programs.cross_white_label.medicaid.base import Medicaid
-import programs.framework.pe_dependencies as dependency
 
 #: Every state we can send PolicyEngine, one per `StateCode` subclass in `household.py`.
 STATES = {dep.state.lower() for dep in StateCode.__subclasses__()}
 
-#: Variants that read something other than their base's PolicyEngine variable, and what
-#: they read: ``(pe_name, pe_outputs)``. Every other variant reads its base's.
-READS_OWN_VARIABLE = {
-    "co_tanf": ("co_tanf", [dependency.spm.CoTanf]),
-    "il_tanf": ("il_tanf", [dependency.spm.IlTanf]),
-    "ks_tanf": ("ks_tanf", [dependency.spm.KsTanf]),
-    "mo_tanf": ("mo_tanf", [dependency.spm.MoTanf]),
-    "nc_tanf": ("nc_tanf", [dependency.spm.NcTanf]),
-    "tx_tanf": ("tx_tanf", [dependency.spm.TxTanf]),
-    "wa_tanf": ("wa_tanf", [dependency.spm.WaTanf]),
-    # MassHealth also reads CHIP's category, to report a child it covers as CHIP.
-    "ma_mass_health": ("medicaid", [*Medicaid.pe_outputs, dependency.member.ChipCategory]),
-}
-
 
 def state_of(calculator: type):
-    """The state a calculator belongs to, read from where it is defined.
+    """The state a calculator belongs to, or None for a federal one.
 
-    ``white_labels/<state>/...`` names it directly. Under ``cross_white_label`` the module
-    is named for the state — ``snap/tx.py``, ``eitc/co_coeitc.py``, ``eitc/ks_federal.py``.
+    ``white_labels/<code>/`` is a white label's own programs, and belongs to that state when
+    the white label is one — ``cesn`` is a Colorado sub-brand with no PolicyEngine programs
+    of its own. ``white_labels/federal/`` belongs to no state. Under ``cross_white_label``,
+    ``base.py`` holds the federal class and every other module is named for its state —
+    ``snap/tx.py``, ``eitc/co_coeitc.py``, ``eitc/ks_federal.py``.
     """
     parts = calculator.__module__.split(".")
-    if parts[2] == "white_labels":
-        return parts[3] if parts[3] in STATES else None
 
-    prefix = parts[-1].split("_")[0]
-    return prefix if prefix in STATES else None
+    if parts[2] == "white_labels":
+        directory = parts[3]
+        if directory == "federal":
+            return None
+        if directory not in white_label_config:
+            raise LookupError(
+                f"{calculator.__name__} is filed under white_labels/{directory}/, which is no white label"
+            )
+        return directory if directory in STATES else None
+
+    module = parts[-1]
+    if module == "base":
+        return None
+    prefix = module.split("_")[0]
+    if prefix not in STATES:
+        raise LookupError(
+            f"{calculator.__name__} is defined in {module}.py, which names no state; a state variant's "
+            "module starts with its state, and the federal class lives in base.py"
+        )
+    return prefix
 
 
 def state_codes(calculator: type) -> set:
@@ -79,6 +88,11 @@ def state_variants():
 
 
 class StateVariantContractTests(SimpleTestCase):
+    def test_every_calculator_is_filed_where_its_state_can_be_read(self):
+        for code, calculator in sorted(all_calculators.items()):
+            with self.subTest(program=code):
+                state_of(calculator)
+
     def test_the_walk_finds_the_variants(self):
         """Guards the rest: an empty walk would pass every assertion below."""
         self.assertGreater(len(list(state_variants())), 50)
@@ -117,13 +131,29 @@ class StateVariantContractTests(SimpleTestCase):
                     f"{calculator.__name__} changes {base.__name__}'s inputs but sends no state code",
                 )
 
-    def test_a_variant_reads_its_bases_variable_unless_listed(self):
+    def test_a_variant_reads_its_bases_variable_or_its_own_states(self):
         for code, calculator, base in state_variants():
             with self.subTest(program=code):
-                expected = READS_OWN_VARIABLE.get(code, (base.pe_name, list(base.pe_outputs)))
-                self.assertEqual((calculator.pe_name, list(calculator.pe_outputs)), expected)
+                if calculator.pe_name != base.pe_name:
+                    self.assertTrue(
+                        calculator.pe_name.startswith(f"{state_of(calculator)}_"),
+                        f"{calculator.__name__} reads {calculator.pe_name!r}, which is neither "
+                        f"{base.__name__}'s variable nor named for its own state",
+                    )
 
-    def test_every_listed_variable_belongs_to_a_variant(self):
-        """A stale entry would otherwise sit here asserting nothing."""
-        variants = {code for code, _, _ in state_variants()}
-        self.assertEqual(set(READS_OWN_VARIABLE) - variants, set())
+    def test_a_variant_keeps_its_bases_outputs_unless_it_reads_its_own_variable(self):
+        for code, calculator, base in state_variants():
+            with self.subTest(program=code):
+                if calculator.pe_name == base.pe_name:
+                    for output in base.pe_outputs:
+                        self.assertIn(
+                            output,
+                            calculator.pe_outputs,
+                            f"{calculator.__name__} drops {output.__name__}, which {base.__name__} reads",
+                        )
+                else:
+                    self.assertIn(
+                        calculator.pe_name,
+                        {output.field for output in calculator.pe_outputs},
+                        f"{calculator.__name__} reads {calculator.pe_name!r} without requesting it",
+                    )
