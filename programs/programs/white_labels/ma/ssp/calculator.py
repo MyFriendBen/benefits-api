@@ -14,5 +14,6 @@ class MaStateSupplementProgram(PolicyEngineMembersCalculator):
         dependency.member.IsBlindDependency,
         dependency.member.SsiCountableResourcesDependency,
         *Ssi.pe_inputs,
+        dependency.household.MaStateCodeDependency,
     ]
     pe_outputs = [dependency.member.MaStateSupplementProgram]
