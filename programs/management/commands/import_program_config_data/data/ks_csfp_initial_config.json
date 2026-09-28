@@ -30,7 +30,8 @@
     "value_format": null,
     "show_on_current_benefits": true,
     "has_calculator": true,
-    "show_in_has_benefits_step": false
+    "show_in_has_benefits_step": false,
+    "active": true
   },
   "warning_message": {
     "external_name": "ks_csfp_waitlist",
