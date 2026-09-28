@@ -1542,6 +1542,29 @@ class AssistantStartViewTests(APITestCase):
         eligible = payload["context"]["eligible_programs"]
         self.assertEqual(sorted(p["external_name"] for p in eligible), ["snap", "wic"])
 
+    def test_supported_locale_from_the_request_is_forwarded_lowercased(self):
+        self.assertEqual(self._post({"locale": "PT-BR"})["locale"], "pt-br")
+
+    def test_omitted_locale_falls_back_to_the_screen_language(self):
+        """Older frontend builds and non-web channels send no locale at all."""
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        self.assertEqual(self._post({})["locale"], "es")
+
+    def test_omitted_locale_without_a_screen_language_is_lowercase_en_us(self):
+        """Not `en-US`: the web client sends `en-us`, and one spelling keeps GROUP BY honest."""
+        self.assertEqual(self._post({})["locale"], "en-us")
+
+    def test_unsupported_locale_falls_back_to_the_screen_language(self):
+        """A stale code (`zh`, now `zh-hans`) or an over-long string never reaches the varchar(12)."""
+        self.screen.request_language_code = "vi"
+        self.screen.save()
+
+        for requested in ("zh", "x" * 40, 42, None):
+            with self.subTest(requested=requested):
+                self.assertEqual(self._post({"locale": requested})["locale"], "vi")
+
     def test_json_array_body_does_not_500(self):
         """`request.data` is a list for an array body, so `.get` isn't safe to assume."""
         with mock.patch("screener.assistant.requests.request") as request:

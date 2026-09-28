@@ -1396,6 +1396,25 @@ def _proxy(method: str, path: str, json_body: dict = None, params: dict = None) 
     return Response(body, status=resp.status_code)
 
 
+def _assistant_locale(body: dict, screen: Screen) -> str:
+    """The locale to store on the conversation.
+
+    The client's code when it is one we support, else the screen's own language code,
+    so older frontend builds and non-web channels (ADR-002) that send nothing still
+    record the household's language rather than a blanket default. Always lowercase
+    and always a `settings.LANGUAGES` code or the screen's `request_language_code`:
+    the value is compared against that column in reporting, and an unchecked string
+    could exceed the conversation's `varchar(12)` and fail the insert in ai-service.
+    Same shape as `_message_language` in screener/views.py.
+    """
+    requested = str(body.get("locale") or "").lower()
+
+    if requested in {code for code, _ in settings.LANGUAGES}:
+        return requested
+
+    return screen.get_language_code()
+
+
 def _body(request: Request) -> dict:
     """The request body as a dict.
 
@@ -1492,7 +1511,7 @@ class AssistantStartView(views.APIView):
         payload = {
             "screen_uuid": str(screen.uuid),
             "white_label": screen.white_label.code,
-            "locale": body.get("locale", "en-US"),
+            "locale": _assistant_locale(body, screen),
             "context": _build_context(screen, _visible_programs(body)),
         }
         return _proxy("POST", "/v1/conversations", payload)
