@@ -267,7 +267,11 @@ class Screen(models.Model):
     def relationship_map(self):
         relationship_map = {}
 
-        all_members = self.household_members.all()
+        # Sorted by id so the map's insertion order is stable: the PolicyEngine payload builds
+        # each marital unit from it ("head-spouse" vs "spouse-head"), and the cassette matcher
+        # compares request bodies exactly. Sorted in Python rather than with order_by so a
+        # prefetched household_members is reused instead of re-queried.
+        all_members = sorted(self.household_members.all(), key=lambda m: m.id)
         for member in all_members:
             if member.id in relationship_map and relationship_map[member.id] is not None:
                 continue

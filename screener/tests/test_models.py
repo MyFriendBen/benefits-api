@@ -732,6 +732,15 @@ class TestScreen(TestCase):
         self.assertEqual(len(result["dependents"]), 1)
         self.assertIn(adult_child2, result["dependents"])
 
+    def test_relationship_map_is_in_id_order_regardless_of_insertion_order(self):
+        """relationship_map iterates members by id, not by however Postgres returns them."""
+        screen = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=2, completed=False)
+        # Insert the higher id first so an unordered query returns the head first.
+        head = HouseholdMember.objects.create(id=9002, screen=screen, relationship="headOfHousehold", age=40)
+        spouse = HouseholdMember.objects.create(id=9001, screen=screen, relationship="spouse", age=40)
+
+        self.assertEqual(list(screen.relationship_map().items()), [(spouse.id, head.id), (head.id, spouse.id)])
+
 
 class TestHouseholdMember(TestCase):
     """
