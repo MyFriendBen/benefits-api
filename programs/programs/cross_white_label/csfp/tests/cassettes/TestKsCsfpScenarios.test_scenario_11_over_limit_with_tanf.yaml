@@ -1,0 +1,80 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"1101": {"age": {"2026": 68}, "is_medicare_eligible":
+      {"2026": null}, "social_security_disability": {"2026": 0.0}, "ssi_earned_income":
+      {"2026": 0}, "ssi_unearned_income": {"2026": 24000}, "medicare_quarters_of_coverage":
+      {"2026": 40}, "is_medicaid_eligible": {"2026": null}, "ssi": {"2026": null},
+      "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+      "commodity_supplemental_food_program": {"2026": null}}}, "tax_units": {"main_tax_unit":
+      {"members": ["1101"]}}, "families": {"family": {"members": ["1101"]}}, "households":
+      {"household": {"members": ["1101"], "state_code": {"2026": "KS"}, "county_str":
+      {"2026": "SEDGWICK_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1101"],
+      "school_meal_countable_income": {"2026": 24000.0}, "spm_unit_cash_assets": {"2026":
+      0}, "tanf": {"2026": null}, "receives_tanf": {"2026": true}, "takes_up_tanf_if_eligible":
+      {"2026": true}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+      {"2026": false}}}, "marital_units": {}}, "version": "2.5.0"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1051'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"1101": {"age":
+        {"2026": 68}, "is_medicare_eligible": {"2026": true}, "social_security_disability":
+        {"2026": 0.0}, "ssi_earned_income": {"2026": 0}, "ssi_unearned_income": {"2026":
+        24000}, "medicare_quarters_of_coverage": {"2026": 40}, "is_medicaid_eligible":
+        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "commodity_supplemental_food_program": {"2026": 0.0}}}, "tax_units":
+        {"main_tax_unit": {"members": ["1101"]}}, "families": {"family": {"members":
+        ["1101"]}}, "households": {"household": {"members": ["1101"], "state_code":
+        {"2026": "KS"}, "county_str": {"2026": "SEDGWICK_COUNTY_KS"}}}, "spm_units":
+        {"spm_unit": {"members": ["1101"], "school_meal_countable_income": {"2026":
+        24000.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": 0.0}, "receives_tanf":
+        {"2026": true}, "takes_up_tanf_if_eligible": {"2026": true}, "receives_snap":
+        {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
+        {}}, "policyengine_bundle": {"model_version": "2.5.0", "data_version": null,
+        "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '1149'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 20:37:33 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-e426501ff0529ba54a2b9382da57c72a-92c19235da304dd7-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - e426501ff0529ba54a2b9382da57c72a
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 37b690c7-9b10-4507-a9ad-37b81d42fbce
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1
