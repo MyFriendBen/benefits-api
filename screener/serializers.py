@@ -408,11 +408,15 @@ class ScreenSerializer(serializers.ModelSerializer):
         through to the residual group.
 
         Checks membership in the white label's full county set, not in the candidates
-        for the submitted ZIP. The narrower check is the better one and is now
-        possible, but the repo still holds 529 spec.md scenarios across five states
-        that pair a ZIP with a bare or mismatched county name; tightening this before
-        those are corrected would fail the QA harness at screen creation. See the PR
-        for the follow-up.
+        for the submitted ZIP. Not to spare the QA harness -- this check already fails
+        it. Of 869 ZIP+county pairs in spec.md scenarios, 419 carry a county name no
+        white label sends, and every one of those is rejected here just as the
+        narrower check would reject it. Only 14 pairs would break under the narrower
+        check and not this one, all of them ZIP 75001 (Addison, in Dallas County)
+        paired with Collin County. So the spec sweep is a coupled follow-up either
+        way, and the reason to stay broad is that this PR should not also rewrite
+        36 spec files. Each white label has its own convention -- IL and TX store
+        bare names, MA stores municipalities -- so the rule cannot be about suffixes.
 
         A blank county stays legal. Colorado's `counties_from_screen` treats a null
         county as "expand the ZIP to every county it covers", so requiring one would
