@@ -334,3 +334,17 @@ class TestScenarios(MoRcaTestCase):
 
         self.assertTrue(result.eligible)
         self.assertAlmostEqual(result.value, 1093.36, places=2)
+
+    def test_scenario_21_case_emptied_by_removal_sibling_case_still_pays(self):
+        """A case can reach zero remaining members through removal alone, not only by
+        failing the income comparison (Scenario 17) — the split-off sibling case is
+        still evaluated and paid on its own."""
+        screen = self.make_screen(household_size=3)
+        p1 = self.add_member(screen, "headOfHousehold", 30, monthly_income=400, income_type="cashAssistance")
+        p2 = self.add_member(screen, "spouse", 28, monthly_income=400, income_type="sSI")
+        p3 = self.add_member(screen, "child", 18)
+
+        result = self.calculate(screen)
+
+        self.assertEqual((result.eligible, result.value), (True, 4296.0))
+        self.assertEqual(self.marks_by_id(result), {p1.id: False, p2.id: False, p3.id: True})

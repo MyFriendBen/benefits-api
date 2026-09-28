@@ -53,10 +53,11 @@ determines the assistance unit against which criterion 4 and the benefit value a
      payment, is removed from their own RCA case; other members and other cases in the same
      household are unaffected. `cashAssistance` is the screener's TANF income option and
      `cashAssistanceOther` is any other cash aid, so only the former evidences TANF receipt —
-     reuse `receipt.TANF_INCOME_TYPE` and `receipt.SSI_INCOME_TYPE`
-     (`programs/framework/pe_dependencies/receipt.py`) rather than repeating the literals, and
-     follow `receipt.member_reports_ssi_amount()` for the per-member read; no TANF twin of that
-     helper exists yet, so add one beside it. Both limbs are read per member because the rule
+     define `SSI_INCOME_TYPE` and `TANF_INCOME_TYPE` locally in the calculator rather than
+     importing them from `programs/framework/pe_dependencies/receipt.py`: that module backs
+     PolicyEngine's actual-receipt contract, which this calculator does not use, and MFB
+     calculators should not take on a PolicyEngine dependency. Read both limbs directly through
+     `HouseholdMember.calc_gross_income`. Both limbs are read per member because the rule
      applies per case, which a screen-level check cannot express: `CurrentBenefit` is
      household-scoped and names no recipient, so a household that ticks a tile without reporting
      an amount identifies nobody and removes nobody — the inclusive direction. What remains
@@ -363,6 +364,7 @@ on the Missouri FY2024 payment schedule.
 | Criterion 6 — later-arriving spouse counted within the case, never as a single | 9, 16 |
 | Criterion 4 — income summed per case, not pooled across the household | 16 |
 | Value — an ineligible case contributes nothing; a sibling case is still served | 17 |
+| Value — a case emptied entirely by removal contributes nothing; a sibling case is still served | 21 |
 | Value — the monthly award is stored × 8, the allowable months | every eligible scenario |
 | Value — case size 1 | 1, 2, 4, 5, 11, 12, 13, 14, 15, 16, 17, 20 |
 | Value — case size 2 | 9, 16, 19 |
@@ -374,8 +376,8 @@ on the Missouri FY2024 payment schedule.
 | Value — zero income yields the full standard, not $0 | 1, 7, 8, 19 |
 | Value — the award is carried to the cent, not rounded to the dollar | 20 |
 | Framework mapping — a member of a case that fails the standard is marked ineligible | 17 |
-| Framework mapping — a member removed from their case is marked ineligible | 10, 11 |
-| Framework mapping — members of payable cases are marked eligible | 11, 15, 16, 19 |
+| Framework mapping — a member removed from their case is marked ineligible | 10, 11, 21 |
+| Framework mapping — members of payable cases are marked eligible | 11, 15, 16, 19, 21 |
 | Framework mapping — the award sits in `household_value()`, not `member_value()` | 6, 7, 8 (a per-member award would multiply by case size) |
 | Registration — `program_code = "mo_rca"` | no scenario; the registry build raises without it (Acceptance Criterion 14) |
 
@@ -680,12 +682,12 @@ members marked eligible)
 * Person 2: born March 1998 (age 28), spouse, no income
 * Current benefits: `has_benefits` true, `current_benefits` includes `mo_tanf`; no member reports a
   `cashAssistance` income stream
-**Why this matters**: the mutation is the one nearest to hand. `programs/framework/pe_dependencies/receipt.py`
-— the module criterion 2 sends the implementer to for `TANF_INCOME_TYPE` — also exports
-`screen_reports_tanf()`, which is
-`has_base_benefit("tanf") or calc_gross_income("yearly", ["cashAssistance"]) > 0`. Reusing that
-neighbouring helper gates the household on the tile and returns Ineligible here, against Data Gap
-3's committed inclusive handling. Scenario 10 does not catch it: its member reports an amount and
+**Why this matters**: the mutation is the one nearest to hand. `screen_reports_tanf()` in
+`programs/framework/pe_dependencies/receipt.py` — a neighbouring helper written for a
+PolicyEngine-facing calculator's household-level TANF check — is
+`has_base_benefit("tanf") or calc_gross_income("yearly", ["cashAssistance"]) > 0`. Reusing it here
+gates the household on the tile and returns Ineligible here, against Data Gap 3's committed
+inclusive handling. Scenario 10 does not catch it: its member reports an amount and
 is removed under either reading. This is also the only zero-income scenario at case size 2, so it
 pins the $726 standard independently of any income calculation.
 
@@ -702,6 +704,28 @@ path evaluates it as $1,093.3600000000001)
 or truncates its final value to the dollar passes the entire rest of the suite. This is the only
 scenario separating $1,093.36 from $1,093.00. It pairs with Scenario 5, the same stream type at a
 whole-dollar amount.
+
+### Scenario 21: A case emptied entirely by removal, alongside a payable sibling case — Eligible, $4,296.00
+**What we're checking**: Acceptance Criterion 5's "a case left with no members contributes
+nothing" — a case can reach zero members through removal alone, not only by failing the income
+comparison (Scenario 17) — combined with Criterion 6's case split, so the sibling case is still
+evaluated and paid on its own.
+**Expected**: Eligible — $4,296.00 (parents' case: both members removed — Person 1 on a reported
+`cashAssistance` stream, Person 2 on a reported `sSI` stream — so the case has no remaining
+members and contributes $0; the 18-year-old's separate case size 1, no income → $537.00/month →
+$4,296.00; Person 1 and Person 2 marked ineligible, Person 3 eligible)
+**Steps**:
+* Location: ZIP `63118`, county `St. Louis City`
+* Person 1: born June 1996 (age 30), head of household, `cashAssistance` $400/month
+* Person 2: born March 1998 (age 28), spouse, `sSI` $400/month
+* Person 3: born September 2008 (age 18), child, no income
+**Why this matters**: Scenario 17 is the only other scenario where one case contributes nothing
+while a sibling case is paid, but there the parents' case fails on income — net countable income
+not under the standard — with both members still present in it. Here the parents' case is emptied
+before any income comparison runs: both members are removed, so `remaining` is empty. An
+implementation that only zeroes a case on the income comparison, and never on an empty
+`remaining` list, either raises or divides by a case size of zero here, while still passing every
+other scenario.
 
 ## Research Sources
 
