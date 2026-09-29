@@ -21,8 +21,7 @@ class Tabor(ProgramCalculator):
         member = e.member
 
         # age at the end of the tax year
-        tax_year = int(self.program.year.period) if self.program.year else None
-        age = member.age_at_end_of_year(tax_year)
+        age = member.age_at_end_of_year(self.tax_year)
         e.condition(age is not None and age >= Tabor.min_age)
 
     def member_value(self, member: HouseholdMember) -> int:

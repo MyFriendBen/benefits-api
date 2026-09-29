@@ -16,9 +16,8 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         if member.birth_year_month is None:
             return member.calc_age() == 0
 
-        reference_date = self.screen.get_reference_date()
-        age_months = (reference_date.year - member.birth_year) * 12 + reference_date.month - member.birth_month
-        return 0 <= age_months <= self.max_newborn_age_months
+        age_months = member.age_in_months()
+        return age_months is not None and 0 <= age_months <= self.max_newborn_age_months
 
     def _is_eligible_adult(self, member: HouseholdMember) -> bool:
         is_old_enough = member.calc_age() >= self.min_adult_age

@@ -49,8 +49,15 @@ def _is_age_field(name: str) -> bool:
     return name == "age" or name.startswith("age__")
 
 
-def _class_index(tree: ast.Module) -> dict[str, tuple[set[str], bool]]:
-    """Each class's base names, and whether it assigns a literal to `age` in its own body."""
+ClassKey = tuple[str, str]
+
+
+def _class_index(tree: ast.Module, relative_path: str = "<source>") -> dict[ClassKey, tuple[set[str], bool]]:
+    """Each class's base names, and whether it assigns a literal to `age` in its own body.
+
+    Keyed by (file, class name): two modules can define classes with the same name (there
+    are two `UniversalPreschool`s), and a bare-name key would let one overwrite the other.
+    """
     index = {}
     for node in ast.walk(tree):
         if not isinstance(node, ast.ClassDef):
@@ -62,27 +69,32 @@ def _class_index(tree: ast.Module) -> dict[str, tuple[set[str], bool]]:
             value = getattr(stmt, "value", None)
             if isinstance(value, ast.Constant) and any(isinstance(t, ast.Name) and t.id == "age" for t in targets):
                 has_constant = True
-        index[node.name] = (bases, has_constant)
+        index[(relative_path, node.name)] = (bases, has_constant)
     return index
 
 
-def _class_constant_names(index: dict[str, tuple[set[str], bool]]) -> set[str]:
-    """Classes with a literal `age`, in their own body or inherited from a base."""
-    names = {name for name, (_, has_constant) in index.items() if has_constant}
+def _class_constant_names(index: dict[ClassKey, tuple[set[str], bool]]) -> set[ClassKey]:
+    """Classes with a literal `age`, in their own body or inherited from a base.
+
+    Bases are written as bare names, so a base matches any class of that name.
+    """
+    keys = {key for key, (_, has_constant) in index.items() if has_constant}
     changed = True
     while changed:
         changed = False
-        for name, (bases, _) in index.items():
-            if name not in names and bases & names:
-                names.add(name)
+        names = {name for _, name in keys}
+        for key, (bases, _) in index.items():
+            if key not in keys and bases & names:
+                keys.add(key)
                 changed = True
-    return names
+    return keys
 
 
 class _AgeReadFinder(ast.NodeVisitor):
-    def __init__(self, relative_path: str, constant_classes: set[str]):
+    def __init__(self, relative_path: str, constant_classes: set[ClassKey]):
         self.relative_path = relative_path
         self.constant_classes = constant_classes
+        self.constant_class_names = {name for _, name in constant_classes}
         self.functions: list[str] = []
         self.classes: list[str] = []
         self.offenders: list[int] = []
@@ -121,20 +133,25 @@ class _AgeReadFinder(ast.NodeVisitor):
         if not isinstance(node.value, ast.Name):
             return False
         owner = node.value.id
-        if owner in self.constant_classes:
+        if owner in self.constant_class_names:
             return True
-        return owner in ("self", "cls") and bool(self.classes) and self.classes[-1] in self.constant_classes
+        return (
+            owner in ("self", "cls")
+            and bool(self.classes)
+            and (self.relative_path, self.classes[-1]) in self.constant_classes
+        )
 
 
-def _static_age_reads(source: str, relative_path: str = "<source>", constant_classes=None) -> list[int]:
+def _static_age_reads(source: str | ast.Module, relative_path: str = "<source>", constant_classes=None) -> list[int]:
     """Line numbers of every read of an `age` attribute that isn't allowed.
 
-    `constant_classes` defaults to the classes in `source` itself; the production scan
-    passes the repo-wide set so inherited constants are recognised across modules.
+    `source` is code or an already-parsed module. `constant_classes` defaults to the
+    classes in `source` itself; the production scan passes the repo-wide set so inherited
+    constants are recognised across modules.
     """
-    tree = ast.parse(source, filename=relative_path)
+    tree = ast.parse(source, filename=relative_path) if isinstance(source, str) else source
     if constant_classes is None:
-        constant_classes = _class_constant_names(_class_index(tree))
+        constant_classes = _class_constant_names(_class_index(tree, relative_path))
     finder = _AgeReadFinder(relative_path, constant_classes)
     finder.visit(tree)
     return finder.offenders
@@ -160,15 +177,15 @@ def _production_files():
 
 class NoStaticAgeReadsTests(SimpleTestCase):
     def test_production_code_reads_age_through_calc_age(self):
-        sources = [(path.read_text(), relative) for path, relative in _production_files()]
+        trees = [(ast.parse(path.read_text(), filename=relative), relative) for path, relative in _production_files()]
         index = {}
-        for source, relative in sources:
-            index.update(_class_index(ast.parse(source, filename=relative)))
+        for tree, relative in trees:
+            index.update(_class_index(tree, relative))
         constant_classes = _class_constant_names(index)
 
         offenders = []
-        for source, relative in sources:
-            for lineno in _static_age_reads(source, relative, constant_classes):
+        for tree, relative in trees:
+            for lineno in _static_age_reads(tree, relative, constant_classes):
                 offenders.append(f"{relative}:{lineno}")
 
         self.assertEqual(
@@ -227,10 +244,26 @@ class NoStaticAgeReadsTests(SimpleTestCase):
         self.assertEqual(_static_age_reads(source), [])
 
     def test_allows_a_constant_inherited_from_another_module(self):
-        index = _class_index(ast.parse("class UniversalPreschool:\n    age = 4\n"))
-        index.update(_class_index(ast.parse("class Denver(base.UniversalPreschool):\n    pass\n")))
+        index = _class_index(ast.parse("class UniversalPreschool:\n    age = 4\n"), "base.py")
         source = "class Denver(base.UniversalPreschool):\n    def f(self):\n        return self.age\n"
-        self.assertEqual(_static_age_reads(source, constant_classes=_class_constant_names(index)), [])
+        index.update(_class_index(ast.parse(source), "denver.py"))
+        self.assertEqual(_static_age_reads(source, "denver.py", _class_constant_names(index)), [])
+
+    def test_same_named_classes_do_not_overwrite_each_other(self):
+        """A class without the constant, scanned later, doesn't strip it from its namesake."""
+        constant = "class UniversalPreschool:\n    age = 4\n    def f(self):\n        return self.age\n"
+        other = "class UniversalPreschool:\n    pass\n"
+        index = _class_index(ast.parse(constant), "a.py")
+        index.update(_class_index(ast.parse(other), "b.py"))
+        self.assertEqual(_static_age_reads(constant, "a.py", _class_constant_names(index)), [])
+
+    def test_a_namesake_constant_class_does_not_excuse_self_age(self):
+        """A model sharing a name with a constant class still can't read `self.age`."""
+        constant = "class Member:\n    age = 4\n"
+        model = "class Member:\n    def f(self):\n        return self.age\n"
+        index = _class_index(ast.parse(constant), "a.py")
+        index.update(_class_index(ast.parse(model), "b.py"))
+        self.assertEqual(_static_age_reads(model, "b.py", _class_constant_names(index)), [3])
 
     def test_detects_self_age_without_an_inherited_constant(self):
         source = "class Denver(Base):\n    def f(self):\n        return self.age\n"

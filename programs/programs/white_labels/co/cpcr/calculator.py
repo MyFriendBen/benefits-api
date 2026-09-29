@@ -48,8 +48,7 @@ class PropertyCreditRebate(ProgramCalculator):
 
     def _tax_year_age(self, member: HouseholdMember):
         # age at the end of the claim year
-        tax_year = int(self.program.year.period) if self.program.year else None
-        return member.age_at_end_of_year(tax_year)
+        return member.age_at_end_of_year(self.tax_year)
 
     def _member_is_disabled(self, member: HouseholdMember):
         age = self._tax_year_age(member)

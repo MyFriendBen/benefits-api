@@ -170,8 +170,8 @@ class TestSpecScenarios(TestCase):
         self.assertFalse(eligible)
 
     def test_child_income_excluded_while_under_18_at_end_of_claim_year(self):
-        # Born Nov 2007: 18 today (2026) but 17 at the end of claim year 2025, so a
-        # stale screening-date age would wrongly count their wages.
+        # Born in 2008: 17 at the end of claim year 2025, so their wages are excluded
+        # even though the stored screening-date age says 18.
         p1 = make_member(birth_year=1958, age=68, income={"pension": 12_000})
         child = make_member(birth_year=2008, age=18, relationship="child", income={"wages": 30_000})
         eligible, value = run(make_calculator([p1, child], property_tax=700))
