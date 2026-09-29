@@ -330,11 +330,9 @@ def _household_shape(screen: Screen):
         }
     }
 
-    # order_by("id") is load-bearing, not tidiness: the payload lists every unit's members
-    # in iteration order, and the cassette matcher compares request bodies exactly. Without
-    # it Postgres picks the order, so the same household can serialize differently between
-    # runs and a recorded cassette stops matching — the request then goes to the live API.
-    members = screen.household_members.all().order_by("id")
+    # Iteration order is load-bearing: HouseholdMember.Meta.ordering keeps it by id, so the
+    # same household always serializes the same way and its recorded cassette keeps matching.
+    members = screen.household_members.all()
     relationship_map = screen.relationship_map()
 
     main_tax_members = []

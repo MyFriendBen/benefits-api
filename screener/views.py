@@ -212,6 +212,19 @@ class EligibilityView(views.APIView):
         return Response(results)
 
 
+# Everything eligibility_results reads per member. Without it every calculator re-queries
+# members and income streams, thousands of queries per screen.
+ELIGIBILITY_PREFETCH = (
+    "household_members",
+    "household_members__income_streams",
+    "household_members__insurance",
+    "household_members__energy_calculator",
+    "expenses",
+    "energy_calculator",
+    "current_benefits__program",
+)
+
+
 class EligibilityTranslationView(views.APIView):
     @swagger_auto_schema(responses={200: ResultsSerializer()})
     def get(self, request, id):
@@ -224,19 +237,7 @@ class EligibilityTranslationView(views.APIView):
         EligibilitySnapshot — that ordering is locked by
         screener/tests/test_pe_version_override.py.
         """
-        screen = (
-            Screen.objects.select_related("white_label")
-            .prefetch_related(
-                "household_members",
-                "household_members__income_streams",
-                "household_members__insurance",
-                "household_members__energy_calculator",
-                "expenses",
-                "energy_calculator",
-                "current_benefits__program",
-            )
-            .get(uuid=id)
-        )
+        screen = Screen.objects.select_related("white_label").prefetch_related(*ELIGIBILITY_PREFETCH).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
 
