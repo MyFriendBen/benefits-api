@@ -13,6 +13,9 @@ from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 from .irs_parameters import get_qualifying_relative_threshold
 
+# Built once: settings.LANGUAGES is fixed for the life of the process.
+SUPPORTED_LANGUAGE_CODES = frozenset(code for code, _ in settings.LANGUAGES)
+
 # Income stream types that represent money earned from work. Everything else the
 # screener collects (SSDI, SSI, pension, unemployment, child support, ...) is
 # unearned. Read by calc_gross_income()'s "earned"/"unearned" selectors and by
@@ -473,6 +476,22 @@ class Screen(models.Model):
             language_code = str(self.request_language_code).lower()
 
         return language_code
+
+    def supported_language_code(self, requested: object = None) -> str:
+        """A `settings.LANGUAGES` code for this screen, preferring `requested`.
+
+        `requested` when it is a supported code, else the screen's own
+        `request_language_code` when that is, else `settings.LANGUAGE_CODE`. Always
+        lowercase. Unlike `get_language_code`, the screen's value is checked too: the
+        serializer only enforces its `max_length`, and a stale frontend code (`zh`, now
+        `zh-hans`) can be saved on it.
+        """
+        for candidate in (requested, self.request_language_code):
+            code = str(candidate or "").lower()
+            if code in SUPPORTED_LANGUAGE_CODES:
+                return code
+
+        return settings.LANGUAGE_CODE
 
     def has_members_outside_of_tax_unit(self):
         for member in self.household_members.all():

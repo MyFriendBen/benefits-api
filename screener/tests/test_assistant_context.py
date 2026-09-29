@@ -1565,6 +1565,13 @@ class AssistantStartViewTests(APITestCase):
             with self.subTest(requested=requested):
                 self.assertEqual(self._post({"locale": requested})["locale"], "vi")
 
+    def test_a_stale_screen_language_falls_back_to_en_us(self):
+        """The screen's own code is checked too, so `zh` never sits beside `zh-hans` rows."""
+        self.screen.request_language_code = "zh"
+        self.screen.save()
+
+        self.assertEqual(self._post({})["locale"], "en-us")
+
     def test_json_array_body_does_not_500(self):
         """`request.data` is a list for an array body, so `.get` isn't safe to assume."""
         with mock.patch("screener.assistant.requests.request") as request:

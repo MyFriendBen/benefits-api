@@ -4,7 +4,7 @@ Unit tests for Screen, HouseholdMember, and WhiteLabel model methods.
 
 from decimal import Decimal
 from unittest.mock import patch
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from programs.models import Program
 from screener.models import CurrentBenefit, Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
 from screener.feature_flags import FeatureFlagConfig
@@ -1237,3 +1237,31 @@ class TestWhiteLabelFeatureFlags(TestCase):
             self.white_label.has_feature("unknown_flag")
 
         self.assertIn("Unknown feature flag: unknown_flag", str(cm.exception))
+
+
+class TestSupportedLanguageCode(SimpleTestCase):
+    """Screen.supported_language_code: the one rule shared by the results message and Benji."""
+
+    def resolve(self, requested, screen_code=None) -> str:
+        return Screen(request_language_code=screen_code).supported_language_code(requested)
+
+    def test_a_supported_request_wins_over_the_screen(self):
+        self.assertEqual(self.resolve("vi", screen_code="es"), "vi")
+
+    def test_normalizes_case(self):
+        self.assertEqual(self.resolve("ZH-Hans"), "zh-hans")
+        self.assertEqual(self.resolve(None, screen_code="PT-BR"), "pt-br")
+
+    def test_an_unsupported_or_missing_request_falls_back_to_the_screen(self):
+        for requested in (None, "", "kl", "x" * 40, 42):
+            with self.subTest(requested=requested):
+                self.assertEqual(self.resolve(requested, screen_code="es"), "es")
+
+    def test_a_stale_screen_code_falls_back_to_the_default(self):
+        """`zh` is a pre-`zh-hans` frontend code that can still be saved on a screen."""
+        for screen_code in ("zh", "en-US-x-legacy", ""):
+            with self.subTest(screen_code=screen_code):
+                self.assertEqual(self.resolve(None, screen_code=screen_code), "en-us")
+
+    def test_no_language_anywhere_is_the_default(self):
+        self.assertEqual(self.resolve(None), "en-us")

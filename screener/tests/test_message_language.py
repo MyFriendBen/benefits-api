@@ -58,6 +58,19 @@ class TestMessageLanguage(TestCase):
         # rather than silently dropping to the screener's language.
         self.assertEqual(self.resolve({"language": "ZH-Hans"}), "zh-hans")
 
+    def test_a_stale_screener_language_falls_back_to_the_default(self):
+        # Composing in `zh` would find no translation and send the untranslated default
+        # anyway; `en-us` gets the reviewed English copy.
+        screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=True,
+            request_language_code="zh",
+        )
+        self.assertEqual(MessageViewSet._message_language({}, screen), "en-us")
+
     def test_screener_language_is_used_when_the_screen_has_none(self):
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=True
