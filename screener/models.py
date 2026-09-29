@@ -198,7 +198,9 @@ class Screen(models.Model):
         Get list of unique expense types for this screen.
         Returns empty list if no expenses exist.
         """
-        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
+        # Deduplicated in Python: a DISTINCT query would also select Expense's default
+        # ordering column (id) and stop deduplicating. This also reads a prefetched expenses.
+        return list(dict.fromkeys(e.type for e in self.expenses.all() if e.type is not None))
 
     def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
         children = 0
@@ -551,6 +553,12 @@ class HouseholdMember(models.Model):
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
 
+    class Meta:
+        # Deterministic iteration everywhere, including prefetches. The PolicyEngine payload
+        # lists members in iteration order and the cassette matcher compares request bodies
+        # exactly, so an unordered query can make the same household stop matching.
+        ordering = ["id"]
+
     def calc_gross_income(self, frequency, types, exclude=[]):
         gross_income = 0
 
@@ -718,6 +726,9 @@ class IncomeStream(models.Model):
     frequency = models.CharField(max_length=30, blank=True, null=True)
     hours_worked = models.IntegerField(null=True, blank=True)
 
+    class Meta:
+        ordering = ["id"]
+
     def monthly(self):
         if self.frequency == "monthly":
             monthly = self.amount
@@ -775,6 +786,9 @@ class Expense(models.Model):
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
+
+    class Meta:
+        ordering = ["id"]
 
     def monthly(self):
         if self.frequency == "monthly":
