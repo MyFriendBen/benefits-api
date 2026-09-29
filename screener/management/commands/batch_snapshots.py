@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
+from django.db.models import prefetch_related_objects
 from screener.models import Screen
-from screener.views import eligibility_results
+from screener.views import ELIGIBILITY_PREFETCH, eligibility_results
 from tqdm import trange
 import time
 
@@ -39,6 +40,9 @@ class Command(BaseCommand):
         errors = []
         for i in trange(len(screens), desc="Screens"):
             try:
+                # Per screen rather than on the queryset, so --limit -1 doesn't hold every
+                # screen's members in memory at once.
+                prefetch_related_objects([screens[i]], *ELIGIBILITY_PREFETCH)
                 eligibility_results(screens[i], batch=True)
                 time.sleep(1)
             except Exception as e:

@@ -181,6 +181,22 @@ class TestScreen(TestCase):
         result = self.screen.has_expense(["heating", "cooling"])
         self.assertFalse(result)
 
+    def test_expense_type_names_deduplicates_repeated_types(self):
+        """Each type appears once, in first-entered order, despite Expense's default ordering."""
+        Expense.objects.create(screen=self.screen, type="heating", amount=80, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="childCare", amount=200, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="heating", amount=40, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type=None, amount=10, frequency="monthly")
+
+        self.assertEqual(self.screen.expense_type_names(), ["heating", "childCare"])
+
+    def test_expense_type_names_reads_prefetched_expenses(self):
+        Expense.objects.create(screen=self.screen, type="rent", amount=1000, frequency="monthly")
+        screen = Screen.objects.prefetch_related("expenses").get(pk=self.screen.pk)
+
+        with self.assertNumQueries(0):
+            self.assertEqual(screen.expense_type_names(), ["rent"])
+
     def test_has_expense_zero_amount(self):
         """Test has_expense with zero amount expense."""
         Expense.objects.create(screen=self.screen, type="heating", amount=0, frequency="monthly")

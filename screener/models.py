@@ -198,7 +198,9 @@ class Screen(models.Model):
         Get list of unique expense types for this screen.
         Returns empty list if no expenses exist.
         """
-        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
+        # Deduplicated in Python: a DISTINCT query would also select Expense's default
+        # ordering column (id) and stop deduplicating. This also reads a prefetched expenses.
+        return list(dict.fromkeys(e.type for e in self.expenses.all() if e.type is not None))
 
     def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
         children = 0
