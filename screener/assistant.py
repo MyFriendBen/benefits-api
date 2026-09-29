@@ -1492,7 +1492,11 @@ class AssistantStartView(views.APIView):
         payload = {
             "screen_uuid": str(screen.uuid),
             "white_label": screen.white_label.code,
-            "locale": body.get("locale", "en-US"),
+            # Falls back to the screen's language, so older frontend builds and non-web
+            # channels (ADR-002) that send nothing still record the household's. Always
+            # a supported code: reporting compares it with `request_language_code`, and an
+            # unchecked string could overflow the conversation's varchar(12) in ai-service.
+            "locale": screen.supported_language_code(body.get("locale")),
             "context": _build_context(screen, _visible_programs(body)),
         }
         return _proxy("POST", "/v1/conversations", payload)

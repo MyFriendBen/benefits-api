@@ -302,12 +302,7 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         language only picks which copy to send, and sending the results in the
         screener's language beats refusing to send them.
         """
-        requested = str(body.get("language") or "").lower()
-
-        if requested in {code for code, _ in settings.LANGUAGES}:
-            return requested
-
-        return screen.get_language_code()
+        return screen.supported_language_code(body.get("language"))
 
 
 def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
