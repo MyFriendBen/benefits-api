@@ -741,6 +741,29 @@ class TestScreen(TestCase):
 
         self.assertEqual(list(screen.relationship_map().items()), [(spouse.id, head.id), (head.id, spouse.id)])
 
+    def test_household_related_rows_iterate_in_id_order_regardless_of_insertion_order(self):
+        """Members, incomes and expenses default to id order, including when prefetched."""
+        screen = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=2, completed=False)
+        # Insert the higher ids first so an unordered query would return them first.
+        member_b = HouseholdMember.objects.create(id=9102, screen=screen, relationship="headOfHousehold", age=40)
+        member_a = HouseholdMember.objects.create(id=9101, screen=screen, relationship="spouse", age=40)
+        income_b = IncomeStream.objects.create(
+            id=9202, screen=screen, household_member=member_a, type="wages", amount=100, frequency="monthly"
+        )
+        income_a = IncomeStream.objects.create(
+            id=9201, screen=screen, household_member=member_a, type="sSI", amount=100, frequency="monthly"
+        )
+        expense_b = Expense.objects.create(id=9302, screen=screen, type="rent", amount=100, frequency="monthly")
+        expense_a = Expense.objects.create(id=9301, screen=screen, type="heating", amount=100, frequency="monthly")
+
+        prefetched = Screen.objects.prefetch_related("household_members__income_streams", "expenses").get(pk=screen.pk)
+        for s in (screen, prefetched):
+            self.assertEqual(list(s.household_members.all()), [member_a, member_b])
+            self.assertEqual(list(s.household_members.get(pk=member_a.pk).income_streams.all()), [income_a, income_b])
+            self.assertEqual(list(s.expenses.all()), [expense_a, expense_b])
+        with self.assertNumQueries(0):
+            self.assertEqual(list(prefetched.household_members.all()[0].income_streams.all()), [income_a, income_b])
+
 
 class TestHouseholdMember(TestCase):
     """

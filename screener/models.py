@@ -267,11 +267,7 @@ class Screen(models.Model):
     def relationship_map(self):
         relationship_map = {}
 
-        # Sorted by id so the map's insertion order is stable: the PolicyEngine payload builds
-        # each marital unit from it ("head-spouse" vs "spouse-head"), and the cassette matcher
-        # compares request bodies exactly. Sorted in Python rather than with order_by so a
-        # prefetched household_members is reused instead of re-queried.
-        all_members = sorted(self.household_members.all(), key=lambda m: m.id)
+        all_members = self.household_members.all()
         for member in all_members:
             if member.id in relationship_map and relationship_map[member.id] is not None:
                 continue
@@ -555,6 +551,12 @@ class HouseholdMember(models.Model):
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
 
+    class Meta:
+        # Deterministic iteration everywhere, including prefetches. The PolicyEngine payload
+        # lists members in iteration order and the cassette matcher compares request bodies
+        # exactly, so an unordered query can make the same household stop matching.
+        ordering = ["id"]
+
     def calc_gross_income(self, frequency, types, exclude=[]):
         gross_income = 0
 
@@ -722,6 +724,9 @@ class IncomeStream(models.Model):
     frequency = models.CharField(max_length=30, blank=True, null=True)
     hours_worked = models.IntegerField(null=True, blank=True)
 
+    class Meta:
+        ordering = ["id"]
+
     def monthly(self):
         if self.frequency == "monthly":
             monthly = self.amount
@@ -779,6 +784,9 @@ class Expense(models.Model):
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
+
+    class Meta:
+        ordering = ["id"]
 
     def monthly(self):
         if self.frequency == "monthly":
