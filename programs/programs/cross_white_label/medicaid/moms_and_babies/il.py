@@ -7,17 +7,13 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     adult_member_amount = 474 * 12  # $474/month for adults
     newborn_member_amount = 284 * 12  # $284/month for newborns
     fpl_percent = 2.13  # 213% FPL
-    max_newborn_age_months = 2
     min_adult_age = 19  # Adults must be 19+
     parent_relationships = ["headOfHousehold", "spouse", "domesticPartner", "parent", "fosterParent"]
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
     def _is_eligible_newborn(self, member: HouseholdMember) -> bool:
-        if member.birth_year_month is None:
-            return member.calc_age() == 0
-
-        age_months = member.age_in_months()
-        return age_months is not None and 0 <= age_months <= self.max_newborn_age_months
+        # a newborn is a baby under 1
+        return member.calc_age() == 0
 
     def _is_eligible_adult(self, member: HouseholdMember) -> bool:
         is_old_enough = member.calc_age() >= self.min_adult_age

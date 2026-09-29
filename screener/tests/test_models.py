@@ -1235,22 +1235,6 @@ class TestStaleStoredAge(TestCase):
         self.assertEqual(member.age_at_end_of_year(2025), 12)
         self.assertEqual(self.head.age_at_end_of_year(None), 45)
 
-    def test_age_in_months_counts_from_the_birth_month(self):
-        member = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=0, birth_year_month=date(2025, 11, 1)
-        )
-        self.assertEqual(member.age_in_months(), 10)
-
-    def test_age_in_months_is_zero_in_the_birth_month(self):
-        member = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=0, birth_year_month=date(2026, 9, 1)
-        )
-        self.assertEqual(member.age_in_months(), 0)
-
-    def test_age_in_months_falls_back_to_the_stored_age(self):
-        member = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=2)
-        self.assertEqual(member.age_in_months(), 24)
-
 
 class TestUnknownAge(TestCase):
     """A member with neither a stored age nor a birth date has no age, and must not crash the helpers."""
@@ -1265,9 +1249,6 @@ class TestUnknownAge(TestCase):
 
     def test_calc_age_is_none(self):
         self.assertIsNone(self.unknown.calc_age())
-
-    def test_age_in_months_is_none(self):
-        self.assertIsNone(self.unknown.age_in_months())
 
     def test_num_children_skips_the_member(self):
         self.assertEqual(self.screen.num_children(), 0)

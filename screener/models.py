@@ -724,17 +724,6 @@ class HouseholdMember(models.Model):
 
         return current_year - birth_year
 
-    def age_in_months(self) -> Optional[int]:
-        """
-        Whole months from the birth month to the reference month, for rules written in
-        months. Without a birth date, the stored age in years times 12.
-        """
-        age = self.fraction_age()
-        if age is None:
-            return None
-
-        return round(age * 12)
-
     def missing_fields(self):
         member_fields = (
             "relationship",
