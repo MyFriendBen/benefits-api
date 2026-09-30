@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from programs.models import County
 from screener.models import WhiteLabel
 from configuration.models import Configuration
@@ -17,7 +17,10 @@ class Command(BaseCommand):
         except ObjectDoesNotExist:
             self.stdout.write(self.style.WARNING(f'White label for "{options["white_label"]}" is not in the database'))
             return
-        counties_from_config = Configuration.counties_by_zipcode(white_label)
+        try:
+            counties_from_config = Configuration.counties_by_zipcode(white_label)
+        except ValueError as e:
+            raise CommandError(str(e)) from e
         if counties_from_config is not None:
             counties = set()
 

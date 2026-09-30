@@ -379,7 +379,8 @@ class ScreenSerializer(serializers.ModelSerializer):
             counties_by_zip = Configuration.counties_by_zipcode(white_label)
         except ValueError as e:
             # Don't block every screen write on a bad config row, but don't fail open quietly either.
-            logger.error("Skipping location validation for %s: %s", white_label.code, e)
+            # warning, not error: Sentry turns logger.error into a second event.
+            logger.warning("Skipping location validation for %s: %s", white_label.code, e)
             capture_message(f"Skipping location validation for {white_label.code}: {e}", level="error")
             return
         if not counties_by_zip:
