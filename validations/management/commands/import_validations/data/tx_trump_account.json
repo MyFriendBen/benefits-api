@@ -7,7 +7,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "78701",
-      "county": "Travis",
+      "county": "Travis County",
       "household_size": 2,
       "household_assets": 5000.00,
       "household_members": [
@@ -57,7 +57,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "78701",
-      "county": "Travis",
+      "county": "Travis County",
       "household_size": 2,
       "household_assets": 4000.00,
       "household_members": [
@@ -106,7 +106,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "75201",
-      "county": "Dallas",
+      "county": "Dallas County",
       "household_size": 2,
       "household_assets": 10000.00,
       "household_members": [
@@ -155,7 +155,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "78701",
-      "county": "Travis",
+      "county": "Travis County",
       "household_size": 2,
       "household_assets": 8000.00,
       "household_members": [
@@ -211,7 +211,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "75201",
-      "county": "Dallas",
+      "county": "Dallas County",
       "household_size": 3,
       "household_assets": 500000.00,
       "household_members": [
@@ -279,7 +279,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "78701",
-      "county": "Travis",
+      "county": "Travis County",
       "household_size": 4,
       "household_assets": 5000.00,
       "household_members": [
@@ -352,7 +352,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "78701",
-      "county": "Travis",
+      "county": "Travis County",
       "household_size": 4,
       "household_assets": 3000.00,
       "household_members": [
@@ -425,7 +425,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "78701",
-      "county": "Travis",
+      "county": "Travis County",
       "household_size": 2,
       "household_assets": 3000.00,
       "household_members": [
@@ -477,7 +477,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "78701",
-      "county": "Travis",
+      "county": "Travis County",
       "household_size": 3,
       "household_assets": 4000.00,
       "household_members": [

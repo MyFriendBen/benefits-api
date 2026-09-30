@@ -7,7 +7,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "98101",
-      "county": "King County",
+      "county": "King",
       "household_size": 3,
       "household_assets": 1500,
       "household_members": [
@@ -85,7 +85,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "98109",
-      "county": "King County",
+      "county": "King",
       "household_size": 2,
       "household_assets": 6000,
       "household_members": [
@@ -146,7 +146,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "98115",
-      "county": "King County",
+      "county": "King",
       "household_size": 3,
       "household_assets": 2000,
       "household_members": [

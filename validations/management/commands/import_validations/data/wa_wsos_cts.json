@@ -7,7 +7,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "98101",
-      "county": "King County",
+      "county": "King",
       "household_size": 1,
       "household_assets": 0.0,
       "household_members": [
@@ -45,7 +45,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "98101",
-      "county": "King County",
+      "county": "King",
       "household_size": 1,
       "household_assets": 0.0,
       "household_members": [
@@ -83,7 +83,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "98501",
-      "county": "Thurston County",
+      "county": "Thurston",
       "household_size": 3,
       "household_assets": 0.0,
       "household_members": [
