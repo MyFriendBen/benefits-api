@@ -4,7 +4,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "02101",
-      "county": "Suffolk",
+      "county": "Boston",
       "household_size": 1,
       "household_members": [
         {
@@ -30,7 +30,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "02101",
-      "county": "Suffolk",
+      "county": "Boston",
       "household_size": 1,
       "household_members": [
         {
@@ -55,7 +55,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "01201",
-      "county": "Berkshire",
+      "county": "Pittsfield",
       "household_size": 1,
       "household_members": [
         {
@@ -80,7 +80,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "02101",
-      "county": "Suffolk",
+      "county": "Boston",
       "household_size": 1,
       "household_members": [
         {
@@ -105,7 +105,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "02139",
-      "county": "Middlesex",
+      "county": "Cambridge",
       "household_size": 2,
       "household_members": [
         {
@@ -138,7 +138,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "02101",
-      "county": "Suffolk",
+      "county": "Boston",
       "household_size": 2,
       "household_members": [
         {
@@ -173,7 +173,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "02101",
-      "county": "Suffolk",
+      "county": "Boston",
       "household_size": 1,
       "current_benefits": ["ma_csfp"],
       "household_members": [
@@ -223,7 +223,7 @@
     "household": {
       "white_label": "ma",
       "zipcode": "02702",
-      "county": "Bristol",
+      "county": "Freetown",
       "household_size": 1,
       "household_members": [
         {
