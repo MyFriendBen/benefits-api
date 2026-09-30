@@ -26,7 +26,7 @@
       "St. Louis County"
     ],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

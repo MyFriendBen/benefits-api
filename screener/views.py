@@ -9,7 +9,6 @@ from integrations.services.communications import MessageUser
 from integrations.clients.policyengine import versions as pe_versions
 from programs.models import Referrer
 from integrations.clients.policyengine.registry import all_calculators
-from programs.urgent_needs.base import UrgentNeedFunction
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
 from screener.models import (
@@ -41,13 +40,12 @@ from screener.serializers import (
 )
 from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
-from programs.util import DependencyError, Dependencies
-from programs.urgent_needs import urgent_need_functions
+from programs.util import DependencyError, Dependencies, UpstreamAbsentError
+from programs.framework.gates import force_calculated_codes
 from programs.models import (
     Document,
     Navigator,
     ProgramCategory,
-    UrgentNeed,
     UrgentNeedType,
     Program,
     Referrer,
@@ -60,12 +58,14 @@ from programs.warnings import warning_calculators
 from programs.serializers import HasBenefitsProgramSerializer
 from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
+from .urgent_needs import eligible_urgent_needs
 from drf_yasg.utils import swagger_auto_schema
 import math
 import json
 from datetime import datetime, timezone
 from django.conf import settings
 from django.db.models import Prefetch
+from sentry_sdk import capture_exception, capture_message
 
 
 def index(request):
@@ -212,6 +212,19 @@ class EligibilityView(views.APIView):
         return Response(results)
 
 
+# Everything eligibility_results reads per member. Without it every calculator re-queries
+# members and income streams, thousands of queries per screen.
+ELIGIBILITY_PREFETCH = (
+    "household_members",
+    "household_members__income_streams",
+    "household_members__insurance",
+    "household_members__energy_calculator",
+    "expenses",
+    "energy_calculator",
+    "current_benefits__program",
+)
+
+
 class EligibilityTranslationView(views.APIView):
     @swagger_auto_schema(responses={200: ResultsSerializer()})
     def get(self, request, id):
@@ -224,19 +237,7 @@ class EligibilityTranslationView(views.APIView):
         EligibilitySnapshot — that ordering is locked by
         screener/tests/test_pe_version_override.py.
         """
-        screen = (
-            Screen.objects.select_related("white_label")
-            .prefetch_related(
-                "household_members",
-                "household_members__income_streams",
-                "household_members__insurance",
-                "household_members__energy_calculator",
-                "expenses",
-                "energy_calculator",
-                "current_benefits__program",
-            )
-            .get(uuid=id)
-        )
+        screen = Screen.objects.select_related("white_label").prefetch_related(*ELIGIBILITY_PREFETCH).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
 
@@ -283,13 +284,25 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         body = json.loads(request.body.decode())
         screen = Screen.objects.get(uuid=body["screen"])
 
-        message = MessageUser(screen, screen.get_language_code())
+        message = MessageUser(screen, self._message_language(body, screen))
         if "email" in body:
             message.email(body["email"], send_tests=True)
         if "phone" in body:
             message.text(body["phone"], send_tests=True)
 
         return Response({}, status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _message_language(body, screen: Screen) -> str:
+        """The language to compose the results message in.
+
+        Defaults to the language the screener was taken in, which is what every
+        caller relied on before the frontend could ask. An unsupported or
+        unrecognized code falls back to that default instead of erroring: the
+        language only picks which copy to send, and sending the results in the
+        screener's language beats refusing to send them.
+        """
+        return screen.supported_language_code(body.get("language"))
 
 
 def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
@@ -480,6 +493,28 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     missing_dependencies = screen.missing_fields()
 
     program_by_abbr = {p.name_abbreviated: p for p in all_programs}
+
+    # Gated upstreams the filters above dropped. A strict gate raises when its upstream was
+    # not calculated, and `active=False`, a NULL category, `has_calculator=False` and
+    # `Referrer.remove_programs` all remove a row from `all_programs` — none of which says
+    # anything about this household. These rows are calculated for their result only and
+    # withheld from the response (see `skip` below), which decouples the gate from display
+    # configuration. `remove_programs` is overridden deliberately: it is a display filter,
+    # and a force-calculated upstream is never displayed.
+    #
+    # Built after `program_by_abbr` on purpose. `force_calculated_codes()` contains no
+    # PolicyEngine program, and keeping the two lists separate makes that structural — a
+    # row added here can never reach `pe_calculators` and perturb the shared PE payload.
+    upstream_only_programs = list(
+        Program.objects.filter(
+            white_label=screen.white_label,
+            name_abbreviated__in=force_calculated_codes(),
+        )
+        .exclude(name_abbreviated__in=list(program_by_abbr))
+        .select_related("year")
+    )
+    upstream_only_ids = {program.id for program in upstream_only_programs}
+
     pe_calculators = {}
     for calculator_name, Calculator in all_calculators.items():
         program = program_by_abbr.get(calculator_name)
@@ -503,34 +538,93 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     # make certain benifits calculate first so that they can be used in other benefits
     all_programs = sorted(all_programs, key=sort_first)
+    ordered_programs = sorted([*all_programs, *upstream_only_programs], key=sort_first)
 
     program_snapshots = []
     eligible_program_data: list[tuple] = []  # (program, data_index) for post-loop navigator pass
 
     program_eligibility = {}
 
-    for program in all_programs:
+    # {name_abbreviated: EligibilitySnapshot.DROPPED_*} for every program left out of the
+    # results, written to the snapshot below. `missing_programs` says only that something
+    # was omitted; this says which program and why.
+    dropped_programs: dict[str, str] = {}
+
+    force_calculated = force_calculated_codes()
+
+    # Force-calculated upstreams that were withheld from the response. They stay in
+    # `program_eligibility` for the gates that read them, but display consumers below
+    # (navigator eligibility, category caps) must not see them.
+    withheld_programs: set[str] = set()
+
+    for program in ordered_programs:
+        # `upstream_only_ids` rows were fetched past the display filters, so being active is
+        # not enough to publish one — a row removed for a referrer is active.
+        displayable = program.active and program.has_calculator and program.id not in upstream_only_ids
+
+        # A force-calculated upstream: run it for its result, then withhold it from the
+        # response. Every use of `skip` below is one half of that.
+        skip = not displayable
+
         # Tracking-only programs (has_calculator=False) and disabled programs
-        # (active=False) are skipped before any eligibility lookup. Without this
-        # guard, the loop would fall through and reuse the previous iteration's
-        # `eligibility` value when writing program_snapshots.
-        if not (program.active and program.has_calculator):
+        # (active=False) are skipped before any eligibility lookup. Without this guard, the
+        # loop would fall through and reuse the previous iteration's `eligibility` value
+        # when writing program_snapshots. A gated custom upstream is the exception: not
+        # being displayable is exactly the state it is here to survive, and it always has a
+        # calculator in code whatever `has_calculator` claims.
+        if skip and program.name_abbreviated not in force_calculated:
             continue
-        skip = False
         if program.name_abbreviated not in pe_programs:
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
-            except DependencyError:
-                missing_programs = True
+            except DependencyError as e:
+                # A force-calculated upstream is not part of the household's results, so
+                # its absence is not a missing program — the dependent that gates on it
+                # reports that for itself when its own gate raises.
+                if not skip:
+                    missing_programs = True
+                    dropped_programs[program.name_abbreviated] = (
+                        EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
+                        if isinstance(e, UpstreamAbsentError)
+                        else EligibilitySnapshot.DROPPED_MISSING_FIELD
+                    )
+                continue
+            except Exception as e:
+                # Only reachable for a force-calculated upstream: this row was not being
+                # calculated at all before, so adding it must not be able to make the
+                # response worse than it already was. Leaving the key absent lets the
+                # dependent's gate raise and drop it exactly as it did before.
+                if not skip:
+                    raise
+
+                capture_exception(e, level="error")
+                capture_message(
+                    f"Force-calculated upstream {program.name_abbreviated} raised; programs "
+                    "gating on it drop out as they did before it was force-calculated.",
+                    level="error",
+                )
+                dropped_programs[program.name_abbreviated] = EligibilitySnapshot.DROPPED_UPSTREAM_ERROR
                 continue
         else:
             if program.name_abbreviated not in pe_eligibility:
                 missing_programs = True
+                # `calc_pe_eligibility` filters on `can_calc` before it builds a payload, so
+                # absence here has two causes worth telling apart: a screener field this
+                # program needs and the household did not give, or PolicyEngine not
+                # answering. Only the second is outside our control.
+                calculator = pe_calculators[program.name_abbreviated]
+                dropped_programs[program.name_abbreviated] = (
+                    EligibilitySnapshot.DROPPED_POLICY_ENGINE
+                    if calculator.can_calc()
+                    else EligibilitySnapshot.DROPPED_MISSING_FIELD
+                )
                 continue
 
             eligibility = pe_eligibility[program.name_abbreviated]
 
         program_eligibility[program.name_abbreviated] = eligibility
+        if skip:
+            withheld_programs.add(program.name_abbreviated)
 
         if previous_snapshot is not None:
             new = True
@@ -545,8 +639,9 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
         warnings = []
 
-        # don't calculate warnings for ineligible programs
-        if eligibility.eligible:
+        # don't calculate warnings for ineligible programs, or for a force-calculated
+        # upstream whose warnings will never be rendered
+        if not skip and eligibility.eligible:
             for warning in program.warning_messages.all():
                 if warning.calculator not in warning_calculators:
                     raise Exception(f"{warning.calculator} is not a valid calculator name")
@@ -624,7 +719,11 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             if eligibility.eligible:
                 eligible_program_data.append((program, len(data) - 1))
 
-    update_navigators(eligible_program_data, program_eligibility, data, screen.county, referrer)
+    displayed_eligibility = {
+        code: eligibility for code, eligibility in program_eligibility.items() if code not in withheld_programs
+    }
+
+    update_navigators(eligible_program_data, displayed_eligibility, data, screen.county, referrer)
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]
@@ -641,7 +740,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         if category.calculator is not None and category.calculator != "":
             CategoryCalculator = category_cap_calculators[category.calculator]
 
-        calculator = CategoryCalculator(program_eligibility)
+        calculator = CategoryCalculator(displayed_eligibility)
 
         caps = []
         for cap in calculator.caps():
@@ -661,6 +760,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     ProgramEligibilitySnapshot.objects.bulk_create(program_snapshots)
     snapshot.had_error = False
+    snapshot.dropped_programs = dropped_programs
     snapshot.save()
 
     eligible_programs = []
@@ -711,80 +811,28 @@ def serialized_document(document):
 
 
 def urgent_need_results(screen: Screen, data):
+    """The additional resources this screen qualifies for, serialized for the browser.
+
+    Selection lives in `screener.urgent_needs` because Benji reads the same list
+    through `screener.assistant` and the two must not drift — see that module. What
+    stays here is the shape the frontend wants: `default_message` translation dicts
+    it resolves against its own locale, rather than resolved text.
     """
-    These keys are used to determine which urgent needs
-    programs to show based on the selected options in the
-    immediate needs page.
-    """
-    possible_needs = {
-        "food": screen.needs_food,
-        "baby supplies": screen.needs_baby_supplies,
-        "housing": screen.needs_housing_help,
-        "mental health": screen.needs_mental_health_help,
-        "child dev": screen.needs_child_dev_help,
-        "funeral": screen.needs_funeral_help,
-        "family planning": screen.needs_family_planning_help,
-        "job resources": screen.needs_job_resources,
-        "dental care": screen.needs_dental_care,
-        "legal services": screen.needs_legal_services,
-        "veteran services": screen.needs_veteran_services,
-        "savings": screen.needs_college_savings,
-        "disability resources": screen.needs_disability_resources,
-        "aging resources": screen.needs_aging_resources,
-        "homeless services": screen.needs_homeless_services,
-        "free low cost medical care": screen.needs_free_low_cost_medical_care,
-        "transportation": screen.needs_transportation,
-        "medical expenses and debt": screen.needs_medical_expenses_and_debt,
-    }
+    eligible = eligible_urgent_needs(screen, data)
 
-    missing_dependencies = screen.missing_fields()
-
-    list_of_needs = []
-    for need, has_need in possible_needs.items():
-        if has_need:
-            list_of_needs.append(need)
-
-    urgent_need_resources = (
-        UrgentNeed.objects.prefetch_related(
-            "functions", "counties", *translations_prefetch_name("", UrgentNeed.objects.translated_fields)
-        )
-        .filter(
-            type_short__name__in=list_of_needs, category_type__isnull=False, active=True, white_label=screen.white_label
-        )
-        .distinct()
-    )
-
-    eligible_urgent_needs = []
-    for need in urgent_need_resources:
-        eligible = True
-
-        calculators = [urgent_need_functions[f.name] for f in need.functions.all()]
-
-        if len(calculators) == 0:
-            calculators = [UrgentNeedFunction]
-
-        for Calculator in calculators:
-            calculator = Calculator(screen, need, missing_dependencies, data)
-
-            if not calculator.calc():
-                eligible = False
-        if eligible:
-            phone_number = str(need.phone_number) if need.phone_number else None
-            need_data = {
-                "name": default_message(need.name),
-                "description": default_message(need.description),
-                "link": default_message(need.link),
-                "category_type": default_message(need.category_type.name),
-                "icon": need.category_type.icon_name,
-                "warning": default_message(need.warning),
-                "phone_number": phone_number,
-                "notification_message": (
-                    default_message(need.notification_message) if need.notification_message else None
-                ),
-            }
-            eligible_urgent_needs.append(need_data)
-
-    return eligible_urgent_needs
+    return [
+        {
+            "name": default_message(need.name),
+            "description": default_message(need.description),
+            "link": default_message(need.link),
+            "category_type": default_message(need.category_type.name),
+            "icon": need.category_type.icon_name,
+            "warning": default_message(need.warning),
+            "phone_number": str(need.phone_number) if need.phone_number else None,
+            "notification_message": (default_message(need.notification_message) if need.notification_message else None),
+        }
+        for need in eligible
+    ]
 
 
 # Throttles now live in screener/throttles.py so `assistant.py` can use the base class

@@ -678,15 +678,22 @@ class MaMbtaAgeEligible(Member):
     field = "ma_mbta_income_eligible_reduced_fare_eligible"
 
 
-class Ccdf(Member):
-    field = "is_ccdf_eligible"
+class MaCcfaEligibleChild(Member):
+    """
+    Whether this member is a child Massachusetts CCFA can be claimed for.
 
+    PolicyEngine's own per-child gate: under 13, or under 16 when disabled, and a tax
+    unit dependent with a qualifying immigration status. Read rather than reimplemented
+    so the age thresholds stay MA's rather than a copy of them, and because the
+    SPM-level ``ma_ccfa_eligible`` is true when *any* child in the unit qualifies --
+    it cannot say which.
 
-class CcdfReasonCareEligibleDependency(Member):
-    field = "is_ccdf_reason_for_care_eligible"
+    Immigration status is not an input we send, so this reads PolicyEngine's default,
+    which qualifies. If the screener ever sends ``immigration_status``, a member with a
+    non-qualifying status stops being claimable here, which is the rule.
+    """
 
-    def value(self):
-        return True
+    field = "ma_ccfa_eligible_child"
 
 
 class ChildcareAttendingDaysPerMonthDependency(Member):

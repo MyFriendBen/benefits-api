@@ -1,5 +1,5 @@
 from screener.models import Screen, HouseholdMember
-from programs.util import Dependencies, DependencyError
+from programs.util import Dependencies, DependencyError, UpstreamAbsentError
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -106,6 +106,19 @@ class ProgramCalculator:
     amount = 0
     member_amount = 0
 
+    #: Upstream program codes this calculator reads through `program_eligible` or
+    #: `member_program_eligible`. Those raise when the upstream was not calculated, so
+    #: `can_calc` also requires the upstream's own screener fields — see
+    #: `programs.framework.gates`. Declaring the code here rather than only passing it to
+    #: the accessor is what makes the gate graph readable from production code.
+    gates_on: tuple = tuple()
+
+    #: Upstream program codes read through `any_program_eligible`, which treats an absent
+    #: upstream as "no". Deliberately does *not* contribute to `can_calc`: a tolerant gate
+    #: loses one route to eligibility rather than the whole program, so requiring the
+    #: upstream's fields would turn a graceful degradation into a dropped program.
+    gates_on_any: tuple = tuple()
+
     def __init__(
         self, screen: Screen, program: "Program", data: dict[str, Eligibility], missing_dependencies: Dependencies
     ):
@@ -208,14 +221,29 @@ class ProgramCalculator:
         all. The last case drops fifteen gates across fourteen programs at once, so a PE
         outage now omits them rather than reporting each one ineligible.
 
-        Declare the upstream's ``dependencies`` alongside your own. Otherwise a screener
-        field the upstream needs and you do not makes you calculable where it is not, and
-        this raises on a household you could have answered for.
+        Name the upstream in ``gates_on``. `all_dependencies` then requires its screener
+        fields, so a field the upstream needs and you do not cannot make you calculable
+        where it is not.
         """
+        self._assert_declared(program_code, self.gates_on, "gates_on")
+
         if program_code not in self.data:
-            raise DependencyError()
+            raise UpstreamAbsentError(program_code)
 
         return self.data[program_code].eligible
+
+    @classmethod
+    def _assert_declared(cls, program_code: str, declared, attribute: str) -> None:
+        """Refuse a gate the class did not declare.
+
+        A programming error, not a data condition: the declarations are what
+        `can_calc`, the force-calculated upstream set and `CALC_ORDER` are all derived
+        from, so a call that bypasses them would reintroduce exactly the silent drift this
+        replaced. `screener/tests/test_calc_order.py` compares the declarations against the
+        source, so this cannot first surface in production.
+        """
+        if program_code not in declared:
+            raise ValueError(f"{cls.__name__} gates on {program_code!r} without declaring it in {attribute}")
 
     def any_program_eligible(self, program_codes) -> bool:
         """
@@ -244,6 +272,9 @@ class ProgramCalculator:
         that route rather than the whole program.
         """
         for program_code in program_codes:
+            self._assert_declared(program_code, self.gates_on_any, "gates_on_any")
+
+        for program_code in program_codes:
             entry = self.data.get(program_code)
             if entry is not None and entry.eligible:
                 return True
@@ -259,9 +290,14 @@ class ProgramCalculator:
         a different answer from "calculated, and not eligible", so it raises. A member with
         no entry in the upstream's results is not eligible for it — the upstream records a
         verdict for every member it evaluated, so a gap means it did not consider them.
+
+        Declared in ``gates_on`` alongside the household-scope gates: the scope differs but
+        the liveness requirement is the same.
         """
+        self._assert_declared(program_code, self.gates_on, "gates_on")
+
         if program_code not in self.data:
-            raise DependencyError()
+            raise UpstreamAbsentError(program_code)
 
         for member_eligibility in self.data[program_code].eligible_members:
             if member_eligibility.member.id == member.id:
@@ -269,8 +305,24 @@ class ProgramCalculator:
 
         return False
 
+    @classmethod
+    def all_dependencies(cls) -> tuple:
+        """Every screener field this program needs, including its strict upstreams'.
+
+        A strict gate raises when its upstream is absent, and a missing screener field is
+        one way an upstream gets there — `can_calc` drops it before it can be calculated.
+        If the dependent needed fewer fields than the upstream, there would be screens
+        where the dependent runs and the upstream did not, so the gate would raise and the
+        program would disappear for a household it could otherwise have answered for.
+        Unioning here makes the pair drop out together, and means no calculator has to
+        restate its upstream's field list by hand.
+        """
+        from programs.framework.gates import strict_upstream_fields
+
+        return tuple(sorted(set(cls.dependencies) | strict_upstream_fields(tuple(cls.gates_on))))
+
     def can_calc(self):
         """
         Returns whether or not the program can be calculated with the missing dependencies
         """
-        return not self.missing_dependencies.has(*self.dependencies)
+        return not self.missing_dependencies.has(*self.all_dependencies())

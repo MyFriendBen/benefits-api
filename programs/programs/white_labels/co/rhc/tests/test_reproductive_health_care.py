@@ -180,8 +180,16 @@ class TestReproductiveHealthCareCanCalc(TestCase):
         calc = make_calculator(missing_dependencies=Dependencies(["insurance"]))
         self.assertFalse(calc.can_calc())
 
-    def test_can_calc_with_an_unrelated_missing_dependency(self):
+    def test_cannot_calc_without_a_field_co_medicaid_needs(self):
+        """`income_amount` is not unrelated: this program gates strictly on `co_medicaid`,
+        which reads it. RHC used to be calculable here, so the gate raised and RHC vanished
+        for a household it could otherwise have answered for. `all_dependencies` now unions
+        the upstream's fields, so the pair drops out together."""
         calc = make_calculator(missing_dependencies=Dependencies(["income_amount"]))
+        self.assertFalse(calc.can_calc())
+
+    def test_can_calc_with_a_dependency_neither_program_reads(self):
+        calc = make_calculator(missing_dependencies=Dependencies(["expense_amount"]))
         self.assertTrue(calc.can_calc())
 
     def test_calc_raises_when_insurance_is_missing(self):

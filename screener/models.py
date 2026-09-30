@@ -13,6 +13,9 @@ from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 from .irs_parameters import get_qualifying_relative_threshold
 
+# Built once: settings.LANGUAGES is fixed for the life of the process.
+SUPPORTED_LANGUAGE_CODES = frozenset(code for code, _ in settings.LANGUAGES)
+
 # Income stream types that represent money earned from work. Everything else the
 # screener collects (SSDI, SSI, pension, unemployment, child support, ...) is
 # unearned. Read by calc_gross_income()'s "earned"/"unearned" selectors and by
@@ -198,7 +201,9 @@ class Screen(models.Model):
         Get list of unique expense types for this screen.
         Returns empty list if no expenses exist.
         """
-        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
+        # Deduplicated in Python: a DISTINCT query would also select Expense's default
+        # ordering column (id) and stop deduplicating. This also reads a prefetched expenses.
+        return list(dict.fromkeys(e.type for e in self.expenses.all() if e.type is not None))
 
     def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
         children = 0
@@ -472,6 +477,22 @@ class Screen(models.Model):
 
         return language_code
 
+    def supported_language_code(self, requested: object = None) -> str:
+        """A `settings.LANGUAGES` code for this screen, preferring `requested`.
+
+        `requested` when it is a supported code, else the screen's own
+        `request_language_code` when that is, else `settings.LANGUAGE_CODE`. Always
+        lowercase. Unlike `get_language_code`, the screen's value is checked too: the
+        serializer only enforces its `max_length`, and a stale frontend code (`zh`, now
+        `zh-hans`) can be saved on it.
+        """
+        for candidate in (requested, self.request_language_code):
+            code = str(candidate or "").lower()
+            if code in SUPPORTED_LANGUAGE_CODES:
+                return code
+
+        return settings.LANGUAGE_CODE
+
     def has_members_outside_of_tax_unit(self):
         for member in self.household_members.all():
             if not member.is_in_tax_unit():
@@ -550,6 +571,12 @@ class HouseholdMember(models.Model):
     has_income = models.BooleanField(blank=True, null=True)
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
+
+    class Meta:
+        # Deterministic iteration everywhere, including prefetches. The PolicyEngine payload
+        # lists members in iteration order and the cassette matcher compares request bodies
+        # exactly, so an unordered query can make the same household stop matching.
+        ordering = ["id"]
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         gross_income = 0
@@ -718,6 +745,9 @@ class IncomeStream(models.Model):
     frequency = models.CharField(max_length=30, blank=True, null=True)
     hours_worked = models.IntegerField(null=True, blank=True)
 
+    class Meta:
+        ordering = ["id"]
+
     def monthly(self):
         if self.frequency == "monthly":
             monthly = self.amount
@@ -775,6 +805,9 @@ class Expense(models.Model):
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
+
+    class Meta:
+        ordering = ["id"]
 
     def monthly(self):
         if self.frequency == "monthly":
@@ -923,6 +956,45 @@ class EligibilitySnapshot(models.Model):
     submission_date = models.DateTimeField(auto_now=True)
     is_batch = models.BooleanField(default=False)
     had_error = models.BooleanField(default=False)
+
+    #: Programs left out of this screen's results, as ``{name_abbreviated: reason}``.
+    #:
+    #: The results payload carries a single ``missing_programs`` boolean, which says that
+    #: something was omitted but not what or why. The reasons are not interchangeable — a
+    #: PolicyEngine outage, a screener field the household skipped, and a gated upstream
+    #: whose row was deactivated all look identical from the response, and only the first
+    #: is outside our control. Recording them per program is what makes the difference
+    #: answerable from production data instead of by reading the calculator tree.
+    #:
+    #: Reasons are the ``DROPPED_*`` constants below. Code that knows this field always
+    #: writes a dict — empty when nothing was dropped — so an empty dict and a null mean
+    #: different things: "nothing was dropped" against "written by code that predates this
+    #: field".
+    #:
+    #: Nullable for deploy safety, which is the only reason it is not simply NOT NULL.
+    #: Django applies ``default`` in Python and drops the database default after adding the
+    #: column, so a NOT NULL column is written only by code that declares the field. The
+    #: release phase migrates before the new dynos take over, so for that window — and for
+    #: the whole of any code rollback that leaves the migration applied — the old code
+    #: inserts no value at all and every eligibility calculation fails on the constraint.
+    dropped_programs = models.JSONField(default=dict, blank=True, null=True)
+
+    #: The program's own `can_calc` failed: a screener field it needs is missing. Not a
+    #: failure — the household was never asked.
+    DROPPED_MISSING_FIELD = "missing_screener_field"
+
+    #: A strict gate raised because the program it reads was not calculated.
+    DROPPED_UPSTREAM_ABSENT = "gated_upstream_absent"
+
+    #: A PolicyEngine program absent from the batch result: the call failed, the payload
+    #: could not be assembled, the request was abandoned on the time budget, or the
+    #: resolved model does not define its output.
+    DROPPED_POLICY_ENGINE = "policy_engine_unavailable"
+
+    #: A force-calculated upstream raised something other than `DependencyError`. Never a
+    #: program the household would have seen; recorded because it means a gate that should
+    #: have been decoupled fell back to dropping its dependents.
+    DROPPED_UPSTREAM_ERROR = "force_calculated_upstream_error"
 
 
 class NPSScore(models.Model):
@@ -1103,6 +1175,76 @@ class AssistantMessage(models.Model):
     completion_tokens = models.IntegerField(blank=True, null=True)
     latency_ms = models.IntegerField(blank=True, null=True)
     error = models.TextField(blank=True, null=True)
+    # --- user feedback on the reply; NULL on user turns and on unrated replies ---
+    # Deliberately +1/-1 rather than a boolean, because NULL has to stay available as
+    # a third state: "nobody rated this" is the overwhelming majority of rows and is a
+    # different fact from "rated badly". A nullable boolean would carry the same three
+    # states, but the integer sums — AVG(rating) over a white label or a
+    # prompt_version is the report query, and it needs no CASE.
+    #
+    # Clearing a rating writes NULL back, so a rated-then-cleared row is
+    # indistinguishable from a never-rated one in this column alone. `rated_at` is what
+    # separates them: it is set on every write INCLUDING the clear, and never reset. So
+    # `rating IS NULL AND rated_at IS NULL` is "never touched", and `rating IS NULL AND
+    # rated_at IS NOT NULL` is "rated, then withdrawn" — which is a real signal about
+    # the reply and not the same as silence.
+    RATING_UP = 1
+    RATING_DOWN = -1
+    RATING_CHOICES = ((RATING_UP, "Thumbs up"), (RATING_DOWN, "Thumbs down"))
+    rating = models.SmallIntegerField(choices=RATING_CHOICES, blank=True, null=True)
+    rated_at = models.DateTimeField(blank=True, null=True)
+    # Why the reply was rated down. NULL means either "not rated down" or "rated down
+    # and the household skipped the question", which is the common case — the chips are
+    # offered after the thumbs-down is already saved, so declining them costs nothing.
+    #
+    # A bare thumbs-down says someone was unhappy and nothing about what to change. This
+    # column is what makes the signal actionable, and the codes are drawn from the
+    # failure modes `_SHARED_GUARDRAILS` in ai-service's prompts.py already names —
+    # fabricated rules, programs outside the closed list, invented links — rather than
+    # from a generic list.
+    #
+    # FIVE, not the seven this started with. Seven chips stacked to seven lines in a
+    # panel capped at 45vh, which is a lot of furniture under every thumbs-down. The two
+    # cut:
+    #
+    #   bad_link  — the only failure mode here we can detect WITHOUT asking anyone. The
+    #               guardrails forbid inventing URLs and phone numbers, and a sweep over
+    #               stored replies finds them directly, so spending a chip on it buys a
+    #               signal we can already get.
+    #   wrong_tone — real, and it matters for this population, but it is the least often
+    #               articulated as a distinct complaint; it lands in `other`, whose rate
+    #               is what will say if that was wrong.
+    #
+    # STORED CODE, NOT DISPLAYED TEXT. The frontend renders a translated label per code
+    # (`chatbot.reason.*`), so the wording can be revised, or translated differently per
+    # locale, without a migration and without splitting a code's history in two. Codes
+    # are therefore append-only in spirit: retire one by dropping it from the UI, not by
+    # renaming it, or old rows stop meaning what they said.
+    #
+    # NEGATIVE RATINGS ONLY, enforced below. Positive reasons were considered and
+    # dropped: they are far less diagnostic, and a second step on the cheap positive
+    # action suppresses the volume that makes the positive signal worth having.
+    REASON_INACCURATE = "inaccurate"
+    REASON_NOT_MY_RESULTS = "not_my_results"
+    REASON_UNANSWERED = "unanswered"
+    REASON_HARD_TO_FOLLOW = "hard_to_follow"
+    REASON_OTHER = "other"
+    RATING_REASON_CHOICES = (
+        # Fabricated rules or numbers — the class the trap suite in ai-service's evals/
+        # exists to measure, and the highest-severity one.
+        (REASON_INACCURATE, "Not accurate"),
+        # The closed-world break: a program outside the list it was given, or one the
+        # household already receives. MFB-1427 / MFB-1788.
+        (REASON_NOT_MY_RESULTS, "Not about my results"),
+        # The commonest complaint about any assistant, and the one with no narrower home.
+        (REASON_UNANSWERED, "Didn't answer me"),
+        # Length, formatting and readability, which a household experiences as one thing.
+        (REASON_HARD_TO_FOLLOW, "Confusing or too long"),
+        # Kept deliberately. On its own it teaches little, but ITS RATE is the signal
+        # that the four above are the wrong four.
+        (REASON_OTHER, "Something else"),
+    )
+    rating_reason = models.CharField(max_length=32, choices=RATING_REASON_CHOICES, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -1122,6 +1264,40 @@ class AssistantMessage(models.Model):
                 fields=["conversation", "client_message_id"],
                 condition=models.Q(client_message_id__isnull=False),
                 name="assistant_msg_client_id_unique",
+            ),
+            # The rating API validates its input, but this table has two writers —
+            # ai-service inserts every row, benefits-api updates this column — and a
+            # column the weekly report AVERAGES cannot be left to whichever of them
+            # happens to be right. A stray 5 would not error anywhere; it would just
+            # quietly move the mean.
+            models.CheckConstraint(
+                check=models.Q(rating__isnull=True) | models.Q(rating__in=(1, -1)),
+                name="assistant_msg_rating_valid",
+            ),
+            # Only assistant turns are rateable. The buttons are rendered on assistant
+            # bubbles only, so a rating on a user turn means a hand-crafted request or
+            # a bug — and either way it would be counted as feedback on a reply that
+            # the household wrote themselves.
+            models.CheckConstraint(
+                check=models.Q(rating__isnull=True) | models.Q(role="assistant"),
+                name="assistant_msg_rating_assistant_only",
+            ),
+            # A reason is only meaningful against a thumbs-down. Switching to a
+            # thumbs-up, or clearing the rating, must take the reason with it — a reason
+            # left stranded on a positive or unrated row would be counted as a
+            # complaint about a reply nobody complained about.
+            #
+            # The `rating__isnull=False` term is load-bearing and is NOT redundant with
+            # `rating=-1`, however much it reads that way. A CHECK passes in Postgres
+            # unless it evaluates to FALSE, and NULL is not FALSE: with a stranded
+            # reason on a row where `rating IS NULL`, `rating = -1` evaluates to NULL,
+            # so `FALSE OR NULL` is NULL and the constraint ACCEPTS the row. That is the
+            # exact case this constraint exists to refuse, and the first version of it
+            # let that row straight through. Spelling the null check out makes the
+            # disjunct FALSE instead of NULL.
+            models.CheckConstraint(
+                check=models.Q(rating_reason__isnull=True) | (models.Q(rating__isnull=False) & models.Q(rating=-1)),
+                name="assistant_msg_reason_needs_thumbs_down",
             ),
         ]
 

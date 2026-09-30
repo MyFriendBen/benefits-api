@@ -30,7 +30,6 @@ from programs.framework.registry import (
     is_abstract,
     register,
 )
-from programs.programs.cross_white_label.ccdf.base import Ccdf
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.cdcc.base import Cdcc
 from programs.programs.cross_white_label.snap.base import Snap
@@ -97,7 +96,7 @@ class BuildTests(SimpleTestCase):
     def test_unkeyed_classes_are_not_registered(self):
         """Abstract bases stay out by declaring no key.
 
-        ``HeadStart``, ``Medicaid``, ``Ccdf`` and friends exist only to be
+        ``HeadStart``, ``Medicaid``, ``Chip`` and friends exist only to be
         subclassed and have no ``Program`` row of their own.
         """
         registry = build("programs.programs", ProgramCalculator)
@@ -190,10 +189,9 @@ class RegistryCoversEveryCalculatorTests(SimpleTestCase):
         harmless while one state uses it and breaks when a second arrives, because
         the base and the new state's subclass then claim the same code.
         """
-        from programs.programs.cross_white_label.ccdf.base import Ccdf
         from programs.programs.cross_white_label.medicaid.base import Medicaid
 
-        for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart, Ccdf):
+        for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart):
             with self.subTest(base=base.__name__):
                 self.assertNotIn(
                     "program_code",
@@ -265,10 +263,9 @@ class AbstractDeclarationTests(SimpleTestCase):
         )
 
     def test_the_family_bases_declare_themselves_abstract(self):
-        from programs.programs.cross_white_label.ccdf.base import Ccdf
         from programs.programs.cross_white_label.medicaid.base import Medicaid
 
-        for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Ccdf, Msp, Aca, Cdcc):
+        for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Msp, Aca, Cdcc):
             with self.subTest(cls=cls.__name__):
                 self.assertTrue(is_abstract(cls), f"{cls.__name__} backs no Program row")
 

@@ -4,6 +4,11 @@ import programs.framework.eligibility_messages as messages
 
 class ReproductiveHealthCare(ProgramCalculator):
     program_code = "rhc"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("co_medicaid",)
     amount = 268
     dependencies = ["insurance"]
 

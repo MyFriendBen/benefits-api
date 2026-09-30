@@ -14,32 +14,40 @@ or tells them to apply for benefits they already have (MFB-1427).
 See the ai-service repo's docs/ for the full API contract.
 """
 
+import json
 import logging
 import os
 import re
 from typing import Optional
 
+from urllib.parse import urlsplit
+
+import phonenumbers
 import requests
 from django.conf import settings
 from django.db.models import Prefetch, Q
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, views
 from rest_framework.request import Request
 from rest_framework.response import Response
 from sentry_sdk import capture_message
 
+from configuration.models import Configuration
 from programs.framework.base import Eligibility
-from programs.models import Document, Program, WarningMessage
+from programs.models import Document, Program, UrgentNeed, WarningMessage
 from programs.util import Dependencies
 from programs.warnings import warning_calculators
 from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
-from .models import EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .models import AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .urgent_needs import eligible_urgent_needs
 from .throttles import (
     AssistantHistoryRateThrottle,
     AssistantMessageRateThrottle,
+    AssistantRatingRateThrottle,
     AssistantStartRateThrottle,
 )
 
@@ -52,7 +60,11 @@ _REPORTED: set[str] = set()
 # service's SERVICE_AUTH_TOKEN). Both come from the environment.
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://localhost:8080")
 AI_SERVICE_TOKEN = os.getenv("AI_SERVICE_TOKEN", "")
-AI_SERVICE_TIMEOUT = 60
+# 25s, not 60: Heroku's router terminates any request at 30 seconds and nothing in this
+# path streams, so a 60s budget was unreachable — the browser got an H12 HTML page rather
+# than the JSON error shape the widget handles, while this worker stayed blocked on a
+# request no one was waiting for. 25 leaves room to return our own 502 first.
+AI_SERVICE_TIMEOUT = 25
 
 # Upper bound on the client-supplied visible-programs list. Comfortably above the
 # largest white label's active program count; exists to bound untrusted input.
@@ -105,6 +117,49 @@ MAX_WARNINGS_PER_PROGRAM = 10
 # Apply links are dropped rather than truncated past this, so it's a reject threshold
 # and not a clip point. Comfortably above the longest link in the seed config (~200).
 MAX_URL_LEN = 500
+
+# Ceiling on the additional-resources list. Sized above the real maximum for the same
+# reason as MAX_DOCUMENTS_PER_PROGRAM: as of 2026-09-17 the largest white label has 43
+# active resources in total (MO), so even a household that ticked every category on the
+# immediate-needs step stays inside this. Truncating would silently break the parity with
+# the Additional Resources tab that this list exists to provide, so hitting it is
+# reported rather than quietly absorbed.
+MAX_ADDITIONAL_RESOURCES = 60
+
+# `acute_condition_options` config key -> the `Screen` field it writes. This mirrors
+# `benefits-calculator/src/Assets/updateScreen.ts`, which is where the mapping has lived
+# alone until now — the browser translates the step's answers into these columns, and the
+# API only ever sees the columns.
+#
+# It is here because Benji may tell someone which category to ADD, and the categories a
+# white label actually offers are config, not code: CO offers 11 of these, TX 12, and
+# "funeral" is a category the resource table has but no white label offers at all. Naming
+# a category that isn't on their step is the same fabrication as naming a button that
+# isn't on their page, so the offered set has to be read from the same config the step
+# renders from.
+#
+# `test_assistant_context.py` asserts every key in every white label's live config
+# resolves to a real Screen field, so a new category added to the config without a column
+# fails a test instead of silently vanishing from Benji's suggestions.
+ACUTE_OPTION_FIELDS = {
+    "food": "needs_food",
+    "babySupplies": "needs_baby_supplies",
+    "housing": "needs_housing_help",
+    "support": "needs_mental_health_help",
+    "childDevelopment": "needs_child_dev_help",
+    "familyPlanning": "needs_family_planning_help",
+    "jobResources": "needs_job_resources",
+    "dentalCare": "needs_dental_care",
+    "legalServices": "needs_legal_services",
+    "savings": "needs_college_savings",
+    "veteranServices": "needs_veteran_services",
+    "disabilityResources": "needs_disability_resources",
+    "agingResources": "needs_aging_resources",
+    "homelessServices": "needs_homeless_services",
+    "freeLowCostMedicalCare": "needs_free_low_cost_medical_care",
+    "transportation": "needs_transportation",
+    "medicalExpensesAndDebt": "needs_medical_expenses_and_debt",
+}
 
 # Program names that look like member-level insurance, used only to report a config
 # gap loudly (see _insurance_program_names).
@@ -560,6 +615,455 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     return current
 
 
+def _is_shareable_url(url: str) -> bool:
+    """An absolute http(s) URL with an actual host.
+
+    The scheme prefix alone is not enough, and `"https://"` is the case that proves it:
+    it passes a `startswith` check and reaches the model as a link it is told to
+    reproduce character-for-character, which the widget then renders as a clickable
+    href that goes nowhere. A link that cannot be opened is the same failure as a
+    truncated one — an authoritative-looking dead end — and the designed fallback
+    ("the link is on your results page") is strictly better.
+
+    `urlsplit` rather than a regex: it is the parser the value will actually be read
+    by, and it treats userinfo, ports and IPv6 literals the way a browser does.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    return parts.scheme in ("http", "https") and bool(parts.hostname)
+
+
+def _resource_url(need: UrgentNeed, language_code: str) -> str:
+    """This resource's website, or "" if there isn't a usable one.
+
+    Validated rather than truncated, exactly like `_apply_url`: the prompt instructs the
+    model to copy the links it is given character-for-character, so a clipped URL becomes
+    an authoritative-looking 404 and is strictly worse than saying nothing. `link` is a
+    `no_auto` translated field, so a blank or placeholder row comes back "" and the
+    resource simply ships without a link.
+
+    Must be an absolute http(s) URL. `Translation.text` holds arbitrary admin-editable
+    text, and this value is handed to the model as something to reproduce verbatim and
+    is rendered as a clickable link in the chat widget — so a `javascript:` or `data:`
+    value would be an editable-row path to an attacker-controlled href, and a plain-text
+    value ("call them") would be emitted as a broken link. Every one of the 273 live
+    resource links is already http(s), so this rejects nothing real; it closes the shape
+    of the field rather than fixing a present-day row.
+    """
+    link = _translated(need.link, language_code, max_len=None)
+    if not link:
+        return ""
+    if not _is_shareable_url(link):
+        _report_once(
+            f"non_http_resource_link:{need.external_name or need.id}",
+            f"Dropping resource {need.external_name or need.id} link: not an absolute http(s) URL with a host",
+        )
+        return ""
+    if len(link) > MAX_URL_LEN:
+        capture_message(
+            f"Dropping resource {need.external_name or need.id} link: {len(link)} chars exceeds "
+            f"MAX_URL_LEN={MAX_URL_LEN}",
+            level="warning",
+        )
+        return ""
+    return link
+
+
+def _resource_phone(need: UrgentNeed) -> str:
+    """The resource's phone number in the same format the card shows it.
+
+    `PhoneNumberField` stores E.164 (+13035551234); the resource card renders
+    `formatNational()` ("(303) 555-1234"). Benji is told these numbers are the only ones
+    it may ever say out loud, so it should say them the way the page prints them —
+    someone reading the card and someone asking Benji must not get two different-looking
+    numbers for the same organization.
+
+    The validity check mirrors the card's, and is not decoration. `formatPhoneNumber`
+    in the frontend formats only when `isValid()` and otherwise prints the stored string
+    unchanged, so an invalid-but-stored number (a extension-only entry, a number saved
+    before validation tightened) shows raw on the card. `format_number` does NOT raise on
+    those — it returns a plausible-looking reformat — so without this, the one field this
+    change claims parity for would be the one field where Benji and the card disagree,
+    and only for the rows most likely to be wrong already.
+    """
+    number = need.phone_number
+    if not number:
+        return ""
+    try:
+        if not phonenumbers.is_valid_number(number):
+            return str(number)
+        return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.NATIONAL)
+    except Exception:
+        # A stored number that the library won't format is a config problem, not a reason
+        # to fail the turn. Dropping it costs a contact route; emitting something
+        # malformed would have Benji read out digits that don't dial.
+        _report_once(
+            f"unformattable_phone:{need.external_name or need.id}",
+            f"Dropping an unformattable phone number on resource {need.external_name or need.id}",
+        )
+        return ""
+
+
+# How the household reaches the Immediate Help resources (2-1-1 and the like).
+#
+# Four shapes, not one, which is why this is computed per screen rather than described
+# once in the prompt: see `_immediate_help`.
+IMMEDIATE_HELP_TAB = "tab"
+IMMEDIATE_HELP_BUTTON = "button"
+IMMEDIATE_HELP_ABSENT = "absent"
+
+# Ceiling on the Immediate Help list. Sized well above reality — the largest configured
+# `more_help_options` holds a handful of entries (most tenants have exactly one, a 2-1-1
+# line) — and exists for the same reason as the other caps: to bound a list that reaches
+# the system prompt.
+MAX_IMMEDIATE_HELP_RESOURCES = 16
+
+# A referrer carrying this in its `uiOptions` hides the Immediate Help route entirely.
+# Per REFERRER, not per white label: NC sets it on 211nc, hfed, lanc and ccla but not on
+# its default, so two households on the same white label genuinely see different pages.
+NO_IMMEDIATE_HELP_UI_OPTION = "no_results_more_help"
+
+# The one white label that renders no tab bar at all. Its Immediate Help resources live
+# on a standalone page reached from a button (`211Button.tsx`: "CESN renders no tab bar,
+# so this is its only entry point to that page").
+NO_TAB_BAR_WHITE_LABEL = "cesn"
+
+
+def _config_data(screen: Screen, *names: str) -> dict[str, dict]:
+    """Several of a white label's `Configuration.data` payloads, decoded, in ONE query.
+
+    Takes a list rather than a single name because `_immediate_help` needs two
+    (`more_help_options` and `referrer_data`) and the start endpoint's query count is
+    bounded by a test that is deliberately hard to raise — two lookups where one will do
+    is exactly what that bound exists to catch.
+
+    `Configuration.data` comes back as a JSON *string*, not a dict: `OrderedJSONField`
+    json.dumps() on the way in and the column then encodes that string as jsonb, so one
+    decode leaves the payload still encoded. Both shapes are accepted because the field
+    would start returning dicts the day that double-encoding is fixed.
+
+    Names with no active row, or with unparseable data, are simply absent from the
+    result — every caller here treats a missing config as "this tenant offers nothing",
+    which is the safe reading.
+    """
+    out: dict[str, dict] = {}
+    rows = Configuration.objects.filter(white_label=screen.white_label, name__in=names, active=True).values_list(
+        "name", "data"
+    )
+    for name, data in rows:
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                _report_once(
+                    f"unparseable_config:{screen.white_label.code}:{name}",
+                    f"{name} for {screen.white_label.code} is not valid JSON; the assistant cannot use it",
+                )
+                continue
+        if isinstance(data, dict):
+            out[name] = data
+    return out
+
+
+def _immediate_help_entry_point(screen: Screen, referrer_data: dict, has_resources: bool) -> str:
+    """Whether this household sees Immediate Help as a tab, a button, or not at all.
+
+    THE RESULTS PAGE IS NOT ONE SHAPE, which is the whole reason this is in the context
+    rather than stated once in the prompt. `buildTabs.ts` adds the tab only when it is
+    neither suppressed nor empty, and CESN renders no tab bar at all — so a prompt that
+    asserted "three tabs" would be wrong for at least three different populations, and
+    naming a tab that is not there is the same failure as inventing a button (MFB-1872).
+
+    Suppression is read from the screen's OWN referrer, not the white label's default:
+    NC turns it off for 211nc, hfed, lanc and ccla while leaving its default on.
+
+    EMPTY BEATS CESN, and the order of these checks is the whole of it. An earlier
+    version returned `button` for CESN whenever the route was not suppressed, including
+    with nothing behind it — but `Results.tsx` redirects `results/more-help` back to the
+    benefits list when there are no resources, and that branch runs BEFORE the CESN one
+    ("Must run before the CESN branch below, so this redirects CESN too"). The button is
+    still painted, so it looks like a route and is not one; telling Benji to point
+    someone at it sends them in a circle.
+    """
+    if _immediate_help_suppressed(screen, referrer_data) or not has_resources:
+        return IMMEDIATE_HELP_ABSENT
+    # CESN renders no tab bar, so its route is the button on the results page.
+    if screen.white_label.code == NO_TAB_BAR_WHITE_LABEL:
+        return IMMEDIATE_HELP_BUTTON
+    return IMMEDIATE_HELP_TAB
+
+
+def _immediate_help_suppressed(screen: Screen, referrer_data: dict) -> bool:
+    """Does this screen's referrer switch the Immediate Help route off?"""
+    ui_options = referrer_data.get("uiOptions")
+    if not isinstance(ui_options, dict):
+        return False
+    # `getReferrer` in the frontend falls back to "default" when the code has no entry.
+    options = ui_options.get(screen.referrer_code) if screen.referrer_code else None
+    if not isinstance(options, list):
+        options = ui_options.get("default")
+    return isinstance(options, list) and NO_IMMEDIATE_HELP_UI_OPTION in options
+
+
+def _immediate_help(screen: Screen, language_code: str) -> dict:
+    """The Immediate Help tab, as the assistant sees it.
+
+    Deliberately a sibling of `additional_resources` rather than part of it. They are
+    different things and the prompt must not blur them: additional resources are matched
+    to what this household said they needed, while these are a fixed per-tenant list
+    (2-1-1, state help lines) shown to everyone — so a count on them "would falsely
+    imply personalization", which is exactly why the tab carries none.
+
+    Name and phone are Translation-backed labels (`{_label, _default_message}`) resolved
+    in the screen's language, because these are the words on the household's own screen.
+    `link` is a plain config string, validated the same way `_resource_url` validates a
+    resource link: absolute http(s) or dropped, never truncated.
+    """
+    configs = _config_data(screen, "more_help_options", "referrer_data")
+    options = configs.get("more_help_options", {}).get("moreHelpOptions")
+    if not isinstance(options, list):
+        options = []
+
+    labels = []
+    for option in options:
+        if not isinstance(option, dict):
+            continue
+        for key in ("name", "phone"):
+            label = (option.get(key) or {}).get("_label") if isinstance(option.get(key), dict) else None
+            if label:
+                labels.append(label)
+    rows = (
+        {t.label: t for t in Translation.objects.filter(label__in=labels).prefetch_related("translations")}
+        if labels
+        else {}
+    )
+
+    def _text(option: dict, key: str) -> str:
+        field = option.get(key)
+        if not isinstance(field, dict):
+            return ""
+        text = _translated(row, language_code) if (row := rows.get(field.get("_label"))) else ""
+        if text:
+            return text
+        # Fall back to the config's own English when the Translation gives us nothing —
+        # whether because no row exists, or because a row exists and is BLANK.
+        #
+        # The blank case is not hypothetical: `add_translation` creates non-default rows
+        # with `text=""`, and `add_translations --no-translate` writes blank rows on
+        # purpose. `_translated` already falls back to LANGUAGE_CODE, so this only fires
+        # when the default language is empty too — and then the `_default_message` sitting
+        # right there in the config is better than dropping the entry, which is what an
+        # `if row else` would do.
+        #
+        # Whitespace collapsed before the cap so the default takes the same shape a
+        # translated value does; ai-service sanitizes again, but a name should not
+        # depend on which branch produced it.
+        return " ".join(str(field.get("_default_message") or "").split())[:MAX_PROMPT_FIELD_LEN]
+
+    resources = []
+    for option in options:
+        if not isinstance(option, dict):
+            continue
+        name = _text(option, "name")
+        if not name:
+            # An unnamed entry is not something the assistant can offer anyone, and a
+            # blank line in a list it is told is complete is worse than a shorter list.
+            continue
+        entry = {"name": name}
+        # `contact`, not `phone_number`: the live value is "Dial 2-1-1", an instruction
+        # rather than a dialable number, and it is translated per language. ai-service
+        # sanitizes it as text for that reason.
+        contact = _text(option, "phone")
+        if contact:
+            entry["contact"] = contact
+        link = option.get("link")
+        if isinstance(link, str) and link:
+            if not _is_shareable_url(link):
+                _report_once(
+                    f"non_http_more_help_link:{screen.white_label.code}:{name}",
+                    f"Dropping more_help link for {screen.white_label.code}/{name}: "
+                    "not an absolute http(s) URL with a host",
+                )
+            elif len(link) > MAX_URL_LEN:
+                _report_once(
+                    f"long_more_help_link:{screen.white_label.code}:{name}",
+                    f"Dropping more_help link for {screen.white_label.code}/{name}: over MAX_URL_LEN={MAX_URL_LEN}",
+                )
+            else:
+                entry["link"] = link
+        resources.append(entry)
+
+    if len(resources) > MAX_IMMEDIATE_HELP_RESOURCES:
+        capture_message(
+            f"White label {screen.white_label.code} has {len(resources)} more_help options, over "
+            f"MAX_IMMEDIATE_HELP_RESOURCES={MAX_IMMEDIATE_HELP_RESOURCES}; truncating the assistant's list",
+            level="warning",
+        )
+        resources = resources[:MAX_IMMEDIATE_HELP_RESOURCES]
+
+    # Deliberately the RAW option count, not `len(resources)`. The frontend's
+    # `useImmediateHelpEmpty` tests `(moreHelpOptions ?? []).length`, before any name
+    # resolution — so a tenant whose entries all resolve to empty names still gets the
+    # tab on screen. Keying this off the filtered list would report "absent" while the
+    # household is looking at the tab: the page-matching rule this function exists to
+    # uphold, broken from the other side. When that happens the route is real and the
+    # contents are not, and `_render_immediate_help` says exactly that.
+    entry_point = _immediate_help_entry_point(screen, configs.get("referrer_data", {}), has_resources=bool(options))
+    # No resources reach the model when there is no route to them: naming help the
+    # household cannot get to on their screen is the closed-world break in reverse.
+    return {
+        "entry_point": entry_point,
+        "resources": resources if entry_point != IMMEDIATE_HELP_ABSENT else [],
+    }
+
+
+def _additional_resources(
+    screen: Screen,
+    program_data: list[dict],
+    missing_dependencies: Optional[Dependencies],
+    language_code: str,
+) -> list[dict]:
+    """The Additional Resources tab, as the assistant sees it.
+
+    Selected through `screener.urgent_needs.eligible_urgent_needs`, the same function the
+    results page uses, so the two lists cannot drift — which matters because the prompt
+    describes this one to the model in closed-world terms.
+
+    Order comes from that same function and is NOT re-sorted here. An earlier version
+    sorted by `(translated category, name)`, which quietly broke the parity it claimed:
+    `Needs.tsx` sorts only by the ENGLISH category name and its sort is stable, so it
+    preserves API order within a category, and on a non-English screen it orders the
+    categories themselves differently from a translated key. "The first one on the list"
+    named a different organization on each side. The shared function now owns the order.
+
+    `warning` and `notification_message` are deliberately not forwarded. Neither appears
+    on a resource card (`NeedCard.tsx` renders category, name, description, phone and
+    link); the notification drives the banner on the *benefits* tab, and the warning is
+    not rendered anywhere at all. Parity means what the card shows.
+    """
+    resources = []
+    needs = eligible_urgent_needs(screen, program_data, missing_dependencies)
+
+    for need in needs:
+        name = _translated(need.name, language_code)
+        if not name:
+            # An unnamed resource is not something the assistant can offer anyone, and a
+            # blank line in a list it's told is complete is worse than a shorter list.
+            _report_once(
+                f"unnamed_resource:{need.external_name or need.id}",
+                f"Dropping resource {need.external_name or need.id} from the assistant context: no usable name",
+            )
+            continue
+
+        entry = {
+            # UrgentNeed.external_name is nullable and many rows have none, so fall back
+            # to the pk. This is an opaque handle for logs and evals, not something the
+            # model is asked to read out.
+            "external_name": need.external_name or f"urgent_need_{need.id}",
+            "name": name,
+        }
+        category = _translated(need.category_type.name, language_code) if need.category_type_id else ""
+        if category:
+            entry["category"] = category
+        description = _clipped(
+            _translated(need.description, language_code, max_len=None),
+            f"description of resource {need.external_name or need.id}",
+        )
+        if description:
+            entry["description"] = description
+        phone = _resource_phone(need)
+        if phone:
+            entry["phone_number"] = phone
+        link = _resource_url(need, language_code)
+        if link:
+            entry["link"] = link
+        resources.append(entry)
+
+    # The cap applies to an already-ordered list (`eligible_urgent_needs` sorts), so it
+    # keeps the same head the results page shows rather than an arbitrary subset — above
+    # the cap the two lists would otherwise differ in membership, not just in order.
+    if len(resources) > MAX_ADDITIONAL_RESOURCES:
+        capture_message(
+            f"Screen {screen.uuid} has {len(resources)} additional resources, over "
+            f"MAX_ADDITIONAL_RESOURCES={MAX_ADDITIONAL_RESOURCES}; truncating the assistant's list",
+            level="warning",
+        )
+    return resources[:MAX_ADDITIONAL_RESOURCES]
+
+
+def _unselected_need_categories(screen: Screen, language_code: str) -> list[str]:
+    """Resource categories this white label offers that the household did NOT tick.
+
+    The Additional Resources tab carries a link back to the immediate-needs step ("edit
+    your selections in this step"), so a household that never ticked "food" has a real
+    route to food resources — and Benji is allowed to point at it. That route is only
+    safe to name if Benji knows which categories the step actually offers: the options
+    are per-white-label config, and telling someone to pick one their step doesn't have
+    is the same failure as inventing a button.
+
+    Labels only. No counts, and no resource names: nothing here says whether that
+    category has anything in it for this household's county, so the prompt has Benji
+    offer it as "add it and I'll see what's there" rather than as a promise.
+    """
+    config = (
+        Configuration.objects.filter(
+            white_label=screen.white_label,
+            name="acute_condition_options",
+            active=True,
+        )
+        .values_list("data", flat=True)
+        .first()
+    )
+    # `Configuration.data` comes back as a JSON *string*, not a dict. `OrderedJSONField`
+    # json.dumps() on the way in and the column then encodes that string as jsonb, so one
+    # decode leaves the payload still encoded — `configuration/admin.py` carries the same
+    # `isinstance(..., str)` unwrap for the same reason. Both shapes are accepted here
+    # because the field would start returning dicts the day that double-encoding is fixed,
+    # and this feature should not be what breaks.
+    if isinstance(config, str):
+        try:
+            config = json.loads(config)
+        except ValueError:
+            _report_once(
+                f"unparseable_acute_options:{screen.white_label.code}",
+                f"acute_condition_options for {screen.white_label.code} is not valid JSON; "
+                "the assistant cannot offer any resource categories",
+            )
+            return []
+    if not isinstance(config, dict):
+        return []
+
+    labels: list[str] = []
+    unknown: list[str] = []
+    for key, option in config.items():
+        field = ACUTE_OPTION_FIELDS.get(key)
+        if field is None:
+            unknown.append(key)
+            continue
+        if getattr(screen, field, False):
+            continue
+        label = ((option or {}).get("text") or {}).get("_label") if isinstance(option, dict) else None
+        if label:
+            labels.append(label)
+
+    if unknown:
+        _report_once(
+            f"unmapped_acute_options:{screen.white_label.code}",
+            f"acute_condition_options keys with no Screen field for {screen.white_label.code}: {sorted(unknown)}. "
+            "Benji cannot offer these categories until ACUTE_OPTION_FIELDS covers them.",
+        )
+    if not labels:
+        return []
+
+    # One query for every label, then resolved in the screen's language like every other
+    # user-facing string here — these are the exact words on the tiles they'd be clicking.
+    rows = {t.label: t for t in Translation.objects.filter(label__in=labels).prefetch_related("translations")}
+    names = [_translated(rows[label], language_code) for label in labels if label in rows]
+    return sorted({name for name in names if name}, key=str.casefold)
+
+
 def _displayed_value(row: ProgramEligibilitySnapshot, visible: Optional[dict[str, dict]]) -> Optional[int]:
     """The figure the user is looking at, in whole dollars.
 
@@ -620,11 +1124,29 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
     language_code = screen.get_language_code()
 
     eligible_programs = []
+    # Shared with the additional-resources pass below, which runs whether or not there is
+    # a snapshot — the resources tab does not depend on one.
+    #
+    # `missing_dependencies` is lazy because building it walks every member, expense and
+    # income stream; both consumers below take it as an optional argument so it is built
+    # at most once per request and only when something actually gates on it.
+    program_data: list[dict] = []
+    missing_dependencies: Optional[Dependencies] = None
     snapshot = _latest_snapshot(screen)
     if snapshot is not None:
         visible = {p["name_abbreviated"]: p for p in visible_programs} if visible_programs is not None else None
         all_rows = list(snapshot.program_snapshots.all())
         values = {p.name_abbreviated: _displayed_value(p, visible) for p in all_rows}
+
+        # What the urgent-need calculators read out of the eligibility results. Five of
+        # them gate a resource on program eligibility ("show SNAP application help if
+        # they're SNAP-eligible"), and every one touches only these two keys — so the
+        # snapshot reproduces it exactly, with no second call to PolicyEngine.
+        #
+        # Built from ALL rows, not the filtered `rows` below: a resource keyed on SNAP
+        # eligibility must still appear for a household that already receives SNAP, and
+        # that row is filtered out of `eligible_programs` precisely because they have it.
+        program_data = [{"name_abbreviated": p.name_abbreviated, "eligible": p.eligible} for p in all_rows]
 
         insurance_held = _insurance_program_names(screen)
 
@@ -679,9 +1201,6 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
         # Sort by what the user sees, so "your biggest one" agrees with their screen.
         rows.sort(key=lambda p: values.get(p.name_abbreviated) or 0, reverse=True)
         programs_by_name = _context_programs(screen, [p.name_abbreviated for p in rows])
-        # Only built if some program actually carries a warning: it walks every member,
-        # expense and income stream, and most white labels configure no warnings at all.
-        missing_dependencies: Optional[Dependencies] = None
         for p in rows:
             # The snapshot's `name` was captured as `program.name.text` under whatever
             # language was active when eligibility ran (screener.views, unpinned), and
@@ -735,10 +1254,31 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
     eligible_names = {p["external_name"] for p in eligible_programs}
     current_programs = [p for p in _current_programs(screen, language_code) if p["external_name"] not in eligible_names]
 
+    # Unconditional, and deliberately outside the `snapshot is not None` block: the
+    # Additional Resources tab does not depend on an eligibility snapshot, so a screen
+    # whose snapshot is missing or stale still has resources, and those may be the only
+    # thing the assistant has to offer.
+    additional_resources = _additional_resources(screen, program_data, missing_dependencies, language_code)
+
     return {
         "household": {"size": screen.household_size},
         "eligible_programs": eligible_programs,
         "current_programs": current_programs,
+        # The other half of the results page. These are organizations to contact, not
+        # benefits to apply for, and the prompt keeps that distinction — but they answer
+        # the immediate "I can't feed my kids this week" that no long-term program does.
+        "additional_resources": additional_resources,
+        # The THIRD tab (MFB-824), and the one whose very existence varies: it is a tab
+        # for most households, a button on CESN, and absent when the referrer suppresses
+        # it or the tenant configured nothing. `entry_point` carries which, so the prompt
+        # can describe the page this household is actually looking at instead of
+        # asserting one shape for everyone.
+        "immediate_help": _immediate_help(screen, language_code),
+        # Only what this white label's immediate-needs step actually offers, minus what
+        # they already ticked. Lets the assistant name the right category when someone
+        # raises a need with no matching resources, instead of either staying silent or
+        # inventing an option their step doesn't have.
+        "unselected_need_categories": _unselected_need_categories(screen, language_code),
         # The assistant's guardrails offer "your results page" as the fallback when
         # it has nothing it may recommend. That fallback was dead — this key was
         # never sent, so on an empty eligible list the model had no legitimate exit
@@ -952,7 +1492,11 @@ class AssistantStartView(views.APIView):
         payload = {
             "screen_uuid": str(screen.uuid),
             "white_label": screen.white_label.code,
-            "locale": body.get("locale", "en-US"),
+            # Falls back to the screen's language, so older frontend builds and non-web
+            # channels (ADR-002) that send nothing still record the household's. Always
+            # a supported code: reporting compares it with `request_language_code`, and an
+            # unchecked string could overflow the conversation's varchar(12) in ai-service.
+            "locale": screen.supported_language_code(body.get("locale")),
             "context": _build_context(screen, _visible_programs(body)),
         }
         return _proxy("POST", "/v1/conversations", payload)
@@ -971,7 +1515,150 @@ class AssistantMessageView(views.APIView):
 
         body = _body(request)
         payload = {
+            # `conversation_id` comes from the URL and was, on its own, enough to
+            # continue ANY conversation from ANY screen: nothing tied it to the screen
+            # the caller addressed. Because the benbot check above reads the CALLER's
+            # white label, that also meant a white label with the flag off could still
+            # have its conversations written and read through one that had it on —
+            # defeating both a partial rollout and a per-white-label rollback.
+            #
+            # ai-service compares this against the conversation's stored screen_uuid and
+            # answers 404 on a mismatch, so the pairing is enforced where the row lives.
+            "screen_uuid": str(screen.uuid),
             "text": body.get("text", ""),
             "client_message_id": body.get("client_message_id"),
         }
         return _proxy("POST", f"/v1/conversations/{conversation_id}/messages", payload)
+
+
+class AssistantMessageRatingView(views.APIView):
+    """PUT: set, change, or clear the thumbs up/down on one assistant reply (MFB-1915).
+
+    The one endpoint in this file that does NOT proxy to ai-service. Everything else
+    here is a passthrough because the thing being asked for is a model completion or
+    the transcript that ai-service assembles; a rating is neither. It is a scalar on a
+    row whose schema this repo owns, needing no LLM, no `seq` assignment and no
+    conversation row lock — so proxying it would put a second service and a second
+    network hop in front of a single UPDATE, and take thumbs-up with it whenever
+    ai-service is down even though the database is fine.
+
+    ai-service still READS the column (it serves `GET /v1/conversations/{id}`, which is
+    how a rating survives a page reload), so the two repos ship together. See the
+    rating fields on `AssistantMessage` and `store_postgres._EXPECTED_COLUMNS`.
+
+    One verb rather than three, because "rate", "change my rating" and "un-rate" are
+    the same statement about the same message — `{"rating": 1 | -1 | null}` — and the
+    widget toggles between them freely. PUT also makes the double-click that a slow
+    network turns into two requests land on the same value instead of racing.
+
+    PUT REPLACES BOTH FIELDS. The body states the whole feedback, so a call carrying
+    `rating` and no `reason` clears any reason already stored. That is what makes
+    picking a different chip, switching thumbs and un-rating all the same operation,
+    and it is why the widget always sends the reason it wants kept rather than relying
+    on the server to remember one.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [AssistantRatingRateThrottle]
+
+    VALID_RATINGS = (AssistantMessage.RATING_UP, AssistantMessage.RATING_DOWN)
+    VALID_REASONS = frozenset(code for code, _ in AssistantMessage.RATING_REASON_CHOICES)
+
+    def put(self, request, screen_uuid, conversation_id, message_id):
+        screen = get_object_or_404(Screen.objects.select_related("white_label"), uuid=screen_uuid)
+        if not screen.white_label.has_feature("benbot"):
+            return Response({"error": {"code": "assistant_disabled"}}, status=status.HTTP_403_FORBIDDEN)
+
+        body = _body(request)
+        if "rating" not in body:
+            return Response(
+                {"error": {"code": "invalid_rating", "message": "A 'rating' key is required (1, -1 or null)."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        rating = body["rating"]
+        # `True == 1` in Python, so a JSON `true` would otherwise sail through the
+        # membership test below and be stored as a thumbs up.
+        if rating is not None and (isinstance(rating, bool) or rating not in self.VALID_RATINGS):
+            return Response(
+                {"error": {"code": "invalid_rating", "message": "rating must be 1, -1 or null."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # `reason` is optional in a way `rating` is not: the chips are offered AFTER the
+        # thumbs-down is already saved, so most calls legitimately carry no reason at
+        # all. Absent means "not answered" and is not an error.
+        reason = body.get("reason")
+        # `isinstance(reason, str)` before the membership test, not as belt-and-braces:
+        # VALID_REASONS is a frozenset, and a JSON array or object body value is
+        # unhashable, so `reason not in VALID_REASONS` raises TypeError and the caller
+        # gets a 500 instead of the 400 this branch exists to produce. Same class of
+        # trap as the `isinstance(rating, bool)` guard above.
+        if reason is not None and (not isinstance(reason, str) or reason not in self.VALID_REASONS):
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_reason",
+                        "message": f"reason must be null or one of: {', '.join(sorted(self.VALID_REASONS))}.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # A reason only means anything against a thumbs-down. Rejecting rather than
+        # silently dropping it: a client sending one with a thumbs-up has a bug, and
+        # swallowing it would hide that while looking like it worked.
+        if reason is not None and rating != AssistantMessage.RATING_DOWN:
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_reason",
+                        "message": "reason is only valid with rating -1.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # All three of screen, conversation and message are matched in one query, for
+        # the reason spelled out in AssistantMessageView: a conversation_id alone was
+        # once enough to reach ANY conversation from ANY screen, which also let a white
+        # label with the benbot flag off have its rows written through one that had it
+        # on. A rating is a smaller write than a message, but it lands on the same rows
+        # and would defeat a per-white-label rollback in the same way.
+        #
+        # `role="assistant"` is part of the lookup rather than a separate 400: a user
+        # turn is not a thing this endpoint can rate, so it is simply not found. The
+        # matching database constraint is the backstop.
+        message = (
+            AssistantMessage.objects.filter(
+                message_id=message_id,
+                conversation_id=conversation_id,
+                conversation__screen_uuid=screen.uuid,
+                role="assistant",
+            )
+            .only("message_id", "rating", "rated_at", "rating_reason")
+            .first()
+        )
+        if message is None:
+            return Response(
+                {"error": {"code": "message_not_found", "message": "No such assistant message."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # `rated_at` is stamped on a clear as well as on a set, and never reset. It is
+        # the only thing that distinguishes "rated, then withdrawn" from "never rated"
+        # once `rating` is back to NULL, and those are different facts about the reply.
+        message.rating = rating
+        message.rated_at = timezone.now()
+        # Switching to a thumbs-up, or clearing, takes any previous reason with it. A
+        # reason stranded on a positive or unrated row would be read as a complaint
+        # about a reply nobody complained about — and the DB constraint refuses it
+        # anyway, so not doing this would turn an ordinary re-rate into a 500.
+        message.rating_reason = reason if rating == AssistantMessage.RATING_DOWN else None
+        message.save(update_fields=["rating", "rated_at", "rating_reason"])
+
+        return Response(
+            {
+                "message_id": str(message.message_id),
+                "rating": message.rating,
+                "reason": message.rating_reason,
+            }
+        )

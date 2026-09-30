@@ -33,6 +33,19 @@ urlpatterns = [
         assistant.AssistantMessageView.as_view(),
         name="assistant-message",
     ),
+    # Rating one assistant reply (MFB-1915). NOT a proxy — benefits-api owns this
+    # table, and a rating needs nothing ai-service does; see the view's docstring.
+    #
+    # `uuid:` on both ids rather than `str:` (as the messages path above uses): this
+    # view puts them straight into a queryset against two uuid columns, where a
+    # malformed id is a ValidationError and therefore a 500. The converter turns it
+    # into the 404 it should be, before the view runs.
+    path(
+        "screens/<uuid:screen_uuid>/assistant/conversations/<uuid:conversation_id>/messages/"
+        "<uuid:message_id>/rating/",
+        assistant.AssistantMessageRatingView.as_view(),
+        name="assistant-message-rating",
+    ),
     path(
         "screener-options/<str:white_label>/has-benefits-programs/",
         views.HasBenefitsProgramsView.as_view(),

@@ -17,8 +17,21 @@ from programs.framework.base import Eligibility, MemberEligibility, ProgramCalcu
 from programs.util import DependencyError
 
 
-def make_calculator(data):
-    return ProgramCalculator(Mock(), Mock(), data, Mock())
+def make_calculator(data, gates_on=(), gates_on_any=()):
+    """A bare calculator that declares the gates the test is about to use.
+
+    `program_eligible` refuses a code the class did not declare, so a fixture has to name
+    its upstreams the way a real calculator does. Defaults cover every code these tests
+    read, so a test only passes them when it is specifically about the declaration.
+    """
+
+    class Gating(ProgramCalculator):
+        pass
+
+    Gating.gates_on = gates_on or ("co_medicaid", "nc_medicaid", "chp")
+    Gating.gates_on_any = gates_on_any or ("cesn_leap", "cesn_eoc", "cesn_cowap", "cesn_care")
+
+    return Gating(Mock(), Mock(), data, Mock())
 
 
 def eligibility(is_eligible):

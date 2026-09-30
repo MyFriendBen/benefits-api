@@ -120,6 +120,16 @@ class PolicyEngineCalulator(ProgramCalculator):
     def get_dependency_value(self, dependency: PolicyEngineScreenInput):
         return self.sim.value(dependency.unit, dependency.sub_unit, dependency.field, self.period_for(dependency))
 
+    def get_member_dependency_value(self, dependency: PolicyEngineScreenInput, member_id: int):
+        """One member's value for `dependency`, whatever entity this calculator reads.
+
+        Lives here rather than on `PolicyEngineMembersCalculator` because reading a
+        person-level input is not the same as being a person-level program: `MaCcdf` is an
+        SPM calculator whose unit-level boolean gates the program and whose per-child
+        boolean picks which members it pays for.
+        """
+        return self.sim.value(dependency.unit, str(member_id), dependency.field, self.period_for(dependency))
+
     def can_calc(self):
         for input in self.pe_inputs:
             if self.missing_dependencies.has(*input.dependencies):
@@ -160,6 +170,3 @@ class PolicyEngineMembersCalculator(PolicyEngineCalulator):
 
     def get_member_variable(self, member_id: int):
         return self.sim.value(self.pe_category, str(member_id), self.pe_name, self.pe_period)
-
-    def get_member_dependency_value(self, dependency: PolicyEngineScreenInput, member_id: int):
-        return self.sim.value(dependency.unit, str(member_id), dependency.field, self.period_for(dependency))

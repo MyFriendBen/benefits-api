@@ -1,0 +1,69 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "transportation"
+  },
+  "program": {
+    "name_abbreviated": "mo_mtrfp",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Metro Transit Reduced Fare Program (St. Louis)",
+    "description": "The Metro Transit Reduced Fare Program lets eligible riders pay half price for MetroBus and MetroLink in St. Louis. You can qualify through your age, a disability, Medicare, SSDI, or SSI — any one is enough.\n\nIf you apply because of a disability, it has to be one that means you need accessibility features to ride, and Metro's ADA Services makes that call. Applying because of your age does not involve that review.\n\nOnce approved, you get a Reduced Fare Permit — a photo ID card, typically ready in about 10 days. Show it every time you pay your fare, or use it to buy a discounted monthly pass instead of a full-price one. Permits need periodic renewal, so plan to reapply with the same documents down the road. The savings estimate above assumes you buy a monthly pass; if you pay for each ride instead, you will still pay half price, but you will save less over a year.\n\nTo apply, contact Metro's ADA Services at 314.982.1510 or OnTheWayADA@MetroStLouis.org.",
+    "description_short": "Lower bus and train fares in St. Louis",
+    "learn_more_link": "https://www.metrostlouis.org/reduced-fare-program/",
+    "apply_button_link": "https://www.metrostlouis.org/reduced-fare-program/",
+    "apply_button_description": "Learn More",
+    "estimated_application_time": "20 minutes",
+    "estimated_delivery_time": "10 days",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Lower bus and train fares in St. Louis"
+  },
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_mtrfp_disability_proof",
+      "text": "If applying under the disability category, one of: a Medicare card, a Social Security Disability (SSD) letter, a Supplemental Security Income (SSI) letter, VA disability documentation showing 100% status, or a disability verification completed by a professional familiar with your condition",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_mtrfp_photo",
+      "text": "A recent color photo (driver's license or state ID photos are not accepted)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_mtrfp_application_form",
+      "text": "Completed Reduced Fare Application form",
+      "link_url": "https://www.metrostlouis.org/wp-content/uploads/2023/07/Metro-Disability-Reduced-Fare-Application-Revised-08-31-22.pdf",
+      "link_text": "Download the application form"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_211",
+      "name": "Missouri 211",
+      "email": "",
+      "description": "Missouri 211 connects residents to local services and can help you find transportation assistance in your area.",
+      "assistance_link": "https://www.211helps.org/",
+      "phone_number": "+18004274626"
+    }
+  ]
+}

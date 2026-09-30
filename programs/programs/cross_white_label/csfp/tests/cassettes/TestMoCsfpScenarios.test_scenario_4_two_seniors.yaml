@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"401": {"age": {"2026": 68}, "commodity_supplemental_food_program":
+      {"2026": null}}, "402": {"age": {"2026": 66}, "commodity_supplemental_food_program":
+      {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["401", "402"]}},
+      "families": {"family": {"members": ["401", "402"]}}, "households": {"household":
+      {"members": ["401", "402"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit":
+      {"members": ["401", "402"], "school_meal_countable_income": {"2026": 18000.0}}},
+      "marital_units": {"401-402": {"members": ["401", "402"]}}}, "version": "2.5.0"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '585'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"401": {"age":
+        {"2026": 68}, "commodity_supplemental_food_program": {"2026": 651.0}}, "402":
+        {"age": {"2026": 66}, "commodity_supplemental_food_program": {"2026": 651.0}}},
+        "tax_units": {"main_tax_unit": {"members": ["401", "402"]}}, "families": {"family":
+        {"members": ["401", "402"]}}, "households": {"household": {"members": ["401",
+        "402"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
+        ["401", "402"], "school_meal_countable_income": {"2026": 18000.0}}}, "marital_units":
+        {"401-402": {"members": ["401", "402"]}}}, "policyengine_bundle": {"model_version":
+        "2.5.0", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '687'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 20:47:00 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-0c795eda171df5539db5f756e9bf19ef-6f1caf3e55270162-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 0c795eda171df5539db5f756e9bf19ef
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 2f7e419d-6c88-4b84-ae47-9ddacce03745
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -31,19 +31,25 @@ from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
 from programs.models import LegalStatus, Program
+from configuration.models import Configuration
 from screener.assistant import (
+    ACUTE_OPTION_FIELDS,
     CONTEXT_PREFETCH,
     AssistantMessageRateThrottle,
     AssistantStartRateThrottle,
     AssistantStartView,
+    MAX_ADDITIONAL_RESOURCES,
     MAX_DOCUMENTS_PER_PROGRAM,
     MAX_PROGRAM_VALUE,
     MAX_PROMPT_TEXT_LEN,
+    MAX_URL_LEN,
     MAX_VISIBLE_PROGRAMS,
     _build_context,
     _visible_programs,
 )
 from screener.models import (
+    AssistantConversation,
+    AssistantMessage,
     CurrentBenefit,
     EligibilitySnapshot,
     HouseholdMember,
@@ -52,8 +58,8 @@ from screener.models import (
     Screen,
     WhiteLabel,
 )
-from screener.tests.helpers import seed_document, seed_program, seed_warning
-from translations.models import BLANK_TRANSLATION_PLACEHOLDER
+from screener.tests.helpers import seed_document, seed_program, seed_urgent_need, seed_warning
+from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
 
 def visible(name_abbreviated: str, value=None) -> dict:
@@ -1040,6 +1046,370 @@ class BuildContextTests(TestCase):
         self.assertEqual(with_two_members, with_five_members)
 
 
+class AdditionalResourcesTests(TestCase):
+    """The Additional Resources tab, as Benji receives it.
+
+    Same invariant as `eligible_programs`, on the other tab: the prompt describes this
+    list to the model as the complete set of resources this person has, so a resource on
+    their screen that is missing here (or here but not on their screen) is a wrong answer
+    the guardrails cannot catch. The selection is shared with the results page
+    (`screener.urgent_needs`) precisely so there is one filter to get right, and
+    `test_urgent_needs.py` covers that selection directly — these tests cover the
+    ASSISTANT'S view of it: the shape, the sanitization, and the two fields (phone and
+    link) that no other part of this payload is allowed to carry.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            household_size=2,
+            completed=True,
+            needs_food=True,
+        )
+
+    def context(self) -> dict:
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        return _build_context(screen)
+
+    def resources(self) -> list[dict]:
+        return self.context()["additional_resources"]
+
+    def test_resource_in_a_selected_category_is_included(self):
+        seed_urgent_need(
+            self.white_label,
+            "food_bank",
+            category="food",
+            name="Community Food Bank",
+            description="Free groceries, no appointment needed.",
+        )
+
+        [resource] = self.resources()
+
+        self.assertEqual(resource["external_name"], "food_bank")
+        self.assertEqual(resource["name"], "Community Food Bank")
+        self.assertEqual(resource["description"], "Free groceries, no appointment needed.")
+
+    def test_resource_in_an_unselected_category_is_excluded(self):
+        seed_urgent_need(self.white_label, "shelter", category="housing", name="Night Shelter")
+
+        self.assertEqual(self.resources(), [])
+
+    def test_inactive_resource_is_excluded(self):
+        need = seed_urgent_need(self.white_label, "closed", category="food", name="Closed Pantry")
+        need.active = False
+        need.save()
+
+        self.assertEqual(self.resources(), [])
+
+    def test_resource_for_another_white_label_is_excluded(self):
+        other = WhiteLabel.objects.create(name="Elsewhere", code="other", state_code="XX")
+        seed_urgent_need(other, "other_pantry", category="food", name="Someone Else's Pantry")
+
+        self.assertEqual(self.resources(), [])
+
+    def test_county_gated_resource_is_excluded_outside_that_county(self):
+        seed_urgent_need(
+            self.white_label,
+            "denver_meals",
+            category="food",
+            name="Denver Meals",
+            county_names=("Denver County",),
+        )
+        self.screen.county = "Jefferson County"
+        self.screen.save()
+
+        self.assertEqual(self.resources(), [])
+
+    def test_county_gated_resource_is_included_in_that_county(self):
+        seed_urgent_need(
+            self.white_label,
+            "denver_meals",
+            category="food",
+            name="Denver Meals",
+            county_names=("Denver County",),
+        )
+        self.screen.county = "Denver County"
+        self.screen.save()
+
+        self.assertEqual([r["external_name"] for r in self.resources()], ["denver_meals"])
+
+    def test_phone_number_is_formatted_the_way_the_card_shows_it(self):
+        """E.164 in the column, national format on the card — and out of Benji's mouth.
+
+        Benji is told these are the only numbers it may ever say, so someone reading the
+        card and someone asking Benji must not get two different-looking numbers.
+        """
+        seed_urgent_need(
+            self.white_label,
+            "hotline",
+            category="food",
+            name="Food Hotline",
+            phone_number="+13035551234",
+        )
+
+        [resource] = self.resources()
+
+        self.assertEqual(resource["phone_number"], "(303) 555-1234")
+
+    def test_invalid_phone_number_is_passed_through_like_the_card_does(self):
+        """`formatPhoneNumber` on the card formats only valid numbers and prints anything
+        else unchanged. `format_number` does not raise on an invalid number — it returns
+        a plausible reformat — so without the validity check this is the one field where
+        Benji and the card would disagree, on exactly the rows most likely to be wrong."""
+        need = seed_urgent_need(self.white_label, "hotline", category="food", name="Food Hotline")
+        need.phone_number = "+1555"
+        need.save()
+
+        [resource] = self.resources()
+
+        self.assertEqual(resource["phone_number"], "+1555")
+
+    def test_phone_number_key_is_omitted_when_there_is_none(self):
+        seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
+
+        self.assertNotIn("phone_number", self.resources()[0])
+
+    def test_link_is_included_verbatim(self):
+        seed_urgent_need(
+            self.white_label,
+            "pantry",
+            category="food",
+            name="Pantry",
+            link="https://example.org/food?lang=en&ref=mfb",
+        )
+
+        self.assertEqual(self.resources()[0]["link"], "https://example.org/food?lang=en&ref=mfb")
+
+    def test_non_http_link_is_dropped(self):
+        """`Translation.text` is arbitrary admin-editable text, and this value is handed
+        to the model to reproduce verbatim and rendered as a clickable href in the
+        widget. All 273 live resource links are already http(s), so this closes the shape
+        of the field rather than fixing a present-day row."""
+        for hostile in ("javascript:alert(1)", "data:text/html;base64,PHM+", "call them instead"):
+            with self.subTest(link=hostile):
+                need = seed_urgent_need(
+                    self.white_label, f"r{abs(hash(hostile))}", category="food", name="Pantry", link=hostile
+                )
+
+                self.assertNotIn("link", self.resources()[0])
+
+                need.delete()
+
+    def test_over_long_link_is_dropped_rather_than_truncated(self):
+        """A clipped URL is an authoritative-looking 404 — the same reason `_apply_url`
+        drops rather than truncates. Saying nothing is the designed fallback."""
+        seed_urgent_need(
+            self.white_label,
+            "pantry",
+            category="food",
+            name="Pantry",
+            link="https://example.org/?q=" + "x" * MAX_URL_LEN,
+        )
+
+        self.assertNotIn("link", self.resources()[0])
+
+    def test_over_long_description_is_clipped(self):
+        seed_urgent_need(
+            self.white_label,
+            "pantry",
+            category="food",
+            name="Pantry",
+            description="d" * (MAX_PROMPT_TEXT_LEN + 50),
+        )
+
+        self.assertEqual(len(self.resources()[0]["description"]), MAX_PROMPT_TEXT_LEN)
+
+    def test_resource_without_a_usable_name_is_dropped(self):
+        """A blank line in a list the prompt calls complete is worse than a shorter list."""
+        seed_urgent_need(self.white_label, "nameless", category="food", description="No name on this one.")
+
+        self.assertEqual(self.resources(), [])
+
+    def test_resources_are_sorted_by_category_then_name(self):
+        """Matches `Needs.tsx`'s client-side sort, so "the first one" means the same
+        thing to Benji and to the user reading the tab."""
+        self.screen.needs_housing_help = True
+        self.screen.save()
+        seed_urgent_need(self.white_label, "rent", category="housing", category_type="Housing", name="Rent Help")
+        seed_urgent_need(self.white_label, "pantry_b", category="food", category_type="Food", name="B Pantry")
+        seed_urgent_need(self.white_label, "pantry_a", category="food", category_type="Food", name="A Pantry")
+
+        self.assertEqual([r["name"] for r in self.resources()], ["A Pantry", "B Pantry", "Rent Help"])
+
+    def test_resource_list_is_capped(self):
+        for i in range(MAX_ADDITIONAL_RESOURCES + 5):
+            seed_urgent_need(self.white_label, f"pantry_{i:03d}", category="food", name=f"Pantry {i:03d}")
+
+        self.assertEqual(len(self.resources()), MAX_ADDITIONAL_RESOURCES)
+
+    def test_the_cap_keeps_the_sorted_head_not_an_arbitrary_subset(self):
+        """The queryset is unordered, so capping before sorting would take an arbitrary
+        subset and then tidy it — a list that looks sorted while silently missing
+        resources that belong in it, with the omissions varying between requests."""
+        # Seeded in REVERSE name order, so insertion order (which is what an unordered
+        # queryset tends to return) and sorted order disagree. Seeded ascending, this
+        # test passes against the bug it exists to catch.
+        names = [f"Pantry {i:03d}" for i in range(MAX_ADDITIONAL_RESOURCES + 5)]
+        for i, name in enumerate(reversed(names)):
+            seed_urgent_need(self.white_label, f"pantry_{i:03d}", category="food", name=name)
+
+        returned = [r["name"] for r in self.resources()]
+
+        self.assertEqual(returned, sorted(names)[:MAX_ADDITIONAL_RESOURCES])
+        # The five dropped entries must be the LAST five by name, not the five that
+        # happened to be inserted first.
+        self.assertNotIn(names[-1], returned)
+
+    def test_resources_survive_a_missing_eligibility_snapshot(self):
+        """The resources tab does not depend on a snapshot, so neither does this list —
+        for a screen whose snapshot is missing or stale, resources may be all Benji has.
+        """
+        seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"], [])
+        self.assertEqual([r["external_name"] for r in context["additional_resources"]], ["pantry"])
+
+    def test_resource_gated_on_program_eligibility_reads_the_snapshot(self):
+        """Five resource calculators gate on eligibility results. `_build_context` feeds
+        them the snapshot rows instead of recomputing eligibility, and this is the test
+        that the substitution actually works end to end."""
+        seed_program(self.white_label, "co_snap")
+        snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
+        ProgramEligibilitySnapshot.objects.create(
+            eligibility_snapshot=snapshot,
+            name="SNAP",
+            name_abbreviated="co_snap",
+            estimated_value=Decimal("1200"),
+            eligible=True,
+        )
+        self.screen.county = "Denver County"
+        self.screen.save()
+        seed_urgent_need(
+            self.white_label,
+            "snap_employment",
+            category="food",
+            name="SNAP Employment Services",
+            functions=("snap_employment",),
+        )
+
+        self.assertEqual([r["external_name"] for r in self.resources()], ["snap_employment"])
+
+    def test_resource_gated_on_program_eligibility_is_excluded_when_ineligible(self):
+        seed_program(self.white_label, "co_snap")
+        snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
+        ProgramEligibilitySnapshot.objects.create(
+            eligibility_snapshot=snapshot,
+            name="SNAP",
+            name_abbreviated="co_snap",
+            estimated_value=Decimal("0"),
+            eligible=False,
+        )
+        self.screen.county = "Denver County"
+        self.screen.save()
+        seed_urgent_need(
+            self.white_label,
+            "snap_employment",
+            category="food",
+            name="SNAP Employment Services",
+            functions=("snap_employment",),
+        )
+
+        self.assertEqual(self.resources(), [])
+
+    def test_query_count_is_flat_in_resource_count(self):
+        """The per-resource work is prefetched, so ten resources cost what one does.
+
+        Without this the translations behind each resource's name, description, link and
+        category heading would be four queries per card.
+        """
+        seed_urgent_need(self.white_label, "pantry_0", category="food", name="Pantry 0")
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        with CaptureQueriesContext(connection) as one:
+            _build_context(screen)
+
+        for i in range(1, 10):
+            seed_urgent_need(self.white_label, f"pantry_{i}", category="food", name=f"Pantry {i}")
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        with CaptureQueriesContext(connection) as ten:
+            _build_context(screen)
+
+        self.assertEqual(len(ten), len(one), f"{len(one)} -> {len(ten)} queries for 1 -> 10 resources")
+
+
+class UnselectedNeedCategoriesTests(TestCase):
+    """What Benji may tell someone to add at the immediate-needs step.
+
+    Benji is allowed to point at the "edit your selections" link the resources tab
+    already renders, and to name the category to pick. That is only safe if the
+    categories it names are ones this white label's step actually offers — naming a
+    missing option is the same failure as inventing a button.
+    """
+
+    OPTIONS = {
+        "food": {"text": {"_label": "acuteConditionOptions.food", "_default_message": "Food or groceries"}},
+        "housing": {"text": {"_label": "acuteConditionOptions.housing", "_default_message": "Housing help"}},
+    }
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            household_size=2,
+            completed=True,
+            needs_food=True,
+        )
+        for label, text in (
+            ("acuteConditionOptions.food", "Food or groceries"),
+            ("acuteConditionOptions.housing", "Housing help"),
+        ):
+            set_translation(Translation.objects.add_translation(label), text)
+        Configuration.objects.create(
+            white_label=self.white_label,
+            name="acute_condition_options",
+            data=self.OPTIONS,
+            active=True,
+        )
+
+    def categories(self) -> list[str]:
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        return _build_context(screen)["unselected_need_categories"]
+
+    def test_offers_only_what_the_household_did_not_tick(self):
+        self.assertEqual(self.categories(), ["Housing help"])
+
+    def test_offers_nothing_when_everything_is_ticked(self):
+        self.screen.needs_housing_help = True
+        self.screen.save()
+
+        self.assertEqual(self.categories(), [])
+
+    def test_offers_nothing_when_the_white_label_has_no_config(self):
+        Configuration.objects.filter(white_label=self.white_label).delete()
+
+        self.assertEqual(self.categories(), [])
+
+    def test_a_category_the_step_does_not_offer_is_never_named(self):
+        """`funeral` is a resource category no white label puts on the step. Benji must
+        not tell anyone to pick it."""
+        self.assertNotIn("funeral", " ".join(self.categories()).lower())
+
+    def test_every_live_config_key_maps_to_a_screen_field(self):
+        """The mapping this asserts lives twice — here and in benefits-calculator's
+        `updateScreen.ts`, which is what actually writes these columns. A category added
+        to the config without a column here would silently never be offered, so the drift
+        fails a test instead."""
+        unmapped = [key for key in self.OPTIONS if key not in ACUTE_OPTION_FIELDS]
+
+        self.assertEqual(unmapped, [])
+        for field in ACUTE_OPTION_FIELDS.values():
+            self.assertTrue(hasattr(self.screen, field), f"Screen has no field {field}")
+
+
 class VisibleProgramsParsingTests(SimpleTestCase):
     """`visible_programs` is untrusted browser input. It can only ever narrow the
     program list (it's intersected with the snapshot), so the risk isn't injection —
@@ -1172,6 +1542,36 @@ class AssistantStartViewTests(APITestCase):
         eligible = payload["context"]["eligible_programs"]
         self.assertEqual(sorted(p["external_name"] for p in eligible), ["snap", "wic"])
 
+    def test_supported_locale_from_the_request_is_forwarded_lowercased(self):
+        self.assertEqual(self._post({"locale": "PT-BR"})["locale"], "pt-br")
+
+    def test_omitted_locale_falls_back_to_the_screen_language(self):
+        """Older frontend builds and non-web channels send no locale at all."""
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        self.assertEqual(self._post({})["locale"], "es")
+
+    def test_omitted_locale_without_a_screen_language_is_lowercase_en_us(self):
+        """Not `en-US`: the web client sends `en-us`, and one spelling keeps GROUP BY honest."""
+        self.assertEqual(self._post({})["locale"], "en-us")
+
+    def test_unsupported_locale_falls_back_to_the_screen_language(self):
+        """A stale code (`zh`, now `zh-hans`) or an over-long string never reaches the varchar(12)."""
+        self.screen.request_language_code = "vi"
+        self.screen.save()
+
+        for requested in ("zh", "x" * 40, 42, None):
+            with self.subTest(requested=requested):
+                self.assertEqual(self._post({"locale": requested})["locale"], "vi")
+
+    def test_a_stale_screen_language_falls_back_to_en_us(self):
+        """The screen's own code is checked too, so `zh` never sits beside `zh-hans` rows."""
+        self.screen.request_language_code = "zh"
+        self.screen.save()
+
+        self.assertEqual(self._post({})["locale"], "en-us")
+
     def test_json_array_body_does_not_500(self):
         """`request.data` is a list for an array body, so `.get` isn't safe to assume."""
         with mock.patch("screener.assistant.requests.request") as request:
@@ -1188,7 +1588,26 @@ class AssistantStartViewTests(APITestCase):
     # screen.missing_fields(), plus documents and warnings (each with their counties,
     # legal statuses and translations) on the one Program fetch _build_context already
     # made. All flat in program and member count — the sibling tests assert that.
-    MAX_START_QUERIES = 16
+    #
+    # Raised again for additional resources: the `acute_condition_options` lookup, and
+    # the one translation fetch for whichever category labels come back from it. This
+    # screen ticks no need categories, so it does NOT include the resource query itself
+    # or its prefetches — `eligible_urgent_needs` returns early before issuing any. That
+    # path is bounded by `AdditionalResourcesTests.test_query_count_is_flat_in_resource_count`,
+    # which is the property that actually matters: the resource work is flat in the
+    # number of resources, not in whether any exist.
+    #
+    # MFB-1931 added the Immediate Help context and did NOT raise this. It needs two
+    # white-label configs (`more_help_options`, `referrer_data`) plus a translation fetch
+    # for whichever labels come back, and `_config_data` takes both config names in one
+    # `name__in` query precisely so it fits. This screen has no more_help config, so the
+    # translation fetch does not fire here — the contents path is covered by
+    # `test_assistant_immediate_help.py`.
+    #
+    # THIS IS NOW EXACTLY AT THE CEILING (18 of 18), so the next addition trips it. That
+    # is the ceiling working, not a problem to route around: batch the new lookup the way
+    # `_config_data` does, or raise this with a reason, but don't do either by reflex.
+    MAX_START_QUERIES = 18
 
     def test_query_count_is_bounded(self):
         """Bounded here so CONTEXT_PREFETCH disappearing from the view is caught, even
@@ -1395,3 +1814,349 @@ class AssistantHistoryViewTests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(request.call_args.args[0], "GET")
+
+
+class AssistantMessageViewTests(APITestCase):
+    """The message path has to say WHICH screen it is acting for.
+
+    The URL carries both ids — `/screens/<screen_uuid>/assistant/conversations/
+    <conversation_id>/messages/` — but the view used to forward only the conversation
+    id, and ai-service looks a conversation up by that id alone. Nothing checked the two
+    belonged together, so any screen could continue any conversation.
+
+    That is not only a data-scoping problem. The `benbot` check above reads the CALLER's
+    white label, so a white label with the flag switched off could still have its
+    conversations written and read through one that had it on — which defeats a partial
+    rollout and a per-white-label rollback, the two levers the release plan relies on.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(
+            name="Test State", code="test", state_code="TS", feature_flags={"benbot": True}
+        )
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=2, completed=True
+        )
+        self.url = reverse("assistant-message", args=[self.screen.uuid, "conv-1"])
+
+    def _post(self, body):
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(
+                status_code=200,
+                json=lambda: {"user_message": {}, "assistant_message": {}},
+            )
+            response = self.client.post(self.url, body, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        return request.call_args.kwargs["json"]
+
+    def test_forwards_the_screen_uuid_so_the_pairing_can_be_checked(self):
+        payload = self._post({"text": "hi"})
+
+        self.assertEqual(payload["screen_uuid"], str(self.screen.uuid))
+
+    def test_screen_uuid_comes_from_the_url_not_the_request_body(self):
+        """Taking it from the body would hand the check straight back to the caller."""
+        payload = self._post({"text": "hi", "screen_uuid": str(uuid.uuid4())})
+
+        self.assertEqual(payload["screen_uuid"], str(self.screen.uuid))
+
+    def test_flag_off_still_refuses_before_reaching_ai_service(self):
+        self.white_label.feature_flags = {"benbot": False}
+        self.white_label.save()
+
+        with mock.patch("screener.assistant.requests.request") as request:
+            response = self.client.post(self.url, {"text": "hi"}, format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"]["code"], "assistant_disabled")
+        request.assert_not_called()
+
+
+class AssistantMessageRatingViewTests(APITestCase):
+    """Thumbs up / thumbs down on one assistant reply (MFB-1915).
+
+    This is the one assistant endpoint that writes our own table instead of proxying,
+    so the checks the proxy gets from ai-service — does this conversation belong to
+    this screen, does this message belong to this conversation — have to be made here.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(
+            name="Test State", code="test", state_code="TS", feature_flags={"benbot": True}
+        )
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=2, completed=True
+        )
+        self.conversation = AssistantConversation.objects.create(
+            conversation_id=uuid.uuid4(),
+            screen_uuid=self.screen.uuid,
+            white_label=self.white_label.code,
+            prompt_version="v5",
+        )
+        self.reply = AssistantMessage.objects.create(
+            message_id=uuid.uuid4(),
+            conversation=self.conversation,
+            seq=1,
+            role="assistant",
+            text="Here is what I found.",
+        )
+        self.question = AssistantMessage.objects.create(
+            message_id=uuid.uuid4(),
+            conversation=self.conversation,
+            seq=0,
+            role="user",
+            text="What should I apply for?",
+        )
+
+    def _url(self, message=None, conversation=None, screen_uuid=None):
+        return reverse(
+            "assistant-message-rating",
+            args=[
+                screen_uuid or self.screen.uuid,
+                (conversation or self.conversation).conversation_id,
+                (message or self.reply).message_id,
+            ],
+        )
+
+    def _put(self, rating, reason=None, **kwargs):
+        body = {"rating": rating}
+        if reason is not None:
+            body["reason"] = reason
+        return self.client.put(self._url(**kwargs), body, format="json")
+
+    # --- the happy path: set, change, clear ---
+
+    def test_sets_a_rating(self):
+        response = self._put(1)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["rating"], 1)
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, 1)
+
+    def test_changing_to_the_other_thumb_replaces_rather_than_appends(self):
+        self._put(1)
+        self._put(-1)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, -1)
+
+    def test_clearing_writes_null(self):
+        self._put(1)
+        response = self._put(None)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data["rating"])
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_rated_then_cleared_is_distinguishable_from_never_rated(self):
+        """The acceptance criterion `rating` alone cannot satisfy.
+
+        Both rows end with `rating IS NULL`. `rated_at` is what says one of them was
+        rated and had it withdrawn — a real signal about the reply, and not the same
+        as the silence of a reply nobody touched.
+        """
+        self._put(1)
+        self._put(None)
+
+        self.reply.refresh_from_db()
+        self.question.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+        self.assertIsNotNone(self.reply.rated_at)
+        self.assertIsNone(self.question.rating)
+        self.assertIsNone(self.question.rated_at)
+
+    # --- input validation ---
+
+    def test_rejects_a_rating_that_is_neither_thumb(self):
+        response = self._put(5)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_rating")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_rejects_a_json_boolean(self):
+        """`True == 1` in Python, so a membership test alone stores `true` as a thumbs up."""
+        response = self._put(True)
+
+        self.assertEqual(response.status_code, 400)
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_a_missing_rating_key_is_not_read_as_a_clear(self):
+        """An omitted key is a malformed request, not an instruction to un-rate."""
+        self._put(1)
+        response = self.client.put(self._url(), {}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, 1)
+
+    # --- scoping: the same failures AssistantMessageView exists to prevent ---
+
+    def test_a_user_turn_cannot_be_rated(self):
+        response = self._put(1, message=self.question)
+
+        self.assertEqual(response.status_code, 404)
+        self.question.refresh_from_db()
+        self.assertIsNone(self.question.rating)
+
+    def test_another_screens_conversation_cannot_be_rated(self):
+        other = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=1, completed=True)
+
+        response = self._put(1, screen_uuid=other.uuid)
+
+        self.assertEqual(response.status_code, 404)
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_a_message_from_another_conversation_cannot_be_rated(self):
+        other = AssistantConversation.objects.create(
+            conversation_id=uuid.uuid4(),
+            screen_uuid=self.screen.uuid,
+            white_label=self.white_label.code,
+            prompt_version="v5",
+            status="closed",
+        )
+
+        response = self._put(1, conversation=other)
+
+        self.assertEqual(response.status_code, 404)
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_flag_off_refuses(self):
+        self.white_label.feature_flags = {"benbot": False}
+        self.white_label.save()
+
+        response = self._put(1)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["error"]["code"], "assistant_disabled")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    # --- reason codes (MFB-1915) ---
+
+    def test_records_a_reason_with_a_thumbs_down(self):
+        response = self._put(-1, reason=AssistantMessage.REASON_NOT_MY_RESULTS)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["reason"], "not_my_results")
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "not_my_results")
+
+    def test_a_thumbs_down_without_a_reason_is_the_normal_case(self):
+        """The chips are offered AFTER the rating is saved, so most calls carry none."""
+        response = self._put(-1)
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data["reason"])
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, -1)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_picking_a_chip_after_the_fact_updates_the_reason(self):
+        self._put(-1)
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "inaccurate")
+
+    def test_choosing_a_different_chip_replaces_rather_than_appends(self):
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(-1, reason=AssistantMessage.REASON_HARD_TO_FOLLOW)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating_reason, "hard_to_follow")
+
+    def test_switching_to_a_thumbs_up_drops_the_reason(self):
+        """A reason stranded on a positive row reads as a complaint nobody made."""
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(1)
+
+        self.reply.refresh_from_db()
+        self.assertEqual(self.reply.rating, 1)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_clearing_the_rating_drops_the_reason(self):
+        self._put(-1, reason=AssistantMessage.REASON_INACCURATE)
+        self._put(None)
+
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_rejects_an_unknown_reason_code(self):
+        response = self._put(-1, reason="because_i_said_so")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_reason")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating_reason)
+
+    def test_rejects_a_reason_on_a_thumbs_up(self):
+        """A client sending this has a bug; swallowing it would hide that."""
+        response = self._put(1, reason=AssistantMessage.REASON_INACCURATE)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error"]["code"], "invalid_reason")
+        self.reply.refresh_from_db()
+        self.assertIsNone(self.reply.rating)
+
+    def test_every_offered_code_is_accepted(self):
+        """The UI renders this list; a code the API refuses would be a dead chip."""
+        for code, _label in AssistantMessage.RATING_REASON_CHOICES:
+            with self.subTest(code=code):
+                response = self._put(-1, reason=code)
+
+                self.assertEqual(response.status_code, 200, response.data)
+                self.reply.refresh_from_db()
+                self.assertEqual(self.reply.rating_reason, code)
+
+    def test_the_database_refuses_a_reason_on_a_thumbs_up(self):
+        """The API validates, but two services write this table; the constraint is the
+        backstop, and it is what makes stranded reasons impossible rather than unlikely."""
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            AssistantMessage.objects.filter(pk=self.reply.pk).update(
+                rating=1, rating_reason=AssistantMessage.REASON_INACCURATE
+            )
+
+    def test_the_database_refuses_a_reason_on_an_UNRATED_row(self):
+        """The case the first version of this constraint let straight through.
+
+        A Postgres CHECK passes unless it evaluates to FALSE, and NULL is not FALSE.
+        With `rating IS NULL`, `rating = -1` is NULL, so `rating_reason IS NULL OR
+        rating = -1` came out NULL and the row was ACCEPTED — the exact thing the
+        constraint exists to refuse. The thumbs-up case above does fail, which is why
+        testing only that one hid this.
+        """
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            AssistantMessage.objects.filter(pk=self.reply.pk).update(
+                rating=None, rating_reason=AssistantMessage.REASON_INACCURATE
+            )
+
+    def test_a_structured_reason_is_a_400_not_a_500(self):
+        """`VALID_REASONS` is a frozenset, so an unhashable body value raises TypeError
+        on the membership test — a 500 where this endpoint owes a 400."""
+        for bad in ([AssistantMessage.REASON_INACCURATE], {"code": "inaccurate"}, 7, True):
+            with self.subTest(reason=bad):
+                response = self.client.put(self._url(), {"rating": -1, "reason": bad}, format="json")
+
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertEqual(response.data["error"]["code"], "invalid_reason")
+                self.reply.refresh_from_db()
+                self.assertIsNone(self.reply.rating_reason)
+
+    def test_does_not_call_ai_service(self):
+        """The whole point of writing directly: no second service in the path."""
+        with mock.patch("screener.assistant.requests.request") as request:
+            self._put(1)
+
+        request.assert_not_called()

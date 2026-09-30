@@ -94,6 +94,10 @@ REST_FRAMEWORK = {
         # Reads are cheap and frequent (the widget opens on nearly every results page).
         "assistant_history": "120/hour",
         "assistant_message": "120/hour",
+        # Ratings are one UPDATE each, but every assistant bubble carries the buttons
+        # and changing or clearing a rating is another call, so a normal conversation
+        # spends multiples of its message count here.
+        "assistant_rating": "240/hour",
     },
 }
 

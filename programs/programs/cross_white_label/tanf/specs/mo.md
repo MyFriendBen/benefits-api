@@ -66,7 +66,7 @@ Each criterion states the Missouri rule that determines household or member elig
 4. Spouse non-cooperation with the neediness determination makes the NPCR not needy; MFB cannot observe cooperation history, so assume the spouse cooperates.
 5. Same procedure applies to a legal guardian's neediness determination (0210.005.40).
 
-The exclusion branch is constructed by submitting the NPCR's household with that member (and any co-resident spouse) simply omitted from the request — a real, policy-valid alternate configuration, not a fabricated one. Steps 1–4 above are implemented exactly as stated: the automatic-needy-exception/neediness-budget pre-test is computed locally from inputs alone (no PE call needed), and the genuinely-elective case makes two live PE calls (NPCR included vs. excluded), keeping whichever eligible result has the higher benefit (Scenarios 10, 11, 12, 34; `mock_calculator/pe_integrated_path.py`).
+**None of steps 1–5 is implemented, and none is planned.** MFB sends one truthful household to PolicyEngine, which has no NPCR concept: a caretaker meeting Missouri's relationship test is always an assistance-unit member, so the automatic-needy exception is never reached, no neediness budget is computed, the mandatory-exclusion branch is never taken, and the election is never offered. PolicyEngine has confirmed it does not model the rule, and MFB ships no override around it — the two divergences this produces are stated under "Accepted PolicyEngine limitations". Scenario 10 covers the caretaker relationship encoding and Scenario 32 the SSI-spouse exclusion; neither exercises neediness or the election.
 
 **Income-deeming and blended-family branches — not representable with current screener inputs:** a minor parent living with their own parent (three-generation household) triggers major-parent income deeming only under a separate-filing arrangement (not under combined filing); a stepparent's income is deemed when the head's spouse isn't the legal/biological parent of the head's existing child. `household_members.relationship` doesn't reveal which filing arrangement a three-generation household uses, or whether a spouse is a stepparent to an existing child, so neither deeming branch can be triggered — inclusively assume a policy-valid arrangement with no additional deemed income. The same relationship-mapping gap also makes blended families, double-stepparent households (separate applications per parent), and three-generation filing-arrangement choice out of scope for this calculator version — Missouri evaluates the whole family together first, splitting into separate cases only once shown financially ineligible together.
 
@@ -200,7 +200,7 @@ None.
 
 **The value displayed in the MFB screener is the final estimated monthly Temporary Assistance benefit.** After the household passes all eligibility requirements and all three income gates, Gate 3 determines the monthly grant from the payment standard minus fully-disregarded countable income. Any applicable grant reduction (Step 8a/8b) would then reduce that amount. Under current MFB inputs, sanction status is unobservable and assumed absent, so the displayed value is the Gate 3 monthly grant — not the Gross Max, Standard of Need, payment-standard ceiling, an annual amount, or a prorated first-month amount. If the household fails an eligibility requirement or any required gate, it is ineligible and no benefit value is returned. First-month proration is not reflected because MFB does not collect an application date.
 
-For the explicitly accepted PolicyEngine divergences in Scenarios 8, 20, and 32, use the live PE result shown in each scenario as the final screener result, consistent with Acceptance Criterion 31.
+For the explicitly accepted PolicyEngine divergences in Scenarios 8, 18, and 30, use the live PE result shown in each scenario as the final screener result, consistent with Acceptance Criterion 31.
 
 ### Gate summary
 
@@ -267,7 +267,7 @@ The screener doesn't collect the historical facts Missouri uses to pick the disr
 - `current_benefits` **does not include `mo_tanf`** → not-active calculation, full $30-plus-⅓ disregard.
 - `current_benefits` **includes `mo_tanf`** → active calculation, full two-thirds disregard.
 
-These are screening assumptions, not verified history — they deliberately pick the more favorable applicable calculation. Scenarios 3, 4, 5, 9, 17, 18, 19, 20, 22, 25, 26, 27, 28, and 30 apply this default.
+These are screening assumptions, not verified history — they deliberately pick the more favorable applicable calculation. Scenarios 3, 4, 5, 9, 15, 16, 17, 18, 20, 23, 24, 25, 26, and 28 apply this default.
 
 #### Earned-income-disregard disqualification default ⚠️ *data gap*
 
@@ -307,7 +307,7 @@ When a minor parent lives with their own parent (a three-generation household), 
 
 | Exclusion | Missouri condition | MFB committed default |
 |---|---|---|
-| **Child-student — truthfully observable channel** (0210.015.35.10) | Dependent child receiving/being added to a TA grant, full-time student "at school/college/university" — Missouri's own condition explicitly includes college/university enrollment, not secondary school alone | When `student: true` and `student_full_time: true` are both reported for a dependent child under 19, MFB's fields directly and truthfully confirm this exact qualifying channel — no assumption required. Apply the exclusion. Fields: `household_members.relationship: "child"`, `student`, `student_full_time`, per-member `income_streams`. Scenario 21 |
+| **Child-student — truthfully observable channel** (0210.015.35.10) | Dependent child receiving/being added to a TA grant, full-time student "at school/college/university" — Missouri's own condition explicitly includes college/university enrollment, not secondary school alone | When `student: true` and `student_full_time: true` are both reported for a dependent child under 19, MFB's fields directly and truthfully confirm this exact qualifying channel — no assumption required. Apply the exclusion. Fields: `household_members.relationship: "child"`, `student`, `student_full_time`, per-member `income_streams`. Scenario 19 |
 | **Child-student — remaining channels, unobservable** (0210.015.35.10) | Same exclusion also covers K-12/secondary/vocational attendance and the part-time-student-who-isn't-a-full-time-employee alternative; Gate 1 exclusion is additionally capped at 6 calendar-year months (not necessarily consecutive) | For a dependent child under 19 with earned income where `student`/`student_full_time` aren't both truthfully `true` (unanswered, `false`, or partial), MFB cannot establish or rule out these remaining channels — a `false` value doesn't disprove them either. Committed inclusive handling, no scenario: assume the exclusion applies regardless, and don't track the unobservable 6-month Gate-1 usage history. |
 | **Teen-parent student** (0210.015.35.15) | Parent under 19, full-time student in high school (or vocational/technical equivalent) — narrower than the child-student condition, and not the college/university channel MFB's fields can confirm. Earnings disregarded for both eligibility and grant amount; no 6-month cap, no gate carve-out | MFB has no field capable of establishing full-time secondary/vocational attendance for a parent under 19 (`student`/`student_full_time` confirm only college/university enrollment, a different fact). Committed inclusive handling, no scenario: assume a household head or parent under 19 with reported earned income meets this condition; earnings disregarded entirely. |
 
@@ -319,7 +319,7 @@ When a minor parent lives with their own parent (a three-generation household), 
 
 When an active TA participant marries, the new spouse's income and resources are disregarded entirely for 6 consecutive benefit months — once-in-a-lifetime for the recipient who marries, applied to both spouses if both are active recipients at the marriage date, and applied before the recipient's own earned-income disregard.
 
-**⚠️ Accepted PE limitation — income:** PolicyEngine has no concept of this disregard and counts a new spouse's income in full at every gate, the same as any other household member's, regardless of marriage timing. This is a disclosed, accepted limitation, not an MFB-side default. Scenarios 3, 4, 5, 22, and 25 use the `spouse` relationship but report no spouse income, so none of their expected values are affected; no executable scenario isolates this limitation.
+**⚠️ Accepted PE limitation — income:** PolicyEngine has no concept of this disregard and counts a new spouse's income in full at every gate, the same as any other household member's, regardless of marriage timing. This is a disclosed, accepted limitation, not an MFB-side default. Scenarios 3, 4, 5, 20, and 23 use the `spouse` relationship but report no spouse income, so none of their expected values are affected; no executable scenario isolates this limitation.
 
 **Committed treatment — resources (unaffected by the above):** Missouri disregards the new spouse's resources for the same 6-month period. `household_assets` is a single aggregate with no per-member ownership breakdown, so the spouse's share can't be isolated. Inclusive default: whenever a current TA recipient's household includes a `spouse` and `household_assets` exceeds the applicable resource tier (Criterion 7), treat the resource test as passed rather than denying on that basis alone — some unknown portion of the aggregate could belong to the disregarded spouse. This resource-side default is unchanged and unrelated to the income limitation above. No scenario — MFB cannot verify marriage timing; see "Data gaps with no executable scenario."
 
@@ -350,7 +350,7 @@ Missouri reduces the TA grant by 50% following work-program noncompliance after 
 
 **(9)(C)2) exception for the not-active branch:** (11) excludes (9)(A)2.–5. "except paragraphs (9)(C)1. and 2. would have application." (9)(C)2 restores *only* the $30-plus-⅓ piece at this gate for a not-active participant if they received TA in one or more of the 4 preceding months and haven't already used the disregard for 4 consecutive months — the same historical fact Step 3 flags as a data gap for the Gate-3 calculation (no field distinguishes "never on TA" from "off TA within 4 months").
 
-**⚠️ Data gap:** consistent with Step 3's favorable-assumption pattern, the committed default is: if a not-active participant's raw gross earned income would otherwise fail Gate 2, apply the $30-plus-⅓ disregard before concluding the gate is failed — i.e., assume the (9)(C)2) exception applies whenever it would change the outcome. No dedicated scenario isolates this default; Scenario 33 exercises the same retry mechanism without it changing the outcome (Gate 2 still fails).
+**⚠️ Data gap:** consistent with Step 3's favorable-assumption pattern, the committed default is: if a not-active participant's raw gross earned income would otherwise fail Gate 2, apply the $30-plus-⅓ disregard before concluding the gate is failed — i.e., assume the (9)(C)2) exception applies whenever it would change the outcome. No dedicated scenario isolates this default; Scenario 31 exercises the same retry mechanism without it changing the outcome (Gate 2 still fails).
 
 **Committed formula:** not-active participant → `gross_earned(member)`; if that fails Gate 2 alone, retry with `max((gross_earned(member) − 30) × 2/3, 0)` (the (9)(C)2) exception) before concluding the gate is failed. Active participant → `gross_earned(member) / 3` only — no (9)(C)2)-style retry (that exception is specific to (9)(A)3, not used by active participants at this gate). No care-cost deduction or $90 exemption apply here for either branch. Sum each employed member's Gate-2 figure with gross unearned income and compare to the Standard of Need.
 
@@ -390,7 +390,7 @@ The official Appendix B values are published for sizes 1–22 — do not derive 
 
 ### Gate interaction
 
-Gate 2 uses a much less-disregarded income figure than Gate 3, so it must be evaluated independently and can deny a household that passes Gates 1 and 3 — it must never be treated as automatically satisfied merely because Gate 3 passes. Scenario 33 demonstrates this: the household passes Gates 1 and 3 but fails Gate 2 even after the `(9)(C)2)` retry.
+Gate 2 uses a much less-disregarded income figure than Gate 3, so it must be evaluated independently and can deny a household that passes Gates 1 and 3 — it must never be treated as automatically satisfied merely because Gate 3 passes. Scenario 31 demonstrates this: the household passes Gates 1 and 3 but fails Gate 2 even after the `(9)(C)2)` retry.
 
 ### First-month proration
 
@@ -428,7 +428,7 @@ TA is paid at regular monthly intervals.
 
 - [ ] 9. Current TA receipt triggers the active-participant treatment described in Benefit Value, while households not currently receiving TA use the not-active-participant treatment.
 - [ ] 10. The calculator returns a monthly benefit amount.
-- [ ] 11. Every finalized executable scenario's final MFB result matches the scenario's expected eligibility and value — for Scenarios 8, 20, and 32, the expected value is the accepted live PolicyEngine result (Acceptance Criterion 31), not the strict-regulation comparison shown in each scenario's policy note.
+- [ ] 11. Every finalized executable scenario's final MFB result matches the scenario's expected eligibility and value — for Scenarios 8, 18, and 30, the expected value is the accepted live PolicyEngine result (Acceptance Criterion 31), not the strict-regulation comparison shown in each scenario's policy note.
 
 **Resources and assets**
 
@@ -452,11 +452,10 @@ TA is paid at regular monthly intervals.
 **Self-employment and NPCR**
 
 - [ ] 19. A reported `selfEmployment` amount is net self-employment profit, included directly in earned income at every gate — no second business-expense deduction.
-- [ ] 20. NPCR neediness and election:
-  - Not run unconditionally: automatically needy (no neediness budget) when the NPCR's spouse isn't in the household or receives SSI/SSI-SP.
-  - When needy (either path), compute both valid unit configurations (NPCR included/excluded, each a truthful PE call) and return the higher eligible monthly grant.
-  - Failing neediness → exclusion is mandatory, no elective comparison.
-  - Spouse cooperation with the neediness determination is assumed.
+- [ ] 20. NPCR neediness and election are an accepted PolicyEngine limitation, not implemented:
+  - A caretaker meeting Missouri's relationship test is always an assistance-unit member — no automatic-needy exception, no neediness budget, no mandatory-exclusion branch, and no election between the included and excluded configurations.
+  - One truthful household is sent to PolicyEngine and its answer is shipped as-is; MFB runs no local pre-test and makes no second call.
+  - The two resulting divergences are stated under "Accepted PolicyEngine limitations" (Criterion 4).
 
 **Other income sources**
 
@@ -470,20 +469,22 @@ TA is paid at regular monthly intervals.
 
 **Assistance-unit and household-composition outcomes**
 
-- [ ] 25. A non-dependent 18+ sibling excluded under Criterion 1 doesn't affect eligibility or benefit result (Scenario 15). A sibling's own excluded income doesn't count against the remaining unit either — committed inclusive default, no executable scenario.
-- [ ] 26. An 18-year-old dependent child qualifying under Criterion 1's inclusive default is included in the unit with their caretaker (Scenario 36).
+- [ ] 25. A non-dependent 18+ sibling excluded under Criterion 1 doesn't affect eligibility or benefit result (Scenario 13). A sibling's own excluded income doesn't count against the remaining unit either — committed inclusive default, no executable scenario.
+- [ ] 26. An 18-year-old dependent child qualifying under Criterion 1's inclusive default is included in the unit with their caretaker (Scenario 34).
 - [ ] 27. The new-spouse income disregard is an accepted PE limitation (AC 23) — a new spouse's income is counted at every gate like any other member's; no data-gap default applies to it.
 - [ ] 28. A household passing the resource test under Criterion 7 isn't denied by a stricter flat resource check, when the new-spouse resource disregard (Step 7) or the SSI/SP/SAB aggregate-resource default (Criterion 4 / AC 24) is active. Committed inclusive default, no executable scenario — MFB cannot verify marriage timing or isolate the SSI member's share of the aggregate.
-- [ ] 29. NPCR election (AC 20) reaching the genuinely-elective case returns whichever configuration produces the higher eligible benefit — not resolved by a static rule (Scenarios 10, 11, 12).
+- [ ] 29. No NPCR-specific branch exists in the shipped result (AC 20) — a qualifying caretaker's household returns PolicyEngine's single answer, whether or not Missouri's rule would have offered an election.
 - [ ] 30. Income-source treatment matches Criterion 8's table, except `rental`, which is counted as unearned rather than earned — a disclosed limitation, see Criterion 8 and MFB-1700 (no executable scenario
 
 **Accepted PolicyEngine divergences**
 
-- [ ] 31. Scenarios 8, 20, and 32's expected value (AC 11) is PolicyEngine's live response, per each scenario's divergence note. No MFB-side override is implemented for these or any other scenario — a disclosed, accepted accuracy gap at these exact input patterns, not a silently-produced wrong answer.
+- [ ] 31. Scenarios 8, 18, and 30's expected value (AC 11) is PolicyEngine's live response, per each scenario's divergence note. No MFB-side override is implemented for these or any other scenario — a disclosed, accepted accuracy gap at these exact input patterns, not a silently-produced wrong answer.
 
 ## Test Scenarios
 
 Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 − age`, evaluated against this spec's Year 2026.
+
+No scenario exercises NPCR neediness, mandatory exclusion or the election. PolicyEngine has declined to model that rule and MFB ships no override, so the branches are unreachable and a scenario asserting them would test nothing — the two verified divergences are recorded under "Accepted PolicyEngine limitations" instead. The two NPCR scenarios that did cover them were removed under MFB-1790 and everything below them moved up by two, so any scenario number quoted from an earlier revision of this spec — or from MFB-1698, MFB-1846, or the MFB-1279 research folder — is two higher than the scenario it names.
 
 ### Scenario 1: Golden path — primary regression test
 
@@ -592,10 +593,10 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the same not-active-participant formula validated in Scenario 3 also scales correctly to a smaller household size.
 
-### Scenario 10: Kinship caretaker, NPCR included
+### Scenario 10: Grandparent-headed household regression
 
-**What we're checking**: The `grandParent`/`grandChild` relationship encoding, and the NPCR-included configuration when inclusion is the better unit.
-**Expected**: Eligible — $292/month (no income, so including the grandparent, size 3, $292, is at least as good as excluding them, size 2, $234; the NPCR election favors inclusion here).
+**What we're checking**: The `grandParent`/`grandChild` relationship encoding — that a grandparent caretaker satisfies Criterion 3's caretaker-relationship test and is counted in the assistance unit.
+**Expected**: Eligible — $292/month (size-3 household, no income; payment standard $292, Appendix B size 3).
 **Steps**:
 * Household size: `3`
 * Person 1: Birth month/year `January 1971` (age 55), `headOfHousehold`, no income
@@ -603,38 +604,9 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 * Person 3: Birth month/year `January 2018` (age 8), `grandChild`, no income
 * `current_benefits` does not include `mo_tanf`
 
-**Why this matters**: Confirms the kinship-caretaker relationship encoding works and that the NPCR election correctly chooses inclusion when there's no income to make exclusion the better option.
+**Why this matters**: Confirms the kinship-caretaker relationship encoding reaches PolicyEngine intact — a grandparent coded `headOfHousehold` with `grandChild` dependants must produce the same size-3 grant as a parent-headed household of the same size. An implementation that dropped the caretaker for want of a parent-child link would return the size-2 $234 instead.
 
-### Scenario 11: NPCR automatic-needy exception, elective exclusion
-
-**What we're checking**: The automatic-needy exception (no spouse in the household) followed by the elective best-of-two-units choice — not an income-based neediness budget, since no spouse is present to budget against.
-**Expected**: Eligible — $234/month, via the excluded (child-only) configuration (no spouse in the household → NPCR is automatically needy, no neediness budget is run → elective choice applies; included, size 3: $292 − $100 = $192/month; excluded, size 2: $234/month; return the higher: $234).
-**Steps**:
-* Same household as Scenario 10, except:
-* Person 1 (`headOfHousehold`, grandparent, no spouse present): unemployment income $100/month
-* `current_benefits` does not include `mo_tanf`
-
-**Why this matters**: Confirms that a spouse-absent NPCR is deemed needy automatically (not via an income comparison), and that the calculator still compares both valid unit configurations and returns the higher grant rather than defaulting to inclusion.
-
-**⚠️ Pending PolicyEngine — not yet the shipped result:** PolicyEngine has no NPCR concept, so a qualifying caretaker is always an assistance-unit member and no neediness budget or election is run (AC 20). Until PE models it, this household returns the caretaker-included result. The expected value above is what the calculator should return once PE ships; the scenario's test is skipped in the meantime.
-
-### Scenario 12: NPCR mandatory non-needy exclusion
-
-**What we're checking**: The mandatory-exclusion branch, which requires a co-resident spouse to trigger the neediness budget at all (the automatic-needy exception in Scenario 11 applies whenever no spouse is present, so this branch cannot be tested without one).
-**Expected**: Eligible — $234/month, via mandatory exclusion (NPCR + co-resident spouse neediness group, size 2, Standard of Need $678; countable income $700 ≥ $678 → not needy → NPCR must be excluded, no elective comparison; remaining cash group is the two grandchildren, size 2: $234).
-**Steps**:
-* Household size: `4`
-* Person 1: Birth month/year `January 1971` (age 55), `headOfHousehold` (grandparent NPCR), unemployment income $700/month
-* Person 2: Birth month/year `January 1973` (age 53), `spouse`, no income
-* Person 3: Birth month/year `January 2020` (age 6), `grandChild`, no income
-* Person 4: Birth month/year `January 2018` (age 8), `grandChild`, no income
-* `current_benefits` does not include `mo_tanf`
-
-**Why this matters**: Confirms that when a co-resident spouse triggers the neediness budget and the NPCR/spouse group fails it, exclusion is mandatory — the calculator must not offer an elective comparison in this branch.
-
-**⚠️ Pending PolicyEngine — not yet the shipped result:** PolicyEngine has no NPCR concept, so a qualifying caretaker is always an assistance-unit member and no neediness budget or election is run (AC 20). Until PE models it, this household returns the caretaker-included result. The expected value above is what the calculator should return once PE ships; the scenario's test is skipped in the meantime.
-
-### Scenario 13: SSI child, payee-only unit
+### Scenario 11: SSI child, payee-only unit
 
 **What we're checking**: SSI exclusion from needs, income, resources, and need-unit size, for the SSI-child branch.
 **Expected**: Eligible — $136/month, via a payee-only unit (the SSI child is the household's only otherwise-eligible TA child; excluded from the unit; the payee still receives a payee-only grant sized to the remaining size-1 unit).
@@ -645,7 +617,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the SSI exclusion still produces a payee-only grant when the SSI recipient is the only qualifying child, rather than incorrectly zeroing out the whole household.
 
-### Scenario 14: Larger household, official table
+### Scenario 12: Larger household, official table
 
 **What we're checking**: The official-table-vs-raw-percentage correction, at household size 5.
 **Expected**: Eligible — $388/month (size-5 payment standard, Appendix B: $388, not the raw $387.73).
@@ -660,7 +632,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the calculator uses the official Appendix B payment-standard table at size 5, not a raw percentage-of-Standard-of-Need derivation, which would produce a different cents-level result.
 
-### Scenario 15: Non-qualifying sibling excluded
+### Scenario 13: Non-qualifying sibling excluded
 
 **What we're checking**: Need-unit-size filtering excludes a non-dependent, non-qualifying older child from headcount. (This person is the dependent child's sibling — relative to `headOfHousehold`, both are coded the head's `child`, since `sisterOrBrother` would instead mean "the head's own sibling.") This person is excluded on **age alone** — exactly 19 fails Criterion 1's "under 19" test regardless of student status, so this scenario does not depend on (and does not report) `student`/`student_full_time`, which cannot establish secondary-school status in any case — see Benefit Value Step 6.
 **Expected**: Eligible — $234/month, size 2 (the 19-year-old is excluded from headcount as a non-dependent, non-qualifying member, on age alone).
@@ -673,7 +645,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms need-unit filtering correctly drops a non-qualifying older sibling from the headcount used to look up the Standard of Need, Gross Max, and payment standard.
 
-### Scenario 16: Pregnancy alone is not a qualifying pathway
+### Scenario 14: Pregnancy alone is not a qualifying pathway
 
 **What we're checking**: Criterion 1's pregnancy exclusion — that pregnancy alone, without a qualifying dependent child, does not establish eligibility.
 **Expected**: Not eligible — 13 CSR 40-2.325 requires a dependent child; pregnancy alone is not an independent basis.
@@ -683,7 +655,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms Missouri's dependent-child requirement and ensures pregnancy alone does not create eligibility.
 
-### Scenario 17: Childcare deduction below the cap
+### Scenario 15: Childcare deduction below the cap
 
 **What we're checking**: The childcare deduction when actual cost is below the $175 cap.
 **Expected**: Eligible — $214/month (`R = 300 − 90 = 210`; countable before care `= (210 − 30) × 2/3 = 120`; countable `= max(120 − 100, 0) = 20`; deficit `= 234 − 20 = 214`).
@@ -696,7 +668,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the childcare deduction is applied dollar-for-dollar when actual cost is below the cap, rather than always applying the full cap regardless of reported cost.
 
-### Scenario 18: Childcare deduction capped
+### Scenario 16: Childcare deduction capped
 
 **What we're checking**: The $175 cap when actual cost exceeds it. Earnings are set high enough that countable-before-care income exceeds $175, so the exact cap amount is observable in the result (unlike a lower-earnings household, where any cap ≥ the pre-care countable amount produces the same $0 regardless of its exact value).
 **Expected**: Eligible — $109/month (`R = 570 − 90 = 480`; countable before care `= (480 − 30) × 2/3 = 300`; actual cost $300 exceeds the $175 cap, so `countable = max(300 − 175, 0) = 125`; deficit `= 234 − 125 = 109`).
@@ -709,7 +681,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the $175 cap actually binds (rather than deducting the full reported cost) once reported cost exceeds it.
 
-### Scenario 19: $10 minimum-payment floor, exact boundary
+### Scenario 17: $10 minimum-payment floor, exact boundary
 
 **What we're checking**: The $10 minimum floor at the boundary where payment is still made.
 **Expected**: Eligible — $10/month (`R = 456 − 90 = 366`; countable `= (366 − 30) × 2/3 = 224`; deficit `= 234 − 224 = 10`).
@@ -721,19 +693,19 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the $10 floor is inclusive — a deficit of exactly $10 still produces a payment, not a denial.
 
-### Scenario 20: $10 floor, one dollar over the boundary
+### Scenario 18: $10 floor, one dollar over the boundary
 
 **What we're checking**: That a deficit of $9.99 or less results in `eligible: false`, not a suppressed-but-still-eligible $0 payment.
 **Expected**: Not eligible — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below). PolicyEngine computes a $0.00 grant, and a $0 value is reported as not eligible, so the household's outcome matches the strict-regulation denial below.
 **Policy note (Missouri's committed policy treatment):** `R = 457 − 90 = 367`; countable `= (367 − 30) × 2/3 = 224.67`; deficit `= 234 − 224.67 = 9.33` ≤ $9.99 → per 0210.020.00's explicit case-status conclusion (the regulation itself is silent on eligibility status below $10, see Benefit Value Step 10), this is `eligible: false`, not `eligible: true, value: $0`.
 **Steps**:
-* Same as Scenario 19, except wages: $457/month
+* Same as Scenario 17, except wages: $457/month
 
 **Why this matters**: Confirms Missouri's committed policy treatment of a sub-$10 deficit as ineligible, based on the current DSS manual's explicit case-status rule where the regulation itself is silent. See the divergence note below for PolicyEngine's accepted departure from this result.
 
-**PE divergence from Missouri's committed policy treatment — accepted, no MFB override:** Under Missouri's committed policy treatment (see policy note above), this exact boundary is `eligible: false`. Same rounding character as Scenarios 8 and 32: PolicyEngine's continuous formula-based calculation doesn't land on a clean deficit at this exact-dollar boundary the way Missouri's discrete floor test does — a permanent characteristic of PolicyEngine's formula-based approach, not a scenario-specific bug. This is a disclosed, accepted accuracy gap at this exact input pattern (Acceptance Criterion 31) — narrow in scope, do not generalize without the same root-causing.
+**PE divergence from Missouri's committed policy treatment — accepted, no MFB override:** Under Missouri's committed policy treatment (see policy note above), this exact boundary is `eligible: false`. Same rounding character as Scenarios 8 and 30: PolicyEngine's continuous formula-based calculation doesn't land on a clean deficit at this exact-dollar boundary the way Missouri's discrete floor test does — a permanent characteristic of PolicyEngine's formula-based approach, not a scenario-specific bug. This is a disclosed, accepted accuracy gap at this exact input pattern (Acceptance Criterion 31) — narrow in scope, do not generalize without the same root-causing.
 
-### Scenario 21: Child-student earned-income exclusion, truthful full-time-college-student channel
+### Scenario 19: Child-student earned-income exclusion, truthful full-time-college-student channel
 
 **What we're checking**: The child-student earnings exclusion affects eligibility itself, not just grant value — and, unlike the general inclusive default (a true data gap, no scenario — see Benefit Value Step 6), this specific input combination truthfully confirms one of Missouri's own qualifying channels: `student: true` and `student_full_time: true` on a dependent child directly reports full-time enrollment at a college/university, which 0210.015.35.10 explicitly recognizes ("at school/college/university," not secondary school alone). No assumption is required for this scenario.
 **Expected**: Eligible — $234/month (the child's earnings are excluded from both Gate 1 and the grant calculation, leaving countable income at $0).
@@ -745,7 +717,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the child-student exclusion applies at Gate 1 as well as the grant calculation for a genuinely observed qualifying fact — without it, $1,300/month would fail the household outright. This scenario is deliberately built on a truthful `student`/`student_full_time` report, not the inclusive default that applies when those fields are unanswered, `false`, or partial (a true data gap with no scenario — the remaining channels of 0210.015.35.10 aren't representable, and neither is the 6-month Gate-1 usage cap).
 
-### Scenario 22: Two-earner calculation — not-active-participant default
+### Scenario 20: Two-earner calculation — not-active-participant default
 
 **What we're checking**: The $90 exemption and $30-plus-1/3 disregard are applied per earner, not combined.
 **Expected**: Eligible — $168/month (earner 1 countable `= (210 − 30) × 2/3 = 120`; earner 2 countable `= (110 − 30) × 2/3 ≈ 53.33`; total `≈ 173.33`; deficit `= 342 − 173.33 ≈ 168.67`, floored to $168. If deductions were instead computed once against the combined $500, the deficit would floor to $88 — this scenario exists to catch that error).
@@ -759,7 +731,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the calculator disregards each employed member's earnings independently, rather than pooling household earnings before applying a single disregard.
 
-### Scenario 23: Verified countable unearned income
+### Scenario 21: Verified countable unearned income
 
 **What we're checking**: Unearned income receives no work-exemption or disregard treatment.
 **Expected**: Eligible — $34/month (Gate 1: $200 < $1,254 ✓; Gate 2: $200 < $678 ✓; deficit `= 234 − 200 = 34`).
@@ -771,7 +743,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms unearned income passes straight through to all three gates with no $90 exemption or disregard applied, unlike earned income.
 
-### Scenario 24: Official size-8 payment standard
+### Scenario 22: Official size-8 payment standard
 
 **What we're checking**: The official Appendix B value at size 8.
 **Expected**: Eligible — $514/month (size-8 payment standard, Appendix B: $514 — not the raw $514.09, and not the flyer's erroneous $517).
@@ -789,7 +761,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the official table is used at the current maximum tested household size, and that neither the raw-percentage value nor the erroneous public-flyer figure is used instead.
 
-### Scenario 25: Incapacitated-person-care deduction from a reported `dependentCare` expense
+### Scenario 23: Incapacitated-person-care deduction from a reported `dependentCare` expense
 
 **What we're checking**: The incapacitated-person care deduction applies to an actual reported `dependentCare` cost — not automatically from a `disabled`/`long_term_disability` flag alone. Earnings are set high enough that countable-before-care income exceeds $175, so the exact deduction amount is observable (unlike a lower-earnings household, where the deduction would zero out countable income regardless of its exact value).
 **Expected**: Eligible — $167/month (`R = 570 − 90 = 480`; countable before care `= (480 − 30) × 2/3 = 300`; the reported $175 `dependentCare` cost is within the $175-per-incapacitated-person cap: `countable = max(300 − 175, 0) = 125`; deficit `= 292` (size-3 payment standard) `− 125 = 167`).
@@ -801,20 +773,20 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 * Expense: `dependentCare`, $175/month
 * `current_benefits` does not include `mo_tanf`
 
-**Why this matters**: Confirms the incapacitated-care deduction requires an actual reported `dependentCare` cost tied to a qualifying incapacitated person — not an automatic deduction triggered by the disability flags alone with no expense reported (see Scenario 26).
+**Why this matters**: Confirms the incapacitated-care deduction requires an actual reported `dependentCare` cost tied to a qualifying incapacitated person — not an automatic deduction triggered by the disability flags alone with no expense reported (see Scenario 24).
 
-### Scenario 26: No `dependentCare` expense reported — no automatic deduction
+### Scenario 24: No `dependentCare` expense reported — no automatic deduction
 
 **What we're checking**: That `long_term_disability: true` with no `dependentCare` expense produces no care deduction, distinguishing this from an automatic deduction triggered by the disability flag alone.
-**Expected**: Not eligible (identical household and wages to Scenario 25, but with no `dependentCare` expense reported: `R = 570 − 90 = 480`; countable `= (480 − 30) × 2/3 = 300`; no care deduction applies; deficit `= 292 − 300 = −8` → Gate 3 fails on the merits, `eligible: false` — this is a genuine income-test failure under 13 CSR 40-2.310(13), not the $10-floor payment-suppression rule in (14), which is never reached because Gate 3 fails outright).
+**Expected**: Not eligible (identical household and wages to Scenario 23, but with no `dependentCare` expense reported: `R = 570 − 90 = 480`; countable `= (480 − 30) × 2/3 = 300`; no care deduction applies; deficit `= 292 − 300 = −8` → Gate 3 fails on the merits, `eligible: false` — this is a genuine income-test failure under 13 CSR 40-2.310(13), not the $10-floor payment-suppression rule in (14), which is never reached because Gate 3 fails outright).
 **Steps**:
-* Same household and wages as Scenario 25, except no `dependentCare` expense is reported
+* Same household and wages as Scenario 23, except no `dependentCare` expense is reported
 
 **Why this matters**: Confirms the calculator does not silently apply the $175 incapacitated-care deduction merely because a household member is flagged `disabled` or `long_term_disability` — Acceptance Criterion 15.
 
-### Scenario 27: Under-age-2 childcare cap
+### Scenario 25: Under-age-2 childcare cap
 
-**What we're checking**: The $200 under-2 cap, distinct from the $175 age-2-and-older cap tested in Scenarios 17/18.
+**What we're checking**: The $200 under-2 cap, distinct from the $175 age-2-and-older cap tested in Scenarios 15/18.
 **Expected**: Eligible — $134/month (`R = 570 − 90 = 480`; countable before care `= (480 − 30) × 2/3 = 300`; actual cost $300 exceeds the under-2 cap, so only $200 is deductible: `countable = max(300 − 200, 0) = 100`; deficit `= 234 − 100 = 134`. Applying the $175 cap instead would yield $109 — this scenario catches that age-bracket error.)
 **Steps**:
 * Household size: `2`
@@ -825,7 +797,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the age-based cap correctly selects $200 (not $175) for a child under age 2.
 
-### Scenario 28: Self-employment income treated as net profit
+### Scenario 26: Self-employment income treated as net profit
 
 **What we're checking**: The committed self-employment treatment (Criterion 8 / Benefit Value Steps 2–3) — a reported `selfEmployment` amount is treated as net profit already after ordinary business expenses and follows the same not-active/active-participant computation as wages, with no separate business-expense subtraction.
 **Expected**: Eligible — $114/month (the not-active-participant calculation applies to the reported net amount the same as it would to wages: `after_work_exemption = 300 − 90 = 210`; countable `= (210 − 30) × 2/3 = 120`; deficit `= 234 − 120 = 114`).
@@ -837,7 +809,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms self-employment income runs through the identical not-active/active-participant formula as wages, with no extra business-expense deduction layered on top.
 
-### Scenario 29: Aggregate `childCare` cap across multiple children
+### Scenario 27: Aggregate `childCare` cap across multiple children
 
 **What we're checking**: The aggregate `childCare` cap is the *sum* of the applicable per-child caps, not a single flat per-household cap.
 **Expected**: Eligible — $200/month (Gate 1: $820 < $1,565 ✓ (size 3 Gross Max); Gate 2, not-active participant, no disregard applies at this gate: $820 < $846 ✓ (size 3 Standard of Need); Gate 3: `R = 820 − 90 = 730`; countable before care `= (730 − 30) × 2/3 = 466.67`; allowable care `= $200 (under-2 cap) + $175 (age-2-and-older cap) = $375`; actual cost $500 exceeds $375, so only $375 is deductible: `countable = max(466.67 − 375, 0) = 91.67`; deficit `= 292` (size-3 payment standard) `− 91.67 = 200.33` → floored to `$200`. Applying a single flat $200 or $175 cap instead of summing per-child caps would produce a materially different result — this scenario catches that error.)
@@ -851,7 +823,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms the household-level `childCare` aggregate is capped against the sum of each child's applicable per-child cap, rather than a single cap applied once regardless of how many children need care.
 
-### Scenario 30: Child support received, active recipient
+### Scenario 28: Child support received, active recipient
 
 **What we're checking**: The committed child-support treatment (Criterion 8) for the **regular budget** — a reported `childSupport` amount is counted as unearned income equal to the amount actually sent to/received by the household, with no disregard. This scenario tests the reportable regular-budget amount under MFB's inclusive active-case default; it does not (and cannot) test Missouri's separate trial-budget step, which uses the CSE/DFAS-retained amount MFB does not collect.
 **Expected**: Eligible — $203/month (Gate 1: $31 < $1,254 ✓; Gate 2: $31 < $678 ✓; deficit `= 234 − 31 = 203`).
@@ -863,7 +835,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Confirms `childSupport` counts as ordinary unearned income at the reported received amount in the regular budget — this scenario reproduces the final regular-budget figure ($234 payment standard − $31 received = $203) from Missouri's own active-case worked example, which uses $156 ($125 retained by CSE + $31 sent to the household) in a preceding trial budget that MFB cannot reproduce and does not need to in order to compute this regular-budget result.
 
-### Scenario 31: Current TA cash grant excluded from its own recalculation
+### Scenario 29: Current TA cash grant excluded from its own recalculation
 
 **What we're checking**: The committed cash-assistance treatment (Criterion 8) — an amount reported under `cashAssistance` ("Cash Assistance - TANF") is the household's own existing TA grant and is excluded entirely, not counted as additional unearned income against itself.
 **Expected**: Eligible — $234/month (identical to a current recipient reporting no income at all — the reported `cashAssistance` amount is excluded from all three gates: Gate 1: $0 countable < $1,254 ✓; Gate 2: $0 < $678 ✓; deficit `= 234 − 0 = 234`. A naive implementation that counted the $234 `cashAssistance` entry as unearned income would instead compute deficit `= 234 − 234 = 0` and wrongly zero out the grant.)
@@ -875,7 +847,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: Catches a realistic implementation error — a current TA recipient re-screening and reporting their own existing grant as `cashAssistance` income must not have that amount counted against them at any gate. The exclusion follows the income type, not the tile: it must hold for a recipient who reports the amount without ticking `mo_tanf` in `current_benefits`.
 
-### Scenario 32: Gate 1 exact-equality boundary, genuinely isolated
+### Scenario 30: Gate 1 exact-equality boundary, genuinely isolated
 
 **What we're checking**: The strict `<` comparator at Gate 1, in a household constructed so Gate 1 is the *only* gate that fails — Gates 2 and 3 both independently pass, so this scenario cannot pass merely because some other gate happens to deny the household too. This scenario uses an active participant's earned income and a childcare deduction specifically to decouple Gate 1 from Gates 2 and 3.
 **Expected**: Eligible — $106.09/month — the calculator ships PolicyEngine's live result as-is for this exact boundary (see divergence note below).
@@ -891,7 +863,7 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **PE divergence from strict Missouri regulation — accepted, no MFB override:** Under strict application of Missouri's regulation (see policy note above), this exact boundary is `eligible: false`. PolicyEngine's live formula-based Standard-of-Need calculation instead returns `eligible: true, $106.09` — a permanent characteristic of that approach, not a scenario-specific bug. This is a disclosed, accepted accuracy gap at this exact input pattern (Acceptance Criterion 31) — narrow in scope, do not generalize without the same root-causing.
 
-### Scenario 33: Gate 2 independently denies even after the `(9)(C)2)` retry
+### Scenario 31: Gate 2 independently denies even after the `(9)(C)2)` retry
 
 **What we're checking**: That Gate 2 can independently deny a household — surviving even the `(9)(C)2)` favorable-history retry — while that same household would pass both Gate 1 and Gate 3. This is the load-bearing scenario for the "Gate 2 can independently bind" principle stated in Gate Interaction above.
 **Expected**: Not eligible (Gate 1: `$1,515 < $1,832` size-4 Gross Max → passes. Gate 2, not-active participant: raw `$1,515 ≥ $990` size-4 Standard of Need fails; `(9)(C)2)` retry `= ($1,515 − $30) × 2/3 = $990`; `$990 ≥ $990` → **still fails** the strict `<` comparator, even at the retry. Gate 3, for reference only since Gate 2 already denies: `R = 1,515 − 90 = 1,425`; countable before care `= (1,425 − 30) × 2/3 = 930`; minus the $600 aggregate under-2 childcare cap (3 children × $200) `= 330`; `$330 < $342` size-4 payment standard → would independently pass, deficit `$12`.)
@@ -906,10 +878,10 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 
 **Why this matters**: An implementation that treats Gate 2 as automatically satisfied whenever Gate 3 passes, or that omits the Gate-2 evaluation after applying the `(9)(C)2)` retry, would incorrectly return `eligible: true, $12` for this household.
 
-### Scenario 34: NPCR automatic-needy exception via co-resident spouse's SSI
+### Scenario 32: SSI-spouse exclusion regression
 
-**What we're checking**: A second trigger of Criterion 4's NPCR automatic-needy exception — a co-resident spouse who *receives SSI*, as distinct from Scenario 11's "spouse absent from the home" trigger. Either condition deems the NPCR needy without running the neediness budget at all.
-**Expected**: Eligible — $292/month. The NPCR is deemed automatically needy (spouse receives SSI); the SSI spouse is itself excluded from needs/income/resources (Criterion 4). Comparing the two valid configurations: NPCR included (grandparent + 2 grandchildren, size 3, no countable income) yields deficit `$292 − $0 = $292`; NPCR excluded (2 grandchildren alone, size 2) yields deficit `$234 − $0 = $234`. The higher eligible grant wins: **$292/month, NPCR included.**
+**What we're checking**: Criterion 4's SSI exclusion applied to a caretaker's co-resident spouse — the SSI member's needs, income and resources are all excluded, and they do not count toward the need-unit size.
+**Expected**: Eligible — $292/month. The SSI spouse is excluded from the assistance unit, leaving the grandparent and two grandchildren at size 3 with no countable income: deficit `$292 − $0 = $292`. The spouse's $750/month SSI is not counted against the unit.
 **Steps**:
 * Household size: `4` (SSI spouse excluded from the assistance unit; unit size 3)
 * Person 1: Birth month/year `January 1971` (age 55), `headOfHousehold`, no income
@@ -918,9 +890,9 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 * Person 4: Birth month/year `January 2018` (age 8), `grandChild`, no income
 * `current_benefits` does not include `mo_tanf`
 
-**Why this matters**: Confirms the automatic-needy exception's SSI-receipt trigger is implemented as an independent path to needy status, not merely the spouse-absent trigger already covered by Scenario 11. An implementation that only checks spouse presence — without separately checking SSI receipt — would incorrectly run the full neediness budget, and might still reach the same benefit number here, masking the missing branch.
+**Why this matters**: Confirms the SSI exclusion is applied on both axes at once — the spouse's $750/month stays out of countable income *and* the spouse stays out of the need-unit size. An implementation that excluded only the income would size the unit at 4 and return the wrong payment standard; one that excluded only the member would count $750 against a size-3 unit and deny the household.
 
-### Scenario 35: Non-TANF cash assistance included as unearned income
+### Scenario 33: Non-TANF cash assistance included as unearned income
 
 **What we're checking**: Criterion 8's committed cash-assistance treatment table — an amount reported under `cashAssistanceOther` ("Cash Assistance - Other") is cash aid from another program (General Assistance, another state's TANF, a local fund) and is included as ordinary unearned income at every gate.
 **Expected**: Eligible — $34/month (Gate 1: `$200 < $1,254` size-2 Gross Max ✓. Gate 2: `$200 < $678` size-2 Standard of Need ✓ — cash assistance receives no earned-income disregard at either gate. Gate 3: countable income `$200` (no disregard applies to unearned income); deficit `= $234 − $200 = $34`.)
@@ -930,9 +902,9 @@ Age shorthand: unless otherwise noted, `birth_month = 1` and `birth_year = 2026 
 * Person 2: Birth month/year `January 2020` (age 6), `child`, no income
 * `current_benefits` does not include `mo_tanf`
 
-**Why this matters**: Scenario 31 proves the self-exclusion branch for the household's own grant; this scenario proves the opposite branch. An implementation that routed both cash-assistance types to PolicyEngine's `tanf` input would exclude this $200 too and overstate the grant at $234 instead of $34.
+**Why this matters**: Scenario 29 proves the self-exclusion branch for the household's own grant; this scenario proves the opposite branch. An implementation that routed both cash-assistance types to PolicyEngine's `tanf` input would exclude this $200 too and overstate the grant at $234 instead of $34.
 
-### Scenario 36: Age-18 dependent child included with their caretaker
+### Scenario 34: Age-18 dependent child included with their caretaker
 
 **What we're checking**: Criterion 1's inclusive default for an 18-year-old — assumed enrolled and expected to graduate, since the screener has no secondary-enrollment field. The child and their caretaker are both in the unit.
 **Expected**: Eligible — $234/month (size-2 payment standard, no income).
@@ -961,7 +933,7 @@ These have a committed inclusive-handling rule but no scenario, since MFB collec
 - Requalification after a full-family work-sanction closure (Criterion 14)
 - Earned-income-disregard disqualification default (Benefit Value Step 3)
 - Pursuit of potentially available RSDI/UC/veterans benefits (Criterion 15) — unobservable entitlement/refusal history
-- `(9)(C)2)` prior-four-month TA-receipt history restoring the $30-plus-⅓ disregard at Gate 2 (Benefit Value Step 9) — Scenario 33 exercises the same retry mechanism as a side effect, without depending on the history fact itself
+- `(9)(C)2)` prior-four-month TA-receipt history restoring the $30-plus-⅓ disregard at Gate 2 (Benefit Value Step 9) — Scenario 31 exercises the same retry mechanism as a side effect, without depending on the history fact itself
 - New-spouse resource disregard, 6-consecutive-benefit-month window (Benefit Value Step 7) — no marriage-date field exists; MFB assumes the window is active whenever a current TA recipient's household includes a `spouse`, rather than scenario-testing the timing fact. (This is the resource half only — the income half is an accepted PE limitation, not a data gap; see below.)
 - SSI/SP/SAB member's share of an aggregate `household_assets` total (Criterion 4) — `household_assets` has no per-member breakdown; don't deny on the aggregate alone
 - Excluded non-dependent sibling's income-availability amount (Criterion 4) — assume $0 is made available to the assistance unit
@@ -974,12 +946,15 @@ These have a committed inclusive-handling rule but no scenario, since MFB collec
 
 ### Accepted PolicyEngine limitations (no MFB-side override)
 
-MFB ships no override code that substitutes a different number for what PE actually returns. These two areas are genuine PE capability gaps — no input, truthful or otherwise, gets PE to apply the rule:
+MFB ships no override code that substitutes a different number for what PE actually returns. These three areas are genuine PE capability gaps — no input, truthful or otherwise, gets PE to apply the rule:
 
 - **$5,000 IEP/self-sufficiency-pact resource tier (Criterion 7):** PolicyEngine's `mo_tanf_resources_eligible` applies a flat $1,000 test regardless of TA-recipient status, with no $5,000-tier concept to select into. Every household is evaluated against $1,000, current recipients included.
 - **New-spouse income disregard (Benefit Value Step 7):** PolicyEngine counts a new spouse's income in full at every gate; there is no PE input that reproduces Missouri's 6-month disregard.
+- **NPCR neediness, mandatory exclusion and election (Criterion 4):** PolicyEngine has no non-parent-caretaker-relative concept, so a caretaker meeting Missouri's relationship test is always an assistance-unit member. PolicyEngine confirmed it does not model Missouri's neediness test, mandatory-exclusion branch or election, and MFB's decision is not to maintain a separate NPCR orchestration layer around it. Two divergences are verified against live PolicyEngine, both against the same size-3 grandparent-plus-two-grandchildren household in St. Louis City:
+  - *Needy caretaker, election case* — grandparent with $100/month unearned income and no spouse in the home. The caretaker is automatically needy, so Missouri offers the election and takes the better of included (size 3, $292.09 − $100) and excluded (the two grandchildren alone, size 2). Policy-valid answer **$234.09/month**; PolicyEngine returns the included configuration, **$192.09/month**.
+  - *Non-needy caretaker, mandatory-exclusion case* — grandparent with $700/month unearned income and a co-resident spouse. The size-2 neediness group fails the $678 Standard of Need, so Missouri must exclude the caretaker, leaving the two grandchildren as a size-2 unit. Policy-valid answer **$234.09/month**; PolicyEngine includes the caretaker and returns **ineligible**.
 
-NPCR election (Criterion 4) is not on this list: submitting two independently-truthful household configurations to PE and keeping the higher real result works correctly against live PE (Scenarios 10, 11, 12, 34) — see Criterion 4.
+  The divergence runs in both directions — understating a real grant in the first case and denying one outright in the second — so it is disclosed rather than corrected. No scenario exercises either branch; see the note at the head of the Test Scenarios section.
 
 ### Not represented by current screener inputs
 
@@ -998,4 +973,4 @@ NPCR election (Criterion 4) is not on this list: submitting two independently-tr
 - DSS Manuals: 0205.005.00, 0205.025.00, 0205.030.05, 0205.030.10, 0205.035.00, 0205.040.05.15, 0205.050.25.10, 0205.050.25.20, 0210.005.00, 0210.005.05, 0210.005.10, 0210.005.30, 0210.005.35, 0210.005.40, 0210.005.45, 0210.010.05.185, 0210.010.10, 0210.010.15, 0210.015.00, 0210.015.05, 0210.015.20.20, 0210.015.52, 0210.020.00, 0210.015.30, 0210.015.30.10, 0210.015.30.15, 0210.015.30.20, 0210.015.30.22, 0210.015.30.25, 0210.015.30.30, 0210.015.35.10, 0210.015.35.15, 0210.015.55, 0220.010.10, 0225.045.00, 0240.000.00, 0240.005.05, 0240.005.15
 - [RSMo § 208.040](https://revisor.mo.gov/main/OneSection.aspx?section=208.040); RSMo § 208.027; 42 U.S.C. § 608(a)(4), (a)(5)(B)
 - [RSMo § 536.010](https://revisor.mo.gov/main/OneSection.aspx?section=536.010); [RSMo § 536.021](https://revisor.mo.gov/main/OneSection.aspx?section=536.021); *[NME Hospitals, Inc. v. Department of Social Services](https://law.justia.com/cases/missouri/supreme-court/1993/75042-0.html)* (Mo. 1993) — the binding legal basis for this spec's source-precedence rule (codified regulation controls over a conflicting DSS operational manual or State Plan), applied at Benefit Value Step 9 (Gate 2) and Criterion 14 (work-sanction requalification duration).
-- PolicyEngine (`mo_tanf` engine). Scenarios 8, 20, and 32 use the explicitly accepted live PE result rather than a hand-calculated correction (Acceptance Criterion 31).
+- PolicyEngine (`mo_tanf` engine). Scenarios 8, 18, and 30 use the explicitly accepted live PE result rather than a hand-calculated correction (Acceptance Criterion 31).

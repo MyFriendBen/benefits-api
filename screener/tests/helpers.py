@@ -7,8 +7,19 @@ join-table lookup will need, then write CurrentBenefit rows directly (or via the
 
 from django.conf import settings
 
-from programs.models import County, Document, Program, WarningMessage
+from programs.models import (
+    County,
+    Document,
+    ExpenseType,
+    Program,
+    UrgentNeed,
+    UrgentNeedCategory,
+    UrgentNeedFunction,
+    UrgentNeedType,
+    WarningMessage,
+)
 from screener.models import WhiteLabel
+from translations.models import Translation
 
 
 def seed_program(white_label: WhiteLabel, *name_abbreviateds: str, base_program: str | None = None) -> None:
@@ -80,3 +91,65 @@ def seed_warning(
         warning.counties.add(county)
     warning.programs.add(program)
     return warning
+
+
+def seed_urgent_need(
+    white_label: WhiteLabel,
+    external_name: str,
+    *,
+    category: str,
+    category_type: str = "Food Resources",
+    name: str = "",
+    description: str = "",
+    link: str = "",
+    phone_number: str = "",
+    county_names: tuple[str, ...] = (),
+    expense_types: tuple[str, ...] = (),
+    functions: tuple[str, ...] = (),
+    active: bool = True,
+) -> UrgentNeed:
+    """Create an active UrgentNeed in `category`, with its translations filled in.
+
+    `category` is the `UrgentNeedCategory.name` the immediate-needs step writes
+    (`"food"`, `"housing"`, ...) — the same string `NEED_CATEGORY_FIELDS` keys on.
+    `category_type` is the display grouping the card shows above the name; it is a
+    different model (`UrgentNeedType`) and defaults to something plausible so callers
+    that don't care about the heading can ignore it.
+
+    `UrgentNeed.objects.new_urgent_need` creates every translation as
+    BLANK_TRANSLATION_PLACEHOLDER (or "" for `notification_message`), which both
+    consumers treat as "no value", so anything a test wants to read back has to be
+    written here.
+    """
+    need = UrgentNeed.objects.new_urgent_need(white_label.code, external_name, phone_number)
+    need.active = active
+
+    need_type, _ = UrgentNeedType.objects.get_or_create(
+        white_label=white_label,
+        external_name=category_type,
+        defaults={"name": Translation.objects.add_translation(f"urgent_need_type.{category_type}-name")},
+    )
+    _set_default_text(need_type.name, category_type)
+    need.category_type = need_type
+    need.save()
+
+    short, _ = UrgentNeedCategory.objects.get_or_create(name=category)
+    need.type_short.add(short)
+
+    for field, text in (("name", name), ("description", description), ("link", link)):
+        if text:
+            _set_default_text(getattr(need, field), text)
+
+    for county_name in county_names:
+        county, _ = County.objects.get_or_create(white_label=white_label, name=county_name)
+        need.counties.add(county)
+
+    for expense_type in expense_types:
+        expense, _ = ExpenseType.objects.get_or_create(name=expense_type)
+        need.required_expense_types.add(expense)
+
+    for function_name in functions:
+        function, _ = UrgentNeedFunction.objects.get_or_create(name=function_name)
+        need.functions.add(function)
+
+    return need
