@@ -346,7 +346,7 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop("force", False)
-        # Off only for replaying stored screens (`pull_screen`, `pull_validations`), which predate the check.
+        # Off only for replaying stored screens (`pull_screen`), which predate the check.
         self.validate_location = kwargs.pop("validate_location", True)
         super().__init__(*args, **kwargs)
 

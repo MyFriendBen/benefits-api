@@ -54,10 +54,10 @@ class Command(BaseCommand):
         try:
             # update
             screen = Screen.objects.get(uuid=uuid)
-            serializer = ScreenSerializer(screen, data=remote_screen, force=True, validate_location=False)
+            serializer = ScreenSerializer(screen, data=remote_screen, force=True)
         except Screen.DoesNotExist:
             # create
-            serializer = ScreenSerializer(data=remote_screen, validate_location=False)
+            serializer = ScreenSerializer(data=remote_screen)
 
         serializer.is_valid(raise_exception=True)
 
