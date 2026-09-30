@@ -2,8 +2,7 @@
 Integration tests for HUD API client.
 
 These tests use VCR to record/replay HTTP interactions:
-- In CI (PRs): Records new interactions only (VCR_MODE=new_episodes)
-- In CI (push to main): Re-records ALL cassettes to verify API interface (VCR_MODE=all)
+- In CI (PRs, staging and production deploys): Replays cassettes only, never records (VCR_MODE=none)
 - Locally: Uses cassettes by default (VCR_MODE=once), records new ones if missing
 - Force re-record all: VCR_MODE=all pytest -m integration
 

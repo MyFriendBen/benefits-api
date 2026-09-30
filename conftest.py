@@ -11,7 +11,7 @@ VCR behavior controlled by VCR_MODE environment variable:
   request. Downgraded to `none` inside an xdist worker unless PE_RECORD is set, so a parallel
   run cannot record a missing cassette live (see vcr_record_mode)
 - VCR_MODE=new_episodes: Replays existing interactions, records NEW HTTP requests not in cassette
-- VCR_MODE=all (production deploy): Never replays, re-records ALL cassettes from scratch
+- VCR_MODE=all (manual only): Never replays, re-records ALL cassettes from scratch
 
 A run that may write a cassette is forced single-process (see pytest_configure): parallel
 workers would issue duplicate live calls and race to write the same file.
