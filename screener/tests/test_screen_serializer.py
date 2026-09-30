@@ -7,6 +7,8 @@ a white-label-scoped Program lookup. These cover `_write_current_benefits()` (th
 shared helper) directly and the serializer `create()` / `update()` paths end to end.
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 
 from configuration.models import Configuration
@@ -409,16 +411,11 @@ class CurrentBenefitsNameLengthTests(TestCase):
 
 
 class LocationValidationTests(TestCase):
-    """`ScreenSerializer._validate_location` — the ZIP/county gate on write.
+    """`ScreenSerializer._validate_location`: the ZIP/county gate on write.
 
-    The browser builds both its ZIP gate and its county dropdown from
-    `counties_by_zipcode`, so it cannot submit a value these reject. API clients
-    can: a 2026-09 audit found screens carrying county names with the " County"
-    suffix dropped. Nothing caught them, because the consumers disagree about
-    matching — PolicyEngine and HUD normalize a bare name away, the navigator
-    filter is a substring test, but urgent needs, warnings, translation overrides
-    and the hardcoded county lists in calculators compare exactly and silently
-    fail to match. The result is a wrong benefit value rather than an error.
+    API clients can submit values the browser's crosswalk-built dropdown never would,
+    most often a county missing its " County" suffix, which exact-match consumers
+    silently fail to match.
     """
 
     ZIP_MAP = {
@@ -485,10 +482,9 @@ class LocationValidationTests(TestCase):
 
     def test_county_is_validated_loosely_not_against_the_submitted_zip(self):
         """Deliberate: any county in the white label passes, even paired with a ZIP
-        that does not cover it. The narrower per-ZIP check is the better one, but the
-        repo still holds spec.md scenarios across five states pairing a ZIP with a
-        mismatched county, and tightening before those are corrected would fail the
-        QA harness at screen creation. Pinned so a later tightening is a choice."""
+        that does not cover it. Tightening to per-ZIP would also mean correcting the
+        spec.md scenarios that pair a ZIP with a mismatched county; pinned so that
+        change is a choice."""
         serializer = ScreenSerializer(data=self._payload(zipcode="67202", county="Douglas County"))
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
@@ -522,23 +518,38 @@ class LocationValidationTests(TestCase):
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    def test_string_encoded_crosswalk_is_parsed(self):
-        """`OrderedJSONField` dumps on write and loads once on read, so a dict written
-        through the ORM reads back as a JSON string. Passing an already-encoded string
-        in (as here) therefore yields a double-encoded row, and one decode is not
-        enough — the helper decodes until the value stops being a string."""
-        import json as _json
-
-        wl = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
-        Configuration.objects.create(
-            white_label=wl,
-            name="counties_by_zipcode",
-            data=_json.dumps({"60601": {"Cook County": "Cook County"}}),
-            active=True,
+    def test_ambiguous_bare_name_suggests_every_match(self):
+        """A bare "St. Louis" matches both jurisdictions; offer both, in a stable order."""
+        mo = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        self._set_crosswalk(
+            mo,
+            {
+                "63101": {"St. Louis City": "St. Louis City"},
+                "63105": {"St. Louis County": "St. Louis County"},
+            },
         )
 
-        ok = ScreenSerializer(data=self._payload(white_label=wl.code, zipcode="60601", county="Cook County"))
-        self.assertTrue(ok.is_valid(), ok.errors)
+        errors = self._errors(white_label=mo.code, zipcode="63101", county="St. Louis")
 
-        bad = ScreenSerializer(data=self._payload(white_label=wl.code, zipcode="60601", county="Cook"))
-        self.assertFalse(bad.is_valid())
+        self.assertIn("Did you mean 'St. Louis City' or 'St. Louis County'?", str(errors["county"]))
+
+    def test_case_only_mismatch_is_suggested(self):
+        errors = self._errors(zipcode="67202", county="sedgwick county")
+
+        self.assertIn("Did you mean 'Sedgwick County'?", str(errors["county"]))
+
+    def test_malformed_crosswalk_skips_validation_and_reports_it(self):
+        bad = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self._set_crosswalk(bad, ["not", "a", "dict"])
+        payload = self._payload(white_label=bad.code, zipcode="00000", county="Nowhere County")
+
+        with patch("screener.serializers.capture_message") as capture:
+            serializer = ScreenSerializer(data=payload)
+            self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        capture.assert_called_once()
+
+    def test_validation_can_be_disabled_for_replaying_stored_screens(self):
+        serializer = ScreenSerializer(data=self._payload(zipcode="67202", county="Sedgwick"), validate_location=False)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)

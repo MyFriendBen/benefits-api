@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import date
 from django.db import IntegrityError, transaction
@@ -347,6 +346,8 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop("force", False)
+        # Off only for replaying stored screens (`pull_screen`, `pull_validations`), which predate the check.
+        self.validate_location = kwargs.pop("validate_location", True)
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs):
@@ -358,97 +359,53 @@ class ScreenSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    @staticmethod
-    def _counties_by_zipcode(white_label: WhiteLabel):
-        """The white label's zip -> {county: county} crosswalk, or None if it has none.
-
-        Read from the Configuration row rather than the Python class, the same way
-        `import_program_config._get_valid_county_names` does: the row is what the
-        screener's own ZIP step is built from, and it is what `add_config` updates.
-        Reading the class instead would validate against a map the deployed screener
-        is not yet using.
-        """
-        config = (
-            Configuration.objects.filter(name="counties_by_zipcode", white_label=white_label, active=True)
-            .order_by("-id")
-            .first()
-        )
-        if config is None:
-            return None
-
-        # `OrderedJSONField` json.dumps on write and json.loads *once* on read, so a
-        # dict written through the ORM -- what `add_config` does -- reads back as the
-        # JSON string, not a dict. That is why `add_counties` and `health_check`
-        # decode this column unconditionally. A row written as a raw jsonb object,
-        # bypassing the field via SQL or a migration, reads back as a dict instead.
-        # Decode until it stops being a string rather than assume which path wrote it.
-        data = config.data
-        for _ in range(3):
-            if not isinstance(data, str):
-                break
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError:
-                return None
-        return data if isinstance(data, dict) and data else None
-
     def _validate_location(self, attrs, white_label: WhiteLabel):
         """Reject a ZIP or county this white label's crosswalk cannot produce.
 
-        The browser cannot send a bad value — its ZIP step builds both the ZIP gate
-        and the county dropdown from this same crosswalk. API clients can, and do: a
-        2026-09 audit found screens carrying county names with the " County" suffix
-        missing ("Sedgwick", "Cole"). Nothing rejected them, because the consumers
-        disagree about matching. PolicyEngine appends `_COUNTY` only when absent, HUD
-        appends " County" when missing, and the navigator filter is a substring test,
-        so four consumers absorb a bare name — while urgent needs, warning messages,
-        translation overrides and every hardcoded county list in a calculator compare
-        exactly, and quietly do not match. The household gets a wrong value, not an
-        error: a bare "Sedgwick" misses both KS child-care rate groups and falls
-        through to the residual group.
+        The browser builds its ZIP gate and county dropdown from the crosswalk; API
+        clients have no such guard, and a bare name like "Sedgwick" for "Sedgwick County"
+        silently misses every exact-match county consumer (urgent needs, warnings,
+        hardcoded calculator lists) instead of erroring.
 
-        Checks membership in the white label's full county set, not in the candidates
-        for the submitted ZIP. Not to spare the QA harness -- this check already fails
-        it. Of 869 ZIP+county pairs in spec.md scenarios, 419 carry a county name no
-        white label sends, and every one of those is rejected here just as the
-        narrower check would reject it. Only 14 pairs would break under the narrower
-        check and not this one, all of them ZIP 75001 (Addison, in Dallas County)
-        paired with Collin County. So the spec sweep is a coupled follow-up either
-        way, and the reason to stay broad is that this PR should not also rewrite
-        36 spec files. Each white label has its own convention -- IL and TX store
-        bare names, MA stores municipalities -- so the rule cannot be about suffixes.
-
-        A blank county stays legal. Colorado's `counties_from_screen` treats a null
-        county as "expand the ZIP to every county it covers", so requiring one would
-        change eligibility for the calculators built on that fallback.
+        The county is checked against the white label's full county set, not the
+        submitted ZIP's candidates. A blank county is allowed: Colorado's
+        `counties_from_screen` expands a null county to every county the ZIP covers.
         """
-        options = self._counties_by_zipcode(white_label)
-        if options is None:
-            # No crosswalk configured for this white label: nothing to validate
-            # against, and blocking would be worse than allowing. Mirrors
-            # `_get_valid_county_names` returning None.
+        zipcode, county = attrs.get("zipcode"), attrs.get("county")
+        if not (self.validate_location and (zipcode or county)):
             return
 
-        zipcode = (attrs.get("zipcode") or "").strip()
-        if zipcode and zipcode not in options:
+        try:
+            counties_by_zip = Configuration.counties_by_zipcode(white_label)
+        except ValueError as e:
+            # Don't block every screen write on a bad config row, but don't fail open quietly either.
+            logger.error("Skipping location validation for %s: %s", white_label.code, e)
+            capture_message(f"Skipping location validation for {white_label.code}: {e}", level="error")
+            return
+        if not counties_by_zip:
+            return
+
+        if zipcode and zipcode not in counties_by_zip:
             raise serializers.ValidationError(
                 {"zipcode": f"'{zipcode}' is not a ZIP code the {white_label.code} screener serves."}
             )
 
-        county = (attrs.get("county") or "").strip()
-        if not county:
-            return
+        valid = {name for counties in counties_by_zip.values() for name in counties}
+        if county and county not in valid:
+            raise serializers.ValidationError({"county": self._county_error(county, valid, white_label)})
 
-        valid = {name for counties in options.values() for name in counties}
-        if county in valid:
-            return
+    @staticmethod
+    def _county_error(county: str, valid: set[str], white_label: WhiteLabel) -> str:
+        """Name the likely fix: usually a dropped suffix, sometimes only casing.
 
-        # The overwhelmingly common error is a dropped suffix, so name the fix.
-        suggestion = next((c for c in valid if c.lower().startswith(f"{county.lower()} ")), None)
+        Lists every match, sorted, so an ambiguous name ("St. Louis") offers both options.
+        """
         message = f"'{county}' is not a county the {white_label.code} screener sends."
-        if suggestion:
-            message += f" Did you mean '{suggestion}'?"
-        raise serializers.ValidationError({"county": message})
+        needle = county.casefold()
+        matches = sorted(c for c in valid if c.casefold() == needle or c.casefold().startswith(f"{needle} "))
+        if matches:
+            message += f" Did you mean {' or '.join(repr(m) for m in matches)}?"
+        return message
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
