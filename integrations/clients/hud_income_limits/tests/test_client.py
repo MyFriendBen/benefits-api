@@ -517,7 +517,7 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
             self.assertEqual(client._get_entity_id("MO", "St. Louis City", 2025), "29510")
 
     def test_county_with_city_in_name_keeps_suffix(self) -> None:
-        """Only a trailing " city" skips the suffix; "Jefferson" and "James City" still get it."""
+        """Only a trailing " city" skips the suffix; bare names get it and "James City County" matches as-is."""
         client = HudIncomeClient(api_token="test_token")
         counties = [
             {"county_name": "Jefferson County", "fips_code": "29099"},
