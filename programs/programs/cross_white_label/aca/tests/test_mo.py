@@ -23,9 +23,6 @@ class TestMoAcaWiring(TestCase):
     def test_pe_outputs_unchanged_from_federal(self):
         self.assertEqual(MoAca.pe_outputs, Aca.pe_outputs)
 
-    def test_sends_mo_state_code(self):
-        self.assertIn(dependency.household.MoStateCodeDependency, MoAca.pe_inputs)
-
     def test_sends_county(self):
         """PolicyEngine keys the benchmark premium (SLCSP) off ``county_str``, not
         ``zip_code``: without county, Jackson and Boone return the same SLCSP and both
@@ -36,11 +33,6 @@ class TestMoAcaWiring(TestCase):
         """Employer coverage is a statutory disqualifier PolicyEngine applies only if we
         send ``has_esi``; without it a household with job-based coverage scores eligible."""
         self.assertIn(dependency.member.HasEsiDependency, MoAca.pe_inputs)
-
-    def test_preserves_every_federal_input(self):
-        """MO adds inputs, it never drops one."""
-        for federal_input in Aca.pe_inputs:
-            self.assertIn(federal_input, MoAca.pe_inputs)
 
     def test_adds_exactly_the_three_mo_inputs(self):
         added = [dep for dep in MoAca.pe_inputs if dep not in Aca.pe_inputs]

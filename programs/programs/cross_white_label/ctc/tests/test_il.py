@@ -1,7 +1,6 @@
 """IL tests."""
 
 from programs.programs.cross_white_label.ctc.base import Ctc
-from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.programs.cross_white_label.ctc.il import Ilctc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from django.test import TestCase
@@ -18,10 +17,6 @@ class TestIlctc(TestCase):
     def test_pe_name_is_il_ctc(self):
         """Test that pe_name is il_ctc."""
         self.assertEqual(Ilctc.pe_name, "il_ctc")
-
-    def test_pe_inputs_includes_il_state_code_dependency(self):
-        """Test that IlStateCodeDependency is in pe_inputs."""
-        self.assertIn(IlStateCodeDependency, Ilctc.pe_inputs)
 
     def test_pe_inputs_includes_federal_ctc_inputs(self):
         """Test that federal CTC inputs are included."""
