@@ -43,4 +43,4 @@ class NcEmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.calc_age() < self.max_age)
+        e.condition(member.calc_age() <= self.max_age)
