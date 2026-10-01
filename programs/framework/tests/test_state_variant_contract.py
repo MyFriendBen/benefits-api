@@ -11,8 +11,8 @@ restated in a test file per state:
 - A state code it sends is its own. A copied ``TxStateCodeDependency`` in a Kansas class
   computes Texas rules for Kansas households, and nothing else fails.
 - It sends its state code unless it is a federal passthrough: a class that only relabels
-  a federal credit for one white label (``TxEitc``, ``KsCdccFederal``) and sends exactly
-  its base's inputs, because PolicyEngine reads no state for it.
+  a federal credit for one white label (``TxEitc``, ``KsCdccFederal``), reading its base's
+  variable from exactly its base's inputs, because PolicyEngine reads no state for it.
 - It reads its base's variable or its own state's. Each state's TANF reads ``<state>_tanf``
   in place of the federal ``tanf_if_takes_up``; MassHealth reads the federal ``medicaid``
   and requests CHIP's category as well. A variable named for another state is a copy.
@@ -129,6 +129,11 @@ class StateVariantContractTests(SimpleTestCase):
                     list(calculator.pe_inputs),
                     list(base.pe_inputs),
                     f"{calculator.__name__} changes {base.__name__}'s inputs but sends no state code",
+                )
+                self.assertEqual(
+                    calculator.pe_name,
+                    base.pe_name,
+                    f"{calculator.__name__} reads {calculator.pe_name!r}, a state variable, but sends no state code",
                 )
 
     def test_a_variant_reads_its_bases_variable_or_its_own_states(self):
