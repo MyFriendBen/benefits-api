@@ -31,6 +31,9 @@ SCREENER_MEMBER_DEFAULTS = {
     "was_in_foster_care": False,
 }
 
+#: Tells an omitted `has_income` apart from an explicit `None`, which `add_member` saves.
+_UNSET = object()
+
 
 def make_white_label(code: str = "test", state_code: str = "TS") -> WhiteLabel:
     """The white label a screen belongs to, created once and reused."""
@@ -158,7 +161,7 @@ def add_member(
 
     # The screener sets `has_income` from the streams, which `add_income` mirrors. An explicit
     # value is reapplied afterwards, for a row written through the API that disagrees.
-    explicit_has_income = kwargs.pop("has_income", None)
+    explicit_has_income = kwargs.pop("has_income", _UNSET)
 
     household_member = HouseholdMember.objects.create(
         screen=screen,
@@ -176,7 +179,7 @@ def add_member(
     if yearly_income:
         add_income(household_member, yearly_income, income_type=income_type, frequency="yearly")
 
-    if explicit_has_income is not None and household_member.has_income != explicit_has_income:
+    if explicit_has_income is not _UNSET and household_member.has_income != explicit_has_income:
         household_member.has_income = explicit_has_income
         household_member.save(update_fields=["has_income"])
 

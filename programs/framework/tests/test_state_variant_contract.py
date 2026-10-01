@@ -59,6 +59,11 @@ def state_of(calculator: type):
             )
         return directory if directory in STATES else None
 
+    if parts[2] != "cross_white_label":
+        raise LookupError(
+            f"{calculator.__name__} is filed under {parts[2]}/, which is neither white_labels/ nor cross_white_label/"
+        )
+
     module = parts[-1]
     if module == "base":
         return None

@@ -440,6 +440,13 @@ class TestHasIncomeFollowsTheIncome(CustomCalculatorTestCase):
 
         self.assertFalse(member.has_income)
 
+    def test_an_explicit_none_is_saved(self):
+        """`None` is a row the screener never wrote, not an omitted argument."""
+        member = self.add_member(self.make_screen(), monthly_income=1_000, has_income=None)
+        member.refresh_from_db()
+
+        self.assertIsNone(member.has_income)
+
 
 class TestHudAmi(CustomCalculatorTestCase):
     """`hud_ami` answers only what the test states, and says so when asked for more."""
