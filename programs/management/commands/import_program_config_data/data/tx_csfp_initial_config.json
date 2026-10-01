@@ -3,7 +3,7 @@
     "program_category": {"external_name": "food", "name": "Food and Nutrition", "icon": "food"},
     "program": {
         "name_abbreviated": "tx_csfp",
-        "year": "2025",
+        "year": "2026",
         "legal_status_required": [
             "citizen",
             "non_citizen",
