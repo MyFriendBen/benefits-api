@@ -23,6 +23,7 @@ from programs.programs.testing_fixtures.custom_calculator import (
     add_insurance,
     hud_ami,
 )
+from programs.programs.testing_fixtures import households
 from programs.programs.testing_fixtures.households import birth_year_month_for_age
 
 
@@ -263,6 +264,16 @@ class TestAgeDerivation(CustomCalculatorTestCase):
 
         with self.assertRaises(ValueError):
             self.add_member(screen, age=30, birth_year_month=birth)
+
+    def test_without_screener_defaults_both_are_saved_as_given(self):
+        """PE scenarios state an age as of their claim year, not today; the cassettes match on it."""
+        screen = self.make_screen()
+        birth = birth_year_month_for_age(7, screen.get_reference_date())
+
+        member = households.add_member(screen, age=30, birth_year_month=birth, screener_defaults=False)
+
+        self.assertEqual(member.age, 30)
+        self.assertEqual(member.birth_year_month, birth)
 
     def test_set_age_moves_the_birth_month_too(self):
         """Assigning `member.age` alone would leave `calc_age()` reading the old birth month."""

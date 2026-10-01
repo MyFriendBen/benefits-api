@@ -1,6 +1,8 @@
 """NC tests."""
 
+from programs.programs.cross_white_label.lifeline.base import Lifeline
 from programs.programs.cross_white_label.lifeline.nc import NcLifeline
+import programs.framework.pe_dependencies as dependency
 from django.test import TestCase
 
 
@@ -14,3 +16,7 @@ class TestNcLifelineWiring(TestCase):
     def test_pe_name_is_lifeline(self):
         """The federal SPM-level variable; NC adds no state variable of its own."""
         self.assertEqual(NcLifeline.pe_name, "lifeline")
+
+    def test_pe_inputs_adds_exactly_the_state_code(self):
+        added = [d for d in NcLifeline.pe_inputs if d not in Lifeline.pe_inputs]
+        self.assertEqual(added, [dependency.household.NcStateCodeDependency])

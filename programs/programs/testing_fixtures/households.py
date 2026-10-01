@@ -131,7 +131,9 @@ def add_member(
     `RelatedObjectDoesNotExist` without it. Override with `add_insurance`.
 
     `screener_defaults=False` skips the checkbox defaults, the derived `birth_year_month`, the
-    `Insurance` row and the `has_income` reset, saving only what the caller passes. PolicyEngine
+    `Insurance` row, the `has_income` reset and the age/birth-month agreement check, saving only
+    what the caller passes. A PolicyEngine scenario states an age as of its claim year, which a
+    birth month checked against today stops agreeing with once the calendar rolls over. PolicyEngine
     cassettes were recorded from members built that way, and the request body they match on
     changes with any of these.
     """
@@ -148,7 +150,7 @@ def add_member(
         derived = HouseholdMember.age_from_date(birth_year_month, reference_date)
         if age is None:
             age = derived
-        elif int(age) != derived:
+        elif screener_defaults and int(age) != derived:
             raise ValueError(
                 f"age={age} disagrees with birth_year_month={birth_year_month}, which is {derived} "
                 f"on {reference_date}. Pass one of them."
