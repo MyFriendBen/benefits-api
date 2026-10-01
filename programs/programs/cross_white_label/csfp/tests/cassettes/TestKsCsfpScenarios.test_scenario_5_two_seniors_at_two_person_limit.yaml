@@ -1,0 +1,91 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"501": {"age": {"2026": 61}, "is_medicare_eligible":
+      {"2026": null}, "social_security_disability": {"2026": 0.0}, "ssi_earned_income":
+      {"2026": 0}, "ssi_unearned_income": {"2026": 18060}, "medicare_quarters_of_coverage":
+      {"2026": 40}, "is_medicaid_eligible": {"2026": null}, "ssi": {"2026": null},
+      "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+      "commodity_supplemental_food_program": {"2026": null}}, "502": {"age": {"2026":
+      67}, "is_medicare_eligible": {"2026": null}, "social_security_disability": {"2026":
+      0.0}, "ssi_earned_income": {"2026": 0}, "ssi_unearned_income": {"2026": 14400},
+      "medicare_quarters_of_coverage": {"2026": 40}, "is_medicaid_eligible": {"2026":
+      null}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "commodity_supplemental_food_program": {"2026": null}}}, "tax_units":
+      {"main_tax_unit": {"members": ["501", "502"]}}, "families": {"family": {"members":
+      ["501", "502"]}}, "households": {"household": {"members": ["501", "502"], "state_code":
+      {"2026": "KS"}, "county_str": {"2026": "SEDGWICK_COUNTY_KS"}}}, "spm_units":
+      {"spm_unit": {"members": ["501", "502"], "school_meal_countable_income": {"2026":
+      32460.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": null}, "receives_tanf":
+      {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
+      {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
+      {"501-502": {"members": ["501", "502"]}}}, "version": "2.5.0"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1546'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"501": {"age":
+        {"2026": 61}, "is_medicare_eligible": {"2026": false}, "social_security_disability":
+        {"2026": 0.0}, "ssi_earned_income": {"2026": 0}, "ssi_unearned_income": {"2026":
+        18060}, "medicare_quarters_of_coverage": {"2026": 40}, "is_medicaid_eligible":
+        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "commodity_supplemental_food_program": {"2026": 651.0}},
+        "502": {"age": {"2026": 67}, "is_medicare_eligible": {"2026": true}, "social_security_disability":
+        {"2026": 0.0}, "ssi_earned_income": {"2026": 0}, "ssi_unearned_income": {"2026":
+        14400}, "medicare_quarters_of_coverage": {"2026": 40}, "is_medicaid_eligible":
+        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "commodity_supplemental_food_program": {"2026": 651.0}}},
+        "tax_units": {"main_tax_unit": {"members": ["501", "502"]}}, "families": {"family":
+        {"members": ["501", "502"]}}, "households": {"household": {"members": ["501",
+        "502"], "state_code": {"2026": "KS"}, "county_str": {"2026": "SEDGWICK_COUNTY_KS"}}},
+        "spm_units": {"spm_unit": {"members": ["501", "502"], "school_meal_countable_income":
+        {"2026": 32460.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": 0.0},
+        "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
+        "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
+        "marital_units": {"501-502": {"members": ["501", "502"]}}}, "policyengine_bundle":
+        {"model_version": "2.5.0", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '1648'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 20:37:52 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-163d242b58df46279d32c9a881eb8a12-ecc3b03bc0c32698-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 163d242b58df46279d32c9a881eb8a12
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - a2549bc9-b61d-431d-9c5b-0674fbf5540b
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

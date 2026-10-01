@@ -4,7 +4,7 @@ Unit tests for Screen, HouseholdMember, and WhiteLabel model methods.
 
 from decimal import Decimal
 from unittest.mock import patch
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from programs.models import Program
 from screener.models import CurrentBenefit, Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
 from screener.feature_flags import FeatureFlagConfig
@@ -180,6 +180,22 @@ class TestScreen(TestCase):
 
         result = self.screen.has_expense(["heating", "cooling"])
         self.assertFalse(result)
+
+    def test_expense_type_names_deduplicates_repeated_types(self):
+        """Each type appears once, in first-entered order, despite Expense's default ordering."""
+        Expense.objects.create(screen=self.screen, type="heating", amount=80, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="childCare", amount=200, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="heating", amount=40, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type=None, amount=10, frequency="monthly")
+
+        self.assertEqual(self.screen.expense_type_names(), ["heating", "childCare"])
+
+    def test_expense_type_names_reads_prefetched_expenses(self):
+        Expense.objects.create(screen=self.screen, type="rent", amount=1000, frequency="monthly")
+        screen = Screen.objects.prefetch_related("expenses").get(pk=self.screen.pk)
+
+        with self.assertNumQueries(0):
+            self.assertEqual(screen.expense_type_names(), ["rent"])
 
     def test_has_expense_zero_amount(self):
         """Test has_expense with zero amount expense."""
@@ -732,6 +748,38 @@ class TestScreen(TestCase):
         self.assertEqual(len(result["dependents"]), 1)
         self.assertIn(adult_child2, result["dependents"])
 
+    def test_relationship_map_is_in_id_order_regardless_of_insertion_order(self):
+        """relationship_map iterates members by id, not by however Postgres returns them."""
+        screen = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=2, completed=False)
+        # Insert the higher id first so an unordered query returns the head first.
+        head = HouseholdMember.objects.create(id=9002, screen=screen, relationship="headOfHousehold", age=40)
+        spouse = HouseholdMember.objects.create(id=9001, screen=screen, relationship="spouse", age=40)
+
+        self.assertEqual(list(screen.relationship_map().items()), [(spouse.id, head.id), (head.id, spouse.id)])
+
+    def test_household_related_rows_iterate_in_id_order_regardless_of_insertion_order(self):
+        """Members, incomes and expenses default to id order, including when prefetched."""
+        screen = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=2, completed=False)
+        # Insert the higher ids first so an unordered query would return them first.
+        member_b = HouseholdMember.objects.create(id=9102, screen=screen, relationship="headOfHousehold", age=40)
+        member_a = HouseholdMember.objects.create(id=9101, screen=screen, relationship="spouse", age=40)
+        income_b = IncomeStream.objects.create(
+            id=9202, screen=screen, household_member=member_a, type="wages", amount=100, frequency="monthly"
+        )
+        income_a = IncomeStream.objects.create(
+            id=9201, screen=screen, household_member=member_a, type="sSI", amount=100, frequency="monthly"
+        )
+        expense_b = Expense.objects.create(id=9302, screen=screen, type="rent", amount=100, frequency="monthly")
+        expense_a = Expense.objects.create(id=9301, screen=screen, type="heating", amount=100, frequency="monthly")
+
+        prefetched = Screen.objects.prefetch_related("household_members__income_streams", "expenses").get(pk=screen.pk)
+        for s in (screen, prefetched):
+            self.assertEqual(list(s.household_members.all()), [member_a, member_b])
+            self.assertEqual(list(s.household_members.get(pk=member_a.pk).income_streams.all()), [income_a, income_b])
+            self.assertEqual(list(s.expenses.all()), [expense_a, expense_b])
+        with self.assertNumQueries(0):
+            self.assertEqual(list(prefetched.household_members.all()[0].income_streams.all()), [income_a, income_b])
+
 
 class TestHouseholdMember(TestCase):
     """
@@ -1189,3 +1237,31 @@ class TestWhiteLabelFeatureFlags(TestCase):
             self.white_label.has_feature("unknown_flag")
 
         self.assertIn("Unknown feature flag: unknown_flag", str(cm.exception))
+
+
+class TestSupportedLanguageCode(SimpleTestCase):
+    """Screen.supported_language_code: the one rule shared by the results message and Benji."""
+
+    def resolve(self, requested, screen_code=None) -> str:
+        return Screen(request_language_code=screen_code).supported_language_code(requested)
+
+    def test_a_supported_request_wins_over_the_screen(self):
+        self.assertEqual(self.resolve("vi", screen_code="es"), "vi")
+
+    def test_normalizes_case(self):
+        self.assertEqual(self.resolve("ZH-Hans"), "zh-hans")
+        self.assertEqual(self.resolve(None, screen_code="PT-BR"), "pt-br")
+
+    def test_an_unsupported_or_missing_request_falls_back_to_the_screen(self):
+        for requested in (None, "", "kl", "x" * 40, 42):
+            with self.subTest(requested=requested):
+                self.assertEqual(self.resolve(requested, screen_code="es"), "es")
+
+    def test_a_stale_screen_code_falls_back_to_the_default(self):
+        """`zh` is a pre-`zh-hans` frontend code that can still be saved on a screen."""
+        for screen_code in ("zh", "en-US-x-legacy", ""):
+            with self.subTest(screen_code=screen_code):
+                self.assertEqual(self.resolve(None, screen_code=screen_code), "en-us")
+
+    def test_no_language_anywhere_is_the_default(self):
+        self.assertEqual(self.resolve(None), "en-us")

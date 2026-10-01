@@ -24,14 +24,18 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
         "snap",
         "ssi",
     ]
-    calculated_presumptive_eligibility = ["cesn_care", "cesn_cowap"]
+    # Tolerant gate, distinct from `presumptive_eligibility` above: those are benefits the
+    # household reported receiving, these are programs we calculate. Both are custom and
+    # force-calculated. Their screener fields are deliberately not required here — an
+    # absent route costs this household that route, not the program.
+    gates_on_any = ("cesn_care", "cesn_cowap")
     dependencies = ["age", "income_frequency", "income_amount", "energy_calculator"]
 
     def household_eligible(self, e: Eligibility):
         # presumptive eligibility
         has_benefit = self.screen.has_benefit_from_list(self.presumptive_eligibility)
 
-        has_benefit = has_benefit or self.any_program_eligible(self.calculated_presumptive_eligibility)
+        has_benefit = has_benefit or self.any_program_eligible(self.gates_on_any)
 
         # income
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.program.year.period)

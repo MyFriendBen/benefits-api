@@ -5,6 +5,11 @@ from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIn
 
 class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     program_code = "il_family_care"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("il_medicaid",)
     member_amount = 474 * 12
     max_child_age = 18
     fpl_percent = 1.38

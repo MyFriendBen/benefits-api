@@ -1,3 +1,5 @@
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+
 """
 Unit tests for the Kansas Nurse-Family Partnership (NFP) calculator.
 
@@ -20,66 +22,21 @@ and in spec.md):
   (`screen.has_benefit`).
 """
 
-from django.test import TestCase
 from programs.programs.white_labels.ks.nurse_family_partnership.calculator import KsNurseFamilyPartnership
-from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
 from screener.serializers import _write_current_benefits
-from programs.models import Program, FederalPoveryLimit
-from programs.util import Dependencies
 from programs.framework.pe_dependencies import member
 
 EXPECTED_VALUE = 6_000 / 2.5  # $2,400/year
 
 
-class TestKsNurseFamilyPartnership(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.ks_white_label = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
-        cls.fpl_year = FederalPoveryLimit.objects.create(year="2026", period="2026")
-        cls.program = Program.objects.new_program(white_label="ks", name_abbreviated="ks_nurse_family_partnership")
-        cls.program.year = cls.fpl_year
-        cls.program.save()
-
-    def make_screen(self, county="Shawnee County", household_size=1, zipcode="66604"):
-        return Screen.objects.create(
-            agree_to_tos=True,
-            zipcode=zipcode,
-            county=county,
-            household_size=household_size,
-            white_label=self.ks_white_label,
-            completed=False,
-        )
-
-    def add_member(
-        self, screen, relationship="headOfHousehold", age=25, pregnant=False, monthly_income=0, yearly_income=0
-    ):
-        member = HouseholdMember.objects.create(
-            screen=screen,
-            relationship=relationship,
-            age=age,
-            pregnant=pregnant,
-            has_income=(monthly_income > 0 or yearly_income > 0),
-        )
-        if monthly_income > 0:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type="wages",
-                amount=monthly_income,
-                frequency="monthly",
-            )
-        if yearly_income > 0:
-            IncomeStream.objects.create(
-                screen=screen,
-                household_member=member,
-                type="wages",
-                amount=yearly_income,
-                frequency="yearly",
-            )
-        return member
-
-    def calculator(self, screen):
-        return KsNurseFamilyPartnership(screen, self.program, {}, Dependencies())
+class TestKsNurseFamilyPartnership(CustomCalculatorTestCase):
+    calculator_class = KsNurseFamilyPartnership
+    program_code = "ks_nurse_family_partnership"
+    white_label_code = "ks"
+    state_code = "KS"
+    fpl_year = "2026"
+    default_zipcode = "66604"
+    default_county = "Shawnee County"
 
     def eligible_member_count(self, eligibility):
         return sum(1 for m in eligibility.eligible_members if m.eligible)
@@ -101,7 +58,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_1_eligible_shawnee(self):
         screen = self.make_screen(county="Shawnee County", zipcode="66604")
         self.add_member(screen, age=22, pregnant=True, monthly_income=1_200)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)
 
@@ -111,7 +68,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_2_young_pregnant_eligible(self):
         screen = self.make_screen(county="Shawnee County", zipcode="66612")
         self.add_member(screen, age=17, pregnant=True, monthly_income=1_300)
-        eligibility = self.calculator(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
         self.assertTrue(eligibility.eligible)
         # The head is not counted as a "child" (relationship != "child"), so a
         # minor head is not self-disqualified by the num_children proxy.
@@ -123,7 +80,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_3_income_just_below_threshold(self):
         screen = self.make_screen(county="Shawnee County")
         self.add_member(screen, age=24, pregnant=True, monthly_income=2_200)
-        self.assertTrue(self.calculator(screen).eligible().eligible)
+        self.assertTrue(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 4: income exactly at the 171% FPL threshold -> eligible.
@@ -136,7 +93,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_4_income_at_threshold(self):
         screen = self.make_screen(county="Shawnee County", zipcode="66603")
         self.add_member(screen, age=23, pregnant=True, yearly_income=27_292)
-        self.assertTrue(self.calculator(screen).eligible().eligible)
+        self.assertTrue(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 5: income just above the threshold -> not eligible
@@ -144,7 +101,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_5_income_above_threshold(self):
         screen = self.make_screen(county="Shawnee County")
         self.add_member(screen, age=26, pregnant=True, monthly_income=2_800)
-        self.assertFalse(self.calculator(screen).eligible().eligible)
+        self.assertFalse(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 6: second distinct ZIP within Shawnee County -> eligible
@@ -153,7 +110,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_6_second_shawnee_zip(self):
         screen = self.make_screen(county="Shawnee County", zipcode="66602")
         self.add_member(screen, age=24, pregnant=True, monthly_income=1_500)
-        self.assertTrue(self.calculator(screen).eligible().eligible)
+        self.assertTrue(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 7: already enrolled in NFP.
@@ -168,7 +125,7 @@ class TestKsNurseFamilyPartnership(TestCase):
         # Framework signal the results view uses to render "already have this".
         self.assertTrue(screen.has_benefit("ks_nurse_family_partnership"))
         # Calculator itself is unaffected and still reports eligible.
-        self.assertTrue(self.calculator(screen).eligible().eligible)
+        self.assertTrue(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 8: second-time mother (existing child in household) -> not eligible
@@ -177,7 +134,7 @@ class TestKsNurseFamilyPartnership(TestCase):
         screen = self.make_screen(county="Shawnee County", household_size=3, zipcode="66603")
         self.add_member(screen, relationship="headOfHousehold", age=27, pregnant=True, monthly_income=1_800)
         self.add_member(screen, relationship="child", age=2)
-        self.assertFalse(self.calculator(screen).eligible().eligible)
+        self.assertFalse(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 9: mixed household with a partner's child present.
@@ -191,7 +148,7 @@ class TestKsNurseFamilyPartnership(TestCase):
         self.add_member(screen, relationship="spouse", age=30, monthly_income=1_800)
         self.add_member(screen, relationship="child", age=4)
         # Known data-model limitation: child in household -> household not eligible.
-        self.assertFalse(self.calculator(screen).eligible().eligible)
+        self.assertFalse(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 10: two first-time pregnant women in one household.
@@ -204,7 +161,7 @@ class TestKsNurseFamilyPartnership(TestCase):
         self.add_member(screen, relationship="headOfHousehold", age=23, pregnant=True, monthly_income=1_200)
         self.add_member(screen, relationship="sibling", age=20, pregnant=True, monthly_income=800)
         self.add_member(screen, relationship="spouse", age=26, monthly_income=1_500)
-        eligibility = self.calculator(screen).calc()
+        eligibility = self.make_calculator(screen).calc()
         self.assertTrue(eligibility.eligible)
         self.assertEqual(self.eligible_member_count(eligibility), 2)
         self.assertEqual(eligibility.value, EXPECTED_VALUE)  # household-level, counted once
@@ -215,7 +172,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_11_stillbirth_no_children_eligible(self):
         screen = self.make_screen(county="Shawnee County", zipcode="66603")
         self.add_member(screen, age=27, pregnant=True, monthly_income=1_200)
-        self.assertTrue(self.calculator(screen).eligible().eligible)
+        self.assertTrue(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 12: Johnson County -> eligible (second service area)
@@ -223,7 +180,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_12_johnson_county_eligible(self):
         screen = self.make_screen(county="Johnson County", zipcode="66061")
         self.add_member(screen, age=26, pregnant=True, monthly_income=1_400)
-        self.assertTrue(self.calculator(screen).eligible().eligible)
+        self.assertTrue(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 13: outside any service area (Douglas County) -> not eligible
@@ -231,7 +188,7 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_13_outside_service_area_not_eligible(self):
         screen = self.make_screen(county="Douglas County", zipcode="66044")
         self.add_member(screen, age=24, pregnant=True, monthly_income=1_200)
-        self.assertFalse(self.calculator(screen).eligible().eligible)
+        self.assertFalse(self.make_calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
     # Scenario 14: not pregnant -> not eligible
@@ -239,6 +196,6 @@ class TestKsNurseFamilyPartnership(TestCase):
     def test_scenario_14_not_pregnant_not_eligible(self):
         screen = self.make_screen(county="Shawnee County")
         self.add_member(screen, age=24, pregnant=False, monthly_income=1_200)
-        eligibility = self.calculator(screen).eligible()
+        eligibility = self.make_calculator(screen).eligible()
         self.assertFalse(eligibility.eligible)
         self.assertEqual(self.eligible_member_count(eligibility), 0)

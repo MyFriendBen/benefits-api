@@ -8,8 +8,10 @@ class MoTanf(Tanf):
     """
     Missouri Temporary Assistance (TA), via PolicyEngine's ``mo_tanf``.
 
-    Eligibility and the grant are PolicyEngine's; see specs/mo.md for the rules and the
-    three it does not model. Notes here cover only why each input is sent.
+    Eligibility and the grant are PolicyEngine's; see specs/mo.md for the rules and for the
+    ones it does not model, under "Accepted PolicyEngine limitations". Notes here cover only
+    why each input is sent. Deliberately not a count: this line read "the three" while the
+    spec listed two, and the set moves as PolicyEngine ships.
 
     ``TaxUnitDependentDependency`` is load-bearing and easy to lose:
     ``mo_tanf_dependent_child`` reads ``is_tax_unit_dependent``, and PolicyEngine's own

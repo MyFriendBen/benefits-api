@@ -2514,3 +2514,43 @@ class TestInSecondarySchoolDependency(TestCase):
         """A teen parent heading their own case is still plausibly in high school; gating on
         tax dependency would route this through is_dependent() (MFB-1693)."""
         self.assertTrue(self._dep(17, relationship="headOfHousehold").value())
+
+
+class TestSsdiReportedDependency(TestCase):
+    """SSDI is sent as its own amount, so only the disability stream counts toward it."""
+
+    def setUp(self):
+        white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=white_label, zipcode="67214", county="Sedgwick County", household_size=1, completed=False
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=62)
+
+    def _add_income(self, income_type, amount):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type=income_type, amount=amount, frequency="monthly"
+        )
+
+    def test_sends_annualized_ssdi(self):
+        self._add_income("sSDisability", 1_200)
+        dep = member.SsdiReportedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.field, "social_security_disability")
+        self.assertEqual(dep.value(), 14_400)
+
+    def test_ignores_other_social_security_types(self):
+        self._add_income("sSRetirement", 1_200)
+        self.assertEqual(member.SsdiReportedDependency(self.screen, self.head, {}).value(), 0)
+
+
+class TestMedicareQuartersOfCoverageDependency(TestCase):
+    """Assumes the 40 quarters that make Part A premium-free for nearly every beneficiary."""
+
+    def test_sends_forty_quarters(self):
+        white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        screen = Screen.objects.create(
+            white_label=white_label, zipcode="67214", county="Sedgwick County", household_size=1, completed=False
+        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=68)
+        dep = member.MedicareQuartersOfCoverageDependency(screen, head, {})
+        self.assertEqual(dep.field, "medicare_quarters_of_coverage")
+        self.assertEqual(dep.value(), 40)

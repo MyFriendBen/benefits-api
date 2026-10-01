@@ -3,21 +3,7 @@ from programs.framework.pe_dependencies.receipt import (
     member_reports_ssi_amount,
     screen_reports_ssi_without_amount,
 )
-from programs.programs.cross_white_label.tanf.ks import KsTanf
 from screener.models import HouseholdMember
-
-
-def _ks_tanf_dependencies() -> list[str]:
-    """The screener fields `ks_tanf` needs, read off its PolicyEngine inputs.
-
-    RCA gates on `ks_tanf` strictly, so it must be uncalculable wherever TANF is.
-    Derived rather than listed so the two cannot drift as KS TANF's inputs change.
-    """
-    fields = set()
-    for pe_input in KsTanf.pe_inputs:
-        fields.update(pe_input.dependencies)
-
-    return sorted(fields)
 
 
 class KsRca(ProgramCalculator):
@@ -55,7 +41,12 @@ class KsRca(ProgramCalculator):
     additional_person_amount = 61
 
     # `age` and `county` come from ks_tanf; the income fields are needed by both.
-    dependencies = _ks_tanf_dependencies()
+    # PolicyEngine-backed. RCA is defined as the program for the refugee households TANF
+    # cannot reach, so "ineligible for TANF" is the rule, not a proxy for one. KS TANF's
+    # screener fields arrive through `all_dependencies`, which reads them off its
+    # `pe_inputs` — RCA used to derive them itself.
+    gates_on = ("ks_tanf",)
+    dependencies = []
 
     def member_eligible(self, e: MemberEligibility):
         # SSI disqualifies on receipt, never on eligibility: 45 CFR 400.51(b)(1)(ii)

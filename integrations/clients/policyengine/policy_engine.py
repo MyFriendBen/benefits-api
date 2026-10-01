@@ -69,8 +69,6 @@ def calc_pe_eligibility(
     version = pe_versions.determine_pe_version(pe_version)
     comparable_version = _resolve_comparable_version(list(valid_programs.values()), version)
 
-    valid_programs = _drop_unreadable_programs(valid_programs, comparable_version)
-
     empty_result: EligibilityPEResult = {
         "eligibility": {},
         "_pe_data": {"request": None, "response": None},
@@ -78,6 +76,30 @@ def calc_pe_eligibility(
 
     if not valid_programs or not screen.household_members.all():
         return empty_result
+
+    # Every program we intended to compute, captured before anything below can shed one.
+    #
+    # `record_external_api_failure` drives the results-page banner ("You may be eligible for
+    # more programs than those listed"), and it used to be called from a single site: the
+    # `except Exception` in `_run_bucket`. That covered a transport or parse failure and
+    # nothing else, so four paths lost programs silently — a `ConflictingDependencyError`
+    # (which loses *every* PolicyEngine program), the bucket deadline, a partition drop, and
+    # a version-gated output. Deriving the flag from the outcome instead means a path added
+    # later cannot forget to report.
+    #
+    # Taken after the `can_calc` filter above and before `_drop_unreadable_programs`: a
+    # program dropped for a missing screener field is not a failure, because we never asked
+    # the household for that field. Everything from here on is something we meant to compute
+    # and could not.
+    intended = set(valid_programs)
+
+    def finish(eligibility: Dict[str, Eligibility], requests: List[Dict[str, Any]]) -> EligibilityPEResult:
+        if intended - set(eligibility):
+            record_external_api_failure(POLICY_ENGINE)
+
+        return {"eligibility": eligibility, "_pe_data": _combine_pe_data(requests)}
+
+    valid_programs = _drop_unreadable_programs(valid_programs, comparable_version)
 
     program_names = list(valid_programs.keys())
     program_list = list(valid_programs.values())
@@ -102,7 +124,7 @@ def calc_pe_eligibility(
             "PolicyEngine programs are unavailable for this screen.",
             level="error",
         )
-        return empty_result
+        return finish({}, [])
 
     _report_conflicts(plan, program_names)
     for index in plan.dropped_program_indexes:
@@ -131,7 +153,7 @@ def calc_pe_eligibility(
         eligibility.update(bucket_eligibility)
         requests_made.append(data)
 
-    return {"eligibility": eligibility, "_pe_data": _combine_pe_data(requests_made)}
+    return finish(eligibility, requests_made)
 
 
 def _run_bucket(
@@ -187,7 +209,10 @@ def _run_bucket(
                 f"PolicyEngine programs are unavailable for this screen.",
                 level="error",
             )
-            record_external_api_failure(POLICY_ENGINE)
+            # The results-page banner is no longer signalled here. `calc_pe_eligibility`
+            # derives it from which programs came back, so this bucket's programs going
+            # missing reports itself — along with the four paths that used to be silent
+            # because they never reached this handler.
             # Preserve the payload that triggered the failure so admins can debug it
             # (the exact request is the most useful thing for diagnosing a 400).
             # _pe_data.request is admin-only — already popped for non-admins downstream.

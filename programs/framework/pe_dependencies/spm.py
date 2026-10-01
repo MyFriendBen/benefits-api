@@ -462,15 +462,24 @@ class BroadbandCostDependency(SpmUnit):
 
 class SchoolMealCountableIncomeDependency(SpmUnit):
     """
-    Feeds PE's ``school_meal_countable_income``, which only ``school_meal_fpg_ratio``
-    reads. Our Wic and CommoditySupplementalFoodProgram classes also send this field,
-    but PE's WIC and CSFP trees never read it, so changes here move school meals alone.
+    Feeds PE's ``school_meal_countable_income``, the numerator of ``school_meal_fpg_ratio``.
+    Only NSLP sends it through this class. CSFP reads the same ratio but writes it through
+    ``CsfpCountableIncomeDependency``, and WIC's tree reads neither, so changes here move
+    school meals alone.
 
     The tier still honors ``meets_school_meal_categorical_eligibility``, so households
     categorically eligible through SNAP/TANF keep free meals regardless of this total.
     """
 
     field = "school_meal_countable_income"
+    # Declared for the same reason `SnapGrossIncomeDependency` declares them: `value()`
+    # calls `calc_gross_income`, which raises on an IncomeStream with a NULL amount or
+    # frequency. Omitting them made `nslp` calculable on a screen where every other
+    # income-reading program was correctly dropped.
+    dependencies = (
+        "income_amount",
+        "income_frequency",
+    )
     income_types = [
         "wages",
         "selfEmployment",
@@ -488,6 +497,35 @@ class SchoolMealCountableIncomeDependency(SpmUnit):
 
     def value(self):
         return self.screen.calc_gross_income("yearly", self.income_types)
+
+
+class CsfpCountableIncomeDependency(SpmUnit):
+    """
+    CSFP's income test. PolicyEngine's CSFP, TX's included, compares ``school_meal_fpg_ratio``
+    to its limit, so this writes that ratio's numerator with CSFP's income definition rather
+    than the school-meals one.
+
+    7 CFR 247.9(d): gross income before deductions, less only the exclusions federal law
+    requires. No screener type is one of those exclusions, so every type counts. Not
+    confirmed: Nurturing Futures (CO), which counts until a governing exclusion is identified.
+    The statutory exclusions (VISTA stipends, Title IV student aid, combat pay, disaster
+    relief) have no screener type, so they count when reported under another type.
+
+    Differs from NSLP's value for the same field whenever a household has income outside the
+    school-meals list; payload splitting then serves CSFP its own request.
+    """
+
+    field = "school_meal_countable_income"
+    # Declared for the same reason `SnapGrossIncomeDependency` declares them: `value()`
+    # calls `calc_gross_income`, which raises on an IncomeStream with a NULL amount or
+    # frequency.
+    dependencies = (
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return self.screen.calc_gross_income("yearly", ["all"])
 
 
 class AssetsDependency(SpmUnit):

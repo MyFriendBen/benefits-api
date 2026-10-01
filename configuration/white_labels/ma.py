@@ -1388,7 +1388,7 @@ class MaConfigurationData(ConfigurationData):
     }
 
     # Inherit base referrer_data (favicon, uiOptions, etc.) and override only the
-    # keys MA customizes. MA keeps its own noResultMessage (smart-quote variant).
+    # keys MA customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
         "theme": {"default": "default"},
@@ -1419,12 +1419,6 @@ class MaConfigurationData(ConfigurationData):
                 "referralSource",
                 "signUpInfo",
             ],
-        },
-        "noResultMessage": {
-            "default": {
-                "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the “Near-Term Benefits” tab. For additional resources, please click the 'More Help' button below to get the resources you’re looking for.",
-            },
         },
         "defaultLanguage": {"default": "en-us"},
     }

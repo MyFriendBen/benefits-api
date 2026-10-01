@@ -66,10 +66,18 @@ class TestRegistration(TestCase):
     def test_program_code(self):
         self.assertEqual(KsRca.program_code, "ks_rca")
 
-    def test_declares_ks_tanf_screener_dependencies(self):
-        """The strict gate is only sound if RCA is uncalculable wherever TANF is."""
+    def test_declares_the_gate(self):
+        self.assertEqual(KsRca.gates_on, ("ks_tanf",))
+
+    def test_requires_ks_tanf_screener_dependencies(self):
+        """The strict gate is only sound if RCA is uncalculable wherever TANF is.
+
+        RCA used to derive TANF's fields itself, into `dependencies`. That moved to
+        `ProgramCalculator.all_dependencies`, which does it for every strict gate off the
+        declaration above — so the assertion reads `all_dependencies`, not `dependencies`.
+        """
         tanf_fields = {field for pe_input in KsTanf.pe_inputs for field in pe_input.dependencies}
-        self.assertTrue(tanf_fields.issubset(set(KsRca.dependencies)))
+        self.assertTrue(tanf_fields.issubset(set(KsRca.all_dependencies())))
 
     def test_ks_tanf_is_calculated_before_ks_rca(self):
         """An unlisted program sorts last in arbitrary relative order, so without this the
