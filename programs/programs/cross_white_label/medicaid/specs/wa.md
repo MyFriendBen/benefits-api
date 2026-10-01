@@ -99,12 +99,13 @@
     * Impact: Low (narrow — requires prior CDC-program screening; fully unscreenable but important to surface for the population it serves)
 
 10. **U.S. citizenship or qualifying immigration status**
-    * **Comprehensive Apple Health adult pathways (criteria 2, 3, 6):** `citizen`, `gc_5plus`, `refugee`, `otherWithWorkPermission`. `gc_5less` is subject to the federally-mandated 5-year bar (8 U.S.C. § 1613) for adult pathways.
+    * **Comprehensive Apple Health adult pathways (criteria 2, 3, 6):** `citizen`, `gc_5plus`, `otherWithWorkPermission` (COFA migrants, Cuban/Haitian entrants). `gc_5less` is subject to the federally-mandated 5-year bar (8 U.S.C. § 1613) for adult pathways. Through 2026-09-30 `refugee` also qualified; from 2026-10-01 (P.L. 119-21 §71109; CMS SHO #26-001) refugee and asylee adults are limited to AEM, like `non_citizen` adults.
     * **Pregnant (criterion 5) and kids (criterion 4):** Above PLUS `gc_5less` — WA elected the CHIPRA option to waive the 5-year bar for lawfully residing pregnant individuals and children (8 U.S.C. § 1612(b)).
     * **Alien Emergency Medical (AEM) — narrow federal exception:** Federal Medicaid emergency-only coverage (42 U.S.C. § 1396b(v)(3); WAC 182-507) for `non_citizen` and `gc_5less` adults with a qualifying medical emergency. Applicant must still meet an Apple Health pathway's income/categorical rules. ⚠️ Not directly screenable (the screener cannot determine current emergency status); surface AEM in the program description for `non_citizen` / `gc_5less` adult users.
     * **Granular detail not captured (minor data gap):** specific exempt subcategories beyond the 6 categorical values (trafficking victims, COFA migrants, sponsor deeming).
-    * **Config:** `legal_status_required` lists all 6 values (`non_citizen` justified by AEM; `gc_5less` justified by CHIPRA + AEM). Calculator routes each person to the correct pathway.
-    * Screener fields: per-member `legal_status`
+    * **Config:** `legal_status_required` is `citizen`, `gc_5plus`, `non_citizen`, `otherWithWorkPermission`, `refugee` (`non_citizen` justified by AEM). `gc_5less` was removed in the five-year-bar fix. `refugee` was deliberately left in place on 2026-10-01: refugee adults now qualify for exactly what `non_citizen` adults do (AEM), and this one card stands in for both full coverage and AEM, so removing `refugee` alone would show the card to undocumented users but not to refugees. Whether `non_citizen` belongs on this card at all is an open decision, tied to modeling Apple Health Expansion as its own program.
+    * **No calculator reads legal status.** `legal_status_required` is applied only as a household-level results-page filter, so it can't route individual members to a pathway.
+    * Screener fields: none (the citizenship filter on the results page, not a screener question)
     * Source: 8 U.S.C. § 1611, § 1612, § 1613; 42 U.S.C. § 1396b(v); 42 CFR § 435.406; WAC 182-503-0535; WAC 182-507 (AEM); HCA Noncitizens (https://www.hca.wa.gov/free-or-low-cost-health-care/i-need-medical-dental-or-vision-care/noncitizens)
 
 11. **Must not be an inmate of a public institution (except as an inpatient in a medical institution)** ⚠️ *data gap*
