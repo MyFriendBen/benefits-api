@@ -33,7 +33,7 @@ FPL_2025_BASE = {1: 15650, 2: 21150, 3: 26650, 4: 32150}
 def make_member(age):
     """Create a mock household member with an age."""
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     return member
 
 

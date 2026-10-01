@@ -51,7 +51,7 @@ class MaYouthworks(ProgramCalculator):
         member = e.member
 
         # Age 14–25 at the start of programming.
-        age = member.age
+        age = member.calc_age()
         e.condition(age is not None and self.min_age <= age <= self.max_age)
 
     def household_eligible(self, e: Eligibility):

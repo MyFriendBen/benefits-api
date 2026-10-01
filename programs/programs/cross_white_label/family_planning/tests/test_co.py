@@ -36,7 +36,7 @@ FPL_2025 = FederalPoveryLimit(year="2025", period="2025")
 
 def make_member(age=30, pregnant=False, is_head=True, is_spouse=False, **insurance_flags):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.pregnant = pregnant
     member.is_head = Mock(return_value=is_head)
     member.is_spouse = Mock(return_value=is_spouse)

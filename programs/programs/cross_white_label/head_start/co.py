@@ -65,4 +65,4 @@ class CoHeadStart(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(CoHeadStart.min_age <= member.age <= CoHeadStart.max_age)
+        e.condition(CoHeadStart.min_age <= member.calc_age() <= CoHeadStart.max_age)

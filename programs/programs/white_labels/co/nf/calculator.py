@@ -65,7 +65,7 @@ class NurturingFutures(ProgramCalculator):
         e.condition(NurturingFutures.county in counties, messages.location())
 
         # head is 18+
-        e.condition(self.screen.get_head().age >= NurturingFutures.head_min_age)
+        e.condition(self.screen.get_head().calc_age() >= NurturingFutures.head_min_age)
 
         # has child 3 or younger
         e.condition(self.screen.num_children(age_max=NurturingFutures.child_max_age))

@@ -21,7 +21,7 @@ from programs.util import Dependencies, DependencyError, UpstreamAbsentError
 
 def make_member(age):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     return member
 
 

@@ -55,7 +55,7 @@ class TestMaDhspAfterschoolLocationEligibility(TestCase):
     def _create_mock_member(self, age):
         """Helper to create a mock household member."""
         mock_member = Mock()
-        mock_member.age = age
+        mock_member.calc_age = Mock(return_value=age)
         return mock_member
 
     def _create_calculator(self, county, children_ages, has_benefit=False):
@@ -108,7 +108,7 @@ class TestMaDhspAfterschoolChildAgeEligibility(TestCase):
     def _create_mock_member(self, age):
         """Helper to create a mock household member."""
         mock_member = Mock()
-        mock_member.age = age
+        mock_member.calc_age = Mock(return_value=age)
         return mock_member
 
     def _create_calculator(self, children_ages, has_benefit=False):
@@ -203,7 +203,7 @@ class TestMaDhspAfterschoolHasBenefit(TestCase):
     def _create_mock_member(self, age):
         """Helper to create a mock household member."""
         mock_member = Mock()
-        mock_member.age = age
+        mock_member.calc_age = Mock(return_value=age)
         return mock_member
 
     def _create_calculator(self, has_benefit=False):
@@ -240,7 +240,7 @@ class TestMaDhspAfterschoolValue(TestCase):
     def _create_mock_member(self, age, member_id=None):
         """Helper to create a mock household member."""
         mock_member = Mock()
-        mock_member.age = age
+        mock_member.calc_age = Mock(return_value=age)
         mock_member.id = member_id if member_id is not None else age  # Use age as id if not specified
         return mock_member
 
@@ -324,7 +324,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
     def _create_mock_member(self, age, member_id=None):
         """Helper to create a mock household member."""
         mock_member = Mock()
-        mock_member.age = age
+        mock_member.calc_age = Mock(return_value=age)
         mock_member.id = member_id if member_id is not None else age
         return mock_member
 
@@ -402,7 +402,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         # Index 1 is age 3 - not eligible
         # Index 2 is age 8 - eligible
         # Index 3 is age 16 - not eligible
-        member_ages_and_eligibility = [(m.member.age, m.eligible) for m in eligibility.eligible_members]
+        member_ages_and_eligibility = [(m.member.calc_age(), m.eligible) for m in eligibility.eligible_members]
 
         self.assertIn((35, False), member_ages_and_eligibility)  # Parent
         self.assertIn((3, False), member_ages_and_eligibility)  # Too young

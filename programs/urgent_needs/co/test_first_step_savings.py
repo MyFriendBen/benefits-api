@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from unittest.mock import patch
 from django.test import TestCase
 from programs.models import UrgentNeed
 from programs.urgent_needs.co.first_step_savings import FirstStepSavings, FirstStepSavingsNotifiable
@@ -10,6 +11,11 @@ from programs.util import Dependencies
 class TestFirstStepSavings(TestCase):
     def setUp(self):
         """Set up test data"""
+        # The fixtures pair an age with a birth month; pin the date they were consistent on.
+        reference_date = patch.object(Screen, "get_reference_date", return_value=date(2025, 6, 15))
+        reference_date.start()
+        self.addCleanup(reference_date.stop)
+
         # Create a white label for Colorado
         self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
 

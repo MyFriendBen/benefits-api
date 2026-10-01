@@ -50,7 +50,7 @@ class TestMaCmspEligibility(TestCase):
     def _make_member(self, age: int, insured: bool = False, mass_health: bool = False) -> Mock:
         """Create a mock household member with insurance attributes."""
         member = Mock()
-        member.age = age
+        member.calc_age = Mock(return_value=age)
         member.insurance = Mock()
         member.insurance.none = not insured
         member.insurance.mass_health = mass_health
@@ -218,7 +218,7 @@ class TestMaCmspValue(TestCase):
 
     def _make_member(self, age: int, insured: bool = False) -> Mock:
         member = Mock()
-        member.age = age
+        member.calc_age = Mock(return_value=age)
         member.id = age  # use age as id for simplicity
         member.insurance = Mock()
         member.insurance.none = not insured

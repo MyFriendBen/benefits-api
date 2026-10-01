@@ -34,7 +34,8 @@ class WaWic(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
         is_pregnant = member.pregnant is True
-        is_under_5 = member.age is not None and member.age < self.max_child_age
+        age = member.calc_age()
+        is_under_5 = age is not None and age < self.max_child_age
         e.condition(is_pregnant or is_under_5)
 
     def household_eligible(self, e: Eligibility):

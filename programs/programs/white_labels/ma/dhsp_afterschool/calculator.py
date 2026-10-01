@@ -43,5 +43,5 @@ class MaDhspAfterschool(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
         # Child must be in K-8 age range (approximately 5-14 years old)
-        is_child_age = self.min_child_age <= member.age <= self.max_child_age
+        is_child_age = self.min_child_age <= member.calc_age() <= self.max_child_age
         e.condition(is_child_age)

@@ -127,6 +127,18 @@ class ProgramCalculator:
         self.data = data
         self.missing_dependencies = missing_dependencies
 
+    @property
+    def tax_year(self) -> int:
+        """
+        The tax or claim year a tax program is judged over: the program's configured year,
+        or, when none is set, the year before the screen's reference date (the year
+        returns are filed for).
+        """
+        if self.program.year is not None:
+            return int(self.program.year.period)
+
+        return self.screen.get_reference_date().year - 1
+
     def eligible(self) -> Eligibility:
         """
         Combine the eligibility for the household and the members
