@@ -12,65 +12,34 @@ logger = logging.getLogger(__name__)
 class MoHcv(ProgramCalculator):
     """
     MO Housing Choice Voucher (Section 8) — an ongoing tenant-based rental subsidy,
-    statewide across Missouri's 45 public housing agencies. MFB custom calculator,
-    modelled on ``KsHcv``'s structure and the Housing Authority of Kansas City,
-    Missouri (HAKC) HCV Administrative Plan effective 12/2025 for every locally-set
-    figure (minimum rent, dependent/elderly deductions, bedroom-size standard).
+    modelled on ``KsHcv`` and the Housing Authority of Kansas City, Missouri (HAKC)
+    HCV Administrative Plan for its locally-set figures (minimum rent, deductions,
+    bedroom standard).
 
-    Eligibility (plain conjunction of four criteria): annual income (24 CFR 5.609,
-    not raw gross) at or below HUD's published Very Low Income limit — 50% AMI —
-    for the household's own county and size; household size at least one (trivial);
-    an eligible citizenship/immigration status, handled entirely through
-    ``legal_status_required`` in the program config, with no calculator branch; and,
-    uniquely among the shipped HCV siblings, not already holding Section 8 —
-    ``self.screen.has_base_benefit("section_8")``. Four income exclusions apply to
-    the annual-income figure both the income gate and the value calculation run on:
-    a minor's earned income (unless they are the head or spouse), a dependent
-    full-time student's earnings above the dependent-deduction amount, all
-    ``workersComp`` income, and all income of a ``fosterChild``-relationship member.
+    Eligible: annual income (24 CFR 5.609) at or below HUD's Very Low Income limit
+    (50% AMI) for the household's county and size; an eligible legal status, gated
+    entirely through program config; and not already holding a Section 8 voucher.
+    Income excludes a minor's earnings (unless head/spouse), a dependent student's
+    earnings above the dependent deduction, ``workersComp``, and all income of a
+    ``fosterChild``-relationship member. No asset/property gate is applied.
 
-    Assumed met (unobservable): the criminal/eviction/debt denial grounds, the
-    § 5.612 student restriction, HOTMA's net-asset and real-property limitation
-    (not enforced at HAKC before 2027-01-01), the imputed-asset-return rule, and
-    § 5.520's mixed-family proration. **No asset or property gate is applied** for
-    the same reason as the shipped siblings: ``household_assets`` is not HUD's
-    *net family assets*.
+    Benefit: monthly HAP = min(payment standard, reported rent) − total tenant
+    payment (TTP), annualized and floored at $1. TTP is the highest of 30% of
+    monthly adjusted income, 10% of monthly gross income, and HAKC's $50 minimum
+    rent. Adjusted income subtracts HAKC's four Chapter 6.A deductions: $480 per
+    dependent, $400 once for an elderly-or-disabled family, a medical deduction
+    (elderly/disabled families only), and a childcare deduction — the last two of
+    which no shipped HCV sibling models.
 
-    Benefit value: monthly HAP = min(payment standard, gross rent proxy) − total
-    tenant payment (TTP), floored at $1 for an eligible household, annualized. The
-    payment standard is 100% of the FY2026 FMR — or the ZIP-level Small Area FMR in
-    a mandatory-SAFMR metro — read through the shared ``hud_client``. The gross-rent
-    proxy reads ``["rent"]`` only, excluding ``mortgage``, matching ``IlHcv`` and
-    ``KsHcv`` rather than ``TxHcv``/``WaHcv``. TTP is the highest of 30% of monthly
-    adjusted income, 10% of monthly (countable) gross income, and HAKC's $50
-    minimum rent — the federal ceiling, and the figure Missouri shares only with
-    ``WaHcv``. Adjusted income subtracts four HAKC Chapter 6.A (pre-HOTMA) mandatory
-    deductions: $480 per dependent, $400 once for an elderly-or-disabled family, an
-    unreimbursed health/medical deduction above a 3%-of-income floor for an elderly
-    or disabled family, and a childcare deduction capped — where the household has
-    earners — at the lowest-paid earner's *included* (post-exclusion) earned
-    income. Missouri is the only shipped HCV white label modelling the last two:
-    every sibling omits them as a documented simplification.
+    Missouri departs from its siblings in two ways: foster children are excluded
+    from the dependent count (§ 5.603), and bedroom size is composition-based —
+    one bedroom per two people per occupied generation, capped at four — rather
+    than a household-size lookup.
 
-    Missouri departs from the shipped siblings on two further points cited
-    explicitly in this program's spec. First, a ``fosterChild``-relationship member
-    is **excluded** from the dependent count (§ 5.603's own text), where ``IlHcv``,
-    ``KsHcv`` and ``WaHcv`` all retain foster children as dependents — only
-    ``TxHcv`` agrees. Second, the voucher bedroom size is **not** a household-size
-    lookup: HAKC assigns one bedroom per two people *within each occupied
-    generation* (``relationship`` mapped to a generation from +2 to −2), summed and
-    capped at four bedrooms — a composition rule that can diverge sharply from a
-    plain size-based map for a multigenerational household. A pregnant sole
-    applicant is still modelled as a two-person family for the bedroom count only
-    (24 CFR 982.402(b)(5)), with the notional member placed in the child
-    generation.
-
-    Known data/implementation gap, out of scope for this calculator: ``Screen.county``
-    stores the literal ``"St. Louis City"`` for the 27 St. Louis-city ZIP codes,
-    which ``hud_client._get_entity_id`` cannot resolve until MFB-2110 lands —
-    St. Louis-city households will present as not eligible, $0, until that fix
-    ships. ``MoHcv`` deliberately adds **no** county override for this, per the
-    program spec: a fixed override would misroute every other Missouri county.
+    Known gap, out of scope here: ``Screen.county`` stores the literal
+    ``"St. Louis City"``, which HUD county lookup cannot resolve until MFB-2110
+    lands; St. Louis-city households show $0 until that fix ships. No Missouri-side
+    override is added, per that ticket's resolution.
     """
 
     program_code = "mo_hcv"
@@ -247,8 +216,7 @@ class MoHcv(ProgramCalculator):
         One bedroom per two people *within each occupied generation*, summed and
         capped at four. This is HAKC's composition-based subsidy standard, not a
         household-size lookup — it can diverge sharply from `BEDROOM_MAP`-style
-        siblings for a multigenerational household (see Scenarios 12, 20, 22, 29,
-        31 and 34 in the program spec).
+        siblings for a multigenerational household.
         """
         counts = self._generation_counts()
         total_bedrooms = sum((count + 1) // 2 for count in counts.values())
