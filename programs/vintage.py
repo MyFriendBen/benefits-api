@@ -369,6 +369,23 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         source="cross_white_label/csfp/co.py; qa/MFB-1786-csfp-limit-probe.py observed against "
         "PolicyEngine current and frontier on 2026-09-24",
     ),
+    ("ks", "ks_csfp"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        # Kansas adopts whichever FNS memorandum is current, so the edition is the row's year.
+        rule="current year: the federal limit is 150% of the guideline at the request period, "
+        "and Kansas fixes no table of its own",
+        source="cross_white_label/csfp/specs/ks.md, all 14 scenarios verified at period 2026",
+    ),
+    ("mo", "mo_csfp"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="current year: the federal limit is 150% of the guideline at the request period, "
+        "matching the FNS 2026 income guidelines",
+        source="cross_white_label/csfp/specs/mo.md, all 17 scenarios verified at period 2026",
+    ),
     # --- DEFERRED ----------------------------------------------------------------------
     ("cesn", "cesn_care"): Vintage(
         edition="2025",
