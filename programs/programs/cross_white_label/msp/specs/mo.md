@@ -58,9 +58,11 @@
    - Source: MO IM-4 MSP flyer ("Be a Missouri Resident (and plan to stay, to qualify for help)")
 
 6. **U.S. citizen or qualified non-citizen (all three tiers)**
-   - Screener field: citizenship/immigration-status field (config `program.legal_status_required`: `citizen`, `gc_5plus`, `refugee`, `otherWithWorkPermission`)
+   - Screener field: citizenship/immigration-status field (config `program.legal_status_required`: `citizen`, `gc_5plus`, `otherWithWorkPermission`)
    - Missouri's own MO HealthNet Non-MAGI eligibility chart lists "U.S. citizen or qualified noncitizen" as a requirement for QMB, and states SLMB/QI eligibility is "same as QMB, other than income and resource limits" — i.e. the citizenship requirement applies to all three tiers.
+   - **Effective 2026-10-01** (P.L. 119-21 §71109): CMS counts Medicare Savings Programs as Medicaid benefits subject to the new limit, so MSP is restricted to citizens/nationals, LPRs, Cuban/Haitian entrants and COFA migrants. `refugee` was removed. `otherWithWorkPermission` stays because COFA migrants and Cuban/Haitian entrants share that bucket with groups that lose eligibility.
    - Source: [MO HealthNet Eligibility for Non-MAGI Programs (07/2026)](https://dssmanuals.mo.gov/wp-content/uploads/2018/10/appendix_k.pdf)
+   - Source (Oct 1 change): [CMS SHO #26-001](https://www.medicaid.gov/federal-policy-guidance/downloads/sho26001.pdf), which defines "full Medicaid and CHIP benefits" to include MSPs
 
 ---
 

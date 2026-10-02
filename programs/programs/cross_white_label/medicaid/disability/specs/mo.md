@@ -94,16 +94,17 @@
 
 7. **U.S. citizen or qualified non-citizen**
    - Evaluation scope: config
-   - Captured via: config `legal_status_required`: `citizen`, `gc_5plus`, `refugee`, `otherWithWorkPermission`
+   - Captured via: config `legal_status_required`: `citizen`, `gc_5plus`, `otherWithWorkPermission`
+   - **Effective 2026-10-01** (P.L. 119-21 §71109; CMS SHO #26-001): federally funded Medicaid, including TWHA, is limited to citizens/nationals, LPRs, Cuban/Haitian entrants and COFA migrants. The rest of the no-waiting-period group below (refugees, asylees, withholding-of-removal cases, trafficking victims), along with parolees and battered immigrants, are no longer eligible apart from emergency care. The Missouri manual text quoted below predates the change and still lists them.
    - **Policy rule**: TWHA adopts Family MO HealthNet (MAGI) citizenship and immigrant-status rules wholesale. A qualified immigrant is one of the enumerated categories cited below. Those present before 8/22/96 face no waiting period. Those entering on or after 8/22/96 are sorted into two published lists — a **no-waiting-period group** (American Indians born in Canada, Amerasians, asylees, Cuban and Haitian entrants, withholding-of-removal cases, Iraqi and Afghan Special Immigrants, refugees, trafficking victims) and a **five-year-bar group** (lawful permanent residents, immigrants paroled ≥ 1 year, pre-4/1/1980 conditional entrants, battered immigrants), whose bar runs five years **from date of entry** and is expressly waived for active-duty U.S. Armed Forces members, veterans, their spouses and dependent children, and unmarried surviving spouses of veterans. Non-qualified immigrants are ineligible apart from emergency care. COFA migrants (Federated States of Micronesia, Palau, Marshall Islands) have been eligible since 2020-12-27.
    - **Committed MFB mapping.** Missouri's rule is more granular than MFB's status buckets. MFB collects no legal-status field on `Screen` or `HouseholdMember`; `legal_status_required` is applied as a results-page filter, so no calculator branch exists in either direction and the criterion is settled entirely in config.
 
      | `legal_status_required` value | Included | Basis |
      |---|---|---|
      | `citizen` | ✅ | Exact. |
-     | `refugee` | ✅ | MFB's Refugee/Asylee bucket — the §207 refugee and §208 asylee no-waiting-period populations. |
      | `gc_5plus` | ✅ | The ordinary lawful permanent resident past the five-year bar. |
-     | `otherWithWorkPermission` | ✅ | MFB's broader "Other Lawful" bucket — the remaining qualifying lawful and no-waiting-period categories with no MFB selection of their own, **including COFA migrants**. |
+     | `otherWithWorkPermission` | ✅ | MFB's broader "Other Lawful" bucket — the remaining lawful categories with no MFB selection of their own, **including COFA migrants and Cuban/Haitian entrants**, who keep eligibility after 2026-10-01. |
+     | `refugee` | ❌ | MFB's Refugee/Asylee bucket. Included through 2026-09-30; removed when §71109 ended federal Medicaid for refugees and asylees. |
      | `gc_5less` | ❌ | Lawful Permanent Resident is the first category 1805.020.10.10.10 lists as barred. |
      | `non_citizen` | ❌ | 1805.020.10.15 makes non-qualified immigrants ineligible apart from emergency care. |
 
@@ -114,7 +115,7 @@
      | Under-inclusive | Missouri's clock runs from **date of entry**; `gc_5less` measures time holding the green card. Someone who entered in 2010 and adjusted to LPR in 2025 selects `gc_5less` but is past Missouri's bar. |
      | Under-inclusive | The military/veteran/veteran-family waiver cannot be represented — `HouseholdMember.veteran` is collected, but `legal_status_required` is a flat filter that cannot be conditioned on another field. |
      | Under-inclusive | A current green-card status can obscure a prior exempt status (a refugee who later adjusted), which MFB does not record. |
-     | Over-inclusive | `otherWithWorkPermission` is coarse and can admit lawful categories Missouri would bar, because MFB captures neither status subtype nor time in status. |
+     | Over-inclusive | `otherWithWorkPermission` is coarse and can admit lawful categories Missouri would bar, because MFB captures neither status subtype nor time in status. From 2026-10-01 this includes parolees, battered immigrants, trafficking victims and withholding-of-removal cases, who lose eligibility but share the bucket with COFA migrants and Cuban/Haitian entrants. |
 
      Excluding `gc_5less` is deliberate: admitting it wholesale would admit the ordinary barred LPR in order to capture a set of narrow, enumerated exceptions. This is a systemic MFB platform constraint, not a TWHA-specific open question.
    - Source (TWHA incorporates the MAGI standard by reference): 0855.005.10 Residence and Citizenship — "Citizenship/Alien status requirements are the same as for the Family MO HealthNet (MAGI) program. Refer to MAGI Manual Section 1805.020.00 Citizenship and Immigrant Status." — [snapshot `2026-08-24--dss-manual-0855-005-10`](../../../sources/mo/mo_twha/2026-08-24--dss-manual-0855-005-10/content.md), accessed 2026-08-24
