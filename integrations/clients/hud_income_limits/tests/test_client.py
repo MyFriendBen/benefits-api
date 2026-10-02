@@ -505,6 +505,31 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
             result = client.get_screen_mtsp_ami(self.screen, "80%", "2025")
             self.assertEqual(result, 103600)
 
+    def test_independent_city_skips_county_suffix(self) -> None:
+        """Independent cities match HUD's "<name> city" listing without a " County" suffix."""
+        client = HudIncomeClient(api_token="test_token")
+        counties = [
+            {"county_name": "St. Louis County", "fips_code": "29189"},
+            {"county_name": "St. Louis city", "fips_code": "29510"},
+        ]
+
+        with self.mock_api_responses(client, counties):
+            self.assertEqual(client._get_entity_id("MO", "St. Louis City", 2025), "29510")
+
+    def test_county_with_city_in_name_keeps_suffix(self) -> None:
+        """Only a trailing " city" skips the suffix; bare names get it and "James City County" matches as-is."""
+        client = HudIncomeClient(api_token="test_token")
+        counties = [
+            {"county_name": "Jefferson County", "fips_code": "29099"},
+            {"county_name": "James City County", "fips_code": "51095"},
+            {"county_name": "Middlesex County", "fips_code": "25017"},
+        ]
+
+        with self.mock_api_responses(client, counties):
+            self.assertEqual(client._get_entity_id("TS", "Jefferson", 2025), "29099")
+            self.assertEqual(client._get_entity_id("TS", "James City County", 2025), "51095")
+            self.assertEqual(client._get_entity_id("TS", "Middlesex", 2025), "25017")
+
     def test_county_lookup_includes_year_parameter(self) -> None:
         """Test that county lookup includes 'year' and 'updated' parameters per HUD API spec."""
         client = HudIncomeClient(api_token="test_token")

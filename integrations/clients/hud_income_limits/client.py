@@ -570,9 +570,10 @@ class HudIncomeClient:
 
     def _get_entity_id(self, state_code: str, county_name: str, year: int) -> str:
         """Get FIPS entity ID for a county in any state."""
-        # Normalize county name
+        # Every county-equivalent (independent cities, parishes, boroughs) is treated as a county;
+        # only names ending in " city" (e.g. HUD's "St. Louis city") currently skip the suffix.
         county_name = county_name.strip()
-        if not county_name.lower().endswith("county"):
+        if not county_name.lower().endswith(("county", " city")):
             county_name = f"{county_name} County"
 
         # Check cache
