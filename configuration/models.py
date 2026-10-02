@@ -1,3 +1,5 @@
+import json
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from screener.models import WhiteLabel
@@ -15,6 +17,27 @@ class Configuration(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def counties_by_zipcode(cls, white_label: WhiteLabel) -> dict | None:
+        """The white label's active zip -> {county: county} crosswalk, or None if it has none.
+
+        Raises ValueError if the row is not a JSON object.
+        """
+        config = (
+            cls.objects.filter(name="counties_by_zipcode", white_label=white_label, active=True).order_by("-id").first()
+        )
+        if config is None:
+            return None
+        # `OrderedJSONField` dumps on write and loads once on read, so a dict saved
+        # through the ORM (what `add_config` does) reads back as a JSON string.
+        data = json.loads(config.data) if isinstance(config.data, str) else config.data
+        if data is not None and not isinstance(data, dict):
+            raise ValueError(
+                f"'counties_by_zipcode' config for white label '{white_label.code}' must be a JSON object, "
+                f"got {type(data).__name__}."
+            )
+        return data or None
 
 
 class PolicyEngineConfig(models.Model):
