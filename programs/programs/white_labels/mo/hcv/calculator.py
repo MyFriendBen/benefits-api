@@ -11,78 +11,44 @@ logger = logging.getLogger(__name__)
 
 class MoHcv(ProgramCalculator):
     """
-    MO Housing Choice Voucher (Section 8) — an ongoing tenant-based rental subsidy,
-    modelled on ``KsHcv`` and the Housing Authority of Kansas City, Missouri (HAKC)
-    HCV Administrative Plan for its locally-set figures (minimum rent, deductions,
-    bedroom standard).
+    MO Housing Choice Voucher (Section 8) — a tenant-based rental subsidy,
+    modelled on KsHcv and HAKC's (Kansas City) administrative plan for
+    locally-set figures.
 
-    Eligible: annual income (24 CFR 5.609) at or below HUD's Very Low Income limit
-    (50% AMI) for the household's county and size; an eligible legal status, gated
-    entirely through program config; and not already holding a Section 8 voucher.
-    Income excludes a minor's earnings (unless head/spouse), a dependent student's
-    earnings above the dependent deduction, ``workersComp``, and all income of a
-    ``fosterChild``-relationship member. No asset/property gate is applied.
+    Eligible: annual income at or below 50% AMI, after excluding a minor's
+    earnings (unless head/spouse), a dependent student's earnings above the
+    student deduction, workersComp income, and a foster child's income. No
+    asset gate. Must not already hold a Section 8 voucher.
 
-    Benefit: monthly HAP = min(payment standard, reported rent) − total tenant
-    payment (TTP), annualized and floored at $1. TTP is the highest of 30% of
-    monthly adjusted income, 10% of monthly gross income, and HAKC's $50 minimum
-    rent. Adjusted income subtracts HAKC's four Chapter 6.A deductions: $480 per
-    dependent, $400 once for an elderly-or-disabled family, a medical deduction
-    (elderly/disabled families only), and a childcare deduction — the last two of
-    which no shipped HCV sibling models.
+    Benefit: monthly HAP = min(payment standard, reported rent) − total
+    tenant payment, annualized and floored at $1. Adjusted income subtracts
+    a per-dependent deduction, a one-time elderly/disabled deduction, and
+    medical/childcare deductions.
 
-    Missouri departs from its siblings in two ways: foster children are excluded
-    from the dependent count (§ 5.603), and bedroom size is composition-based —
-    one bedroom per two people per occupied generation, capped at four — rather
-    than a household-size lookup.
-
-    Known gap, out of scope here: ``Screen.county`` stores the literal
-    ``"St. Louis City"``, which HUD county lookup cannot resolve until MFB-2110
-    lands; St. Louis-city households show $0 until that fix ships. No Missouri-side
-    override is added, per that ticket's resolution.
+    St. Louis City households show $0 until MFB-2110 fixes county lookup.
     """
 
     program_code = "mo_hcv"
 
     ami_percent = "50%"
-    # HAKC HCV Administrative Plan Chapter 6.A (pre-HOTMA, in force at HAKC before its
-    # own 2027-01-01 HOTMA 102/104 compliance date) — $480/$400, not the CY2026
-    # inflation-adjusted $500/$550 pair `il_hcv` and `ks_hcv` carry, and not the
-    # un-indexed post-HOTMA $480/$525 pair `tx_hcv`/`wa_hcv` carry.
     dependent_deduction_annual = 480
     elderly_disabled_deduction_annual = 400
-    # HAKC's stated local minimum rent and the § 5.630(a)(2) federal ceiling — the
-    # top of the permitted range, shared only with `wa_hcv` among the siblings.
     min_rent_monthly = 50
     min_elderly_age = 62
-    # § 5.611(a)(3)(i)'s pre-HOTMA floor on the health/medical deduction — three
-    # percent of annual income, not the ten percent the post-HOTMA eCFR text now
-    # carries (that increase does not bind at HAKC until its own compliance date).
     medical_deduction_floor_percent = Decimal("0.03")
 
-    #: Head, co-head or spouse — the members who are never dependents, and whose age
-    #: or disability makes the household an elderly or disabled family (24 CFR 5.403).
-    #: MFB has no co-head, so ``domesticPartner`` stands in for one, matching the IL
-    #: and KS siblings. The tuple decides four rules: the dependent count, the
-    #: § 5.609(b)(3) minor-earner exclusion, the § 5.609(b)(14) dependent-student
-    #: exclusion, and the § 5.403 elderly-or-disabled flag.
+    #: Head, co-head (domesticPartner), or spouse — never dependents, and
+    #: whose age/disability sets the elderly-or-disabled flag.
     HEAD_RELATIONSHIPS = ("headOfHousehold", "spouse", "domesticPartner")
 
-    #: Income types excluded from annual income for every member, whoever receives
-    #: them: workers' compensation, per 24 CFR 5.609(b)(5).
+    #: Excluded from annual income for every member.
     EXCLUDED_INCOME_TYPES = ("workersComp",)
 
-    #: § 5.609(b)(8) excludes a foster child's income entirely, and § 5.603 excludes
-    #: them from the *dependent* definition too — departing from `IlHcv`, `KsHcv`
-    #: and `WaHcv`, which all retain foster children as dependents. Only `TxHcv`
-    #: agrees with Missouri here.
+    #: Foster children's income is excluded, and they don't count as dependents.
     FOSTER_RELATIONSHIPS = ("fosterChild",)
 
-    #: `relationship` → generation offset, read for the bedroom standard only.
-    #: A member whose `relationship` is null, unrecognised, or one of the three
-    #: values that carry no real generational distance (`relatedOther`, `roommate`,
-    #: `boyfriendOrGirlfriend`) falls to generation 0, the head's own generation —
-    #: the reading that yields the lower, more conservative bedroom count.
+    #: relationship -> generation, for the bedroom standard. An unmapped or
+    #: unrecognized relationship falls to generation 0 (the head's).
     GENERATION_MAP = MappingProxyType(
         {
             "grandParent": 2,
@@ -104,9 +70,7 @@ class MoHcv(ProgramCalculator):
         }
     )
 
-    #: HAKC's subsidy standard is capped at four bedrooms — HUD publishes no FMR
-    #: above that, and `hud_client._validate_bedrooms` rejects anything outside
-    #: 0–4. Reachable from two occupied generations upward in a large household.
+    #: HUD publishes no FMR above 4 bedrooms.
     MAX_BEDROOMS = 4
 
     dependencies = (
@@ -126,35 +90,24 @@ class MoHcv(ProgramCalculator):
 
     @staticmethod
     def _age(member):
-        """A member's age against the screen's reference date, from
-        ``birth_year_month`` where it is set — never the raw, possibly-stale ``age``
-        field. ``calc_age()`` falls back to the raw field when no birth date is
-        recorded, so the result is still ``None`` for a member with neither."""
+        """Age from `birth_year_month`, not the possibly-stale raw `age` field."""
         return member.calc_age()
 
     def _is_head_or_spouse(self, member) -> bool:
         return member.relationship in self.HEAD_RELATIONSHIPS
 
     def _is_minor(self, member) -> bool:
-        """A member known to be under 18. An unknown age is treated as an adult, so
-        an income exclusion is never applied on a guess."""
+        """Unknown age is treated as an adult, so income is never excluded on a guess."""
         age = self._age(member)
         return age is not None and age < 18
 
     def _countable_earned_income(self, member, earned: float) -> float:
-        """
-        A member's earned income after the three person-scoped exclusions that
-        attach to a person rather than to an income type: § 5.609(b)(8) (a foster
-        child's income is excluded entirely, checked first since it is the
-        strongest and unconditional exclusion), § 5.609(b)(3) (a minor's earned
-        income, unless they are the head or spouse), and § 5.609(b)(14) (a
-        dependent full-time student's earnings above the dependent-deduction
-        amount). The minor branch must run before the student branch: a member who
-        is both under 18 and a full-time student is excluded in full under (b)(3),
-        not capped at the dependent-deduction amount under (b)(14) — § 5.609(b)'s
-        lead-in makes the exclusions a union, not a sequence, so an amount (b)(3)
-        already excludes cannot be re-included by (b)(14).
-        """
+        """A member's earned income after the person-scoped exclusions: a foster
+        child's income is excluded entirely, a minor's earnings are excluded
+        unless they're the head or spouse, and a dependent student's earnings
+        above the dependent deduction are excluded. Order matters — a member
+        who is both a minor and a student must hit the minor branch first, or
+        they lose the full exclusion."""
         if member.relationship in self.FOSTER_RELATIONSHIPS:
             return 0.0
 
@@ -167,36 +120,24 @@ class MoHcv(ProgramCalculator):
         return earned
 
     def _annual_income(self) -> float:
-        """
-        Annual income as 24 CFR 5.609 defines it, § 5.609(b)-adjusted — the
-        quantity both the income gate and the value computation (including the
-        TTP's 10%-of-gross-income prong and the (a)(3) medical floor's base) run
-        on, not raw gross income.
-        """
+        """Annual income after the exclusions above, aggregated per member —
+        a single screen-level income call would apply one exclusion list to
+        everyone instead of scoping it per person."""
         total = 0.0
         for member in self.screen.household_members.all():
-            # § 5.609(b)(8): all of a foster child's income is excluded, earned and
-            # unearned alike — handled here as an early skip rather than inside
-            # `_countable_earned_income` alone, since that only reaches earned
-            # income.
             if member.relationship in self.FOSTER_RELATIONSHIPS:
                 continue
 
             earned = member.calc_gross_income("yearly", ["earned"], exclude=self.EXCLUDED_INCOME_TYPES)
             unearned = member.calc_gross_income("yearly", ["unearned"], exclude=self.EXCLUDED_INCOME_TYPES)
-
-            # § 5.609(a)(1): unearned income counts for a dependent under 18 too.
             total += unearned + self._countable_earned_income(member, earned)
         return total
 
     def _generation_counts(self) -> dict:
-        """Household members grouped by generation, read from `relationship`, plus
-        the § 982.402(b)(5) notional member for a pregnant sole applicant.
-
-        Unlike the income-limit comparison, which always uses the real
-        `household_size`, this notional member exists only for the bedroom count —
-        the regulation's lead-in scopes the whole paragraph to family unit size.
-        """
+        """Members grouped by generation, for the bedroom count. A pregnant
+        sole applicant counts as two people (a notional member added to the
+        child generation) — this only affects the bedroom count, not the
+        household size used for the income test."""
         counts: dict = {}
         for member in self.screen.household_members.all():
             generation = self.GENERATION_MAP.get(member.relationship, 0)
@@ -205,31 +146,20 @@ class MoHcv(ProgramCalculator):
         if self.screen.household_size == 1:
             head = self.screen.get_head()
             if head is not None and head.pregnant:
-                # The notional second member sits in the child generation, so a
-                # pregnant sole applicant becomes two bedrooms (1+1), not one.
                 counts[-1] = counts.get(-1, 0) + 1
 
         return counts
 
     def _estimate_bedrooms(self) -> int:
-        """
-        One bedroom per two people *within each occupied generation*, summed and
-        capped at four. This is HAKC's composition-based subsidy standard, not a
-        household-size lookup — it can diverge sharply from `BEDROOM_MAP`-style
-        siblings for a multigenerational household.
-        """
+        """One bedroom per two people within each occupied generation, capped
+        at four."""
         counts = self._generation_counts()
         total_bedrooms = sum((count + 1) // 2 for count in counts.values())
         return min(self.MAX_BEDROOMS, total_bedrooms)
 
     def _count_dependents(self) -> int:
-        """
-        Dependents per 24 CFR 5.603: a member other than the head, co-head or
-        spouse who is under 18, has a disability, or is a full-time student.
-        Foster children are **excluded** here, following § 5.603's own text —
-        departing from `IlHcv`, `KsHcv` and `WaHcv`, which all retain them; only
-        `TxHcv` agrees.
-        """
+        """A dependent is any non-head member who is a minor, disabled, or a
+        full-time student. Foster children never count."""
         count = 0
         for member in self.screen.household_members.all():
             if self._is_head_or_spouse(member):
@@ -241,10 +171,7 @@ class MoHcv(ProgramCalculator):
         return count
 
     def _is_elderly_or_disabled_family(self) -> bool:
-        """A family whose head, co-head, spouse or sole member is at least 62 or is
-        a person with a disability (24 CFR 5.403). A family-level flag taken once,
-        not a per-member count — and read through ``has_disability()``, which ORs
-        ``disabled``, ``visually_impaired`` and ``long_term_disability``."""
+        """True if the head, co-head, or spouse is 62+ or has a disability."""
         for member in self.screen.household_members.all():
             if not self._is_head_or_spouse(member):
                 continue
@@ -254,25 +181,17 @@ class MoHcv(ProgramCalculator):
         return False
 
     def _medical_deduction(self, annual_gross: Decimal) -> Decimal:
-        """§ 5.611(a)(3)(i): unreimbursed health and medical care expenses above
-        three percent of annual (countable) income, for an elderly or disabled
-        family only — the caller gates on that flag. ``"medical"`` is a leaf key,
-        not a category path."""
+        """Unreimbursed medical expenses above 3% of income, for an elderly
+        or disabled family only."""
         medical = Decimal(str(self.screen.calc_expenses("yearly", ["medical"])))
         floor = annual_gross * self.medical_deduction_floor_percent
         return max(Decimal(0), medical - floor)
 
     def _childcare_deduction(self) -> Decimal:
-        """§ 5.611(a)(4): reasonable childcare expenses, capped — where the
-        household has earners — at the lowest-paid earner's employment income that
-        is *included* in annual income, per HAKC § 6-II.F. The earner list is built
-        from `_countable_earned_income`, not a raw per-member `calc_gross_income`
-        call, so a member whose earnings § 5.609(b)(3), (b)(8) or (b)(14) exclude
-        (in whole or in part) is not an earner, or is one at a reduced figure. A
-        household with no included earned income cannot be on the work branch and
-        takes the deduction uncapped. ``"childCare"`` is a leaf key; `childSupport`
-        is a different leaf and is not part of this deduction.
-        """
+        """Childcare expenses, capped at the lowest-paid earner's included
+        earned income when the household has earners (built from
+        `_countable_earned_income`, so an excluded earner doesn't set the
+        cap). Uncapped when there are no earners."""
         childcare = Decimal(str(self.screen.calc_expenses("yearly", ["childCare"])))
 
         earners = []
@@ -288,13 +207,8 @@ class MoHcv(ProgramCalculator):
         return min(childcare, Decimal(str(min(earners))))
 
     def _adjusted_income(self, annual_income: float) -> Decimal:
-        """
-        Annual (countable) income less all four § 5.611(a) mandatory deductions
-        HAKC's Chapter 6.A applies, floored at zero: $480 per dependent, $400 once
-        for an elderly-or-disabled family, the (a)(3)(i) health/medical deduction
-        and the (a)(4) childcare deduction — the last two of which no shipped HCV
-        sibling models.
-        """
+        """Annual income minus the dependent, elderly/disabled, medical, and
+        childcare deductions, floored at zero."""
         annual_gross = Decimal(str(annual_income))
         elderly_or_disabled = self._is_elderly_or_disabled_family()
 
@@ -307,18 +221,9 @@ class MoHcv(ProgramCalculator):
         return max(Decimal(0), annual_gross - deductions)
 
     def _total_tenant_payment(self, annual_income: float, annual_adjusted: Decimal) -> int:
-        """
-        The highest of 30% of monthly adjusted income, 10% of monthly (countable)
-        gross income, and the $50 minimum rent, rounded to the nearest dollar
-        **half-up** per the Form HUD-50058 instructions (24 CFR 5.628(a)).
-
-        Each prong is computed from the annual figure — 30% of a monthly amount is
-        the annual over 40, and 10% is the annual over 120 — so an exact half-dollar
-        stays exact instead of landing a hair under it, and rounding happens once,
-        at the end. Implemented with ``Decimal`` and ``ROUND_HALF_UP``, following
-        `KsHcv._total_tenant_payment`, not Python's built-in ``round()`` (banker's
-        rounding).
-        """
+        """Highest of 30% of monthly adjusted income, 10% of monthly gross
+        income, and the $50 minimum rent, rounded to the nearest dollar
+        half-up (not Python's banker's-rounding `round()`)."""
         thirty_percent_monthly_adjusted = annual_adjusted / 40
         ten_percent_monthly_income = Decimal(str(annual_income)) / 120
 
@@ -330,52 +235,36 @@ class MoHcv(ProgramCalculator):
         return int(ttp.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
     def _gross_rent_proxy(self, payment_standard: int) -> float:
-        """
-        The household's reported rent stands in for the assisted unit's gross
-        rent, falling back to the payment standard when no rent is reported.
-        ``mortgage`` is deliberately excluded, matching `IlHcv` and `KsHcv` rather
-        than `TxHcv`/`WaHcv`: gross rent is rent to owner plus the utility
-        allowance (24 CFR 982.4), and an owner's mortgage payment is not a proxy
-        for the rent of a future tenant-based voucher unit.
-        """
+        """Reported rent stands in for the unit's gross rent, falling back to
+        the payment standard when no rent is reported. Mortgage isn't counted
+        as rent."""
         reported_rent = self.screen.calc_expenses("monthly", ["rent"])
         return reported_rent if reported_rent > 0 else float(payment_standard)
 
     def household_eligible(self, e: Eligibility):
-        # Criterion 2: the household is a "family", which HUD's open-ended
-        # definition reduces to household_size >= 1 — true of every screen the
-        # frontend can submit, so this is unfalsifiable and kept simple on purpose.
+        # Every screen has a household of at least one person.
         e.condition(self.screen.household_size is None or self.screen.household_size >= 1)
 
-        # Criterion 4 (Missouri-specific, not sourced in federal HCV rule): a
-        # household already holding Section 8 is not shown eligible for it again.
+        # Don't show a household a voucher it already has.
         e.condition(
             not self.screen.has_base_benefit("section_8"),
             messages.must_not_have_benefit("a Housing Choice Voucher"),
         )
 
-        # Criterion 1: annual income at or below HUD's Very Low Income limit (50%
-        # AMI) for the household's own county and size. A HUD lookup failure must
-        # never raise out of the calculator and break the whole eligibility run.
+        # Income test against HUD's Very Low Income limit. A HUD lookup
+        # failure degrades to not-eligible instead of raising, so one
+        # program can't break eligibility for the whole screen.
         try:
             annual_income = int(self._annual_income())
 
             if self.screen.household_size is None:
-                # No size means no limit to compare against. Passed inclusively
-                # rather than compared — normally unreachable, since a null
-                # household_size is a missing dependency and the program is not
-                # calculated at all.
                 return
 
             income_limit = hud_client.get_screen_il_ami(self.screen, self.ami_percent, self._year_period())
             e.condition(annual_income <= income_limit, messages.income(annual_income, income_limit))
         except HudIncomeClientError:
-            # Expected when HUD data is unavailable (API down, county not found,
-            # size outside 1-8, year unconfigured) — not eligible, without noise.
             e.condition(False, messages.income_limit_unknown())
         except Exception:
-            # Unexpected failure — still degrade to not eligible rather than raise,
-            # so one program cannot 500 the whole eligibility response, and log it.
             logger.exception(
                 "MoHcv.household_eligible income check failed unexpectedly (white_label=%s, household_size=%s)",
                 getattr(self.screen.white_label, "code", None),
@@ -394,23 +283,14 @@ class MoHcv(ProgramCalculator):
             )
             gross_rent = self._gross_rent_proxy(payment_standard)
 
-            # 24 CFR 982.505(b): the payment is the lower of the two arms, less the
-            # tenant payment.
             hap = max(0.0, min(float(payment_standard), gross_rent) - ttp)
 
-            # Floored at $1, not $0: a household whose rent sits below its own
-            # tenant payment is genuinely eligible but nets no subsidy, and the
-            # frontend drops any program whose value is not greater than zero.
+            # Floored at $1: the frontend hides any program valued at $0, but
+            # this household is still genuinely eligible.
             return max(1, int(hap * 12))
         except HudIncomeClientError:
-            # Expected when HUD data is unavailable — degrade to $0 without noise.
-            # This is a value we could not compute rather than one that came out
-            # at zero, so it is not floored: hiding the program is the honest
-            # outcome.
             return 0
         except Exception:
-            # Unexpected bug in the value calculation — still degrade to $0 so one
-            # program cannot 500 the whole eligibility response, but log it.
             logger.exception(
                 "MoHcv.household_value failed unexpectedly (white_label=%s, household_size=%s)",
                 getattr(self.screen.white_label, "code", None),
