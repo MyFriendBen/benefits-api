@@ -153,7 +153,7 @@ The core screening factors are fully covered: age (under 19), income (at or belo
 
 Each scenario lists PE-verified expected eligibility and premium. Birth years assume the current year is 2026. Income is the household total (placed on the head unless noted); premium is per family.
 
-> **County naming note:** Scenarios use bare KS county names (`Sedgwick`, `Riley`, `Shawnee`, `Douglas`, `Finney`) with no "County" suffix — consistent with the TX/IL convention in `test_case_schema.json` and confirmed against the KS SNAP config. All ZIP↔county pairings are verified correct (67202 Sedgwick/Wichita, 66502 Riley/Manhattan, 66604 Shawnee/Topeka, 66044 Douglas/Lawrence, 67846 Finney/Garden City).
+> **County naming note:** Scenarios use the suffixed KS county names stored in the KS white label's `counties_by_zipcode` (`Sedgwick County`, `Riley County`, `Shawnee County`, `Douglas County`, `Finney County`); the API rejects bare names with a 400 on `county`. ZIP↔county pairings: 67202 Sedgwick County/Wichita, 66502 Riley County/Manhattan, 66604 Shawnee County/Topeka, 66044 Douglas County/Lawrence, 67846 Finney County/Garden City.
 
 ### Scenario 1: Golden path — uninsured child, working family
 **What we're checking**: Typical eligible household — child under 19, income above the Medicaid threshold but under the 255% CHIP cap, KS resident, no other coverage.

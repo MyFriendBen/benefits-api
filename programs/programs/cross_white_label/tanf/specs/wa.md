@@ -29,7 +29,7 @@
 
 3. **Household must reside in Washington State**
    - Screener fields: `zipcode`, `county`
-   - ⚠️ **Known platform limitation:** The PolicyEngine-based calculator infrastructure hardcodes `state = "WA"` for all screens submitted under the `wa` white label (via `WaStateCodeDependency`). The calculator does not check the ZIP, but screen creation does: the API rejects any ZIP outside the WA ZIP map with a 400, as the browser's ZIP step does. This applies to all PE-based state programs across all states — it is a platform design decision, not a wa_tanf-specific bug. See Scenario 16.
+   - Enforced at intake: screen creation rejects any ZIP outside the WA ZIP map with a 400 on `zipcode`, as the browser's ZIP step does. The calculator itself does not check the ZIP — `WaStateCodeDependency` sends `state = "WA"` for every `wa` screen. See Scenario 16.
    - Source: [Washington DSHS TANF Program Overview](https://www.dshs.wa.gov/esa/community-services-offices/temporary-assistance-needy-families); RCW 74.04.005
 
 4. **Household resources/assets must not exceed $12,000**

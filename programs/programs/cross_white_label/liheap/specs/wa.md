@@ -277,7 +277,7 @@ Key notes: WA does not implement categorical eligibility — all households must
 **Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `97201` is not in the WA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
-- **Location**: Enter ZIP code `97201`, County `Multnomah` (Portland, Oregon — no "County" suffix needed for OR)
+- **Location**: Enter ZIP code `97201`, County `Multnomah County` (Portland, Oregon — outside WA)
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1980` (age 45), Relationship: Head of Household, Has income: Yes, Income type: Wages, Amount: `$1,200` per month
 - **Person 2**: Birth month/year: `January 1982` (age 44), Relationship: Spouse, Has income: Yes, Income type: Wages, Amount: `$800` per month

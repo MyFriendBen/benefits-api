@@ -153,7 +153,7 @@ All scenarios run through PolicyEngine.
 
 ## Test Scenarios
 
-Expected values use the Benefit Value table above (annual figures). ZIP/county pairs: 66603/66604/66044/66502 = Shawnee/Shawnee/Douglas/Riley; 67202 = Sedgwick; 66102 = Wyandotte.
+Expected values use the Benefit Value table above (annual figures). ZIP/county pairs: 66603/66604/66044/66502 = Shawnee County/Shawnee County/Douglas County/Riley County; 67202 = Sedgwick County; 66102 = Wyandotte County.
 
 Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input handling (Implementation Note 1). With the federal `pe_inputs` inherited unchanged, all three would return ineligible. Scenario 7 (senior with assets above the ABD limit) is ineligible and Scenario 7b (assets below the limit) is eligible, per the ABD asset test (Implementation Note 2).
 

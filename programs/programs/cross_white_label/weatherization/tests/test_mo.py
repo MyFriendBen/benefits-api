@@ -581,14 +581,14 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assertEqual(result.value, 0)
 
     def test_scenario_1_standard_income_path_single_adult_below_the_limit(self):
-        screen = self.build(1, zipcode="64108", county="Jackson")
+        screen = self.build(1, zipcode="64108", county="Jackson County")
         head = self.add_person(screen, age=40)
         self.add_monthly_income(head, "wages", 2_600)  # $31,200/yr vs a $31,300 limit
         self.assertEqual(self.countable_income(screen), 31_200)
         self.assert_eligible(screen)
 
     def test_scenario_2_exact_200_percent_boundary_four_person_household(self):
-        screen = self.build(4, zipcode="65201", county="Boone")
+        screen = self.build(4, zipcode="65201", county="Boone County")
         head = self.add_person(screen, age=38)
         self.add_yearly_income(head, "wages", LIMIT[4])
         self.add_person(screen, "spouse", age=37)
@@ -598,7 +598,7 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assert_eligible(screen)
 
     def test_scenario_3_just_above_the_income_limit_no_categorical_pathway(self):
-        screen = self.build(3, zipcode="65802", county="Greene")
+        screen = self.build(3, zipcode="65802", county="Greene County")
         head = self.add_person(screen, age=40)
         self.add_yearly_income(head, "wages", LIMIT[3] + 100)
         self.add_person(screen, "spouse", age=39)
@@ -615,7 +615,7 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assert_eligible(screen)
 
     def test_scenario_5_ssi_categorical_above_the_income_limit(self):
-        screen = self.build(2, zipcode="65616", county="Taney")
+        screen = self.build(2, zipcode="65616", county="Taney County")
         head = self.add_person(screen, age=45)
         self.add_monthly_income(head, "sSI", 900)
         spouse = self.add_person(screen, "spouse", age=44)
@@ -635,7 +635,7 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assert_eligible(screen)
 
     def test_scenario_7_minors_wages_and_unemployment_are_both_excluded(self):
-        screen = self.build(2, zipcode="65201", county="Boone")
+        screen = self.build(2, zipcode="65201", county="Boone County")
         head = self.add_person(screen, age=42)
         self.add_yearly_income(head, "wages", 42_000)
         child = self.add_person(screen, "child", age=15)
@@ -654,7 +654,7 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assert_ineligible(screen)
 
     def test_scenario_9_income_aggregated_across_two_adults(self):
-        screen = self.build(2, zipcode="65201", county="Boone")
+        screen = self.build(2, zipcode="65201", county="Boone County")
         head = self.add_person(screen, age=36)
         self.add_yearly_income(head, "wages", 24_000)
         spouse = self.add_person(screen, "spouse", age=35)
@@ -664,7 +664,7 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assert_ineligible(screen)
 
     def test_scenario_10_gifts_are_excluded(self):
-        screen = self.build(1, zipcode="64801", county="Jasper")
+        screen = self.build(1, zipcode="64801", county="Jasper County")
         head = self.add_person(screen, age=29)
         self.add_yearly_income(head, "wages", 31_000)
         self.add_yearly_income(head, "gifts", 5_000)
@@ -673,7 +673,7 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assert_eligible(screen)
 
     def test_scenario_11_child_support_paid_is_not_deducted(self):
-        screen = self.build(1, zipcode="65802", county="Greene")
+        screen = self.build(1, zipcode="65802", county="Greene County")
         head = self.add_person(screen, age=44)
         self.add_yearly_income(head, "wages", 32_000)
         self.add_expense(screen, "childSupport", 12_000)
@@ -692,7 +692,7 @@ class TestMoWapSpecScenarios(MoWapTestCase):
         self.assert_eligible(screen)
 
     def test_scenario_12_household_size_above_8_applies_the_per_person_extension(self):
-        screen = self.build(9, zipcode="64108", county="Jackson")
+        screen = self.build(9, zipcode="64108", county="Jackson County")
         head = self.add_person(screen, age=48)
         self.add_yearly_income(head, "wages", LIMIT[9])
         self.add_person(screen, "spouse", age=47)

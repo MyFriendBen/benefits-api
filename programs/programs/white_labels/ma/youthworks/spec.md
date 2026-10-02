@@ -78,7 +78,7 @@ Sources: YouthWorks RFP 2026–27, Section C (Available Funding, p.8; Participan
 - [ ] Scenario 12 (Mixed Household — Eligible 16-Year-Old, Ineligible 12-Year-Old): **eligible**, **$2,400/yr**
 - [ ] Scenario 13 (Multiple Eligible Youth — Two Teens in Same Household): **eligible**, **$4,800/yr**
 - [ ] Scenario 14 (Edge Case — Youth Turning 14 This Month): **eligible**, **$2,400/yr**
-- [ ] Scenario 15 (Out-of-State — 16-Year-Old in Providence, RI): **ineligible**
+- [ ] Scenario 15 (Out-of-State — 16-Year-Old in Providence, RI): **rejected at screen creation** (400 on `zipcode`)
 - [ ] Scenario 16 (Over-Income — 22-Year-Old HoH, 1-Person Household): **ineligible**
 
 ## Test Scenarios

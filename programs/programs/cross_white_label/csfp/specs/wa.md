@@ -251,7 +251,7 @@
 
 **Steps**:
 
-* Location: Enter ZIP code `97201`, Select county `Multnomah`
+* Location: Enter ZIP code `97201`, Select county `Multnomah County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1957` (age 68), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$950` per month, No other income sources, Insurance: None, Citizenship: US Citizen
 
