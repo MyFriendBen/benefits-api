@@ -80,6 +80,10 @@ class HudIncomeClient:
             # so the entry also covers a Missouri-side ZIP once MO HCV ships.
             "Wichita, KS HUD Metro FMR Area",
             "Kansas City, MO-KS HUD Metro FMR Area",
+            # Missouri (MO HCV). HUD's FY2026 SAFMR workbook and Income Limits
+            # summary both render this area name identically; matched by exact
+            # string equality against `area_name` as the HUD FMR API returns it.
+            "St. Louis, MO-IL HUD Metro FMR Area",
         }
     )
 
