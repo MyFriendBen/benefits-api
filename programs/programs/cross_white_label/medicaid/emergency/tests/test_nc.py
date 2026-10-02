@@ -28,7 +28,7 @@ class TestNcEmergencyMedicaid(CustomCalculatorTestCase):
                 self.assertEqual(eligible, expected)
 
     def test_value_counts_each_eligible_member(self):
-        e, eligible = self.eligible_ages(64, 65)
+        e, eligible = self.eligible_ages(63, 64, 65)
 
-        self.assertEqual(eligible, [64])
-        self.assertEqual(e.value, NcEmergencyMedicaid.member_amount)
+        self.assertEqual(eligible, [63, 64])
+        self.assertEqual(e.value, 2 * NcEmergencyMedicaid.member_amount)
