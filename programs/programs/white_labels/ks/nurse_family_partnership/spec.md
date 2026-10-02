@@ -135,7 +135,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 ### Scenario 6: First-Time Pregnant Woman in Shawnee County — Second Distinct ZIP Code
 
-**What we're checking**: Validates that a different Topeka ZIP code (66602) within Shawnee County is correctly mapped to the NFP service area, confirming geographic eligibility is not limited to one specific ZIP
+**What we're checking**: Validates that a different Topeka ZIP code (66605) within Shawnee County is correctly mapped to the NFP service area, confirming geographic eligibility is not limited to one specific ZIP
 **Expected**: Eligible, value: $2,400/year
 
 **Steps**:

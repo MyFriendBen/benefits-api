@@ -243,9 +243,9 @@
 
 ---
 
-### Scenario 15: Non-Washington Resident — Out-of-State Senior Should Be Ineligible
+### Scenario 15: Non-Washington Resident — Out-of-State ZIP Rejected at Intake
 
-**What we're checking**: Verifies that an applicant who otherwise meets all CSFP criteria (age 60+, income below 150% FPL, no FDPIR participation) but resides outside Washington State is correctly identified as ineligible due to the state residency requirement
+**What we're checking**: Verifies that an applicant who otherwise meets all CSFP criteria (age 60+, income below 150% FPL, no FDPIR participation) but enters a ZIP outside Washington State is rejected at screen creation, before eligibility is calculated: the state residency requirement is enforced by ZIP validation at intake
 
 **Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `97201` is not in the WA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
@@ -255,7 +255,7 @@
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1957` (age 68), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$950` per month, No other income sources, Insurance: None, Citizenship: US Citizen
 
-**Why this matters**: This test isolates the Washington State residency requirement (7 CFR 247.9(a); WA CSFP State Plan Section 2). The applicant clearly satisfies every other eligibility criterion — age well above 60, income well below 150% FPL, no disqualifying program participation — so the only factor that should drive ineligibility is the out-of-state ZIP and county.
+**Why this matters**: This test isolates the Washington State residency requirement (7 CFR 247.9(a); WA CSFP State Plan Section 2). The applicant clearly satisfies every other eligibility criterion — age well above 60, income well below 150% FPL, no disqualifying program participation — so the out-of-state ZIP is the only reason the screen is rejected.
 
 ---
 
