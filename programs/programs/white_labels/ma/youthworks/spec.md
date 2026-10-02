@@ -78,7 +78,7 @@ Sources: YouthWorks RFP 2026–27, Section C (Available Funding, p.8; Participan
 - [ ] Scenario 12 (Mixed Household — Eligible 16-Year-Old, Ineligible 12-Year-Old): **eligible**, **$2,400/yr**
 - [ ] Scenario 13 (Multiple Eligible Youth — Two Teens in Same Household): **eligible**, **$4,800/yr**
 - [ ] Scenario 14 (Edge Case — Youth Turning 14 This Month): **eligible**, **$2,400/yr**
-- [ ] Scenario 15 (Out-of-State — 16-Year-Old in Providence, RI): **ineligible**
+- [ ] Scenario 15 (Out-of-State — 16-Year-Old in Providence, RI): **rejected at screen creation** (400 on `zipcode`)
 - [ ] Scenario 16 (Over-Income — 22-Year-Old HoH, 1-Person Household): **ineligible**
 
 ## Test Scenarios
@@ -316,9 +316,9 @@ Sources: YouthWorks RFP 2026–27, Section C (Available Funding, p.8; Participan
 
 ### Scenario 15: Out-of-State — 16-Year-Old in Providence, RI
 
-**What we're checking**: Youth living outside Massachusetts is correctly ineligible even if all other criteria are met.
+**What we're checking**: Youth living outside Massachusetts is rejected at screen creation, before eligibility is calculated, even if all other criteria are met.
 
-**Expected**: Not eligible
+**Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `02903` is not in the MA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
 - **Location**: ZIP code `02903`, city `Providence, RI`
@@ -327,7 +327,7 @@ Sources: YouthWorks RFP 2026–27, Section C (Available Funding, p.8; Participan
 - **Person 2**: Birth month/year: `January 2010` (age 16), Relationship: child, No income
 - **Person 3**: Birth month/year: `May 2014` (age 12), Relationship: child, No income
 
-**Why this matters**: Confirms the MA residency requirement is enforced — a youth who meets age and income criteria but lives outside Massachusetts is excluded.
+**Why this matters**: Confirms the MA residency requirement is enforced — a youth who meets age and income criteria but lives outside Massachusetts is rejected at intake.
 
 ---
 

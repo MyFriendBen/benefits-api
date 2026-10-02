@@ -153,14 +153,14 @@ The core screening factors are fully covered: age (under 19), income (at or belo
 
 Each scenario lists PE-verified expected eligibility and premium. Birth years assume the current year is 2026. Income is the household total (placed on the head unless noted); premium is per family.
 
-> **County naming note:** Scenarios use bare KS county names (`Sedgwick`, `Riley`, `Shawnee`, `Douglas`, `Finney`) with no "County" suffix — consistent with the TX/IL convention in `test_case_schema.json` and confirmed against the KS SNAP config. All ZIP↔county pairings are verified correct (67202 Sedgwick/Wichita, 66502 Riley/Manhattan, 66604 Shawnee/Topeka, 66044 Douglas/Lawrence, 67846 Finney/Garden City).
+> **County naming note:** Scenarios use the suffixed KS county names stored in the KS white label's `counties_by_zipcode` (`Sedgwick County`, `Riley County`, `Shawnee County`, `Douglas County`, `Finney County`); the API rejects bare names with a 400 on `county`. ZIP↔county pairings: 67202 Sedgwick County/Wichita, 66502 Riley County/Manhattan, 66604 Shawnee County/Topeka, 66044 Douglas County/Lawrence, 67846 Finney County/Garden City.
 
 ### Scenario 1: Golden path — uninsured child, working family
 **What we're checking**: Typical eligible household — child under 19, income above the Medicaid threshold but under the 255% CHIP cap, KS resident, no other coverage.
 **Expected**: Eligible · coverage value **$1,896/yr** (PE `chip` / `per_capita_chip`) · **$20/mo** premium (child FPL ≈176%)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$2,800`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, employment income `$1,200`/mo, insurance: none
@@ -175,7 +175,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Eligible · coverage value **$1,896/yr** (PE `chip` / `per_capita_chip`) · **$0/mo** premium (child FPL ≈146%)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$3,333`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, no income, insurance: none
@@ -190,7 +190,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Eligible · coverage value **$1,896/yr** (PE `chip` / `per_capita_chip`) · **$30/mo** premium (child FPL ≈201%)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$4,583`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, no income, insurance: none
@@ -205,7 +205,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Eligible · coverage value **$1,896/yr** (PE `chip` / `per_capita_chip`) · **$50/mo** premium (child FPL ≈253%)
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$5,750`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, no income, insurance: none
@@ -220,7 +220,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Not eligible (child FPL ≈264%)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$6,000`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, no income, insurance: none
@@ -235,7 +235,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Not eligible for CHIP (child is Medicaid-eligible; child FPL ≈110%)
 
 **Steps**:
-- **Location**: ZIP `67846`, county `Finney`
+- **Location**: ZIP `67846`, county `Finney County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$2,500`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, no income, insurance: none
@@ -250,7 +250,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Eligible · coverage value **$1,896/yr** (PE `chip` / `per_capita_chip`) · **$20/mo** premium (FPL ≈176%)
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$2,800`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, employment income `$1,200`/mo, insurance: none
@@ -265,7 +265,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Not eligible (age ≥ 19)
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `September 1981`, employment income `$2,500`/mo, insurance: none
 - **Person 2**: Child, born `March 2007` (turned 19 in March 2026), no income, insurance: none, not on Medicaid
@@ -279,7 +279,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Not eligible (no CHIP-eligible person in household)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$2,500`/mo, insurance: none
 - **Person 2**: Spouse, born `January 1990`, no income, insurance: none
@@ -293,7 +293,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Not eligible (child has other coverage)
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$3,200`/mo, insurance: employer / group health plan
 - **Person 2**: Spouse, born `September 1989`, employment income `$1,500`/mo, insurance: employer / group health plan
@@ -308,7 +308,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Eligible for the uninsured child · coverage value **$1,896/yr** (PE `chip` / `per_capita_chip`) · **$0/mo** premium (FPL ≈164%); the insured child is excluded ($0).
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 4 people
 - **Person 1**: Head of Household, born `March 1988`, employment income `$3,000`/mo, insurance: employer / group health plan
 - **Person 2**: Spouse, born `September 1991`, employment income `$1,500`/mo, insurance: employer / group health plan
@@ -324,7 +324,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Not eligible for CHIP — infant is **Medicaid-eligible** (child FPL ≈158%, below the ≈170% infant Medicaid line)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$3,600`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, no income, insurance: none
@@ -339,7 +339,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Not eligible for CHIP — child is **Medicaid-eligible** (child FPL ≈145%, below the ≈154% age 1–5 Medicaid line)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$3,300`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, no income, insurance: none
@@ -352,7 +352,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Eligible · coverage value **$1,896/yr** (PE `chip` / `per_capita_chip`) · **$20/mo** premium (child FPL ≈177%)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1982` (age 44), employment income `$3,200`/mo, insurance: none
 - **Person 2**: Child, born `March 2008` (age 18), no income, insurance: none, not on Medicaid
@@ -366,7 +366,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: **Ineligible / $0** — child has private direct-purchase coverage; both PE and MFB agree.
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$2,800`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, employment income `$1,200`/mo, insurance: none
@@ -381,7 +381,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 **Expected**: Eligible · coverage value **$3,792/yr** (PE raw per child $1,896.4944; 2 × = $3,792.99, which the platform **truncates** to the integer **$3,792** — the per-child display value is still $1,896) · **$20/mo** premium (per-family, FPL ≈178%)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 4 people
 - **Person 1**: Head of Household, born `March 1986`, employment income `$4,000`/mo, insurance: none
 - **Person 2**: Spouse, born `September 1988`, employment income `$800`/mo, insurance: none

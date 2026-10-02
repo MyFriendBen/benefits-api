@@ -29,7 +29,7 @@
 
 3. **Household must reside in Washington State**
    - Screener fields: `zipcode`, `county`
-   - ⚠️ **Known platform limitation:** The PolicyEngine-based calculator infrastructure hardcodes `state = "WA"` for all screens submitted under the `wa` white label (via `WaStateCodeDependency`). The ZIP code is not validated against WA state boundaries at the calculator level. In practice, users access the WA screener via a WA-specific URL, so out-of-state ZIPs are an edge case. This applies to all PE-based state programs across all states — it is a platform design decision, not a wa_tanf-specific bug. See Scenario 16.
+   - Enforced at intake: screen creation rejects any ZIP outside the WA ZIP map with a 400 on `zipcode`, as the browser's ZIP step does. The calculator itself does not check the ZIP — `WaStateCodeDependency` sends `state = "WA"` for every `wa` screen. See Scenario 16.
    - Source: [Washington DSHS TANF Program Overview](https://www.dshs.wa.gov/esa/community-services-offices/temporary-assistance-needy-families); RCW 74.04.005
 
 4. **Household resources/assets must not exceed $12,000**
@@ -322,11 +322,11 @@ Source: [WAC 388-478-0020](https://app.leg.wa.gov/WAC/default.aspx?cite=388-478-
 
 ---
 
-### Scenario 16: Out-of-State ZIP Code — Known Platform Limitation
+### Scenario 16: Out-of-State ZIP Code — Rejected at Intake
 
-**What we're checking**: Residency exclusion via ZIP. ⚠️ **Known platform limitation (MFB-749):** the PolicyEngine-based calculator infrastructure hardcodes `state = "WA"` for all screens submitted under the `wa` white label, so ZIP-based state validation does not occur at the calculator level. This scenario will return Eligible even with an Oregon ZIP code. The scenario is retained for documentation purposes; in practice, users access the WA screener via a WA-specific URL. This is not a wa_tanf-specific bug — it applies to all PE-based state programs across all states.
+**What we're checking**: Residency exclusion via ZIP. The PolicyEngine-based calculators still hardcode `state = "WA"` for the `wa` white label, so residency is enforced at intake instead: the API rejects any ZIP outside the WA ZIP map, as the browser's ZIP step does.
 
-**Expected**: Eligible (per known platform behavior — *spec-intent would be Ineligible if ZIP validation were enforced*)
+**Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `97201` is not in the WA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
 

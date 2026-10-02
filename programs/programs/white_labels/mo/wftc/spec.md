@@ -146,7 +146,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $333
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -163,7 +163,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $104
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 33 in TY2023), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 8 in TY2023), Has income: `No`
@@ -180,7 +180,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$6,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -197,7 +197,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$25,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -214,7 +214,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $292
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$35,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -231,7 +231,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$55,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -248,7 +248,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $192
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,400` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -265,7 +265,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,401` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -282,7 +282,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $40
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 33 in TY2023), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,050` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 8 in TY2023), Has income: `No`
@@ -299,7 +299,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $152
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 34 in TY2024), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,300` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 9 in TY2024), Has income: `No`
@@ -316,7 +316,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 34 in TY2024), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,301` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 9 in TY2024), Has income: `No`
@@ -333,7 +333,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $16
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1995` (age 30), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$18,000` per year
 - **Current Benefits**: Select `None`
@@ -349,7 +349,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $401
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$45,000` per year
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `June 1990` (age 35), Has income: `No`
@@ -367,7 +367,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$28,400` per year, Annual real estate taxes paid: `$1,200`
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -384,7 +384,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible, $0
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Rental Income`, Income amount: `$5,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -405,7 +405,7 @@ Missouri's real test would route this filer to Publication 596 Worksheet 1, whos
 **Expected**: Eligible, $14
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$30,000` per year, Annual real estate taxes paid: `$1,010`
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`

@@ -109,7 +109,7 @@ def make_member(
 DERIVE = object()
 
 
-def make_calculator(members=None, household_size=DERIVE, county="Sedgwick", zipcode="67202", rent=0, mortgage=0):
+def make_calculator(members=None, household_size=DERIVE, county="Sedgwick County", zipcode="67202", rent=0, mortgage=0):
     if members is None:
         members = [make_member(born=(1990, 3))]
     if household_size is DERIVE:
@@ -705,7 +705,7 @@ class TestKsHcvSpecScenarios(TestCase):
             income_limit=TOPEKA_VLI[7],
             payment_standard=TOPEKA_FMR[4],
             expected_value=2_436,
-            county="Shawnee",
+            county="Shawnee County",
             zipcode="66604",
         )
 
@@ -717,7 +717,7 @@ class TestKsHcvSpecScenarios(TestCase):
             income_limit=TOPEKA_VLI[1],
             payment_standard=TOPEKA_FMR[0],
             expected_value=9_504,
-            county="Shawnee",
+            county="Shawnee County",
             zipcode="66604",
         )
 
@@ -732,7 +732,7 @@ class TestKsHcvSpecScenarios(TestCase):
             income_limit=TOPEKA_VLI[3],
             payment_standard=TOPEKA_FMR[2],
             expected_value=6_504,
-            county="Shawnee",
+            county="Shawnee County",
             zipcode="66604",
         )
 
@@ -792,7 +792,7 @@ class TestKsHcvSpecScenarios(TestCase):
             income_limit=KANSAS_CITY_VLI[2],
             payment_standard=KANSAS_CITY_SAFMR[1],
             expected_value=8_040,
-            county="Wyandotte",
+            county="Wyandotte County",
             zipcode="66103",
         )
 

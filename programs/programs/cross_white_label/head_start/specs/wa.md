@@ -234,7 +234,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$20,762/year** (2 eligible × $10,381)
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1994` (age 32), HoH, Employment income `$1,200`/month, US Citizen
 - **Person 2:** Birth `August 2021` (age 4), Child, no income
@@ -251,7 +251,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: HS Preschool age 3)
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `June 1994` (age 31), HoH, Employment income `$27,320` per year (frequency: **`yearly`**)
 - **Person 2:** Birth `January 1996` (age 30), Spouse, no income
@@ -270,7 +270,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: HS Preschool age 3)
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1990` (age 36), HoH, Employment income `$27,319` per year (frequency: `yearly`)
 - **Person 2:** Birth `August 1992` (age 33), Spouse, no income
@@ -287,7 +287,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$20,762/year** (2 eligible)
 
-- **Location:** ZIP `98103`, County `King`
+- **Location:** ZIP `98103`, County `King County`
 - **Household size:** 4
 - **Person 1:** Birth `March 1991` (age 35), HoH, Employment income `$2,750`/month
 - **Person 2:** Birth `August 1993` (age 32), Spouse, no income
@@ -305,7 +305,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Not eligible
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 2
 - **Person 1:** Birth `March 1990` (age 36), HoH, Employment income `$21,641` per year (frequency: `yearly`), Special Circumstances: none (not pregnant)
 - **Person 2:** Birth `January 2022` (age 4), Child, not in foster care
@@ -321,7 +321,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: HS Preschool)
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1994` (age 32), HoH, Employment income `$1,800`/month
 - **Person 2:** Birth `June 1995` (age 30), Spouse, no income
@@ -338,7 +338,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: EHS)
 
-- **Location:** ZIP `98902`, County `Yakima`
+- **Location:** ZIP `98902`, County `Yakima County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1994` (age 32), HoH, Employment income `$1,200`/month, US Citizen
 - **Person 2:** Birth `January 1996` (age 30), Spouse, no income, US Citizen
@@ -355,7 +355,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: HS Preschool)
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1990` (age 36), HoH, Employment income `$1,500`/month, US Citizen
 - **Person 2:** Birth `June 2020` (age 5, turning 6 in June 2026), Child, no income, US Citizen
@@ -374,7 +374,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 *Originally tested geographic eligibility. Effectively duplicates Scenario 1 now — exclude when picking validation cases.*
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1990` (age 36), HoH, Employment income `$1,500`/month
 - **Person 2:** Birth `January 1992` (age 34), Spouse, no income
@@ -389,7 +389,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Not eligible
 
-- **Location:** ZIP `98103`, County `King`
+- **Location:** ZIP `98103`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1990` (age 36), HoH, Employment income `$1,500`/month, US Citizen
 - **Person 2:** Birth `August 1992` (age 33), Spouse, no income, US Citizen
@@ -406,7 +406,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Not eligible
 
-- **Location:** ZIP `98103`, County `King`
+- **Location:** ZIP `98103`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1990` (age 36), HoH, Employment income `$1,500`/month
 - **Person 2:** Birth `January 1992` (age 34), Spouse
@@ -423,7 +423,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$20,762/year** (2 eligible: HS Preschool + EHS; 7-year-old excluded)
 
-- **Location:** ZIP `98103`, County `King`
+- **Location:** ZIP `98103`, County `King County`
 - **Household size:** 5
 - **Person 1:** Birth `March 1990` (age 36), HoH, Employment income `$1,800`/month
 - **Person 2:** Birth `June 1992` (age 33), Spouse, Employment income `$800`/month
@@ -442,7 +442,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$20,762/year** (2 eligible: ages 3 and 5; 6-year-old excluded)
 
-- **Location:** ZIP `98902`, County `Yakima`
+- **Location:** ZIP `98902`, County `Yakima County`
 - **Household size:** 5
 - **Person 1:** Birth `August 1990` (age 35), HoH, Employment income `$2,200`/month
 - **Person 2:** Birth `November 1992` (age 33), Spouse, no income
@@ -461,7 +461,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: pregnant woman via EHS)
 
-- **Location:** ZIP `98103`, County `King`
+- **Location:** ZIP `98103`, County `King County`
 - **Household size:** 1
 - **Person 1:** Birth `September 1998` (age 27), HoH, Employment income `$1,200`/month
 - **Special Circumstances:** Pregnant
@@ -477,7 +477,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: HS Preschool age 4)
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3
 - **Person 1:** Birth `March 1991` (age 35), HoH, Employment income `$2,500`/month
 - **Person 2:** Birth `August 1991` (age 34), Spouse, SSI `$1,000`/month
@@ -494,7 +494,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: HS Preschool age 3)
 
-- **Location:** ZIP `98101`, County `King`
+- **Location:** ZIP `98101`, County `King County`
 - **Household size:** 2
 - **Person 1:** Birth `April 1996` (age 30), HoH, Employment income `$2,000`/month
 - **Person 2:** Birth `February 2023` (age 3), Child, no income
@@ -510,7 +510,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: foster child age 4)
 
-- **Location:** ZIP `98103`, County `King`
+- **Location:** ZIP `98103`, County `King County`
 - **Household size:** 2
 - **Person 1:** Birth `February 1986` (age 40), HoH, Employment income `$3,000`/month
 - **Person 2:** Birth `September 2021` (age 4), `fosterChild`, no income

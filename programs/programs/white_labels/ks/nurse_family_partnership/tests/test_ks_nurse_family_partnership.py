@@ -108,7 +108,7 @@ class TestKsNurseFamilyPartnership(CustomCalculatorTestCase):
     # Geography is gated at the county level; ZIP is informational.
     # ------------------------------------------------------------------ #
     def test_scenario_6_second_shawnee_zip(self):
-        screen = self.make_screen(county="Shawnee County", zipcode="66602")
+        screen = self.make_screen(county="Shawnee County", zipcode="66605")
         self.add_member(screen, age=24, pregnant=True, monthly_income=1_500)
         self.assertTrue(self.make_calculator(screen).eligible().eligible)
 
