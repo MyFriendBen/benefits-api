@@ -134,19 +134,15 @@ class MoConfigurationData(ConfigurationData):
 
     # ==========================================================================================
     # COUNTIES BY ZIPCODE
-    # Full statewide mapping generated from the HUD USPS ZIP-County crosswalk (state "MO").
-    # Each ZIP is assigned to the county with the highest TOT_RATIO from that crosswalk.
-    # ==========================================================================================
-
-    # ==========================================================================================
-    # COUNTIES BY ZIPCODE
     # Source: HUD USPS ZIP-County crosswalk, **2026 Q2** (file ZIP-COUNTY_062026.xlsx),
     #   downloaded from https://www.huduser.gov/apps/public/uspscrosswalk/login
     # County names come from HUD fmr/listCounties/{state} (year=2025&updated=2025), except
     #   29510, which we spell "St. Louis City" -- PolicyEngine's independent-cities token
     #   depends on that exact string.
-    # Candidates with res_ratio == 0 are dropped, and each zip's counties are ordered by
-    #   descending residential ratio so the likeliest county is first in the dropdown.
+    # Each zip keeps every county with a nonzero residential share (res_ratio > 0), ordered by
+    #   descending res_ratio so the likeliest county is first in the dropdown. A business-only
+    #   zip (res_ratio 0 for every county) keeps all its counties, ordered by tot_ratio, so no
+    #   zip is dropped.
     # Regenerate with generate_ks_mo_zip_county_maps.py when a newer vintage is published.
     # ==========================================================================================
     counties_by_zipcode = {
