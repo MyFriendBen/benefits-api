@@ -27,9 +27,13 @@ class KsConfigurationData(ConfigurationData):
     more_help_options = {
         "moreHelpOptions": [
             {
+                # New label rather than a reworded one: `add_translation` updates the
+                # default-language text for an existing label but only creates the other
+                # languages when they are absent, so reusing "moreHelp.211.name.ks" would
+                # leave every non-English locale reading "United Way of Kansas" forever.
                 "name": {
-                    "_default_message": "Kansas 211 (United Way of Kansas)",
-                    "_label": "moreHelp.211.name.ks",
+                    "_default_message": "Kansas 211 (United Way of the Plains)",
+                    "_label": "moreHelp.211.name.ks.plains",
                 },
                 "link": "https://unitedwayplains.org/211-information-and-referral/",
                 "phone": {
