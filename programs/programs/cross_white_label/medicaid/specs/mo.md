@@ -288,7 +288,7 @@ Medicaid is valued per MFB convention as KFF's published average spending per fu
 **Expected**: Eligible — Adult Expansion, $7,445/year (not MHABD). Income ($1,700/mo via `pension`, deliberately not `sSI`/`sSDisability`) triggers a concurrent MHABD determination (criterion 5) via the self-reported `disabled` flag, but adjusted MHABD income ($1,700 − $20 = $1,680) exceeds the $1,131 non-spend-down standard — MHABD is only reachable via spend-down (non-mandatory), so Missouri's own choice/default mechanism (not independently implemented by MFB) defaults to AEG, and this scenario's result is PE's actual output. Gross income is under the $1,836 HH1 AEG ceiling.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1986 (age 40), `headOfHousehold`, not pregnant, `disabled`: yes (`long_term_disability`/`visually_impaired`: no), income type `pension` $1,700/mo, no employment income, not enrolled in Medicare, not receiving SSI
 
@@ -300,7 +300,7 @@ Medicaid is valued per MFB convention as KFF's published average spending per fu
 **Expected**: Child eligible — Children, $4,576/year (under $2,760 HH2 ceiling). Grandparent eligible — Seniors, $21,857/year (own $750/mo income, evaluated independently under MHABD's unconditional individual-income rule). Parent ineligible (over the $2,489 HH2 AEG ceiling).
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 3 people
 - **Person 1**: born March 1991 (age 35), `headOfHousehold`, not pregnant/disabled, employment income $2,600/mo, employer-sponsored insurance, not receiving Medicare or SSI
 - **Person 2**: born January 2018 (age 8), `child`, no income
@@ -314,7 +314,7 @@ Medicaid is valued per MFB convention as KFF's published average spending per fu
 **Expected**: Mother eligible — Adults (pregnant), $6,379/year. Disabled sibling eligible — People with Disabilities, $30,410/year (his $500/mo SSI is entered as unearned income then fully deducted per §0805.015.35, leaving $0 adjusted income; evaluated in his own MHABD unit). Father ineligible. Toddler ineligible — his MAGI household is parent+spouse+toddler (HH3), and their combined $4,000/mo income exceeds the $3,484 HH3 ceiling, even though neither parent's income alone would.
 
 **Steps**:
-- **Location**: ZIP `65201`, County `Boone`
+- **Location**: ZIP `65201`, County `Boone County`
 - **Household**: 4 people
 - **Person 1**: born March 1994 (age 32), `headOfHousehold`, pregnant: yes, employment income $2,000/mo, not receiving Medicare or SSI
 - **Person 2**: born June 1993 (age 33), `spouse`, employment income $2,000/mo, not receiving Medicare or SSI
@@ -342,7 +342,7 @@ MFB-1744.
 Deemed parental income uses **only** the biological parent's $4,300/month earned income (Person 2) — the stepparent's $3,000/month (Person 1) is entirely excluded (criterion 12). No other minor child is in the home, so no non-applying-sibling allocation applies. Calculation: $4,300 − $65 = $4,235, ÷ 2 = $2,117.50; combine with unearned income (none) and subtract the $20 exclusion: $2,117.50 − $20 = $2,097.50, floored to $2,097; subtract the one-parent living allowance ($994) = **$1,103.00** — under the $1,131 standard. Parent and stepparent are both independently ineligible for MHF/AEG (combined $7,300/mo, HH3).
 
 **Steps**:
-- **Location**: ZIP `65201`, County `Boone`
+- **Location**: ZIP `65201`, County `Boone County`
 - **Household**: 3 people
 - **Person 1**: born June 1988 (age 38), `headOfHousehold` — the stepparent, employment income $3,000/mo, not pregnant/disabled, not enrolled in Medicare or receiving SSI
 - **Person 2**: born April 1990 (age 36), `spouse` — the biological parent of Person 3, employment income $4,300/mo, no unearned income
@@ -358,7 +358,7 @@ Deemed parental income uses **only** the biological parent's $4,300/month earned
 **Expected**: Not eligible, despite otherwise-qualifying income.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1975 (age 51), `headOfHousehold`, employment income $1,000/mo, health insurance: Medicare
 
@@ -371,7 +371,7 @@ Deemed parental income uses **only** the biological parent's $4,300/month earned
 Uses an aged (66) rather than disabled applicant, to isolate the disregard math from criterion 6's separate SGA/IRWE data gap (SGA applies only to the disability-determination pathway).
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born April 1960 (age 66), `headOfHousehold`, not long_term_disability, employed, employment income $2,367/mo, no unearned income
 
@@ -396,7 +396,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Not eligible for Adult Expansion — SSI is an explicit exclusion (criterion 5). **Eligible via MHABD** — People with Disabilities, $30,410/year: SSI receipt is itself a sufficient disability-routing signal. His $500/mo SSI is deducted (§0805.015.35) before the MHABD test, leaving only $200/mo employment income — well under $1,131.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born June 1985 (age 41), `headOfHousehold`, not long_term_disability, not pregnant, employment income $200/mo, income type `sSI` $500/mo, not enrolled in Medicare
 
@@ -408,7 +408,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Both spouses eligible — Seniors, $21,857/year each. Combined couple income ($1,300/mo) minus one $20 personal exemption per couple (§0805.015.35: "Only one $20.00 exemption is allowed even if the income of a couple is being considered") = $1,280 — under the $1,533 couple standard, confirming the couple standard governs each spouse's own determination.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 2 people
 - **Person 1**: born March 1959 (age 67), `headOfHousehold`, married, living with spouse, not long_term_disability, income type `sSRetirement` $600/mo
 - **Person 2**: born June 1960 (age 66), `spouse`, married, living with Person 1, income type `sSRetirement` $700/mo
@@ -421,7 +421,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Not eligible for MHABD (fails the categorical gate, criterion 6) or Adult Expansion (over the AEG ceiling).
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1980 (age 46), `headOfHousehold`, not long_term_disability, not visually_impaired, not pregnant, employment income $3,000/mo, not enrolled in Medicare, not receiving SSI
 
@@ -433,7 +433,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Child not eligible — fails MHDC's categorical disability requirement (criterion 12) and ordinary children's Medicaid (over the $2,760 HH2 ceiling). Parent not eligible (over the $2,489 HH2 AEG ceiling).
 
 **Steps**:
-- **Location**: ZIP `65201`, County `Boone`
+- **Location**: ZIP `65201`, County `Boone County`
 - **Household**: 2 people
 - **Person 1**: born April 1985 (age 41), `headOfHousehold`, employment income $3,000/mo, not long_term_disability, not enrolled in Medicare, not receiving SSI
 - **Person 2**: born March 2015 (age 11), `child`, not long_term_disability, not visually_impaired, no income
@@ -459,7 +459,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Eligible — Adult Expansion, $7,445/year (not MHABD). $500/mo employment plus a $1,200/mo `sSDisability` income stream triggers a concurrent MHABD determination (same as a bare disability claim). Adjusted MHABD income: earned $500 − $65 = $435, ÷2 = $217.50; unearned $1,200 − $20 = $1,180; total = $1,397.50 — over $1,131, so only non-mandatory spend-down applies, defaulting to AEG.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1986 (age 40), `headOfHousehold`, not pregnant, income type `sSDisability` $1,200/mo, employment income $500/mo, not enrolled in Medicare, not receiving SSI
 
@@ -471,7 +471,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Adult Expansion, $7,445/year (committed PE result — see criterion 5). Adjusted MHABD income: ($1,600 − $65) ÷ 2 − $20 = $747.50, floored to $747 — under the $1,131 standard.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1986 (age 40), `headOfHousehold`, not pregnant, `disabled`: yes (`long_term_disability`: no, `visually_impaired`: no), employment income $1,600/mo, no unearned income, not enrolled in Medicare, not receiving SSI/SSDI
 
@@ -496,7 +496,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Adult Expansion, $7,445/year (committed PE result — see criterion 5). Unearned income of $1,350/mo (`pension`) produces adjusted income of exactly **$1,330** after the $20 exemption — precisely the blind non-spend-down standard.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1980 (age 46), `headOfHousehold`, not pregnant, income type `pension` $1,350/mo, no earned income, not enrolled in Medicare, not receiving SSI, `visually_impaired`: yes, `long_term_disability`: no
 
@@ -533,7 +533,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 **Expected**: Eligible via MHABD — valued at **Seniors, $21,857/year**, not People with Disabilities. KFF's Seniors definition is age 65+ regardless of disability.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1956 (age 70), `headOfHousehold`, `long_term_disability`: yes, income type `pension` $1,000/mo, no earned income, not enrolled in Medicare, not receiving SSI
 
@@ -548,7 +548,7 @@ Uses an aged (66) rather than disabled applicant, to isolate the disregard math 
 No non-applying-sibling allocation applies (only the two disabled-child applicants). Calculation: $5,273 − $65 = $5,208, ÷ 2 = $2,604; − $20 = $2,584; − $994 one-parent living allowance = $1,590 undivided; divided equally per Missouri's rule: $1,590 ÷ 2 = **$795.00 per child**. Both remain under $1,131 (eligible, non-spend-down).
 
 **Steps**:
-- **Location**: ZIP `65201`, County `Boone`
+- **Location**: ZIP `65201`, County `Boone County`
 - **Household**: 3 people
 - **Person 1**: born March 1986 (age 40), `headOfHousehold` — the parent, no other children in the home, employment income $5,273/mo, no unearned income, not pregnant/disabled, not enrolled in Medicare or receiving SSI
 - **Person 2**: born March 2015 (age 11), `child`, `long_term_disability`: yes, no income
@@ -625,7 +625,7 @@ No non-applying-sibling allocation applies (only the two disabled-child applican
 **Expected**: Adult Expansion, $7,445/year (committed PE result — see criterion 5). A $600/mo `sSDisability` stream plus $500/mo employment triggers the same concurrent determination as Scenario 18. Adjusted MHABD income: earned $500 − $65 = $435, ÷2 = $217.50; unearned $600 − $20 = $580; total = **$797.50** — under $1,131.
 
 **Steps**:
-- **Location**: ZIP `65101`, County `Cole`
+- **Location**: ZIP `65101`, County `Cole County`
 - **Household**: 1 person
 - **Person 1**: born March 1986 (age 40), `headOfHousehold`, not pregnant, income type `sSDisability` $600/mo, employment income $500/mo, not enrolled in Medicare, not receiving SSI
 

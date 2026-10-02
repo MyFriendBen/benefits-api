@@ -70,7 +70,7 @@ All 9 scenarios below were approved.
 
 **Steps**:
 
-Location: ZIP 98103, county King
+Location: ZIP 98103, county King County
 Household size: 4
 Person 1 (Head of Household): Birth June 1988 (age 37), earned income: Yes, monthly wages $3,200, filing status: Married Filing Jointly
 Person 2 (Spouse): Birth September 1990 (age 35), earned income: Yes, monthly wages $1,500
@@ -87,7 +87,7 @@ Person 4 (Child): Birth November 2019 (age 6)
 
 **Steps**:
 
-Location: ZIP 98103, county King
+Location: ZIP 98103, county King County
 Household size: 1
 Person 1 (Head of Household): Birth June 1991 (age 34), filing status: Single, earned income: Yes, monthly wages $1,593 
 
@@ -102,7 +102,7 @@ Person 1 (Head of Household): Birth June 1991 (age 34), filing status: Single, e
 
 **Steps**:
 
-Location: ZIP 98101, county King
+Location: ZIP 98101, county King County
 Household size: 1
 Person 1 (Head of Household): Birth May 2002 (age 24), filing status: Single, earned income: Yes, monthly wages $1,200
 
@@ -116,7 +116,7 @@ Person 1 (Head of Household): Birth May 2002 (age 24), filing status: Single, ea
 
 **Steps**:
 
-Location: Enter ZIP code 98103, Select county King
+Location: Enter ZIP code 98103, Select county King County
 Household: Number of people: 3
 Person 1: Birth month/year: June 1991 (age 34), Relationship: Head of Household, Has earned income: Yes, Monthly employment income: $2,500
 Person 2: Birth month/year: September 2016 (age 9), Relationship: Child, No income
@@ -133,7 +133,7 @@ Current Benefits: Select that the household already receives the Working Familie
 
 **Steps**:
 
-Location: ZIP 98103, county King
+Location: ZIP 98103, county King County
 Household size: 5
 Person 1 (Head of Household): Birth June 1988 (age 37), filing status: Married Filing Jointly, earned income: Yes, monthly wages $5,723 (annual ~$68,676)
 Person 2 (Spouse): Birth September 1990 (age 35), earned income: No
@@ -151,7 +151,7 @@ Person 5 (Child): Birth July 2019 (age 6)
 
 **Steps**:
 
-Location: ZIP 98103, county King
+Location: ZIP 98103, county King County
 Household size: 2
 Person 1 (Head of Household): Birth June 1990 (age 35), filing status: Single/Head of Household, earned income: Yes, monthly wages $4,000 (annual $48,000, below the $50,434 limit)
 Person 2 (Child): Birth September 2016 (age 9)
@@ -166,7 +166,7 @@ Person 2 (Child): Birth September 2016 (age 9)
 
 **Steps**:
 
-Location: ZIP 98144, county King
+Location: ZIP 98144, county King County
 Household size: 1
 Person 1 (Head of Household): Birth March 1954 (age 72), filing status: Single, earned income: No, income type: SSRetirement, monthly amount $1,400
 
@@ -180,7 +180,7 @@ Person 1 (Head of Household): Birth March 1954 (age 72), filing status: Single, 
 
 **Steps**:
 
-Location: ZIP 98103, county King
+Location: ZIP 98103, county King County
 Household size: 5
 Person 1 (Head of Household): Birth June 1985 (age 40), filing status: Married Filing Jointly, earned income: Yes, monthly wages $2,500
 Person 2 (Spouse): Birth September 1987 (age 38), earned income: Yes, monthly wages $1,500
@@ -198,7 +198,7 @@ Person 5 (Child): Birth July 2019 (age 6)
 
 **Steps**:
 
-Location: ZIP 98101, county King
+Location: ZIP 98101, county King County
 Household size: 1
 Person 1 (Head of Household): Birth January 2001 (age 25), filing status: Single, earned income: Yes, monthly wages $1,200
 

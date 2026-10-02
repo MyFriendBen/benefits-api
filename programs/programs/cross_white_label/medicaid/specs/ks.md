@@ -162,7 +162,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $3,648/yr (PREGNANT)
 
 **Steps**:
-- **Location**: ZIP `66603`, county `Shawnee`
+- **Location**: ZIP `66603`, county `Shawnee County`
 - **Household**: 1 person (MAGI size 2 — unborn counted)
 - **Person 1**: Head of Household, born `March 1991` (age 35), female, US citizen, pregnant: yes, employment income `$1,200`/mo, insurance: none
 
@@ -175,7 +175,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $3,648/yr (PREGNANT)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 1 person (MAGI size 2)
 - **Person 1**: Head of Household, born `September 1996` (age 29), female, US citizen, pregnant: yes, employment income `$2,900`/mo, insurance: none
 
@@ -188,7 +188,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: All eligible · $3,648/yr each (PARENT, OLDER_CHILD, YOUNG_CHILD)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `September 1991` (age 34), female, US citizen, not pregnant/disabled, employment income `$620`/mo, insurance: none, current benefits: SNAP
 - **Person 2**: Child, born `March 2018` (age 8), no income
@@ -203,7 +203,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Children eligible ($3,648/yr each); parent ineligible ($0)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1991` (age 35), female, US citizen, not pregnant/disabled, employment income `$900`/mo, insurance: none
 - **Person 2**: Child, born `January 2018` (age 8), no income
@@ -218,7 +218,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `February 1981` (age 45), male, US citizen, not pregnant/disabled, no dependent children, employment income `$350`/mo, insurance: none
 
@@ -231,7 +231,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `December 1961` (age 64), male, US citizen, not disabled, employment income `$250`/mo, insurance: none
 
@@ -244,7 +244,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Ineligible (ABD asset test)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1960` (age 66), male, US citizen, not disabled, Social Security income `$900`/mo, `household_assets`: `$5,000`, insurance: none
 
@@ -257,7 +257,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $20,508/yr (AGED)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1960` (age 66), male, US citizen, not disabled, Social Security income `$900`/mo, `household_assets`: `$1,500`, insurance: none
 
@@ -270,7 +270,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `May 1976` (age 50), male, US citizen, disabled: yes, receives SSDI, SSDI income `$800`/mo, insurance: none
 
@@ -283,7 +283,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED/SSI_RECIPIENT)
 
 **Steps**:
-- **Location**: ZIP `66102`, county `Wyandotte`
+- **Location**: ZIP `66102`, county `Wyandotte County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `June 1985` (age 40), female, US citizen, disabled: yes, SSI income `$943`/mo, `household_assets`: `$1,000`, insurance: none
 
@@ -296,7 +296,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Infant eligible ($3,648/yr, INFANT); parents ineligible ($0)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1994` (age 32), female, US citizen, not pregnant, employment income `$1,800`/mo, insurance: none
 - **Person 2**: Spouse, born `May 1993` (age 33), male, employment income `$800`/mo, insurance: none
@@ -311,7 +311,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Child eligible ($3,648/yr, OLDER_CHILD); parent ineligible ($0)
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1985` (age 41), female, US citizen, not pregnant/disabled, employment income `$1,600`/mo, insurance: employer
 - **Person 2**: Child, born `September 2014` (age 11), no income, insurance: none
@@ -325,7 +325,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: PE returns eligible (PREGNANT, $3,648/yr if shown) — but MFB suppresses the result because the household is already enrolled
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `September 1991` (age 34), female, US citizen, pregnant: yes, employment income `$400`/mo, insurance: Medicaid, current benefits: Medicaid/KanCare
 
@@ -338,7 +338,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Mother eligible · $3,648/yr (PREGNANT); the unborn is **not** a separate PE person / enrollee
 
 **Steps**:
-- **Location**: ZIP `66603`, county `Shawnee`
+- **Location**: ZIP `66603`, county `Shawnee County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1996` (age 30), female, US citizen, pregnant: yes, employment income `$400`/mo, insurance: none
 - **Person 2**: Child, born `December 2026` (future / unborn)
@@ -352,7 +352,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `May 2006` (age 20), male, US citizen, not disabled/pregnant, no children, employment income `$300`/mo, insurance: none
 
@@ -365,7 +365,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `May 1976` (age 50), male, US citizen, disabled: yes, employment income `$2,000`/mo (earned, above the $1,690/mo SGA threshold), insurance: none
 
@@ -378,7 +378,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `August 1975` (age 50), female, US citizen, visually impaired: yes, disabled: no, employment income `$500`/mo, insurance: none
 
@@ -391,7 +391,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `March 1970` (age 56), male, US citizen, long-term disability: yes, disabled: no, no SSDI income, employment income `$600`/mo, insurance: none
 
@@ -404,7 +404,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `January 1958` (age 68), male, US citizen, not disabled, Social Security income `$1,100`/mo, insurance: none
 
@@ -417,7 +417,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED, not the $20,508 AGED value)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1958` (age 68), male, US citizen, disabled: yes, Social Security retirement `$500`/mo + SSDI `$300`/mo (total `$800`/mo), insurance: none
 
@@ -430,7 +430,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person (MAGI size 2)
 - **Person 1**: Head of Household, born `March 1998` (age 28), female, US citizen, pregnant: yes, employment income `$3,500`/mo, insurance: none
 
@@ -443,7 +443,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Both not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `September 1990` (age 34), female, US citizen, not pregnant/disabled, employment income `$3,500`/mo, insurance: none
 - **Person 2**: Child, born `January 2022` (age 4), no income
@@ -457,7 +457,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Both not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `January 1991` (age 35), female, US citizen, not pregnant/disabled, employment income `$3,500`/mo, insurance: none
 - **Person 2**: Child, born `April 2026` (age 0, infant), no income
@@ -471,7 +471,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Both not eligible
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1985` (age 41), female, US citizen, not pregnant/disabled, employment income `$2,600`/mo, insurance: none
 - **Person 2**: Child, born `September 2014` (age 11), no income

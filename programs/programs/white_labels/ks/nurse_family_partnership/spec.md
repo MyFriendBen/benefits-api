@@ -65,7 +65,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2003` (age 22), Select sex: `Female`, Indicate pregnant: `Yes`, Indicate number of existing children: `0` (first-time parent, no previous live births), Indicate citizenship/immigration status: `US Citizen`, Indicate income: `Yes`, Enter monthly employment income: `$1,200`, Indicate current health insurance: `Medicaid`
 
@@ -80,7 +80,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66612`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66612`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `August 2008` (age 17, turning 18 in August 2026), Sex: `Female`, Indicate pregnant: `Yes`, Number of existing children: `0` (first-time parent), Relationship: `Head of Household`, Has income: `Yes`, Enter employment income: `$1,300` per month (approximately 98% FPL for household of 1), Citizenship status: `US Citizen`
 
@@ -95,7 +95,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2001` (age 24), Sex: `Female`, Relationship: `Head of Household`, Indicate `pregnant`, Indicate `first pregnancy` / no previous live births, Number of children: `0`, Citizenship status: `US Citizen`, Enter monthly gross income of `$2,200` ($26,400/year ≈ 165% FPL for household of 1 — just below the 171% FPL threshold of $2,274/month)
 
@@ -110,7 +110,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2002` (age 23), Select sex: `Female`, Indicate pregnant: `Yes`, Indicate first pregnancy / no previous live births: `Yes` (no existing children), Enter monthly gross income: `$2,274` ($27,288/year; 2026 FPL for 1-person household = $15,960 × 1.71 = $27,292/year ≈ $2,274/month), Income source: `Employment / wages`, Citizenship status: `US Citizen`
 
@@ -125,7 +125,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 1999` (age 26), Sex: `Female`, Indicate `Pregnant`, Indicate this is her first pregnancy / no existing children, Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$2,800` per month, No current benefits or insurance
 
@@ -140,7 +140,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66602`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66605`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2001` (age 24), Select sex: `Female`, Indicate pregnant: `Yes`, Number of existing children: `0`, Income type: `Employment / wages`, Enter monthly income: `$1,500`
 
@@ -155,7 +155,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2003` (age 22), Select sex: `Female`, Indicate pregnant: `Yes`, Indicate number of existing children: `0` (first-time mother), Indicate citizenship status: `US Citizen`
 * **Income**: Enter monthly employment income: `$1,200`
@@ -172,7 +172,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 * **Household**: Number of people: `3` (mother, existing child, and unborn child counted as part of household)
 * **Person 1**: Birth month/year: `September 1998` (age 27), Sex: `Female`, Relationship: `Head of Household`, Indicate she is `pregnant`, Indicate she has `1` existing child (not a first-time parent), Citizenship: `US Citizen`
 * **Person 2**: Birth month/year: `March 2024` (age 2), Sex: `Female`, Relationship: `Child`, This is the existing child from a previous birth
@@ -190,7 +190,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `September 1998` (age 27), Sex: `Female`, Relationship: `Head of Household`, Pregnant: `Yes`, Number of children: `0` (first-time mother, no previous live births), Has income: `Yes`, Employment income: `$1,200` per month, Citizenship: `US Citizen`
 * **Person 2**: Birth month/year: `March 1996` (age 30), Sex: `Male`, Relationship: `Spouse/Partner`, Pregnant: `No`, Has income: `Yes`, Employment income: `$1,800` per month, Citizenship: `US Citizen`
@@ -209,7 +209,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `September 2002` (age 23), Sex: `Female`, Relationship: `Head of Household`, Pregnant: `Yes`, Number of children: `0` (first-time parent, no previous live births), US citizen: `Yes`, Monthly income: `$1,200` (part-time employment)
 * **Person 2**: Birth month/year: `March 2006` (age 20), Sex: `Female`, Relationship: `Sister` or `Other related`, Pregnant: `Yes`, Number of children: `0` (first-time parent, no previous live births), US citizen: `Yes`, Monthly income: `$800` (part-time employment)
@@ -228,7 +228,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 1998` (age 27), Sex: `Female`, Relationship: `Head of Household`, Indicate she is currently pregnant, Number of children in household: `0` (no living children - previous pregnancy resulted in stillbirth, not a live birth), Enter monthly income: `$1,200`, Income type: `Employment/wages`, Income frequency: `Monthly`
 
@@ -243,7 +243,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66061`, Select county `Johnson`
+* **Location**: Enter ZIP code `66061`, Select county `Johnson County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 2000` (age 26), Sex: `Female`, Indicate pregnant: `Yes`, Number of existing children: `0` (first-time parent), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,400` per month, Citizenship: `US Citizen`
 
@@ -258,7 +258,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66044`, Select county `Douglas`
+* **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2001` (age 24), Sex: `Female`, Indicate pregnant: `Yes`, Number of existing children: `0` (first-time parent), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,200` per month, Citizenship: `US Citizen`
 
@@ -273,7 +273,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2001` (age 24), Sex: `Female`, Indicate pregnant: `No`, Number of existing children: `0`, Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,200` per month, Citizenship: `US Citizen`
 

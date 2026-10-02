@@ -318,7 +318,7 @@ Sources: YouthWorks RFP 2026–27, Section C (Available Funding, p.8; Participan
 
 **What we're checking**: Youth living outside Massachusetts is correctly ineligible even if all other criteria are met.
 
-**Expected**: Not eligible
+**Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `02903` is not in the MA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
 - **Location**: ZIP code `02903`, city `Providence, RI`

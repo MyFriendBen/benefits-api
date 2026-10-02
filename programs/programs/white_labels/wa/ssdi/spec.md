@@ -128,7 +128,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Eligible, value: $1,634
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1981` (age 44), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -142,7 +142,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1981` (age 44), Special Circumstances: select `None`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -156,7 +156,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$1,700`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -170,7 +170,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Social Security Retirement`, Income amount: `$1,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `Social Security Retirement`
@@ -184,7 +184,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Eligible, value: $1,634
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$1,690`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -198,7 +198,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1957` (age 68), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -212,7 +212,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Eligible, value: $1,634
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1981` (age 44), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, and `Blind or visually impaired`, Has income: `Yes`, Income type: `Wages`, Income amount: `$2,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -226,7 +226,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Eligible, value: $1,634
 
 **Steps:**
-- **Location:** Enter ZIP code `98103`, Select county `King`
+- **Location:** Enter ZIP code `98103`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `November 1960` (age 65), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -240,7 +240,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Expected:** Eligible, value: $1,634
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `3`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1976` (age 49), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$800`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `SSDI`, Income amount: `$1,200`, Income frequency: `Monthly`, Insurance: `None`

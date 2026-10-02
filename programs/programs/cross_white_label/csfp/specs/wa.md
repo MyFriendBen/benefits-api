@@ -69,7 +69,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1957` (age 68), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$950` per month, No other income sources, Insurance: None, Citizenship: US Citizen
 * **Current Benefits**: Do not select any current benefits (no FDPIR, no CSFP)
@@ -86,7 +86,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1966` (age 60, just turned 60 this month), Relationship: `Head of Household`, Has income: Yes, Social Security Retirement income: `$1,956` per month (approximately $23,475/year, which is right at 150% FPL for a household of 1 using 2026 HHS guidelines)
 * **Current Benefits**: Do not select any current benefits (no FDPIR)
@@ -103,7 +103,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `June 1953` (age 72), Relationship: Head of Household, Has income: Yes, Social Security Retirement: `$1,100` per month
 * **Person 2**: Birth month/year: `September 1955` (age 70), Relationship: Spouse, Has income: Yes, Social Security Retirement: `$470` per month
@@ -121,7 +121,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1961` (age 65), This person is the head of household, Has income: Yes, Social Security Retirement income: `$1,999` per month (approximately $23,988/year, just above the 150% FPL limit of ~$23,475/year for a 1-person household using 2025 HHS guidelines), No other income sources
 * **Current Benefits**: Do not select any current benefits
@@ -138,7 +138,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1966` (age 59), This person is 59 years old, which is below the minimum age of 60 required for CSFP
 * **Income**: Enter Social Security Retirement income of `$800` per month, This is well below the 150% FPL threshold for a single-person household, so income is not the disqualifying factor
@@ -156,7 +156,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98902`, Select county `Yakima`
+* **Location**: Enter ZIP code `98902`, Select county `Yakima County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1956` (age 69), Indicate this person is the head of household, Indicate US citizen
 * **Income**: Enter Social Security Retirement income of `$900` per month, No other income sources
@@ -174,7 +174,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `99201`, Select county `Spokane`
+* **Location**: Enter ZIP code `99201`, Select county `Spokane County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1960` (age 65), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$900` per month, No other income sources
 * **Current Benefits**: Select that the household currently receives **SNAP** (food stamps/EBT) benefits.
@@ -191,7 +191,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98201`, Select county `Snohomish`
+* **Location**: Enter ZIP code `98201`, Select county `Snohomish County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1962` (age 63), Relationship: Head of Household, Has income: Yes, Social Security Retirement: `$950` per month
 * **Person 2**: Birth month/year: `September 1975` (age 50), Relationship: Spouse, Has income: Yes, Wages/Salary: `$1,200` per month
@@ -210,7 +210,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `99201`, Select county `Spokane`
+* **Location**: Enter ZIP code `99201`, Select county `Spokane County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `June 1954` (age 71), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$950` per month
 * **Person 2**: Birth month/year: `September 1958` (age 67), Relationship: Spouse, Has income: Yes, Social Security Retirement income: `$750` per month
@@ -228,7 +228,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `99362`, Select county `Walla Walla`
+* **Location**: Enter ZIP code `99362`, Select county `Walla Walla County`
 * **Household**: Number of people: `8`
 * **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: Head of Household, Has income: Yes, Social Security Retirement: `$2,500` monthly
 * **Person 2**: Birth month/year: `June 1968` (age 57), Relationship: Spouse, Has income: Yes, Employment income: `$2,000` monthly
@@ -247,7 +247,7 @@
 
 **What we're checking**: Verifies that an applicant who otherwise meets all CSFP criteria (age 60+, income below 150% FPL, no FDPIR participation) but resides outside Washington State is correctly identified as ineligible due to the state residency requirement
 
-**Expected**: Not eligible, value: `$0`
+**Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `97201` is not in the WA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
 

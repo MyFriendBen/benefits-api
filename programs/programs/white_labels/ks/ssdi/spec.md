@@ -100,7 +100,7 @@ Test scenarios mirror the federal SSDI cases, using Kansas locations.
 
 ### Scenario 1: Clearly Eligible — Standard Case
 **Expected:** Eligible, value: $1,634
-- **Location:** ZIP `67202`, county `Sedgwick`
+- **Location:** ZIP `67202`, county `Sedgwick County`
 - **Household:** 1 person
 - **Person 1 (Head):** Born `June 1981` (age 44), Special Circumstances: long-term disability + medical condition, Income: Wages `$500/month`, Insurance: None
 - **Current Benefits:** None
@@ -135,5 +135,5 @@ Test scenarios mirror the federal SSDI cases, using Kansas locations.
 
 ### Scenario 9: Edge — Multi-Member Household, One Eligible Member
 **Expected:** Eligible, value: $1,634
-- **Location:** ZIP `66603`, county `Shawnee`
+- **Location:** ZIP `66603`, county `Shawnee County`
 - Head eligible (disability, Wages `$800/month`); Spouse already receives SSDI; Adult child (age 24) no disability, Wages `$2,500/month`

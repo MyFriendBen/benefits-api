@@ -207,7 +207,7 @@ Two notes on the age-sensitive scenarios, since CHIP's under-19 gate is an age *
 **Expected**: Eligible, **$2,527.85/year**
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `March 1985` (age 41), Relationship: `headOfHousehold`, Has income: Yes, Employment income: `$4,167` per month (~$50,000/year), Insurance: `none`, Citizenship: US Citizen
 - **Person 2**: Birth month/year: `June 1987` (age 39), Relationship: `spouse`, Has income: No, Insurance: `none`, Citizenship: US Citizen

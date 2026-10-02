@@ -105,7 +105,7 @@ Early Head Start eligibility can be substantially evaluated with current screene
 **Expected**: Eligible — $13,323/year (1 eligible child)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1996` (age 30), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,500` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year: `April 2025` (age 1), Relationship: `Child`, Has income: `No`
@@ -121,7 +121,7 @@ Early Head Start eligibility can be substantially evaluated with current screene
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,200` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year: `January 2020` (age 6), Relationship: `Child`, Has income: `No`
@@ -137,7 +137,7 @@ Early Head Start eligibility can be substantially evaluated with current screene
 **Expected**: Eligible — **$26,646/year** (2 eligible individuals × $13,323 = $26,646: 1-year-old + pregnant adult)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `4`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1996` (age 30), Relationship: `Head of Household`, Pregnant: `Yes`, Has income: `Yes`, Employment income: `$1,200` per month
 - **Person 2 (Spouse)**: Birth month/year: `September 1994` (age 31), Relationship: `Spouse`, Has income: `Yes`, Employment income: `$800` per month
@@ -154,7 +154,7 @@ Early Head Start eligibility can be substantially evaluated with current screene
 **Expected**: Eligible — $13,323/year
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$3,100` per month (~136% of 2026 FPL for HH of 3: $27,320/yr → 100% limit = $2,277/mo; $3,100/mo exceeds that limit), Citizenship: `U.S. Citizen`
 - **Person 2 (Spouse)**: Birth month/year: `June 1992` (age 33), Relationship: `Spouse`, Has income: `No`
@@ -170,7 +170,7 @@ Early Head Start eligibility can be substantially evaluated with current screene
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$3,200` per month (~141% of 2026 FPL for HH of 3: $27,320/yr → $2,277/mo × 1.41 ≈ $3,210/mo), Citizenship: `U.S. Citizen`
 - **Person 2 (Spouse)**: Birth month/year: `June 1992` (age 33), Relationship: `Spouse`, Has income: `No`
@@ -186,7 +186,7 @@ Early Head Start eligibility can be substantially evaluated with current screene
 **Expected**: Eligible — $13,323/year
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1985` (age 41), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$4,000` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year: `April 2025` (age 1), Relationship: `Foster Child`, Has income: `No`

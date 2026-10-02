@@ -177,7 +177,7 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `75001`, Select county `Collin`
+- **Location**: Enter ZIP code `75001`, Select county `Dallas`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1961` (age 65), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,632`, Frequency: `Monthly`, Citizenship: `U.S. Citizen`
 - **Assets**: Total household assets: `$9,400`
@@ -192,7 +192,7 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `75001`, Select county `Collin`
+- **Location**: Enter ZIP code `75001`, Select county `Dallas`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1959` (age 67), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,275` monthly, Assets: `$8,000` (below $9,430 resource limit)
 

@@ -274,7 +274,7 @@ Key notes: WA does not implement categorical eligibility — all households must
 
 ### Scenario 9: Ineligible — Out-of-State ZIP Code
 **What we're checking**: Household using a non-Washington ZIP code is correctly identified as not residing in WA.
-**Expected**: Not eligible
+**Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `97201` is not in the WA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
 - **Location**: Enter ZIP code `97201`, County `Multnomah` (Portland, Oregon — no "County" suffix needed for OR)
