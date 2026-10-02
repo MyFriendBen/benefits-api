@@ -67,7 +67,9 @@ EDITED_PROGRAMS = {
         "refugee",
         "otherWithWorkPermission",
     },
-    "tx_medicaid_for_pregnant_women": {"citizen", "gc_5plus", "refugee"},
+    # `refugee` came off when H.R.1 §71109 limited federal Medicaid to citizens, LPRs, Cuban/Haitian
+    # entrants and COFA migrants (2026-10-01). Texas covers no lawfully residing pregnant people.
+    "tx_medicaid_for_pregnant_women": {"citizen", "gc_5plus"},
     "il_mpe": {"citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"},
     # Lifeline, every white label. DOJ's Office of Legal Counsel concluded PRWORA reaches Lifeline
     # as both a federal public benefit and a federal means-tested public benefit, so `non_citizen`
