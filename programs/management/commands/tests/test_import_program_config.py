@@ -12,6 +12,7 @@ from django.test import TestCase, TransactionTestCase
 
 from programs.models import (
     County,
+    FederalPoveryLimit,
     LegalStatus,
     Navigator,
     Program,
@@ -93,6 +94,27 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             # Verify success message says "created" (not "recreated")
             self.assertIn("Successfully created program: test_program", output)
             self.assertNotIn("Successfully recreated program", output)
+        finally:
+            Path(config_file).unlink()
+
+    def test_dynamic_year_row_is_found_by_year_only(self):
+        """Dynamic FPL rows have year != period (MFB-564), e.g.
+        year="THIS_YEAR_CALENDAR", period="2026". Matching on year AND period
+        only ever worked for legacy rows where the two happen to be equal, and
+        always missed dynamic rows."""
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="THIS_YEAR_CALENDAR", defaults={"period": "2026"})
+        self.assertNotEqual(fpl.period, fpl.year)
+        config = copy.deepcopy(self.base_config)
+        config["program"]["year"] = "THIS_YEAR_CALENDAR"
+        config_file = self._create_temp_config(config)
+        out = StringIO()
+
+        try:
+            call_command("import_program_config", config_file, stdout=out)
+            program = Program.objects.get(name_abbreviated="test_program")
+            self.assertEqual(program.year_id, fpl.id)
+            self.assertEqual(program.year_type, "calendar_year")
+            self.assertNotIn("Warning: Year", out.getvalue())
         finally:
             Path(config_file).unlink()
 
