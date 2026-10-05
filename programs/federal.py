@@ -66,13 +66,25 @@ def active_duplicates(names: Optional[Iterable[str]] = None) -> dict[str, list[s
 
 
 def one_per_name(programs: Iterable[T], where: str) -> list[T]:
-    """Collapse `programs` to one row per `name_abbreviated`, preferring the federal row.
+    """Drop the state row wherever a federal row has the same name.
 
-    Order is kept by each name's first appearance. A collision between two *active* rows is
-    logged at ERROR with `where` naming the read path; see the module docstring for why an
-    inactive state row losing to the federal one is not.
+    For a query built with `visible_to`, which returns a white label's own programs plus the
+    federal ones. A federal program reuses the name of the state rows it replaced, so one name
+    can match two rows: the white label's and the federal one. Every caller keys programs by
+    name, so it must see only one, and it should be the federal one.
 
-    Rows must have `white_label` loaded (`select_related("white_label")`) to avoid a query each.
+    The database allows one row per (white label, name), so a name matches at most those two
+    rows. The federal row wins whatever order the rows arrive in, which makes the result
+    independent of the query's ordering; the returned list keeps the order in which each name
+    first appeared.
+
+    `where` names the calling read path for the log. The two rows are expected when the state
+    row is inactive: its program moved to federal and the row was deactivated, not deleted. If
+    both are active, the program was never deactivated on the state side; that is logged at
+    ERROR (which reaches Sentry) rather than raised, so a stale row can't take a page down.
+
+    Rows must have `white_label` loaded (`select_related("white_label")`), or each comparison
+    costs a query.
     """
     kept: dict[str, T] = {}
     for program in programs:
@@ -96,3 +108,21 @@ def one_per_name(programs: Iterable[T], where: str) -> list[T]:
             kept[name] = program
 
     return list(kept.values())
+
+
+def visible_program(white_label, name_abbreviated: str, where: str):
+    """The one program a screen under `white_label` sees by this name, or None.
+
+    The white label's own row or the federal one, the federal row winning when both exist
+    (see `one_per_name`). Inactive rows are included: a caller deciding whether a household
+    holds a benefit has to resolve programs that are no longer offered.
+    """
+    from programs.models import Program
+
+    programs = one_per_name(
+        Program.objects.filter(visible_to(white_label), name_abbreviated=name_abbreviated).select_related(
+            "white_label"
+        ),
+        where,
+    )
+    return programs[0] if programs else None

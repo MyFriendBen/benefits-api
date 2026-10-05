@@ -1,7 +1,7 @@
 import hashlib
 import requests
 from typing import Optional
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.clients.google_places import GooglePlacesClient
@@ -22,6 +22,7 @@ from screener.models import (
     ProgramEligibilitySnapshot,
 )
 from rest_framework import viewsets, views, status, mixins, throttling
+from rest_framework.exceptions import NotFound
 from rest_framework import permissions
 from rest_framework.response import Response
 from screener.serializers import (
@@ -42,7 +43,7 @@ from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
-from programs.federal import one_per_name, visible_to, visible_to_code
+from programs.federal import one_per_name, visible_program, visible_to, visible_to_code
 from programs.models import (
     Document,
     Navigator,
@@ -161,17 +162,13 @@ class ScreenCurrentBenefitsView(views.APIView):
         # the locked screen's white label rather than a pre-lock read.
         with transaction.atomic():
             screen = get_object_or_404(Screen.objects.select_for_update(), uuid=screen_uuid)
-            # A federal row and a deactivated state row can share a name, so this is a list
-            # resolved to one rather than a get() that would raise on two.
-            matches = one_per_name(
-                Program.objects.filter(visible_to(screen.white_label), name_abbreviated=name_abbreviated)
-                .select_related("white_label")
-                .order_by("id"),
-                "current benefit toggle",
-            )
-            if not matches:
-                raise Http404
-            program = matches[0]
+            # Not a get(): a federal row and the deactivated state row it replaced share a name,
+            # and get() would raise MultipleObjectsReturned on the pair.
+            program = visible_program(screen.white_label, name_abbreviated, "current benefit toggle")
+            if program is None:
+                raise NotFound(
+                    f"No program '{name_abbreviated}' is offered to white label '{screen.white_label.code}'."
+                )
             if has:
                 CurrentBenefit.objects.get_or_create(screen=screen, program=program)
             else:

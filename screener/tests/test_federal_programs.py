@@ -154,6 +154,14 @@ class TestOnePerName(FederalProgramsTestCase):
 
         self.assertEqual(kept, [a, shared_federal, b])
 
+    def test_the_federal_row_wins_in_either_order(self):
+        """A name matches at most a state row and a federal row, so order can't change the winner."""
+        state = self.program(self.co, "shared", active=False)
+        federal = self.program(self.federal, "shared")
+
+        self.assertEqual(one_per_name([state, federal], "test"), [federal])
+        self.assertEqual(one_per_name([federal, state], "test"), [federal])
+
 
 class TestCurrentBenefits(FederalProgramsTestCase):
     def setUp(self):
@@ -198,6 +206,7 @@ class TestCurrentBenefits(FederalProgramsTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["detail"], "No program 'nope' is offered to white label 'co'.")
 
     def test_the_screen_write_path_keeps_a_federal_benefit(self):
         federal = self.program(self.federal, "shared_name")

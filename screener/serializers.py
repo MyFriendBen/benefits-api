@@ -210,9 +210,7 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
                 Program.objects.filter(
                     visible_to(screen.white_label),
                     name_abbreviated__in=requested | derived,
-                )
-                .select_related("white_label")
-                .order_by("id"),
+                ).select_related("white_label"),
                 "current benefits write",
             )
         ]
