@@ -24,7 +24,7 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.white_labels.co.cpcr.calculator import PropertyCreditRebate
+from programs.programs.cross_white_label.cpcr.co import CoPropertyCreditRebate as PropertyCreditRebate
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember
 from programs.framework.pe_dependencies import member

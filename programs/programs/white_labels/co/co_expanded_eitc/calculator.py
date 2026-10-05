@@ -1,6 +1,6 @@
 """CoExpandedEitc."""
 
-from programs.programs.cross_white_label.eitc.co_coeitc import Coeitc
+from programs.programs.white_labels.co.coeitc.calculator import Coeitc
 
 
 class CoExpandedEitc(Coeitc):

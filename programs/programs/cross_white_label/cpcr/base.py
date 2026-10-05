@@ -1,10 +1,11 @@
+"""Property Tax/Rent/Heat Credit Rebate."""
+
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
 from screener.models import HouseholdMember
 
 
-class PropertyCreditRebate(ProgramCalculator):
-    program_code = "cpcr"
+class PropertyCreditRebate(ProgramCalculator, abstract=True):
     amount = 1_154
     min_age = 65
     disabled_min_age = 18
