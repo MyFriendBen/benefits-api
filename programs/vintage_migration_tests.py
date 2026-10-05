@@ -18,7 +18,7 @@ from screener.models import WhiteLabel
 CORRECTING_MIGRATIONS = (
     "programs.migrations.0179_correct_aca_coverage_year",
     "programs.migrations.0180_ssi_msp_csfp_current_edition",
-    "programs.migrations.0181_mo_wftc_prior_tax_year",
+    "programs.migrations.0181_mo_tax_credits_prior_tax_year",
 )
 
 
@@ -96,31 +96,33 @@ class TestCsfpMigrationMovesEveryDayEats(TestCase):
         self.assertEqual(ede.year.period, "2024")
 
 
-class TestMoWftcMigrationMovesToPriorTaxYear(TestCase):
+class TestMoTaxCreditsMigrationMovesToPriorTaxYear(TestCase):
     """Run 0181's forwards/backwards against real rows."""
 
     def setUp(self):
         self.fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
         self.fpl_2026 = FederalPoveryLimit.objects.create(year="2026", period="2026")
         WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
-        self.migration = _migration("programs.migrations.0181_mo_wftc_prior_tax_year")
+        self.migration = _migration("programs.migrations.0181_mo_tax_credits_prior_tax_year")
 
-    def _program(self, fpl):
-        program = Program.objects.new_program(white_label="mo", name_abbreviated="mo_wftc")
+    def _program(self, fpl, abbr="mo_wftc"):
+        program = Program.objects.new_program(white_label="mo", name_abbreviated=abbr)
         program.year = fpl
         program.save()
         return program
 
-    def test_forwards_moves_to_2025_and_backwards_restores_2026(self):
-        wftc = self._program(self.fpl_2026)
+    def test_forwards_moves_both_to_2025_and_backwards_restores_2026(self):
+        programs = [self._program(self.fpl_2026, abbr) for abbr in ("mo_wftc", "mo_pts")]
 
         self.migration.forwards(django_apps, None)
-        wftc.refresh_from_db()
-        self.assertEqual(wftc.year.period, "2025")
+        for program in programs:
+            program.refresh_from_db()
+            self.assertEqual(program.year.period, "2025", program.name_abbreviated)
 
         self.migration.backwards(django_apps, None)
-        wftc.refresh_from_db()
-        self.assertEqual(wftc.year.period, "2026")
+        for program in programs:
+            program.refresh_from_db()
+            self.assertEqual(program.year.period, "2026", program.name_abbreviated)
 
     def test_forwards_leaves_a_later_year_alone(self):
         # Rolled forward to 2026's successor by hand before this ran: reported, not pulled back.

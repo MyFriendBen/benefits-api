@@ -606,6 +606,14 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
+    ("mo", "mo_pts"): Vintage(
+        edition="2025",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule=_PRIOR_TAX_YEAR,
+        source="RSMo 135.030 (claim years through 2025); 2025 Form MO-PTC and Property Tax Credit Chart; "
+        "programs/programs/white_labels/mo/pts/spec.md",
+    ),
     ("mo", "mo_wftc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,

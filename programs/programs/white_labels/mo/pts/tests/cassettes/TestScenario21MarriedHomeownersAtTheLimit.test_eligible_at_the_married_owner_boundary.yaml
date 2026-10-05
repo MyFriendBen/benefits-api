@@ -1,25 +1,25 @@
 interactions:
 - request:
-    body: '{"household": {"people": {"82211": {"age": {"2026": 68}, "is_tax_unit_head":
-      {"2026": true}, "is_tax_unit_spouse": {"2026": false}, "is_tax_unit_dependent":
-      {"2026": false}, "is_disabled": {"2026": null}, "is_fully_disabled_service_connected_veteran":
-      {"2026": false}, "real_estate_taxes": {"2026": 850}, "rent": {"2026": 0}, "ssi":
-      {"2026": null}, "veterans_benefits": {"2026": 0}, "taxable_pension_income":
-      {"2026": 0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
-      0}, "rental_income": {"2026": 0}, "social_security": {"2026": 31200}, "social_security_survivors":
-      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
-      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}}, "82212": {"age": {"2026":
-      66}, "is_tax_unit_head": {"2026": false}, "is_tax_unit_spouse": {"2026": true},
-      "is_tax_unit_dependent": {"2026": false}, "is_disabled": {"2026": null}, "is_fully_disabled_service_connected_veteran":
-      {"2026": false}, "real_estate_taxes": {"2026": 850}, "rent": {"2026": 0}, "ssi":
-      {"2026": null}, "veterans_benefits": {"2026": 0}, "taxable_pension_income":
-      {"2026": 0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
-      0}, "rental_income": {"2026": 0}, "social_security": {"2026": 22600}, "social_security_survivors":
-      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
-      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}}}, "tax_units": {"main_tax_unit":
-      {"members": ["82211", "82212"], "mo_property_tax_credit": {"2026": null}}},
+    body: '{"household": {"people": {"82211": {"age": {"2025": 68}, "is_tax_unit_head":
+      {"2025": true}, "is_tax_unit_spouse": {"2025": false}, "is_tax_unit_dependent":
+      {"2025": false}, "is_disabled": {"2025": null}, "is_fully_disabled_service_connected_veteran":
+      {"2025": false}, "real_estate_taxes": {"2025": 850}, "rent": {"2025": 0}, "ssi":
+      {"2025": null}, "veterans_benefits": {"2025": 0}, "taxable_pension_income":
+      {"2025": 0}, "employment_income": {"2025": 0}, "self_employment_income": {"2025":
+      0}, "rental_income": {"2025": 0}, "social_security": {"2025": 20000}, "social_security_survivors":
+      {"2025": 0}, "unemployment_compensation": {"2025": 0}, "long_term_capital_gains":
+      {"2025": 0}, "taxable_ira_distributions": {"2025": 0}}, "82212": {"age": {"2025":
+      66}, "is_tax_unit_head": {"2025": false}, "is_tax_unit_spouse": {"2025": true},
+      "is_tax_unit_dependent": {"2025": false}, "is_disabled": {"2025": null}, "is_fully_disabled_service_connected_veteran":
+      {"2025": false}, "real_estate_taxes": {"2025": 850}, "rent": {"2025": 0}, "ssi":
+      {"2025": null}, "veterans_benefits": {"2025": 0}, "taxable_pension_income":
+      {"2025": 0}, "employment_income": {"2025": 0}, "self_employment_income": {"2025":
+      0}, "rental_income": {"2025": 0}, "social_security": {"2025": 14000}, "social_security_survivors":
+      {"2025": 0}, "unemployment_compensation": {"2025": 0}, "long_term_capital_gains":
+      {"2025": 0}, "taxable_ira_distributions": {"2025": 0}}}, "tax_units": {"main_tax_unit":
+      {"members": ["82211", "82212"], "mo_property_tax_credit": {"2025": null}}},
       "families": {"family": {"members": ["82211", "82212"]}}, "households": {"household":
-      {"members": ["82211", "82212"], "state_code": {"2026": "MO"}}}, "spm_units":
+      {"members": ["82211", "82212"], "state_code": {"2025": "MO"}}}, "spm_units":
       {"spm_unit": {"members": ["82211", "82212"]}}, "marital_units": {"82211-82212":
       {"members": ["82211", "82212"]}}}, "version": "2.9.0"}'
     headers:
@@ -40,48 +40,48 @@ interactions:
   response:
     body:
       string: '{"status": "ok", "message": null, "result": {"people": {"82211": {"age":
-        {"2026": 68}, "is_tax_unit_head": {"2026": true}, "is_tax_unit_spouse": {"2026":
-        false}, "is_tax_unit_dependent": {"2026": false}, "is_disabled": {"2026":
-        false}, "is_fully_disabled_service_connected_veteran": {"2026": false}, "real_estate_taxes":
-        {"2026": 850}, "rent": {"2026": 0}, "ssi": {"2026": 0.0}, "veterans_benefits":
-        {"2026": 0}, "taxable_pension_income": {"2026": 0}, "employment_income": {"2026":
-        0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "social_security":
-        {"2026": 31200}, "social_security_survivors": {"2026": 0}, "unemployment_compensation":
-        {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
-        {"2026": 0}}, "82212": {"age": {"2026": 66}, "is_tax_unit_head": {"2026":
-        false}, "is_tax_unit_spouse": {"2026": true}, "is_tax_unit_dependent": {"2026":
-        false}, "is_disabled": {"2026": false}, "is_fully_disabled_service_connected_veteran":
-        {"2026": false}, "real_estate_taxes": {"2026": 850}, "rent": {"2026": 0},
-        "ssi": {"2026": 0.0}, "veterans_benefits": {"2026": 0}, "taxable_pension_income":
-        {"2026": 0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
-        0}, "rental_income": {"2026": 0}, "social_security": {"2026": 22600}, "social_security_survivors":
-        {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
-        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}}}, "tax_units": {"main_tax_unit":
-        {"members": ["82211", "82212"], "mo_property_tax_credit": {"2026": 578.0}}},
+        {"2025": 68}, "is_tax_unit_head": {"2025": true}, "is_tax_unit_spouse": {"2025":
+        false}, "is_tax_unit_dependent": {"2025": false}, "is_disabled": {"2025":
+        false}, "is_fully_disabled_service_connected_veteran": {"2025": false}, "real_estate_taxes":
+        {"2025": 850}, "rent": {"2025": 0}, "ssi": {"2025": 0.0}, "veterans_benefits":
+        {"2025": 0}, "taxable_pension_income": {"2025": 0}, "employment_income": {"2025":
+        0}, "self_employment_income": {"2025": 0}, "rental_income": {"2025": 0}, "social_security":
+        {"2025": 20000}, "social_security_survivors": {"2025": 0}, "unemployment_compensation":
+        {"2025": 0}, "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions":
+        {"2025": 0}}, "82212": {"age": {"2025": 66}, "is_tax_unit_head": {"2025":
+        false}, "is_tax_unit_spouse": {"2025": true}, "is_tax_unit_dependent": {"2025":
+        false}, "is_disabled": {"2025": false}, "is_fully_disabled_service_connected_veteran":
+        {"2025": false}, "real_estate_taxes": {"2025": 850}, "rent": {"2025": 0},
+        "ssi": {"2025": 0.0}, "veterans_benefits": {"2025": 0}, "taxable_pension_income":
+        {"2025": 0}, "employment_income": {"2025": 0}, "self_employment_income": {"2025":
+        0}, "rental_income": {"2025": 0}, "social_security": {"2025": 14000}, "social_security_survivors":
+        {"2025": 0}, "unemployment_compensation": {"2025": 0}, "long_term_capital_gains":
+        {"2025": 0}, "taxable_ira_distributions": {"2025": 0}}}, "tax_units": {"main_tax_unit":
+        {"members": ["82211", "82212"], "mo_property_tax_credit": {"2025": 95.0}}},
         "families": {"family": {"members": ["82211", "82212"]}}, "households": {"household":
-        {"members": ["82211", "82212"], "state_code": {"2026": "MO"}}}, "spm_units":
+        {"members": ["82211", "82212"], "state_code": {"2025": "MO"}}}, "spm_units":
         {"spm_unit": {"members": ["82211", "82212"]}}, "marital_units": {"82211-82212":
         {"members": ["82211", "82212"]}}}, "policyengine_bundle": {"model_version":
         "2.9.0", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '1935'
+      - '1934'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 19:43:44 GMT
+      - Mon, 05 Oct 2026 21:45:34 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-7e3dfd1ca4f3f77b213a64650e891179-6fa7679a52972203-01
+      - 00-b51cae6d55ca3683bdb3cf5b69ea1dd4-2eb17d413aed7625-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 7e3dfd1ca4f3f77b213a64650e891179;o=1
+      - b51cae6d55ca3683bdb3cf5b69ea1dd4
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -89,7 +89,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 02ed4f04-a64d-4756-b587-62ae6e9250dd
+      - 13cbc24e-80d0-4be8-8b84-493d49d92368
       x-policyengine-route-channel:
       - current
     status:

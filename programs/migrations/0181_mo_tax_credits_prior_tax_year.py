@@ -3,15 +3,19 @@ from django.db import migrations
 # Programs moving onto the prior tax year, as (white_label code, abbreviation, from, to).
 #
 # For a tax credit `Program.year` is the tax year being claimed, and the tax year a household
-# screening now files is the calendar year just ended. mo_wftc was configured on 2026, so it
-# showed a household the credit for a year it cannot file yet. Its spec and tests are
-# validated at TY2025.
+# screening now files is the calendar year just ended. Both programs were configured on 2026,
+# so they showed a household the credit for a year it cannot file yet. Their specs and tests
+# are validated at 2025.
 #
-# Only mo_wftc moves. The other Missouri credits it sits beside -- mo_eitc, mo_ctc,
-# mo_cdcc_federal, mo_pts -- stay where production has them until each is verified at the
-# prior year.
+# mo_pts is more than a relabel: Missouri's 2026 Property Tax Credit expansion (higher limits
+# and caps, a smaller phaseout) starts with claim year 2026, so on 2025 the program applies
+# the earlier law, which its spec now describes.
+#
+# The other Missouri credits -- mo_eitc, mo_ctc, mo_cdcc_federal -- stay where production
+# has them until each is verified at the prior year.
 CORRECTIONS = [
     ("mo", "mo_wftc", "2026", "2025"),
+    ("mo", "mo_pts", "2026", "2025"),
 ]
 
 
@@ -64,12 +68,12 @@ def _repoint(apps, corrections, to_period):
 
 
 def forwards(apps, schema_editor):
-    print("Moving mo_wftc onto the prior tax year:")
+    print("Moving mo_wftc and mo_pts onto the prior tax year:")
     _repoint(apps, [(wl, abbr, frm) for wl, abbr, frm, _to in CORRECTIONS], to_period="2025")
 
 
 def backwards(apps, schema_editor):
-    print("Reverting mo_wftc:")
+    print("Reverting mo_wftc and mo_pts:")
     _repoint(apps, [(wl, abbr, to) for wl, abbr, _frm, to in CORRECTIONS], to_period="2026")
 
 
