@@ -21,7 +21,7 @@ interactions:
       "families": {"family": {"members": ["82201", "82202"]}}, "households": {"household":
       {"members": ["82201", "82202"], "state_code": {"2026": "MO"}}}, "spm_units":
       {"spm_unit": {"members": ["82201", "82202"]}}, "marital_units": {"82201-82202":
-      {"members": ["82201", "82202"]}}}, "version": "1.794.2"}'
+      {"members": ["82201", "82202"]}}}, "version": "2.9.0"}'
     headers:
       Accept:
       - '*/*'
@@ -30,7 +30,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1835'
+      - '1833'
       Content-Type:
       - application/json
       User-Agent:
@@ -62,26 +62,26 @@ interactions:
         {"members": ["82201", "82202"], "state_code": {"2026": "MO"}}}, "spm_units":
         {"spm_unit": {"members": ["82201", "82202"]}}, "marital_units": {"82201-82202":
         {"members": ["82201", "82202"]}}}, "policyengine_bundle": {"model_version":
-        "1.794.2", "data_version": null, "dataset": null}}'
+        "2.9.0", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1936'
+      - '1934'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 19:00:11 GMT
+      - Mon, 05 Oct 2026 19:43:42 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-09318e32fb8159eb8af2154c5ca80957-675427ff9f91df05-00
+      - 00-0713f8486f01cb1bf6f161cb9e2a6d1e-d9faa90d3e9e2ca3-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 09318e32fb8159eb8af2154c5ca80957
+      - 0713f8486f01cb1bf6f161cb9e2a6d1e
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -89,7 +89,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 6bed32d8-5fea-4e72-a960-7c922f28e653
+      - c4b2ae67-ce5d-4faf-9a84-028f1ad4aaa7
       x-policyengine-route-channel:
       - current
     status:

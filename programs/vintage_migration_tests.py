@@ -1,7 +1,7 @@
 """The edition-correcting migrations agree with the vintage map, and actually move the rows.
 
 `vintage_tests.py` keeps the map coherent without touching the database. These cover the
-other half: that 0179/0180 move each program to the edition the map records, and that no
+other half: that 0179-0181 move each program to the edition the map records, and that no
 PolicyEngine CSFP calculator is left without an entry -- CO's `ede` (Everyday Eats) was, for
 no reason but an abbreviation that doesn't say "csfp".
 """
@@ -18,6 +18,7 @@ from screener.models import WhiteLabel
 CORRECTING_MIGRATIONS = (
     "programs.migrations.0179_correct_aca_coverage_year",
     "programs.migrations.0180_ssi_msp_csfp_current_edition",
+    "programs.migrations.0181_mo_wftc_prior_tax_year",
 )
 
 
@@ -93,3 +94,39 @@ class TestCsfpMigrationMovesEveryDayEats(TestCase):
         self.migration.forwards(django_apps, None)
         ede.refresh_from_db()
         self.assertEqual(ede.year.period, "2024")
+
+
+class TestMoWftcMigrationMovesToPriorTaxYear(TestCase):
+    """Run 0181's forwards/backwards against real rows."""
+
+    def setUp(self):
+        self.fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
+        self.fpl_2026 = FederalPoveryLimit.objects.create(year="2026", period="2026")
+        WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        self.migration = _migration("programs.migrations.0181_mo_wftc_prior_tax_year")
+
+    def _program(self, fpl):
+        program = Program.objects.new_program(white_label="mo", name_abbreviated="mo_wftc")
+        program.year = fpl
+        program.save()
+        return program
+
+    def test_forwards_moves_to_2025_and_backwards_restores_2026(self):
+        wftc = self._program(self.fpl_2026)
+
+        self.migration.forwards(django_apps, None)
+        wftc.refresh_from_db()
+        self.assertEqual(wftc.year.period, "2025")
+
+        self.migration.backwards(django_apps, None)
+        wftc.refresh_from_db()
+        self.assertEqual(wftc.year.period, "2026")
+
+    def test_forwards_leaves_a_later_year_alone(self):
+        # Rolled forward to 2026's successor by hand before this ran: reported, not pulled back.
+        fpl_2027 = FederalPoveryLimit.objects.create(year="2027", period="2027")
+        wftc = self._program(fpl_2027)
+
+        self.migration.forwards(django_apps, None)
+        wftc.refresh_from_db()
+        self.assertEqual(wftc.year.period, "2027")

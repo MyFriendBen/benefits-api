@@ -21,7 +21,7 @@ interactions:
       "families": {"family": {"members": ["82171", "82172"]}}, "households": {"household":
       {"members": ["82171", "82172"], "state_code": {"2026": "MO"}}}, "spm_units":
       {"spm_unit": {"members": ["82171", "82172"]}}, "marital_units": {}}, "version":
-      "1.794.2"}'
+      "2.9.0"}'
     headers:
       Accept:
       - '*/*'
@@ -30,7 +30,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1787'
+      - '1785'
       Content-Type:
       - application/json
       User-Agent:
@@ -61,26 +61,26 @@ interactions:
         "families": {"family": {"members": ["82171", "82172"]}}, "households": {"household":
         {"members": ["82171", "82172"], "state_code": {"2026": "MO"}}}, "spm_units":
         {"spm_unit": {"members": ["82171", "82172"]}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "1.794.2", "data_version": null, "dataset": null}}'
+        {"model_version": "2.9.0", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '1890'
+      - '1888'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 19:00:06 GMT
+      - Mon, 05 Oct 2026 19:43:36 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-9803ae6abae97f5a7a58393e6c8adc67-d6a3979e25c6b68b-00
+      - 00-8227c3e1980f67f5b73a107f99e35e3c-7b1d05abeef11e49-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 9803ae6abae97f5a7a58393e6c8adc67
+      - 8227c3e1980f67f5b73a107f99e35e3c
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -88,7 +88,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - a296cbf2-6f5b-4b17-bdb2-a17b1426f58c
+      - 02634221-9fa4-4c69-94fb-85ef0eff047f
       x-policyengine-route-channel:
       - current
     status:

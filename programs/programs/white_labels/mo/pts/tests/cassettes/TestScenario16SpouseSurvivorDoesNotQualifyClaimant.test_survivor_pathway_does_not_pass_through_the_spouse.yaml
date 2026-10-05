@@ -21,7 +21,7 @@ interactions:
       "families": {"family": {"members": ["82161", "82162"]}}, "households": {"household":
       {"members": ["82161", "82162"], "state_code": {"2026": "MO"}}}, "spm_units":
       {"spm_unit": {"members": ["82161", "82162"]}}, "marital_units": {"82161-82162":
-      {"members": ["82161", "82162"]}}}, "version": "1.794.2"}'
+      {"members": ["82161", "82162"]}}}, "version": "2.9.0"}'
     headers:
       Accept:
       - '*/*'
@@ -30,7 +30,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1836'
+      - '1834'
       Content-Type:
       - application/json
       User-Agent:
@@ -62,26 +62,26 @@ interactions:
         {"members": ["82161", "82162"], "state_code": {"2026": "MO"}}}, "spm_units":
         {"spm_unit": {"members": ["82161", "82162"]}}, "marital_units": {"82161-82162":
         {"members": ["82161", "82162"]}}}, "policyengine_bundle": {"model_version":
-        "1.794.2", "data_version": null, "dataset": null}}'
+        "2.9.0", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1935'
+      - '1933'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 21 Aug 2026 19:00:04 GMT
+      - Mon, 05 Oct 2026 19:43:33 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-d8829016305608c1dc29a149d1145b11-28b06b3ab68602dc-00
+      - 00-6c665354102dfb00fd2ae84efd220450-28a3534fa94feb43-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - d8829016305608c1dc29a149d1145b11
+      - 6c665354102dfb00fd2ae84efd220450;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -89,7 +89,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 56696671-7138-4ea5-9e24-7a5ac18cdcf9
+      - 0e8da4c0-1681-422e-840e-1a18e53c79d8
       x-policyengine-route-channel:
       - current
     status:

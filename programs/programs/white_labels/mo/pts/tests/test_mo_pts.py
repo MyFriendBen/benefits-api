@@ -32,7 +32,7 @@ from screener.models import Expense
 from programs.programs.white_labels.mo.pts.calculator import MoPts
 from programs.framework.pe_dependencies import member
 
-PE_VERSION = "1.794.2"
+PE_VERSION = "2.9.0"
 CLAIM_YEAR = 2026
 
 
