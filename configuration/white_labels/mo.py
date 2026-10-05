@@ -1788,9 +1788,12 @@ class MoConfigurationData(ConfigurationData):
                 "defaultMessage": "211 Missouri and MyFriendBen home page button",
             },
         },
+        # `no_results_more_help` omits the Immediate Help tab from the results page. A named
+        # referrer's list replaces `default` rather than merging with it, so every referrer
+        # repeats the flag.
         # The co-branded logo's MyFriendBen wordmark is dark navy, which would disappear against
         # the theme's dark blue header, so this referrer gets the white header treatment.
-        "uiOptions": {"default": [], "uwgkc": ["white_header"]},
+        "uiOptions": {"default": ["no_results_more_help"], "uwgkc": ["no_results_more_help", "white_header"]},
         "logoClass": {"default": "logo", "uwgkc": "uwgkc-logo-size"},
         "shareLink": {
             "default": "https://screener.myfriendben.org/mo/step-1",
