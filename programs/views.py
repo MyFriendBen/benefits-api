@@ -1,6 +1,7 @@
 from programs.models import Program, Navigator, ProgramCategory, UrgentNeed, UrgentNeedType
 from rest_framework import viewsets, mixins
-from programs.federal import visible_to_code
+from programs.federal import one_per_name, visible_to_code
+from rest_framework.response import Response
 from rest_framework import permissions
 from programs.serializers import (
     ProgramCategorySerializer,
@@ -22,6 +23,14 @@ class ProgramViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.
             show_on_current_benefits=True,
             category__isnull=False,
         )
+
+    def list(self, request, *args, **kwargs):
+        # One program per name, the federal row winning (see `one_per_name`). Overridden here
+        # rather than in get_queryset, which `retrieve` needs to stay a queryset.
+        programs = one_per_name(
+            self.filter_queryset(self.get_queryset()).select_related("white_label"), "current benefits programs"
+        )
+        return Response(self.get_serializer(programs, many=True).data)
 
 
 class ProgramCategoryViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):

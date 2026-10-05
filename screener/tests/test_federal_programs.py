@@ -26,7 +26,7 @@ from rest_framework.test import APIClient
 
 from authentication.models import User
 from configuration.white_labels import state_options
-from programs.federal import FEDERAL_WHITE_LABEL, one_per_name
+from programs.federal import FEDERAL_WHITE_LABEL
 from programs.framework.base import Eligibility
 from programs.admin import ReferrerAdmin, WarningMessageAdmin
 from programs.models import FederalPoveryLimit, Program, ProgramCategory, Referrer, WarningMessage
@@ -143,26 +143,6 @@ class TestResults(FederalProgramsTestCase):
         self.assertEqual(data, [])
 
 
-class TestOnePerName(FederalProgramsTestCase):
-    def test_keeps_first_appearance_order(self):
-        a = self.program(self.co, "a")
-        shared_state = self.program(self.co, "shared", active=False)
-        b = self.program(self.co, "b")
-        shared_federal = self.program(self.federal, "shared")
-
-        kept = one_per_name([a, shared_state, b, shared_federal], "test")
-
-        self.assertEqual(kept, [a, shared_federal, b])
-
-    def test_the_federal_row_wins_in_either_order(self):
-        """A name matches at most a state row and a federal row, so order can't change the winner."""
-        state = self.program(self.co, "shared", active=False)
-        federal = self.program(self.federal, "shared")
-
-        self.assertEqual(one_per_name([state, federal], "test"), [federal])
-        self.assertEqual(one_per_name([federal, state], "test"), [federal])
-
-
 class TestCurrentBenefits(FederalProgramsTestCase):
     def setUp(self):
         super().setUp()
@@ -244,6 +224,18 @@ class TestScreenerOptions(FederalProgramsTestCase):
         data = ProgramCategorySerializer(self.category, context={"white_label": "co"}).data
 
         self.assertEqual(sorted(p["id"] for p in data["programs"]), sorted([federal.id, state.id]))
+
+    def test_the_current_benefits_program_list_shows_a_shared_name_once(self):
+        """Even with both rows active (an unfinished move), the list carries the federal row only."""
+        federal = self.program(self.federal, "shared_name", show_on_current_benefits=True)
+        self.program(self.co, "shared_name", show_on_current_benefits=True)
+        state = self.program(self.co, "co_only", show_on_current_benefits=True)
+
+        with self.assertLogs("programs.federal", level="ERROR"):
+            response = self.client.get("/api/programs/co/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(sorted(p["id"] for p in response.data), sorted([federal.id, state.id]))
 
     def test_federal_is_not_a_state_option(self):
         self.assertNotIn(FEDERAL_WHITE_LABEL, [option["code"] for option in state_options()])
