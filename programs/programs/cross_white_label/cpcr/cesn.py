@@ -1,5 +1,7 @@
+"""CESN Property Tax/Rent/Heat Credit Rebate."""
+
 from programs.framework.base import MemberEligibility
-from programs.programs.white_labels.co.cpcr.calculator import PropertyCreditRebate
+from programs.programs.cross_white_label.cpcr.base import PropertyCreditRebate
 from screener.models import HouseholdMember
 
 
