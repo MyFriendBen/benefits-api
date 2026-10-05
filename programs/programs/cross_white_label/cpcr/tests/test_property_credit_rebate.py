@@ -1,5 +1,5 @@
 """
-Unit tests for the PropertyCreditRebate (cpcr) calculator.
+Unit tests for the CoPropertyCreditRebate (cpcr) calculator.
 
 Eligibility requirements:
   1. Yearly gross household income at or below a flat limit that depends on whether
@@ -24,7 +24,7 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.cross_white_label.cpcr.co import CoPropertyCreditRebate as PropertyCreditRebate
+from programs.programs.cross_white_label.cpcr.co import CoPropertyCreditRebate
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember
 from programs.framework.pe_dependencies import member
@@ -62,7 +62,7 @@ def make_calculator(
     mock_screen.relationship_map = Mock(return_value={1: 2, 2: 1} if married else {1: None})
     mock_screen.household_members.all.return_value = [make_member()] if members is None else members
 
-    return PropertyCreditRebate(
+    return CoPropertyCreditRebate(
         mock_screen,
         program,
         {},
@@ -72,29 +72,29 @@ def make_calculator(
 
 class TestPropertyCreditRebateClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
-        self.assertTrue(issubclass(PropertyCreditRebate, ProgramCalculator))
+        self.assertTrue(issubclass(CoPropertyCreditRebate, ProgramCalculator))
 
     def test_amount_is_1154(self):
-        self.assertEqual(PropertyCreditRebate.amount, 1_154)
+        self.assertEqual(CoPropertyCreditRebate.amount, 1_154)
 
     def test_no_member_amount(self):
-        self.assertEqual(PropertyCreditRebate.member_amount, 0)
+        self.assertEqual(CoPropertyCreditRebate.member_amount, 0)
 
     def test_min_age_is_65(self):
-        self.assertEqual(PropertyCreditRebate.min_age, 65)
+        self.assertEqual(CoPropertyCreditRebate.min_age, 65)
 
     def test_disabled_min_age_is_18(self):
-        self.assertEqual(PropertyCreditRebate.disabled_min_age, 18)
+        self.assertEqual(CoPropertyCreditRebate.disabled_min_age, 18)
 
     def test_qualifying_expenses(self):
-        self.assertEqual(PropertyCreditRebate.expenses, ["rent", "mortgage"])
+        self.assertEqual(CoPropertyCreditRebate.expenses, ["rent", "mortgage"])
 
     def test_income_limits(self):
-        self.assertEqual(PropertyCreditRebate.income_limit, {"single": 18_704, "married": 25_261})
+        self.assertEqual(CoPropertyCreditRebate.income_limit, {"single": 18_704, "married": 25_261})
 
     def test_dependencies(self):
         self.assertEqual(
-            PropertyCreditRebate.dependencies,
+            CoPropertyCreditRebate.dependencies,
             ["age", "income_frequency", "income_amount", "relationship"],
         )
 
