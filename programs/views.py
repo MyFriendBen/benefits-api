@@ -1,5 +1,6 @@
 from programs.models import Program, Navigator, ProgramCategory, UrgentNeed, UrgentNeedType
 from rest_framework import viewsets, mixins
+from programs.federal import visible_to_code
 from rest_framework import permissions
 from programs.serializers import (
     ProgramCategorySerializer,
@@ -16,10 +17,10 @@ class ProgramViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.
 
     def get_queryset(self):
         return Program.objects.filter(
+            visible_to_code(self.kwargs["white_label"]),
             active=True,
             show_on_current_benefits=True,
             category__isnull=False,
-            white_label__code=self.kwargs["white_label"],
         )
 
 
@@ -31,12 +32,12 @@ class ProgramCategoryViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, v
         # Scope by the *programs'* white label rather than the category's own.
         # A shared category has no white label, so filtering on it would drop
         # every shared row; the programs it contains are what belong to a
-        # white label.
+        # white label (or to `federal`, which every white label sees).
         return ProgramCategory.objects.filter(
+            visible_to_code(self.kwargs["white_label"], prefix="programs__"),
             programs__isnull=False,
             programs__active=True,
             programs__show_on_current_benefits=True,
-            programs__white_label__code=self.kwargs["white_label"],
         ).distinct()
 
     def get_serializer_context(self):
@@ -50,7 +51,7 @@ class NavigatorViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Navigator.objects.filter(programs__isnull=False, white_label__code=self.kwargs["white_label"])
+        return Navigator.objects.filter(visible_to_code(self.kwargs["white_label"]), programs__isnull=False)
 
 
 class UrgentNeedViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):

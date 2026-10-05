@@ -6,6 +6,7 @@ from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
 from configuration.models import Configuration
+from programs.federal import one_per_name, visible_to
 from programs.models import Program, WarningMessage
 from screener.models import (
     CurrentBenefit,
@@ -160,9 +161,10 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
     flow through `current_benefits`. Add new derivable compounds here as they appear.
 
-    Already scoped to this screen's white label, so every name returned resolves in
-    `_write_current_benefits()` — unlike the hardcoded set this replaced, which
-    relied on that resolve to drop the variants a white label doesn't ship.
+    Already scoped to the programs this screen's white label sees (its own plus the
+    federal ones), so every name returned resolves in `_write_current_benefits()` —
+    unlike the hardcoded set this replaced, which relied on that resolve to drop the
+    variants a white label doesn't ship.
     """
     derived: set[str] = set()
     if screen.calc_gross_income("yearly", (_SSI_INCOME_TYPE,)) > 0:
@@ -170,7 +172,7 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
         # `co_tax_calculator` and `dbg_wl` ship no SSI program at all.
         derived |= set(
             Program.objects.filter(
-                white_label=screen.white_label,
+                visible_to(screen.white_label),
                 base_program=_SSI_BASE_PROGRAM,
             ).values_list("name_abbreviated", flat=True)
         )
@@ -182,12 +184,12 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
     Write the CurrentBenefit join table for `screen`, replacing any existing rows.
 
     `current_benefits` is a list of `name_abbreviated` strings (e.g. ["tx_snap",
-    "tanf"]). Each is resolved to a Program via the (white_label, name_abbreviated)
-    lookup and written directly; a name the current WL doesn't offer is silently
-    skipped. Names derivable from screen state (currently SSI, via an sSI income
-    stream) are OR'd in via `_derived_current_benefit_names()` so the join table
-    reflects benefits the household demonstrably receives even when the tile wasn't
-    ticked.
+    "tanf"]). Each is resolved to one Program among the white label's own and the
+    federal ones (the federal row winning a shared name) and written directly; a name
+    the current WL doesn't offer is silently skipped. Names derivable from screen
+    state (currently SSI, via an sSI income stream) are OR'd in via
+    `_derived_current_benefit_names()` so the join table reflects benefits the
+    household demonstrably receives even when the tile wasn't ticked.
 
     Uses select_for_update() inside a transaction to serialize concurrent PATCH
     requests on the same screen and prevent races on the delete+bulk_create. The
@@ -202,10 +204,18 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
         # screen's white label; silently drop any this WL doesn't offer.
         requested = set(current_benefits)
         derived = _derived_current_benefit_names(screen)
-        resolved = Program.objects.filter(
-            white_label=screen.white_label,
-            name_abbreviated__in=requested | derived,
-        ).values_list("id", "name_abbreviated")
+        resolved = [
+            (program.id, program.name_abbreviated)
+            for program in one_per_name(
+                Program.objects.filter(
+                    visible_to(screen.white_label),
+                    name_abbreviated__in=requested | derived,
+                )
+                .select_related("white_label")
+                .order_by("id"),
+                "current benefits write",
+            )
+        ]
         program_ids_to_write = [program_id for program_id, _ in resolved]
 
         # A *frontend-requested* name with no Program in this WL is dropped

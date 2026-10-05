@@ -34,6 +34,7 @@ from rest_framework.response import Response
 from sentry_sdk import capture_message
 
 from configuration.models import Configuration
+from programs.federal import one_per_name, visible_to
 from programs.framework.base import Eligibility
 from programs.models import (
     Document,
@@ -401,10 +402,10 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
 
     programs = (
         Program.objects.filter(
-            white_label=screen.white_label,
+            visible_to(screen.white_label),
             name_abbreviated__in=name_abbreviations,
         )
-        .select_related("apply_button_link", "estimated_value")
+        .select_related("apply_button_link", "estimated_value", "white_label")
         .prefetch_related(
             "apply_button_link__translations",
             "estimated_value__translations",
@@ -435,7 +436,7 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
             _navigators_prefetch(),
         )
     )
-    return {program.name_abbreviated: program for program in programs}
+    return {program.name_abbreviated: program for program in one_per_name(programs, "assistant context")}
 
 
 def _navigators_prefetch() -> Prefetch:
@@ -767,7 +768,7 @@ def _insurance_program_names(screen: Screen) -> set[str]:
     if not held_keys:
         return set()
 
-    rows = Program.objects.filter(white_label=screen.white_label).values_list("name_abbreviated", "base_program")
+    rows = Program.objects.filter(visible_to(screen.white_label)).values_list("name_abbreviated", "base_program")
     held_names: set[str] = set()
     unmapped: list[str] = []
     for name, base_program in rows:
@@ -818,20 +819,23 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     # row. `currentbenefit` is the default reverse accessor; CurrentBenefit.program
     # declares no related_name.
     #
-    # White-label scoped like its sibling _context_programs: the write path in
+    # White-label scoped like its sibling _context_programs (the white label's own
+    # programs plus the federal ones): the write path in
     # serializers._write_current_benefits is scoped too, so this is belt-and-braces,
     # but a foreign program leaking into a list the prompt calls a closed universe
     # is worth one extra WHERE clause. Deactivated programs are intentionally NOT
-    # filtered out — a program can be discontinued and still be in payment.
+    # filtered out — a program can be discontinued and still be in payment — so a
+    # state row deactivated when its program moved to `federal` can share a name with
+    # the federal row; one_per_name keeps the federal one.
     insurance_names = _insurance_program_names(screen)
     criteria = Q(currentbenefit__screen=screen)
     if insurance_names:
         criteria |= Q(name_abbreviated__in=insurance_names)
     programs = (
-        Program.objects.filter(criteria, white_label=screen.white_label)
+        Program.objects.filter(criteria, visible_to(screen.white_label))
         # distinct() is required now that the Q() union can match a program by both
         # arms; the CurrentBenefit join alone couldn't duplicate (unique_together).
-        .distinct().select_related("name")
+        .distinct().select_related("name", "white_label")
         # Documents ride this query rather than a second one — same rows, and
         # `_document_texts` needs nothing else. Text only, no link translations, for
         # the reason in `_context_programs`.
@@ -839,7 +843,7 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     )
 
     current = []
-    for program in programs:
+    for program in one_per_name(programs, "assistant current programs"):
         entry = {
             "external_name": program.name_abbreviated,
             # Fall back to the abbreviation so the assistant can still name the

@@ -1,7 +1,7 @@
 import hashlib
 import requests
 from typing import Optional
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.clients.google_places import GooglePlacesClient
@@ -42,6 +42,7 @@ from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
+from programs.federal import one_per_name, visible_to, visible_to_code
 from programs.models import (
     Document,
     Navigator,
@@ -160,7 +161,17 @@ class ScreenCurrentBenefitsView(views.APIView):
         # the locked screen's white label rather than a pre-lock read.
         with transaction.atomic():
             screen = get_object_or_404(Screen.objects.select_for_update(), uuid=screen_uuid)
-            program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=name_abbreviated)
+            # A federal row and a deactivated state row can share a name, so this is a list
+            # resolved to one rather than a get() that would raise on two.
+            matches = one_per_name(
+                Program.objects.filter(visible_to(screen.white_label), name_abbreviated=name_abbreviated)
+                .select_related("white_label")
+                .order_by("id"),
+                "current benefit toggle",
+            )
+            if not matches:
+                raise Http404
+            program = matches[0]
             if has:
                 CurrentBenefit.objects.get_or_create(screen=screen, program=program)
             else:
@@ -419,7 +430,8 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         excluded_programs = [p.id for p in referrer.remove_programs.all()]
 
     all_programs = (
-        Program.objects.filter(active=True, category__isnull=False, white_label=screen.white_label)
+        Program.objects.filter(visible_to(screen.white_label), active=True, category__isnull=False)
+        .select_related("white_label")
         .prefetch_related(
             "legal_status_required",
             "year",
@@ -451,6 +463,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         )
         .exclude(id__in=excluded_programs)
     )
+    # Every name below keys a dict (`program_by_abbr`, `program_eligibility`), so a name active
+    # under both this white label and `federal` would silently drop one row from the PE payload
+    # while still displaying both.
+    all_programs = one_per_name(all_programs, "eligibility_results")
     data = []
 
     try:
@@ -479,13 +495,14 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     # Built after `program_by_abbr` on purpose. `force_calculated_codes()` contains no
     # PolicyEngine program, and keeping the two lists separate makes that structural — a
     # row added here can never reach `pe_calculators` and perturb the shared PE payload.
-    upstream_only_programs = list(
+    upstream_only_programs = one_per_name(
         Program.objects.filter(
-            white_label=screen.white_label,
+            visible_to(screen.white_label),
             name_abbreviated__in=force_calculated_codes(),
         )
         .exclude(name_abbreviated__in=list(program_by_abbr))
-        .select_related("year")
+        .select_related("year", "white_label"),
+        "eligibility_results upstream",
     )
     upstream_only_ids = {program.id for program in upstream_only_programs}
 
@@ -872,11 +889,14 @@ class HasBenefitsProgramsView(views.APIView):
     queryset = Program.objects.none()  # Required for DjangoModelPermissions
 
     def get(self, request, white_label):
-        programs = Program.objects.filter(
-            active=True,
-            show_in_has_benefits_step=True,
-            white_label__code=white_label,
-        ).select_related("name", "website_description", "category__name")
+        programs = one_per_name(
+            Program.objects.filter(
+                visible_to_code(white_label),
+                active=True,
+                show_in_has_benefits_step=True,
+            ).select_related("name", "website_description", "category__name", "white_label"),
+            "has-benefits step",
+        )
 
         serializer = HasBenefitsProgramSerializer(programs, many=True)
         return Response(serializer.data)

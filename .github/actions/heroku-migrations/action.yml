@@ -107,3 +107,17 @@ runs:
         if [ $STATUS -ne 0 ]; then
           exit $STATUS
         fi
+
+    - name: Audit federal programs
+      id: federal-audit
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        # Federal programs are shown to every white label, and moving one to `federal`
+        # deactivates its state rows in a data migration -- which just ran above. A name still
+        # active on both sides is a configuration error the results page would only log, so
+        # fail the deploy here. Unlike the vintage audit this is a hard failure: a clean
+        # database is the starting state, so it can't block deploys on pre-existing drift.
+        echo "Auditing federal programs..."
+        heroku run --exit-code -a ${{ inputs.heroku-app-name }} "python manage.py audit_federal_programs" 2>&1
