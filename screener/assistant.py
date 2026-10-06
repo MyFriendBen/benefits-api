@@ -35,7 +35,8 @@ from sentry_sdk import capture_message
 
 from configuration.models import Configuration
 from programs.framework.base import Eligibility
-from programs.models import Document, Program, UrgentNeed, WarningMessage
+from programs.models import Document, Program, TranslationOverride, UrgentNeed, WarningMessage
+from programs.translation_overrides import warning_calculators as translation_override_calculators
 from programs.util import Dependencies
 from programs.warnings import warning_calculators
 from parler.models import TranslationDoesNotExist
@@ -342,9 +343,23 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
             white_label=screen.white_label,
             name_abbreviated__in=name_abbreviations,
         )
-        .select_related("apply_button_link")
+        .select_related("apply_button_link", "estimated_value")
         .prefetch_related(
             "apply_button_link__translations",
+            "estimated_value__translations",
+            # Only the overrides `_value_override` can apply. `to_attr` rather than
+            # filtering `translation_overrides` itself, so `Program.get_translation`
+            # never sees a narrowed list if something later calls it on these rows.
+            Prefetch(
+                "translation_overrides",
+                queryset=(
+                    TranslationOverride.objects.filter(field="estimated_value", active=True)
+                    .select_related("translation")
+                    .prefetch_related("translation__translations", "counties")
+                    .order_by("id")
+                ),
+                to_attr="estimated_value_overrides",
+            ),
             _documents_prefetch(),
             Prefetch(
                 "warning_messages",
@@ -385,6 +400,46 @@ def _apply_url(program: Program, language_code: str) -> str:
         )
         return ""
     return link
+
+
+def _value_override(
+    program: Program,
+    screen: Screen,
+    missing_dependencies: Optional[Dependencies],
+    language_code: str,
+) -> str:
+    """The text the results page shows in place of this program's dollar figure, or "".
+
+    An admin sets `Program.estimated_value` when the calculated figure shouldn't be
+    shown as-is ("Up to $7,669 per home", "Varies based on services used"); the card
+    then renders that text and no number. Benji has to quote the same text, or it
+    contradicts the card with a precise-sounding figure the page deliberately hides.
+
+    Mirrors `Program.get_translation(..., "estimated_value")`, which the results page
+    goes through: a `TranslationOverride` can swap the text per household (cesn_leap
+    shows "At least $200" to renters). Two differences, both for the same reason as
+    `_warning_messages`: an unknown calculator is skipped rather than raising, and the
+    overrides come from `_context_programs`' prefetch rather than one query per program.
+
+    `missing_dependencies` is only read when the program has overrides, so callers may
+    pass None for a program without any.
+    """
+    translation = program.estimated_value
+    for override in program.estimated_value_overrides:
+        calculator = translation_override_calculators.get(override.calculator)
+        if calculator is None:
+            _report_once(
+                f"unknown-override-calculator:{override.calculator}",
+                f"Skipping estimated_value override {override.external_name or override.id} on "
+                f"{program.name_abbreviated}: '{override.calculator}' is not a valid calculator name",
+            )
+            continue
+        if calculator(screen, override, missing_dependencies).calc():
+            translation = override.translation
+            break
+    # Capped like a name: it's a label on the card, the longest live one is 29 chars,
+    # and it lands in the system prompt.
+    return _translated(translation, language_code)
 
 
 def _document_texts(program: Program, language_code: str) -> list[str]:
@@ -1228,6 +1283,15 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
             }
             row_program = programs_by_name.get(p.name_abbreviated)
             if row_program is not None:
+                # How the card frames the figure. ai-service treats `lump_sum` as a
+                # one-time amount rather than "per year"; the value itself stays annual.
+                if row_program.value_format:
+                    program["value_format"] = row_program.value_format
+                if row_program.estimated_value_overrides and missing_dependencies is None:
+                    missing_dependencies = screen.missing_fields()
+                value_override = _value_override(row_program, screen, missing_dependencies, language_code)
+                if value_override:
+                    program["estimated_value_override"] = value_override
                 apply_url = _apply_url(row_program, language_code)
                 if apply_url:
                     program["apply_url"] = apply_url
