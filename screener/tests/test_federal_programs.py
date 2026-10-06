@@ -5,7 +5,8 @@ replaces carry, and moving a program deactivates those state rows. These tests c
 read paths that union federal programs in (results, current benefits, the has-benefits step,
 the current-benefits page), the collision rule when a name is still active on both sides
 (log and prefer the federal row, never raise), and the two hard failures that keep that from
-happening: the import guard and `audit_federal_programs`.
+happening: the import guard and `audit_federal_programs`. Switching a federal program off in
+the admin needs a confirmation, because it hides the program from every white label.
 
 Calculators are stubbed through `Program.eligibility`: what is under test is which rows the
 results page fetches and publishes, not any program's rule.
@@ -24,6 +25,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db.models import Model
 from django.forms import ModelForm
+from django.forms.models import model_to_dict
 from django.test import RequestFactory, TestCase
 from rest_framework.test import APIClient
 
@@ -31,7 +33,7 @@ from authentication.models import User
 from configuration.white_labels import state_options
 from programs.federal import FEDERAL_WHITE_LABEL
 from programs.framework.base import Eligibility
-from programs.admin import ReferrerAdmin, WarningMessageAdmin
+from programs.admin import ProgramAdmin, ReferrerAdmin, WarningMessageAdmin
 from programs.models import FederalPoveryLimit, Program, ProgramCategory, Referrer, WarningMessage
 from programs.serializers import ProgramCategorySerializer
 from screener.models import CurrentBenefit, EligibilitySnapshot, Screen, WhiteLabel
@@ -512,3 +514,87 @@ class TestAdminPickers(FederalProgramsTestCase):
 
         self.assertIn(own, choices)
         self.assertNotIn(federal, choices)
+
+
+class TestFederalDeactivationInAdmin(FederalProgramsTestCase):
+    """Switching off a federal program hides it everywhere, so the admin makes that deliberate."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.model_admin = ProgramAdmin(Program, AdminSite())
+        self.request = RequestFactory().post("/admin/")
+        self.request.user = _Superuser()
+
+    def bound_form(self, program: Program, **changes: Any) -> ModelForm:
+        form_class = self.model_admin.get_form(self.request, obj=program)
+        data = {
+            name: value
+            for name, value in model_to_dict(program, fields=list(form_class.base_fields)).items()
+            if value is not None
+        }
+        data = {name: [v.pk for v in value] if isinstance(value, list) else value for name, value in data.items()}
+        data.update(changes)
+        data = {name: value for name, value in data.items() if value is not False}
+        return form_class(data=data, instance=program)
+
+    def test_switching_off_a_federal_program_needs_confirmation(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+
+        form = self.bound_form(federal, active=False)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("all 2 white labels", form.errors["confirm_federal_deactivation"][0])
+
+    def test_a_confirmed_switch_off_saves_with_a_warning(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+        self.program(self.co, "fed_account", active=False)
+        form = self.bound_form(federal, active=False, confirm_federal_deactivation=True)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch("programs.admin.messages.warning") as warning:
+            self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
+
+        federal.refresh_from_db()
+        self.assertFalse(federal.active)
+        message = warning.call_args.args[1]
+        self.assertIn("hidden from all 2 white labels", message)
+        self.assertIn("No state version replaces it", message)
+
+    def test_the_warning_names_state_versions_that_are_still_active(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+        self.program(self.wa, "fed_account")
+        form = self.bound_form(federal, active=False, confirm_federal_deactivation=True)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch("programs.admin.messages.warning") as warning:
+            self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
+
+        self.assertIn("state versions under wa", warning.call_args.args[1])
+
+    def test_other_edits_to_a_federal_program_need_no_confirmation(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+
+        form = self.bound_form(federal, low_confidence=True)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        with patch("programs.admin.messages.warning") as warning:
+            self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
+        warning.assert_not_called()
+
+    def test_a_state_program_switches_off_as_before(self) -> None:
+        state = self.program(self.co, "co_only")
+
+        form = self.bound_form(state, active=False)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertNotIn("confirm_federal_deactivation", self.model_admin.get_fields(self.request, state))
+
+    def test_the_list_page_locks_active_only_on_active_federal_programs(self) -> None:
+        form_class = self.model_admin.get_changelist_form(self.request)
+
+        def locked(program: Program) -> bool:
+            return form_class(instance=program).fields["active"].disabled
+
+        self.assertTrue(locked(self.program(self.federal, "fed_on")))
+        self.assertFalse(locked(self.program(self.federal, "fed_off", active=False)))
+        self.assertFalse(locked(self.program(self.co, "co_only")))
