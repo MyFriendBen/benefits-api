@@ -5,6 +5,17 @@ from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIn
 
 class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     program_code = "il_aca_adults"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    #
+    # The two sibling gates are mutual exclusion, not a shared threshold: ACA Adults is
+    # the leftover category for adults FamilyCare and Moms & Babies do not reach, so
+    # "not eligible for either" is the rule itself. Both siblings are custom calculators
+    # and are force-calculated, but each gates on il_medicaid in turn, so they resolve
+    # only when PolicyEngine answered.
+    gates_on = ("il_medicaid", "il_family_care", "il_moms_and_babies")
     member_amount = 474 * 12  # $474/month
     min_age = 19
     max_age = 64
@@ -34,7 +45,8 @@ class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         member = e.member
 
         # Must be age 19-64
-        e.condition(member.age >= self.min_age and member.age <= self.max_age)
+        age = member.calc_age()
+        e.condition(age >= self.min_age and age <= self.max_age)
 
         # Must NOT be pregnant
         e.condition(not member.pregnant)

@@ -53,8 +53,10 @@
    - Source: HTW Who Can Apply page: 'Not have health coverage, including...Medicare'; HTW FAQ confirms no other insurance
 
 8. **Must be a U.S. citizen, U.S. national, or qualified non-citizen (legal immigration status required)** ⚠️ *data gap*
-   - Note: The screener does not collect citizenship or immigration status. HTW requires U.S. citizenship, U.S. national status, or qualified non-citizen status (e.g., lawful permanent resident, refugee, asylee). Undocumented immigrants are not eligible for standard HTW. This is addressed at the config level via `legal_status_required` — undocumented (`non_citizen`) is excluded from the program.
+   - Note: The screener does not collect citizenship or immigration status. HTW requires U.S. citizenship, U.S. national status, or qualified non-citizen status (e.g., lawful permanent resident). Undocumented immigrants are not eligible for standard HTW. This is addressed at the config level via `legal_status_required`: `citizen`, `gc_5plus`, `gc_5less`, `otherWithWorkPermission`. Undocumented (`non_citizen`) is excluded.
+   - **Effective 2026-10-01** (P.L. 119-21 §71109): HTW is partly funded with federal Medicaid matching funds, and CMS counts family-planning-only coverage as Medicaid benefits subject to the new limit. Federally funded coverage is now limited to citizens/nationals, LPRs, Cuban/Haitian entrants and COFA migrants, so `refugee` was removed. `otherWithWorkPermission` stays because COFA migrants and Cuban/Haitian entrants share that bucket with groups that lose eligibility. Texas has not yet published its own HTW guidance on the change.
    - Source: HTW Who Can Apply page: 'Be a U.S. citizen or qualified non-citizen'; TMHP HTW Handbook Chapter 2 references citizenship/immigration documentation requirements
+   - Source (Oct 1 change): [CMS SHO #26-001](https://www.medicaid.gov/federal-policy-guidance/downloads/sho26001.pdf), footnote 14 (family-planning-only coverage)
 
 ## Benefit Value
 

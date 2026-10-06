@@ -16,7 +16,7 @@ class AllKids(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         member = e.member
 
         # Must be under 19
-        e.condition(member.age <= self.max_age)
+        e.condition(member.calc_age() <= self.max_age)
 
         # Must not have Medicaid
         e.condition(not member.has_insurance("medicaid"))

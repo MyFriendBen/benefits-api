@@ -4,12 +4,10 @@ from unittest.mock import Mock, MagicMock
 from django.test import TestCase
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_deps
-from programs.framework.pe_dependencies.household import KsStateCodeDependency
 from programs.framework.pe_dependencies.member import AgeDependency, PregnancyDependency, Chip
 from programs.framework.pe_dependencies.tax import KsChipPremium
 from programs.programs.cross_white_label.medicaid.ks import KsKanCare
 from programs.programs.cross_white_label.medicaid.chip.ks import KsChip
-from programs.framework.pe_dependencies import member
 
 
 class TestKsChip(TestCase):
@@ -49,12 +47,6 @@ class TestKsChip(TestCase):
     def test_pe_inputs_includes_ssi_countable_resources(self):
         """Inherited via KsKanCare.pe_inputs; CHIP applies no resource test of its own."""
         self.assertIn(member_deps.SsiCountableResourcesDependency, KsChip.pe_inputs)
-
-    def test_pe_inputs_includes_ks_state_code_dependency(self):
-        """KsStateCodeDependency sets state_code=KS so PE applies the KS income limit (2.55)."""
-        self.assertIn(KsStateCodeDependency, KsChip.pe_inputs)
-        self.assertEqual(KsStateCodeDependency.state, "KS")
-        self.assertEqual(KsStateCodeDependency.field, "state_code")
 
     def test_pe_outputs_includes_chip_dependency(self):
         """The per-child coverage value comes from PE's `chip` output."""

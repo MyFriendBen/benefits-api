@@ -69,7 +69,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1957` (age 68), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$950` per month, No other income sources, Insurance: None, Citizenship: US Citizen
 * **Current Benefits**: Do not select any current benefits (no FDPIR, no CSFP)
@@ -86,7 +86,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1966` (age 60, just turned 60 this month), Relationship: `Head of Household`, Has income: Yes, Social Security Retirement income: `$1,956` per month (approximately $23,475/year, which is right at 150% FPL for a household of 1 using 2026 HHS guidelines)
 * **Current Benefits**: Do not select any current benefits (no FDPIR)
@@ -103,7 +103,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `June 1953` (age 72), Relationship: Head of Household, Has income: Yes, Social Security Retirement: `$1,100` per month
 * **Person 2**: Birth month/year: `September 1955` (age 70), Relationship: Spouse, Has income: Yes, Social Security Retirement: `$470` per month
@@ -121,7 +121,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1961` (age 65), This person is the head of household, Has income: Yes, Social Security Retirement income: `$1,999` per month (approximately $23,988/year, just above the 150% FPL limit of ~$23,475/year for a 1-person household using 2025 HHS guidelines), No other income sources
 * **Current Benefits**: Do not select any current benefits
@@ -138,7 +138,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1966` (age 59), This person is 59 years old, which is below the minimum age of 60 required for CSFP
 * **Income**: Enter Social Security Retirement income of `$800` per month, This is well below the 150% FPL threshold for a single-person household, so income is not the disqualifying factor
@@ -156,7 +156,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98902`, Select county `Yakima`
+* **Location**: Enter ZIP code `98902`, Select county `Yakima County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1956` (age 69), Indicate this person is the head of household, Indicate US citizen
 * **Income**: Enter Social Security Retirement income of `$900` per month, No other income sources
@@ -174,7 +174,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `99201`, Select county `Spokane`
+* **Location**: Enter ZIP code `99201`, Select county `Spokane County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1960` (age 65), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$900` per month, No other income sources
 * **Current Benefits**: Select that the household currently receives **SNAP** (food stamps/EBT) benefits.
@@ -191,7 +191,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98201`, Select county `Snohomish`
+* **Location**: Enter ZIP code `98201`, Select county `Snohomish County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1962` (age 63), Relationship: Head of Household, Has income: Yes, Social Security Retirement: `$950` per month
 * **Person 2**: Birth month/year: `September 1975` (age 50), Relationship: Spouse, Has income: Yes, Wages/Salary: `$1,200` per month
@@ -210,7 +210,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `99201`, Select county `Spokane`
+* **Location**: Enter ZIP code `99201`, Select county `Spokane County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `June 1954` (age 71), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$950` per month
 * **Person 2**: Birth month/year: `September 1958` (age 67), Relationship: Spouse, Has income: Yes, Social Security Retirement income: `$750` per month
@@ -228,7 +228,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `99362`, Select county `Walla Walla`
+* **Location**: Enter ZIP code `99362`, Select county `Walla Walla County`
 * **Household**: Number of people: `8`
 * **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: Head of Household, Has income: Yes, Social Security Retirement: `$2,500` monthly
 * **Person 2**: Birth month/year: `June 1968` (age 57), Relationship: Spouse, Has income: Yes, Employment income: `$2,000` monthly
@@ -243,19 +243,19 @@
 
 ---
 
-### Scenario 15: Non-Washington Resident — Out-of-State Senior Should Be Ineligible
+### Scenario 15: Non-Washington Resident — Out-of-State ZIP Rejected at Intake
 
-**What we're checking**: Verifies that an applicant who otherwise meets all CSFP criteria (age 60+, income below 150% FPL, no FDPIR participation) but resides outside Washington State is correctly identified as ineligible due to the state residency requirement
+**What we're checking**: Verifies that an applicant who otherwise meets all CSFP criteria (age 60+, income below 150% FPL, no FDPIR participation) but enters a ZIP outside Washington State is rejected at screen creation, before eligibility is calculated: the state residency requirement is enforced by ZIP validation at intake
 
-**Expected**: Not eligible, value: `$0`
+**Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `97201` is not in the WA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
 
-* Location: Enter ZIP code `97201`, Select county `Multnomah`
+* Location: Enter ZIP code `97201`, Select county `Multnomah County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 1957` (age 68), Relationship: Head of Household, Has income: Yes, Social Security Retirement income: `$950` per month, No other income sources, Insurance: None, Citizenship: US Citizen
 
-**Why this matters**: This test isolates the Washington State residency requirement (7 CFR 247.9(a); WA CSFP State Plan Section 2). The applicant clearly satisfies every other eligibility criterion — age well above 60, income well below 150% FPL, no disqualifying program participation — so the only factor that should drive ineligibility is the out-of-state ZIP and county.
+**Why this matters**: This test isolates the Washington State residency requirement (7 CFR 247.9(a); WA CSFP State Plan Section 2). The applicant clearly satisfies every other eligibility criterion — age well above 60, income well below 150% FPL, no disqualifying program participation — so the out-of-state ZIP is the only reason the screen is rejected.
 
 ---
 
@@ -263,3 +263,16 @@
 
 * [https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp)](https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp))
 * [https://agr.wa.gov/services/food-access/hunger-relief-agency-hub/csfp/csfp-plan/section-2](https://agr.wa.gov/services/food-access/hunger-relief-agency-hub/csfp/csfp-plan/section-2)
+
+## Note: the 150% limit is federal; Texas alone is on 130%
+
+The 150% limit matches PolicyEngine's federal parameter, `gov.usda.csfp.fpg_limit` (1.3 from
+2024, 1.5 from 1 January 2025). Texas is the one exception: PolicyEngine routes TX through
+its own `tx_dta_csfp_income_eligible` test at 130%. So a 130% boundary observed at request
+period 2026 (130% × $15,960 = $20,748/year for a single senior; the probe bisects to $12 and
+landed at $20,753, within that resolution) is the Texas rule, not a disagreement with this
+spec. Verify per state with `qa/MFB-1786-csfp-limit-probe.py`.
+
+**Data gap:** the vintage is stated inconsistently within this spec. The boundary scenarios
+describe $23,475 as 150% of the 2026 guidelines in one place and of the 2025 guidelines in
+another. $23,475 is 150% of the 2025 guideline; the 2026 equivalent is $23,940.

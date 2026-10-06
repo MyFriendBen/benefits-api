@@ -137,21 +137,21 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 
 ### Scenario 1: Standard Income Path — Single Adult Below the Limit
 **Expected**: Eligible, $370/year
-- ZIP `64108`, county `Jackson`, household size 1
+- ZIP `64108`, county `Jackson County`, household size 1
 - Person 1: Head of Household, birth month/year June 1986, wages $2,600/month ($31,200/year — below the $31,300 limit for 1 person)
 - No cash-assistance categorical benefit
 - **Why this matters**: confirms the verified WPN 25-3 threshold for a 1-person household (not the generic HHS figure, which would incorrectly show this household as further below/above threshold).
 
 ### Scenario 2: Exact 200% Boundary — Four-Person Household
 **Expected**: Eligible, $370/year
-- ZIP `65201`, county `Boone`, household size 4
+- ZIP `65201`, county `Boone County`, household size 4
 - Person 1: Head of Household, birth month/year June 1988, wages $64,300/year exactly (the correct 4-person WPN 25-3 limit)
 - Persons 2–4: Spouse and two children, no income
 - **Why this matters**: validates the ≤ comparator at the exact WPN 25-3 boundary for a 4-person household.
 
 ### Scenario 3: Just Above the Income Limit, No Categorical Pathway
 **Expected**: Not eligible
-- ZIP `65802`, county `Greene`, household size 3
+- ZIP `65802`, county `Greene County`, household size 3
 - Person 1: Head of Household, wages $53,400/year (just above the $53,300 3-person limit); Persons 2–3: no income
 - No cash-assistance categorical benefit
 - **Why this matters**: confirms the income ceiling is a hard gate at the verified WPN 25-3 threshold.
@@ -165,7 +165,7 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 
 ### Scenario 5: SSI Categorical Eligibility Above the Income Limit
 **Expected**: Eligible, $370/year
-- ZIP `65616`, county `Taney`, household size 2
+- ZIP `65616`, county `Taney County`, household size 2
 - Person 1: `sSI` income stream $900/month; Person 2 (spouse): wages $3,000/month (combined $46,800/year, above the $42,300 2-person limit)
 - No cash-assistance income stream of either type
 - **Why this matters**: confirms `sSI` is tested as a pathway distinct from `cashAssistance`.
@@ -180,7 +180,7 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 
 ### Scenario 7: Minor's Earned Income and Unemployment Compensation Are Both Excluded from Countable Income
 **Expected**: Eligible, $370/year
-- ZIP `65201`, county `Boone`, household size 2
+- ZIP `65201`, county `Boone County`, household size 2
 - Person 1: wages $42,000/year; Person 2: child, birth month/year June 2011 (age 15), wages $1,800/year plus unemployment compensation $600/year ($2,400/year total)
 - No categorical benefit
 - **Calculation**: countable income is $42,000 (both the minor's wages and unemployment compensation are excluded, per WPN 25-3's *"earned income or unemployment compensation for minors under the age of 18"*), ≤ the $42,300 limit.
@@ -196,14 +196,14 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 
 ### Scenario 9: Income Aggregation Across Two Adults
 **Expected**: Not eligible
-- ZIP `65201`, county `Boone`, household size 2
+- ZIP `65201`, county `Boone County`, household size 2
 - Person 1: wages $24,000/year; Person 2 (spouse): wages $20,000/year (each individually below the $31,300 1-person figure, combined $44,000/year against the $42,300 2-person limit)
 - No categorical benefit
 - **Why this matters**: WPN 25-3 requires income for *"the entire family living in the residence"* — none of the other scenarios prove that two members' incomes are actually summed rather than evaluated independently. A calculator that incorrectly checks each member against the 1-person limit would wrongly pass this household.
 
 ### Scenario 10: Gifts Are Excluded from Countable Income
 **Expected**: Eligible, $370/year
-- ZIP `64801`, county `Jasper`, household size 1
+- ZIP `64801`, county `Jasper County`, household size 1
 - Person 1: wages $31,000/year + a `gifts` income stream of $5,000/year
 - No categorical benefit
 - **Calculation**: countable income is $31,000 (gifts excluded per WPN 25-3 Section C.6), ≤ the $31,300 1-person limit; without the exclusion this household ($36,000) would incorrectly fail.
@@ -211,7 +211,7 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 
 ### Scenario 11: Child Support Paid Is Not Deducted from Countable Income
 **Expected**: Not eligible
-- ZIP `65802`, county `Greene`, household size 1
+- ZIP `65802`, county `Greene County`, household size 1
 - Person 1: wages $32,000/year, plus a `childSupport` expense of $12,000/year
 - No categorical benefit
 - **Calculation**: countable income remains $32,000 — above the $31,300 1-person limit. WPN 25-3 Section E.2 bars deducting child support paid from income; a calculator that incorrectly treats the expense as a deduction would show $20,000 and wrongly pass this household.
@@ -219,7 +219,7 @@ This affects service order only, not eligibility or benefit value. Not modeled i
 
 ### Scenario 12: Household Size Above 8 Applies the Per-Person Extension
 **Expected**: Eligible, $370/year
-- ZIP `64108`, county `Jackson`, household size 9
+- ZIP `64108`, county `Jackson County`, household size 9
 - Person 1: Head of Household, wages $119,300/year exactly (the 8-person limit of $108,300 plus the $11,000 per-additional-person extension for the 9th member); Persons 2–9: no income
 - No categorical benefit
 - **Why this matters**: confirms the +$11,000-per-additional-person rule is correctly applied above the table's explicit 8-person row, at the exact boundary.

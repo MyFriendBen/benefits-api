@@ -30,7 +30,7 @@ class TxMedicaidForChildren(Medicaid):
         Returns the Medicaid benefit value for children under 19 without other insurance.
         """
         # Must be under 19
-        if member.age >= 19:
+        if member.calc_age() >= 19:
             return 0
 
         # Must not have other health insurance

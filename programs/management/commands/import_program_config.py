@@ -241,32 +241,13 @@ class Command(BaseCommand):
         Return the set of valid county-name strings for a white label, taken from its
         `counties_by_zipcode` configuration — the same values the screener stores in
         `Screen.county`. Returns None when no such configuration exists (in which case
-        county validation is skipped), read the same way `add_counties` reads it.
+        county validation is skipped).
         """
-        config_obj = (
-            Configuration.objects.filter(name="counties_by_zipcode", white_label=white_label, active=True)
-            .order_by("-id")
-            .first()
-        )
-        if config_obj is None:
-            return None
-
-        data = config_obj.data
-        if isinstance(data, str):
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError as e:
-                raise CommandError(
-                    f"'counties_by_zipcode' config for white label '{white_label.code}' is not valid JSON: {e}"
-                ) from e
+        try:
+            data = Configuration.counties_by_zipcode(white_label)
+        except ValueError as e:
+            raise CommandError(str(e)) from e
         if data is None:
-            return None
-        if not isinstance(data, dict):
-            raise CommandError(
-                f"'counties_by_zipcode' config for white label '{white_label.code}' must be a JSON object, "
-                f"got {type(data).__name__}."
-            )
-        if not data:
             return None
 
         valid = set()

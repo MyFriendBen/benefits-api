@@ -26,7 +26,7 @@ def make_insurance(none=False, private=False, medicaid=False, medicare=False, em
 
 def make_member(age=40, insurance=None):
     m = Mock()
-    m.age = age
+    m.calc_age = Mock(return_value=age)
     m.insurance = insurance or make_insurance(none=True)
     return m
 

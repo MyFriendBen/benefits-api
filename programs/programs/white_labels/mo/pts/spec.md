@@ -97,7 +97,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,033**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1954` (age 72), Has income: `Yes`, Income type: `Social Security`, Income amount: `$14,400` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Rent`, Rent paid: `$6,000` per year
@@ -114,7 +114,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$280**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1958` (age 68), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$38,200` per year (single filer, $0 deduction), Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Rent`, Rent paid: `$9,000` per year
@@ -131,7 +131,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$695**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1958` (age 68), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$42,200` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Own`, Property tax paid: `$1,800` per year
@@ -148,7 +148,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1954` (age 72), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$38,201` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Rent`, Rent paid: `$6,000` per year
@@ -165,7 +165,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,500**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1961` (age 65), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$14,300` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Own`, Property tax paid: `$1,500` per year
@@ -182,7 +182,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,200**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `September 1961` (turns 65 in September, before Dec 31), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$12,000` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Own`, Property tax paid: `$1,200` per year
@@ -199,7 +199,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1954` (age 72), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$10,800` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Neither` (neither owns nor rents)
@@ -216,7 +216,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,550**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1956` (age 70), Has income: `Yes`, Income type: `Social Security`, Income amount: `$10,800` per year, Veteran: `No`, Disability: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1958` (age 68), Has income: `Yes`, Income type: `Social Security`, Income amount: `$8,400` per year, Veteran: `No`, Disability: `No`
@@ -235,7 +235,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1955` (age 71), Has income: `Yes`, Income type: `Social Security`, Income amount: `$22,800` per year; also Income type: `Pension/Retirement`, Income amount: `$18,000` per year, Veteran: `No`, Disability: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1957` (age 69), Has income: `Yes`, Income type: `Social Security`, Income amount: `$9,600` per year; also Income type: `Pension/Retirement`, Income amount: `$3,600` per year, Veteran: `No`, Disability: `No`
@@ -253,7 +253,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$960**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1970` (age 56), Has income: `Yes`, Income type: `SSDI`, Income amount: `$10,800` per year, Veteran: `No`, Disability: `Yes`
 - **Housing**: Housing situation: `Rent`, Rent paid: `$4,800` per year
@@ -270,7 +270,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1962` (turns 65 the following year), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$12,000` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Own`, Property tax paid: `$1,400` per year
@@ -287,7 +287,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,055**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1966` (age 60), Has income: `Yes`, Income type: `Social Security Survivor Benefits`, Income amount: `$13,200` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Rent`, Rent paid: `$5,400` per year
@@ -304,7 +304,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,100**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1975` (age 51), Has income: `Yes`, Income type: `VA Disability Compensation`, Income amount: `$46,800` per year (only income, excluded from PTC income → PTC income $0), Veteran: `Yes`, Disability: `Yes`
 - **Housing**: Housing situation: `Own`, Property tax paid: `$1,100` per year
@@ -321,7 +321,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$227**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1958` (age 68), Has income: `Yes`, Income type: `Social Security`, Income amount: `$16,800` per year, Veteran: `No`, Disability: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1960` (age 66), Has income: `Yes`, Income type: `Social Security`, Income amount: `$14,400` per year; also Income type: `Pension/Retirement`, Income amount: `$12,600` per year, Veteran: `No`, Disability: `No`
@@ -339,7 +339,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,474**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1970` (age 56, not disabled/veteran/65+), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$9,600` per year, Veteran: `No`, Disability: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1958` (age 68), Has income: `Yes`, Income type: `Social Security`, Income amount: `$13,200` per year
@@ -357,7 +357,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1978` (age 48, not disabled/veteran/65+), Has income: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1966` (age 60), Has income: `Yes`, Income type: `Social Security Survivor Benefits`, Income amount: `$12,000` per year
@@ -375,7 +375,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,069**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1958` (age 68), Has income: `Yes`, Income type: `Social Security`, Income amount: `$14,400` per year
 - **Person 2 (Minor Child)**: Relationship: `Child`, Birth month/year: `January 2015` (age 11), Has income: `Yes`, Income type: `SSI`, Income amount: `$4,800` per year
@@ -393,7 +393,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1954` (age 72), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$10,800` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Own`, Property tax paid: `$0` per year
@@ -412,7 +412,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Note on the expected result.** Discovery recorded this as "Eligible, $0", which is correct as a statement about the statute — the $0 is a phaseout outcome, not an exclusion (Benefit Value item 8). It is not a correct expected *screener* result. The results page requires `program.eligible && programValue(program) > 0` to display a program (`filterPrograms.ts`), so a $0 credit is never shown whichever way eligibility is reported. The calculator therefore uses the inherited `value > 0` rule and reports this household ineligible: telling someone they qualify for $0 would invite a filing that pays nothing. PolicyEngine's separate `mo_ptc_taxunit_eligible` flag is deliberately not read.
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1954` (age 72), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$37,900` per year, Veteran: `No`, Disability: `No`
 - **Housing**: Housing situation: `Rent`, Rent paid: `$600` per year (qualifying rent-equiv $120)
@@ -429,7 +429,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,474**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1970` (age 56, not disabled/veteran/65+), Has income: `Yes`, Income type: `Pension/Retirement`, Income amount: `$9,600` per year, Veteran: `No`, Disability: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1970` (age 56), Has income: `Yes`, Income type: `SSDI`, Income amount: `$13,200` per year, Disability: `Yes`
@@ -447,7 +447,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$578**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1958` (age 68), Has income: `Yes`, Income type: `Social Security`, Income amount: `$31,200` per year, Veteran: `No`, Disability: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1960` (age 66), Has income: `Yes`, Income type: `Social Security`, Income amount: `$22,600` per year, Veteran: `No`, Disability: `No`
@@ -465,7 +465,7 @@ No new screener field or feature is required by any acceptance criterion above.
 **Expected**: Eligible, **$1,100**
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1970` (age 56, no income, no pathway), Has income: `No`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `January 1975` (age 51), Has income: `Yes`, Income type: `VA Disability Compensation`, Income amount: `$46,800` per year (only income, excluded → PTC income $0), Veteran: `Yes`, Disability: `Yes`

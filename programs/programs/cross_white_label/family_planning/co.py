@@ -4,6 +4,11 @@ import programs.framework.eligibility_messages as messages
 
 class FamilyPlanningServices(ProgramCalculator):
     program_code = "fps"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("co_medicaid",)
     member_amount = 404
     min_age = 12
     fpl_percent = 2.65
@@ -39,7 +44,7 @@ class FamilyPlanningServices(ProgramCalculator):
         e.condition(not member.pregnant)
 
         # age
-        e.condition(member.age >= FamilyPlanningServices.min_age)
+        e.condition(member.calc_age() >= FamilyPlanningServices.min_age)
 
         # head or spouse
         e.condition(member.is_head() or member.is_spouse())

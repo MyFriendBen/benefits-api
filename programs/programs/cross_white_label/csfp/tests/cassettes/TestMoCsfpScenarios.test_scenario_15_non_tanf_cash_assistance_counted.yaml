@@ -1,0 +1,65 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"1501": {"age": {"2026": 66}, "commodity_supplemental_food_program":
+      {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["1501"]}}, "families":
+      {"family": {"members": ["1501"]}}, "households": {"household": {"members": ["1501"],
+      "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1501"],
+      "school_meal_countable_income": {"2026": 24600.0}}}, "marital_units": {}}, "version":
+      "2.5.0"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '439'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"1501": {"age":
+        {"2026": 66}, "commodity_supplemental_food_program": {"2026": 0.0}}}, "tax_units":
+        {"main_tax_unit": {"members": ["1501"]}}, "families": {"family": {"members":
+        ["1501"]}}, "households": {"household": {"members": ["1501"], "state_code":
+        {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1501"], "school_meal_countable_income":
+        {"2026": 24600.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
+        "2.5.0", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '538'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 28 Sep 2026 20:46:53 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-558ffebd808f5fddc44831fac02123d5-049d093ac5d9a60c-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 558ffebd808f5fddc44831fac02123d5
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 6d0675a1-d749-4818-af2b-01bd0787b731
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

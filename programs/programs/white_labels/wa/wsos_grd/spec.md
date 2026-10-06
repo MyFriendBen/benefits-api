@@ -127,7 +127,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Eligible, value: $25,000
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$4,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -141,7 +141,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `No`, Has income: `Yes`, Income type: `Wages`, Income amount: `$4,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -155,7 +155,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$10,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -169,7 +169,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Eligible, value: $25,000
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `3`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$12,208`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1992` (age 34), Has income: `No`, Insurance: `None`
@@ -185,7 +185,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Eligible, value: $25,000 (calculator returns `eligible: true` — UI must surface hardship caveat clearly)
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$8,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -199,7 +199,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Eligible, value: $25,000 (calculator returns `eligible: true` — UI must surface hardship caveat clearly)
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `3`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$13,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1992` (age 34), Has income: `No`, Insurance: `None`
@@ -215,7 +215,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `3`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$16,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1992` (age 34), Has income: `No`, Insurance: `None`

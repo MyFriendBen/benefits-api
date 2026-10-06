@@ -185,7 +185,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `70` (born 1956), Head of Household, U.S. Citizen, no disability, no visual impairment, no income
 - **Insurance**: None
@@ -204,7 +204,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `45` (born 1981), Head of Household, U.S. Citizen, **long-term disability: true**, no income
 - **Insurance**: None
@@ -223,7 +223,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
-- **Location**: ZIP `98052`, County `King`
+- **Location**: ZIP `98052`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `40` (born 1986), Head of Household, U.S. Citizen, **visually impaired: true**, no other disability, no income
 - **Insurance**: None
@@ -241,7 +241,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected**: Not eligible (countable unearned income > FBR)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `68` (born 1958), Head of Household, U.S. Citizen, no disability, Social Security retirement income: `$1,200/month`
 - **Insurance**: None
@@ -259,7 +259,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `70` (born 1956), Head of Household, U.S. Citizen, no disability, no income
 - **Insurance**: None
@@ -278,7 +278,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: `17892` ($1,491/month × 12 — MFB sums per-person PolicyEngine outputs so the household total equals the full couple rate)
 
 **Steps**:
-- **Location**: ZIP `98109`, County `King`
+- **Location**: ZIP `98109`, County `King County`
 - **Household**: 2 people
 - **Person 1 (Head)**: Age `70` (born 1956), U.S. Citizen, no disability, no income
 - **Person 2 (Spouse)**: Age `68` (born 1958), U.S. Citizen, no disability, no income
@@ -297,7 +297,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `35` (born 1991), Head of Household, U.S. Citizen, no disability, no visual impairment, no income
 - **Insurance**: None
@@ -315,7 +315,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected**: Not eligible (already has)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `70` (born 1956), Head of Household, U.S. Citizen, no disability, SSI income: `$994/month`
 - **Insurance**: None
@@ -341,7 +341,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - Child SSI: full individual FBR = `$994 × 12 = $11,928/yr`
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 3 people
 - **Person 1 (Head)**: Age `40` (born 1986), U.S. Citizen, no disability, wages: `$1,500/month`
 - **Person 2 (Spouse)**: Age `38` (born 1988), U.S. Citizen, no disability, no income
@@ -362,7 +362,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `45` (born 1981), Head of Household, U.S. Citizen, **disabled: true**, **long_term_disability: false**, no income
 - **Insurance**: None
@@ -381,7 +381,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: `6168` (`$994 − ($500 − $20 general exclusion) = $514/month × 12`)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `72` (born 1954), Head of Household, U.S. Citizen, no disability, Social Security retirement income: `$500/month`
 - **Insurance**: None
@@ -400,7 +400,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: `10038` (`$994 − ($400 − $20 − $65) × ½ = $836.50/month × 12`; truncated to int per `validate.py`)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `45` (born 1981), Head of Household, U.S. Citizen, **long-term disability: true**, wages: `$400/month` (well below the 2026 SGA threshold of $1,690/mo)
 - **Insurance**: None
@@ -418,7 +418,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected**: Not eligible (spousal deemed income exceeds couple FBR after exclusions)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 2 people
 - **Person 1 (Head)**: Age `60` (born 1966), U.S. Citizen, **long-term disability: true**, no income
 - **Person 2 (Spouse)**: Age `58` (born 1968), U.S. Citizen, no disability, wages: `$4,000/month`
@@ -438,7 +438,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **Expected `value`**: omitted (ineligible)
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 1 person
 - **Person 1**: Age `50` (born 1976), Head of Household, U.S. Citizen, **long-term disability: true**, **not visually impaired**, wages: `$1,700/month` (just above the 2026 non-blind SGA threshold of $1,690/mo)
 - **Insurance**: None
@@ -464,7 +464,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - SSI = couple FBR (`$1,491 × 12 = $17,892/yr`) − deemed countable (`$6,690/yr`) = `$11,202/yr` = **$933.50/month**
 
 **Steps**:
-- **Location**: ZIP `98101`, County `King`
+- **Location**: ZIP `98101`, County `King County`
 - **Household**: 2 people
 - **Person 1 (Head)**: Age `70` (born 1956), U.S. Citizen, no disability, no income (eligible — aged path)
 - **Person 2 (Spouse)**: Age `60` (born 1966), U.S. Citizen, **no disability, no visual impairment** (ineligible spouse — not aged/blind/disabled), wages: `$1,200/month`

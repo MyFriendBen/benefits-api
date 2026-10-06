@@ -4,6 +4,11 @@ import programs.framework.eligibility_messages as messages
 
 class MedicaidAdultWithDisability(ProgramCalculator):
     program_code = "awd_medicaid"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("co_medicaid",)
     min_age = 16
     max_income_percent = 4.5
     earned_deduction = 65
@@ -22,7 +27,7 @@ class MedicaidAdultWithDisability(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age >= MedicaidAdultWithDisability.min_age)
+        e.condition(member.calc_age() >= MedicaidAdultWithDisability.min_age)
 
         # disability
         e.condition(member.long_term_disability or member.visually_impaired)

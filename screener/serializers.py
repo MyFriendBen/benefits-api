@@ -5,6 +5,7 @@ from django.utils import timezone
 from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
+from configuration.models import Configuration
 from programs.models import Program, WarningMessage
 from screener.models import (
     CurrentBenefit,
@@ -345,6 +346,8 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop("force", False)
+        # Off only for replaying stored screens (`pull_screen`), which predate the check.
+        self.validate_location = kwargs.pop("validate_location", True)
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs):
@@ -352,7 +355,58 @@ class ScreenSerializer(serializers.ModelSerializer):
         white_label = WhiteLabel.objects.get(code=white_label_code)
         attrs["white_label"] = white_label
 
+        self._validate_location(attrs, white_label)
+
         return attrs
+
+    def _validate_location(self, attrs, white_label: WhiteLabel):
+        """Reject a ZIP or county this white label's crosswalk cannot produce.
+
+        The browser builds its ZIP gate and county dropdown from the crosswalk; API
+        clients have no such guard, and a bare name like "Sedgwick" for "Sedgwick County"
+        silently misses every exact-match county consumer (urgent needs, warnings,
+        hardcoded calculator lists) instead of erroring.
+
+        The county is checked against the white label's full county set, not the
+        submitted ZIP's candidates. A blank county is allowed: Colorado's
+        `counties_from_screen` expands a null county to every county the ZIP covers.
+        """
+        zipcode, county = attrs.get("zipcode"), attrs.get("county")
+        if not (self.validate_location and (zipcode or county)):
+            return
+
+        try:
+            counties_by_zip = Configuration.counties_by_zipcode(white_label)
+        except ValueError as e:
+            # Don't block every screen write on a bad config row, but don't fail open quietly either.
+            # warning, not error: Sentry turns logger.error into a second event.
+            logger.warning("Skipping location validation for %s: %s", white_label.code, e)
+            capture_message(f"Skipping location validation for {white_label.code}: {e}", level="error")
+            return
+        if not counties_by_zip:
+            return
+
+        if zipcode and zipcode not in counties_by_zip:
+            raise serializers.ValidationError(
+                {"zipcode": f"'{zipcode}' is not a ZIP code the {white_label.code} screener serves."}
+            )
+
+        valid = {name for counties in counties_by_zip.values() for name in counties}
+        if county and county not in valid:
+            raise serializers.ValidationError({"county": self._county_error(county, valid, white_label)})
+
+    @staticmethod
+    def _county_error(county: str, valid: set[str], white_label: WhiteLabel) -> str:
+        """Name the likely fix: usually a dropped suffix, sometimes only casing.
+
+        Lists every match, sorted, so an ambiguous name ("St. Louis") offers both options.
+        """
+        message = f"'{county}' is not a county the {white_label.code} screener sends."
+        needle = county.casefold()
+        matches = sorted(c for c in valid if c.casefold() == needle or c.casefold().startswith(f"{needle} "))
+        if matches:
+            message += f" Did you mean {' or '.join(repr(m) for m in matches)}?"
+        return message
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

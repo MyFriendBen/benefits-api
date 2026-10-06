@@ -66,7 +66,8 @@ class TxHse(ProgramCalculator):
         """
         if member.long_term_disability or member.disabled:
             return True
-        if member.visually_impaired and member.age is not None and member.age >= self.blind_senior_age:
+        age = member.calc_age()
+        if member.visually_impaired and age is not None and age >= self.blind_senior_age:
             return True
         return False
 
@@ -75,7 +76,8 @@ class TxHse(ProgramCalculator):
 
     def household_value(self) -> int:
         for member in self.screen.household_members.all():
-            if member.age is not None and member.age >= self.senior_age:
+            age = member.calc_age()
+            if age is not None and age >= self.senior_age:
                 return self.senior_disabled_amount
             if self._qualifies_for_disability_exemption(member):
                 return self.senior_disabled_amount

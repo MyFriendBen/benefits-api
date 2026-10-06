@@ -16,7 +16,7 @@ class TxCcad(ProgramCalculator):
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
-        age = member.age
+        age = member.calc_age()
         age_eligible = age is not None and (
             age >= self.min_age or (age >= self.min_age_disabled and member.has_disability())
         )

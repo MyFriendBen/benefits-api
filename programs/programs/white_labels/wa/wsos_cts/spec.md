@@ -120,7 +120,7 @@ Source: https://waopportunityscholarship.org/applicants/career-technical/ (Caree
 **Expected:** Eligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 2002` (age 24), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$2,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -134,7 +134,7 @@ Source: https://waopportunityscholarship.org/applicants/career-technical/ (Caree
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `No`, Has income: `Yes`, Income type: `Wages`, Income amount: `$3,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -148,7 +148,7 @@ Source: https://waopportunityscholarship.org/applicants/career-technical/ (Caree
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 2002` (age 24), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$8,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -162,7 +162,7 @@ Source: https://waopportunityscholarship.org/applicants/career-technical/ (Caree
 **Expected:** Eligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `3`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1995` (age 31), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$12,208`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1996` (age 30), Has income: `No`, Insurance: `None`
@@ -178,7 +178,7 @@ Source: https://waopportunityscholarship.org/applicants/career-technical/ (Caree
 **Expected:** Eligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98225`, Select county `Whatcom`
+- **Location:** Enter ZIP code `98225`, Select county `Whatcom County`
 - **Household:** Number of people: `2`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 2003` (age 23), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$3,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Parent):** Relationship: `Parent`, Birth month/year: `April 1975` (age 51), Has income: `Yes`, Income type: `Wages`, Income amount: `$1,500`, Income frequency: `Monthly`, Insurance: `None`
@@ -193,7 +193,7 @@ Source: https://waopportunityscholarship.org/applicants/career-technical/ (Caree
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `4`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$15,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1992` (age 34), Has income: `No`, Insurance: `None`

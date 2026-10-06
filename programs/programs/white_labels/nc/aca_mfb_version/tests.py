@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from django.test import SimpleTestCase
 
+from programs.models import FederalPoveryLimit
 from programs.programs.white_labels.nc.aca_mfb_version.calculator import ACACache, ACASubsidiesNC
 
 
@@ -67,3 +68,74 @@ class TestACASubsidiesNCMemberValue(SimpleTestCase):
         self._calculator("Wake County").member_value(None)
 
         self.assertFalse(capture.called)
+
+
+class TestACASubsidiesNCFplEdition(SimpleTestCase):
+    """The income band must come from the PRIOR year's poverty guideline.
+
+    26 U.S.C. 36B judges a coverage year against the guideline in effect when its open
+    enrollment opened. The PolicyEngine-backed ACA programs get that lag applied inside
+    PolicyEngine; this calculator reads the table itself, so the lag has to be here.
+
+    Without it every band is one edition too generous -- at 400% FPL for a household of
+    one that is $1,240/yr of income wrongly treated as eligible.
+    """
+
+    def _calculator(self, period):
+        calc = ACASubsidiesNC.__new__(ACASubsidiesNC)
+        calc.program = type("Program", (), {"year": FederalPoveryLimit(year=period, period=period)})()
+        return calc
+
+    def test_coverage_year_uses_the_prior_years_guideline(self):
+        """2026 coverage is judged against the 2025 guideline: $15,650, not $15,960."""
+        self.assertEqual(self._calculator("2026")._fpl_edition().period, "2025")
+        self.assertEqual(self._calculator("2026")._fpl_edition().get_limit(1), 15_650)
+
+    def test_the_lag_follows_the_configured_coverage_year(self):
+        """Rolling the program forward moves the edition with it, with no constant to edit."""
+        self.assertEqual(self._calculator("2025")._fpl_edition().get_limit(1), 15_060)
+
+    def test_income_band_is_four_times_the_prior_guideline(self):
+        """The 400% band for a household of one at 2026 coverage: 4 x $15,650."""
+        calc = self._calculator("2026")
+        calc.screen = type("Screen", (), {"household_size": 1})()
+
+        band = int(calc._fpl_edition().get_limit(1) * ACASubsidiesNC.percent_of_fpl)
+
+        self.assertEqual(band, 62_600)
+        # The un-lagged band, which this test exists to keep us off.
+        self.assertNotEqual(band, 63_840)
+
+    def test_sizes_past_the_defined_table_extrapolate_rather_than_raise(self):
+        """as_dict()[size] raised KeyError past 8; get_limit() adds the per-person amount."""
+        edition = self._calculator("2026")._fpl_edition()
+
+        self.assertEqual(edition.get_limit(9), edition.get_limit(8) + 5_500)
+
+    def test_unresolvable_prior_edition_falls_back_to_the_configured_one(self):
+        """2023 is the oldest edition defined, so 2023 coverage has no prior to fall back on.
+
+        Banding a year too generously beats raising, which would remove the program from
+        North Carolina's results entirely.
+        """
+        self.assertEqual(self._calculator("2023")._fpl_edition().period, "2023")
+
+    def test_non_numeric_period_falls_back_to_the_configured_edition(self):
+        """`period` is free text, so a typo reaches here rather than being rejected."""
+        calc = self._calculator("not-a-year")
+
+        self.assertEqual(calc._fpl_edition().period, "not-a-year")
+
+    def test_missing_coverage_year_raises_with_the_program_named(self):
+        """No configured year means nothing to lag from, so there is no sane fallback.
+
+        Raising here names the misconfigured program; letting None through would surface
+        as an AttributeError inside get_limit() several frames away.
+        """
+        calc = ACASubsidiesNC.__new__(ACASubsidiesNC)
+        calc.program = type("Program", (), {"year": None})()
+
+        with self.assertRaises(ValueError) as caught:
+            calc._fpl_edition()
+
+        self.assertIn("nc_aca_mfb_version", str(caught.exception))

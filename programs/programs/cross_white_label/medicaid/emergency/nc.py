@@ -4,6 +4,11 @@ import programs.framework.eligibility_messages as messages
 
 class NcEmergencyMedicaid(ProgramCalculator):
     program_code = "nc_emergency_medicaid"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("nc_medicaid",)
     # $6,268/yr | ~$522/mo
     member_amount = 6268
     max_age = 64
@@ -21,7 +26,7 @@ class NcEmergencyMedicaid(ProgramCalculator):
 
         for member in self.screen.household_members.all():
             # Pregnant and under 18 years old have a different FPL percentage
-            if member.age <= 18 and member.pregnant:
+            if member.calc_age() <= 18 and member.pregnant:
                 fpl_percent = 2.11
 
         # Medicaid eligibility
@@ -38,4 +43,4 @@ class NcEmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age < self.max_age)
+        e.condition(member.calc_age() <= self.max_age)

@@ -13,7 +13,6 @@
     "legal_status_required": [
       "citizen",
       "gc_5plus",
-      "refugee",
       "otherWithWorkPermission"
     ],
     "name": "Medicare Savings Program (MSP)",

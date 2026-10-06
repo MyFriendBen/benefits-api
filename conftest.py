@@ -11,7 +11,7 @@ VCR behavior controlled by VCR_MODE environment variable:
   request. Downgraded to `none` inside an xdist worker unless PE_RECORD is set, so a parallel
   run cannot record a missing cassette live (see vcr_record_mode)
 - VCR_MODE=new_episodes: Replays existing interactions, records NEW HTTP requests not in cassette
-- VCR_MODE=all (production deploy): Never replays, re-records ALL cassettes from scratch
+- VCR_MODE=all (manual only): Never replays, re-records ALL cassettes from scratch
 
 A run that may write a cassette is forced single-process (see pytest_configure): parallel
 workers would issue duplicate live calls and race to write the same file.
@@ -21,7 +21,7 @@ All integration tests marked with @pytest.mark.integration automatically use VCR
 Two integrations use this harness:
 - HUD income limits (integrations/clients/hud_income_limits) — needs HUD_API_TOKEN to record
 - PolicyEngine program tests — see programs/framework/tests/
-  integration_test_helpers.py and docs/TESTING.md
+  programs/programs/testing_fixtures/pe_integration.py and docs/TESTING.md
 """
 
 import json
@@ -51,7 +51,7 @@ HUD_TEST_PATH_FRAGMENT = "hud_income_limits"
 # Hosts VCR passes straight through, never recording. PolicyEngine's OAuth exchange lives
 # here: its response body is a real bearer token, so it must not be written to a cassette.
 # Recording fetches a token live; replay pre-seeds a placeholder instead (see
-# programs/framework/tests/integration_test_helpers.py).
+# programs/programs/testing_fixtures/pe_integration.py).
 VCR_IGNORE_HOSTS = ["policyengine.uk.auth0.com"]
 
 # Recording PolicyEngine cassettes is an explicit opt-in rather than a VCR_MODE, so the
@@ -534,7 +534,7 @@ def auto_vcr(request, vcr_config):
     - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP
       request. Becomes `none` in a parallel worker unless PE_RECORD is set
     - VCR_MODE=new_episodes: Flexible - replays existing, records new HTTP requests not yet in cassette
-    - VCR_MODE=all (production deploy): Fresh start - never replays, re-records all cassettes from scratch
+    - VCR_MODE=all (manual only): Fresh start - never replays, re-records all cassettes from scratch
 
     Cassettes are stored in: <test_dir>/cassettes/<TestClass>.<test_name>.yaml
     Example: integrations/clients/hud_income_limits/tests/cassettes/
@@ -557,7 +557,7 @@ def auto_vcr(request, vcr_config):
     # Determine VCR record mode based on VCR_MODE environment variable
     # Possible values:
     #   - "new_episodes": Flexible - replays existing, records new HTTP requests
-    #   - "all": Fresh start - never replays, re-records everything from scratch (push to main in CI)
+    #   - "all": Fresh start - never replays, re-records everything from scratch (manual only)
     #   - "once" (default): Strict - replays existing, errors if cassette missing new HTTP request (local dev)
     #   - "none": Read-only - replays only, never records, errors on new HTTP requests (strict mode)
     record_mode = vcr_record_mode()

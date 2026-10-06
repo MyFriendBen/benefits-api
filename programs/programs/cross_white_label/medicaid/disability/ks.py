@@ -36,6 +36,11 @@ class KsWorkingHealthy(ProgramCalculator):
     """
 
     program_code = "ks_working_healthy"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("ks_medicaid",)
 
     min_age = 16
     max_age = 64
@@ -77,7 +82,8 @@ class KsWorkingHealthy(ProgramCalculator):
         member = e.member
 
         # Age 16 through 64.
-        e.condition(member.age is not None and self.min_age <= member.age <= self.max_age)
+        age = member.calc_age()
+        e.condition(age is not None and self.min_age <= age <= self.max_age)
 
         # Qualifying disability or blindness (not the generic short-term flag).
         e.condition(member.long_term_disability or member.visually_impaired)
@@ -120,7 +126,8 @@ class KsWorkingHealthy(ProgramCalculator):
         if member.is_married()["is_married"]:
             return 2
 
-        if member.age is not None and member.age < 18 and self._minor_lives_with_parent(member):
+        age = member.calc_age()
+        if age is not None and age < 18 and self._minor_lives_with_parent(member):
             return 2
 
         return 1

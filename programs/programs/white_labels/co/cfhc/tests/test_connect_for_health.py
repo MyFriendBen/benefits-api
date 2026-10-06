@@ -401,8 +401,13 @@ class TestConnectForHealthCanCalc(TestCase):
     def test_cannot_calc_without_zipcode(self):
         self.assertFalse(make_calculator(missing_dependencies=Dependencies(["zipcode"])).can_calc())
 
-    def test_can_calc_with_an_unrelated_missing_dependency(self):
-        self.assertTrue(make_calculator(missing_dependencies=Dependencies(["age"])).can_calc())
+    def test_cannot_calc_without_a_field_its_upstreams_need(self):
+        """`age` is read by both `co_medicaid` and `chp`, which this gates on strictly, so
+        it is not unrelated — see `ProgramCalculator.all_dependencies`."""
+        self.assertFalse(make_calculator(missing_dependencies=Dependencies(["age"])).can_calc())
+
+    def test_can_calc_with_a_dependency_no_upstream_reads(self):
+        self.assertTrue(make_calculator(missing_dependencies=Dependencies(["expense_amount"])).can_calc())
 
     def test_calc_raises_when_a_dependency_is_missing(self):
         calc = make_calculator(missing_dependencies=Dependencies(["insurance"]))

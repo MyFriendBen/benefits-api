@@ -180,7 +180,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `6 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Employment income: `$2,500` per month, Insurance: `employer`, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `9 1992` (age 33), Relationship: `spouse`, Has income: No, Insurance: `employer`, Citizenship: US Citizen
@@ -199,7 +199,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98001`, Select county `King`
+* **Location**: Enter ZIP code `98001`, Select county `King County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Enter monthly gross income of `$3,879` (employment/wages), Insurance: None
 * **Person 2**: Birth month/year: `May 2008` (age 18), Relationship: `child`, Has income: No, Insurance: None
@@ -218,7 +218,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `Head of Household`, Has income: Yes, Employment income: `$4,894` per month, No other income sources, Insurance: None, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `Spouse`, Has income: No, Insurance: None, Citizenship: US Citizen
@@ -237,7 +237,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Monthly gross income: `$7,217`, Income type: Employment/wages, Insurance: None
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `spouse`, Has income: No, Insurance: None
@@ -254,7 +254,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `4`
 * **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: `headOfHousehold`, Has income: Yes, Enter monthly gross income of `$8,719` (employment/wages), Insurance: `employer`
 * **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: `spouse`, Has income: No, Insurance: `employer`
@@ -272,7 +272,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Monthly employment income: `$4,000`, Insurance: `none`, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `spouse`, Has income: No, Insurance: `none`, Citizenship: US Citizen
@@ -289,7 +289,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `June 1980` (age 45), Relationship: `Head of Household`, Has income: Yes, Gross monthly income: `$2,500`, Income frequency: `Monthly`, Insurance: None, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `March 2007` (age 19), Relationship: `Child`, Has income: No, Insurance: None, Citizenship: US Citizen
@@ -305,7 +305,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1985` (age 40), Relationship: Head of Household, Has income: Yes, Employment income: `$2,800` monthly, Insurance: None
 * **Person 2**: Birth month/year: `January 1988` (age 38), Relationship: Spouse, Has income: Yes, Employment income: `$1,000` monthly, Insurance: None
@@ -322,7 +322,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `99201`, Select county `Spokane`
+* **Location**: Enter ZIP code `99201`, Select county `Spokane County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Monthly employment income: `$2,500`, Insurance: `none`, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `spouse`, Has income: No, Insurance: `none`, Citizenship: US Citizen
@@ -339,7 +339,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: Head of Household, Has income: Yes, Monthly employment income: `$2,500`, Insurance: None, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: Spouse, Has income: No, Insurance: None, Citizenship: US Citizen
@@ -357,7 +357,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: Head of Household, Has income: Yes, Monthly employment income: `2,500`, Insurance: None, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: Spouse, Has income: No, Insurance: None, Citizenship: US Citizen
@@ -375,7 +375,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `4`
 * **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, Has income: Yes, Employment income: `$3,200` per month, Insurance: None, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: Spouse, Has income: Yes, Employment income: `$1,500` per month, Insurance: None, Citizenship: US Citizen
@@ -393,7 +393,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `5`
 * **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Gross monthly income (employment): `$3,800`, Insurance: `none`
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `spouse`, Has income: No, Insurance: `none`
@@ -412,7 +412,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `June 1985` (age 40), Relationship: `Head of Household`, Has income: Yes, Employment income: `$2,500` per month, Insurance: `None`
 * **Person 2**: Birth month/year: `June 2007` (age 18, turning 19 next month), Relationship: `Child`, Has income: No, Insurance: `None`
@@ -428,7 +428,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1987` (age 38), Relationship: `headOfHousehold`, Has income: Yes, Monthly employment income: `$5,500`, Insurance: `private`, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1989` (age 36), Relationship: `spouse`, Has income: No, Insurance: `private`, Citizenship: US Citizen
@@ -447,7 +447,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98103`, Select county `King`
+* **Location**: Enter ZIP code `98103`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1985` (age 40), Relationship: `headOfHousehold`, Has income: Yes, Monthly employment income: `$6,500`, Insurance: `private`, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1987` (age 38), Relationship: `spouse`, Has income: No, Insurance: `private`, Citizenship: US Citizen
@@ -466,7 +466,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 **Steps**:
 
-* **Location**: Enter ZIP code `98101`, Select county `King`
+* **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `June 1987` (age 38), Relationship: `headOfHousehold`, Has income: Yes, Monthly employment income: `$5,500`, Insurance: `employer`, Citizenship: US Citizen
 * **Person 2**: Birth month/year: `September 1989` (age 36), Relationship: `spouse`, Has income: No, Insurance: `employer`, Citizenship: US Citizen

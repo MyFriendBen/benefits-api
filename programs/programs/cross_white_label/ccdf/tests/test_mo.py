@@ -24,12 +24,9 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import patch
 
-from django.test import TestCase
-
 from configuration.white_labels.mo import MoConfigurationData
 from programs.framework.base import ProgramCalculator
 from programs.framework.registry import build
-from programs.models import Program
 from programs.programs.cross_white_label.ccdf.mo import (
     CHART_MAXIMUM,
     COUNTY_REGIONS,
@@ -42,9 +39,9 @@ from programs.programs.cross_white_label.ccdf.mo import (
     MoChildCareSubsidy,
     normalize_county,
 )
-from programs.programs.testing_fixtures.pe_integration import add_member, make_program, make_screen
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.util import DependencyError
-from screener.models import Expense, HouseholdMember, IncomeStream, Screen
+from screener.models import IncomeStream, Screen
 
 YEAR = "2026"
 
@@ -59,72 +56,35 @@ TEXAS = ("65483", "Texas County")  # Region 5 Rural
 ST_LOUIS_COUNTY = ("63011", "St. Louis County")  # Region 1 Dense Urban
 
 
-class MoChildCareSubsidyTestCase(TestCase):
+class MoChildCareSubsidyTestCase(CustomCalculatorTestCase):
     """Household builder shared by every test below."""
 
-    next_screen_id = 1
+    calculator_class = MoChildCareSubsidy
+    white_label_code = "mo"
+    state_code = "MO"
+    fpl_year = YEAR
 
     def setUp(self):
-        self.reference_date = REFERENCE_DATE
-        reference_date = patch.object(Screen, "get_reference_date", side_effect=lambda: self.reference_date)
-        reference_date.start()
-        self.addCleanup(reference_date.stop)
+        # Not the base class's `reference_date`, which is fixed for the whole test:
+        # a few scenarios move the evaluation date before building their household.
+        super().setUp()
+        self.evaluation_date = REFERENCE_DATE
+        evaluation_date = patch.object(Screen, "get_reference_date", side_effect=lambda: self.evaluation_date)
+        evaluation_date.start()
+        self.addCleanup(evaluation_date.stop)
 
     def build(self, household_size, location=ST_LOUIS_CITY, assets=Decimal("500")):
         zipcode, county = location
-        screen = make_screen(
-            self.next_screen_id,
-            white_label_code="mo",
-            state_code="MO",
-            household_size=household_size,
-            zipcode=zipcode,
-            county=county,
-            household_assets=assets,
-        )
-        existing = Program.objects.filter(white_label=screen.white_label, name_abbreviated="mo_ccs").first()
-        self.program = existing or make_program("mo", "mo_ccs", YEAR)
-        self.member_id = self.next_screen_id * 100
-        MoChildCareSubsidyTestCase.next_screen_id += 1
-        return screen
+        return self.make_screen(household_size, zipcode=zipcode, county=county, household_assets=assets)
 
     def add_person(self, screen, relationship, born, **kwargs):
-        """A member stated by the (year, month) the scenario gives.
-
-        ``age`` is set as well as ``birth_year_month``: the calculator reads
-        ``calc_age()``, while ``missing_fields()`` reads ``age``.
-        """
-        self.member_id += 1
-        birth_year_month = date(born[0], born[1], 1)
-        kwargs.setdefault("disabled", False)
-        kwargs.setdefault("long_term_disability", False)
-        kwargs.setdefault("visually_impaired", False)
-        kwargs.setdefault("student", False)
-        return add_member(
-            screen,
-            self.member_id,
-            relationship,
-            HouseholdMember.age_from_date(birth_year_month, self.reference_date),
-            birth_year_month=birth_year_month,
-            **kwargs,
-        )
-
-    def add_income(self, member, amount, income_type="wages", frequency="monthly"):
-        return IncomeStream.objects.create(
-            screen=member.screen,
-            household_member=member,
-            type=income_type,
-            amount=Decimal(str(amount)),
-            frequency=frequency,
-        )
-
-    def add_medical(self, screen, amount, frequency="monthly"):
-        return Expense.objects.create(screen=screen, type="medical", amount=Decimal(str(amount)), frequency=frequency)
-
-    def calculator(self, screen):
-        return MoChildCareSubsidy(screen, self.program, {}, screen.missing_fields())
+        """A member stated by the (year, month) the scenario gives."""
+        return self.add_member(screen, relationship, age=None, birth_year_month=date(born[0], born[1], 1), **kwargs)
 
     def calc(self, screen):
-        return self.calculator(screen).calc()
+        # The screen's own missing fields, so a null the screener would send withholds
+        # the program here too.
+        return self.calculate(screen, missing=screen.missing_fields())
 
     def assert_eligible(self, screen, value):
         eligibility = self.calc(screen)
@@ -250,7 +210,7 @@ class TestCountyNormalization(MoChildCareSubsidyTestCase):
 
     def test_unmatched_county_takes_region_5(self):
         screen = self.baseline(location=("00000", "Nowhere County"))
-        self.assertEqual(self.calculator(screen).region(), REGION_5)
+        self.assertEqual(self.make_calculator(screen).region(), REGION_5)
 
 
 class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
@@ -268,12 +228,12 @@ class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
 
     def test_null_frequency_medical_expense_is_skipped_rather_than_raising(self):
         screen = self.baseline(location=GREENE, wages=4_100)
-        self.add_medical(screen, 200, frequency=None)
+        self.add_expense(self.head, 200, "medical", frequency=None)
         self.assert_ineligible(screen)
 
     def test_null_amount_medical_expense_is_skipped_rather_than_raising(self):
         screen = self.baseline(location=GREENE, wages=4_100)
-        Expense.objects.create(screen=screen, type="medical", amount=None, frequency="monthly")
+        self.add_expense(self.head, None, "medical")
         self.assert_ineligible(screen)
 
     def test_income_message_reports_annual_figures(self):
@@ -299,7 +259,7 @@ class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
     def test_school_year_hold_follows_the_child_through_june(self):
         # Born August 2020, the child was 4 on 2025-07-31, so stays Preschool for the
         # school year running to 2026-07-31 even though `calc_age` is 5 by June.
-        self.reference_date = date(2026, 6, 15)
+        self.evaluation_date = date(2026, 6, 15)
         self.assert_eligible(self.baseline(child_born=(2020, 8)), 11_340)
 
     def test_tanf_with_an_excluded_ssi_stream_is_not_the_only_income(self):
@@ -331,7 +291,7 @@ class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
         screen = self.baseline()
         for _ in range(18):
             self.add_person(screen, "child", (2010, 3))
-        self.assertEqual(self.calculator(screen).unit_size(), 20)
+        self.assertEqual(self.make_calculator(screen).unit_size(), 20)
 
     def test_hourly_wages_are_quantised_to_the_cent(self):
         screen = self.baseline(location=GREENE, wages=0)
@@ -343,7 +303,7 @@ class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
             frequency="hourly",
             hours_worked=20,
         )
-        income = self.calculator(screen).adjusted_monthly_income()
+        income = self.make_calculator(screen).adjusted_monthly_income()
         self.assertEqual(income, income.quantize(Decimal("0.01")))
 
     def test_no_member_values(self):
@@ -378,7 +338,7 @@ class TestSpecScenarios(MoChildCareSubsidyTestCase):
 
     def test_scenario_8_medical_deduction_brings_income_under(self):
         screen = self.baseline(location=GREENE, wages=4_100)
-        self.add_medical(screen, 200)
+        self.add_expense(self.head, 200, "medical")
         self.assert_eligible(screen, 8_820)
 
     def test_scenario_9_same_income_without_the_deduction(self):
@@ -490,7 +450,7 @@ class TestSpecScenarios(MoChildCareSubsidyTestCase):
         self.assert_eligible(self.baseline(child_kwargs={"disabled": True}), 12_600)
 
     def test_scenario_35_school_age_outside_the_school_year(self):
-        self.reference_date = date(2026, 8, 15)
+        self.evaluation_date = date(2026, 8, 15)
         self.assert_eligible(self.baseline(child_born=(2021, 7)), 7_812)
 
     def test_scenario_36_special_needs_extension_past_13(self):
@@ -520,11 +480,11 @@ class TestSpecScenarios(MoChildCareSubsidyTestCase):
         self.assert_ineligible(self.baseline(child_born=(2008, 9), child_kwargs={"disabled": True}))
 
     def test_scenario_41_school_year_pattern_in_april(self):
-        self.reference_date = date(2026, 4, 15)
+        self.evaluation_date = date(2026, 4, 15)
         self.assert_eligible(self.baseline(child_born=(2019, 3)), 6_217)
 
     def test_scenario_42_school_year_pattern_lapses_in_may(self):
-        self.reference_date = date(2026, 5, 1)
+        self.evaluation_date = date(2026, 5, 1)
         self.assert_eligible(self.baseline(child_born=(2019, 3)), 7_812)
 
     def test_scenario_43_just_turned_2_is_preschool(self):

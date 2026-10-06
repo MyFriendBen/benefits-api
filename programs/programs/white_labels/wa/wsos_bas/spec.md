@@ -136,7 +136,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Eligible, value: $22,500
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 2006` (age 20), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$2,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -150,7 +150,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98101`, Select county `King`
+- **Location:** Enter ZIP code `98101`, Select county `King County`
 - **Household:** Number of people: `1`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `March 2005` (age 21), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$8,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
@@ -164,7 +164,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Eligible, value: $22,500
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `4`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1980` (age 46, parent), Has income: `Yes`, Income type: `Wages`, Income amount: `$14,541`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1982` (age 44, parent), Has income: `No`, Insurance: `None`
@@ -181,7 +181,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Ineligible
 
 **Steps:**
-- **Location:** Enter ZIP code `98501`, Select county `Thurston`
+- **Location:** Enter ZIP code `98501`, Select county `Thurston County`
 - **Household:** Number of people: `4`
 - **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1980` (age 46, parent), Has income: `Yes`, Income type: `Wages`, Income amount: `$16,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1982` (age 44, parent), Has income: `No`, Insurance: `None`
@@ -198,7 +198,7 @@ These factors affect selection priority but not eligibility:
 **Expected:** Eligible, value: $22,500
 
 **Steps:**
-- **Location:** Enter ZIP code `99201`, Select county `Spokane`
+- **Location:** Enter ZIP code `99201`, Select county `Spokane County`
 - **Household:** Number of people: `3`
 - **Person 1 (Head of Household — applicant):** Relationship: `Head of Household`, Birth month/year: `May 1998` (age 28), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$4,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `February 1996` (age 30), Student: `No`, Has income: `No`, Insurance: `None`

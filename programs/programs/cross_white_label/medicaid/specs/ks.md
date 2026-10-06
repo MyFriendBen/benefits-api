@@ -19,7 +19,9 @@ A person qualifies by meeting the **general requirements** and **one categorical
    - Source: K.A.R. 129-6-55 ("Residence, citizenship, and alienage"); 42 CFR 435.403
 
 2. **U.S. citizen or qualified non-citizen**
-   - Configured at the program level via `legal_status_required` — **not** a data gap. Set to `["citizen", "refugee", "gc_5plus", "otherWithWorkPermission"]`. Kansas has not adopted the ICHIA/CHIPRA §214 option, so LPRs within the 5-year bar (`gc_5less`) are excluded. `otherWithWorkPermission` is kept as an over-inclusive catch-all covering COFA migrants (work-authorized, no green card, no waiting period) and some humanitarian parolees, per MFB's over-include-and-explain principle.
+   - Configured at the program level via `legal_status_required` — **not** a data gap. Set to `["citizen", "gc_5plus", "otherWithWorkPermission"]`. Kansas has not adopted the ICHIA/CHIPRA §214 option, so LPRs within the 5-year bar (`gc_5less`) are excluded, and no child or pregnancy exception applies. `otherWithWorkPermission` is kept as an over-inclusive catch-all covering COFA migrants and Cuban/Haitian entrants (both still eligible), per MFB's over-include-and-explain principle.
+   - **Effective 2026-10-01** (P.L. 119-21 §71109): federally funded Medicaid is limited to citizens/nationals, LPRs, Cuban/Haitian entrants and COFA migrants. Refugees and asylees lose eligibility, so `refugee` was removed; they remain eligible for emergency Medicaid only, which MFB does not model in Kansas. Humanitarian parolees, VAWA self-petitioners, T-visa holders and people granted withholding of removal lose eligibility too, but share the `otherWithWorkPermission` bucket with groups that keep it, so that status stays.
+   - Source (Oct 1 change): CMS SHO #26-001, "Implementation of Section 71109 'Alien Medicaid Eligibility'", https://www.medicaid.gov/federal-policy-guidance/downloads/sho26001.pdf
    - Source: KFMAM §2040–2048 "Citizenship and Alien Status" (§2043 = no-wait eligible non-citizens incl. COFA migrants §2043.12; §2044 = LPRs/parolees eligible after the 5-yr bar; §2040 = non-qualified → emergency only; §2040 NOTE = undocumented parent + citizen child → child still covered); K.A.R. 129-6-55; 8 U.S.C. §1613; KFF State Health Facts, "Medicaid/CHIP Coverage of Lawfully-Residing Immigrant Children and Pregnant Women" (Jan 2026) — Kansas = No/No, https://www.kff.org/affordable-care-act/state-indicator/medicaid-chip-coverage-of-lawfully-residing-immigrant-children-and-pregnant-women/
 
 ### Categorical pathways (qualify under any one)
@@ -106,9 +108,8 @@ The KS subclass requires these `pe_inputs`/registry changes.
 
 1. **Add a disability→SSI-criterion dependency.** On production PE, `is_ssi_disabled = meets_ssi_disability_criteria & ~ssi_engaged_in_sga`, where `meets_ssi_disability_criteria` is a pure input (defaults False); `is_disabled` does not feed it. Add a dependency mapping the screener's `disabled`/`long_term_disability`/SSDI signals → **`meets_ssi_disability_criteria`** (not by overriding `is_ssi_disabled` directly, so the SGA test still applies — see Scenario 15). Also map `visually_impaired` → PE's **`is_blind`** input (also a pure input, defaults False) — K.A.R. 129-6-85 covers *blind* as a qualifying status distinct from disabled, and `is_blind=True` exempts from SGA entirely (`ssi_engaged_in_sga = (earned_income > $1,690/mo) & ~is_blind`; 20 CFR 416.971). See Scenario 16.
 2. **Send assets for the ABD pathway.** Include `SsiCountableResourcesDependency` (→ `ssi_countable_resources`, `household_assets / num_adults` per adult) in the KS `pe_inputs`, so PE gates the ABD pathway on the $2,000/$3,000 resource limit. This must stay consistent with the Medicare Savings Program: `msp_asset_eligible` reads the same `ssi_countable_resources`, and all programs share one PolicyEngine simulation, so the input is either present for both programs or absent for both. Every state that offers both Medicaid and MSP (CO/IL/MA) sends it.
-3. **Add `ks_medicaid` to `STATE_MEDICAID_OPTIONS`** in `programs/framework/helpers.py`. The `medicaid_eligible()` helper gates other programs on calculated Medicaid eligibility — without KS, this program won't exclude Medicaid-eligible Kansans from the KS ACA Premium Tax Credit or feed KS Medicaid sub-pathways.
 
-**`show_in_has_benefits_step` = false:** Medicaid conferral runs off the calculated `medicaid_eligible()` helper, and "already enrolled" is detected via the Step 8 insurance question — not the Has-Benefits step.
+**`show_in_has_benefits_step` = false:** a program gating on Medicaid reads the calculated result through `self.program_eligible("ks_medicaid")`, and "already enrolled" is detected via the Step 8 insurance question — not the Has-Benefits step.
 
 **MFB-layer branches (not PolicyEngine):**
 - **Already-enrolled suppression** (Scenario 12). PE Medicaid eligibility takes no insurance/enrollment input. MFB suppresses an already-enrolled household at the display layer via the Step 8 insurance answer / `current_benefits`.
@@ -152,7 +153,7 @@ All scenarios run through PolicyEngine.
 
 ## Test Scenarios
 
-Expected values use the Benefit Value table above (annual figures). ZIP/county pairs: 66603/66604/66044/66502 = Shawnee/Shawnee/Douglas/Riley; 67202 = Sedgwick; 66102 = Wyandotte.
+Expected values use the Benefit Value table above (annual figures). ZIP/county pairs: 66603/66604/66044/66502 = Shawnee County/Shawnee County/Douglas County/Riley County; 67202 = Sedgwick County; 66102 = Wyandotte County.
 
 Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input handling (Implementation Note 1). With the federal `pe_inputs` inherited unchanged, all three would return ineligible. Scenario 7 (senior with assets above the ABD limit) is ineligible and Scenario 7b (assets below the limit) is eligible, per the ABD asset test (Implementation Note 2).
 
@@ -161,7 +162,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $3,648/yr (PREGNANT)
 
 **Steps**:
-- **Location**: ZIP `66603`, county `Shawnee`
+- **Location**: ZIP `66603`, county `Shawnee County`
 - **Household**: 1 person (MAGI size 2 — unborn counted)
 - **Person 1**: Head of Household, born `March 1991` (age 35), female, US citizen, pregnant: yes, employment income `$1,200`/mo, insurance: none
 
@@ -174,7 +175,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $3,648/yr (PREGNANT)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 1 person (MAGI size 2)
 - **Person 1**: Head of Household, born `September 1996` (age 29), female, US citizen, pregnant: yes, employment income `$2,900`/mo, insurance: none
 
@@ -187,7 +188,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: All eligible · $3,648/yr each (PARENT, OLDER_CHILD, YOUNG_CHILD)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `September 1991` (age 34), female, US citizen, not pregnant/disabled, employment income `$620`/mo, insurance: none, current benefits: SNAP
 - **Person 2**: Child, born `March 2018` (age 8), no income
@@ -202,7 +203,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Children eligible ($3,648/yr each); parent ineligible ($0)
 
 **Steps**:
-- **Location**: ZIP `66502`, county `Riley`
+- **Location**: ZIP `66502`, county `Riley County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1991` (age 35), female, US citizen, not pregnant/disabled, employment income `$900`/mo, insurance: none
 - **Person 2**: Child, born `January 2018` (age 8), no income
@@ -217,7 +218,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `February 1981` (age 45), male, US citizen, not pregnant/disabled, no dependent children, employment income `$350`/mo, insurance: none
 
@@ -230,7 +231,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `December 1961` (age 64), male, US citizen, not disabled, employment income `$250`/mo, insurance: none
 
@@ -243,7 +244,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Ineligible (ABD asset test)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1960` (age 66), male, US citizen, not disabled, Social Security income `$900`/mo, `household_assets`: `$5,000`, insurance: none
 
@@ -256,7 +257,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $20,508/yr (AGED)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1960` (age 66), male, US citizen, not disabled, Social Security income `$900`/mo, `household_assets`: `$1,500`, insurance: none
 
@@ -269,7 +270,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `May 1976` (age 50), male, US citizen, disabled: yes, receives SSDI, SSDI income `$800`/mo, insurance: none
 
@@ -282,7 +283,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED/SSI_RECIPIENT)
 
 **Steps**:
-- **Location**: ZIP `66102`, county `Wyandotte`
+- **Location**: ZIP `66102`, county `Wyandotte County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `June 1985` (age 40), female, US citizen, disabled: yes, SSI income `$943`/mo, `household_assets`: `$1,000`, insurance: none
 
@@ -295,7 +296,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Infant eligible ($3,648/yr, INFANT); parents ineligible ($0)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, born `March 1994` (age 32), female, US citizen, not pregnant, employment income `$1,800`/mo, insurance: none
 - **Person 2**: Spouse, born `May 1993` (age 33), male, employment income `$800`/mo, insurance: none
@@ -310,7 +311,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Child eligible ($3,648/yr, OLDER_CHILD); parent ineligible ($0)
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1985` (age 41), female, US citizen, not pregnant/disabled, employment income `$1,600`/mo, insurance: employer
 - **Person 2**: Child, born `September 2014` (age 11), no income, insurance: none
@@ -324,7 +325,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: PE returns eligible (PREGNANT, $3,648/yr if shown) — but MFB suppresses the result because the household is already enrolled
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `September 1991` (age 34), female, US citizen, pregnant: yes, employment income `$400`/mo, insurance: Medicaid, current benefits: Medicaid/KanCare
 
@@ -337,7 +338,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Mother eligible · $3,648/yr (PREGNANT); the unborn is **not** a separate PE person / enrollee
 
 **Steps**:
-- **Location**: ZIP `66603`, county `Shawnee`
+- **Location**: ZIP `66603`, county `Shawnee County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1996` (age 30), female, US citizen, pregnant: yes, employment income `$400`/mo, insurance: none
 - **Person 2**: Child, born `December 2026` (future / unborn)
@@ -351,7 +352,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `May 2006` (age 20), male, US citizen, not disabled/pregnant, no children, employment income `$300`/mo, insurance: none
 
@@ -364,7 +365,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `May 1976` (age 50), male, US citizen, disabled: yes, employment income `$2,000`/mo (earned, above the $1,690/mo SGA threshold), insurance: none
 
@@ -377,7 +378,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `August 1975` (age 50), female, US citizen, visually impaired: yes, disabled: no, employment income `$500`/mo, insurance: none
 
@@ -390,7 +391,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED)
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `March 1970` (age 56), male, US citizen, long-term disability: yes, disabled: no, no SSDI income, employment income `$600`/mo, insurance: none
 
@@ -403,7 +404,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `January 1958` (age 68), male, US citizen, not disabled, Social Security income `$1,100`/mo, insurance: none
 
@@ -416,7 +417,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Eligible · $32,460/yr (DISABLED, not the $20,508 AGED value)
 
 **Steps**:
-- **Location**: ZIP `67202`, county `Sedgwick`
+- **Location**: ZIP `67202`, county `Sedgwick County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1958` (age 68), male, US citizen, disabled: yes, Social Security retirement `$500`/mo + SSDI `$300`/mo (total `$800`/mo), insurance: none
 
@@ -429,7 +430,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 1 person (MAGI size 2)
 - **Person 1**: Head of Household, born `March 1998` (age 28), female, US citizen, pregnant: yes, employment income `$3,500`/mo, insurance: none
 
@@ -442,7 +443,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Both not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `September 1990` (age 34), female, US citizen, not pregnant/disabled, employment income `$3,500`/mo, insurance: none
 - **Person 2**: Child, born `January 2022` (age 4), no income
@@ -456,7 +457,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Both not eligible
 
 **Steps**:
-- **Location**: ZIP `66604`, county `Shawnee`
+- **Location**: ZIP `66604`, county `Shawnee County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `January 1991` (age 35), female, US citizen, not pregnant/disabled, employment income `$3,500`/mo, insurance: none
 - **Person 2**: Child, born `April 2026` (age 0, infant), no income
@@ -470,7 +471,7 @@ Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input 
 **Expected**: Both not eligible
 
 **Steps**:
-- **Location**: ZIP `66044`, county `Douglas`
+- **Location**: ZIP `66044`, county `Douglas County`
 - **Household**: 2 people
 - **Person 1**: Head of Household, born `March 1985` (age 41), female, US citizen, not pregnant/disabled, employment income `$2,600`/mo, insurance: none
 - **Person 2**: Child, born `September 2014` (age 11), no income

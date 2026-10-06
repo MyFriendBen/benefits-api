@@ -149,7 +149,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 **Expected**: Eligible — $1,097/year (federal EITC $6,450.43 × 17%, TY2026)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `March 1991` (age 35), Relationship: Head of Household, Has earned income: Yes, Annual wages/salary: `$28,000`, Filed Kansas tax return last year: Yes (last_tax_filing_year: 2025)
 - **Person 2**: Birth month/year: `September 2016` (age 9), Relationship: Child
@@ -164,7 +164,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 **Expected**: Eligible — $60/year (boundary test; income is just below the 3+ children MFJ limit, federal EITC $351.40 × 17% → $60, TY2026 — this scenario primarily tests eligibility determination at the income boundary)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `6`
 - **Person 1**: Birth month/year: `January 1988` (age 38), Relationship: Head of Household, Has earned income: Yes, Annual wages/salary: `$68,575` (monthly ~$5,715), Filed Kansas tax return last year: Yes
 - **Person 2**: Birth month/year: `April 1990` (age 36), Relationship: Spouse, Has earned income: No
@@ -182,7 +182,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 **Expected**: Eligible — $32/year (federal EITC $185.27 × 17% → $32 at $50,434 income with 1 qualifying child, TY2026; the phase-out has not fully reached zero at this income, so a small residual credit remains. This scenario tests that the screener uses "at or below" eligibility logic)
 
 **Steps**:
-- **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+- **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `September 1990` (age 35), Relationship: Head of Household, Has earned income: Yes, Annual wages/salary: `$50,434`, Income frequency: Yearly, Filed Kansas tax return last year: Yes
 - **Person 2**: Birth month/year: `January 2016` (age 10), Relationship: Child, Has income: No
@@ -196,7 +196,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 **Expected**: Not eligible — $0 (income is past the point where the childless EITC phase-out reaches zero, TY2026)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `headOfHousehold`, Has earned income: Yes, Annual wages/salary: `$20,000` (equivalent to `$1,667` monthly), Filed Kansas tax return last year: Yes (last_tax_filing_year: 2025)
 
@@ -209,7 +209,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 **Expected**: Eligible — $59/year (federal EITC $347.29 × 17% at $15k income, 0 children, TY2026)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `March 2001` (age 25), Relationship: `headOfHousehold`, Has earned income: Yes, Annual wages/salary: `$15,000`, Filed Kansas tax return last year: Yes
 
@@ -222,7 +222,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 **Expected**: Not eligible — $0 (PolicyEngine applies the childless minimum-age rule)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `September 2001` (age 24), Relationship: `headOfHousehold`, Has earned income: Yes, Annual wages/salary: `$15,000`, Filed Kansas tax return last year: Yes
 
@@ -235,7 +235,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 **Expected**: Not eligible — $0 (PolicyEngine requires earned income; SSI is unearned and does not qualify)
 
 **Steps**:
-- **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+- **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `February 1988` (age 38), Relationship: Head of Household, Has income: Yes, Income type: SSI only, SSI amount: `$900` monthly, No wages/salaries/self-employment income, Filed Kansas tax return last year: Yes (last_tax_filing_year: 2025)
 - **Person 2**: Birth month/year: `September 2016` (age 9), Relationship: Child
@@ -252,7 +252,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 The 20-year-old is not a dependent in MFB's tax-unit logic (over 18, not a student ≤23, not disabled per `is_dependent()`), so MFB places them in a separate tax unit before sending to PolicyEngine. Their $14k therefore does not enter the head's EITC calculation — the head's tax unit is head ($32k) + the 13-year-old (one qualifying child). Verified end-to-end through the MFB calculator.
 
 **Steps**:
-- **Location**: Enter ZIP code `66502`, Select county `Riley`
+- **Location**: Enter ZIP code `66502`, Select county `Riley County`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `February 1984` (age 42), Relationship: Head of Household, Has earned income: Yes, Annual wages/salary: `$32,000`, Filed Kansas tax return last year: Yes
 - **Person 2**: Birth month/year: `September 2005` (age 20), Relationship: Child, Has earned income: Yes, Annual wages/salary: `$14,000`
@@ -267,7 +267,7 @@ The 20-year-old is not a dependent in MFB's tax-unit logic (over 18, not a stude
 **Expected**: Eligible — $942/year (federal EITC $5,538.54 × 17% at $39,600 combined income, 2 children, MFJ, TY2026)
 
 **Steps**:
-- **Location**: Enter ZIP code `66502`, Select county `Riley`
+- **Location**: Enter ZIP code `66502`, Select county `Riley County`
 - **Household**: Number of people: `4`
 - **Person 1**: Birth month/year: `February 1990` (age 36), Relationship: Head of Household, Has earned income: Yes, Monthly wages/salary: `$1,800`, Filed Kansas tax return last year: Yes
 - **Person 2**: Birth month/year: `September 1991` (age 34), Relationship: Spouse/Partner, Has earned income: Yes, Monthly wages/salary: `$1,500`
@@ -283,7 +283,7 @@ The 20-year-old is not a dependent in MFB's tax-unit logic (over 18, not a stude
 **Expected**: Eligible — $1/year (federal EITC $7.65 × 17% at $100 income, KS EITC $1.30 → $1, TY2026; this scenario tests age eligibility at the upper boundary, not calculator value)
 
 **Steps**:
-- **Location**: Enter ZIP code `66502`, Select county `Riley`
+- **Location**: Enter ZIP code `66502`, Select county `Riley County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `September 1961` (age 64), Relationship: `headOfHousehold`, Has earned income: Yes, Annual wages/salary: `$100` (minimal), Filed Kansas tax return last year: Yes (last_tax_filing_year: 2025)
 

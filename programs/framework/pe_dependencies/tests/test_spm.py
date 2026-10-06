@@ -374,7 +374,7 @@ class TestBroadbandCostDependency(TestCase):
 
 
 class TestSchoolMealCountableIncomeDependency(TestCase):
-    """Tests for SchoolMealCountableIncomeDependency class used by WIC calculators."""
+    """Tests for SchoolMealCountableIncomeDependency class used by NSLP calculators."""
 
     def setUp(self):
         """Set up test data for school meal countable income tests."""
@@ -533,6 +533,85 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
 
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 31200)  # ($2000 + $600) * 12
+
+
+class TestCsfpCountableIncomeDependency(TestCase):
+    """CSFP counts gross income (7 CFR 247.9(d)), so every screener income type counts."""
+
+    # Every type the school-meals list leaves out, plus one it keeps.
+    INCOME_TYPES = [
+        "wages",
+        "sSI",
+        "unemployment",
+        "cashAssistance",
+        "cashAssistanceOther",
+        "workersComp",
+        "investment",
+        "deferredComp",
+        "boarder",
+        "childSupport",
+        "alimony",
+        "gifts",
+        "stateDisability",
+        "cOSDisability",
+        "nurturingFutures",
+    ]
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=65)
+
+    def test_writes_the_field_csfp_reads(self):
+        self.assertEqual(spm.CsfpCountableIncomeDependency.field, "school_meal_countable_income")
+
+    def test_counts_every_income_type(self):
+        for income_type in self.INCOME_TYPES:
+            IncomeStream.objects.create(
+                screen=self.screen, household_member=self.head, type=income_type, amount=100, frequency="monthly"
+            )
+
+        dep = spm.CsfpCountableIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 100 * 12 * len(self.INCOME_TYPES))
+
+    def test_counts_income_the_school_meals_list_drops(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1800, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="workersComp", amount=250, frequency="monthly"
+        )
+
+        self.assertEqual(spm.CsfpCountableIncomeDependency(self.screen, None, {}).value(), 24600)
+        self.assertEqual(spm.SchoolMealCountableIncomeDependency(self.screen, None, {}).value(), 21600)
+
+    def test_aggregates_across_household_members(self):
+        spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=62)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=spouse, type="alimony", amount=500, frequency="monthly"
+        )
+
+        self.assertEqual(spm.CsfpCountableIncomeDependency(self.screen, None, {}).value(), 18000)
+
+    def test_zero_without_income(self):
+        self.assertEqual(spm.CsfpCountableIncomeDependency(self.screen, None, {}).value(), 0)
+
+    def test_declares_the_income_fields_it_reads(self):
+        self.assertEqual(spm.CsfpCountableIncomeDependency.dependencies, ("income_amount", "income_frequency"))
+
+    def test_csfp_cannot_calculate_without_income_amount_or_frequency(self):
+        from programs.programs.cross_white_label.csfp.ma import MaCsfp
+        from programs.util import Dependencies
+
+        for missing in ("income_amount", "income_frequency"):
+            with self.subTest(missing=missing):
+                calculator = MaCsfp(self.screen, None, Dependencies({missing}))
+                self.assertFalse(calculator.can_calc())
 
 
 class TestSnapReceiptDependencies(TestCase):

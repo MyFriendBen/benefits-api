@@ -13,6 +13,9 @@ from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 from .irs_parameters import get_qualifying_relative_threshold
 
+# Built once: settings.LANGUAGES is fixed for the life of the process.
+SUPPORTED_LANGUAGE_CODES = frozenset(code for code, _ in settings.LANGUAGES)
+
 # Income stream types that represent money earned from work. Everything else the
 # screener collects (SSDI, SSI, pension, unemployment, child support, ...) is
 # unearned. Read by calc_gross_income()'s "earned"/"unearned" selectors and by
@@ -198,7 +201,9 @@ class Screen(models.Model):
         Get list of unique expense types for this screen.
         Returns empty list if no expenses exist.
         """
-        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
+        # Deduplicated in Python: a DISTINCT query would also select Expense's default
+        # ordering column (id) and stop deduplicating. This also reads a prefetched expenses.
+        return list(dict.fromkeys(e.type for e in self.expenses.all() if e.type is not None))
 
     def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
         children = 0
@@ -206,7 +211,8 @@ class Screen(models.Model):
         household_members = self.household_members.all()
         for household_member in household_members:
             has_child_relationship = household_member.relationship in child_relationship or "all" in child_relationship
-            if household_member.age >= age_min and household_member.age <= age_max and has_child_relationship:
+            age = household_member.calc_age()
+            if age is not None and age_min <= age <= age_max and has_child_relationship:
                 children += 1
             if household_member.pregnant and include_pregnant:
                 children += 1
@@ -217,7 +223,8 @@ class Screen(models.Model):
         adults = 0
         household_members = self.household_members.all()
         for household_member in household_members:
-            if household_member.age >= age_max:
+            age = household_member.calc_age()
+            if age is not None and age >= age_max:
                 adults += 1
         return adults
 
@@ -320,7 +327,7 @@ class Screen(models.Model):
             return unit
 
         for member in other_tax_unit:
-            if unit["head"] is None or member.age > unit["head"].age:
+            if unit["head"] is None or (member.calc_age() or 0) > (unit["head"].calc_age() or 0):
                 unit["head"] = member
 
         spouse_id = self.relationship_map()[unit["head"].id]
@@ -472,6 +479,22 @@ class Screen(models.Model):
 
         return language_code
 
+    def supported_language_code(self, requested: object = None) -> str:
+        """A `settings.LANGUAGES` code for this screen, preferring `requested`.
+
+        `requested` when it is a supported code, else the screen's own
+        `request_language_code` when that is, else `settings.LANGUAGE_CODE`. Always
+        lowercase. Unlike `get_language_code`, the screen's value is checked too: the
+        serializer only enforces its `max_length`, and a stale frontend code (`zh`, now
+        `zh-hans`) can be saved on it.
+        """
+        for candidate in (requested, self.request_language_code):
+            code = str(candidate or "").lower()
+            if code in SUPPORTED_LANGUAGE_CODES:
+                return code
+
+        return settings.LANGUAGE_CODE
+
     def has_members_outside_of_tax_unit(self):
         for member in self.household_members.all():
             if not member.is_in_tax_unit():
@@ -551,6 +574,12 @@ class HouseholdMember(models.Model):
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
 
+    class Meta:
+        # Deterministic iteration everywhere, including prefetches. The PolicyEngine payload
+        # lists members in iteration order and the cassette matcher compares request bodies
+        # exactly, so an unordered query can make the same household stop matching.
+        ordering = ["id"]
+
     def calc_gross_income(self, frequency, types, exclude=[]):
         gross_income = 0
 
@@ -617,11 +646,12 @@ class HouseholdMember(models.Model):
             return False
 
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
+        age = self.calc_age()
 
         # Path 1: Qualifying Child
         is_qualifying_child = (
             has_eligible_relationship
-            and (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
+            and ((age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability())
             and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
         )
 
@@ -656,12 +686,23 @@ class HouseholdMember(models.Model):
 
         return self.birth_year_month.month
 
-    def calc_age(self) -> int:
+    def calc_age(self) -> Optional[int]:
         if self.birth_year_month is None:
             return self.age
 
         reference_date = self.screen.get_reference_date()
         return self.age_from_date(self.birth_year_month, reference_date)
+
+    def age_at_end_of_year(self, year: Optional[int]) -> Optional[int]:
+        """
+        Age on December 31 of ``year``, for rules judged over a tax or claim year
+        rather than on the screening date. Falls back to ``calc_age()`` when the birth
+        year or the year is unknown.
+        """
+        if self.birth_year is None or year is None:
+            return self.calc_age()
+
+        return max(year - self.birth_year, 0)
 
     @staticmethod
     def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
@@ -717,6 +758,9 @@ class IncomeStream(models.Model):
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
     hours_worked = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["id"]
 
     def monthly(self):
         if self.frequency == "monthly":
@@ -775,6 +819,9 @@ class Expense(models.Model):
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
+
+    class Meta:
+        ordering = ["id"]
 
     def monthly(self):
         if self.frequency == "monthly":
@@ -923,6 +970,45 @@ class EligibilitySnapshot(models.Model):
     submission_date = models.DateTimeField(auto_now=True)
     is_batch = models.BooleanField(default=False)
     had_error = models.BooleanField(default=False)
+
+    #: Programs left out of this screen's results, as ``{name_abbreviated: reason}``.
+    #:
+    #: The results payload carries a single ``missing_programs`` boolean, which says that
+    #: something was omitted but not what or why. The reasons are not interchangeable — a
+    #: PolicyEngine outage, a screener field the household skipped, and a gated upstream
+    #: whose row was deactivated all look identical from the response, and only the first
+    #: is outside our control. Recording them per program is what makes the difference
+    #: answerable from production data instead of by reading the calculator tree.
+    #:
+    #: Reasons are the ``DROPPED_*`` constants below. Code that knows this field always
+    #: writes a dict — empty when nothing was dropped — so an empty dict and a null mean
+    #: different things: "nothing was dropped" against "written by code that predates this
+    #: field".
+    #:
+    #: Nullable for deploy safety, which is the only reason it is not simply NOT NULL.
+    #: Django applies ``default`` in Python and drops the database default after adding the
+    #: column, so a NOT NULL column is written only by code that declares the field. The
+    #: release phase migrates before the new dynos take over, so for that window — and for
+    #: the whole of any code rollback that leaves the migration applied — the old code
+    #: inserts no value at all and every eligibility calculation fails on the constraint.
+    dropped_programs = models.JSONField(default=dict, blank=True, null=True)
+
+    #: The program's own `can_calc` failed: a screener field it needs is missing. Not a
+    #: failure — the household was never asked.
+    DROPPED_MISSING_FIELD = "missing_screener_field"
+
+    #: A strict gate raised because the program it reads was not calculated.
+    DROPPED_UPSTREAM_ABSENT = "gated_upstream_absent"
+
+    #: A PolicyEngine program absent from the batch result: the call failed, the payload
+    #: could not be assembled, the request was abandoned on the time budget, or the
+    #: resolved model does not define its output.
+    DROPPED_POLICY_ENGINE = "policy_engine_unavailable"
+
+    #: A force-calculated upstream raised something other than `DependencyError`. Never a
+    #: program the household would have seen; recorded because it means a gate that should
+    #: have been decoupled fell back to dropping its dependents.
+    DROPPED_UPSTREAM_ERROR = "force_calculated_upstream_error"
 
 
 class NPSScore(models.Model):

@@ -2296,10 +2296,7 @@ class IlConfigurationData(ConfigurationData):
     # override only the keys IL customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        # twoOneOneChicago is registered in styleController.ts as an exact copy of
-        # `default` until 211 Metro Chicago's palette arrives, so this is a no-op
-        # visually today. Pointing at it now means the brand swap is a one-file
-        # frontend change rather than a config change too.
+        # twoOneOneChicago carries 211 Metro Chicago's palette; see styleController.ts.
         "theme": {"default": "default", "211chicago": "twoOneOneChicago"},
         "logoSource": {
             "default": "MFB_ILLogo",
@@ -2356,7 +2353,13 @@ class IlConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {
-            "default": [],
+            # Overrides the base's empty list so the results page omits the Immediate Help tab.
+            "default": ["no_results_more_help"],
+            # getReferrer resolves referrerData[key][referrer] ?? referrerData[key].default,
+            # so a referrer list REPLACES the default rather than extending it:
+            # no_results_more_help has to be repeated here or 211chicago users would get
+            # the Immediate Help tab back that the rest of Illinois no longer sees.
+            #
             # il_show_211_link renders the 211 Metro Chicago resource deep links at
             # the top of the Additional Resources tab; no_zipcode_change_state hides
             # the "not in Illinois?" prompt on the zipcode step.
@@ -2364,7 +2367,12 @@ class IlConfigurationData(ConfigurationData):
             # white_header is not cosmetic: their logo is blue on transparent, and
             # the default header bar is filled with --primary-color, which is now
             # that same brand blue. Without this the mark is near-invisible.
-            "211chicago": ["il_show_211_link", "no_zipcode_change_state", "white_header"],
+            "211chicago": [
+                "no_results_more_help",
+                "il_show_211_link",
+                "no_zipcode_change_state",
+                "white_header",
+            ],
         },
         "defaultLanguage": {"default": "en-us"},
     }

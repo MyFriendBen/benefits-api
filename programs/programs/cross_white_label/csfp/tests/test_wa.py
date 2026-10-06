@@ -8,7 +8,7 @@ from programs.framework.pe_dependencies import member
 
 def make_member(age=65):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     return member
 
 

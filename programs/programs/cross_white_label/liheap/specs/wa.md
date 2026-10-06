@@ -272,19 +272,19 @@ Key notes: WA does not implement categorical eligibility — all households must
 
 ---
 
-### Scenario 9: Ineligible — Out-of-State ZIP Code
-**What we're checking**: Household using a non-Washington ZIP code is correctly identified as not residing in WA.
-**Expected**: Not eligible
+### Scenario 9: Out-of-State ZIP Code — Rejected at Intake
+**What we're checking**: Household using a non-Washington ZIP code is rejected at screen creation, before eligibility is calculated.
+**Expected**: Rejected at screen creation — the API returns a 400 on `zipcode` because `97201` is not in the WA ZIP map, so no eligibility result is produced. The browser's ZIP step blocks the same ZIP as out of area.
 
 **Steps**:
-- **Location**: Enter ZIP code `97201`, County `Multnomah` (Portland, Oregon — no "County" suffix needed for OR)
+- **Location**: Enter ZIP code `97201`, County `Multnomah County` (Portland, Oregon — outside WA)
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1980` (age 45), Relationship: Head of Household, Has income: Yes, Income type: Wages, Amount: `$1,200` per month
 - **Person 2**: Birth month/year: `January 1982` (age 44), Relationship: Spouse, Has income: Yes, Income type: Wages, Amount: `$800` per month
 - **Expenses**: Indicate household has heating costs
 - **Current Benefits**: None
 
-**Why this matters**: Tests the WA residency criterion. Income is under threshold ($24,000/year vs. $32,460 for HH of 2), so this household would otherwise be eligible. Confirms ZIP/county gates eligibility by state before evaluating income.
+**Why this matters**: Tests the WA residency criterion. Income is under threshold ($24,000/year vs. $32,460 for HH of 2), so this household would otherwise be eligible. Confirms the state check happens at intake, before income is evaluated.
 
 ---
 

@@ -25,4 +25,4 @@ class MyDenver(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(MyDenver.child_age_min <= member.age <= MyDenver.child_age_max)
+        e.condition(MyDenver.child_age_min <= member.calc_age() <= MyDenver.child_age_max)

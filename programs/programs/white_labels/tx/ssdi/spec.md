@@ -56,7 +56,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1976` (age 50), Head of Household, U.S. Citizen, has disability, long-term disability, income: `$0`, no insurance
 
@@ -70,7 +70,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1960` (age 66), Head of Household, U.S. Citizen, has disability, long-term disability, income: `$0`, no insurance
 
@@ -84,7 +84,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `March 1976` (age 50), Head of Household, U.S. Citizen, has disability, long-term disability, wages: `$1,690/month`, no insurance
 
@@ -98,7 +98,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
+- **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `March 1972` (age 54), Head of Household, U.S. Citizen, has disability, long-term disability, wages: `$1,750/month`, no insurance
 
@@ -112,7 +112,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `March 1976` (age 50), Head of Household, U.S. Citizen, has disability, long-term disability, income: `$1,537/month SSDI`, Medicare, **current benefits: SSDI**
 
@@ -126,7 +126,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
+- **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1978` (age 48), Head of Household, U.S. Citizen, has disability, long-term disability, income: `$943/month SSI`, Medicaid, **current benefits: SSI**
 
@@ -140,7 +140,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible (for the disabled worker)
 
 **Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
+- **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 3 people
 - **Person 1 (Head)**: DOB `January 1972` (age 54), U.S. Citizen, has disability, long-term disability, income: `$0`, no insurance
 - **Person 2 (Spouse)**: DOB `May 1974` (age 51), U.S. Citizen, no disability, wages: `$2,800/month`, employer insurance
@@ -156,7 +156,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible (both members)
 
 **Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
+- **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 2 people
 - **Person 1 (Head)**: DOB `January 1971` (age 55), U.S. Citizen, has disability, long-term disability, income: `$0`, no insurance
 - **Person 2 (Spouse)**: DOB `June 1973` (age 52), U.S. Citizen, has disability, long-term disability, income: `$0`, no insurance
@@ -171,7 +171,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1959` (age 67 — FRA of 66y10m reached November 2025), Head of Household, U.S. Citizen, has disability, long-term disability, income: `$0`, no insurance, no current benefits
 
@@ -185,7 +185,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1976` (age 50), Head of Household, U.S. Citizen, has disability, long-term disability, visually impaired, wages: `$2,500/month`, no insurance
 
@@ -199,7 +199,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1976` (age 50), Head of Household, U.S. Citizen, has disability, long-term disability, visually impaired, wages: `$3,000/month`, no insurance
 
@@ -213,7 +213,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1976` (age 50), Head of Household, U.S. Citizen, **disabled: False**, long-term disability, income: `$0`, no insurance
 
@@ -227,7 +227,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1976` (age 50), Head of Household, U.S. Citizen, has disability (no long-term disability), income: `$0`, no insurance
 
@@ -241,7 +241,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin County`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1963` (age 63), Head of Household, U.S. Citizen, has disability, long-term disability, income: `$900/month Social Security (retirement)`, no insurance
 

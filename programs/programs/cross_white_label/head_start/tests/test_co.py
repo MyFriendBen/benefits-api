@@ -41,7 +41,7 @@ PARTICIPATING_COUNTIES = {
 
 def make_member(age=4):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     return member
 
 

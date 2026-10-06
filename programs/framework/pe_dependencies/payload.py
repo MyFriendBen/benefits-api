@@ -26,8 +26,8 @@ from integrations.clients.policyengine import versions as pe_versions
 #: How many PolicyEngine requests one screen may be split into before we stop splitting and
 #: start dropping programs. Each bucket is a separate HTTP round trip, and the gunicorn
 #: worker timeout (120s) against PolicyEngine's read timeout (30s) leaves room for a handful.
-#: Only screens that actually carry a disagreement split at all, and today exactly one
-#: program wants a value another program contradicts, so 3 is slack rather than a budget.
+#: Only screens that actually carry a disagreement split at all, and today two slots can
+#: disagree (age bases, school-meals vs CSFP income); a screen carrying both needs all 3.
 #:
 #: This bounds the request *count* only. Three slow-but-not-failing calls would outlast the
 #: worker timeout and cost the whole response, so the dispatcher holds a wall-clock budget
@@ -40,11 +40,14 @@ MAX_PAYLOAD_BUCKETS = 3
 #:
 #: A split between exactly these is structural rather than a mistake: age on the screening
 #: date and age at the end of the claim year are both correct, for different rules, and a
-#: large recurring share of Missouri screens carries both. Reporting every one of them as a
-#: Sentry warning would bury the disagreements that mean something, so these are logged
+#: large recurring share of Missouri screens carries both. Likewise school-meals and CSFP
+#: countable income, which fill one field under different income definitions and differ
+#: whenever a household has income outside the school-meals list. Reporting every one of them
+#: as a Sentry warning would bury the disagreements that mean something, so these are logged
 #: instead (see `_report_conflicts`). Any other combination stays a warning.
 EXPECTED_CONFLICTING_DEPENDENCIES: Tuple[frozenset, ...] = (
     frozenset({"AgeDependency", "AgeAtEndOfClaimYearDependency"}),
+    frozenset({"SchoolMealCountableIncomeDependency", "CsfpCountableIncomeDependency"}),
 )
 
 
@@ -327,11 +330,9 @@ def _household_shape(screen: Screen):
         }
     }
 
-    # order_by("id") is load-bearing, not tidiness: the payload lists every unit's members
-    # in iteration order, and the cassette matcher compares request bodies exactly. Without
-    # it Postgres picks the order, so the same household can serialize differently between
-    # runs and a recorded cassette stops matching — the request then goes to the live API.
-    members = screen.household_members.all().order_by("id")
+    # Iteration order is load-bearing: HouseholdMember.Meta.ordering keeps it by id, so the
+    # same household always serializes the same way and its recorded cassette keeps matching.
+    members = screen.household_members.all()
     relationship_map = screen.relationship_map()
 
     main_tax_members = []
