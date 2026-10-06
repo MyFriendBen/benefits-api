@@ -298,7 +298,6 @@ class NcConfigurationData(ConfigurationData):
     # Every county with a nonzero residential ratio is kept, ordered by descending residential
     #   ratio so the likeliest county is first in the dropdown. Business-only zips keep all
     #   candidates. Zips we served before that are absent from this vintage keep their counties.
-    # Regenerate with scratch/generate_nc_zip_county_map.py when a newer vintage is published.
     # ==========================================================================================
     counties_by_zipcode = {
         "27006": {"Davie County": "Davie County"},
