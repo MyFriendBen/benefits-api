@@ -28,7 +28,7 @@ def seed_dynamic_fpl_rows(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0175_ks_lieap_on_has_benefits_step"),
+        ("programs", "0180_ssi_msp_csfp_current_edition"),
     ]
     operations = [
         migrations.RunPython(seed_dynamic_fpl_rows, migrations.RunPython.noop),
