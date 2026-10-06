@@ -102,6 +102,19 @@ class TestResults(FederalProgramsTestCase):
         self.assertEqual(len(categories), 1)
         self.assertEqual(sorted(categories[0]["programs"]), sorted([federal.id, state.id]))
 
+    def test_programs_outside_calc_order_come_back_in_id_order(self) -> None:
+        """The order the screener breaks value ties with; it must not depend on the query plan."""
+        programs = [
+            self.program(self.federal, "fed_b"),
+            self.program(self.co, "co_a"),
+            self.program(self.federal, "fed_a"),
+            self.program(self.co, "co_b"),
+        ]
+
+        data, _ = self.results(self.screen(self.co))
+
+        self.assertEqual([p["program_id"] for p in data], [p.id for p in programs])
+
     def test_an_inactive_federal_program_is_not_shown(self) -> None:
         self.program(self.federal, "fed_account", active=False)
 

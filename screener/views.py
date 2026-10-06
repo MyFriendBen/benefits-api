@@ -468,6 +468,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             *translations_prefetch_name("category__", ProgramCategory.objects.translated_fields),
         )
         .exclude(id__in=excluded_programs)
+        # Explicit so the response order is stable: CALC_ORDER only reorders its own programs and
+        # keeps the rest in query order, which without this is whatever Postgres returns and
+        # shifts with the query plan or an edited row.
+        .order_by("id")
     )
     # Every name below keys a dict (`program_by_abbr`, `program_eligibility`), so a name active
     # under both this white label and `federal` would silently drop one row from the PE payload
@@ -507,7 +511,8 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             name_abbreviated__in=force_calculated_codes(),
         )
         .exclude(name_abbreviated__in=list(program_by_abbr))
-        .select_related("year", "white_label"),
+        .select_related("year", "white_label")
+        .order_by("id"),
         "eligibility_results upstream",
     )
     upstream_only_ids = {program.id for program in upstream_only_programs}
