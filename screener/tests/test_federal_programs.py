@@ -12,15 +12,18 @@ results page fetches and publishes, not any program's rule.
 """
 
 import json
+from typing import Any, Optional
 import tempfile
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from django.contrib.admin import AdminSite
+from django.contrib.admin import AdminSite, ModelAdmin
 from django.contrib.auth.models import Permission
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db.models import Model
+from django.forms import ModelForm
 from django.test import RequestFactory, TestCase
 from rest_framework.test import APIClient
 
@@ -40,7 +43,7 @@ CONFIG_DIR = (
 )
 
 
-def eligible():
+def eligible() -> Eligibility:
     e = Eligibility()
     e.eligible = True
     e.household_value = 1
@@ -48,14 +51,14 @@ def eligible():
 
 
 class FederalProgramsTestCase(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.federal = WhiteLabel.objects.create(name="Federal Programs", code=FEDERAL_WHITE_LABEL)
         self.co = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         self.wa = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
         self.category = ProgramCategory.objects.new_program_category(white_label=None, external_name="cash", icon="")
         self.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
 
-    def program(self, white_label, name, *, active=True, **fields):
+    def program(self, white_label: WhiteLabel, name: str, *, active: bool = True, **fields: Any) -> Program:
         program = Program.objects.new_program(white_label.code, name)
         program.active = active
         program.has_calculator = True
@@ -66,12 +69,12 @@ class FederalProgramsTestCase(TestCase):
         program.save()
         return program
 
-    def screen(self, white_label, **fields):
+    def screen(self, white_label: WhiteLabel, **fields: Any) -> Screen:
         return Screen.objects.create(
             white_label=white_label, zipcode="80202", household_size=1, completed=False, **fields
         )
 
-    def results(self, screen):
+    def results(self, screen: Screen) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         with patch.object(Program, "eligibility", lambda *args: eligible()), patch(
             "screener.views.calc_pe_eligibility", return_value={"eligibility": {}, "_pe_data": {}}
         ):
@@ -80,7 +83,7 @@ class FederalProgramsTestCase(TestCase):
 
 
 class TestResults(FederalProgramsTestCase):
-    def test_a_federal_program_is_shown_to_every_white_label(self):
+    def test_a_federal_program_is_shown_to_every_white_label(self) -> None:
         federal = self.program(self.federal, "fed_account")
         self.program(self.co, "co_only")
 
@@ -90,7 +93,7 @@ class TestResults(FederalProgramsTestCase):
         self.assertEqual(sorted(p["name_abbreviated"] for p in co_data), ["co_only", "fed_account"])
         self.assertEqual([p["program_id"] for p in wa_data], [federal.id])
 
-    def test_it_lands_in_the_shared_category_alongside_state_programs(self):
+    def test_it_lands_in_the_shared_category_alongside_state_programs(self) -> None:
         federal = self.program(self.federal, "fed_account")
         state = self.program(self.co, "co_only")
 
@@ -99,14 +102,14 @@ class TestResults(FederalProgramsTestCase):
         self.assertEqual(len(categories), 1)
         self.assertEqual(sorted(categories[0]["programs"]), sorted([federal.id, state.id]))
 
-    def test_an_inactive_federal_program_is_not_shown(self):
+    def test_an_inactive_federal_program_is_not_shown(self) -> None:
         self.program(self.federal, "fed_account", active=False)
 
         data, _ = self.results(self.screen(self.co))
 
         self.assertEqual(data, [])
 
-    def test_without_federal_programs_results_are_unchanged(self):
+    def test_without_federal_programs_results_are_unchanged(self) -> None:
         self.program(self.co, "co_only")
         self.program(self.wa, "wa_only")
 
@@ -114,7 +117,7 @@ class TestResults(FederalProgramsTestCase):
 
         self.assertEqual([p["name_abbreviated"] for p in data], ["co_only"])
 
-    def test_a_name_active_on_both_sides_shows_the_federal_row_once_and_logs(self):
+    def test_a_name_active_on_both_sides_shows_the_federal_row_once_and_logs(self) -> None:
         federal = self.program(self.federal, "shared_name")
         self.program(self.co, "shared_name")
 
@@ -124,7 +127,7 @@ class TestResults(FederalProgramsTestCase):
         self.assertEqual([p["program_id"] for p in data], [federal.id])
         self.assertIn("shared_name", logs.output[0])
 
-    def test_a_deactivated_state_row_loses_to_the_federal_row_silently(self):
+    def test_a_deactivated_state_row_loses_to_the_federal_row_silently(self) -> None:
         federal = self.program(self.federal, "shared_name")
         self.program(self.co, "shared_name", active=False)
 
@@ -133,7 +136,7 @@ class TestResults(FederalProgramsTestCase):
 
         self.assertEqual([p["program_id"] for p in data], [federal.id])
 
-    def test_a_referrer_can_exclude_a_federal_program(self):
+    def test_a_referrer_can_exclude_a_federal_program(self) -> None:
         federal = self.program(self.federal, "fed_account")
         referrer = Referrer.objects.create(white_label=self.co, referrer_code="partner", name="Partner")
         referrer.remove_programs.add(federal)
@@ -144,17 +147,17 @@ class TestResults(FederalProgramsTestCase):
 
 
 class TestCurrentBenefits(FederalProgramsTestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.user = User.objects.create_user(email_or_cell="toggle@example.com", password="password")
         self.user.user_permissions.add(Permission.objects.get(codename="change_screen"))
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-    def benefits(self, screen):
+    def benefits(self, screen: Screen) -> list[int]:
         return list(CurrentBenefit.objects.filter(screen=screen).values_list("program_id", flat=True))
 
-    def test_the_toggle_resolves_a_federal_program(self):
+    def test_the_toggle_resolves_a_federal_program(self) -> None:
         federal = self.program(self.federal, "fed_account")
         screen = self.screen(self.co)
 
@@ -165,7 +168,7 @@ class TestCurrentBenefits(FederalProgramsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.benefits(screen), [federal.id])
 
-    def test_the_toggle_picks_the_federal_row_over_a_deactivated_state_row(self):
+    def test_the_toggle_picks_the_federal_row_over_a_deactivated_state_row(self) -> None:
         """Two rows with one name would raise MultipleObjectsReturned in a plain get()."""
         federal = self.program(self.federal, "shared_name")
         self.program(self.co, "shared_name", active=False)
@@ -178,7 +181,48 @@ class TestCurrentBenefits(FederalProgramsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.benefits(screen), [federal.id])
 
-    def test_the_toggle_still_404s_an_unknown_name(self):
+    def test_unticking_removes_the_state_row_a_screen_saved_before_the_move(self) -> None:
+        """Screens saved before a program moved still point at the deactivated state row."""
+        self.program(self.federal, "shared_name")
+        state = self.program(self.co, "shared_name", active=False)
+        screen = self.screen(self.co)
+        CurrentBenefit.objects.create(screen=screen, program=state)
+
+        response = self.client.patch(
+            f"/api/screens/{screen.uuid}/current-benefits/", {"name_abbreviated": "shared_name", "has": False}, "json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {"current_benefits": []})
+        self.assertEqual(self.benefits(screen), [])
+        self.assertFalse(Screen.objects.get(pk=screen.pk).has_benefit("shared_name"))
+
+    def test_ticking_moves_that_screen_onto_the_federal_row_without_a_second_row(self) -> None:
+        federal = self.program(self.federal, "shared_name")
+        state = self.program(self.co, "shared_name", active=False)
+        screen = self.screen(self.co)
+        CurrentBenefit.objects.create(screen=screen, program=state)
+
+        response = self.client.patch(
+            f"/api/screens/{screen.uuid}/current-benefits/", {"name_abbreviated": "shared_name", "has": True}, "json"
+        )
+
+        self.assertEqual(response.data, {"current_benefits": ["shared_name"]})
+        self.assertEqual(self.benefits(screen), [federal.id])
+
+    def test_unticking_leaves_other_benefits_alone(self) -> None:
+        self.program(self.federal, "shared_name")
+        other = self.program(self.co, "co_only")
+        screen = self.screen(self.co)
+        CurrentBenefit.objects.create(screen=screen, program=other)
+
+        self.client.patch(
+            f"/api/screens/{screen.uuid}/current-benefits/", {"name_abbreviated": "shared_name", "has": False}, "json"
+        )
+
+        self.assertEqual(self.benefits(screen), [other.id])
+
+    def test_the_toggle_still_404s_an_unknown_name(self) -> None:
         screen = self.screen(self.co)
 
         response = self.client.patch(
@@ -188,7 +232,7 @@ class TestCurrentBenefits(FederalProgramsTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["detail"], "No program 'nope' is offered to white label 'co'.")
 
-    def test_the_screen_write_path_keeps_a_federal_benefit(self):
+    def test_the_screen_write_path_keeps_a_federal_benefit(self) -> None:
         federal = self.program(self.federal, "shared_name")
         self.program(self.co, "shared_name", active=False)
         state = self.program(self.co, "co_only")
@@ -201,12 +245,12 @@ class TestCurrentBenefits(FederalProgramsTestCase):
 
 
 class TestScreenerOptions(FederalProgramsTestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         self.client = APIClient()
         self.client.force_authenticate(user=User.objects.create_user(email_or_cell="o@example.com", password="pw"))
 
-    def test_the_has_benefits_step_lists_federal_programs(self):
+    def test_the_has_benefits_step_lists_federal_programs(self) -> None:
         self.program(self.federal, "fed_account", show_in_has_benefits_step=True)
         self.program(self.co, "co_only", show_in_has_benefits_step=True)
         self.program(self.wa, "wa_only", show_in_has_benefits_step=True)
@@ -216,7 +260,7 @@ class TestScreenerOptions(FederalProgramsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(sorted(p["name_abbreviated"] for p in response.data), ["co_only", "fed_account"])
 
-    def test_the_current_benefits_page_includes_federal_programs(self):
+    def test_the_current_benefits_page_includes_federal_programs(self) -> None:
         federal = self.program(self.federal, "fed_account", show_on_current_benefits=True)
         state = self.program(self.co, "co_only", show_on_current_benefits=True)
         self.program(self.wa, "wa_only", show_on_current_benefits=True)
@@ -225,7 +269,7 @@ class TestScreenerOptions(FederalProgramsTestCase):
 
         self.assertEqual(sorted(p["id"] for p in data["programs"]), sorted([federal.id, state.id]))
 
-    def test_the_current_benefits_program_list_shows_a_shared_name_once(self):
+    def test_the_current_benefits_program_list_shows_a_shared_name_once(self) -> None:
         """Even with both rows active (an unfinished move), the list carries the federal row only."""
         federal = self.program(self.federal, "shared_name", show_on_current_benefits=True)
         self.program(self.co, "shared_name", show_on_current_benefits=True)
@@ -237,12 +281,12 @@ class TestScreenerOptions(FederalProgramsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(sorted(p["id"] for p in response.data), sorted([federal.id, state.id]))
 
-    def test_federal_is_not_a_state_option(self):
+    def test_federal_is_not_a_state_option(self) -> None:
         self.assertNotIn(FEDERAL_WHITE_LABEL, [option["code"] for option in state_options()])
 
 
 class TestAudit(FederalProgramsTestCase):
-    def test_clean_when_no_name_is_active_on_both_sides(self):
+    def test_clean_when_no_name_is_active_on_both_sides(self) -> None:
         self.program(self.federal, "shared_name")
         self.program(self.co, "shared_name", active=False)
         out = StringIO()
@@ -251,7 +295,7 @@ class TestAudit(FederalProgramsTestCase):
 
         self.assertIn("No program is active", out.getvalue())
 
-    def test_fails_on_a_name_active_on_both_sides(self):
+    def test_fails_on_a_name_active_on_both_sides(self) -> None:
         self.program(self.federal, "shared_name")
         self.program(self.co, "shared_name")
         self.program(self.wa, "shared_name")
@@ -261,7 +305,7 @@ class TestAudit(FederalProgramsTestCase):
 
 
 class TestImportGuard(FederalProgramsTestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         translate = patch("programs.management.commands.import_program_config.Translate")
         translate.start().return_value.bulk_translate.side_effect = lambda langs, texts: {
@@ -269,7 +313,7 @@ class TestImportGuard(FederalProgramsTestCase):
         }
         self.addCleanup(translate.stop)
 
-    def import_config(self, white_label_code, name, active):
+    def import_config(self, white_label_code: str, name: str, active: bool) -> None:
         config = {
             "white_label": {"code": white_label_code},
             "program_category": {"external_name": "cash"},
@@ -279,7 +323,7 @@ class TestImportGuard(FederalProgramsTestCase):
         path.write_text(json.dumps(config))
         call_command("import_program_config", str(path), stdout=StringIO())
 
-    def test_refuses_an_active_federal_import_over_an_active_state_row(self):
+    def test_refuses_an_active_federal_import_over_an_active_state_row(self) -> None:
         self.program(self.co, "shared_name")
 
         with self.assertRaisesMessage(CommandError, "already active under co"):
@@ -287,20 +331,20 @@ class TestImportGuard(FederalProgramsTestCase):
 
         self.assertFalse(Program.objects.filter(white_label=self.federal).exists())
 
-    def test_refuses_an_active_state_import_over_an_active_federal_row(self):
+    def test_refuses_an_active_state_import_over_an_active_federal_row(self) -> None:
         self.program(self.federal, "shared_name")
 
         with self.assertRaisesMessage(CommandError, "already active under federal"):
             self.import_config("wa", "shared_name", active=True)
 
-    def test_allows_it_once_the_state_row_is_inactive(self):
+    def test_allows_it_once_the_state_row_is_inactive(self) -> None:
         self.program(self.co, "shared_name", active=False)
 
         self.import_config(FEDERAL_WHITE_LABEL, "shared_name", active=True)
 
         self.assertTrue(Program.objects.filter(white_label=self.federal, name_abbreviated="shared_name").exists())
 
-    def test_allows_an_inactive_import(self):
+    def test_allows_an_inactive_import(self) -> None:
         self.program(self.co, "shared_name")
 
         self.import_config(FEDERAL_WHITE_LABEL, "shared_name", active=False)
@@ -312,7 +356,7 @@ class TestConfigFiles(TestCase):
     """PR CI's database is empty, so the database audit can't run there; the committed
     configs are what a reviewer can still catch a duplicate in."""
 
-    def test_no_active_federal_config_shares_a_name_with_an_active_state_config(self):
+    def test_no_active_federal_config_shares_a_name_with_an_active_state_config(self) -> None:
         active: dict[str, set[str]] = {}
         for path in CONFIG_DIR.glob("*.json"):
             config = json.loads(path.read_text())
@@ -334,19 +378,19 @@ class _Superuser:
     is_active = True
     is_staff = True
 
-    def has_perm(self, perm, obj=None):
+    def has_perm(self, perm: str, obj: Optional[object] = None) -> bool:
         return True
 
 
 class TestAdminPickers(FederalProgramsTestCase):
     """A white label's rows may reference a federal program, but not attach content to one."""
 
-    def form(self, model_admin, obj):
+    def form(self, model_admin: ModelAdmin, obj: Model) -> type[ModelForm]:
         request = RequestFactory().get("/admin/")
         request.user = _Superuser()
         return model_admin.get_form(request, obj=obj)
 
-    def test_a_referrer_can_pick_a_federal_program_to_remove(self):
+    def test_a_referrer_can_pick_a_federal_program_to_remove(self) -> None:
         federal = self.program(self.federal, "fed_account")
         own = self.program(self.co, "co_only")
         other = self.program(self.wa, "wa_only")
@@ -357,7 +401,7 @@ class TestAdminPickers(FederalProgramsTestCase):
         self.assertEqual(choices, {federal, own})
         self.assertNotIn(other, choices)
 
-    def test_a_state_warning_cannot_be_attached_to_a_federal_program(self):
+    def test_a_state_warning_cannot_be_attached_to_a_federal_program(self) -> None:
         federal = self.program(self.federal, "fed_account")
         own = self.program(self.co, "co_only")
         warning = WarningMessage.objects.new_warning("co", "_show")

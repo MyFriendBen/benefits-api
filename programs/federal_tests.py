@@ -20,12 +20,12 @@ from screener.models import WhiteLabel
 
 
 class FederalHelpersTestCase(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.federal = WhiteLabel.objects.create(name="Federal Programs", code=FEDERAL_WHITE_LABEL)
         self.co = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         self.wa = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
 
-    def program(self, white_label, name, *, active=True):
+    def program(self, white_label: WhiteLabel, name: str, *, active: bool = True) -> Program:
         program = Program.objects.new_program(white_label.code, name)
         program.active = active
         program.save()
@@ -33,7 +33,7 @@ class FederalHelpersTestCase(TestCase):
 
 
 class TestVisibleTo(FederalHelpersTestCase):
-    def test_a_white_label_sees_its_own_programs_and_federal_ones(self):
+    def test_a_white_label_sees_its_own_programs_and_federal_ones(self) -> None:
         own = self.program(self.co, "co_only")
         federal = self.program(self.federal, "fed_only")
         self.program(self.wa, "wa_only")
@@ -43,7 +43,7 @@ class TestVisibleTo(FederalHelpersTestCase):
 
 
 class TestFilterProgramsByName(FederalHelpersTestCase):
-    def test_keeps_first_appearance_order(self):
+    def test_keeps_first_appearance_order(self) -> None:
         a = self.program(self.co, "a")
         shared_state = self.program(self.co, "shared", active=False)
         b = self.program(self.co, "b")
@@ -53,7 +53,7 @@ class TestFilterProgramsByName(FederalHelpersTestCase):
 
         self.assertEqual(kept, [a, shared_federal, b])
 
-    def test_names_without_a_federal_row_pass_through(self):
+    def test_names_without_a_federal_row_pass_through(self) -> None:
         a = self.program(self.co, "a")
         b = self.program(self.co, "b")
 
@@ -61,12 +61,12 @@ class TestFilterProgramsByName(FederalHelpersTestCase):
 
 
 class TestPreferredProgram(FederalHelpersTestCase):
-    def test_the_first_program_for_a_name_is_kept(self):
+    def test_the_first_program_for_a_name_is_kept(self) -> None:
         own = self.program(self.co, "shared")
 
         self.assertEqual(preferred_program(None, own, "test"), own)
 
-    def test_the_federal_program_wins_in_either_order(self):
+    def test_the_federal_program_wins_in_either_order(self) -> None:
         """A name matches at most a state row and a federal row, so order can't change the winner."""
         state = self.program(self.co, "shared", active=False)
         federal = self.program(self.federal, "shared")
@@ -74,14 +74,14 @@ class TestPreferredProgram(FederalHelpersTestCase):
         self.assertEqual(preferred_program(state, federal, "test"), federal)
         self.assertEqual(preferred_program(federal, state, "test"), federal)
 
-    def test_an_inactive_state_row_losing_is_not_logged(self):
+    def test_an_inactive_state_row_losing_is_not_logged(self) -> None:
         state = self.program(self.co, "shared", active=False)
         federal = self.program(self.federal, "shared")
 
         with self.assertNoLogs("programs.federal", level="ERROR"):
             preferred_program(state, federal, "test")
 
-    def test_two_active_programs_are_logged_with_the_read_path(self):
+    def test_two_active_programs_are_logged_with_the_read_path(self) -> None:
         state = self.program(self.co, "shared")
         federal = self.program(self.federal, "shared")
 
@@ -94,26 +94,26 @@ class TestPreferredProgram(FederalHelpersTestCase):
 
 
 class TestVisibleProgram(FederalHelpersTestCase):
-    def test_returns_the_federal_row_over_the_deactivated_state_row(self):
+    def test_returns_the_federal_row_over_the_deactivated_state_row(self) -> None:
         self.program(self.co, "shared", active=False)
         federal = self.program(self.federal, "shared")
 
         self.assertEqual(visible_program(self.co, "shared", "test"), federal)
 
-    def test_returns_an_inactive_own_row(self):
+    def test_returns_an_inactive_own_row(self) -> None:
         """Callers resolve held benefits, which may no longer be offered."""
         own = self.program(self.co, "retired", active=False)
 
         self.assertEqual(visible_program(self.co, "retired", "test"), own)
 
-    def test_returns_none_for_another_white_labels_program(self):
+    def test_returns_none_for_another_white_labels_program(self) -> None:
         self.program(self.wa, "wa_only")
 
         self.assertIsNone(visible_program(self.co, "wa_only", "test"))
 
 
 class TestActiveDuplicates(FederalHelpersTestCase):
-    def test_lists_each_state_still_active_beside_the_federal_row(self):
+    def test_lists_each_state_still_active_beside_the_federal_row(self) -> None:
         self.program(self.federal, "shared")
         self.program(self.co, "shared")
         self.program(self.wa, "shared")
@@ -122,7 +122,7 @@ class TestActiveDuplicates(FederalHelpersTestCase):
 
         self.assertEqual(active_duplicates(), {"shared": ["co", "wa"]})
 
-    def test_can_be_limited_to_names(self):
+    def test_can_be_limited_to_names(self) -> None:
         self.program(self.federal, "shared")
         self.program(self.co, "shared")
 

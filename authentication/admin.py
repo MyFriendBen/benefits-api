@@ -1,7 +1,10 @@
+from typing import Optional
+
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
-from django.db.models import Q
+from django.db.models import Model, Q
+from django.http import HttpRequest
 from django.core.exceptions import PermissionDenied
 from rest_framework.authtoken.models import TokenProxy
 from rest_framework.authtoken.admin import TokenAdmin
@@ -73,7 +76,9 @@ class SecureAdmin(ModelAdmin):
 
         return form
 
-    def _set_select_queryset(self, field_name: str, field: forms.ModelMultipleChoiceField, obj, request):
+    def _set_select_queryset(
+        self, field_name: str, field: forms.ModelMultipleChoiceField, obj: Optional[Model], request: HttpRequest
+    ) -> None:
         user: User = request.user
 
         # filter the white label field

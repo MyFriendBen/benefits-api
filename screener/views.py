@@ -1,6 +1,7 @@
 import hashlib
 import requests
 from typing import Optional
+from uuid import UUID
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
@@ -24,6 +25,7 @@ from screener.models import (
 from rest_framework import viewsets, views, status, mixins, throttling
 from rest_framework.exceptions import NotFound
 from rest_framework import permissions
+from rest_framework.request import Request
 from rest_framework.response import Response
 from screener.serializers import (
     ScreenSerializer,
@@ -149,7 +151,7 @@ class ScreenCurrentBenefitsView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Screen.objects.all()
 
-    def patch(self, request, screen_uuid):
+    def patch(self, request: Request, screen_uuid: UUID) -> Response:
         serializer = CurrentBenefitToggleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         name_abbreviated = serializer.validated_data["name_abbreviated"]
@@ -169,10 +171,17 @@ class ScreenCurrentBenefitsView(views.APIView):
                 raise NotFound(
                     f"No program '{name_abbreviated}' is offered to white label '{screen.white_label.code}'."
                 )
+            # Match the screen's rows by name, not by `program`: a screen saved before its program
+            # moved to federal still points at the deactivated state row. Clearing every row with
+            # this name lets an untick remove that old row, and a tick replace it with the federal
+            # one rather than add a second row for the same benefit.
+            CurrentBenefit.objects.filter(
+                visible_to(screen.white_label, prefix="program__"),
+                screen=screen,
+                program__name_abbreviated=name_abbreviated,
+            ).delete()
             if has:
-                CurrentBenefit.objects.get_or_create(screen=screen, program=program)
-            else:
-                CurrentBenefit.objects.filter(screen=screen, program=program).delete()
+                CurrentBenefit.objects.create(screen=screen, program=program)
             current_benefits = sorted(
                 CurrentBenefit.objects.filter(screen=screen).values_list("program__name_abbreviated", flat=True)
             )
@@ -885,7 +894,7 @@ class HasBenefitsProgramsView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Program.objects.none()  # Required for DjangoModelPermissions
 
-    def get(self, request, white_label):
+    def get(self, request: Request, white_label: str) -> Response:
         programs = filter_programs_by_name(
             Program.objects.filter(
                 visible_to_code(white_label),

@@ -12,6 +12,8 @@ Usage:
 Read-only: it writes nothing.
 """
 
+from typing import Any
+
 from django.core.management.base import BaseCommand, CommandError
 
 from programs.federal import active_duplicates
@@ -20,7 +22,7 @@ from programs.federal import active_duplicates
 class Command(BaseCommand):
     help = "Exit non-zero if any program is active under both the federal white label and another one."
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         duplicates = active_duplicates()
         if not duplicates:
             self.stdout.write(self.style.SUCCESS("No program is active under both federal and another white label."))

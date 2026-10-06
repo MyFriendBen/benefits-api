@@ -14,20 +14,26 @@ is silent.
 """
 
 import logging
-from typing import Iterable, Optional, TypeVar
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from django.db.models import Q
+
+if TYPE_CHECKING:
+    # Type-only: importing models at module load would cycle through apps that import this module.
+    from programs.models import Program
+    from screener.models import WhiteLabel
 
 logger = logging.getLogger(__name__)
 
 FEDERAL_WHITE_LABEL = "federal"
 
-T = TypeVar("T")
 
+def visible_to(white_label: "WhiteLabel", prefix: str = "") -> Q:
+    """Programs a screen under `white_label` sees: the white label's own plus the federal ones.
 
-def visible_to(white_label) -> Q:
-    """Programs a screen under `white_label` sees: the white label's own plus the federal ones."""
-    return Q(white_label=white_label) | Q(white_label__code=FEDERAL_WHITE_LABEL)
+    `prefix` reaches the program through a relation, e.g. `prefix="program__"` on CurrentBenefit.
+    """
+    return Q(**{f"{prefix}white_label": white_label}) | Q(**{f"{prefix}white_label__code": FEDERAL_WHITE_LABEL})
 
 
 def visible_to_code(white_label_code: str, prefix: str = "") -> Q:
@@ -37,7 +43,7 @@ def visible_to_code(white_label_code: str, prefix: str = "") -> Q:
     )
 
 
-def is_federal(program) -> bool:
+def is_federal(program: "Program") -> bool:
     return program.white_label.code == FEDERAL_WHITE_LABEL
 
 
@@ -65,7 +71,7 @@ def active_duplicates(names: Optional[Iterable[str]] = None) -> dict[str, list[s
     return duplicates
 
 
-def preferred_program(kept: Optional[T], candidate: T, where: str) -> T:
+def preferred_program(kept: Optional["Program"], candidate: "Program", where: str) -> "Program":
     """Of two programs with the same name, the one a screen should see: the federal one.
 
     A federal program reuses the name of the state rows it replaced, so a query built with
@@ -99,20 +105,20 @@ def preferred_program(kept: Optional[T], candidate: T, where: str) -> T:
     return candidate if is_federal(candidate) and not is_federal(kept) else kept
 
 
-def filter_programs_by_name(programs: Iterable[T], where: str) -> list[T]:
+def filter_programs_by_name(programs: Iterable["Program"], where: str) -> list["Program"]:
     """`programs` with one program per name, chosen by `preferred_program`.
 
     For the result of a `visible_to` query, which every caller keys by `name_abbreviated`. The
     list keeps the order in which each name first appeared.
     """
-    kept: dict[str, T] = {}
+    kept: dict[str, "Program"] = {}
     for program in programs:
         name = program.name_abbreviated
         kept[name] = preferred_program(kept.get(name), program, where)
     return list(kept.values())
 
 
-def visible_program(white_label, name_abbreviated: str, where: str):
+def visible_program(white_label: "WhiteLabel", name_abbreviated: str, where: str) -> Optional["Program"]:
     """The program a screen under `white_label` sees by this name, or None.
 
     The white label's own row or the federal one, chosen by `preferred_program` when both exist.
@@ -123,7 +129,7 @@ def visible_program(white_label, name_abbreviated: str, where: str):
 
     candidates = Program.objects.filter(visible_to(white_label), name_abbreviated=name_abbreviated)
 
-    program = None
+    program: Optional[Program] = None
     for candidate in candidates.select_related("white_label"):
         program = preferred_program(program, candidate, where)
     return program

@@ -1,4 +1,6 @@
 from django.db import migrations
+from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+from django.db.migrations.state import StateApps
 
 # Federal programs live under this white label and are shown to every other white label
 # (programs/federal.py). It has no state, no configuration module and no referrers: no
@@ -7,7 +9,7 @@ FEDERAL_CODE = "federal"
 FEDERAL_NAME = "Federal Programs"
 
 
-def create_federal_white_label(apps, schema_editor):
+def create_federal_white_label(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
 
     # `code` has no unique constraint, so read defensively like 0176 does rather than
@@ -16,7 +18,7 @@ def create_federal_white_label(apps, schema_editor):
         WhiteLabel.objects.create(code=FEDERAL_CODE, name=FEDERAL_NAME, state_code=None, feature_flags={})
 
 
-def reverse_create(apps, schema_editor):
+def reverse_create(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     # No-op: programs may point at the row by the time anyone rolls back.
     pass
 
