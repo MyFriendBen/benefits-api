@@ -21,7 +21,7 @@ class MedicareSavingsNC(MedicareSavings):
         """
         They qualify if any of these are true:
             Reports Medicare as their health insurance
-            Age > 65 (regardless of insurance)
+            Age >= 65 (regardless of insurance)
             Reports SSDI income (regardless of age)
         Automatic disqualifiers:
             Reports SSI income (they get full Medicaid instead)
@@ -58,9 +58,8 @@ class MedicareSavingsNC(MedicareSavings):
         e.condition(self._passes_ssi_budgeting(member, spouse) or self._passes_family_size_methodology(member, spouse))
 
     def _passes_ssi_budgeting(self, member, spouse) -> bool:
-        """Step 1: individual/couple SSI budgeting, income <= 100% FPL."""
+        """Step 1: individual/couple SSI budgeting, income <= 100% FPL.
 
-        """
         1a. Classify the a/b into one of four categories:
 
         Category	        Condition	                            Income counted
