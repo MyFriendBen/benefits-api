@@ -26,6 +26,10 @@ from programs.programs.testing_fixtures.pe_integration import (
 from programs.util import Dependencies
 
 PE_VERSION = "2.5.0"
+PE_VERSION_REASON = (
+    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
+    "re-recorded at PE_TEST_VERSION."
+)
 YEAR = "2026"
 
 # gov.usda.csfp.amount for 2026, per qualifying individual.
@@ -41,6 +45,7 @@ TYPE_UNDER_TEST = 3_000
 @pytest.mark.integration
 class TestMoCsfpScenarios(PeIntegrationTestCase):
     pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     def build(self, screen_id, household_size, location=BOONE):
         zipcode, county = location

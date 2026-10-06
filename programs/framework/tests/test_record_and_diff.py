@@ -1,0 +1,128 @@
+"""Tests for the pure parts of record_and_diff: the scenario diff and the override rewrite."""
+
+import ast
+from typing import Optional
+
+from django.test import SimpleTestCase
+
+from programs.management.commands.record_and_diff import (
+    CHANGED,
+    ERROR,
+    UNCHANGED,
+    Outcome,
+    add_override,
+    classify_scenario,
+    diff_captures,
+    module_classes,
+    remove_override,
+)
+
+
+def outcome(
+    test: str, eligible: bool = True, value: int = 100, error: Optional[str] = None, version: str = "1.0.0"
+) -> Outcome:
+    return {"test": test, "pe_version": version, "eligible": eligible, "value": value, "error": error}
+
+
+MODULE = "programs/x/tests/test_x.py"
+
+
+class TestClassifyScenario(SimpleTestCase):
+    def test_same_result_is_unchanged(self) -> None:
+        self.assertEqual(classify_scenario(outcome("t"), outcome("t", version="2.0.0")), UNCHANGED)
+
+    def test_a_moved_value_is_changed(self) -> None:
+        self.assertEqual(classify_scenario(outcome("t"), outcome("t", value=101)), CHANGED)
+
+    def test_a_flipped_eligibility_is_changed(self) -> None:
+        self.assertEqual(classify_scenario(outcome("t"), outcome("t", eligible=False)), CHANGED)
+
+    def test_an_error_after_recording_is_an_error(self) -> None:
+        self.assertEqual(classify_scenario(outcome("t"), outcome("t", error="HTTPError: 422")), ERROR)
+
+    def test_no_outcome_after_recording_is_an_error(self) -> None:
+        self.assertEqual(classify_scenario(outcome("t"), None), ERROR)
+
+    def test_a_scenario_new_since_the_baseline_is_changed(self) -> None:
+        self.assertEqual(classify_scenario(None, outcome("t")), CHANGED)
+
+
+class TestDiffCaptures(SimpleTestCase):
+    def test_groups_scenarios_by_module_and_ranks_error_over_changed(self) -> None:
+        a, b, c = f"{MODULE}::TestX::test_a", f"{MODULE}::TestX::test_b", f"{MODULE}::TestX::test_c"
+        other = "programs/y/tests/test_y.py::TestY::test_a"
+        baseline = {t: outcome(t) for t in (a, b, c, other)}
+        recorded = {
+            a: outcome(a, value=5),
+            b: outcome(b, error="boom"),
+            c: outcome(c),
+            other: outcome(other, version="2.0.0"),
+        }
+
+        diff = diff_captures("2.0.0", baseline, recorded)
+
+        x = diff["modules"][MODULE]
+        self.assertEqual(x["status"], ERROR)
+        self.assertEqual(x["scenario_count"], 3)
+        self.assertEqual([s["test"] for s in x["scenarios"]], [a, b])
+        self.assertEqual(x["baseline_versions"], ["1.0.0"])
+        self.assertEqual(diff["modules"]["programs/y/tests/test_y.py"]["status"], UNCHANGED)
+        self.assertEqual(diff["summary"], {UNCHANGED: 1, CHANGED: 0, ERROR: 1})
+
+
+OVERRIDDEN = '''"""Docstring."""
+
+from programs.programs.testing_fixtures.pe_integration import PeIntegrationTestCase
+
+PE_VERSION = "1.815.1"
+PE_VERSION_REASON = (
+    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
+    "re-recorded at PE_TEST_VERSION."
+)
+YEAR = "2026"
+
+
+class TestA(PeIntegrationTestCase):
+    """Class docstring."""
+
+    pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
+
+    def test_one(self):
+        pass
+
+
+class TestB(PeIntegrationTestCase):
+    pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
+    screen_id = 1
+'''
+
+
+class TestOverrideRewrite(SimpleTestCase):
+    def test_remove_strips_the_pin_reason_and_class_attributes(self) -> None:
+        source = remove_override(OVERRIDDEN)
+
+        self.assertNotIn("PE_VERSION", source)
+        self.assertNotIn("pe_version", source)
+        self.assertIn('YEAR = "2026"', source)
+        self.assertIn("screen_id = 1", source)
+        ast.parse(source)
+
+    def test_add_then_remove_round_trips_to_no_override(self) -> None:
+        bare = remove_override(OVERRIDDEN)
+
+        pinned = add_override(bare, "2.9.0", "held for review")
+
+        ast.parse(pinned)
+        self.assertIn('PE_VERSION = "2.9.0"', pinned)
+        self.assertIn('PE_VERSION_REASON = "held for review"', pinned)
+        self.assertEqual(pinned.count("    pe_version = PE_VERSION\n"), 2)
+        self.assertEqual(pinned.count("    pe_version_reason = PE_VERSION_REASON\n"), 2)
+        # The docstring stays the first statement of the class.
+        class_a = next(node for node in ast.parse(pinned).body if getattr(node, "name", "") == "TestA")
+        self.assertEqual(ast.get_docstring(class_a), "Class docstring.")
+        self.assertNotIn("PE_VERSION", remove_override(pinned))
+
+    def test_module_classes(self) -> None:
+        self.assertEqual(module_classes(OVERRIDDEN), ["TestA", "TestB"])

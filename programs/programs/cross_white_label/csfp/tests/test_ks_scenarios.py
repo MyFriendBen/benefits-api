@@ -25,6 +25,10 @@ from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
 PE_VERSION = "2.5.0"
+PE_VERSION_REASON = (
+    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
+    "re-recorded at PE_TEST_VERSION."
+)
 YEAR = "2026"
 
 # gov.usda.csfp.amount for 2026, per qualifying individual.
@@ -44,6 +48,7 @@ CURRENT_BENEFIT_ROWS = {
 @pytest.mark.integration
 class TestKsCsfpScenarios(PeIntegrationTestCase):
     pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     def build(self, screen_id, household_size, location=SEDGWICK):
         zipcode, county = location

@@ -34,6 +34,7 @@ serves what ``current``/``frontier`` currently resolve to — so these tests ski
 rather than fail a release. Re-recording is always also the act of adopting a new version.
 """
 
+import json
 import math
 import os
 from typing import Optional
@@ -64,6 +65,37 @@ TEST_PE_TOKEN = "pe-integration-test-token"
 # mode alone can't tell us whether this run needs a real token.
 PE_RECORD_ENV_VAR = "PE_RECORD"
 _TRUTHY = ("1", "true", "yes")
+
+# The PolicyEngine version every PeIntegrationTestCase records and replays at unless it
+# overrides ``pe_version``. Adopting a new version is a bump here plus a re-record of every
+# module that doesn't override. Must be one PolicyEngine currently serves (see docs/TESTING.md).
+PE_TEST_VERSION = "2.9.0"
+
+# Both used by the record_and_diff management command. The override replaces every test case's
+# pe_version for the run, so the whole suite can be recorded at a new version without editing any
+# module. The capture directory collects each scenario's outcome (see capture_result).
+PE_VERSION_OVERRIDE_ENV_VAR = "PE_VERSION_OVERRIDE"
+PE_CAPTURE_DIR_ENV_VAR = "PE_CAPTURE_DIR"
+
+
+def check_pe_version_pin(test_name: str, pe_version: str, pe_version_reason: str) -> None:
+    """Fail a test class whose pin is missing, or departs from the suite pin without saying why.
+
+    A module still on an older version can't simply follow ``PE_TEST_VERSION``: the version is
+    part of the request body VCR matches on, so its cassettes replay only at the version they
+    were recorded at. Overriding is therefore allowed, but has to carry a reason, so that every
+    module behind the suite pin is a deliberate, visible exception rather than a forgotten one.
+    """
+    if not pe_version:
+        raise AssertionError(
+            f"{test_name} must set pe_version to the exact PolicyEngine version its cassettes were recorded at."
+        )
+
+    if pe_version != PE_TEST_VERSION and not pe_version_reason.strip():
+        raise AssertionError(
+            f"{test_name} pins PolicyEngine {pe_version} instead of the suite pin {PE_TEST_VERSION}. "
+            "Set pe_version_reason to say why, or re-record its cassettes at the suite pin."
+        )
 
 
 def _can_record() -> bool:
@@ -188,10 +220,43 @@ def calc_pe_program(
             "on the program's absence instead of on an Eligibility."
         )
 
-    sim = PrivateApiSim(pe_input(screen, [calculator]))
-    calculator.set_engine(sim)
+    try:
+        sim = PrivateApiSim(pe_input(screen, [calculator]))
+        calculator.set_engine(sim)
+        eligibility = calculator.calc()
+    except Exception as error:
+        capture_result(error=f"{type(error).__name__}: {error}")
+        raise
 
-    return calculator.calc()
+    capture_result(eligible=bool(eligibility.eligible), value=math.trunc(eligibility.value))
+
+    return eligibility
+
+
+def capture_result(eligible: Optional[bool] = None, value: Optional[int] = None, error: Optional[str] = None) -> None:
+    """Append this test's PolicyEngine outcome to the capture directory, when one is set.
+
+    A no-op unless ``PE_CAPTURE_DIR`` is set. ``record_and_diff`` sets it on a replay run and a
+    recording run and compares the two, which is how a new PolicyEngine version's effect is
+    measured per scenario. Captured before the test asserts, so a changed value is recorded even
+    though the test then fails. Each xdist worker writes its own file, so lines never interleave.
+    """
+    capture_dir = os.getenv(PE_CAPTURE_DIR_ENV_VAR)
+    if not capture_dir:
+        return
+
+    os.makedirs(capture_dir, exist_ok=True)
+    worker = os.getenv("PYTEST_XDIST_WORKER", "main")
+    record = {
+        # PYTEST_CURRENT_TEST is "<nodeid> (<phase>)".
+        "test": os.getenv("PYTEST_CURRENT_TEST", "").rsplit(" ", 1)[0],
+        "pe_version": PolicyEngineConfig.current_version(),
+        "eligible": eligible,
+        "value": value,
+        "error": error,
+    }
+    with open(os.path.join(capture_dir, f"{worker}.jsonl"), "a") as f:
+        f.write(json.dumps(record) + "\n")
 
 
 def screener_value(eligibility: Eligibility) -> int:
@@ -208,8 +273,9 @@ def screener_value(eligibility: Eligibility) -> int:
 class PeIntegrationTestCase(TestCase):
     """Base class for a program's PolicyEngine tests.
 
-    Subclasses set ``pe_version`` to the version the cassettes were recorded at (keep it in
-    sync with the pinned ``PolicyEngineConfig`` version; changing it means re-recording).
+    Cassettes are recorded at ``PE_TEST_VERSION`` by default. A subclass whose cassettes were
+    recorded at another version overrides ``pe_version`` and says why in
+    ``pe_version_reason``; changing either version means re-recording.
     """
 
     # Applies VCR to every subclass. Carried here rather than left to each subclass to
@@ -219,16 +285,15 @@ class PeIntegrationTestCase(TestCase):
     pytestmark = pytest.mark.integration
 
     # Exact MAJOR.MINOR.PATCH the cassettes in this module were recorded against.
-    pe_version: str = ""
+    pe_version: str = PE_TEST_VERSION
 
-    def setUp(self):
+    # Required whenever pe_version differs from PE_TEST_VERSION.
+    pe_version_reason: str = ""
+
+    def setUp(self) -> None:
         super().setUp()
 
-        if not self.pe_version:
-            raise AssertionError(
-                f"{type(self).__name__} must set pe_version to the exact PolicyEngine version "
-                "its cassettes were recorded at."
-            )
+        check_pe_version_pin(type(self).__name__, self.pe_version, self.pe_version_reason)
 
         if _forces_live_recording():
             self.skipTest(
@@ -237,5 +302,5 @@ class PeIntegrationTestCase(TestCase):
                 "(422 unsupported_version). Refresh cassettes deliberately — see docs/TESTING.md."
             )
 
-        pin_pe_version(self.pe_version)
+        pin_pe_version(os.getenv(PE_VERSION_OVERRIDE_ENV_VAR) or self.pe_version)
         seed_pe_token()

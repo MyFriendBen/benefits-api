@@ -215,6 +215,23 @@ def _json_body(request):
         return body
 
 
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# Redirects every cassette into a parallel tree rooted here instead of next to its test, so a
+# run can record at a new PolicyEngine version without touching the committed cassettes.
+# Used by programs/management/commands/record_and_diff.py.
+CASSETTE_ROOT_ENV_VAR = "PE_CASSETTE_ROOT"
+
+
+def cassette_dir_for(test_dir: str) -> str:
+    """The cassettes directory for tests in ``test_dir``: beside them, or mirrored under the root."""
+    root = os.getenv(CASSETTE_ROOT_ENV_VAR)
+    if not root:
+        return os.path.join(test_dir, "cassettes")
+
+    return os.path.join(root, os.path.relpath(os.path.abspath(test_dir), REPO_ROOT), "cassettes")
+
+
 def cassette_name(request) -> str:
     """Cassette filename for a test, qualified by its class when it has one.
 
@@ -497,7 +514,7 @@ def vcr_config(request):
     """
     # Get the directory containing the test file
     test_dir = os.path.dirname(str(request.fspath))
-    cassette_dir = os.path.join(test_dir, "cassettes")
+    cassette_dir = cassette_dir_for(test_dir)
 
     return {
         "cassette_library_dir": cassette_dir,
