@@ -85,13 +85,12 @@ class NjConfigurationData(ConfigurationData):
 
     # ==========================================================================================
     # COUNTIES BY ZIPCODE
-    # Source: HUD USPS ZIP-County crosswalk (NJ Zip County Crosswalk - Sheet1.csv), 2026 Q3
+    # Source: HUD USPS ZIP-County crosswalk, 2026 Q3
     # vintage, downloaded from https://www.huduser.gov/apps/public/uspscrosswalk/login
     # Each zip is assigned to the single county with the highest tot_ratio (total address
     # share) per MFB-2161. Unlike mo.py/ks.py, this does not keep every nonzero-share county --
     # most of NJ's split zips are a >99% / <1% sliver pair, so a single best-match county avoids
-    # cluttering the dropdown with near-meaningless choices. Source zips are 4-digit in the raw
-    # file (leading zero stripped by spreadsheet export) and are zero-padded back to 5 here.
+    # cluttering the dropdown with near-meaningless choices.
     # ==========================================================================================
 
     counties_by_zipcode = {
