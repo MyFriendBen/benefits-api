@@ -33,6 +33,7 @@ def make_member(
     member = Mock()
     member.pk = pk
     member.age = age
+    member.calc_age = Mock(return_value=age)
     member.relationship = relationship
 
     member.has_insurance_types = Mock(side_effect=lambda types, strict=True: "medicare" in types and has_medicare)

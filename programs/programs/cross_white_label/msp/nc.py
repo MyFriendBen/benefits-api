@@ -31,7 +31,7 @@ class MedicareSavingsNC(MedicareSavings):
 
         # Medicare eligibility: any one of these qualifies
         e.condition(
-            member.age >= self.min_age
+            member.calc_age() >= self.min_age
             or member.has_insurance_types(("medicare",), strict=False)
             or member.calc_gross_income("yearly", ["sSDisability"]) > 0
         )
@@ -124,7 +124,7 @@ class MedicareSavingsNC(MedicareSavings):
         Returns one of: medicaid_individual, medicaid_couple,
                         individual_with_ineligible_spouse, medicaid_child.
         """
-        if member.age < 18:
+        if member.calc_age() < 18:
             parents_on_ssi = any(
                 p.calc_gross_income("yearly", ["sSI"]) > 0
                 for p in self._get_parents_in_household(member, exclude_ssi=False)
@@ -136,7 +136,7 @@ class MedicareSavingsNC(MedicareSavings):
             return "medicaid_individual"  # spouse already on SSI
         spouse_medicare_eligible = (
             spouse.has_insurance_types(("medicare",), strict=False)
-            or spouse.age >= self.min_age
+            or spouse.calc_age() >= self.min_age
             or spouse.calc_gross_income("yearly", ["sSDisability"]) > 0
         )
         if spouse_medicare_eligible:
@@ -183,7 +183,7 @@ class MedicareSavingsNC(MedicareSavings):
         household = list(self.screen.household_members.all())
 
         dependents = [
-            m for m in household if m.pk != member.pk and (spouse is None or m.pk != spouse.pk) and m.age < 18
+            m for m in household if m.pk != member.pk and (spouse is None or m.pk != spouse.pk) and m.calc_age() < 18
         ]
         # Skip step 2 entirely if no dependents under 18 in the home
         if not dependents:
