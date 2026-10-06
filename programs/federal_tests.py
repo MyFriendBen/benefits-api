@@ -9,6 +9,7 @@ from django.test import TestCase
 from programs.federal import (
     FEDERAL_WHITE_LABEL,
     active_duplicates,
+    conflicting_active_programs,
     filter_programs_by_name,
     preferred_program,
     visible_program,
@@ -143,3 +144,26 @@ class TestActiveDuplicates(FederalHelpersTestCase):
 
         self.assertEqual(active_duplicates(["other"]), {})
         self.assertEqual(active_duplicates(["shared"]), {"shared": ["co"]})
+
+
+class TestConflictingActivePrograms(FederalHelpersTestCase):
+    def test_a_federal_program_conflicts_with_active_state_rows_of_its_name(self) -> None:
+        self.program(self.federal, "shared")
+        wa = self.program(self.wa, "shared")
+        co = self.program(self.co, "shared")
+        self.program(self.co, "other")
+
+        self.assertEqual(conflicting_active_programs(FEDERAL_WHITE_LABEL, "shared"), [co, wa])
+
+    def test_a_state_program_conflicts_only_with_the_active_federal_row(self) -> None:
+        federal = self.program(self.federal, "shared")
+        self.program(self.wa, "shared")
+
+        self.assertEqual(conflicting_active_programs("co", "shared"), [federal])
+
+    def test_inactive_rows_never_conflict(self) -> None:
+        self.program(self.federal, "shared", active=False)
+        self.program(self.co, "shared", active=False)
+
+        self.assertEqual(conflicting_active_programs(FEDERAL_WHITE_LABEL, "shared"), [])
+        self.assertEqual(conflicting_active_programs("co", "shared"), [])

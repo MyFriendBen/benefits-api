@@ -15,7 +15,7 @@ from programs.models import (
     LegalStatus,
     BaseProgram,
 )
-from programs.federal import FEDERAL_WHITE_LABEL
+from programs.federal import FEDERAL_WHITE_LABEL, conflicting_active_programs
 from screener.models import WhiteLabel
 from configuration.models import Configuration
 from integrations.clients.google_translate import Translate
@@ -249,13 +249,7 @@ class Command(BaseCommand):
         importing under a state white label conflicts with an active federal row. The program's
         own move deactivates the state rows first.
         """
-        active = Program.objects.filter(name_abbreviated=program_name, active=True)
-        if white_label.code == FEDERAL_WHITE_LABEL:
-            conflicts = active.exclude(white_label__code=FEDERAL_WHITE_LABEL)
-        else:
-            conflicts = active.filter(white_label__code=FEDERAL_WHITE_LABEL)
-
-        codes = sorted(conflicts.values_list("white_label__code", flat=True))
+        codes = [p.white_label.code for p in conflicting_active_programs(white_label.code, program_name)]
         if codes:
             raise CommandError(
                 f"Program '{program_name}' is already active under {', '.join(codes)}. Federal programs are "

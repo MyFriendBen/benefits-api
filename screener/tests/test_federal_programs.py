@@ -516,9 +516,7 @@ class TestAdminPickers(FederalProgramsTestCase):
         self.assertNotIn(federal, choices)
 
 
-class TestFederalDeactivationInAdmin(FederalProgramsTestCase):
-    """Switching off a federal program hides it everywhere, so the admin makes that deliberate."""
-
+class ProgramAdminTestCase(FederalProgramsTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.model_admin = ProgramAdmin(Program, AdminSite())
@@ -536,6 +534,10 @@ class TestFederalDeactivationInAdmin(FederalProgramsTestCase):
         data.update(changes)
         data = {name: value for name, value in data.items() if value is not False}
         return form_class(data=data, instance=program)
+
+
+class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
+    """Switching off a federal program hides it everywhere, so the admin makes that deliberate."""
 
     def test_switching_off_a_federal_program_needs_confirmation(self) -> None:
         federal = self.program(self.federal, "fed_account")
@@ -598,3 +600,59 @@ class TestFederalDeactivationInAdmin(FederalProgramsTestCase):
         self.assertTrue(locked(self.program(self.federal, "fed_on")))
         self.assertFalse(locked(self.program(self.federal, "fed_off", active=False)))
         self.assertFalse(locked(self.program(self.co, "co_only")))
+
+
+class TestFederalActivationInAdmin(ProgramAdminTestCase):
+    """A name can't be switched on under both federal and a state, and the admin shows what's in the way."""
+
+    def test_a_federal_program_cant_go_on_while_a_state_version_is_active(self) -> None:
+        federal = self.program(self.federal, "fed_account", active=False)
+        co = self.program(self.co, "fed_account")
+
+        form = self.bound_form(federal, active=True)
+
+        self.assertFalse(form.is_valid())
+        error = form.errors["active"][0]
+        self.assertIn("still active under", error)
+        self.assertIn(f'/admin/programs/program/{co.pk}/change/">co</a>', error)
+
+    def test_it_can_go_on_once_the_state_versions_are_off(self) -> None:
+        federal = self.program(self.federal, "fed_account", active=False)
+        self.program(self.co, "fed_account", active=False)
+
+        self.assertTrue(self.bound_form(federal, active=True).is_valid())
+
+    def test_a_state_program_cant_go_on_while_the_federal_one_is_active(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+        co = self.program(self.co, "fed_account", active=False)
+
+        form = self.bound_form(co, active=True)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(f'/admin/programs/program/{federal.pk}/change/">federal</a>', form.errors["active"][0])
+
+    def test_the_list_page_refuses_the_same_switch(self) -> None:
+        federal = self.program(self.federal, "fed_account", active=False)
+        self.program(self.wa, "fed_account")
+        form_class = self.model_admin.get_changelist_form(self.request)
+
+        form = form_class(data={"active": "on"}, instance=federal)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("still active under", form.errors["active"][0])
+
+    def test_programs_without_a_counterpart_switch_on_as_before(self) -> None:
+        self.assertTrue(self.bound_form(self.program(self.co, "co_only", active=False), active=True).is_valid())
+        self.assertTrue(self.bound_form(self.program(self.federal, "fed_only", active=False), active=True).is_valid())
+
+    def test_a_federal_program_lists_its_state_versions(self) -> None:
+        federal = self.program(self.federal, "fed_account", active=False)
+        co = self.program(self.co, "fed_account")
+        self.program(self.wa, "fed_account", active=False)
+
+        shown = self.model_admin.state_versions(federal)
+
+        self.assertIn(f'/admin/programs/program/{co.pk}/change/">co (active)</a>', shown)
+        self.assertIn("wa (inactive)", shown)
+        self.assertIn("state_versions", self.model_admin.get_fields(self.request, federal))
+        self.assertNotIn("state_versions", self.model_admin.get_fields(self.request, co))

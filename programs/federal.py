@@ -71,6 +71,22 @@ def active_duplicates(names: Optional[Iterable[str]] = None) -> dict[str, list[s
     return duplicates
 
 
+def conflicting_active_programs(white_label_code: str, name_abbreviated: str) -> list["Program"]:
+    """Active programs that a program under `white_label_code` can't be active alongside.
+
+    For a federal program, the active state rows of the same name; for a state program, the
+    active federal row. Ordered by white label code, with `white_label` loaded.
+    """
+    from programs.models import Program
+
+    active = Program.objects.filter(name_abbreviated=name_abbreviated, active=True).select_related("white_label")
+    if white_label_code == FEDERAL_WHITE_LABEL:
+        active = active.exclude(white_label__code=FEDERAL_WHITE_LABEL)
+    else:
+        active = active.filter(white_label__code=FEDERAL_WHITE_LABEL)
+    return list(active.order_by("white_label__code"))
+
+
 def preferred_program(kept: Optional["Program"], candidate: "Program", where: str) -> "Program":
     """Of two programs with the same name, the one a screen should see.
 
