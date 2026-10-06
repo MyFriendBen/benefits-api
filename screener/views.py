@@ -43,7 +43,7 @@ from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
-from programs.federal import one_per_name, visible_program, visible_to, visible_to_code
+from programs.federal import filter_programs_by_name, visible_program, visible_to, visible_to_code
 from programs.models import (
     Document,
     Navigator,
@@ -463,7 +463,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     # Every name below keys a dict (`program_by_abbr`, `program_eligibility`), so a name active
     # under both this white label and `federal` would silently drop one row from the PE payload
     # while still displaying both.
-    all_programs = one_per_name(all_programs, "eligibility_results")
+    all_programs = filter_programs_by_name(all_programs, "eligibility_results")
     data = []
 
     try:
@@ -492,7 +492,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     # Built after `program_by_abbr` on purpose. `force_calculated_codes()` contains no
     # PolicyEngine program, and keeping the two lists separate makes that structural — a
     # row added here can never reach `pe_calculators` and perturb the shared PE payload.
-    upstream_only_programs = one_per_name(
+    upstream_only_programs = filter_programs_by_name(
         Program.objects.filter(
             visible_to(screen.white_label),
             name_abbreviated__in=force_calculated_codes(),
@@ -886,7 +886,7 @@ class HasBenefitsProgramsView(views.APIView):
     queryset = Program.objects.none()  # Required for DjangoModelPermissions
 
     def get(self, request, white_label):
-        programs = one_per_name(
+        programs = filter_programs_by_name(
             Program.objects.filter(
                 visible_to_code(white_label),
                 active=True,

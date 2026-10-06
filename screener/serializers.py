@@ -6,7 +6,7 @@ from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
 from configuration.models import Configuration
-from programs.federal import one_per_name, visible_to
+from programs.federal import filter_programs_by_name, visible_to
 from programs.models import Program, WarningMessage
 from screener.models import (
     CurrentBenefit,
@@ -206,7 +206,7 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
         derived = _derived_current_benefit_names(screen)
         resolved = [
             (program.id, program.name_abbreviated)
-            for program in one_per_name(
+            for program in filter_programs_by_name(
                 Program.objects.filter(
                     visible_to(screen.white_label),
                     name_abbreviated__in=requested | derived,

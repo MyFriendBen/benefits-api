@@ -1,4 +1,4 @@
-from programs.federal import one_per_name, visible_to_code
+from programs.federal import filter_programs_by_name, visible_to_code
 from programs.models import Program, ProgramCategory, UrgentNeed, UrgentNeedType, Navigator
 from rest_framework import serializers
 from translations.serializers import ModelTranslationSerializer
@@ -63,7 +63,7 @@ class ProgramCategorySerializer(serializers.ModelSerializer):
 
         white_label = self.context.get("white_label")
         if white_label is not None:
-            programs = one_per_name(
+            programs = filter_programs_by_name(
                 programs.filter(visible_to_code(white_label)).select_related("white_label"),
                 "current benefits categories",
             )

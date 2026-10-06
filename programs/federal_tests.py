@@ -9,7 +9,8 @@ from django.test import TestCase
 from programs.federal import (
     FEDERAL_WHITE_LABEL,
     active_duplicates,
-    one_per_name,
+    filter_programs_by_name,
+    preferred_program,
     visible_program,
     visible_to,
     visible_to_code,
@@ -41,48 +42,55 @@ class TestVisibleTo(FederalHelpersTestCase):
         self.assertEqual(set(Program.objects.filter(visible_to_code("co"))), {own, federal})
 
 
-class TestOnePerName(FederalHelpersTestCase):
+class TestFilterProgramsByName(FederalHelpersTestCase):
     def test_keeps_first_appearance_order(self):
         a = self.program(self.co, "a")
         shared_state = self.program(self.co, "shared", active=False)
         b = self.program(self.co, "b")
         shared_federal = self.program(self.federal, "shared")
 
-        kept = one_per_name([a, shared_state, b, shared_federal], "test")
+        kept = filter_programs_by_name([a, shared_state, b, shared_federal], "test")
 
         self.assertEqual(kept, [a, shared_federal, b])
 
-    def test_the_federal_row_wins_in_either_order(self):
+    def test_names_without_a_federal_row_pass_through(self):
+        a = self.program(self.co, "a")
+        b = self.program(self.co, "b")
+
+        self.assertEqual(filter_programs_by_name([a, b], "test"), [a, b])
+
+
+class TestPreferredProgram(FederalHelpersTestCase):
+    def test_the_first_program_for_a_name_is_kept(self):
+        own = self.program(self.co, "shared")
+
+        self.assertEqual(preferred_program(None, own, "test"), own)
+
+    def test_the_federal_program_wins_in_either_order(self):
         """A name matches at most a state row and a federal row, so order can't change the winner."""
         state = self.program(self.co, "shared", active=False)
         federal = self.program(self.federal, "shared")
 
-        self.assertEqual(one_per_name([state, federal], "test"), [federal])
-        self.assertEqual(one_per_name([federal, state], "test"), [federal])
+        self.assertEqual(preferred_program(state, federal, "test"), federal)
+        self.assertEqual(preferred_program(federal, state, "test"), federal)
 
     def test_an_inactive_state_row_losing_is_not_logged(self):
         state = self.program(self.co, "shared", active=False)
         federal = self.program(self.federal, "shared")
 
         with self.assertNoLogs("programs.federal", level="ERROR"):
-            one_per_name([state, federal], "test")
+            preferred_program(state, federal, "test")
 
-    def test_two_active_rows_are_logged_with_the_read_path(self):
+    def test_two_active_programs_are_logged_with_the_read_path(self):
         state = self.program(self.co, "shared")
         federal = self.program(self.federal, "shared")
 
         with self.assertLogs("programs.federal", level="ERROR") as logs:
-            kept = one_per_name([state, federal], "the test path")
+            kept = preferred_program(state, federal, "the test path")
 
-        self.assertEqual(kept, [federal])
+        self.assertEqual(kept, federal)
         self.assertIn("shared", logs.output[0])
         self.assertIn("the test path", logs.output[0])
-
-    def test_names_without_a_federal_row_pass_through(self):
-        a = self.program(self.co, "a")
-        b = self.program(self.co, "b")
-
-        self.assertEqual(one_per_name([a, b], "test"), [a, b])
 
 
 class TestVisibleProgram(FederalHelpersTestCase):

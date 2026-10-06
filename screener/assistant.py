@@ -34,7 +34,7 @@ from rest_framework.response import Response
 from sentry_sdk import capture_message
 
 from configuration.models import Configuration
-from programs.federal import one_per_name, visible_to
+from programs.federal import filter_programs_by_name, visible_to
 from programs.framework.base import Eligibility
 from programs.models import (
     Document,
@@ -436,7 +436,7 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
             _navigators_prefetch(),
         )
     )
-    return {program.name_abbreviated: program for program in one_per_name(programs, "assistant context")}
+    return {program.name_abbreviated: program for program in filter_programs_by_name(programs, "assistant context")}
 
 
 def _navigators_prefetch() -> Prefetch:
@@ -826,7 +826,7 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     # is worth one extra WHERE clause. Deactivated programs are intentionally NOT
     # filtered out — a program can be discontinued and still be in payment — so a
     # state row deactivated when its program moved to `federal` can share a name with
-    # the federal row; one_per_name keeps the federal one.
+    # the federal row; filter_programs_by_name keeps the federal one.
     insurance_names = _insurance_program_names(screen)
     criteria = Q(currentbenefit__screen=screen)
     if insurance_names:
@@ -843,7 +843,7 @@ def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     )
 
     current = []
-    for program in one_per_name(programs, "assistant current programs"):
+    for program in filter_programs_by_name(programs, "assistant current programs"):
         entry = {
             "external_name": program.name_abbreviated,
             # Fall back to the abbreviation so the assistant can still name the

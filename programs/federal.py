@@ -65,64 +65,65 @@ def active_duplicates(names: Optional[Iterable[str]] = None) -> dict[str, list[s
     return duplicates
 
 
-def one_per_name(programs: Iterable[T], where: str) -> list[T]:
-    """Drop the state row wherever a federal row has the same name.
+def preferred_program(kept: Optional[T], candidate: T, where: str) -> T:
+    """Of two programs with the same name, the one a screen should see: the federal one.
 
-    For a query built with `visible_to`, which returns a white label's own programs plus the
-    federal ones. A federal program reuses the name of the state rows it replaced, so one name
-    can match two rows: the white label's and the federal one. Every caller keys programs by
-    name, so it must see only one, and it should be the federal one.
+    A federal program reuses the name of the state rows it replaced, so a query built with
+    `visible_to` (a white label's own programs plus the federal ones) can match one name twice.
+    `kept` is the program already chosen for the name, or None when `candidate` is the first;
+    the federal program wins whichever of the two it is, so the order rows arrive in can't
+    change the result. The database allows one row per (white label, name), so a name never
+    matches more than one state row and one federal row.
 
-    The database allows one row per (white label, name), so a name matches at most those two
-    rows. The federal row wins whatever order the rows arrive in, which makes the result
-    independent of the query's ordering; the returned list keeps the order in which each name
-    first appeared.
+    Both rows existing is expected when the state row is inactive: its program moved to federal
+    and the row was deactivated, not deleted. If both are active, the state row was never
+    deactivated; that is logged at ERROR (which reaches Sentry) with `where` naming the calling
+    read path, rather than raised, so a stale row can't take a page down.
 
-    `where` names the calling read path for the log. The two rows are expected when the state
-    row is inactive: its program moved to federal and the row was deactivated, not deleted. If
-    both are active, the program was never deactivated on the state side; that is logged at
-    ERROR (which reaches Sentry) rather than raised, so a stale row can't take a page down.
+    Both programs must have `white_label` loaded (`select_related("white_label")`), or the
+    comparison costs a query.
+    """
+    if kept is None:
+        return candidate
 
-    Rows must have `white_label` loaded (`select_related("white_label")`), or each comparison
-    costs a query.
+    if kept.active and candidate.active:
+        logger.error(
+            "Program '%s' is active under both white labels '%s' and '%s' (%s); using the federal row. "
+            "Run audit_federal_programs and deactivate the state row.",
+            candidate.name_abbreviated,
+            kept.white_label.code,
+            candidate.white_label.code,
+            where,
+        )
+
+    return candidate if is_federal(candidate) and not is_federal(kept) else kept
+
+
+def filter_programs_by_name(programs: Iterable[T], where: str) -> list[T]:
+    """`programs` with one program per name, chosen by `preferred_program`.
+
+    For the result of a `visible_to` query, which every caller keys by `name_abbreviated`. The
+    list keeps the order in which each name first appeared.
     """
     kept: dict[str, T] = {}
     for program in programs:
         name = program.name_abbreviated
-        current = kept.get(name)
-        if current is None:
-            kept[name] = program
-            continue
-
-        if current.active and program.active:
-            logger.error(
-                "Program '%s' is active under both white labels '%s' and '%s' (%s); using the federal row. "
-                "Run audit_federal_programs and deactivate the state row.",
-                name,
-                current.white_label.code,
-                program.white_label.code,
-                where,
-            )
-
-        if is_federal(program) and not is_federal(current):
-            kept[name] = program
-
+        kept[name] = preferred_program(kept.get(name), program, where)
     return list(kept.values())
 
 
 def visible_program(white_label, name_abbreviated: str, where: str):
-    """The one program a screen under `white_label` sees by this name, or None.
+    """The program a screen under `white_label` sees by this name, or None.
 
-    The white label's own row or the federal one, the federal row winning when both exist
-    (see `one_per_name`). Inactive rows are included: a caller deciding whether a household
-    holds a benefit has to resolve programs that are no longer offered.
+    The white label's own row or the federal one, chosen by `preferred_program` when both exist.
+    Inactive rows are included: a caller deciding whether a household holds a benefit has to
+    resolve programs that are no longer offered.
     """
     from programs.models import Program
 
-    programs = one_per_name(
-        Program.objects.filter(visible_to(white_label), name_abbreviated=name_abbreviated).select_related(
-            "white_label"
-        ),
-        where,
-    )
-    return programs[0] if programs else None
+    candidates = Program.objects.filter(visible_to(white_label), name_abbreviated=name_abbreviated)
+
+    program = None
+    for candidate in candidates.select_related("white_label"):
+        program = preferred_program(program, candidate, where)
+    return program
