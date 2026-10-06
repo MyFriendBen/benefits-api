@@ -305,9 +305,7 @@ class TestFamilySizeOver8(TestCase):
 
     def setUp(self):
         self.head = make_member(pk=1, age=66, yearly_unearned=76_000)
-        self.children = [
-            make_member(pk=i + 2, age=10, relationship="child", has_medicare=False) for i in range(8)
-        ]
+        self.children = [make_member(pk=i + 2, age=10, relationship="child", has_medicare=False) for i in range(8)]
         self.calculator = make_calculator([self.head] + self.children, assets=5_000)
 
     def test_head_is_eligible_via_extended_family_size(self):

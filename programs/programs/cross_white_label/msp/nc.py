@@ -66,14 +66,14 @@ class MedicareSavingsNC(MedicareSavings):
 
         Medicaid            Unmarried 18+, or spouse/parent         a/b's income only
         Individual          already on SSI
-                        	
+
         Medicaid            Married, living together, both          Combined spousal income
         Couple              MQB-eligible, neither on SSI
 
         Individual w/       Married, spouse not on                  a/b's income + deemed spouse income
-        Ineligible          Medicare/Medicaid/SSI	
-        Spouse	
-        
+        Ineligible          Medicare/Medicaid/SSI
+        Spouse
+
         Medicaid            Under 18, living with parent(s)         a/b's income + deemed parent income
         Child	            not on SSI
 
