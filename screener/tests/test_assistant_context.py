@@ -30,7 +30,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
-from programs.models import LegalStatus, Program
+from programs.models import LegalStatus, Program, TranslationOverride
 from configuration.models import Configuration
 from screener.assistant import (
     ACUTE_OPTION_FIELDS,
@@ -652,6 +652,99 @@ class BuildContextTests(TestCase):
 
         self.assertEqual(context["eligible_programs"][0]["estimated_delivery_time"], "30 days")
 
+    # --- value framing (MFB-2203) -------------------------------------------
+
+    def value_override(self, name_abbreviated: str, calculator: str, text: str) -> TranslationOverride:
+        """A per-household `estimated_value` override, as the admin creates one."""
+        override = TranslationOverride.objects.new_translation_override(
+            self.white_label.code, calculator, "estimated_value"
+        )
+        override.program = self.programs[name_abbreviated]
+        override.save()
+        set_translation(override.translation, text)
+        return override
+
+    def test_value_format_is_forwarded(self):
+        """`lump_sum` is how ai-service knows not to call a one-time amount yearly."""
+        self.programs["snap"].value_format = "lump_sum"
+        self.programs["snap"].save()
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["value_format"], "lump_sum")
+
+    def test_value_format_key_is_omitted_when_unset(self):
+        """NULL is the default (monthly card); ai-service treats a missing key the same."""
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertNotIn("value_format", context["eligible_programs"][0])
+
+    def test_value_override_text_is_forwarded(self):
+        """The card shows this text instead of a number, so Benji has to quote it too."""
+        set_translation(self.programs["snap"].estimated_value, "Up to $7,669 per home")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        program = context["eligible_programs"][0]
+        self.assertEqual(program["estimated_value_override"], "Up to $7,669 per home")
+        # The number still travels: it sorts and gates the list, and ai-service decides
+        # what to quote.
+        self.assertEqual(program["estimated_value"], 1200)
+
+    def test_placeholder_value_override_is_omitted(self):
+        """seed_program() leaves estimated_value at [PLACEHOLDER], as untranslated rows
+        are in production; that is "no override", not text to quote."""
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertNotIn("estimated_value_override", context["eligible_programs"][0])
+
+    def test_a_matching_translation_override_replaces_the_value_text(self):
+        """Program.get_translation's per-household swap — cesn_leap shows renters
+        "At least $200" — has to reach Benji the same way it reaches the card."""
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "_show", "At least $200")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "At least $200")
+
+    def test_a_non_matching_translation_override_keeps_the_program_text(self):
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "_dont_show", "At least $200")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "Varies")
+
+    def test_an_inactive_translation_override_is_ignored(self):
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        override = self.value_override("snap", "_show", "At least $200")
+        override.active = False
+        override.save()
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "Varies")
+
+    def test_an_unknown_override_calculator_is_skipped_rather_than_raising(self):
+        """get_translation raises KeyError here; a config typo shouldn't take Benji down."""
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "not_a_real_calculator", "At least $200")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "Varies")
+
     # --- visible_programs intersection --------------------------------------
 
     def test_visible_programs_narrows_the_eligible_list(self):
@@ -993,6 +1086,10 @@ class BuildContextTests(TestCase):
         # that method was memoized.
         seed_warning(self.programs["snap"], "_tax_unit", "SNAP has tax-unit rules.")
         seed_warning(self.programs["tanf"], "_show", "TANF applications take a while.")
+        # Value overrides (MFB-2203) resolve per program too, including the override's
+        # own translation and county list.
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "_show", "At least $200")
         with_one = query_count()
 
         self.add_snapshot_row("wic")
@@ -1002,6 +1099,8 @@ class BuildContextTests(TestCase):
         seed_document(self.programs["lifeline"], "lifeline_id", "Photo ID")
         seed_warning(self.programs["wic"], "_tax_unit", "WIC has tax-unit rules.")
         seed_warning(self.programs["lifeline"], "_show", "Lifeline takes a while.")
+        set_translation(self.programs["wic"].estimated_value, "Varies")
+        self.value_override("wic", "_show", "At least $200")
         with_two = query_count()
 
         self.assertEqual(with_one, with_two)
@@ -1604,10 +1703,17 @@ class AssistantStartViewTests(APITestCase):
     # translation fetch does not fire here — the contents path is covered by
     # `test_assistant_immediate_help.py`.
     #
-    # THIS IS NOW EXACTLY AT THE CEILING (18 of 18), so the next addition trips it. That
+    # MFB-2203 raised this from 18 to 20, for two prefetches on the `_context_programs`
+    # query: `estimated_value__translations` (the card's override text) and the active
+    # `estimated_value` TranslationOverrides. Neither could be batched into an existing
+    # fetch — they are different relations — and both are one query regardless of
+    # program count (the N+1 test above covers that). The overrides' own translation and
+    # county prefetches only fire when an override exists, so not here.
+    #
+    # THIS IS NOW EXACTLY AT THE CEILING (20 of 20), so the next addition trips it. That
     # is the ceiling working, not a problem to route around: batch the new lookup the way
     # `_config_data` does, or raise this with a reason, but don't do either by reflex.
-    MAX_START_QUERIES = 18
+    MAX_START_QUERIES = 20
 
     def test_query_count_is_bounded(self):
         """Bounded here so CONTEXT_PREFETCH disappearing from the view is caught, even
