@@ -74,6 +74,21 @@ class TestPreferredProgram(FederalHelpersTestCase):
         self.assertEqual(preferred_program(state, federal, "test"), federal)
         self.assertEqual(preferred_program(federal, state, "test"), federal)
 
+    def test_an_active_state_row_beats_an_inactive_federal_row(self) -> None:
+        """Before a move: the federal row can exist, imported inactive, while the state row is live."""
+        state = self.program(self.co, "shared")
+        federal = self.program(self.federal, "shared", active=False)
+
+        self.assertEqual(preferred_program(state, federal, "test"), state)
+        self.assertEqual(preferred_program(federal, state, "test"), state)
+
+    def test_the_federal_row_wins_when_both_are_inactive(self) -> None:
+        state = self.program(self.co, "shared", active=False)
+        federal = self.program(self.federal, "shared", active=False)
+
+        self.assertEqual(preferred_program(state, federal, "test"), federal)
+        self.assertEqual(preferred_program(federal, state, "test"), federal)
+
     def test_an_inactive_state_row_losing_is_not_logged(self) -> None:
         state = self.program(self.co, "shared", active=False)
         federal = self.program(self.federal, "shared")

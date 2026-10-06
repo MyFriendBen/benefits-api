@@ -34,8 +34,8 @@ from programs.framework.base import Eligibility
 from programs.admin import ReferrerAdmin, WarningMessageAdmin
 from programs.models import FederalPoveryLimit, Program, ProgramCategory, Referrer, WarningMessage
 from programs.serializers import ProgramCategorySerializer
-from screener.models import CurrentBenefit, Screen, WhiteLabel
-from screener.serializers import _write_current_benefits
+from screener.models import CurrentBenefit, EligibilitySnapshot, Screen, WhiteLabel
+from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.views import eligibility_results
 
 CONFIG_DIR = (
@@ -181,6 +181,18 @@ class TestCurrentBenefits(FederalProgramsTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.benefits(screen), [federal.id])
 
+    def test_before_the_move_the_toggle_keeps_the_live_state_row(self) -> None:
+        """A federal row imported inactive ahead of the move must not capture the benefit."""
+        self.program(self.federal, "shared_name", active=False)
+        state = self.program(self.co, "shared_name")
+        screen = self.screen(self.co)
+
+        self.client.patch(
+            f"/api/screens/{screen.uuid}/current-benefits/", {"name_abbreviated": "shared_name", "has": True}, "json"
+        )
+
+        self.assertEqual(self.benefits(screen), [state.id])
+
     def test_unticking_removes_the_state_row_a_screen_saved_before_the_move(self) -> None:
         """Screens saved before a program moved still point at the deactivated state row."""
         self.program(self.federal, "shared_name")
@@ -283,6 +295,81 @@ class TestScreenerOptions(FederalProgramsTestCase):
 
     def test_federal_is_not_a_state_option(self) -> None:
         self.assertNotIn(FEDERAL_WHITE_LABEL, [option["code"] for option in state_options()])
+
+
+class TestNoScreensUnderFederal(FederalProgramsTestCase):
+    """No screener serves `federal`, so no screen may be saved under it, by the API or otherwise."""
+
+    BODY = {"household_members": [], "expenses": [], "current_benefits": []}
+
+    def test_creating_a_screen_under_federal_is_rejected(self) -> None:
+        user = User.objects.create_user(email_or_cell="create@example.com", password="pw")
+        user.user_permissions.add(Permission.objects.get(codename="add_screen"))
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        response = client.post("/api/screens/", {**self.BODY, "white_label": FEDERAL_WHITE_LABEL}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["white_label"], ["'federal' is not a screener white label."])
+        self.assertFalse(Screen.objects.filter(white_label=self.federal).exists())
+
+    def test_moving_a_screen_to_federal_is_rejected(self) -> None:
+        screen = self.screen(self.co)
+
+        serializer = ScreenSerializer(screen, data={**self.BODY, "white_label": FEDERAL_WHITE_LABEL})
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("white_label", serializer.errors)
+
+
+class TestResultsUnchangedWithoutActiveFederalPrograms(FederalProgramsTestCase):
+    """Until a program moves, the federal union must change nothing a screen gets back.
+
+    For each kind of white label, including the ones with no state (`co_tax_calculator`,
+    `_default`) or a shared state (`cesn`), the full `eligibility_results` output is captured
+    with no federal white label at all, then again once it exists holding only inactive
+    programs (one reusing a state program's name), and the two serialized forms must match
+    exactly.
+    """
+
+    WHITE_LABELS = {"co": "CO", "cesn": "CO", "co_tax_calculator": None, "_default": None}
+
+    def setUp(self) -> None:
+        super().setUp()
+        # The base fixture creates `federal`; this test needs the world from before it existed.
+        self.federal.delete()
+
+    def snapshot(self, screen: Screen) -> str:
+        """Every output of a fresh results run, serialized; the screen's snapshots are cleared
+        first so the `new` flag doesn't depend on an earlier run."""
+        EligibilitySnapshot.objects.filter(screen=screen).delete()
+        with patch.object(Program, "eligibility", lambda *args: eligible()), patch(
+            "screener.views.calc_pe_eligibility", return_value={"eligibility": {}, "_pe_data": {}}
+        ):
+            output = eligibility_results(screen)
+        return json.dumps(output, sort_keys=True, default=str)
+
+    def test_every_kind_of_white_label_gets_identical_results(self) -> None:
+        screens = {}
+        for code, state_code in self.WHITE_LABELS.items():
+            white_label = WhiteLabel.objects.filter(code=code).first() or WhiteLabel.objects.create(
+                name=code, code=code, state_code=state_code
+            )
+            self.program(white_label, f"{code}_benefit")
+            self.program(white_label, "shared_name")
+            self.program(white_label, f"{code}_retired", active=False)
+            screens[code] = self.screen(white_label)
+
+        before = {code: self.snapshot(screen) for code, screen in screens.items()}
+
+        federal = WhiteLabel.objects.create(name="Federal Programs", code=FEDERAL_WHITE_LABEL)
+        self.program(federal, "shared_name", active=False)
+        self.program(federal, "fed_only", active=False)
+
+        for code, screen in screens.items():
+            with self.subTest(white_label=code):
+                self.assertEqual(self.snapshot(screen), before[code])
 
 
 class TestAudit(FederalProgramsTestCase):

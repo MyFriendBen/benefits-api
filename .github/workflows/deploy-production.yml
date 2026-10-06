@@ -235,6 +235,15 @@ jobs:
         #   echo "Translations synced: ${DATE}.json" >> $GITHUB_OUTPUT
         #   echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
+      - name: Audit federal programs
+        # After every other step, whenever migrations ran, so a duplicate can't skip config or
+        # validations, and still fails the deploy (and its Slack notice) on its own.
+        if: ${{ !cancelled() && steps.migrations.outcome == 'success' }}
+        uses: ./.github/actions/heroku-federal-audit
+        with:
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
+
       - name: Determine final status
         if: ${{ !failure() }}
         id: final_status

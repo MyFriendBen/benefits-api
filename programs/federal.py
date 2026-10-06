@@ -72,27 +72,34 @@ def active_duplicates(names: Optional[Iterable[str]] = None) -> dict[str, list[s
 
 
 def preferred_program(kept: Optional["Program"], candidate: "Program", where: str) -> "Program":
-    """Of two programs with the same name, the one a screen should see: the federal one.
+    """Of two programs with the same name, the one a screen should see.
 
     A federal program reuses the name of the state rows it replaced, so a query built with
     `visible_to` (a white label's own programs plus the federal ones) can match one name twice.
-    `kept` is the program already chosen for the name, or None when `candidate` is the first;
-    the federal program wins whichever of the two it is, so the order rows arrive in can't
-    change the result. The database allows one row per (white label, name), so a name never
-    matches more than one state row and one federal row.
+    `kept` is the program already chosen for the name, or None when `candidate` is the first.
+    The database allows one row per (white label, name), so a name never matches more than one
+    state row and one federal row. The choice:
 
-    Both rows existing is expected when the state row is inactive: its program moved to federal
-    and the row was deactivated, not deleted. If both are active, the state row was never
-    deactivated; that is logged at ERROR (which reaches Sentry) with `where` naming the calling
-    read path, rather than raised, so a stale row can't take a page down.
+    - **An active row beats an inactive one.** Before a move the state row is live and a
+      federal row may already exist inactive (the importer creates programs inactive); after
+      it, the federal row is live and the state row is deactivated, not deleted. Either way
+      the live row is the program.
+    - **Between two rows in the same state, the federal one wins.** Both inactive covers
+      callers that resolve benefits no longer offered. Both active means the state row was
+      never deactivated; that is logged at ERROR (which reaches Sentry) with `where` naming the
+      calling read path, rather than raised, so a stale row can't take a page down.
 
+    Neither rule depends on which row arrives first, so query order can't change the result.
     Both programs must have `white_label` loaded (`select_related("white_label")`), or the
     comparison costs a query.
     """
     if kept is None:
         return candidate
 
-    if kept.active and candidate.active:
+    if kept.active != candidate.active:
+        return kept if kept.active else candidate
+
+    if kept.active:
         logger.error(
             "Program '%s' is active under both white labels '%s' and '%s' (%s); using the federal row. "
             "Run audit_federal_programs and deactivate the state row.",

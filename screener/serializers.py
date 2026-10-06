@@ -6,7 +6,7 @@ from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
 from configuration.models import Configuration
-from programs.federal import filter_programs_by_name, visible_to
+from programs.federal import FEDERAL_WHITE_LABEL, filter_programs_by_name, visible_to
 from programs.models import Program, WarningMessage
 from screener.models import (
     CurrentBenefit,
@@ -357,6 +357,12 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         white_label_code = attrs.pop("white_label")["code"]
+        # `federal` only holds programs shown to every other white label; no screener serves it,
+        # so a screen saved under it would have no state, counties or configuration.
+        if white_label_code == FEDERAL_WHITE_LABEL:
+            raise serializers.ValidationError(
+                {"white_label": f"'{FEDERAL_WHITE_LABEL}' is not a screener white label."}
+            )
         white_label = WhiteLabel.objects.get(code=white_label_code)
         attrs["white_label"] = white_label
 
