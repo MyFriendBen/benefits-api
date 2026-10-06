@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from datetime import date
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -355,7 +356,7 @@ class ScreenSerializer(serializers.ModelSerializer):
         self.validate_location = kwargs.pop("validate_location", True)
         super().__init__(*args, **kwargs)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         white_label_code = attrs.pop("white_label")["code"]
         # `federal` only holds programs shown to every other white label; no screener serves it,
         # so a screen saved under it would have no state, counties or configuration.

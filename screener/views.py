@@ -1,6 +1,6 @@
 import hashlib
 import requests
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -41,7 +41,7 @@ from screener.serializers import (
     RemImpactSerializer,
     CurrentBenefitToggleSerializer,
 )
-from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
+from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
@@ -422,7 +422,9 @@ CALC_ORDER = (
 )
 
 
-def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
+def eligibility_results(
+    screen: Screen, batch: bool = False, pe_version: Optional[str] = None
+) -> tuple[list[dict[str, Any]], bool, list[dict[str, Any]], PEData]:
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,
@@ -530,7 +532,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     pe_programs = pe_calculators.keys()
 
-    def sort_first(program):
+    def sort_first(program: Program) -> int:
         if program.name_abbreviated not in CALC_ORDER:
             return len(CALC_ORDER)
 
