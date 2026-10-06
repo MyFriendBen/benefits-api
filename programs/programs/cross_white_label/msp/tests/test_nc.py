@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 from django.test import SimpleTestCase as TestCase
 
-from programs.framework.base import MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 from programs.programs.cross_white_label.msp.nc import MedicareSavingsNC
 
 # Approximate 2026 federal FPL values (48 contiguous states, yearly)
@@ -256,3 +256,100 @@ class TestScenario6SSISpouseWithDepChild(TestCase):
         calculator = make_calculator([member])
         e = run_member_eligible(calculator, member)
         self.assertFalse(e.eligible)
+
+
+class TestLowIncomeAndLowAssets(TestCase):
+    """
+    Single, age 68, $1,000/month unearned, assets $1,500.
+    Step 1: countable $11,760 < $15,960 FPL but assets $1,500 <= $2,000 Medicaid limit → FAIL.
+    Full Medicaid applies; MSP is not shown.
+    """
+
+    def setUp(self):
+        self.member = make_member(pk=1, age=68, yearly_unearned=12_000)
+        self.calculator = make_calculator([self.member], assets=1_500)
+
+    def test_is_not_eligible_below_medicaid_asset_limit(self):
+        e = run_member_eligible(self.calculator, self.member)
+        self.assertFalse(e.eligible)
+
+
+class TestDeemedIncomeGate(TestCase):
+    """
+    Head age 66 (Medicare, $14,000/year unearned), ineligible spouse ($700/month = $8,400/year unearned).
+    Deemed: $8,400 - $5,976 allowance = $2,424; $2,424 <= $5,976 limit → gate fires, deem $0.
+    Step 1: A/B countable $13,760 + $0 deemed = $13,760 < $15,960 FPL; assets $5,000 > $3,000 → PASS.
+    Without the gate: $13,760 + $2,424 = $16,184 > FPL → incorrectly FAIL.
+    """
+
+    def setUp(self):
+        self.head = make_member(pk=1, age=66, yearly_unearned=14_000)
+        self.spouse = make_member(pk=2, age=50, relationship="spouse", has_medicare=False, yearly_unearned=8_400)
+        self.head.is_married.return_value = {"is_married": True, "married_to": self.spouse}
+        self.spouse.is_married.return_value = {"is_married": True, "married_to": self.head}
+        self.calculator = make_calculator([self.head, self.spouse], assets=5_000)
+
+    def test_head_is_eligible_gate_suppresses_deemed_income(self):
+        e = run_member_eligible(self.calculator, self.head)
+        self.assertTrue(e.eligible)
+
+
+class TestFamilySizeOver8(TestCase):
+    """
+    Single head age 66 (Medicare, $76,000/year unearned), 8 dependent children under 18.
+    Step 1: household_size 1, countable $75,760 >> $15,960 FPL → FAIL.
+    Step 2: family_size 9; limit = $74,277 (family 8 at 135%) + $7,668 (1 extra) = $81,945.
+    Countable $75,760 < $81,945 → PASS via additional_per_person extension.
+    Without the extension, $75,760 > $74,277 would incorrectly FAIL.
+    """
+
+    def setUp(self):
+        self.head = make_member(pk=1, age=66, yearly_unearned=76_000)
+        self.children = [
+            make_member(pk=i + 2, age=10, relationship="child", has_medicare=False) for i in range(8)
+        ]
+        self.calculator = make_calculator([self.head] + self.children, assets=5_000)
+
+    def test_head_is_eligible_via_extended_family_size(self):
+        e = run_member_eligible(self.calculator, self.head)
+        self.assertTrue(e.eligible)
+
+
+class TestJustOverFamilySizeLimit(TestCase):
+    """
+    Head age 66, ineligible spouse age 55, child age 14. Both earn $37,500/year.
+    Step 1: A/B countable $18,240 + deemed $31,524 = $49,764 > $15,960 FPL → FAIL.
+    Step 2: family size 3, combined post-disregard $36,990 > $36,612 (135% FPL) → FAIL.
+    Confirms the 135% FPL ceiling is enforced, not just that pass cases pass.
+    """
+
+    def setUp(self):
+        self.head = make_member(pk=1, age=66, yearly_earned=37_500)
+        self.spouse = make_member(pk=2, age=55, relationship="spouse", has_medicare=False, yearly_earned=37_500)
+        self.child = make_member(pk=3, age=14, relationship="child", has_medicare=False)
+        self.head.is_married.return_value = {"is_married": True, "married_to": self.spouse}
+        self.spouse.is_married.return_value = {"is_married": True, "married_to": self.head}
+        self.child.is_married.return_value = {"is_married": False, "married_to": None}
+        self.calculator = make_calculator([self.head, self.spouse, self.child], assets=5_000)
+
+    def test_head_is_not_eligible_over_135_fpl(self):
+        e = run_member_eligible(self.calculator, self.head)
+        self.assertFalse(e.eligible)
+
+
+class TestBenefitAmount(TestCase):
+    """Eligible member receives the annual Part B premium: $203/month * 12 = $2,436/year."""
+
+    def test_eligible_member_receives_annual_premium(self):
+        member = make_member(pk=1, age=68, yearly_unearned=12_000)
+        calculator = make_calculator([member], assets=5_000)
+
+        member_e = MemberEligibility(member)
+        calculator.member_eligible(member_e)
+
+        household_e = Eligibility()
+        household_e.add_member_eligibility(member_e)
+        calculator.value(household_e)
+
+        self.assertTrue(member_e.eligible)
+        self.assertEqual(member_e.value, 203 * 12)
