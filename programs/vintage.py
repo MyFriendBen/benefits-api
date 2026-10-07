@@ -104,12 +104,21 @@ class Vintage:
 
 #: The tax credits are recorded as production has them, not as a decision. `year` is the tax
 #: year, but the same federal credits sit on 2024 in co/il/ma, 2025 in nc/tx/wa and the CO
-#: tax calculator, and 2026 in ks/mo -- a spread no single rule produces. Which tax year the
-#: screener should model is a product decision nobody has made yet, so these are UNVERIFIED
-#: and the audit lists them rather than reading them as settled.
+#: tax calculator, and 2026 in ks/mo -- a spread no single rule produces. The rule is now
+#: decided -- the prior tax year, see `_PRIOR_TAX_YEAR` -- but each credit moves only once its
+#: spec and tests are verified at that year, so until then these stay UNVERIFIED and the audit
+#: lists them rather than reading them as settled.
 _TAX_YEAR_UNSETTLED = (
-    "tax year, not calendar year; recorded as production has it -- which tax year the "
-    "screener should model is an open product decision"
+    "tax year, not calendar year; recorded as production has it until the credit is "
+    "verified against the prior-tax-year rule"
+)
+
+#: The tax year a household is filing: the calendar year just ended, rolling over on January 1
+#: rather than when filing season opens. Nothing rolls it forward automatically, so an entry
+#: on this rule goes stale every January.
+_PRIOR_TAX_YEAR = (
+    "prior tax year: the calendar year just ended, which is what a household screening now "
+    "files; rolls over on January 1"
 )
 
 
@@ -597,12 +606,20 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("mo", "mo_wftc"): Vintage(
-        edition="2026",
+    ("mo", "mo_pts"): Vintage(
+        edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
+        status=Status.CONFIRMED,
+        rule=_PRIOR_TAX_YEAR,
+        source="RSMo 135.030 (claim years through 2025); 2025 Form MO-PTC and Property Tax Credit Chart; "
+        "programs/programs/white_labels/mo/pts/spec.md",
+    ),
+    ("mo", "mo_wftc"): Vintage(
+        edition="2025",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule=_PRIOR_TAX_YEAR,
+        source="Form MO-WFTC (2025); programs/programs/white_labels/mo/wftc/spec.md, validated at TY2025",
     ),
     ("nc", "ctc"): Vintage(
         edition="2025",
