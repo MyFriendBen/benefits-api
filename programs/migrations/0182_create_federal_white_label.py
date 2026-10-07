@@ -25,7 +25,8 @@ def reverse_create(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0180_ssi_msp_csfp_current_edition"),
+        ("programs", "0181_add_remaining_211_referral_options"),
+        ("programs", "0181_mo_tax_credits_prior_tax_year"),
         ("screener", "0168_household_rows_default_id_ordering"),
     ]
 
