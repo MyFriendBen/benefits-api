@@ -358,11 +358,14 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         white_label_code = attrs.pop("white_label")["code"]
-        # `federal` only holds programs shown to every other white label; no screener serves it,
-        # so a screen saved under it would have no state, counties or configuration.
-        if white_label_code == FEDERAL_WHITE_LABEL:
+        # `federal` holds the programs shown to every other white label, and no screener serves
+        # it yet: a screen under it has no state, counties or configuration. Test screens may
+        # use it to see federal programs on their own. `is_test` is create-only, so an update
+        # reads it from the saved screen.
+        is_test = self.instance.is_test if self.instance is not None else attrs.get("is_test", False)
+        if white_label_code == FEDERAL_WHITE_LABEL and not is_test:
             raise serializers.ValidationError(
-                {"white_label": f"'{FEDERAL_WHITE_LABEL}' is not a screener white label."}
+                {"white_label": f"'{FEDERAL_WHITE_LABEL}' only takes test screens: send \"is_test\": true."}
             )
         white_label = WhiteLabel.objects.get(code=white_label_code)
         attrs["white_label"] = white_label

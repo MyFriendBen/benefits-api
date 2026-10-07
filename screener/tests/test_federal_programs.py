@@ -312,24 +312,46 @@ class TestScreenerOptions(FederalProgramsTestCase):
         self.assertNotIn(FEDERAL_WHITE_LABEL, [option["code"] for option in state_options()])
 
 
-class TestNoScreensUnderFederal(FederalProgramsTestCase):
-    """No screener serves `federal`, so no screen may be saved under it, by the API or otherwise."""
+class TestScreensUnderFederal(FederalProgramsTestCase):
+    """No screener serves `federal`, so only test screens may be saved under it.
+
+    A test screen there sees the federal programs alone, with no location, which is how a
+    federal program's API tests run.
+    """
 
     BODY = {"household_members": [], "expenses": [], "current_benefits": []}
 
-    def test_creating_a_screen_under_federal_is_rejected(self) -> None:
+    def post(self, body: dict[str, Any]) -> Any:
         user = User.objects.create_user(email_or_cell="create@example.com", password="pw")
         user.user_permissions.add(Permission.objects.get(codename="add_screen"))
         client = APIClient()
         client.force_authenticate(user=user)
+        return client.post("/api/screens/", body, format="json")
 
-        response = client.post("/api/screens/", {**self.BODY, "white_label": FEDERAL_WHITE_LABEL}, format="json")
+    def test_a_real_screen_under_federal_is_rejected(self) -> None:
+        response = self.post({**self.BODY, "white_label": FEDERAL_WHITE_LABEL})
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["white_label"], ["'federal' is not a screener white label."])
+        self.assertEqual(response.data["white_label"], ["'federal' only takes test screens: send \"is_test\": true."])
         self.assertFalse(Screen.objects.filter(white_label=self.federal).exists())
 
-    def test_moving_a_screen_to_federal_is_rejected(self) -> None:
+    def test_a_test_screen_under_federal_is_saved_without_a_location(self) -> None:
+        response = self.post({**self.BODY, "white_label": FEDERAL_WHITE_LABEL, "is_test": True})
+
+        self.assertEqual(response.status_code, 201, response.data)
+        screen = Screen.objects.get(white_label=self.federal)
+        self.assertIsNone(screen.zipcode)
+        self.assertTrue(screen.is_test_data)
+
+    def test_a_test_screen_under_federal_sees_only_federal_programs(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+        self.program(self.co, "co_only")
+
+        data, _ = self.results(self.screen(self.federal, is_test=True))
+
+        self.assertEqual([p["program_id"] for p in data], [federal.id])
+
+    def test_moving_a_real_screen_to_federal_is_rejected(self) -> None:
         screen = self.screen(self.co)
 
         serializer = ScreenSerializer(screen, data={**self.BODY, "white_label": FEDERAL_WHITE_LABEL})
