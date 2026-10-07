@@ -1249,14 +1249,16 @@ class NavigatorsTests(TestCase):
                 "phone_number": "(303) 555-1234",
                 "email": "apply@example.org",
                 "link": "https://example.org/help",
-                "languages": ["es", "en-us"],
+                "languages": ["Spanish", "English"],
             },
         )
 
-    def test_navigators_key_is_omitted_when_the_program_has_none(self):
-        """Omitted rather than sent empty, like documents: ai-service defaults the field
-        and the prompt states the absence itself."""
-        self.assertNotIn("navigators", self.program())
+    def test_navigators_key_is_sent_empty_when_the_program_has_none(self):
+        """Sent empty rather than omitted, unlike documents: ai-service tells the model
+        out loud when a household has no help-to-apply organizations, and it must be
+        able to tell "checked, none" from "never sent" (an older payload or a stored
+        snapshot from before the field existed)."""
+        self.assertEqual(self.program()["navigators"], [])
 
     def test_optional_fields_are_omitted_when_blank(self):
         seed_navigator(self.programs["snap"], "bare", name="Bare Navigator")
@@ -1296,8 +1298,11 @@ class NavigatorsTests(TestCase):
         for i in range(MAX_NAVIGATORS_PER_PROGRAM + 2):
             seed_navigator(self.programs["snap"], f"nav_{i:02d}", name=f"Navigator {i:02d}", order=i)
 
-        with mock.patch("screener.assistant.capture_message") as capture:
-            navigators = self.navigators()
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as capture:
+                navigators = self.navigators()
+                # Config-level, so reported once per process rather than per household.
+                self.navigators()
 
         self.assertEqual(len(navigators), MAX_NAVIGATORS_PER_PROGRAM)
         # The cap keeps the HEAD of the page's list, not an arbitrary subset.
@@ -1435,6 +1440,19 @@ class NavigatorsTests(TestCase):
                 self.assertNotIn("email", self.navigators()[0])
                 navigator.delete()
 
+    def test_over_long_email_is_dropped_not_truncated(self):
+        """`_translated`'s default cap would clip this mid-domain, and the clipped result
+        still looks address-shaped — the one way a truncated address could reach the
+        model as something to copy verbatim."""
+        local = "x" * 200
+        seed_navigator(self.programs["snap"], "help", name="Help", email=f"{local}@{'y' * 60}.example.org")
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as capture:
+                self.assertNotIn("email", self.navigators()[0])
+
+        capture.assert_called_once()
+
     def test_non_http_link_is_dropped(self):
         for bad in ("javascript:alert(1)", "https://", "call them", "tel:+13035551234"):
             with self.subTest(link=bad):
@@ -1449,13 +1467,14 @@ class NavigatorsTests(TestCase):
         with mock.patch("screener.assistant.capture_message"):
             self.assertNotIn("link", self.navigators()[0])
 
-    def test_unknown_language_codes_are_dropped(self):
+    def test_languages_are_forwarded_as_the_card_labels_and_unknown_codes_are_dropped(self):
         """The card renders a badge only for codes in `allNavigatorLanguages`; the junk
         production rows carry ("Spanish", "english") renders nothing there, so it
-        reaches Benji as nothing too."""
+        reaches Benji as nothing too. What is forwarded is the badge's words, not the
+        code, so ai-service needs no table of its own to drift from this one."""
         seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("Spanish", "es", "english", "ALL"))
 
-        self.assertEqual(self.navigators()[0]["languages"], ["es", "ALL"])
+        self.assertEqual(self.navigators()[0]["languages"], ["Spanish", "all languages"])
 
     def test_over_long_description_is_clipped_and_reported(self):
         seed_navigator(self.programs["snap"], "help", name="Help", description="x" * (MAX_PROMPT_TEXT_LEN + 50))

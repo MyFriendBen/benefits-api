@@ -145,35 +145,39 @@ MAX_ADDITIONAL_RESOURCES = 60
 # reported rather than silently absorbed, for the same parity reason as the other caps.
 MAX_NAVIGATORS_PER_PROGRAM = 8
 
-# The navigator language codes the results page knows how to render. Mirrors
-# `allNavigatorLanguages` in the frontend (Results/ProgramPage/NavigatorLanguages.tsx):
-# the card draws a "Spanish Available" badge for each code in that map and silently
-# ignores the rest. Production rows carry free-text junk alongside real codes ("Spanish",
-# "english", "ALL"), and parity means forwarding exactly what the card shows — so a code
-# not in this set is dropped here rather than handed to the model to guess at.
-NAVIGATOR_LANGUAGE_CODES = frozenset(
-    {
-        "en-us",
-        "es",
-        "vi",
-        "fr",
-        "am",
-        "so",
-        "ru",
-        "ne",
-        "my",
-        "zh",
-        "ar",
-        "sw",
-        "pl",
-        "tl",
-        "ko",
-        "ur",
-        "pt-br",
-        "ht",
-        "ALL",
-    }
-)
+# The navigator languages the results page knows how to render, code -> the words the
+# card prints. Mirrors `allNavigatorLanguages` in the frontend
+# (Results/ProgramPage/NavigatorLanguages.tsx): the card draws a "Spanish Available"
+# badge for each code in that map and silently ignores the rest. Production rows carry
+# free-text junk alongside real codes ("Spanish", "english", "ALL"), and parity means
+# forwarding exactly what the card shows — so a code not in this map is dropped here.
+#
+# The LABEL is what is forwarded, not the code: this is the one place that resolves card
+# content for the assistant, and sending codes would make ai-service keep a third copy of
+# this table, where a language added here and in the frontend would silently render as
+# nothing. The label is English because the prompt is; the card's own badge is
+# translated by the frontend.
+NAVIGATOR_LANGUAGE_LABELS = {
+    "en-us": "English",
+    "es": "Spanish",
+    "vi": "Vietnamese",
+    "fr": "French",
+    "am": "Amharic",
+    "so": "Somali",
+    "ru": "Russian",
+    "ne": "Nepali",
+    "my": "Burmese",
+    "zh": "Chinese",
+    "ar": "Arabic",
+    "sw": "Swahili",
+    "pl": "Polish",
+    "tl": "Tagalog",
+    "ko": "Korean",
+    "ur": "Urdu",
+    "pt-br": "Portuguese",
+    "ht": "Haitian Creole",
+    "ALL": "all languages",
+}
 
 # A navigator email as the card renders it: one address, no display name, no scheme.
 # The card wraps the stored text in `mailto:` itself, so a row that already carries the
@@ -181,6 +185,9 @@ NAVIGATOR_LANGUAGE_CODES = frozenset(
 # isn't address-shaped is dropped: like a phone number, an email reaches the model as a
 # thing to reproduce verbatim, so there is no safe rewrite of a malformed one.
 _EMAIL_SHAPED = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Reject threshold for an email, like MAX_URL_LEN for a link: validated, never truncated.
+# RFC 5321's path limit; nothing real is longer, and anything longer is a config problem.
+MAX_EMAIL_LEN = 254
 
 # `acute_condition_options` config key -> the `Screen` field it writes. This mirrors
 # `benefits-calculator/src/Assets/updateScreen.ts`, which is where the mapping has lived
@@ -536,16 +543,23 @@ def _program_navigators(
         link = _card_link(navigator.assistance_link, label, language_code)
         if link:
             entry["link"] = link
-        languages = [lang.code for lang in navigator.languages.all() if lang.code in NAVIGATOR_LANGUAGE_CODES]
+        languages = [
+            NAVIGATOR_LANGUAGE_LABELS[lang.code]
+            for lang in navigator.languages.all()
+            if lang.code in NAVIGATOR_LANGUAGE_LABELS
+        ]
         if languages:
             entry["languages"] = languages
         entries.append(entry)
 
     if len(entries) > MAX_NAVIGATORS_PER_PROGRAM:
-        capture_message(
-            f"{program.name_abbreviated} has {len(entries)} navigators for screen {screen.uuid}, over "
+        # A property of the program's configuration, not of this household, so reported
+        # once per process like the other config-level conditions — per request it would
+        # fire on every assistant start for every household that sees the program.
+        _report_once(
+            f"navigator_cap:{program.name_abbreviated}",
+            f"{program.name_abbreviated} has {len(entries)} navigators for one household, over "
             f"MAX_NAVIGATORS_PER_PROGRAM={MAX_NAVIGATORS_PER_PROGRAM}; truncating the assistant's list",
-            level="warning",
         )
     return entries[:MAX_NAVIGATORS_PER_PROGRAM]
 
@@ -945,14 +959,24 @@ def _card_email(translation: Optional[Translation], label: str, language_code: s
     addresses it is given are the only ones it may hand out, so a value that changed
     under sanitization would be an address that reaches the wrong inbox with full
     authority — the same stance `_card_phone` takes.
+
+    Resolved at full length (`max_len=None`) and rejected over `MAX_EMAIL_LEN`, exactly
+    like `_card_link`: through `_translated`'s default cap an over-long address would be
+    clipped mid-domain, and a clipped address can still look address-shaped.
     """
-    email = _translated(translation, language_code)
+    email = _translated(translation, language_code, max_len=None)
     if not email:
         return ""
     if email.lower().startswith("mailto:"):
         email = email[len("mailto:") :].strip()
     if not _EMAIL_SHAPED.match(email):
         _report_once(f"malformed_email:{label}", f"Dropping {label} email: not a single address")
+        return ""
+    if len(email) > MAX_EMAIL_LEN:
+        _report_once(
+            f"over_long_email:{label}",
+            f"Dropping {label} email: {len(email)} chars exceeds MAX_EMAIL_LEN={MAX_EMAIL_LEN}",
+        )
         return ""
     return email
 
@@ -1510,13 +1534,15 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
                     if warnings:
                         program["warnings"] = warnings
                 # The "Get Help Applying" panel on the program's own page, filtered for
-                # this household exactly as the page filters it. Omitted when empty, like
-                # documents: the prompt states the absence itself.
-                navigators = _program_navigators(
+                # this household exactly as the page filters it. ALWAYS sent, even empty —
+                # unlike documents. ai-service states the absence of help organizations
+                # out loud under its closed-world prompt, and it may only do that when the
+                # panel was actually checked: a missing key is an older payload or a
+                # stored snapshot from before this field existed, which must read as
+                # "unknown", not "none".
+                program["navigators"] = _program_navigators(
                     row_program, program_eligibility, screen, primary_navigators, language_code
                 )
-                if navigators:
-                    program["navigators"] = navigators
             eligible_programs.append(program)
 
     # Disjointness is enforced HERE, not merely asserted. The insurance gate above is
