@@ -223,7 +223,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 
 ---
 
-### Scenario 1: Senior homeowner, Social Security income (Golden Path) ✓ in validation JSON
+### Scenario 1: Senior homeowner, Social Security income (Golden Path)
 
 **What we're checking**: A 68-year-old homeowner qualifies via the age path (born before Jan 1, 1970) with the 50% Social Security rule applied to household income and the $700 cap fallback when no property-tax expense is entered.
 **Expected**: Eligible — $616 (income = 50% × $16,800 = $8,400 → 88% bracket; $700 × 0.88 = $616).
@@ -238,7 +238,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 
 ---
 
-### Scenario 2: Renter, otherwise fully qualified ✓ in validation JSON
+### Scenario 2: Renter, otherwise fully qualified
 
 **What we're checking**: A 70-year-old with qualifying age and income who pays rent is excluded — renters are not eligible under current law (repealed by L. 2012, ch. 135, § 30, eff. 1/1/2013).
 **Expected**: Not eligible (no value). (Would be $644 if a homeowner.)
@@ -253,7 +253,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 
 ---
 
-### Scenario 3: Under-55 parent, dependent-child path, income near limit ✓ in validation JSON
+### Scenario 3: Under-55 parent, dependent-child path, income near limit
 
 **What we're checking**: A household where no adult meets age/disability paths qualifies via a dependent child under 18; multi-member wage aggregation lands just under the $43,389 limit in the 5% bracket; mortgage expense marks the household as owner.
 **Expected**: Eligible — $35 (income = $42,000 → 5% bracket; $700 × 0.05 = $35; ≥ $5 floor so payable).

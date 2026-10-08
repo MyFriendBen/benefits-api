@@ -157,7 +157,7 @@ Per the [HHS 2026 Detailed Poverty Guidelines](https://aspe.hhs.gov/sites/defaul
 
 ## Test Scenarios
 
-This spec defines 8 scenarios covering every major branch of the eligibility logic. Three of these are extracted into `wa_orca_lift_test_cases.json` for the automated validation suite (see the "Extracted for JSON validation" note below). All ages are valid as of the research date (May 12, 2026).
+This spec defines 8 scenarios covering every major branch of the eligibility logic. All ages are valid as of the research date (May 12, 2026).
 
 ### Scenario 1: Single Working Adult Below 200% FPL in King County
 
@@ -326,16 +326,6 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
 | Age 19–64 requirement | 1, 2, 3, 4, 5, 7, 8 | 6 |
 | Benefit value scales by 19–64 count | 4 ($1,728/year), 5 ($1,728/year) | n/a |
 | Boundary precision | 7 (at threshold) | 8 (just over) |
-
-### Extracted for JSON validation (`wa_orca_lift_test_cases.json`)
-
-Per the 2.3 guidance, three scenarios are extracted into the automated validation file. These three give the broadest coverage of the eligibility logic:
-
-- **Scenario 1** → JSON case 1 (golden path / primary regression)
-- **Scenario 2** → JSON case 2 (primary exclusion)
-- **Scenario 3** → JSON case 3 (categorical override + age-filtered value scaling)
-
-The remaining 5 scenarios (4–8) live in this spec as documentation for the dev and QA to walk through manually during implementation.
 
 ## Notes for the Dev
 

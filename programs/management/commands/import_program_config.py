@@ -15,6 +15,7 @@ from programs.models import (
     LegalStatus,
     BaseProgram,
 )
+from programs.federal import FEDERAL_WHITE_LABEL, conflicting_active_programs
 from screener.models import WhiteLabel
 from configuration.models import Configuration
 from integrations.clients.google_translate import Translate
@@ -180,6 +181,11 @@ class Command(BaseCommand):
             )
             return
 
+        # Federal programs are shown to every white label, so a name active under both
+        # `federal` and a state white label is a duplicate. Refuse it here, before any writes.
+        if program_config.get("active"):
+            self._refuse_active_federal_duplicate(white_label, program_name)
+
         # Validate navigator county names against this white label's convention BEFORE any
         # writes (now that we know the import will proceed), scoped to the navigators this run
         # will actually (re)create — so a mismatch fails loudly without blocking over counties
@@ -235,6 +241,22 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
             raise
+
+    def _refuse_active_federal_duplicate(self, white_label: WhiteLabel, program_name: str) -> None:
+        """Raise if importing this program active would duplicate an active one on the other side.
+
+        Importing under `federal` conflicts with any active state row of the same name, and
+        importing under a state white label conflicts with an active federal row. The program's
+        own move deactivates the state rows first.
+        """
+        codes = [p.white_label.code for p in conflicting_active_programs(white_label.code, program_name)]
+        if codes:
+            raise CommandError(
+                f"Program '{program_name}' is already active under {', '.join(codes)}. Federal programs are "
+                f"shown to every white label, so the same name can't also be active under "
+                f"{'a state white label' if white_label.code == FEDERAL_WHITE_LABEL else 'federal'}. "
+                'Deactivate the other row first, or import this one with "active": false.'
+            )
 
     def _get_valid_county_names(self, white_label: WhiteLabel) -> Optional[set]:
         """

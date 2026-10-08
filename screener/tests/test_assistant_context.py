@@ -1082,9 +1082,8 @@ class BuildContextTests(TestCase):
         seed_document(self.programs["tanf"], "tanf_id", "Photo ID")
         # _tax_unit, not just _show: _show reads nothing, so it cannot exercise the
         # axis that scales. _tax_unit reaches Screen.has_members_outside_of_tax_unit ->
-        # is_dependent -> get_reference_date, which is unprefetchable by construction
-        # (order_by builds a fresh queryset) and was an N+1 on members x programs until
-        # that method was memoized.
+        # is_dependent -> get_reference_date, which was an N+1 on members x programs
+        # until that method was memoized.
         seed_warning(self.programs["snap"], "_tax_unit", "SNAP has tax-unit rules.")
         seed_warning(self.programs["tanf"], "_show", "TANF applications take a while.")
         # Value overrides (MFB-2203) resolve per program too, including the override's

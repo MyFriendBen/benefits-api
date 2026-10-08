@@ -2,8 +2,7 @@
 Guard: production code must not read the stored `HouseholdMember.age` column.
 
 `age` is written once, when the member is created, and never refreshed. A household that
-comes back to its results after a birthday is judged on last year's age, and a frozen
-screen drifts away from the reference date it was pinned to. `calc_age()` derives the age
+comes back to its results after a birthday is judged on last year's age. `calc_age()` derives the age
 from `birth_year_month` at `Screen.get_reference_date()` and falls back to the stored
 column only when there is no birth date, so it is right in every case the column is.
 

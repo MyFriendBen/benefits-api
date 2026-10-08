@@ -213,7 +213,7 @@ Note: For shared living, the per-person increment for family sizes 5+ is not a f
 
 Benefit = Payment Standard − Countable Income. If countable income ≥ payment standard, benefit = $0.
 
-> **Storage convention:** All benefit values in this spec are expressed as monthly figures for readability. The validation JSON (`ks_tanf.json`) stores `expected_results.value` as annual amounts (monthly × 12). Example: $403/month → 4836 in the JSON.
+> **Storage convention:** All benefit values in this spec are expressed as monthly figures for readability. The calculator returns annual amounts (monthly × 12). Example: $403/month → 4836.
 
 ### Data Gaps
 
@@ -234,13 +234,13 @@ Source: [KS DCF Cash Assistance Payment Standards](https://www.dcf.ks.gov/servic
 
 ## Test Scenarios
 
-*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios 1, 10, and 15 are reflected in the validation JSON (`ks_tanf.json`). All other scenarios are for QA coverage and traceability. Scenarios marked ⚠️ PE depend on MFB-level logic not yet in PE and should be confirmed via the PE delta report.*
+*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios marked ⚠️ PE depend on MFB-level logic not yet in PE and should be confirmed via the PE delta report.*
 
 Payment standard assumptions: non-shared living (inclusivity assumption). County tiers per KEESM Appendix T-2. Income disregard: countable = (earnings − $90) × 40% (minimum $0), applied per employed person.
 
 ---
 
-### Scenario 1: Single parent, 2 children, no income (Golden Path) ✓ in validation JSON
+### Scenario 1: Single parent, 2 children, no income (Golden Path)
 
 **What we're checking**: A single parent with two young children and no income qualifies under Criterion 1 (child presence) and Criterion 3 (income below 30% FPL). High Population county tier.
 **Expected**: Eligible — $403/month (payment standard family 3, High Pop, non-shared: $403 − $0 countable = $403).
@@ -377,7 +377,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 
 ---
 
-### Scenario 10: Adult-only household — no qualifying child (Primary Exclusion) ✓ in validation JSON
+### Scenario 10: Adult-only household — no qualifying child (Primary Exclusion)
 
 **What we're checking**: The most common TANF ineligibility reason — no dependent child present (Criterion 1 fails). Income level is irrelevant; the household is rejected at the first criterion.
 **Expected**: Not eligible (no value).
@@ -447,7 +447,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 
 ---
 
-### Scenario 15: Income disregard + county tier — single parent, earned income, Johnson County ✓ in validation JSON
+### Scenario 15: Income disregard + county tier — single parent, earned income, Johnson County
 
 **What we're checking**: The $90 + 60% earned income disregard formula and the T-2 HC+HP county tier lookup together. Uses a mid-range income to produce a non-zero countable amount and tests the highest-tier payment standard.
 **Expected**: Eligible — $268/month (gross $300 < ~$541 (30% FPL for family 2) ✓; countable = ($300 − $90) × 40% = $84; payment standard family 2, HC+HP $352 − $84 = $268).
