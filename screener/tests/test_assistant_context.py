@@ -30,7 +30,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
-from programs.models import LegalStatus, Program
+from programs.models import LegalStatus, Program, Referrer, TranslationOverride
 from configuration.models import Configuration
 from screener.assistant import (
     ACUTE_OPTION_FIELDS,
@@ -40,6 +40,7 @@ from screener.assistant import (
     AssistantStartView,
     MAX_ADDITIONAL_RESOURCES,
     MAX_DOCUMENTS_PER_PROGRAM,
+    MAX_NAVIGATORS_PER_PROGRAM,
     MAX_PROGRAM_VALUE,
     MAX_PROMPT_TEXT_LEN,
     MAX_URL_LEN,
@@ -58,7 +59,7 @@ from screener.models import (
     Screen,
     WhiteLabel,
 )
-from screener.tests.helpers import seed_document, seed_program, seed_urgent_need, seed_warning
+from screener.tests.helpers import seed_document, seed_navigator, seed_program, seed_urgent_need, seed_warning
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
 
@@ -652,6 +653,99 @@ class BuildContextTests(TestCase):
 
         self.assertEqual(context["eligible_programs"][0]["estimated_delivery_time"], "30 days")
 
+    # --- value framing (MFB-2203) -------------------------------------------
+
+    def value_override(self, name_abbreviated: str, calculator: str, text: str) -> TranslationOverride:
+        """A per-household `estimated_value` override, as the admin creates one."""
+        override = TranslationOverride.objects.new_translation_override(
+            self.white_label.code, calculator, "estimated_value"
+        )
+        override.program = self.programs[name_abbreviated]
+        override.save()
+        set_translation(override.translation, text)
+        return override
+
+    def test_value_format_is_forwarded(self):
+        """`lump_sum` is how ai-service knows not to call a one-time amount yearly."""
+        self.programs["snap"].value_format = "lump_sum"
+        self.programs["snap"].save()
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["value_format"], "lump_sum")
+
+    def test_value_format_key_is_omitted_when_unset(self):
+        """NULL is the default (monthly card); ai-service treats a missing key the same."""
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertNotIn("value_format", context["eligible_programs"][0])
+
+    def test_value_override_text_is_forwarded(self):
+        """The card shows this text instead of a number, so Benji has to quote it too."""
+        set_translation(self.programs["snap"].estimated_value, "Up to $7,669 per home")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        program = context["eligible_programs"][0]
+        self.assertEqual(program["estimated_value_override"], "Up to $7,669 per home")
+        # The number still travels: it sorts and gates the list, and ai-service decides
+        # what to quote.
+        self.assertEqual(program["estimated_value"], 1200)
+
+    def test_placeholder_value_override_is_omitted(self):
+        """seed_program() leaves estimated_value at [PLACEHOLDER], as untranslated rows
+        are in production; that is "no override", not text to quote."""
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertNotIn("estimated_value_override", context["eligible_programs"][0])
+
+    def test_a_matching_translation_override_replaces_the_value_text(self):
+        """Program.get_translation's per-household swap — cesn_leap shows renters
+        "At least $200" — has to reach Benji the same way it reaches the card."""
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "_show", "At least $200")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "At least $200")
+
+    def test_a_non_matching_translation_override_keeps_the_program_text(self):
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "_dont_show", "At least $200")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "Varies")
+
+    def test_an_inactive_translation_override_is_ignored(self):
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        override = self.value_override("snap", "_show", "At least $200")
+        override.active = False
+        override.save()
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "Varies")
+
+    def test_an_unknown_override_calculator_is_skipped_rather_than_raising(self):
+        """get_translation raises KeyError here; a config typo shouldn't take Benji down."""
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "not_a_real_calculator", "At least $200")
+        self.add_snapshot_row("snap")
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value_override"], "Varies")
+
     # --- visible_programs intersection --------------------------------------
 
     def test_visible_programs_narrows_the_eligible_list(self):
@@ -993,6 +1087,25 @@ class BuildContextTests(TestCase):
         # that method was memoized.
         seed_warning(self.programs["snap"], "_tax_unit", "SNAP has tax-unit rules.")
         seed_warning(self.programs["tanf"], "_show", "TANF applications take a while.")
+        # Value overrides (MFB-2203) resolve per program too, including the override's
+        # own translation and county list.
+        set_translation(self.programs["snap"].estimated_value, "Varies")
+        self.value_override("snap", "_show", "At least $200")
+        # Navigators (MFB-1776) hang off Program through the ordered through table and
+        # run three filters per program, each of which reads an M2M on the navigator.
+        seed_navigator(
+            self.programs["snap"],
+            "snap_help",
+            name="SNAP Help",
+            county_names=("Travis County",),
+            language_codes=("es",),
+            eligibility_programs=(self.programs["snap"],),
+            email="help@example.org",
+            link="https://example.org/snap",
+            phone_number="+13035551234",
+        )
+        self.screen.county = "Travis County"
+        self.screen.save()
         with_one = query_count()
 
         self.add_snapshot_row("wic")
@@ -1002,6 +1115,19 @@ class BuildContextTests(TestCase):
         seed_document(self.programs["lifeline"], "lifeline_id", "Photo ID")
         seed_warning(self.programs["wic"], "_tax_unit", "WIC has tax-unit rules.")
         seed_warning(self.programs["lifeline"], "_show", "Lifeline takes a while.")
+        set_translation(self.programs["wic"].estimated_value, "Varies")
+        self.value_override("wic", "_show", "At least $200")
+        seed_navigator(
+            self.programs["wic"],
+            "wic_help",
+            name="WIC Help",
+            county_names=("Travis County",),
+            language_codes=("es",),
+            eligibility_programs=(self.programs["wic"],),
+            email="wic@example.org",
+            link="https://example.org/wic",
+            phone_number="+13035555678",
+        )
         with_two = query_count()
 
         self.assertEqual(with_one, with_two)
@@ -1044,6 +1170,340 @@ class BuildContextTests(TestCase):
         with_five_members = query_count()
 
         self.assertEqual(with_two_members, with_five_members)
+
+
+class NavigatorsTests(TestCase):
+    """The "Get Help Applying" panel on each program's page, as Benji receives it (MFB-1776).
+
+    Navigators are the one per-program field that is FILTERED per household on the
+    results path — by county, by required-program eligibility, and by referrer — and
+    they carry a phone number, an email and a website, the three things the prompt's
+    guardrails are strictest about. So two invariants matter here and nowhere else:
+
+    1. Benji sees exactly the navigators this household's page shows. Not the program's
+       whole attachment list: a navigator the page hid for this county is a number that
+       is not for them. The selection is shared with the results view
+       (`screener.navigators`), and `test_update_navigators.py` covers the filters
+       directly; these tests cover the ASSISTANT'S view — that the same inputs reach
+       the same function, and the shape of what comes out.
+    2. Contact details arrive as the card shows them, or not at all. Dropped, never
+       rewritten — a sanitized phone number or email that changed is one that reaches
+       the wrong place with full authority.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=2,
+            completed=True,
+        )
+        seed_program(self.white_label, "snap", "wic", "tanf")
+        self.programs = {p.name_abbreviated: p for p in Program.objects.filter(white_label=self.white_label)}
+        self.snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
+        self.add_snapshot_row("snap")
+
+    def add_snapshot_row(self, name_abbreviated: str, *, value: str = "1200", eligible: bool = True) -> None:
+        ProgramEligibilitySnapshot.objects.create(
+            eligibility_snapshot=self.snapshot,
+            name=name_abbreviated.upper(),
+            name_abbreviated=name_abbreviated,
+            estimated_value=Decimal(value),
+            eligible=eligible,
+        )
+
+    def context(self) -> dict:
+        screen = Screen.objects.prefetch_related(*CONTEXT_PREFETCH).get(pk=self.screen.pk)
+        return _build_context(screen)
+
+    def program(self, name_abbreviated: str = "snap") -> dict:
+        return next(p for p in self.context()["eligible_programs"] if p["external_name"] == name_abbreviated)
+
+    def navigators(self, name_abbreviated: str = "snap") -> list[dict]:
+        return self.program(name_abbreviated).get("navigators", [])
+
+    # --- shape -----------------------------------------------------------------
+
+    def test_navigator_is_forwarded_with_its_card_fields(self):
+        seed_navigator(
+            self.programs["snap"],
+            "food_help",
+            name="Food Help Center",
+            description="Walk-in help with the Basic Food application, Monday to Friday.",
+            email="apply@example.org",
+            link="https://example.org/help",
+            phone_number="+13035551234",
+            language_codes=("es", "en-us"),
+        )
+
+        [navigator] = self.navigators()
+
+        self.assertEqual(
+            navigator,
+            {
+                "external_name": "food_help",
+                "name": "Food Help Center",
+                "description": "Walk-in help with the Basic Food application, Monday to Friday.",
+                "phone_number": "(303) 555-1234",
+                "email": "apply@example.org",
+                "link": "https://example.org/help",
+                "languages": ["Spanish", "English"],
+            },
+        )
+
+    def test_navigators_key_is_sent_empty_when_the_program_has_none(self):
+        """Sent empty rather than omitted, unlike documents: ai-service tells the model
+        out loud when a household has no help-to-apply organizations, and it must be
+        able to tell "checked, none" from "never sent" (an older payload or a stored
+        snapshot from before the field existed)."""
+        self.assertEqual(self.program()["navigators"], [])
+
+    def test_optional_fields_are_omitted_when_blank(self):
+        seed_navigator(self.programs["snap"], "bare", name="Bare Navigator")
+
+        [navigator] = self.navigators()
+
+        self.assertEqual(navigator, {"external_name": "bare", "name": "Bare Navigator"})
+
+    def test_navigator_without_a_name_is_dropped(self):
+        """A nameless entry in a list the prompt calls complete is worse than a shorter list."""
+        seed_navigator(self.programs["snap"], "nameless", phone_number="+13035551234")
+        seed_navigator(self.programs["snap"], "named", name="Named Navigator")
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["named"])
+
+    def test_navigators_keep_the_page_order(self):
+        """`ProgramNavigator.order` is what the admin's drag-to-reorder writes and what
+        the panel renders; "the first one listed" must name the same organization on
+        both sides."""
+        seed_navigator(self.programs["snap"], "second", name="Second", order=2)
+        seed_navigator(self.programs["snap"], "first", name="First", order=1)
+        seed_navigator(self.programs["snap"], "third", name="Third", order=3)
+
+        self.assertEqual([n["name"] for n in self.navigators()], ["First", "Second", "Third"])
+
+    def test_navigators_are_attached_to_their_own_program_only(self):
+        """The eval trap for this feature: a navigator attached to WIC must not be
+        offered for SNAP. The association is structural in the payload — nested under
+        the program — so there is nothing for the model to get wrong."""
+        self.add_snapshot_row("wic")
+        seed_navigator(self.programs["wic"], "wic_clinic", name="WIC Clinic")
+
+        self.assertEqual(self.navigators("snap"), [])
+        self.assertEqual([n["external_name"] for n in self.navigators("wic")], ["wic_clinic"])
+
+    def test_navigators_are_capped_per_program(self):
+        for i in range(MAX_NAVIGATORS_PER_PROGRAM + 2):
+            seed_navigator(self.programs["snap"], f"nav_{i:02d}", name=f"Navigator {i:02d}", order=i)
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as capture:
+                navigators = self.navigators()
+                # Config-level, so reported once per process rather than per household.
+                self.navigators()
+
+        self.assertEqual(len(navigators), MAX_NAVIGATORS_PER_PROGRAM)
+        # The cap keeps the HEAD of the page's list, not an arbitrary subset.
+        self.assertEqual(navigators[0]["name"], "Navigator 00")
+        capture.assert_called_once()
+
+    # --- the three household filters -----------------------------------------
+
+    def test_county_restricted_navigator_is_included_in_its_county(self):
+        seed_navigator(self.programs["snap"], "travis", name="Travis Help", county_names=("Travis County",))
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["travis"])
+
+    def test_county_restricted_navigator_is_excluded_outside_its_county(self):
+        """The ticket's "never names an out-of-area navigator". A statewide navigator on
+        the same program survives, so the filter is per navigator, not per program."""
+        seed_navigator(self.programs["snap"], "dallas", name="Dallas Help", county_names=("Dallas County",))
+        seed_navigator(self.programs["snap"], "statewide", name="Statewide Help")
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["statewide"])
+
+    def test_county_restricted_navigator_is_excluded_when_the_screen_has_no_county(self):
+        self.screen.county = None
+        self.screen.save()
+        seed_navigator(self.programs["snap"], "travis", name="Travis Help", county_names=("Travis County",))
+
+        self.assertEqual(self.navigators(), [])
+
+    def test_required_program_gate_passes_when_the_household_is_eligible(self):
+        self.add_snapshot_row("tanf", eligible=True)
+        seed_navigator(
+            self.programs["snap"], "both", name="SNAP and TANF Help", eligibility_programs=(self.programs["tanf"],)
+        )
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["both"])
+
+    def test_required_program_gate_fails_when_the_household_is_ineligible(self):
+        self.add_snapshot_row("tanf", eligible=False)
+        seed_navigator(
+            self.programs["snap"], "both", name="SNAP and TANF Help", eligibility_programs=(self.programs["tanf"],)
+        )
+
+        self.assertEqual(self.navigators(), [])
+
+    def test_required_program_gate_fails_when_the_program_is_not_in_the_snapshot(self):
+        """No row means the page did not display it, and the view's gate reads the
+        displayed set — so "unknown" is "not eligible" on both sides."""
+        seed_navigator(
+            self.programs["snap"], "both", name="SNAP and WIC Help", eligibility_programs=(self.programs["wic"],)
+        )
+
+        self.assertEqual(self.navigators(), [])
+
+    def test_required_program_gate_reads_rows_the_eligible_list_filtered_out(self):
+        """The gate keys on ALL snapshot rows, not the forwarded list: a navigator that
+        needs TANF eligibility must still show for a household that is TANF-eligible but
+        already receives it, exactly as the page does."""
+        self.add_snapshot_row("tanf", eligible=True)
+        CurrentBenefit.objects.create(screen=self.screen, program=self.programs["tanf"])
+        self.screen.invalidate_current_benefits_cache()
+        seed_navigator(
+            self.programs["snap"], "both", name="SNAP and TANF Help", eligibility_programs=(self.programs["tanf"],)
+        )
+
+        context = self.context()
+
+        self.assertNotIn("tanf", [p["external_name"] for p in context["eligible_programs"]])
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["both"])
+
+    def test_referrer_primary_navigator_wins(self):
+        statewide = seed_navigator(self.programs["snap"], "statewide", name="Statewide Help")
+        seed_navigator(self.programs["snap"], "other", name="Other Help")
+        referrer = Referrer.objects.create(white_label=self.white_label, referrer_code="partner", name="Partner")
+        referrer.primary_navigators.add(statewide)
+        self.screen.referrer_code = "partner"
+        self.screen.save()
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["statewide"])
+
+    def test_referrer_prioritization_falls_back_when_no_primary_navigator_passes(self):
+        """A primary navigator filtered out for this county does not empty the list —
+        the page shows the full filtered set, so Benji gets it too."""
+        dallas = seed_navigator(self.programs["snap"], "dallas", name="Dallas Help", county_names=("Dallas County",))
+        seed_navigator(self.programs["snap"], "statewide", name="Statewide Help")
+        referrer = Referrer.objects.create(white_label=self.white_label, referrer_code="partner", name="Partner")
+        referrer.primary_navigators.add(dallas)
+        self.screen.referrer_code = "partner"
+        self.screen.save()
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["statewide"])
+
+    def test_unknown_referrer_code_is_ignored(self):
+        seed_navigator(self.programs["snap"], "statewide", name="Statewide Help")
+        self.screen.referrer_code = "nobody"
+        self.screen.save()
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["statewide"])
+
+    def test_referrer_from_another_white_label_is_ignored(self):
+        other = WhiteLabel.objects.create(name="Elsewhere", code="other", state_code="XX")
+        statewide = seed_navigator(self.programs["snap"], "statewide", name="Statewide Help")
+        seed_navigator(self.programs["snap"], "other_nav", name="Other Help")
+        referrer = Referrer.objects.create(white_label=other, referrer_code="partner", name="Partner")
+        referrer.primary_navigators.add(statewide)
+        self.screen.referrer_code = "partner"
+        self.screen.save()
+
+        self.assertEqual([n["external_name"] for n in self.navigators()], ["statewide", "other_nav"])
+
+    # --- contact details -------------------------------------------------------
+
+    def test_phone_number_is_formatted_the_way_the_card_shows_it(self):
+        seed_navigator(self.programs["snap"], "help", name="Help", phone_number="+13035551234")
+
+        self.assertEqual(self.navigators()[0]["phone_number"], "(303) 555-1234")
+
+    def test_invalid_phone_number_is_passed_through_like_the_card_does(self):
+        navigator = seed_navigator(self.programs["snap"], "help", name="Help")
+        type(navigator).objects.filter(pk=navigator.pk).update(phone_number="+1303555")
+
+        self.assertEqual(self.navigators()[0]["phone_number"], "+1303555")
+
+    def test_mailto_prefix_is_stripped_from_the_email(self):
+        """One production row stores "mailto:" in the text; the card wraps the text in
+        its own `mailto:`, so forwarding the stored value would reproduce the bug."""
+        seed_navigator(self.programs["snap"], "help", name="Help", email="mailto:upk@example.org")
+
+        self.assertEqual(self.navigators()[0]["email"], "upk@example.org")
+
+    def test_malformed_email_is_dropped_not_rewritten(self):
+        for bad in ("call us", "two@example.org or three@example.org", "Help Desk <help@example.org>"):
+            with self.subTest(email=bad):
+                navigator = seed_navigator(self.programs["snap"], f"help_{abs(hash(bad))}", name="Help", email=bad)
+
+                self.assertNotIn("email", self.navigators()[0])
+                navigator.delete()
+
+    def test_over_long_email_is_dropped_not_truncated(self):
+        """`_translated`'s default cap would clip this mid-domain, and the clipped result
+        still looks address-shaped — the one way a truncated address could reach the
+        model as something to copy verbatim."""
+        local = "x" * 200
+        seed_navigator(self.programs["snap"], "help", name="Help", email=f"{local}@{'y' * 60}.example.org")
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as capture:
+                self.assertNotIn("email", self.navigators()[0])
+
+        capture.assert_called_once()
+
+    def test_non_http_link_is_dropped(self):
+        for bad in ("javascript:alert(1)", "https://", "call them", "tel:+13035551234"):
+            with self.subTest(link=bad):
+                navigator = seed_navigator(self.programs["snap"], f"help_{abs(hash(bad))}", name="Help", link=bad)
+
+                self.assertNotIn("link", self.navigators()[0])
+                navigator.delete()
+
+    def test_over_long_link_is_dropped_not_truncated(self):
+        seed_navigator(self.programs["snap"], "help", name="Help", link="https://example.org/?q=" + "x" * MAX_URL_LEN)
+
+        with mock.patch("screener.assistant.capture_message"):
+            self.assertNotIn("link", self.navigators()[0])
+
+    def test_languages_are_forwarded_as_the_card_labels_and_unknown_codes_are_dropped(self):
+        """The card renders a badge only for codes in `allNavigatorLanguages`; the junk
+        production rows carry ("Spanish", "english") renders nothing there, so it
+        reaches Benji as nothing too. What is forwarded is the badge's words, not the
+        code, so ai-service needs no table of its own to drift from this one."""
+        seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("Spanish", "es", "english", "ALL"))
+
+        self.assertEqual(self.navigators()[0]["languages"], ["Spanish", "all languages"])
+
+    def test_over_long_description_is_clipped_and_reported(self):
+        seed_navigator(self.programs["snap"], "help", name="Help", description="x" * (MAX_PROMPT_TEXT_LEN + 50))
+
+        with mock.patch("screener.assistant.capture_message") as capture:
+            description = self.navigators()[0]["description"]
+
+        self.assertEqual(len(description), MAX_PROMPT_TEXT_LEN)
+        capture.assert_called_once()
+
+    # --- language --------------------------------------------------------------
+
+    def test_navigator_text_uses_the_screen_language_not_the_request_language(self):
+        navigator = seed_navigator(self.programs["snap"], "help", name="Help Center")
+        navigator.name.set_current_language("es")
+        navigator.name.text = "Centro de Ayuda"
+        navigator.name.save()
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        with translation.override("en-us"):
+            self.assertEqual(self.navigators()[0]["name"], "Centro de Ayuda")
+
+    def test_navigator_text_falls_back_when_the_screen_language_has_no_text(self):
+        seed_navigator(self.programs["snap"], "help", name="Help Center")
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        self.assertEqual(self.navigators()[0]["name"], "Help Center")
 
 
 class AdditionalResourcesTests(TestCase):
@@ -1604,10 +2064,26 @@ class AssistantStartViewTests(APITestCase):
     # translation fetch does not fire here — the contents path is covered by
     # `test_assistant_immediate_help.py`.
     #
-    # THIS IS NOW EXACTLY AT THE CEILING (18 of 18), so the next addition trips it. That
+    # MFB-2203 raised this from 18 to 20, for two prefetches on the `_context_programs`
+    # query: `estimated_value__translations` (the card's override text) and the active
+    # `estimated_value` TranslationOverrides. Neither could be batched into an existing
+    # fetch — they are different relations — and both are one query regardless of
+    # program count (the N+1 test above covers that). The overrides' own translation and
+    # county prefetches only fire when an override exists, so not here.
+    #
+    # MFB-1776 raised this from 20 to 21, for the `program_navigators` prefetch on the
+    # same `_context_programs` query (the "Get Help Applying" panel). It is a different
+    # relation from everything already fetched there, so it cannot be batched in, and it
+    # is one query regardless of program count (the N+1 test above seeds navigators on
+    # both sides). Its nested prefetches — counties, languages, eligibility programs and
+    # the four translated fields — fire only when a program actually has navigators, so
+    # not here; the referrer lookup for `primary_navigators` fires only when the screen
+    # carries a referrer code, so not here either.
+    #
+    # THIS IS NOW EXACTLY AT THE CEILING (21 of 21), so the next addition trips it. That
     # is the ceiling working, not a problem to route around: batch the new lookup the way
     # `_config_data` does, or raise this with a reason, but don't do either by reflex.
-    MAX_START_QUERIES = 18
+    MAX_START_QUERIES = 21
 
     def test_query_count_is_bounded(self):
         """Bounded here so CONTEXT_PREFETCH disappearing from the view is caught, even

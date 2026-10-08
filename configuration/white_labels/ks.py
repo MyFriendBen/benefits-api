@@ -28,7 +28,7 @@ class KsConfigurationData(ConfigurationData):
         "moreHelpOptions": [
             {
                 "name": {
-                    "_default_message": "Kansas 211 (United Way of Kansas)",
+                    "_default_message": "Kansas 211 (United Way of the Plains)",
                     "_label": "moreHelp.211.name.ks",
                 },
                 "link": "https://unitedwayplains.org/211-information-and-referral/",

@@ -83,12 +83,13 @@ class TestReferralSourcesView(APITestCase):
         self.assertIn("other", response.data["generic"])
         self.assertIn("bia", response.data["partners"])
 
-    def test_excludes_hidden_referrers(self):
-        """Referrers with show_in_dropdown=False are excluded."""
+    def test_hidden_referrers_kept_out_of_dropdown_groups(self):
+        """Referrers with show_in_dropdown=False are returned under hidden only."""
         response = self.client.get(self.url)
 
         self.assertNotIn("hidden", response.data["generic"])
         self.assertNotIn("hidden", response.data["partners"])
+        self.assertEqual(response.data["hidden"], {"hidden": "Hidden Partner"})
 
     def test_generic_and_partner_are_separated(self):
         """is_partner=True rows appear in partners, is_partner=False in generic."""
@@ -155,7 +156,7 @@ class TestReferralSourcesView(APITestCase):
         response = self.client.get("/api/screener-options/doesnotexist/referral-options/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"generic": {}, "partners": {}})
+        self.assertEqual(response.data, {"generic": {}, "partners": {}, "hidden": {}})
 
     def test_unauthenticated_returns_403(self):
         """Unauthenticated requests are rejected."""

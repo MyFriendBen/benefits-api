@@ -1,7 +1,7 @@
 """IL tests."""
 
 from programs.programs.cross_white_label.eitc.base import Eitc
-from programs.programs.cross_white_label.eitc.il import Ileitc
+from programs.programs.white_labels.il.eitc.calculator import Ileitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from django.test import TestCase
 from programs.framework.pe_dependencies import tax as tax_dependency
