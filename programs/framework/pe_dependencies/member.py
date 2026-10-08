@@ -734,6 +734,32 @@ class ChipGross(Member):
     field = "chip_gross"
 
 
+class MoSsp(Member):
+    """
+    PolicyEngine's ``mo_ssp`` person output: Missouri's State Supplementary Payment, monthly.
+
+    One variable covers Supplemental Aid to the Blind and Supplemental Nursing Care; which one
+    it computes follows ``mo_ssp_living_arrangement``.
+    """
+
+    field = "mo_ssp"
+
+
+class MoSspLivingArrangementSabDependency(Member):
+    """
+    Tells ``mo_ssp`` to compute Supplemental Aid to the Blind.
+
+    ``mo_ssp_living_arrangement`` defaults to ``NONE``, which PolicyEngine reads as neither SAB
+    nor a nursing-care facility, so it returns $0 for every Missourian without erroring. SAB is
+    the only arrangement this screener models.
+    """
+
+    field = "mo_ssp_living_arrangement"
+
+    def value(self):
+        return "SAB"
+
+
 class IncomeDependency(Member):
     dependencies = (
         "income_type",
@@ -750,6 +776,27 @@ class IncomeDependency(Member):
 class EmploymentIncomeDependency(IncomeDependency):
     field = "employment_income"
     income_types = ["wages"]
+
+
+class MoSabEarnedIncomeDependency(IncomeDependency):
+    """
+    Employment income for Missouri's Supplemental Aid to the Blind, where boarder and lodger
+    income is earned.
+
+    DSS Manual 0410.015.05 lists boarders or lodgers among Missouri's earned-income sources, so
+    it carries the earned-income exemptions. PolicyEngine's SAB earned-source parameter does not
+    capture it ("Boarder income and income in kind for services are not captured"), and the
+    screener's ``boarder`` stream reaches no other slot the formula reads, so without this
+    mapping the income is invisible and the full grant is paid whatever the claimant takes in.
+
+    An input mapping, not an override: PolicyEngine still applies Missouri's exemptions to what
+    arrives. Replaces ``EmploymentIncomeDependency`` for ``mo_sab`` only; ``rental`` is left out
+    because 13 CSR 40-2.050(1)(C) makes self-managed real estate earned and agency-managed rental
+    not, and the screener cannot tell them apart.
+    """
+
+    field = "employment_income"
+    income_types = ["wages", "boarder"]
 
 
 class SelfEmploymentIncomeDependency(IncomeDependency):
