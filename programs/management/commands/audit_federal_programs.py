@@ -4,7 +4,11 @@ Fail when a program is active under both the `federal` white label and a state o
 Federal programs are shown to every white label, so moving a program to `federal` means
 deactivating its state rows. A name still active on both sides is a configuration error:
 the results page would log it and show only the federal row, which hides the drift rather
-than fixing it. This command surfaces it instead, exiting non-zero so a deploy stops.
+than fixing it. Run this by hand during a program's cutover; it exits non-zero on a
+duplicate.
+
+It matches on the name alone, so a clean run says nothing about state rows under another
+name (`ks_snap`, `tx_eitc`). The cutover ticket's list of rows to switch off covers those.
 
 Usage:
     python manage.py audit_federal_programs

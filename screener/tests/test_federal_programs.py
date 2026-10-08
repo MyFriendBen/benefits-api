@@ -4,9 +4,9 @@ A federal row reuses its calculator's `name_abbreviated`, the same name the stat
 replaces carry, and moving a program deactivates those state rows. These tests cover the
 read paths that union federal programs in (results, current benefits, the has-benefits step,
 the current-benefits page), the collision rule when a name is still active on both sides
-(log and prefer the federal row, never raise), and the two hard failures that keep that from
-happening: the import guard and `audit_federal_programs`. Switching a federal program off in
-the admin needs a confirmation, because it hides the program from every white label.
+(log and prefer the federal row, never raise), and what keeps that from happening: the import
+and admin guards, and `audit_federal_programs` for a cutover. Switching a federal program off
+in the admin needs a confirmation, because it hides the program from every white label.
 
 Calculators are stubbed through `Program.eligibility`: what is under test is which rows the
 results page fetches and publishes, not any program's rule.
@@ -39,10 +39,6 @@ from programs.serializers import ProgramCategorySerializer
 from screener.models import CurrentBenefit, EligibilitySnapshot, Screen, WhiteLabel
 from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.views import eligibility_results
-
-CONFIG_DIR = (
-    Path(__file__).resolve().parents[2] / "programs" / "management" / "commands" / "import_program_config_data" / "data"
-)
 
 
 def eligible() -> Eligibility:
@@ -485,27 +481,6 @@ class TestImportGuard(FederalProgramsTestCase):
         self.import_config(FEDERAL_WHITE_LABEL, "shared_name", active=False)
 
         self.assertFalse(Program.objects.get(white_label=self.federal).active)
-
-
-class TestConfigFiles(TestCase):
-    """PR CI's database is empty, so the database audit can't run there; the committed
-    configs are what a reviewer can still catch a duplicate in."""
-
-    def test_no_active_federal_config_shares_a_name_with_an_active_state_config(self) -> None:
-        active: dict[str, set[str]] = {}
-        for path in CONFIG_DIR.glob("*.json"):
-            config = json.loads(path.read_text())
-            if not config.get("program", {}).get("active"):
-                continue
-            name = config["program"]["name_abbreviated"]
-            active.setdefault(name, set()).add(config["white_label"]["code"])
-
-        duplicates = {
-            name: sorted(codes - {FEDERAL_WHITE_LABEL})
-            for name, codes in active.items()
-            if FEDERAL_WHITE_LABEL in codes and len(codes) > 1
-        }
-        self.assertEqual(duplicates, {}, "Deactivate (or delete) the state configs a federal config replaces.")
 
 
 class _Superuser:

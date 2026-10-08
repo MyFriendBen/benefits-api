@@ -5,8 +5,14 @@ label instead of a copy per state.
 A federal row reuses the `name_abbreviated` of the calculator it runs, which is the same
 name the state rows it replaces carry. Each program's move deactivates those state rows, so
 an *active* name under both `federal` and a state white label is a configuration error. The
-import command and `audit_federal_programs` fail on one. The read paths here log it and let
-the federal row win instead, because a stale row must not take a results page down with it.
+import command and the admin refuse to create one, and `audit_federal_programs` lists any
+for a cutover run by hand. A data migration or the shell can still make one, so the read
+paths here log it at ERROR and let the federal row win, because a stale row must not take a
+results page down with it.
+
+Everything here matches on the name alone. A state row under another name (`ks_snap`,
+`tx_eitc`) is invisible to all of it and would show beside the federal row, so each move's
+own ticket lists every state row it switches off.
 
 An *inactive* state row sharing a federal row's name is the expected state after a move (rows
 are deactivated, not deleted, to keep snapshot history), so preferring the federal row there
