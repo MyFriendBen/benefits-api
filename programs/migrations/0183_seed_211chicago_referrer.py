@@ -13,7 +13,9 @@ def seed_211chicago_referrer(apps, schema_editor):
 
     show_in_dropdown=False because they have not launched: listing them as a
     "how did you hear about us" option would show every Illinois user a partner
-    that is not live yet. Flip it in the Django admin at launch — which is also
+    that is not live yet. The referral-options endpoint still returns the row
+    under "hidden", so a ?referrer=211chicago link skips the referral step.
+    Flip it in the Django admin at launch — which is also
     the point at which the dashboard predicate should move from referrer_code to
     the partner display name, so dropdown-attributed screens are not dropped.
 
@@ -48,7 +50,7 @@ def reverse_seed(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0180_ssi_msp_csfp_current_edition"),
+        ("programs", "0182_merge_0181_migrations"),
     ]
 
     operations = [

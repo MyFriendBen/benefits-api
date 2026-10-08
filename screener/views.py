@@ -891,30 +891,35 @@ class ReferralSourcesView(views.APIView):
     Response shape:
         {
             "generic": {"friend": "Friend / Family", ...},
-            "partners": {"bia": "Benefits in Action", ...}
+            "partners": {"bia": "Benefits in Action", ...},
+            "hidden": {"211chicago": "211 Metro Chicago", ...}
         }
 
-    Both groups are sorted alphabetically by display name.
+    generic and partners are the dropdown options. hidden holds referrers with
+    show_in_dropdown=False: not offered in the dropdown, but still known, so a
+    ?referrer= link to one skips the referral step like any other referrer.
+
+    All groups are sorted alphabetically by display name.
     """
 
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Referrer.objects.none()  # Required for DjangoModelPermissions
 
     def get(self, request, white_label):
-        referrers = Referrer.objects.filter(
-            white_label__code=white_label,
-            show_in_dropdown=True,
-        ).order_by("name")
+        referrers = Referrer.objects.filter(white_label__code=white_label).order_by("name")
 
         generic = {}
         partners = {}
+        hidden = {}
         for ref in referrers:
-            if ref.is_partner:
+            if not ref.show_in_dropdown:
+                hidden[ref.referrer_code] = ref.name
+            elif ref.is_partner:
                 partners[ref.referrer_code] = ref.name
             else:
                 generic[ref.referrer_code] = ref.name
 
-        return Response({"generic": generic, "partners": partners})
+        return Response({"generic": generic, "partners": partners, "hidden": hidden})
 
 
 class RemImpactView(views.APIView):

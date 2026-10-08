@@ -2320,9 +2320,6 @@ class IlConfigurationData(ConfigurationData):
         "logoClass": {"default": "logo", "211chicago": "chicago211-logo-size"},
         "shareLink": {
             "default": "",
-            # Carries the referrer through a share, so a shared screener keeps
-            # the 211 Metro Chicago experience instead of dropping to plain IL.
-            "211chicago": "https://screener.myfriendben.org/il?referrer=211chicago",
         },
         "stepDirectory": {
             "default": [
@@ -2339,7 +2336,8 @@ class IlConfigurationData(ConfigurationData):
             ],
             # 211 Metro Chicago runs its own intake and contact capture, so the
             # sign-up step is dropped to avoid asking a caller for the same
-            # details twice. referralSource stays, so attribution is unaffected.
+            # details twice. referralSource stays in the list for parity with the
+            # default; the screener skips it whenever the referrer code is known.
             "211chicago": [
                 "zipcode",
                 # the hhSize and hhData have to be consecutive
@@ -2373,6 +2371,14 @@ class IlConfigurationData(ConfigurationData):
                 "no_zipcode_change_state",
                 "white_header",
             ],
+        },
+        # Every IL referrer hides the Immediate Help tab (no_results_more_help above), so the
+        # base message's "go to the Immediate Help tab" would point at a tab that isn't there.
+        "noResultMessage": {
+            "default": {
+                "_label": "noResultMessage.noImmediateHelp",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. You can find other support matched to your needs in the Additional Resources tab.",
+            },
         },
         "defaultLanguage": {"default": "en-us"},
     }
