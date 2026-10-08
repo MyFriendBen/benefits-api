@@ -372,7 +372,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Expected:** Eligible — **$10,381/year** (1 eligible: HS Preschool)
 
-*Originally tested geographic eligibility. Effectively duplicates Scenario 1 now — exclude when picking validation cases.*
+*Originally tested geographic eligibility. Effectively duplicates Scenario 1 now.*
 
 - **Location:** ZIP `98101`, County `King County`
 - **Household size:** 3

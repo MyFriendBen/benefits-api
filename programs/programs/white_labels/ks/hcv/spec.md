@@ -279,7 +279,7 @@ Ages are derived from `birth_year_month` via `calc_age()` / `age_from_date()` ag
 
 ## Test Scenarios
 
-All ages are computed as of the pinned reference date **2026-08-27**. `Screen.get_reference_date()` falls back to the current date for an unfrozen screen, so tests must freeze or pass this date rather than relying on the ambient clock.
+All ages are computed as of the pinned reference date **2026-08-27**. `Screen.get_reference_date()` returns the current date, so tests must freeze or pass this date rather than relying on the ambient clock.
 
 Each scenario's **Current Benefits** line is a results-layer condition, not a calculator input. `eligibility_results` sets `already_has` from `screen.has_benefit("ks_hcv")` *after* `household_eligible` and `household_value` have run, and the frontend filter reads it; neither calculator method consults it. A unit test of `KsHcv` will not exercise that line.
 

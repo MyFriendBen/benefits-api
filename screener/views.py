@@ -56,7 +56,6 @@ from programs.categories import ProgramCategoryCapCalculator, category_cap_calcu
 from django.core.exceptions import ObjectDoesNotExist
 from programs.warnings import warning_calculators
 from programs.serializers import HasBenefitsProgramSerializer
-from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
 from .urgent_needs import eligible_urgent_needs
 from .navigators import navigators_for_program
@@ -313,7 +312,6 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
         urgent_needs = urgent_need_results(screen, eligibility)
         external_api_failures = get_external_api_failures()
-    validations = ValidationSerializer(screen.validations.all(), many=True).data
 
     results = {
         "programs": eligibility,
@@ -321,7 +319,6 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         "screen_id": screen.id,
         "default_language": screen.request_language_code,
         "missing_programs": missing_programs,
-        "validations": validations,
         "program_categories": categories,
         "pe_data": _pe_data,
         # Unlike pe_data (admin-only, popped below), this is sent to all users so the

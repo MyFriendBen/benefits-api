@@ -240,9 +240,8 @@ _LOOKS_LIKE_INSURANCE = re.compile(r"medicaid|chip|medicare|mass_health|apple_he
 #
 # This list is NOT the whole story, and adding to it is not always the fix: the warning
 # calculators themselves read further than missing_fields() does. `_tax_unit` reaches
-# Screen.has_members_outside_of_tax_unit -> is_dependent -> get_reference_date, whose
-# `validations.order_by(...)` builds a fresh queryset and so cannot be prefetched from
-# here at all — that one is solved by memoizing on the model. If a new calculator
+# Screen.has_members_outside_of_tax_unit -> is_dependent -> get_reference_date, which is
+# memoized on the model. If a new calculator
 # regresses the query count, check what it reads before reaching for this tuple.
 CONTEXT_PREFETCH = (
     "current_benefits__program",

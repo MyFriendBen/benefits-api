@@ -233,7 +233,7 @@ None.
 
 ## Implementation
 
-- Age (criterion 1) must be computed from `birth_year_month` against `screen.get_reference_date()`, month-precision — not from a precomputed `age` integer — since the 65-and-under boundary is inclusive of the birth month itself. `Screen.get_reference_date()` returns the earliest validation's date for a frozen screen and today's date otherwise. Do not use `Screen.submission_date` as the age reference date: the field does exist, but `get_reference_date()` never reads it — a submitted screen with no validations still resolves to today — so the two are not interchangeable.
+- Age (criterion 1) must be computed from `birth_year_month` against `screen.get_reference_date()`, month-precision — not from a precomputed `age` integer — since the 65-and-under boundary is inclusive of the birth month itself. `Screen.get_reference_date()` returns today's date. Do not use `Screen.submission_date` as the age reference date: the field does exist, but `get_reference_date()` never reads it — a submitted screen still resolves to today — so the two are not interchangeable.
 - Countable income (criterion 5) must be derived from the itemized statutory disregards in the committed order, then compared against the operational thresholds in criterion 5's table — not by comparing gross income directly to Appendix J's $3,990/$5,410 figures, which would silently misclassify any household with a spouse, SSI, SSDI, or a mix of earned/unearned income.
 - Earned income (criterion 3) must be read through the `earned` selector, which includes the `wages` and `selfEmployment` income types.
 - `cashAssistance` is excluded from countable income unconditionally (criterion 5, item 1).
