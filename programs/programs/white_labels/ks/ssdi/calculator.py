@@ -1,7 +1,5 @@
 from datetime import date
 from typing import Optional
-
-from django.utils import timezone
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 from programs.framework import eligibility_messages as messages
 
@@ -78,7 +76,7 @@ class KsSsdi(ProgramCalculator):
         # back to age vs the maximum FRA (67), and treat a member with neither
         # birth year nor age as not established to be of working age.
         if member.birth_year is not None:
-            under_fra = self._is_under_fra(member.birth_year, member.birth_month, timezone.now().date())
+            under_fra = self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date())
         else:
             # without a birth date, calc_age() is the stored age
             age = member.calc_age()

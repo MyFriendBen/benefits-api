@@ -134,6 +134,22 @@ class Screen(models.Model):
     utm_content = models.CharField(max_length=128, blank=True, null=True)
     utm_term = models.CharField(max_length=128, blank=True, null=True)
 
+    def get_reference_date(self) -> date:
+        """
+        Get the reference date for age calculations: the current date.
+
+        Memoized per instance. Nothing invalidates the cache: an instance lives for one
+        request, and a reference date that shifts mid-request is a bug in its own right,
+        since the whole point is to keep ages consistent (two calls either side of
+        midnight would otherwise disagree).
+        """
+        cached = getattr(self, "_reference_date", None)
+        if cached is not None:
+            return cached
+
+        self._reference_date = timezone.now().date()
+        return self._reference_date
+
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
         gross_income = 0
@@ -626,7 +642,7 @@ class HouseholdMember(models.Model):
         )
 
         # Path 2: Qualifying Relative
-        threshold = get_qualifying_relative_threshold(timezone.now().year)
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
         is_qualifying_relative = has_eligible_relationship and self.calc_gross_income("yearly", ["all"]) < threshold
 
         return is_qualifying_child or is_qualifying_relative
@@ -660,7 +676,8 @@ class HouseholdMember(models.Model):
         if self.birth_year_month is None:
             return self.age
 
-        return self.age_from_date(self.birth_year_month)
+        reference_date = self.screen.get_reference_date()
+        return self.age_from_date(self.birth_year_month, reference_date)
 
     def age_at_end_of_year(self, year: Optional[int]) -> Optional[int]:
         """
@@ -674,8 +691,8 @@ class HouseholdMember(models.Model):
         return max(year - self.birth_year, 0)
 
     @staticmethod
-    def age_from_date(birth_year_month: date) -> int:
-        today = timezone.now()
+    def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
+        today = reference_date if reference_date else timezone.now()
 
         if today.month >= birth_year_month.month:
             return today.year - birth_year_month.year
@@ -686,7 +703,7 @@ class HouseholdMember(models.Model):
         if self.birth_year_month is None:
             return float(self.age) if self.age is not None else None
 
-        reference_date = timezone.now().date()
+        reference_date = self.screen.get_reference_date()
 
         current_year = reference_date.year + reference_date.month / 12
         birth_year = self.birth_year_month.year + self.birth_year_month.month / 12

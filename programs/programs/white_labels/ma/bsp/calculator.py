@@ -1,8 +1,6 @@
 from datetime import date
 from typing import Optional
 
-from django.utils import timezone
-
 from screener.models import HouseholdMember
 from programs.framework.base import MemberEligibility, ProgramCalculator
 
@@ -52,7 +50,7 @@ class MaBabySteps(ProgramCalculator):
         if birth_year_month < self.program_start:
             return False
 
-        reference_date = timezone.now().date()
+        reference_date = self.screen.get_reference_date()
         months_since_birth = (reference_date.year - birth_year_month.year) * 12 + (
             reference_date.month - birth_year_month.month
         )

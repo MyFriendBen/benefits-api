@@ -131,11 +131,11 @@ INSTALLED_APPS = [
     # Custom apps - order determines admin sidebar position
     "screener.apps.ScreenerConfig",
     "configuration.apps.ConfigurationConfig",
+    "programs.apps.ProgramsConfig",
+    "translations.apps.TranslationsConfig",
     # Retained only so migration 0005 (DeleteModel) applies in every environment;
     # the app has no models, views, or commands. Remove once 0005 is deployed everywhere.
     "validations.apps.ValidationsConfig",
-    "programs.apps.ProgramsConfig",
-    "translations.apps.TranslationsConfig",
     "integrations.apps.IntegrationsConfig",
     "rest_framework",
     "rest_framework.authtoken",
