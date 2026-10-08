@@ -25,7 +25,7 @@ def reverse_create(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0182_merge_0181_migrations"),
+        ("programs", "0184_create_nj_white_label"),
         ("screener", "0168_household_rows_default_id_ordering"),
     ]
 
