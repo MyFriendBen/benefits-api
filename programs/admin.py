@@ -104,10 +104,18 @@ class ProgramNavigatorInline(TabularInline):
 
 
 def deactivates_federal_program(form: forms.ModelForm) -> bool:
-    """Whether saving `form` switches off a federal program, which hides it from every white label."""
+    """Whether saving `form` switches off a federal program, which hides it from every white label.
+
+    Reads whether the program was federal when the form opened: by `save_model`, `form.instance`
+    already carries the submitted white label, so a program moved off federal would read as a
+    state one.
+    """
+    was_federal = getattr(form, "initially_federal", None)
+    if was_federal is None:
+        was_federal = form.instance.pk is not None and is_federal(form.instance)
     return (
         form.instance.pk is not None
-        and is_federal(form.instance)
+        and was_federal
         and "active" in form.changed_data
         and not form.cleaned_data.get("active")
     )
@@ -169,6 +177,10 @@ class ProgramAdminForm(forms.ModelForm):
         label="Confirm deactivation",
         help_text="This is a federal program. Unticking Active hides it from every white label, not one state.",
     )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.initially_federal: bool | None = is_federal(self.instance) if self.instance.pk is not None else None
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
