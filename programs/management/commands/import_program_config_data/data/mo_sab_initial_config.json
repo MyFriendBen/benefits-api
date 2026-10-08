@@ -1,0 +1,94 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "cash"
+  },
+  "program": {
+    "name_abbreviated": "mo_sab",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "otherWithWorkPermission"
+    ],
+    "name": "Supplemental Aid to the Blind (SAB)",
+    "description": "Supplemental Aid to the Blind (SAB) is a monthly cash grant for Missouri adults who are blind. It also comes with MO HealthNet (Missouri Medicaid) health coverage, on top of the cash shown here.\n\nMissouri sets a monthly total for this program. If you get Supplemental Security Income (SSI), SAB pays the rest. If you get no SSI, SAB pays all of it. You choose how the money arrives: a check in the mail, or direct deposit into your bank account.\n\nMissouri checks a few more things first. It uses its own vision standard, which is stricter than the usual meaning of \"legally blind\". An eye doctor approved by the state tests your vision, and the state makes the decision after you apply. Different rules apply if you live in a care facility or institution. People whose nursing home is paid for by the state cannot get SAB.\n\nA few things can change the amount you see. If you get SSI, enter the monthly amount so your estimate is right. If you do not get SSI yet, SAB will cover less once SSI starts, but your monthly total stays the same. You can get Temporary Assistance or SAB, but not both. If you get Temporary Assistance, you can choose SAB instead. Missouri says SAB is usually worth more.\n\nYou apply for SAB through MO HealthNet. To start, follow the steps on Missouri's blind financial assistance page. If you have questions, call the FSD Blind Service Center at 866-877-8155.",
+    "description_short": "Monthly cash for adults who are blind",
+    "learn_more_link": "https://mydss.mo.gov/blind-financial-assistance",
+    "apply_button_link": "https://mydss.mo.gov/blind-financial-assistance",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "website_description": "Monthly cash for adults who are blind",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "active": true,
+    "show_in_has_benefits_step": true,
+    "low_confidence": false
+  },
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn_proof",
+      "text": "Social Security Number or proof you applied for one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_residency_proof",
+      "text": "Proof of Missouri residency, if requested (e.g., utility bill, lease agreement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status, if required",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_income_proof",
+      "text": "Income records (ex: pay stubs, tax forms, or benefit letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_assets",
+      "text": "Proof of savings and other resources (ex: bank statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_sab_eye_doctor",
+      "text": "Your eye doctor's name, address, and exam dates, if you have one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_sab_addendum",
+      "text": "Completed MO HealthNet addendum, which is how you ask for SAB",
+      "link_url": "https://dssmanuals.mo.gov/wp-content/uploads/2023/04/im1mac_fillable-v.3.pdf",
+      "link_text": "Complete the MO HealthNet addendum (IM-1MAC)"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_sab_blind_service_center",
+      "name": "Family Support Division Blind Service Center",
+      "email": "",
+      "phone_number": "+18668778155",
+      "description": "Answers questions about SAB and helps with your application or addendum.",
+      "assistance_link": "https://mydss.mo.gov/blind-financial-assistance"
+    }
+  ]
+}

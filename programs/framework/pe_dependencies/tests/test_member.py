@@ -210,6 +210,61 @@ class TestIsBlindDependency(TestCase):
         self.assertFalse(dep.value())
 
 
+class TestMoSabDependencies(TestCase):
+    """Dependencies behind MoSab (MO Supplemental Aid to the Blind)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="65101", county="Cole County", household_size=1, completed=False
+        )
+        self.member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+
+    def _income(self, income_type, amount, frequency="monthly"):
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.member,
+            type=income_type,
+            amount=amount,
+            frequency=frequency,
+        )
+
+    def test_living_arrangement_is_always_sab(self):
+        dep = member.MoSspLivingArrangementSabDependency(self.screen, self.member, {})
+
+        self.assertEqual(dep.field, "mo_ssp_living_arrangement")
+        self.assertEqual(dep.value(), "SAB")
+
+    def test_mo_ssp_output_field(self):
+        self.assertEqual(member.MoSsp.field, "mo_ssp")
+        self.assertEqual(member.MoSsp.unit, "people")
+
+    def test_earned_income_counts_boarder_alongside_wages(self):
+        self._income("wages", 500)
+        self._income("boarder", 1_200)
+
+        dep = member.MoSabEarnedIncomeDependency(self.screen, self.member, {})
+
+        self.assertEqual(dep.field, "employment_income")
+        self.assertEqual(dep.value(), (500 + 1_200) * 12)
+
+    def test_earned_income_leaves_rental_and_pension_out(self):
+        self._income("rental", 300)
+        self._income("pension", 400)
+
+        dep = member.MoSabEarnedIncomeDependency(self.screen, self.member, {})
+
+        self.assertEqual(dep.value(), 0)
+
+    def test_shared_employment_income_still_ignores_boarder(self):
+        """The Missouri rule must not leak into the mapping every other program uses."""
+        self._income("boarder", 1_200)
+
+        dep = member.EmploymentIncomeDependency(self.screen, self.member, {})
+
+        self.assertEqual(dep.value(), 0)
+
+
 class TestMemberExpenseDependency(TestCase):
     """Tests for member-level expense dependency classes: SnapChildSupportDependency, PropertyTaxExpenseDependency, and MedicalExpenseDependency."""
 
