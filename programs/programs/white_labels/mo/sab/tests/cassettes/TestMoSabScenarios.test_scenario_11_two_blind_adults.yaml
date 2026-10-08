@@ -1,0 +1,94 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"1": {"age": {"2026": 40}, "is_blind": {"2026":
+      true}, "mo_ssp_living_arrangement": {"2026": "SAB"}, "ssi_countable_resources":
+      {"2026": 500}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+      0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 6000},
+      "social_security": {"2026": 0}, "unemployment_compensation": {"2026": 0}, "taxable_ira_distributions":
+      {"2026": 0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "mo_ssp": {"2026-07": null}}, "2": {"age": {"2026": 38}, "is_blind":
+      {"2026": true}, "mo_ssp_living_arrangement": {"2026": "SAB"}, "ssi_countable_resources":
+      {"2026": 500}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+      0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 4800},
+      "social_security": {"2026": 0}, "unemployment_compensation": {"2026": 0}, "taxable_ira_distributions":
+      {"2026": 0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "mo_ssp": {"2026-07": null}}}, "tax_units": {"main_tax_unit":
+      {"members": ["1", "2"]}}, "families": {"family": {"members": ["1", "2"]}}, "households":
+      {"household": {"members": ["1", "2"], "state_code": {"2026": "MO"}, "county_str":
+      {"2026": "ST_LOUIS_CITY_MO"}, "zip_code": {"2026": "63101"}}}, "spm_units":
+      {"spm_unit": {"members": ["1", "2"], "tanf": {"2026": null}, "receives_tanf":
+      {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
+      {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
+      {"1-2": {"members": ["1", "2"]}}}, "version": "2.18.0"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1670'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"1": {"age":
+        {"2026": 40}, "is_blind": {"2026": true}, "mo_ssp_living_arrangement": {"2026":
+        "SAB"}, "ssi_countable_resources": {"2026": 500}, "employment_income": {"2026":
+        0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+        {"2026": 6000}, "social_security": {"2026": 0}, "unemployment_compensation":
+        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "ssi": {"2026": 0.0},
+        "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+        "mo_ssp": {"2026-07": 949.0}}, "2": {"age": {"2026": 38}, "is_blind": {"2026":
+        true}, "mo_ssp_living_arrangement": {"2026": "SAB"}, "ssi_countable_resources":
+        {"2026": 500}, "employment_income": {"2026": 0}, "self_employment_income":
+        {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
+        4800}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+        0}, "taxable_ira_distributions": {"2026": 0}, "ssi": {"2026": 0.0}, "receives_ssi":
+        {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false}, "mo_ssp": {"2026-07":
+        949.0}}}, "tax_units": {"main_tax_unit": {"members": ["1", "2"]}}, "families":
+        {"family": {"members": ["1", "2"]}}, "households": {"household": {"members":
+        ["1", "2"], "state_code": {"2026": "MO"}, "county_str": {"2026": "ST_LOUIS_CITY_MO"},
+        "zip_code": {"2026": "63101"}}}, "spm_units": {"spm_unit": {"members": ["1",
+        "2"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+        {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+        {"2026": false}}}, "marital_units": {"1-2": {"members": ["1", "2"]}}}, "policyengine_bundle":
+        {"model_version": "2.18.0", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '1769'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Thu, 08 Oct 2026 18:36:36 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-25e1df6a4cc8b651ce78319a55d1a70b-f7c954e505174c94-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 25e1df6a4cc8b651ce78319a55d1a70b
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 87894cb9-19c2-4c81-ade0-6f0707c9c206
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1
