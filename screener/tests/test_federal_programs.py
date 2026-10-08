@@ -35,9 +35,10 @@ from programs.federal import FEDERAL_WHITE_LABEL
 from programs.framework.base import Eligibility
 from programs.admin import ProgramAdmin, ReferrerAdmin, WarningMessageAdmin
 from programs.models import FederalPoveryLimit, Program, ProgramCategory, Referrer, WarningMessage
+from programs.programs.testing_fixtures.households import add_income, add_member
 from programs.serializers import ProgramCategorySerializer
 from screener.models import CurrentBenefit, EligibilitySnapshot, Screen, WhiteLabel
-from screener.serializers import ScreenSerializer, _write_current_benefits
+from screener.serializers import ScreenSerializer, _derived_current_benefit_names, _write_current_benefits
 from screener.views import eligibility_results
 
 
@@ -276,6 +277,24 @@ class TestCurrentBenefits(FederalProgramsTestCase):
 
         self.assertEqual(sorted(self.benefits(screen)), sorted([federal.id, state.id]))
         self.assertTrue(screen.has_benefit("shared_name"))
+
+    def ssi_screen(self, white_label: WhiteLabel) -> Screen:
+        screen = self.screen(white_label)
+        add_income(add_member(screen), 900, income_type="sSI")
+        return screen
+
+    def test_ssi_income_derives_a_live_federal_ssi_program(self) -> None:
+        self.program(self.federal, "ssi", base_program="ssi")
+
+        self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.wa)), {"ssi"})
+
+    def test_ssi_income_ignores_a_federal_ssi_program_not_launched_yet(self) -> None:
+        self.program(self.federal, "ssi", active=False, base_program="ssi")
+        self.program(self.co, "co_ssi", active=False, base_program="ssi")
+
+        # The inactive state row is still derived, as before federal programs existed.
+        self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.co)), {"co_ssi"})
+        self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.wa)), set())
 
 
 class TestScreenerOptions(FederalProgramsTestCase):
@@ -553,7 +572,7 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
         form = self.bound_form(federal, active=False)
 
         self.assertFalse(form.is_valid())
-        self.assertIn("all 2 white labels", form.errors["confirm_federal_deactivation"][0])
+        self.assertIn("every white label", form.errors["confirm_federal_deactivation"][0])
 
     def test_a_confirmed_switch_off_saves_with_a_warning(self) -> None:
         federal = self.program(self.federal, "fed_account")
@@ -567,7 +586,7 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
         federal.refresh_from_db()
         self.assertFalse(federal.active)
         message = warning.call_args.args[1]
-        self.assertIn("hidden from all 2 white labels", message)
+        self.assertIn("hidden from every white label", message)
         self.assertIn("No state version replaces it", message)
 
     def test_the_warning_names_state_versions_that_are_still_active(self) -> None:
@@ -589,7 +608,7 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
         with patch("programs.admin.messages.warning") as warning:
             self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
 
-        self.assertIn("hidden from all 2 white labels", warning.call_args.args[1])
+        self.assertIn("hidden from every white label", warning.call_args.args[1])
 
     def test_moving_a_state_program_to_federal_while_switching_it_off_does_not_warn(self) -> None:
         state = self.program(self.co, "co_only")
@@ -632,6 +651,23 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
 
 class TestFederalActivationInAdmin(ProgramAdminTestCase):
     """A name can't be switched on under both federal and a state, and the admin shows what's in the way."""
+
+    def test_moving_an_active_program_onto_federal_doesnt_conflict_with_itself(self) -> None:
+        moving = self.program(self.co, "fed_account")
+
+        form = self.bound_form(moving, white_label=self.federal.pk)
+
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_moving_one_state_version_onto_federal_still_conflicts_with_the_others(self) -> None:
+        moving = self.program(self.co, "fed_account")
+        self.program(self.wa, "fed_account")
+
+        form = self.bound_form(moving, white_label=self.federal.pk)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('">wa</a>', form.errors["active"][0])
+        self.assertNotIn('">co</a>', form.errors["active"][0])
 
     def test_a_federal_program_cant_go_on_while_a_state_version_is_active(self) -> None:
         federal = self.program(self.federal, "fed_account", active=False)

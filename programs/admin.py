@@ -13,7 +13,6 @@ from django.utils.html import format_html, format_html_join
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
-from screener.models import WhiteLabel
 from .federal import FEDERAL_WHITE_LABEL, conflicting_active_programs, is_federal
 from .models import (
     LegalStatus,
@@ -121,10 +120,6 @@ def deactivates_federal_program(form: forms.ModelForm) -> bool:
     )
 
 
-def screener_white_label_count() -> int:
-    return WhiteLabel.objects.exclude(code=FEDERAL_WHITE_LABEL).count()
-
-
 def program_links(programs: list[Program], label: Callable[[Program], str]) -> SafeString:
     """Comma-separated links to each program's admin page."""
     return format_html_join(
@@ -148,7 +143,9 @@ def refuse_duplicate_activation(form: forms.ModelForm) -> None:
 
     white_label = form.cleaned_data.get("white_label") or instance.white_label
     name = form.cleaned_data.get("name_abbreviated") or instance.name_abbreviated
-    conflicts = conflicting_active_programs(white_label.code, name)
+    # The saved row is excluded: a program moved between a state and `federal` would
+    # otherwise conflict with itself.
+    conflicts = [p for p in conflicting_active_programs(white_label.code, name) if p.pk != instance.pk]
     if not conflicts:
         return
 
@@ -188,8 +185,7 @@ class ProgramAdminForm(forms.ModelForm):
         if deactivates_federal_program(self) and not cleaned_data.get("confirm_federal_deactivation"):
             self.add_error(
                 "confirm_federal_deactivation",
-                f"Deactivating a federal program hides it from all {screener_white_label_count()} white labels. "
-                "Tick this box to confirm.",
+                "Deactivating a federal program hides it from every white label. Tick this box to confirm.",
             )
         return cleaned_data
 
@@ -306,8 +302,8 @@ class ProgramAdmin(SecureAdmin):
         )
         messages.warning(
             request,
-            f"Federal program '{obj.name_abbreviated}' is now inactive and hidden from all "
-            f"{screener_white_label_count()} white labels. {still_shown}",
+            f"Federal program '{obj.name_abbreviated}' is now inactive and hidden from every white label. "
+            f"{still_shown}",
         )
 
     @admin.display(ordering="name", description="Program")
