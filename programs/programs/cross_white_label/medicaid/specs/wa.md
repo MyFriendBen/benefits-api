@@ -198,9 +198,9 @@ The following changes to the MFB screener would close data gaps identified in th
 
 ## Test Scenarios
 
-*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios 1, 3, and 7 below are reflected in the validation JSON (`wa_apple_health.json`) as the validation suite's core 3 (golden path, primary exclusion, edge case). All other scenarios are documented here for broader QA coverage and traceability.*
+*All scenarios use 2026 FPL values (matching the config's `year` field).*
 
-### Scenario 1: Low-Income Single Adult Eligible (Golden Path) ✓ in validation JSON
+### Scenario 1: Low-Income Single Adult Eligible (Golden Path)
 
 **What we're checking**: A single adult aged 30 with very low income qualifies under ACA Adult Expansion (criterion 2: 19–64 at ≤138% FPL).
 **Expected**: Eligible, value $5,652 annual (1 EXPANSION_ADULT × $5,652/yr; displays as $471/month with `value_format: null`).
@@ -224,7 +224,7 @@ The following changes to the MFB screener would close data gaps identified in th
 
 ---
 
-### Scenario 3: Single Adult Above 138% FPL Ineligible ✓ in validation JSON
+### Scenario 3: Single Adult Above 138% FPL Ineligible
 
 **What we're checking**: Adult with income above the 138% FPL threshold ($1,835 for HH1) is correctly determined ineligible (criterion 2 upper bound).
 **Expected**: Not eligible (no value).
@@ -274,7 +274,7 @@ The following changes to the MFB screener would close data gaps identified in th
 
 ---
 
-### Scenario 7: Mixed Household — Eligible Child, Ineligible Parents ✓ in validation JSON
+### Scenario 7: Mixed Household — Eligible Child, Ineligible Parents
 
 **What we're checking**: In a multi-member household, eligibility is independent per member. Parents over 138% FPL ($3,142 HH3) but child under 215% effective free tier ($4,896 HH3) for kids (criterion 4 free tier).
 **Expected**: Eligible (child only); value $2,796 annual (1 CHILD × $2,796/yr; displays as $233/month with `value_format: null`); parents ineligible and contribute $0.

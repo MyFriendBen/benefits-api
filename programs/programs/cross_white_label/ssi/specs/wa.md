@@ -478,7 +478,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 ### Out-of-band: Non-citizen without qualified status
 
-The SSI alien restriction (8 U.S.C. § 1612(a)(2)) is enforced through the program's `legal_status_required` configuration (`["citizen", "gc_5plus", "refugee"]`) and the post-results citizenship filter chip on the Results UI, not via a household-member field on the screen. As a result, this case is not represented in the JSON validation suite — it is verified manually by toggling the citizenship filter and confirming that `wa_ssi` disappears for users who do not select an SSI-qualifying status.
+The SSI alien restriction (8 U.S.C. § 1612(a)(2)) is enforced through the program's `legal_status_required` configuration (`["citizen", "gc_5plus", "refugee"]`) and the post-results citizenship filter chip on the Results UI, not via a household-member field on the screen. As a result, this case is verified manually by toggling the citizenship filter and confirming that `wa_ssi` disappears for users who do not select an SSI-qualifying status.
 
 ## Research Sources
 

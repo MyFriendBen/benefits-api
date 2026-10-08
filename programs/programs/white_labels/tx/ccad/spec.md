@@ -60,11 +60,11 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ## Test Scenarios
 
-Scenarios marked `[validation]` are included in `tx_ccad.json` as automated validations run in CI. All scenarios are covered by unit tests in `programs/programs/white_labels/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
+All scenarios are covered by unit tests in `programs/programs/white_labels/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
 
 ---
 
-### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL `[validation]`
+### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL
 
 **Checks**: Core age-based eligibility (65+) with income clearly below threshold
 **Expected**: Eligible
@@ -106,7 +106,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 4: 72-Year-Old with Income Just Above 300% FPL `[validation]`
+### Scenario 4: 72-Year-Old with Income Just Above 300% FPL
 
 **Checks**: Income exceeding threshold is correctly rejected
 **Expected**: Not eligible
@@ -192,7 +192,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 10: Categorically Eligible — SNAP Recipient Above 300% FPL `[validation]`
+### Scenario 10: Categorically Eligible — SNAP Recipient Above 300% FPL
 
 **Checks**: Categorical eligibility path — SNAP recipient qualifies regardless of income
 **Expected**: Eligible

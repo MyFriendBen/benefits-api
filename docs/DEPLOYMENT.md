@@ -739,7 +739,6 @@ These secrets are configured in the repository settings and used by the deployme
 
 #### Notifications & Monitoring
 - `SLACK_WEBHOOK_URL` - Webhook for deployment notifications
-- `VALIDATION_SHEET_ID` - Google Sheets ID for validation results (e.g., `1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY`)
 
 #### External API Integrations (for production pre-deployment tests)
 - `HUD_API_TOKEN` - HUD API authentication token (required for real API integration tests)
