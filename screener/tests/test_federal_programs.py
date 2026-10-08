@@ -160,6 +160,17 @@ class TestResults(FederalProgramsTestCase):
 
         self.assertEqual(data, [])
 
+    def test_removing_a_state_program_also_removes_its_federal_replacement(self) -> None:
+        self.program(self.federal, "shared_name")
+        state = self.program(self.co, "shared_name", active=False)
+        kept = self.program(self.co, "co_only")
+        referrer = Referrer.objects.create(white_label=self.co, referrer_code="partner", name="Partner")
+        referrer.remove_programs.add(state)
+
+        data, _ = self.results(self.screen(self.co, referrer_code="partner"))
+
+        self.assertEqual([p["program_id"] for p in data], [kept.id])
+
 
 class TestCurrentBenefits(FederalProgramsTestCase):
     def setUp(self) -> None:
@@ -594,6 +605,26 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
             self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
 
         self.assertIn("state versions under wa", warning.call_args.args[1])
+
+    def test_moving_a_federal_program_to_a_state_while_switching_it_off_still_warns(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+        form = self.bound_form(federal, white_label=self.co.pk, active=False, confirm_federal_deactivation=True)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch("programs.admin.messages.warning") as warning:
+            self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
+
+        self.assertIn("hidden from all 2 white labels", warning.call_args.args[1])
+
+    def test_moving_a_state_program_to_federal_while_switching_it_off_does_not_warn(self) -> None:
+        state = self.program(self.co, "co_only")
+        form = self.bound_form(state, white_label=self.federal.pk, active=False)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch("programs.admin.messages.warning") as warning:
+            self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
+
+        warning.assert_not_called()
 
     def test_other_edits_to_a_federal_program_need_no_confirmation(self) -> None:
         federal = self.program(self.federal, "fed_account")

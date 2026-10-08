@@ -433,9 +433,11 @@ def eligibility_results(
     except ObjectDoesNotExist:
         referrer = None
 
-    excluded_programs = []
+    # By name, not id: a program moved to federal gets a new row under the same name, and a
+    # referrer that removed the old state row means to remove its replacement too.
+    excluded_names = []
     if referrer is not None:
-        excluded_programs = [p.id for p in referrer.remove_programs.all()]
+        excluded_names = [p.name_abbreviated for p in referrer.remove_programs.all()]
 
     all_programs = (
         Program.objects.filter(visible_to(screen.white_label), active=True, category__isnull=False)
@@ -469,7 +471,7 @@ def eligibility_results(
             "category",
             *translations_prefetch_name("category__", ProgramCategory.objects.translated_fields),
         )
-        .exclude(id__in=excluded_programs)
+        .exclude(name_abbreviated__in=excluded_names)
         # Explicit so the response order is stable: CALC_ORDER only reorders its own programs and
         # keeps the rest in query order, which without this is whatever Postgres returns and
         # shifts with the query plan or an edited row.
