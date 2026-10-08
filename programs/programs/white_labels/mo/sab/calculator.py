@@ -7,31 +7,9 @@ class MoSab(PolicyEngineMembersCalculator):
     """
     Missouri Supplemental Aid to the Blind (SAB), via PolicyEngine's ``mo_ssp``.
 
-    Eligibility and value are PolicyEngine's; see spec.md. Nothing here re-derives Missouri's
-    $1,073 Consolidated Standard, its earned-income exemptions, the resource limits or the
-    $949 grant less reported SSI. The notes below cover only the wiring.
-
-    ``mo_ssp`` is a monthly variable and Missouri's figures turn over on July 1, so it is read
-    at one pinned month and annualized here. Reading it at the program year returns the twelve
-    months summed, which comes to $192/year low for a claimant with no SSI. See
-    ``PolicyEngineCalulator.period_for``.
-
-    Inputs that are load-bearing rather than boilerplate (each one fails silently if omitted):
-
-    - ``MoSspLivingArrangementSabDependency`` — the arrangement defaults to ``NONE``, which pays
-      $0 to everyone.
-    - ``IsBlindDependency`` — ``is_blind`` defaults to False, so unsent it pays $0 to everyone.
-    - ``AgeDependency`` — ``age`` defaults to 40, which clears the age-18 floor, so unsent a
-      17-year-old is returned eligible.
-    - ``SsiCountableResourcesDependency`` — unsent, the resource test never bites.
-    - ``MoSabEarnedIncomeDependency`` — Missouri counts boarder income as earned; unsent, it
-      never reaches the formula.
-    - ``receipt_contract`` — the grant is $949 less the SSI the claimant *receives*, not an SSI
-      entitlement computed for them. The contract makes PolicyEngine's ``ssi`` read 0 for a
-      member who reports none, so they are paid the full $949.
-
-    Reported Temporary Assistance deliberately does not gate: it is an election between two
-    programs, not a bar (spec.md criterion 11).
+    Eligibility and value are PolicyEngine's. ``mo_ssp`` is monthly and Missouri's figures turn
+    over on July 1, so it is read at one pinned month and annualized here rather than read at
+    the program year, which would sum twelve months across the change.
     """
 
     program_code = "mo_sab"
@@ -45,8 +23,7 @@ class MoSab(PolicyEngineMembersCalculator):
         # Earned income: Missouri's boarder rule replaces the shared wages-only mapping.
         dependency.member.MoSabEarnedIncomeDependency,
         dependency.member.SelfEmploymentIncomeDependency,
-        # Unearned income. SSI is absent from PolicyEngine's SAB source list, so reported SSI
-        # is not counted against the $1,073 standard (criterion 8).
+        # Unearned income. SSI is not one of PolicyEngine's SAB income sources.
         dependency.member.RentalIncomeDependency,
         dependency.member.PensionIncomeDependency,
         dependency.member.SocialSecurityIncomeDependency,
@@ -59,9 +36,7 @@ class MoSab(PolicyEngineMembersCalculator):
     ]
     pe_outputs = [dependency.member.MoSsp]
     pe_monthly_outputs = [dependency.member.MoSsp]
-    # Missouri's SAB figures turn over on July 1 (the grant maximum and the resource limits),
-    # so any month from July on reads the schedule the 2026 expected values are stated against.
-    # January would read the prior one.
+    # Missouri's SAB figures turn over on July 1, so read a month from July on, not January.
     pe_period_month = "07"
 
     def member_value(self, member: HouseholdMember):
