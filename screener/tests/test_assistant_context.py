@@ -527,6 +527,31 @@ class BuildContextTests(TestCase):
 
         self.assertNotIn("warnings", context["eligible_programs"][0])
 
+    def test_prior_tax_year_warnings_cost_no_query_per_program(self):
+        """The warning gate reads each program's `year`; it's loaded with the program
+        query, so a second program carrying the warning costs no extra query."""
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
+        for name in ("snap", "tanf"):
+            self.programs[name].year = fpl
+            self.programs[name].save()
+            self.add_snapshot_row(name)
+
+        def query_count(expected_warned: int) -> int:
+            with mock.patch("django.utils.timezone.localdate", return_value=date(2026, 9, 23)):
+                with CaptureQueriesContext(connection) as captured:
+                    context = self.context()
+            self.assertEqual(sum("warnings" in p for p in context["eligible_programs"]), expected_warned)
+            return len(captured)
+
+        seed_warning(self.programs["snap"], "_prior_tax_year", "For the {priorYear} tax year.")
+        one = query_count(1)
+        seed_warning(
+            self.programs["tanf"], "_prior_tax_year", "For the {priorYear} tax year.", external_name="tanf_prior"
+        )
+        two = query_count(2)
+
+        self.assertEqual(two, one, f"{one} -> {two} queries for 1 -> 2 programs with the warning")
+
     def test_warnings_key_is_omitted_when_the_program_has_none(self):
         self.add_snapshot_row("snap")
 

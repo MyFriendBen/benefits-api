@@ -401,12 +401,13 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
     if not name_abbreviations:
         return {}
 
+    # `year` is read by the `_prior_tax_year` warning gate on each program it's attached to.
     programs = (
         Program.objects.filter(
             white_label=screen.white_label,
             name_abbreviated__in=name_abbreviations,
         )
-        .select_related("apply_button_link", "estimated_value")
+        .select_related("apply_button_link", "estimated_value", "year")
         .prefetch_related(
             "apply_button_link__translations",
             "estimated_value__translations",
