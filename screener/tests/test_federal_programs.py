@@ -1,12 +1,12 @@
 """Programs under the `federal` white label are shown to every white label.
 
-A federal row reuses its calculator's `name_abbreviated`, the same name the state rows it
-replaces carry, and moving a program deactivates those state rows. These tests cover the
-read paths that union federal programs in (results, current benefits, the has-benefits step,
-the current-benefits page), the collision rule when a name is still active on both sides
-(log and prefer the federal row, never raise), and what keeps that from happening: the import
-and admin guards, and `audit_federal_programs` for a cutover. Switching a federal program off
-in the admin needs a confirmation, because it hides the program from every white label.
+A federal row is prefixed (`federal_trump_account`), so it does not share a name with the
+state rows it replaces, and moving a program deactivates those state rows. These tests cover
+the read paths that union federal programs in (results, current benefits, the has-benefits
+step, the current-benefits page) and the collision rule for the un-prefixed rows that predate
+the prefix, where a name still active on both sides is logged and resolved to the federal row
+rather than raised. Switching a federal program off in the admin needs a confirmation,
+because it hides the program from every white label.
 
 Calculators are stubbed through `Program.eligibility`: what is under test is which rows the
 results page fetches and publishes, not any program's rule.
@@ -14,15 +14,10 @@ results page fetches and publishes, not any program's rule.
 
 import json
 from typing import Any, Optional
-import tempfile
-from io import StringIO
-from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.admin import AdminSite, ModelAdmin
 from django.contrib.auth.models import Permission
-from django.core.management import call_command
-from django.core.management.base import CommandError
 from django.db.models import Model
 from django.forms import ModelForm
 from django.forms.models import model_to_dict
@@ -435,73 +430,6 @@ class TestResultsUnchangedWithoutActiveFederalPrograms(FederalProgramsTestCase):
                 self.assertEqual(self.snapshot(screen), before[code])
 
 
-class TestAudit(FederalProgramsTestCase):
-    def test_clean_when_no_name_is_active_on_both_sides(self) -> None:
-        self.program(self.federal, "shared_name")
-        self.program(self.co, "shared_name", active=False)
-        out = StringIO()
-
-        call_command("audit_federal_programs", stdout=out)
-
-        self.assertIn("No program is active", out.getvalue())
-
-    def test_fails_on_a_name_active_on_both_sides(self) -> None:
-        self.program(self.federal, "shared_name")
-        self.program(self.co, "shared_name")
-        self.program(self.wa, "shared_name")
-
-        with self.assertRaisesMessage(CommandError, "shared_name: federal and co, wa"):
-            call_command("audit_federal_programs", stdout=StringIO())
-
-
-class TestImportGuard(FederalProgramsTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-        translate = patch("programs.management.commands.import_program_config.Translate")
-        translate.start().return_value.bulk_translate.side_effect = lambda langs, texts: {
-            text: {lang: text for lang in langs} for text in texts
-        }
-        self.addCleanup(translate.stop)
-
-    def import_config(self, white_label_code: str, name: str, active: bool) -> None:
-        config = {
-            "white_label": {"code": white_label_code},
-            "program_category": {"external_name": "cash"},
-            "program": {"name_abbreviated": name, "name": "Test", "active": active},
-        }
-        path = Path(self.enterContext(tempfile.TemporaryDirectory())) / "config.json"
-        path.write_text(json.dumps(config))
-        call_command("import_program_config", str(path), stdout=StringIO())
-
-    def test_refuses_an_active_federal_import_over_an_active_state_row(self) -> None:
-        self.program(self.co, "shared_name")
-
-        with self.assertRaisesMessage(CommandError, "already active under co"):
-            self.import_config(FEDERAL_WHITE_LABEL, "shared_name", active=True)
-
-        self.assertFalse(Program.objects.filter(white_label=self.federal).exists())
-
-    def test_refuses_an_active_state_import_over_an_active_federal_row(self) -> None:
-        self.program(self.federal, "shared_name")
-
-        with self.assertRaisesMessage(CommandError, "already active under federal"):
-            self.import_config("wa", "shared_name", active=True)
-
-    def test_allows_it_once_the_state_row_is_inactive(self) -> None:
-        self.program(self.co, "shared_name", active=False)
-
-        self.import_config(FEDERAL_WHITE_LABEL, "shared_name", active=True)
-
-        self.assertTrue(Program.objects.filter(white_label=self.federal, name_abbreviated="shared_name").exists())
-
-    def test_allows_an_inactive_import(self) -> None:
-        self.program(self.co, "shared_name")
-
-        self.import_config(FEDERAL_WHITE_LABEL, "shared_name", active=False)
-
-        self.assertFalse(Program.objects.get(white_label=self.federal).active)
-
-
 class _Superuser:
     is_superuser = True
     is_active = True
@@ -649,63 +577,10 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
         self.assertFalse(locked(self.program(self.co, "co_only")))
 
 
-class TestFederalActivationInAdmin(ProgramAdminTestCase):
-    """A name can't be switched on under both federal and a state, and the admin shows what's in the way."""
+class TestFederalStateVersionsInAdmin(ProgramAdminTestCase):
+    """A federal program's edit form lists the state versions sharing its name."""
 
-    def test_moving_an_active_program_onto_federal_doesnt_conflict_with_itself(self) -> None:
-        moving = self.program(self.co, "fed_account")
-
-        form = self.bound_form(moving, white_label=self.federal.pk)
-
-        self.assertTrue(form.is_valid(), form.errors)
-
-    def test_moving_one_state_version_onto_federal_still_conflicts_with_the_others(self) -> None:
-        moving = self.program(self.co, "fed_account")
-        self.program(self.wa, "fed_account")
-
-        form = self.bound_form(moving, white_label=self.federal.pk)
-
-        self.assertFalse(form.is_valid())
-        self.assertIn('">wa</a>', form.errors["active"][0])
-        self.assertNotIn('">co</a>', form.errors["active"][0])
-
-    def test_a_federal_program_cant_go_on_while_a_state_version_is_active(self) -> None:
-        federal = self.program(self.federal, "fed_account", active=False)
-        co = self.program(self.co, "fed_account")
-
-        form = self.bound_form(federal, active=True)
-
-        self.assertFalse(form.is_valid())
-        error = form.errors["active"][0]
-        self.assertIn("still active under", error)
-        self.assertIn(f'/admin/programs/program/{co.pk}/change/">co</a>', error)
-
-    def test_it_can_go_on_once_the_state_versions_are_off(self) -> None:
-        federal = self.program(self.federal, "fed_account", active=False)
-        self.program(self.co, "fed_account", active=False)
-
-        self.assertTrue(self.bound_form(federal, active=True).is_valid())
-
-    def test_a_state_program_cant_go_on_while_the_federal_one_is_active(self) -> None:
-        federal = self.program(self.federal, "fed_account")
-        co = self.program(self.co, "fed_account", active=False)
-
-        form = self.bound_form(co, active=True)
-
-        self.assertFalse(form.is_valid())
-        self.assertIn(f'/admin/programs/program/{federal.pk}/change/">federal</a>', form.errors["active"][0])
-
-    def test_the_list_page_refuses_the_same_switch(self) -> None:
-        federal = self.program(self.federal, "fed_account", active=False)
-        self.program(self.wa, "fed_account")
-        form_class = self.model_admin.get_changelist_form(self.request)
-
-        form = form_class(data={"active": "on"}, instance=federal)
-
-        self.assertFalse(form.is_valid())
-        self.assertIn("still active under", form.errors["active"][0])
-
-    def test_programs_without_a_counterpart_switch_on_as_before(self) -> None:
+    def test_programs_switch_on_without_a_duplicate_check(self) -> None:
         self.assertTrue(self.bound_form(self.program(self.co, "co_only", active=False), active=True).is_valid())
         self.assertTrue(self.bound_form(self.program(self.federal, "fed_only", active=False), active=True).is_valid())
 

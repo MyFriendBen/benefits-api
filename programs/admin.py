@@ -13,7 +13,7 @@ from django.utils.html import format_html, format_html_join
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
-from .federal import FEDERAL_WHITE_LABEL, conflicting_active_programs, is_federal
+from .federal import FEDERAL_WHITE_LABEL, is_federal
 from .models import (
     LegalStatus,
     Program,
@@ -129,44 +129,6 @@ def program_links(programs: list[Program], label: Callable[[Program], str]) -> S
     )
 
 
-def refuse_duplicate_activation(form: forms.ModelForm) -> None:
-    """Add an error to Active if saving `form` would make its name active under both federal and a state.
-
-    The same rule as the import guard: a federal program is shown to every white label, so its
-    state versions must be switched off before it is switched on, and the reverse.
-    """
-    instance = form.instance
-    if instance.pk is None or not form.cleaned_data.get("active"):
-        return
-    if not {"active", "white_label", "name_abbreviated"} & set(form.changed_data):
-        return
-
-    white_label = form.cleaned_data.get("white_label") or instance.white_label
-    name = form.cleaned_data.get("name_abbreviated") or instance.name_abbreviated
-    # The saved row is excluded: a program moved between a state and `federal` would
-    # otherwise conflict with itself.
-    conflicts = [p for p in conflicting_active_programs(white_label.code, name) if p.pk != instance.pk]
-    if not conflicts:
-        return
-
-    links = program_links(conflicts, lambda p: p.white_label.code)
-    if white_label.code == FEDERAL_WHITE_LABEL:
-        message = format_html(
-            "'{}' is still active under {}. A federal program is shown to every white label, "
-            "so switch those state versions off first.",
-            name,
-            links,
-        )
-    else:
-        message = format_html(
-            "'{}' is already active as a {} program, which shows it to every white label. "
-            "Switch the federal version off first, or leave this one off.",
-            name,
-            links,
-        )
-    form.add_error("active", message)
-
-
 class ProgramAdminForm(forms.ModelForm):
     confirm_federal_deactivation = forms.BooleanField(
         required=False,
@@ -181,7 +143,6 @@ class ProgramAdminForm(forms.ModelForm):
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
-        refuse_duplicate_activation(self)
         if deactivates_federal_program(self) and not cleaned_data.get("confirm_federal_deactivation"):
             self.add_error(
                 "confirm_federal_deactivation",
@@ -194,18 +155,12 @@ class ProgramChangelistForm(forms.ModelForm):
     """The list page's Active checkbox, locked on active federal programs.
 
     Switching one off needs the confirmation on the edit form, which a list row can't show.
-    Switching a program on is refused here as on the edit form when it would duplicate a name.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         if self.instance.pk is not None and self.instance.active and is_federal(self.instance):
             self.fields["active"].disabled = True
-
-    def clean(self) -> dict[str, Any]:
-        cleaned_data = super().clean()
-        refuse_duplicate_activation(self)
-        return cleaned_data
 
 
 class ProgramAdmin(SecureAdmin):

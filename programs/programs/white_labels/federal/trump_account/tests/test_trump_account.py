@@ -1,213 +1,146 @@
+"""Trump Account scenarios, one per spec §8.
+
+The pilot window is a pair of absolute dates, so the household is built from
+`birth_year_month` rather than an age and the clock is pinned by `reference_date` — an age
+would walk out of the window as the suite ages.
+
+§4's `us_citizen` has no scenario here: it is `Enforced by: program-record`
+(`legal_status_required`), which the calculator never reads, so no calculator test can catch
+a change to it.
 """
-Unit tests for TrumpAccount calculator.
 
-Tests the 530A ("Trump") Account calculator logic:
-- Pilot window eligibility (Jan 2025 – Dec 2028) using birth_year_month
-- Age ceiling (under 18)
-- Pregnancy path: estimated due date (reference_date + 280 days) must fall in pilot window
-- Value: $1,000 per eligible member
-"""
+from datetime import date
 
-from datetime import date, timedelta
-from unittest.mock import Mock
-
-from django.test import TestCase
-
-from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import ProgramCalculator
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.federal.trump_account.calculator import TrumpAccount
-from programs.framework.pe_dependencies import member
 
 
-def make_calculator(reference_date=None):
-    """Create a TrumpAccount calculator with a mocked screen."""
-    mock_screen = Mock()
-    mock_screen.get_reference_date.return_value = reference_date or date(2026, 3, 11)
-    mock_program = Mock()
-    mock_missing_deps = Mock()
-    mock_missing_deps.has.return_value = False
-    return TrumpAccount(mock_screen, mock_program, {}, mock_missing_deps)
+class TrumpAccountTestCase(CustomCalculatorTestCase):
+    calculator_class = TrumpAccount
+    white_label_code = "federal"
+    state_code = ""
+    # Mid-window, so a child born in any month the scenarios name is already born and the
+    # 2028 upper bound is still ahead.
+    reference_date = date(2026, 6, 15)
+    # The calculator reads age only through `calc_age()`.
+    stores_age = False
 
 
-def make_member(age=1, birth_year_month=None, pregnant=False):
-    """Create a mock HouseholdMember."""
-    mock_member = Mock()
-    mock_member.calc_age = Mock(return_value=age)
-    mock_member.birth_year_month = birth_year_month
-    mock_member.pregnant = pregnant
-    return mock_member
-
-
-class TestTrumpAccountRegistration(TestCase):
+class TestTrumpAccountRegistration(TrumpAccountTestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TrumpAccount, ProgramCalculator))
 
-
-class TestTrumpAccountPilotWindow(TestCase):
-    """Tests for pilot window boundary conditions using birth_year_month."""
-
-    def _run_member_eligible(self, birth_year_month, age=1):
-        calculator = make_calculator()
-        member = make_member(age=age, birth_year_month=birth_year_month)
-        e = MemberEligibility(member)
-        calculator.member_eligible(e)
-        return e.eligible
-
-    def test_start_boundary_jan_2025_is_eligible(self):
-        self.assertTrue(self._run_member_eligible(date(2025, 1, 1)))
-
-    def test_end_boundary_dec_2028_is_eligible(self):
-        self.assertTrue(self._run_member_eligible(date(2028, 12, 1)))
-
-    def test_mid_window_2026_is_eligible(self):
-        self.assertTrue(self._run_member_eligible(date(2026, 6, 1)))
-
-    def test_one_month_before_window_dec_2024_is_ineligible(self):
-        self.assertFalse(self._run_member_eligible(date(2024, 12, 1)))
-
-    def test_one_month_after_window_jan_2029_is_ineligible(self):
-        self.assertFalse(self._run_member_eligible(date(2029, 1, 1)))
-
-    def test_birth_year_month_none_is_ineligible(self):
-        self.assertFalse(self._run_member_eligible(None))
+    def test_program_code_is_the_prefixed_federal_name(self):
+        """The registry resolves a calculator by matching `program_code` to
+        `Program.name_abbreviated`, so the federal row's prefixed name has to be here."""
+        self.assertEqual(TrumpAccount.program_code, "federal_trump_account")
 
 
-class TestTrumpAccountAgeCeiling(TestCase):
-    """Tests for the age <= 17 (under 18) requirement."""
+class TestScenario01NewbornInACitizenHousehold(TrumpAccountTestCase):
+    """Scenario 1: `birth_window` — golden path."""
 
-    def _run_member_eligible(self, age):
-        calculator = make_calculator()
-        member = make_member(age=age, birth_year_month=date(2025, 6, 1))
-        e = MemberEligibility(member)
-        calculator.member_eligible(e)
-        return e.eligible
+    def test_a_newborn_is_eligible_for_one_thousand(self):
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=30)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 3, 1))
 
-    def test_age_0_is_eligible(self):
-        self.assertTrue(self._run_member_eligible(0))
+        e = self.calculate(screen)
 
-    def test_age_17_is_eligible(self):
-        self.assertTrue(self._run_member_eligible(17))
-
-    def test_age_18_is_ineligible(self):
-        self.assertFalse(self._run_member_eligible(18))
-
-    def test_age_19_is_ineligible(self):
-        self.assertFalse(self._run_member_eligible(19))
-
-
-class TestTrumpAccountPregnancy(TestCase):
-    """Tests for the pregnancy path: due date = reference_date + 280 days."""
-
-    def _run_member_eligible(self, reference_date):
-        calculator = make_calculator(reference_date=reference_date)
-        member = make_member(pregnant=True)
-        e = MemberEligibility(member)
-        calculator.member_eligible(e)
-        return e.eligible
-
-    def test_due_date_inside_pilot_window_is_eligible(self):
-        # reference_date + 280 days lands in mid-2026 (well inside window)
-        reference_date = date(2025, 6, 1)
-        due_date = reference_date + timedelta(days=280)
-        self.assertGreaterEqual(due_date, date(2025, 1, 1))
-        self.assertLessEqual(due_date, date(2028, 12, 31))
-        self.assertTrue(self._run_member_eligible(reference_date))
-
-    def test_due_date_at_pilot_start_is_eligible(self):
-        # reference_date such that due_date == pilot_start exactly
-        reference_date = date(2025, 1, 1) - timedelta(days=280)
-        self.assertTrue(self._run_member_eligible(reference_date))
-
-    def test_due_date_at_pilot_end_is_eligible(self):
-        # reference_date such that due_date == pilot_end exactly
-        reference_date = date(2028, 12, 31) - timedelta(days=280)
-        self.assertTrue(self._run_member_eligible(reference_date))
-
-    def test_due_date_before_pilot_window_is_ineligible(self):
-        # reference_date such that due_date falls before Jan 2025
-        reference_date = date(2024, 1, 1) - timedelta(days=280)
-        self.assertFalse(self._run_member_eligible(reference_date))
-
-    def test_due_date_after_pilot_window_is_ineligible(self):
-        # reference_date such that due_date falls after Dec 2028
-        reference_date = date(2029, 1, 1)
-        self.assertFalse(self._run_member_eligible(reference_date))
-
-    def test_pregnant_member_skips_birth_year_month_check(self):
-        # birth_year_month=None would fail the non-pregnant path; pregnancy path ignores it
-        calculator = make_calculator(reference_date=date(2025, 6, 1))
-        member = make_member(pregnant=True, birth_year_month=None)
-        e = MemberEligibility(member)
-        calculator.member_eligible(e)
         self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 1_000)
 
 
-class TestTrumpAccountValue(TestCase):
-    """Tests for the $1,000 value assignment."""
+class TestScenario02FirstMonthOfTheWindow(TrumpAccountTestCase):
+    """Scenario 2: `birth_window` — at the lower limit."""
 
-    def _run_full_eligible(self, birth_year_month=date(2025, 6, 1), age=1):
-        calculator = make_calculator()
-        member = make_member(age=age, birth_year_month=birth_year_month)
-        member_e = MemberEligibility(member)
-        calculator.member_eligible(member_e)
+    def test_january_2025_is_eligible(self):
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=30)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2025, 1, 1))
 
-        household_e = Eligibility()
-        household_e.add_member_eligibility(member_e)
-        calculator.value(household_e)
-        return household_e, member_e
+        e = self.calculate(screen)
 
-    def test_eligible_member_receives_1000(self):
-        _, member_e = self._run_full_eligible()
-        self.assertTrue(member_e.eligible)
-        self.assertEqual(member_e.value, 1_000)
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 1_000)
 
-    def test_ineligible_member_receives_0(self):
-        calculator = make_calculator()
-        member = make_member(age=1, birth_year_month=date(2024, 1, 1))  # outside pilot window
-        member_e = MemberEligibility(member)
-        calculator.member_eligible(member_e)
 
-        household_e = Eligibility()
-        household_e.add_member_eligibility(member_e)
-        calculator.value(household_e)
+class TestScenario03MonthBeforeTheWindow(TrumpAccountTestCase):
+    """Scenario 3: `birth_window` — one step before the lower limit."""
 
-        self.assertFalse(member_e.eligible)
-        self.assertEqual(member_e.value, 0)
+    def test_december_2024_is_ineligible(self):
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=30)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2024, 12, 1))
 
-    def test_two_eligible_members_each_receive_1000(self):
-        calculator = make_calculator()
-        members = [
-            make_member(age=1, birth_year_month=date(2025, 3, 1)),
-            make_member(age=2, birth_year_month=date(2026, 7, 1)),
-        ]
-        member_eligibilities = []
-        for m in members:
-            e = MemberEligibility(m)
-            calculator.member_eligible(e)
-            member_eligibilities.append(e)
+        e = self.calculate(screen)
 
-        household_e = Eligibility()
-        for me in member_eligibilities:
-            household_e.add_member_eligibility(me)
-        calculator.value(household_e)
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.value, 0)
 
-        for me in member_eligibilities:
-            self.assertTrue(me.eligible)
-            self.assertEqual(me.value, 1_000)
 
-    def test_mixed_household_only_eligible_members_receive_value(self):
-        calculator = make_calculator()
-        eligible_member = make_member(age=1, birth_year_month=date(2025, 6, 1))
-        ineligible_member = make_member(age=1, birth_year_month=date(2024, 6, 1))
+class TestScenario04LastMonthOfTheWindow(TrumpAccountTestCase):
+    """Scenario 4: `birth_window` — at the upper limit."""
 
-        eligible_e = MemberEligibility(eligible_member)
-        ineligible_e = MemberEligibility(ineligible_member)
-        calculator.member_eligible(eligible_e)
-        calculator.member_eligible(ineligible_e)
+    # December 2028 is in the future from the window's midpoint, so the clock moves to a
+    # date by which that child is born; the window itself is unchanged.
+    reference_date = date(2029, 6, 15)
 
-        household_e = Eligibility()
-        household_e.add_member_eligibility(eligible_e)
-        household_e.add_member_eligibility(ineligible_e)
-        calculator.value(household_e)
+    def test_december_2028_is_eligible(self):
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=30)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2028, 12, 1))
 
-        self.assertEqual(eligible_e.value, 1_000)
-        self.assertEqual(ineligible_e.value, 0)
+        e = self.calculate(screen)
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 1_000)
+
+
+class TestScenario05MonthAfterTheWindow(TrumpAccountTestCase):
+    """Scenario 5: `birth_window` — one step past the upper limit."""
+
+    reference_date = date(2029, 6, 15)
+
+    def test_january_2029_is_ineligible(self):
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, "headOfHousehold", age=30)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2029, 1, 1))
+
+        e = self.calculate(screen)
+
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.value, 0)
+
+
+class TestScenario06PregnantNoChildBornYet(TrumpAccountTestCase):
+    """Scenario 6: `birth_window` — no member has a birth month in the window.
+
+    26 U.S.C. §6434(e) requires the child's Social Security number with the election, and an
+    unborn child has none.
+    """
+
+    def test_a_pregnancy_alone_is_ineligible(self):
+        screen = self.make_screen(household_size=1)
+        self.add_member(screen, "headOfHousehold", age=28, pregnant=True)
+
+        e = self.calculate(screen)
+
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.value, 0)
+
+
+class TestScenario07TwinsAndAnOlderSibling(TrumpAccountTestCase):
+    """Scenario 7: `birth_window` — tested per member, and the value counts only those in it."""
+
+    def test_only_the_two_children_in_the_window_are_paid(self):
+        screen = self.make_screen(household_size=4)
+        self.add_member(screen, "headOfHousehold", age=32)
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 6, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 6, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(2022, 5, 1))
+
+        e = self.calculate(screen)
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 2_000)
