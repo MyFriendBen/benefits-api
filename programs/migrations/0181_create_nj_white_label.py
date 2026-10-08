@@ -20,25 +20,28 @@ STATE_CODE = "NJ"
 def create_nj_white_label(apps, schema_editor):
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
     db = schema_editor.connection
+    # Keep every ORM call on the database this migration is running against
+    # (matters for `migrate --database=<alias>`).
+    manager = WhiteLabel.objects.using(db.alias)
 
     # code has no unique constraint at the DB level (screener/models.py), and
     # bulk_import creates WhiteLabel rows via bare .objects.create() in several
     # places, so a drifted database could have duplicates — get_or_create's
     # .get() would raise MultipleObjectsReturned and fail the deploy. Match the
     # same defensive read configuration/views.py:46 and 0176 already use.
-    white_label = WhiteLabel.objects.filter(code=CODE).order_by("id").first()
+    white_label = manager.filter(code=CODE).order_by("id").first()
     if white_label is None:
-        white_label = WhiteLabel.objects.create(
+        white_label = manager.create(
             name=NAME, code=CODE, state_code=STATE_CODE, feature_flags={}, cms_method="nj_hubspot"
         )
 
     if not white_label.state_code:
         white_label.state_code = STATE_CODE
-        white_label.save()
+        white_label.save(using=db.alias)
 
     if not white_label.cms_method:
         white_label.cms_method = "nj_hubspot"
-        white_label.save()
+        white_label.save(using=db.alias)
 
     # Seed generic referrer codes. Raw SQL, not the ORM: apps.get_model()
     # returns a frozen historical model that parler never registers
