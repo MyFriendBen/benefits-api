@@ -5,14 +5,14 @@ These tests verify the pe_input() function correctly generates the PolicyEngine 
 request payload structure (household, people, tax_units, marital_units, etc.)
 independent of any specific calculator's dependencies.
 
-Calculator-specific dependency tests belong in the state's pe/tests/ directory.
+Calculator-specific dependency tests belong beside the calculator.
 """
 
 from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
 from benefits.tests.cache_override import LOCAL_CACHE
-from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
+from screener.models import Screen, HouseholdMember
 from integrations.clients.policyengine.policy_engine import _drop_unreadable_programs
 from programs.framework.pe_dependencies.payload import PayloadPlan, pe_input
 from programs.framework.pe_dependencies.constants import (
@@ -21,10 +21,8 @@ from programs.framework.pe_dependencies.constants import (
 )
 from programs.programs.cross_white_label.nslp.base import SchoolLunch
 from programs.programs.cross_white_label.snap.base import Snap
-from programs.programs.cross_white_label.snap.tx import TxSnap
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.cross_white_label.wic.base import Wic
-from programs.programs.cross_white_label.wic.tx import TxWic
 from programs.programs.cross_white_label.ssi.base import Ssi
 from programs.programs.white_labels.federal.acp.calculator import Acp
 from programs.framework.pe_dependencies import household
@@ -32,55 +30,44 @@ from programs.programs.cross_white_label.medicaid.chip.mo import MoChip
 from programs.models import FederalPoveryLimit, Program
 from programs.util import Dependencies
 import programs.framework.pe_dependencies as dependency
+from programs.programs.testing_fixtures.households import make_program
+from programs.programs.testing_fixtures.pe_input_test_base import PeInputTestCase
+from programs.programs.cross_white_label.aca.base import Aca
+from programs.programs.cross_white_label.eitc.base import Eitc
 
 
 @override_settings(CACHES=LOCAL_CACHE)
-class PeInputTestBase(TestCase):
-    """Base class with shared test fixtures for pe_input tests."""
+class PeInputTestBase(PeInputTestCase):
+    """The shared payload household, without income, run through federal SNAP."""
 
-    @classmethod
-    def setUpTestData(cls):
-        """Set up test data that doesn't change between tests."""
-        cls.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+    with_income = False
+    calculator_class = Snap
 
-    def setUp(self):
-        """Set up test screen with household members."""
-        self.calculator_class = TxSnap
 
-        self.screen = Screen.objects.create(
-            white_label=self.white_label,
-            zipcode="78701",
-            county="Travis County",
-            household_size=3,
-            household_assets=5000.00,
-            completed=False,
-        )
+@override_settings(CACHES=LOCAL_CACHE)
+class TestPeInputCarriesHouseholdValues(PeInputTestCase):
+    """What the screen says reaches the slot each variable is read from.
 
-        # Head of household - 35 year old, disabled
-        self.head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=35,
-            disabled=True,
-            student=False,
-        )
+    Each dependency's value is tested on its own in test_member/test_spm/test_household;
+    this is the one place that asserts where the payload puts them, across entity levels.
+    """
 
-        # Spouse - 32 year old
-        self.spouse = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="spouse",
-            age=32,
-            disabled=False,
-            student=False,
-        )
+    def test_values_land_in_their_slots(self):
+        program = make_program(self.white_label.code, "test_program", "2025")
+        calculators = [cls(self.screen, program, Dependencies()) for cls in (Snap, Eitc, Aca)]
 
-        # Child - 8 year old
-        self.child = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="child",
-            age=8,
-            disabled=False,
-            student=True,
+        household = pe_input(self.screen, calculators)["household"]
+        people = household["people"]
+        head = people[str(self.head.id)]
+
+        self.assertEqual(household["households"]["household"]["zip_code"]["2025"], "78701")
+        self.assertEqual(household["spm_units"]["spm_unit"]["snap_assets"]["2025"], 5000)
+        self.assertEqual(head["employment_income"]["2025"], 30000)
+        self.assertEqual(head["self_employment_income"]["2025"], 5000)
+        self.assertEqual(head["rental_income"]["2025"], 12000)
+        self.assertEqual(
+            [people[str(m.id)]["age"]["2025"] for m in (self.head, self.spouse, self.child)],
+            [35, 32, 8],
         )
 
 
@@ -294,7 +281,7 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
     def test_calculator_dependencies_are_merged(self):
         """Test that dependencies from multiple calculators are merged."""
 
-        result = pe_input(self.screen, [self.calculator_class, TxWic])
+        result = pe_input(self.screen, [self.calculator_class, Wic])
 
         # Both SNAP and WIC dependencies should be present
         spm_unit = result["household"]["spm_units"]["spm_unit"]
@@ -609,7 +596,7 @@ class TestPerVariableOutputPeriod(PeInputTestBase):
     def setUp(self):
         super().setUp()
 
-        self.program = Program.objects.new_program(white_label="tx", name_abbreviated="mo_chip")
+        self.program = Program.objects.new_program(white_label=self.white_label.code, name_abbreviated="mo_chip")
         fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2026", defaults={"period": "2026"})
         self.program.year = fpl
         self.program.save()

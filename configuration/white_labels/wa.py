@@ -1307,6 +1307,8 @@ class WaConfigurationData(ConfigurationData):
     referrer_data = {
         **ConfigurationData.referrer_data,
         "theme": {"default": "default"},
+        # Overrides the base's empty list so the results page omits the Immediate Help tab.
+        "uiOptions": {"default": ["no_results_more_help"]},
         "logoSource": {"default": "MFB_Logo"},
         "logoAlt": {
             "default": {

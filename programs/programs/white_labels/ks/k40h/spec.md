@@ -217,7 +217,7 @@ Estimated refund = allowed property tax × refund percentage from household inco
 
 ## Test Scenarios
 
-*All scenarios use 2025 claim-year rules (income limit $43,389; refund table from the 2025 booklet). Expense-object key names mirror `income_streams` and need dev confirmation at import. County naming: the KS white label (`configuration/white_labels/ks.py`) stores counties **with** the "County" suffix (e.g., `Sedgwick County`). The k40h calculator does not use county at all, so the county value in these scenarios is location metadata only and does not affect the computed refund — the bare names below are harmless. (For reference, county matching in PE-based KS programs is suffix-insensitive: `CountyDependency` normalizes `Sedgwick` and `Sedgwick County` to the same token.)*
+*All scenarios use 2025 claim-year rules (income limit $43,389; refund table from the 2025 booklet). Expense-object key names mirror `income_streams` and need dev confirmation at import. County naming: the KS white label (`configuration/white_labels/ks.py`) stores counties **with** the "County" suffix (e.g., `Sedgwick County`). The k40h calculator does not use county, so the county value does not affect the computed refund — but screen creation validates it, and a bare name (`Sedgwick`) is rejected with a 400 on `county`. Use the suffixed names below.*
 
 Benefit assumptions: allowed property tax = min(annualized Property Taxes expense, $700), defaulting to $700 when no expense is entered. Household income per the K-40H definition: 50% of SS/SSI retirement-survivor benefits; SS/SSI/VA/Railroad disability payments fully excluded; child support and gifts fully excluded; all other member income counted. Refund = allowed tax × table percentage; refunds under $5 are not paid. Values are annual refunds (`estimated_annual`).
 
@@ -229,7 +229,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $616 (income = 50% × $16,800 = $8,400 → 88% bracket; $700 × 0.88 = $616).
 **Steps**:
 
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `March 1958` (age 68), `headOfHousehold`, Social Security retirement: $1,400/month, insurance: none
 * Expenses: none
@@ -244,7 +244,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Not eligible (no value). (Would be $644 if a homeowner.)
 **Steps**:
 
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `May 1956` (age 70), `headOfHousehold`, Social Security retirement: $1,200/month, insurance: none
 * Expenses: rent $800/month
@@ -259,7 +259,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $35 (income = $42,000 → 5% bracket; $700 × 0.05 = $35; ≥ $5 floor so payable).
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `3`, assets: $0
 * Person 1: Birth month/year `September 1983` (age 42), `headOfHousehold`, wages: $2,300/month, insurance: none
 * Person 2: Birth month/year `February 1986` (age 40), `spouse`, wages: $1,200/month, insurance: none
@@ -276,7 +276,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $35 (income = $43,200 → 5% bracket; $700 × 0.05 = $35).
 **Steps**:
 
-* Location: ZIP `66044`, county `Douglas`
+* Location: ZIP `66044`, county `Douglas County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `January 1957` (age 69), `headOfHousehold`, pension: $3,600/month, insurance: none
 * Expenses: none
@@ -291,7 +291,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $35 (top of the 5% bracket).
 **Steps**:
 
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `July 1955` (age 70), `headOfHousehold`, pension: $43,389/year (annual frequency), insurance: none
 * Expenses: none
@@ -306,7 +306,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Not eligible (no value).
 **Steps**:
 
-* Location: ZIP `66044`, county `Douglas`
+* Location: ZIP `66044`, county `Douglas County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `January 1957` (age 69), `headOfHousehold`, pension: $43,500/year (annual frequency), insurance: none
 * Expenses: none
@@ -321,7 +321,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $644 (income = 50% × $14,400 = $7,200 → 92% bracket; $700 × 0.92 = $644).
 **Steps**:
 
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `December 1969` (age 56), `headOfHousehold`, Social Security retirement: $1,200/month, insurance: none
 * Expenses: none
@@ -336,7 +336,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Not eligible (no value).
 **Steps**:
 
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `March 1970` (age 56), `headOfHousehold`, wages: $1,500/month, not disabled, insurance: none
 * Expenses: mortgage $750/month
@@ -351,7 +351,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $700 (SSDI excluded → income $0 → 100% bracket; $700 × 1.00 = $700).
 **Steps**:
 
-* Location: ZIP `66044`, county `Douglas`
+* Location: ZIP `66044`, county `Douglas County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `September 1986` (age 39), `headOfHousehold`, disabled: yes, Social Security Disability: $1,400/month, insurance: none
 * Expenses: none
@@ -366,7 +366,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $385 (income = 50% × $33,600 = $16,800 → 55% bracket; $700 × 0.55 = $385).
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `2`, assets: $0
 * Person 1: Birth month/year `March 1955` (age 71), `headOfHousehold`, Social Security retirement: $1,500/month, insurance: none
 * Person 2: Birth month/year `June 1958` (age 68), `spouse`, Social Security retirement: $1,300/month, insurance: none
@@ -382,7 +382,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $528 (income $8,400 → 88%; allowed tax = min($600, $700) = $600; $600 × 0.88 = $528).
 **Steps**:
 
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `March 1958` (age 68), `headOfHousehold`, Social Security retirement: $1,400/month, insurance: none
 * Expenses: property taxes $50/month
@@ -397,7 +397,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $532 (income = $12,000 → 76% bracket; $700 × 0.76 = $532).
 **Steps**:
 
-* Location: ZIP `66044`, county `Douglas`
+* Location: ZIP `66044`, county `Douglas County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `May 1981` (age 45), `headOfHousehold`, Veteran's Pension or Benefits: $1,000/month, insurance: none
 * Expenses: none
@@ -412,7 +412,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Not eligible (no value).
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `2`, assets: $0
 * Person 1: Birth month/year `August 1981` (age 44), `headOfHousehold`, wages: $2,000/month, insurance: none
 * Person 2: Birth month/year `June 2007` (age 19), `child`, no income, insurance: none
@@ -428,7 +428,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Not eligible (no value).
 **Steps**:
 
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `April 1976` (age 50), `headOfHousehold`, wages: $1,800/month, not disabled, insurance: none
 * Expenses: mortgage $800/month
@@ -443,7 +443,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Not eligible — no value (refund = $96 × 5% = $4.80 → below $5 floor → not issued; ineligible scenarios carry no `value` key).
 **Steps**:
 
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `February 1957` (age 69), `headOfHousehold`, pension: $43,200/year (annual frequency), insurance: none
 * Expenses: property taxes $8/month
@@ -458,7 +458,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $476 (K-40H income: $6,000 veteran [100%] + $4,800 [50% × $9,600 sSSurvivor] + $2,400 [50% × $4,800 sSI] = $13,200 → 68% bracket; $700 × 0.68 = $476).
 **Steps**:
 
-* Location: ZIP `66210`, county `Johnson`
+* Location: ZIP `66210`, county `Johnson County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `March 1975` (age 51), `headOfHousehold`, income streams:
   - Veteran's Pension or Benefits: $500/month
@@ -477,7 +477,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $700 (K-40H income: $4,800 wages only [child support and gifts excluded] → $0–$6,000 bracket, 100%; $700 × 1.00 = $700). A calculator that wrongly includes the excluded streams would compute income = $4,800 + $21,600 + $3,600 = $30,000 → 5% bracket → $700 × 0.05 = $35 — a $665 error.
 **Steps**:
 
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `June 1960` (age 65), `headOfHousehold`, income streams:
   - Wages: $400/month
@@ -496,7 +496,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $504 (income = $12,600 → 72% bracket; $700 × 0.72 = $504).
 **Steps**:
 
-* Location: ZIP `66044`, county `Douglas`
+* Location: ZIP `66044`, county `Douglas County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `March 1986` (age 40), `headOfHousehold`, `visually_impaired`: yes, `disabled`: no, `long_term_disability`: no, wages: $1,050/month, insurance: none
 * Expenses: none
@@ -511,7 +511,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $700 (K-40H income: $6,000 head-of-household wages only [child's wages excluded] → $0–$6,000 bracket, 100%; $700 × 1.00 = $700). A calculator that wrongly includes the child's income would compute $6,000 + $3,600 = $9,600 → 84% bracket → $700 × 0.84 = $588 — a $112 error.
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `2`, assets: $0
 * Person 1: Birth month/year `August 1965` (age 60), `headOfHousehold`, wages: $500/month, insurance: none
 * Person 2: Birth month/year `June 2009` (age 16), `child`, wages: $300/month (part-time job), insurance: none
@@ -527,7 +527,7 @@ Benefit assumptions: allowed property tax = min(annualized Property Taxes expens
 **Expected**: Eligible — $448 (income = $14,400 → 64% bracket; $700 × 0.64 = $448).
 **Steps**:
 
-* Location: ZIP `66044`, county `Douglas`
+* Location: ZIP `66044`, county `Douglas County`
 * Household size: `1`, assets: $0
 * Person 1: Birth month/year `July 1990` (age 35), `headOfHousehold`, `long_term_disability`: yes, `disabled`: no, `visually_impaired`: no, wages: $1,200/month, insurance: none
 * Expenses: none

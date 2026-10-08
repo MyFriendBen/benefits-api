@@ -95,7 +95,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1971` (age 55), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment/wages income: `$1,200` per month ($14,400/year — well below the $23,940/year (150% FPL) threshold for a household of 1: $1,995/month × 12)
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`, Select heating fuel type if prompted (e.g., `Natural Gas`)
@@ -112,7 +112,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,500` per month
 * **Person 2**: Birth month/year: `March 1988` (age 38), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,200` per month
@@ -129,7 +129,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `3`
 * **Person 1**: Birth month/year: `March 1991` (age 35), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,400` per month
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `No`
@@ -147,7 +147,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `4`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,125` monthly, No other income sources
 * **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,000` monthly, No other income sources
@@ -166,7 +166,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1976` (age 50), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$2,000` per month (annualizes to $24,000/year, above the $23,940/year cap), No other income sources
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`
@@ -183,7 +183,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1961` (age 65), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Social Security Retirement income: `$900` per month, No other income sources
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`
@@ -200,7 +200,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `March 1961` (age 65), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Social Security Retirement income: `$900` per month
 * **Person 2**: Birth month/year: `June 1963` (age 63), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `No`
@@ -218,7 +218,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `March 1980` (age 46), Relationship: Head of Household, U.S. citizen: Yes
 * **Person 2**: Birth month/year: `September 1982` (age 43), Relationship: Spouse, U.S. citizen: Yes
@@ -236,7 +236,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `4`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: Head of Household, Citizenship status: `US Citizen`, Has income: Yes, Employment income: `$1,800`/month
 * **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: Spouse, Citizenship status: `Non-citizen / Not eligible`, Has income: Yes, Employment income: `$1,200`/month
@@ -256,7 +256,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `5`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$2,400`/month
 * **Person 2**: Birth month/year: `June 1988` (age 38), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,200`/month
@@ -277,7 +277,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `January 1980` (age 46), Relationship: `Head of Household`, Citizenship status: `U.S. Citizen`, Has income: `No` (all income fields left at $0), No current benefits selected
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`, Energy cost type: `Directly pays heating bills`
@@ -293,7 +293,7 @@
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `March 1985` (age 41), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,200`/month
 * **Person 2**: Birth month/year: `June 1987` (age 39), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$0`/month

@@ -35,7 +35,17 @@ from sentry_sdk import capture_message
 
 from configuration.models import Configuration
 from programs.framework.base import Eligibility
-from programs.models import Document, Program, UrgentNeed, WarningMessage
+from programs.models import (
+    Document,
+    Navigator,
+    Program,
+    ProgramNavigator,
+    Referrer,
+    TranslationOverride,
+    UrgentNeed,
+    WarningMessage,
+)
+from programs.translation_overrides import warning_calculators as translation_override_calculators
 from programs.util import Dependencies
 from programs.warnings import warning_calculators
 from programs.warnings.base import fill_warning_placeholders
@@ -44,6 +54,7 @@ from parler.models import TranslationDoesNotExist
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
 from .models import AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .navigators import navigators_for_program
 from .urgent_needs import eligible_urgent_needs
 from .throttles import (
     AssistantHistoryRateThrottle,
@@ -126,6 +137,58 @@ MAX_URL_LEN = 500
 # the Additional Resources tab that this list exists to provide, so hitting it is
 # reported rather than quietly absorbed.
 MAX_ADDITIONAL_RESOURCES = 60
+
+# Per-program ceiling on the help-to-apply organizations (navigators) forwarded for a
+# program. Sized against production the way the document cap is: as of 2026-10-07 the
+# largest raw attachment is 37 navigators on one CO program, but 172 of the 295 live
+# navigators are county-restricted and the county filter runs BEFORE this cap, so what a
+# single household actually sees on one program's panel is a handful. Hitting it is
+# reported rather than silently absorbed, for the same parity reason as the other caps.
+MAX_NAVIGATORS_PER_PROGRAM = 8
+
+# The navigator languages the results page knows how to render, code -> the words the
+# card prints. Mirrors `allNavigatorLanguages` in the frontend
+# (Results/ProgramPage/NavigatorLanguages.tsx): the card draws a "Spanish Available"
+# badge for each code in that map and silently ignores the rest. Production rows carry
+# free-text junk alongside real codes ("Spanish", "english", "ALL"), and parity means
+# forwarding exactly what the card shows — so a code not in this map is dropped here.
+#
+# The LABEL is what is forwarded, not the code: this is the one place that resolves card
+# content for the assistant, and sending codes would make ai-service keep a third copy of
+# this table, where a language added here and in the frontend would silently render as
+# nothing. The label is English because the prompt is; the card's own badge is
+# translated by the frontend.
+NAVIGATOR_LANGUAGE_LABELS = {
+    "en-us": "English",
+    "es": "Spanish",
+    "vi": "Vietnamese",
+    "fr": "French",
+    "am": "Amharic",
+    "so": "Somali",
+    "ru": "Russian",
+    "ne": "Nepali",
+    "my": "Burmese",
+    "zh": "Chinese",
+    "ar": "Arabic",
+    "sw": "Swahili",
+    "pl": "Polish",
+    "tl": "Tagalog",
+    "ko": "Korean",
+    "ur": "Urdu",
+    "pt-br": "Portuguese",
+    "ht": "Haitian Creole",
+    "ALL": "all languages",
+}
+
+# A navigator email as the card renders it: one address, no display name, no scheme.
+# The card wraps the stored text in `mailto:` itself, so a row that already carries the
+# prefix (one does in production) is normalized rather than dropped. Anything else that
+# isn't address-shaped is dropped: like a phone number, an email reaches the model as a
+# thing to reproduce verbatim, so there is no safe rewrite of a malformed one.
+_EMAIL_SHAPED = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Reject threshold for an email, like MAX_URL_LEN for a link: validated, never truncated.
+# RFC 5321's path limit; nothing real is longer, and anything longer is a config problem.
+MAX_EMAIL_LEN = 254
 
 # `acute_condition_options` config key -> the `Screen` field it writes. This mirrors
 # `benefits-calculator/src/Assets/updateScreen.ts`, which is where the mapping has lived
@@ -343,9 +406,23 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
             white_label=screen.white_label,
             name_abbreviated__in=name_abbreviations,
         )
-        .select_related("apply_button_link")
+        .select_related("apply_button_link", "estimated_value")
         .prefetch_related(
             "apply_button_link__translations",
+            "estimated_value__translations",
+            # Only the overrides `_value_override` can apply. `to_attr` rather than
+            # filtering `translation_overrides` itself, so `Program.get_translation`
+            # never sees a narrowed list if something later calls it on these rows.
+            Prefetch(
+                "translation_overrides",
+                queryset=(
+                    TranslationOverride.objects.filter(field="estimated_value", active=True)
+                    .select_related("translation")
+                    .prefetch_related("translation__translations", "counties")
+                    .order_by("id")
+                ),
+                to_attr="estimated_value_overrides",
+            ),
             _documents_prefetch(),
             Prefetch(
                 "warning_messages",
@@ -357,9 +434,135 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
             ),
             "warning_messages__counties",
             "warning_messages__legal_statuses",
+            _navigators_prefetch(),
         )
     )
     return {program.name_abbreviated: program for program in programs}
+
+
+def _navigators_prefetch() -> Prefetch:
+    """Prefetch each program's navigators with everything the three filters and the
+    serializer read, so `_program_navigators` adds no queries per program.
+
+    Goes through the ORDERED through table (`program_navigators`), which is what the
+    results view reads and what the admin's drag-to-reorder writes — the legacy
+    `programs` M2M is kept for migration compatibility and holds only about half the
+    live links.
+
+    All four translated fields are rendered on the card, so all four are prefetched.
+    Unlike document links, which `_context_programs` deliberately never loads, the
+    navigator's `assistance_link` IS shown to the household and is forwarded — under the
+    same absolute-http(s) validation as a resource website.
+    """
+    return Prefetch(
+        "program_navigators",
+        queryset=(
+            ProgramNavigator.objects.select_related("navigator")
+            .prefetch_related(
+                "navigator__counties",
+                "navigator__languages",
+                "navigator__eligibility_programs",
+                *(f"navigator__{field}__translations" for field in Navigator.objects.translated_fields),
+            )
+            .order_by("order", "id")
+        ),
+    )
+
+
+def _primary_navigators(screen: Screen) -> list[Navigator]:
+    """The screen's referrer's `primary_navigators`, or [] when it has no referrer.
+
+    Same lookup `screener.views.eligibility_results` makes, because
+    `referrer_prioritization` is the one stage of the navigator filter that reads it.
+    No query when the screen has no referrer code at all, which is most screens.
+    """
+    if not screen.referrer_code:
+        return []
+    try:
+        referrer = Referrer.objects.prefetch_related("primary_navigators").get(
+            white_label=screen.white_label,
+            referrer_code=screen.referrer_code,
+        )
+    except Referrer.DoesNotExist:
+        return []
+    return list(referrer.primary_navigators.all())
+
+
+def _program_navigators(
+    program: Program,
+    program_eligibility: dict,
+    screen: Screen,
+    primary_navigators: list[Navigator],
+    language_code: str,
+) -> list[dict]:
+    """The help-to-apply organizations this household sees on `program`'s page.
+
+    Selected through `screener.navigators.navigators_for_program`, the same function
+    the results view uses, with the same inputs: the screen's county, the referrer's
+    primary navigators, and per-program eligibility — here the snapshot rows, which
+    carry `.eligible` exactly as the view's `Eligibility` objects do. The snapshot holds
+    only the programs the page displayed (force-calculated upstreams that were withheld
+    never get a row), so it matches the `displayed_eligibility` the view filters on.
+
+    Serialized flat and in the screen's language, like everything else in the payload.
+    A navigator with no usable name is dropped rather than sent nameless: the prompt
+    describes this list as complete, and a blank entry in a complete list is worse than
+    a shorter one.
+    """
+    navigators = navigators_for_program(program, program_eligibility, screen.county, primary_navigators)
+    if not navigators:
+        return []
+
+    entries: list[dict] = []
+    for navigator in navigators:
+        label = f"navigator {navigator.external_name or navigator.id}"
+        name = _translated(navigator.name, language_code)
+        if not name:
+            _report_once(
+                f"unnamed_navigator:{navigator.external_name or navigator.id}",
+                f"Dropping {label} from the assistant context: no usable name",
+            )
+            continue
+        entry: dict = {
+            # Opaque handle for logs, evals and ai-service's dedupe across programs —
+            # the same 2-1-1 line is attached to many programs. Not read out to anyone.
+            "external_name": navigator.external_name or f"navigator_{navigator.id}",
+            "name": name,
+        }
+        description = _clipped(
+            _translated(navigator.description, language_code, max_len=None),
+            f"description of {label}",
+        )
+        if description:
+            entry["description"] = description
+        phone = _card_phone(navigator.phone_number, label)
+        if phone:
+            entry["phone_number"] = phone
+        email = _card_email(navigator.email, label, language_code)
+        if email:
+            entry["email"] = email
+        link = _card_link(navigator.assistance_link, label, language_code)
+        if link:
+            entry["link"] = link
+        languages = [
+            NAVIGATOR_LANGUAGE_LABELS[lang.code]
+            for lang in navigator.languages.all()
+            if lang.code in NAVIGATOR_LANGUAGE_LABELS
+        ]
+        if languages:
+            entry["languages"] = languages
+        entries.append(entry)
+
+    if len(entries) > MAX_NAVIGATORS_PER_PROGRAM:
+        # A property of the program's configuration, not of this household, so reported
+        # once per process like the other config-level conditions — per request it would
+        # fire on every assistant start for every household that sees the program.
+        _report_once(
+            f"navigator_cap:{program.name_abbreviated}",
+            f"{program.name_abbreviated} has {len(entries)} navigators for one household, over "
+            f"MAX_NAVIGATORS_PER_PROGRAM={MAX_NAVIGATORS_PER_PROGRAM}; truncating the assistant's list",
+        )
+    return entries[:MAX_NAVIGATORS_PER_PROGRAM]
 
 
 def _apply_url(program: Program, language_code: str) -> str:
@@ -386,6 +589,46 @@ def _apply_url(program: Program, language_code: str) -> str:
         )
         return ""
     return link
+
+
+def _value_override(
+    program: Program,
+    screen: Screen,
+    missing_dependencies: Optional[Dependencies],
+    language_code: str,
+) -> str:
+    """The text the results page shows in place of this program's dollar figure, or "".
+
+    An admin sets `Program.estimated_value` when the calculated figure shouldn't be
+    shown as-is ("Up to $7,669 per home", "Varies based on services used"); the card
+    then renders that text and no number. Benji has to quote the same text, or it
+    contradicts the card with a precise-sounding figure the page deliberately hides.
+
+    Mirrors `Program.get_translation(..., "estimated_value")`, which the results page
+    goes through: a `TranslationOverride` can swap the text per household (cesn_leap
+    shows "At least $200" to renters). Two differences, both for the same reason as
+    `_warning_messages`: an unknown calculator is skipped rather than raising, and the
+    overrides come from `_context_programs`' prefetch rather than one query per program.
+
+    `missing_dependencies` is only read when the program has overrides, so callers may
+    pass None for a program without any.
+    """
+    translation = program.estimated_value
+    for override in program.estimated_value_overrides:
+        calculator = translation_override_calculators.get(override.calculator)
+        if calculator is None:
+            _report_once(
+                f"unknown-override-calculator:{override.calculator}",
+                f"Skipping estimated_value override {override.external_name or override.id} on "
+                f"{program.name_abbreviated}: '{override.calculator}' is not a valid calculator name",
+            )
+            continue
+        if calculator(screen, override, missing_dependencies).calc():
+            translation = override.translation
+            break
+    # Capped like a name: it's a label on the card, the longest live one is 29 chars,
+    # and it lands in the system prompt.
+    return _translated(translation, language_code)
 
 
 def _document_texts(program: Program, language_code: str) -> list[str]:
@@ -637,50 +880,51 @@ def _is_shareable_url(url: str) -> bool:
     return parts.scheme in ("http", "https") and bool(parts.hostname)
 
 
-def _resource_url(need: UrgentNeed, language_code: str) -> str:
-    """This resource's website, or "" if there isn't a usable one.
+def _card_link(translation: Optional[Translation], label: str, language_code: str) -> str:
+    """A resource's or navigator's website, or "" if there isn't a usable one.
 
     Validated rather than truncated, exactly like `_apply_url`: the prompt instructs the
     model to copy the links it is given character-for-character, so a clipped URL becomes
-    an authoritative-looking 404 and is strictly worse than saying nothing. `link` is a
-    `no_auto` translated field, so a blank or placeholder row comes back "" and the
-    resource simply ships without a link.
+    an authoritative-looking 404 and is strictly worse than saying nothing. Both source
+    fields are `no_auto` translated fields, so a blank or placeholder row comes back ""
+    and the entry simply ships without a link.
 
     Must be an absolute http(s) URL. `Translation.text` holds arbitrary admin-editable
     text, and this value is handed to the model as something to reproduce verbatim and
     is rendered as a clickable link in the chat widget — so a `javascript:` or `data:`
     value would be an editable-row path to an attacker-controlled href, and a plain-text
-    value ("call them") would be emitted as a broken link. Every one of the 273 live
-    resource links is already http(s), so this rejects nothing real; it closes the shape
-    of the field rather than fixing a present-day row.
+    value ("call them") would be emitted as a broken link. Every live resource link and
+    every live navigator link is already http(s), so this rejects nothing real; it closes
+    the shape of the field rather than fixing a present-day row.
+
+    `label` names the row in reports ("resource food_bank", "navigator co_211").
     """
-    link = _translated(need.link, language_code, max_len=None)
+    link = _translated(translation, language_code, max_len=None)
     if not link:
         return ""
     if not _is_shareable_url(link):
         _report_once(
-            f"non_http_resource_link:{need.external_name or need.id}",
-            f"Dropping resource {need.external_name or need.id} link: not an absolute http(s) URL with a host",
+            f"non_http_link:{label}",
+            f"Dropping {label} link: not an absolute http(s) URL with a host",
         )
         return ""
     if len(link) > MAX_URL_LEN:
         capture_message(
-            f"Dropping resource {need.external_name or need.id} link: {len(link)} chars exceeds "
-            f"MAX_URL_LEN={MAX_URL_LEN}",
+            f"Dropping {label} link: {len(link)} chars exceeds MAX_URL_LEN={MAX_URL_LEN}",
             level="warning",
         )
         return ""
     return link
 
 
-def _resource_phone(need: UrgentNeed) -> str:
-    """The resource's phone number in the same format the card shows it.
+def _card_phone(number: Optional[phonenumbers.PhoneNumber], label: str) -> str:
+    """A `PhoneNumberField` value in the same format the card shows it.
 
-    `PhoneNumberField` stores E.164 (+13035551234); the resource card renders
-    `formatNational()` ("(303) 555-1234"). Benji is told these numbers are the only ones
-    it may ever say out loud, so it should say them the way the page prints them —
-    someone reading the card and someone asking Benji must not get two different-looking
-    numbers for the same organization.
+    `PhoneNumberField` stores E.164 (+13035551234); both the resource card and the
+    navigator card render `formatNational()` ("(303) 555-1234"). Benji is told these
+    numbers are the only ones it may ever say out loud, so it should say them the way the
+    page prints them — someone reading the card and someone asking Benji must not get
+    two different-looking numbers for the same organization.
 
     The validity check mirrors the card's, and is not decoration. `formatPhoneNumber`
     in the frontend formats only when `isValid()` and otherwise prints the stored string
@@ -690,7 +934,6 @@ def _resource_phone(need: UrgentNeed) -> str:
     change claims parity for would be the one field where Benji and the card disagree,
     and only for the rows most likely to be wrong already.
     """
-    number = need.phone_number
     if not number:
         return ""
     try:
@@ -701,11 +944,43 @@ def _resource_phone(need: UrgentNeed) -> str:
         # A stored number that the library won't format is a config problem, not a reason
         # to fail the turn. Dropping it costs a contact route; emitting something
         # malformed would have Benji read out digits that don't dial.
+        _report_once(f"unformattable_phone:{label}", f"Dropping an unformattable phone number on {label}")
+        return ""
+
+
+def _card_email(translation: Optional[Translation], label: str, language_code: str) -> str:
+    """A navigator's email as the card shows it, or "" if there isn't a usable one.
+
+    The card renders the stored text as the link label and prefixes `mailto:` itself.
+    One production row stores the prefix in the text, which the card turns into a
+    `mailto:mailto:` href; stripping it here forwards what the person can actually read
+    rather than reproducing the bug. Three more carry stray whitespace, which
+    `_translated` already collapses.
+
+    Dropped, not rewritten, when it isn't a single address: the model is told the
+    addresses it is given are the only ones it may hand out, so a value that changed
+    under sanitization would be an address that reaches the wrong inbox with full
+    authority — the same stance `_card_phone` takes.
+
+    Resolved at full length (`max_len=None`) and rejected over `MAX_EMAIL_LEN`, exactly
+    like `_card_link`: through `_translated`'s default cap an over-long address would be
+    clipped mid-domain, and a clipped address can still look address-shaped.
+    """
+    email = _translated(translation, language_code, max_len=None)
+    if not email:
+        return ""
+    if email.lower().startswith("mailto:"):
+        email = email[len("mailto:") :].strip()
+    if not _EMAIL_SHAPED.match(email):
+        _report_once(f"malformed_email:{label}", f"Dropping {label} email: not a single address")
+        return ""
+    if len(email) > MAX_EMAIL_LEN:
         _report_once(
-            f"unformattable_phone:{need.external_name or need.id}",
-            f"Dropping an unformattable phone number on resource {need.external_name or need.id}",
+            f"over_long_email:{label}",
+            f"Dropping {label} email: {len(email)} chars exceeds MAX_EMAIL_LEN={MAX_EMAIL_LEN}",
         )
         return ""
+    return email
 
 
 # How the household reaches the Immediate Help resources (2-1-1 and the like).
@@ -820,7 +1095,7 @@ def _immediate_help(screen: Screen, language_code: str) -> dict:
 
     Name and phone are Translation-backed labels (`{_label, _default_message}`) resolved
     in the screen's language, because these are the words on the household's own screen.
-    `link` is a plain config string, validated the same way `_resource_url` validates a
+    `link` is a plain config string, validated the same way `_card_link` validates a
     resource link: absolute http(s) or dropped, never truncated.
     """
     configs = _config_data(screen, "more_help_options", "referrer_data")
@@ -975,10 +1250,10 @@ def _additional_resources(
         )
         if description:
             entry["description"] = description
-        phone = _resource_phone(need)
+        phone = _card_phone(need.phone_number, f"resource {need.external_name or need.id}")
         if phone:
             entry["phone_number"] = phone
-        link = _resource_url(need, language_code)
+        link = _card_link(need.link, f"resource {need.external_name or need.id}", language_code)
         if link:
             entry["link"] = link
         resources.append(entry)
@@ -1149,6 +1424,12 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
         # eligibility must still appear for a household that already receives SNAP, and
         # that row is filtered out of `eligible_programs` precisely because they have it.
         program_data = [{"name_abbreviated": p.name_abbreviated, "eligible": p.eligible} for p in all_rows]
+        # What the navigator eligibility gate reads ("show this navigator only if the
+        # household qualifies for ALL of these programs"). Keyed on all rows for the same
+        # reason as `program_data`, and the rows themselves serve as the values because
+        # the filter reads only `.eligible`.
+        program_eligibility = {p.name_abbreviated: p for p in all_rows}
+        primary_navigators = _primary_navigators(screen)
 
         insurance_held = _insurance_program_names(screen)
 
@@ -1230,6 +1511,15 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
             }
             row_program = programs_by_name.get(p.name_abbreviated)
             if row_program is not None:
+                # How the card frames the figure. ai-service treats `lump_sum` as a
+                # one-time amount rather than "per year"; the value itself stays annual.
+                if row_program.value_format:
+                    program["value_format"] = row_program.value_format
+                if row_program.estimated_value_overrides and missing_dependencies is None:
+                    missing_dependencies = screen.missing_fields()
+                value_override = _value_override(row_program, screen, missing_dependencies, language_code)
+                if value_override:
+                    program["estimated_value_override"] = value_override
                 apply_url = _apply_url(row_program, language_code)
                 if apply_url:
                     program["apply_url"] = apply_url
@@ -1245,6 +1535,16 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
                     warnings = _warning_messages(row_program, screen, p.eligible, missing_dependencies, language_code)
                     if warnings:
                         program["warnings"] = warnings
+                # The "Get Help Applying" panel on the program's own page, filtered for
+                # this household exactly as the page filters it. ALWAYS sent, even empty —
+                # unlike documents. ai-service states the absence of help organizations
+                # out loud under its closed-world prompt, and it may only do that when the
+                # panel was actually checked: a missing key is an older payload or a
+                # stored snapshot from before this field existed, which must read as
+                # "unknown", not "none".
+                program["navigators"] = _program_navigators(
+                    row_program, program_eligibility, screen, primary_navigators, language_code
+                )
             eligible_programs.append(program)
 
     # Disjointness is enforced HERE, not merely asserted. The insurance gate above is

@@ -166,7 +166,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Male, Not a student enrolled in higher education, Not pregnant, No disability, U.S. citizen
 - **Income**: Employment income: `$1,500` per month, No other income sources
@@ -184,7 +184,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `4`
 - **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$4,800` per month
 - **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: Spouse, Sex: Female, Not a student, Not pregnant, Not disabled, US citizen, No income
@@ -204,7 +204,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$3,524` per month ($1 below 200% FPL for HH of 2: threshold = $3,525/mo, based on 2025 HHS guidelines: $21,150/yr ÷ 12 × 2)
 - **Person 2**: Birth month/year: `September 2020` (age 5), Relationship: Child, Sex: Male, No income, U.S. citizen
@@ -222,7 +222,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$2,000` per month
 - **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: Spouse, Sex: Female, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$1,525` per month
@@ -240,7 +240,7 @@
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, No disability, US citizen, Employment income: `$2,661` per month
 - **Expenses**: Rent/mortgage: `$900` per month, No other deductions or expenses
@@ -257,7 +257,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `March 2008` (age 18), Relationship: Head of Household, Not a student enrolled in higher education, Not pregnant, No disability, Employment income: `$800/month`, No other income sources
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
@@ -273,7 +273,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `June 2008` (age 17 — will turn 18 in June 2026), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Working: No, No disability, Not pregnant
 - **Income**: No earned income, No unearned income, Total gross monthly income: `$0`
@@ -290,7 +290,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1951` (age 75), Relationship: Head of Household, Not a student, Not pregnant, Not disabled (using age 60+ exemption, not disability)
 - **Income**: Social Security Retirement income: `$2,700` per month (above 200% FPL of $2,608/mo for HH of 1), No other income sources
@@ -309,7 +309,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Not a student enrolled in higher education, Not pregnant, No disability, U.S. citizen
 - **Income**: Employment income: `$2,200` per month, No other income sources
@@ -327,7 +327,7 @@
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1985` (age 40), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, Not disabled, U.S. citizen, Employment income: `$1,800` per month
 - **Person 2**: Birth month/year: `September 2018` (age 7), Relationship: Child, Sex: Male, Not a student, Not disabled, U.S. citizen
@@ -344,7 +344,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `June 1960` (age 65), Relationship: Head of Household, Not a student, Social Security Retirement income: `$1,200` per month, Not currently receiving SNAP/Basic Food
 - **Person 2**: Birth month/year: `September 1996` (age 29), Relationship: Child/Dependent adult, Not a student, No disability, Employment income: `$1,500` per month
@@ -362,7 +362,7 @@
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `5`
 - **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Male, US citizen, Employment income: `$2,000` per month, Not a student, No disability
 - **Person 2**: Birth month/year: `September 1993` (age 32), Relationship: Spouse, Sex: Female, US citizen, Employment income: `$1,500` per month, Not a student, **Pregnant: Yes** (note: counts as 1 household member, not 2; pregnancy is relevant for work requirement exemption only), No disability

@@ -11,7 +11,7 @@ VCR behavior controlled by VCR_MODE environment variable:
   request. Downgraded to `none` inside an xdist worker unless PE_RECORD is set, so a parallel
   run cannot record a missing cassette live (see vcr_record_mode)
 - VCR_MODE=new_episodes: Replays existing interactions, records NEW HTTP requests not in cassette
-- VCR_MODE=all (production deploy): Never replays, re-records ALL cassettes from scratch
+- VCR_MODE=all (manual only): Never replays, re-records ALL cassettes from scratch
 
 A run that may write a cassette is forced single-process (see pytest_configure): parallel
 workers would issue duplicate live calls and race to write the same file.
@@ -534,7 +534,7 @@ def auto_vcr(request, vcr_config):
     - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP
       request. Becomes `none` in a parallel worker unless PE_RECORD is set
     - VCR_MODE=new_episodes: Flexible - replays existing, records new HTTP requests not yet in cassette
-    - VCR_MODE=all (production deploy): Fresh start - never replays, re-records all cassettes from scratch
+    - VCR_MODE=all (manual only): Fresh start - never replays, re-records all cassettes from scratch
 
     Cassettes are stored in: <test_dir>/cassettes/<TestClass>.<test_name>.yaml
     Example: integrations/clients/hud_income_limits/tests/cassettes/
@@ -557,7 +557,7 @@ def auto_vcr(request, vcr_config):
     # Determine VCR record mode based on VCR_MODE environment variable
     # Possible values:
     #   - "new_episodes": Flexible - replays existing, records new HTTP requests
-    #   - "all": Fresh start - never replays, re-records everything from scratch (push to main in CI)
+    #   - "all": Fresh start - never replays, re-records everything from scratch (manual only)
     #   - "once" (default): Strict - replays existing, errors if cassette missing new HTTP request (local dev)
     #   - "none": Read-only - replays only, never records, errors on new HTTP requests (strict mode)
     record_mode = vcr_record_mode()

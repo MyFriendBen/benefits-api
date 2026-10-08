@@ -2180,7 +2180,7 @@ class CoConfigurationData(ConfigurationData):
                 "referralSource",
             ],
         },
-        "uiOptions": {"default": [], "211co": ["no_results_more_help", "211co"]},
+        "uiOptions": {"default": ["no_results_more_help"], "211co": ["no_results_more_help", "211co"]},
         "defaultLanguage": {"default": "en-us"},
     }
 

@@ -108,7 +108,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Eligible, value: $540/year
 
 **Steps**:
-- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `March 1991` (age 35), Relationship: Head of Household, Has earned income: Yes, Employment income: `$3,500` per month, Filing status: Single / Head of Household, Last tax filing year: `2025`, Citizenship: US Citizen
 - **Person 2**: Birth month/year: `September 2023` (age 2), Relationship: Child, Lives with head of household: Yes
@@ -123,7 +123,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Ineligible — at $22,800 MFJ income the household owes no federal income tax (taxable income is ~$0 after the standard deduction). The federal CDCC is non-refundable, so with no tax liability to offset it resolves to $0, and the KS credit (50% of $0) is $0. (The age-boundary and joint-filing eligibility logic is still exercised; only the dollar value resolves to $0.)
 
 **Steps**:
-- **Location**: Enter ZIP code `66002`, Select county `Atchison`
+- **Location**: Enter ZIP code `66002`, Select county `Atchison County`
 - **Household**: Number of people: `3`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `January 1996` (age 30), Has earned income: Yes, Income: `$1,100/month` (wages), Filing status: Married Filing Jointly, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Spouse`, Birth month/year: `March 1997` (age 29), Has earned income: Yes, Income: `$800/month` (wages)
@@ -139,7 +139,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `March 1990` (age 36), Relationship: Head of Household, Has income: Yes, Investment income: `$4,000/month`, No earned income (wages/salary/self-employment): `$0`, Filing status: Single / Head of Household, Last tax filing year: `2025`
 - **Person 2**: Birth month/year: `January 2022` (age 4), Relationship: Child, Lives with Person 1: Yes
@@ -154,7 +154,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66502`, Select county `Riley`
+- **Location**: Enter ZIP code `66502`, Select county `Riley County`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1988` (age 38), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Single / Head of Household, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Child`, Birth month/year: `January 2013` (age 13), No income, Lives with head of household: Yes
@@ -169,7 +169,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66502`, Select county `Riley`
+- **Location**: Enter ZIP code `66502`, Select county `Riley County`
 - **Household**: Number of people: `3`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1988` (age 38), Has earned income: Yes, Wages/salary: `$3,800/month`, Filing status: Married Filing Jointly
 - **Person 2**: Relationship: `Spouse`, Birth month/year: `September 1990` (age 35), Has earned income: No, Income: `$0`
@@ -186,7 +186,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Eligible, value: $1,050/year (expenses capped at $6,000 for 2+ qualifying individuals)
 
 **Steps**:
-- **Location**: Enter ZIP code `66502`, Select county `Riley`
+- **Location**: Enter ZIP code `66502`, Select county `Riley County`
 - **Household**: Number of people: `5`
 - **Person 1**: Birth month/year: `March 1990` (age 36), Relationship: Head of Household, Has earned income: Yes, Employment income: `$3,200/month` (wages), Filing status: Married Filing Jointly, Last tax filing year: `2025`
 - **Person 2**: Birth month/year: `July 1991` (age 34), Relationship: Spouse, Has earned income: Yes, Employment income: `$2,800/month` (wages)
@@ -204,7 +204,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Eligible, value: $570/year
 
 **Steps**:
-- **Location**: Enter ZIP code `66502`, Select county `Riley`
+- **Location**: Enter ZIP code `66502`, Select county `Riley County`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1988` (age 38), Has earned income: Yes, Employment income: `$3,200/month` (wages), Filing status: Single / Head of Household, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Child`, Birth month/year: `December 2013` (age 12, turns 13 in December 2026), Lives with head of household: Yes
@@ -219,7 +219,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1985` (age 41), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Single / Head of Household, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Child`, Birth month/year: `April 2010` (age 16), No income
@@ -234,7 +234,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Eligible, value: $540/year. Per IRC § 21, a disabled dependent incapable of self-care is a qualifying individual at any age, so care expenses for that dependent qualify the household for the credit. (Value: $900/mo expenses exceed the $3,000 single-individual cap → 36% × $3,000 = $1,080 federal → 50% = $540 KS.)
 
 **Steps**:
-- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1978` (age 48), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Single / Head of Household, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Sibling`, Birth month/year: `July 1980` (age 45), Disabled: Yes (physically incapable of self-care), Has earned income: No, Income: `$0`
@@ -249,7 +249,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Eligible, value: $490/year. The disabled spouse is a qualifying individual (§ 21(b)(1)(C)), and the § 21(d)(2) deemed $250/month of earned income satisfies the two-earner requirement, so their care expenses are creditable. (Federal CDCC computes to $980 for this household; KS credit = 50% = $490.)
 
 **Steps**:
-- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1985` (age 41), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Married Filing Jointly, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Spouse`, Birth month/year: `May 1986` (age 40), Disabled: Yes (physically/mentally incapable of self-care), Has earned income: No, Income: `$0`
@@ -264,7 +264,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Eligible, value: $490/year. The child under 13 is the qualifying individual; the § 21(d)(2) deemed earned income for the full-time-student spouse satisfies the two-earner test, so the child's childcare is creditable. (Federal CDCC computes to $980 for this household; KS credit = 50% = $490.)
 
 **Steps**:
-- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 - **Household**: Number of people: `3`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1985` (age 41), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Married Filing Jointly, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Spouse`, Birth month/year: `May 1990` (age 36), Full-time student: Yes, Has earned income: No, Income: `$0`
@@ -280,7 +280,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 **Expected**: Not eligible. A full-time student is not a qualifying individual under IRC § 21(b)(1); the § 21(d)(2) deeming only supplies earned income and does not create a qualifying individual. With no child under 13 and no one incapable of self-care, there are no creditable care expenses.
 
 **Steps**:
-- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1985` (age 41), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Married Filing Jointly, Last tax filing year: `2025`
 - **Person 2**: Relationship: `Spouse`, Birth month/year: `May 1990` (age 36), Full-time student: Yes, Has earned income: No, Income: `$0`

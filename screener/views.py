@@ -59,6 +59,7 @@ from programs.serializers import HasBenefitsProgramSerializer
 from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
 from .urgent_needs import eligible_urgent_needs
+from .navigators import navigators_for_program
 from drf_yasg.utils import swagger_auto_schema
 import math
 import json
@@ -338,33 +339,6 @@ def translations_prefetch_name(prefix: str, fields):
     return [f"{prefix}{f}__translations" for f in fields]
 
 
-def filter_by_county(navigators: list, county: Optional[str]) -> list:
-    result = []
-    for nav in navigators:
-        counties = nav.counties.all()
-        if len(counties) == 0 or (county is not None and any(county in c.name for c in counties)):
-            result.append(nav)
-    return result
-
-
-def filter_by_required_programs_eligibility(navigators: list, program_eligibility: dict) -> list:
-    result = []
-    for nav in navigators:
-        required = nav.eligibility_programs.all()
-        if not required or all(
-            getattr(program_eligibility.get(p.name_abbreviated), "eligible", False) for p in required
-        ):
-            result.append(nav)
-    return result
-
-
-def referrer_prioritization(eligibility_filtered: list, primary_navigators: list) -> list:
-    if not primary_navigators:
-        return eligibility_filtered
-    referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
-    return referrer_navigators if referrer_navigators else eligibility_filtered
-
-
 def update_navigators(
     eligible_program_data: list,
     program_eligibility: dict,
@@ -372,12 +346,15 @@ def update_navigators(
     screen_county: Optional[str],
     referrer,
 ) -> None:
+    """Attach each eligible program's navigators to its results entry, in place.
+
+    The selection itself lives in `screener.navigators` so Benji's context builder can
+    run the same three filters against the same inputs — see that module for why the
+    two consumers must not drift.
+    """
     primary_navs = list(referrer.primary_navigators.all()) if referrer is not None else []
     for program, idx in eligible_program_data:
-        all_navigators = [pn.navigator for pn in program.program_navigators.all()]
-        county_filtered = filter_by_county(all_navigators, screen_county)
-        eligibility_filtered = filter_by_required_programs_eligibility(county_filtered, program_eligibility)
-        navigators = referrer_prioritization(eligibility_filtered, primary_navs)
+        navigators = navigators_for_program(program, program_eligibility, screen_county, primary_navs)
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
