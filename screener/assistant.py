@@ -48,6 +48,7 @@ from programs.models import (
 from programs.translation_overrides import warning_calculators as translation_override_calculators
 from programs.util import Dependencies
 from programs.warnings import warning_calculators
+from programs.warnings.base import fill_warning_placeholders
 from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
@@ -400,12 +401,13 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
     if not name_abbreviations:
         return {}
 
+    # `year` is read by the `_prior_tax_year` warning gate on each program it's attached to.
     programs = (
         Program.objects.filter(
             white_label=screen.white_label,
             name_abbreviated__in=name_abbreviations,
         )
-        .select_related("apply_button_link", "estimated_value")
+        .select_related("apply_button_link", "estimated_value", "year")
         .prefetch_related(
             "apply_button_link__translations",
             "estimated_value__translations",
@@ -671,8 +673,9 @@ def _warning_messages(
     and does NOT persist the result, so there is nothing on the snapshot to read.
 
     Rather than add a snapshot column, we re-run the gates here. That's cheap because
-    six of the seven registered calculators need only `screen` — county, member data,
-    `energy_calculator`, `num_adults`. `screen.missing_fields()` is pure screen data (no
+    nearly every registered calculator needs only `screen` — county, member data,
+    `energy_calculator`, `num_adults` — or the program itself (`_prior_tax_year` reads
+    its configured year). `screen.missing_fields()` is pure screen data (no
     PolicyEngine), and `Eligibility()` takes no constructor args, so the only input we
     cannot reproduce is `eligible_members`, which no snapshot stores. Calculators that
     read it declare `needs_full_eligibility` and are skipped loudly below.
@@ -731,11 +734,11 @@ def _warning_messages(
         if warning.legal_statuses.all():
             continue
 
-        if not calculator(screen, warning, eligibility, missing_dependencies).calc():
+        if not calculator(screen, warning, eligibility, missing_dependencies, program=program).calc():
             continue
 
         message = _clipped(
-            _translated(warning.message, language_code, max_len=None),
+            fill_warning_placeholders(_translated(warning.message, language_code, max_len=None)),
             f"warning {warning.external_name or warning.id} on {program.name_abbreviated}",
         )
         if message:

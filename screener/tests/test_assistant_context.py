@@ -16,6 +16,7 @@ See the ai-service repo's docs/04-mfb-ai-service-api-contract.md (Layer 2).
 """
 
 import uuid
+from datetime import date
 from decimal import Decimal
 from unittest import mock
 
@@ -30,7 +31,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
-from programs.models import LegalStatus, Program, Referrer, TranslationOverride
+from programs.models import FederalPoveryLimit, LegalStatus, Program, Referrer, TranslationOverride
 from configuration.models import Configuration
 from screener.assistant import (
     ACUTE_OPTION_FIELDS,
@@ -497,6 +498,59 @@ class BuildContextTests(TestCase):
             context["eligible_programs"][0]["warnings"],
             ["If you are eligible for SNAP, enroll in SNAP before applying for Lifeline."],
         )
+
+    def test_prior_tax_year_warning_has_its_years_filled_in(self):
+        """The results page fills {priorYear}/{currentYear} in the browser; the assistant
+        reads the raw text, so it has to get the same substitution, not the placeholders."""
+        self.add_snapshot_row("snap")
+        self.programs["snap"].year, _ = FederalPoveryLimit.objects.get_or_create(
+            year="2025", defaults={"period": "2025"}
+        )
+        self.programs["snap"].save()
+        seed_warning(self.programs["snap"], "_prior_tax_year", "These results are for the {priorYear} tax year.")
+
+        with mock.patch("django.utils.timezone.localdate", return_value=date(2026, 9, 23)):
+            context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["warnings"], ["These results are for the 2025 tax year."])
+
+    def test_prior_tax_year_warning_is_hidden_when_the_program_is_not_on_last_year(self):
+        self.add_snapshot_row("snap")
+        self.programs["snap"].year, _ = FederalPoveryLimit.objects.get_or_create(
+            year="2026", defaults={"period": "2026"}
+        )
+        self.programs["snap"].save()
+        seed_warning(self.programs["snap"], "_prior_tax_year", "These results are for the {priorYear} tax year.")
+
+        with mock.patch("django.utils.timezone.localdate", return_value=date(2026, 9, 23)):
+            context = self.context()
+
+        self.assertNotIn("warnings", context["eligible_programs"][0])
+
+    def test_prior_tax_year_warnings_cost_no_query_per_program(self):
+        """The warning gate reads each program's `year`; it's loaded with the program
+        query, so a second program carrying the warning costs no extra query."""
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
+        for name in ("snap", "tanf"):
+            self.programs[name].year = fpl
+            self.programs[name].save()
+            self.add_snapshot_row(name)
+
+        def query_count(expected_warned: int) -> int:
+            with mock.patch("django.utils.timezone.localdate", return_value=date(2026, 9, 23)):
+                with CaptureQueriesContext(connection) as captured:
+                    context = self.context()
+            self.assertEqual(sum("warnings" in p for p in context["eligible_programs"]), expected_warned)
+            return len(captured)
+
+        seed_warning(self.programs["snap"], "_prior_tax_year", "For the {priorYear} tax year.")
+        one = query_count(1)
+        seed_warning(
+            self.programs["tanf"], "_prior_tax_year", "For the {priorYear} tax year.", external_name="tanf_prior"
+        )
+        two = query_count(2)
+
+        self.assertEqual(two, one, f"{one} -> {two} queries for 1 -> 2 programs with the warning")
 
     def test_warnings_key_is_omitted_when_the_program_has_none(self):
         self.add_snapshot_row("snap")
