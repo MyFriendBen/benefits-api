@@ -69,7 +69,7 @@ def reverse_create(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0180_ssi_msp_csfp_current_edition"),
+        ("programs", "0183_seed_211chicago_referrer"),
     ]
 
     operations = [
