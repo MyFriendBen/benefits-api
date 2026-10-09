@@ -515,18 +515,7 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
         self.assertFalse(federal.active)
         message = warning.call_args.args[1]
         self.assertIn("hidden from every white label", message)
-        self.assertIn("No state version replaces it", message)
-
-    def test_the_warning_names_state_versions_that_are_still_active(self) -> None:
-        federal = self.program(self.federal, "fed_account")
-        self.program(self.wa, "fed_account")
-        form = self.bound_form(federal, active=False, confirm_federal_deactivation=True)
-        self.assertTrue(form.is_valid(), form.errors)
-
-        with patch("programs.admin.messages.warning") as warning:
-            self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
-
-        self.assertIn("state versions under wa", warning.call_args.args[1])
+        self.assertIn("Check its state versions", message)
 
     def test_moving_a_federal_program_to_a_state_while_switching_it_off_still_warns(self) -> None:
         federal = self.program(self.federal, "fed_account")
@@ -577,21 +566,35 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
         self.assertFalse(locked(self.program(self.co, "co_only")))
 
 
-class TestFederalStateVersionsInAdmin(ProgramAdminTestCase):
-    """A federal program's edit form lists the state versions sharing its name."""
+class TestFederalProgramsInAdmin(ProgramAdminTestCase):
+    """What the admin does with a federal program, now that nothing matches on the name."""
 
     def test_programs_switch_on_without_a_duplicate_check(self) -> None:
         self.assertTrue(self.bound_form(self.program(self.co, "co_only", active=False), active=True).is_valid())
         self.assertTrue(self.bound_form(self.program(self.federal, "fed_only", active=False), active=True).is_valid())
 
-    def test_a_federal_program_lists_its_state_versions(self) -> None:
-        federal = self.program(self.federal, "fed_account", active=False)
-        co = self.program(self.co, "fed_account")
-        self.program(self.wa, "fed_account", active=False)
+    def test_no_state_versions_panel_is_offered(self) -> None:
+        """It matched on `name_abbreviated`, which a prefixed federal row never shares with the
+        state rows it replaces, so it reported "None" beside eight live ones."""
+        federal = self.program(self.federal, "federal_fed_account", active=False)
+        self.program(self.co, "fed_account")
 
-        shown = self.model_admin.state_versions(federal)
+        self.assertNotIn("state_versions", self.model_admin.get_fields(self.request, federal))
+        self.assertFalse(hasattr(self.model_admin, "state_versions"))
 
-        self.assertIn(f'/admin/programs/program/{co.pk}/change/">co (active)</a>', shown)
-        self.assertIn("wa (inactive)", shown)
-        self.assertIn("state_versions", self.model_admin.get_fields(self.request, federal))
-        self.assertNotIn("state_versions", self.model_admin.get_fields(self.request, co))
+    def test_deactivation_warning_claims_nothing_about_state_versions(self) -> None:
+        """The rows a federal program replaces can't be found by name, so the warning says to go
+        and check rather than reporting a safe state it never established. The live `fed_account`
+        row below is exactly what the old wording called "no state version"."""
+        federal = self.program(self.federal, "federal_fed_account")
+        self.program(self.co, "fed_account")
+        form = self.bound_form(federal, active=False, confirm_federal_deactivation=True)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        with patch("programs.admin.messages.warning") as warning:
+            self.model_admin.save_model(self.request, form.save(commit=False), form, change=True)
+
+        message = warning.call_args.args[1]
+        self.assertIn("hidden from every white label", message)
+        self.assertIn("Check its state versions", message)
+        self.assertNotIn("No state version replaces it", message)
