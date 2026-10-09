@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from django.contrib import admin, messages
 from django.db.models import Max, Q, QuerySet
@@ -9,11 +9,11 @@ from django.forms.models import BaseInlineFormSet
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
-from django.utils.html import format_html, format_html_join
+from django.utils.html import format_html
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
-from .federal import FEDERAL_WHITE_LABEL, conflicting_active_programs, is_federal
+from .federal import is_federal
 from .models import (
     LegalStatus,
     Program,
@@ -120,53 +120,6 @@ def deactivates_federal_program(form: forms.ModelForm) -> bool:
     )
 
 
-def program_links(programs: list[Program], label: Callable[[Program], str]) -> SafeString:
-    """Comma-separated links to each program's admin page."""
-    return format_html_join(
-        ", ",
-        '<a href="{}">{}</a>',
-        ((reverse("admin:programs_program_change", args=[p.pk]), label(p)) for p in programs),
-    )
-
-
-def refuse_duplicate_activation(form: forms.ModelForm) -> None:
-    """Add an error to Active if saving `form` would make its name active under both federal and a state.
-
-    The same rule as the import guard: a federal program is shown to every white label, so its
-    state versions must be switched off before it is switched on, and the reverse.
-    """
-    instance = form.instance
-    if instance.pk is None or not form.cleaned_data.get("active"):
-        return
-    if not {"active", "white_label", "name_abbreviated"} & set(form.changed_data):
-        return
-
-    white_label = form.cleaned_data.get("white_label") or instance.white_label
-    name = form.cleaned_data.get("name_abbreviated") or instance.name_abbreviated
-    # The saved row is excluded: a program moved between a state and `federal` would
-    # otherwise conflict with itself.
-    conflicts = [p for p in conflicting_active_programs(white_label.code, name) if p.pk != instance.pk]
-    if not conflicts:
-        return
-
-    links = program_links(conflicts, lambda p: p.white_label.code)
-    if white_label.code == FEDERAL_WHITE_LABEL:
-        message = format_html(
-            "'{}' is still active under {}. A federal program is shown to every white label, "
-            "so switch those state versions off first.",
-            name,
-            links,
-        )
-    else:
-        message = format_html(
-            "'{}' is already active as a {} program, which shows it to every white label. "
-            "Switch the federal version off first, or leave this one off.",
-            name,
-            links,
-        )
-    form.add_error("active", message)
-
-
 class ProgramAdminForm(forms.ModelForm):
     confirm_federal_deactivation = forms.BooleanField(
         required=False,
@@ -181,7 +134,6 @@ class ProgramAdminForm(forms.ModelForm):
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
-        refuse_duplicate_activation(self)
         if deactivates_federal_program(self) and not cleaned_data.get("confirm_federal_deactivation"):
             self.add_error(
                 "confirm_federal_deactivation",
@@ -194,18 +146,12 @@ class ProgramChangelistForm(forms.ModelForm):
     """The list page's Active checkbox, locked on active federal programs.
 
     Switching one off needs the confirmation on the edit form, which a list row can't show.
-    Switching a program on is refused here as on the edit form when it would duplicate a name.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         if self.instance.pk is not None and self.instance.active and is_federal(self.instance):
             self.fields["active"].disabled = True
-
-    def clean(self) -> dict[str, Any]:
-        cleaned_data = super().clean()
-        refuse_duplicate_activation(self)
-        return cleaned_data
 
 
 class ProgramAdmin(SecureAdmin):
@@ -214,7 +160,6 @@ class ProgramAdmin(SecureAdmin):
     list_display = ["get_str", "name_abbreviated", "active", "action_buttons"]
     list_editable = ["active"]
     list_select_related = ["white_label"]
-    readonly_fields = ["state_versions"]
     list_filter = [
         "active",
         "low_confidence",
@@ -261,24 +206,9 @@ class ProgramAdmin(SecureAdmin):
 
     def get_fields(self, request: HttpRequest, obj: Optional[Program] = None) -> list[str]:
         fields = list(super().get_fields(request, obj))
-        if obj is not None and is_federal(obj):
-            fields.insert(fields.index("active") + 1, "state_versions")
-            if obj.active:
-                fields.insert(fields.index("active") + 1, "confirm_federal_deactivation")
+        if obj is not None and is_federal(obj) and obj.active:
+            fields.insert(fields.index("active") + 1, "confirm_federal_deactivation")
         return fields
-
-    @admin.display(description="State versions")
-    def state_versions(self, obj: Program) -> SafeString | str:
-        """The state rows sharing a federal program's name, which must be off while it is on."""
-        programs = list(
-            Program.objects.filter(name_abbreviated=obj.name_abbreviated)
-            .exclude(white_label__code=FEDERAL_WHITE_LABEL)
-            .select_related("white_label")
-            .order_by("white_label__code")
-        )
-        if not programs:
-            return "None"
-        return program_links(programs, lambda p: f"{p.white_label.code} ({'active' if p.active else 'inactive'})")
 
     def get_changelist_form(self, request: HttpRequest, **kwargs: Any) -> type[forms.ModelForm]:
         return super().get_changelist_form(request, form=ProgramChangelistForm, **kwargs)
@@ -289,21 +219,14 @@ class ProgramAdmin(SecureAdmin):
         if not deactivated:
             return
 
-        replacements = list(
-            Program.objects.filter(name_abbreviated=obj.name_abbreviated, active=True)
-            .exclude(white_label__code=FEDERAL_WHITE_LABEL)
-            .order_by("white_label__code")
-            .values_list("white_label__code", flat=True)
-        )
-        still_shown = (
-            f"Only the state versions under {', '.join(replacements)} are still shown."
-            if replacements
-            else "No state version replaces it."
-        )
+        # Which state rows replace this one isn't stated: a federal program is prefixed
+        # (`federal_trump_account`), so the rows it replaces can't be found by name, and
+        # saying "no state version replaces it" from an empty name match would report a
+        # safe state that was never checked.
         messages.warning(
             request,
             f"Federal program '{obj.name_abbreviated}' is now inactive and hidden from every white label. "
-            f"{still_shown}",
+            "Check its state versions are active if the program is still meant to be offered.",
         )
 
     @admin.display(ordering="name", description="Program")
