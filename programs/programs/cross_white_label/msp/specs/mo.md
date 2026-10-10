@@ -58,9 +58,11 @@
    - Source: MO IM-4 MSP flyer ("Be a Missouri Resident (and plan to stay, to qualify for help)")
 
 6. **U.S. citizen or qualified non-citizen (all three tiers)**
-   - Screener field: citizenship/immigration-status field (config `program.legal_status_required`: `citizen`, `gc_5plus`, `refugee`, `otherWithWorkPermission`)
+   - Screener field: citizenship/immigration-status field (config `program.legal_status_required`: `citizen`, `gc_5plus`, `otherWithWorkPermission`)
    - Missouri's own MO HealthNet Non-MAGI eligibility chart lists "U.S. citizen or qualified noncitizen" as a requirement for QMB, and states SLMB/QI eligibility is "same as QMB, other than income and resource limits" — i.e. the citizenship requirement applies to all three tiers.
+   - **Effective 2026-10-01** (P.L. 119-21 §71109): CMS counts Medicare Savings Programs as Medicaid benefits subject to the new limit, so MSP is restricted to citizens/nationals, LPRs, Cuban/Haitian entrants and COFA migrants. `refugee` was removed. `otherWithWorkPermission` stays because COFA migrants and Cuban/Haitian entrants share that bucket with groups that lose eligibility.
    - Source: [MO HealthNet Eligibility for Non-MAGI Programs (07/2026)](https://dssmanuals.mo.gov/wp-content/uploads/2018/10/appendix_k.pdf)
+   - Source (Oct 1 change): [CMS SHO #26-001](https://www.medicaid.gov/federal-policy-guidance/downloads/sho26001.pdf), which defines "full Medicaid and CHIP benefits" to include MSPs
 
 ---
 
@@ -162,7 +164,7 @@ standard federal SSI figures are used.
 **Expected**: Eligible — $202.90/month
 
 **Steps**:
-- **Location**: Enter ZIP code `65101` (Jefferson City), Select county `Cole`
+- **Location**: Enter ZIP code `65101` (Jefferson City), Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,000` per month, Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Assets**: Household resources: `$3,000`
@@ -177,7 +179,7 @@ standard federal SSI figures are used.
 **Expected**: Eligible — $202.90/month
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,500` per month (~113% FPL for household of 1), Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Assets**: Household resources: `$3,000`
@@ -191,7 +193,7 @@ standard federal SSI figures are used.
 **Expected**: Eligible — $202.90/month
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,700` per month (~128% FPL for household of 1), Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Assets**: Household resources: `$3,000`
@@ -206,7 +208,7 @@ standard federal SSI figures are used.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,000` per month, Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Assets**: Household resources: `$15,000` (excludes home/vehicle — this is countable savings/investments only)
@@ -220,7 +222,7 @@ standard federal SSI figures are used.
 **Expected**: Eligible — $202.90/month per eligible spouse ($405.80/month household total)
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1953` (age 73), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$900` per month, Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Person 2 (Spouse)**: Birth month/year: `July 1955` (age 71), Relationship: `Spouse`, Has income: `Yes`, Social Security income: `$800` per month, Insurance: `Medicare`
@@ -235,7 +237,7 @@ standard federal SSI figures are used.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1966` (age 60), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,000` per month, Citizenship: `U.S. Citizen`, Insurance: none selected
 
@@ -248,7 +250,7 @@ standard federal SSI figures are used.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,700` per month (~128% FPL — QI band), Citizenship: `U.S. Citizen`, Insurance: `Medicare`, `Medicaid`
 - **Current Benefits**: Select `Medicaid`
@@ -262,7 +264,7 @@ standard federal SSI figures are used.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,900` per month (~143% FPL for household of 1), Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Assets**: Household resources: `$3,000`
@@ -278,7 +280,7 @@ starts at $1,597/mo.
 **Expected**: Eligible as **SLMB** — $202.90/month (not QI). A companion check one dollar higher ($1,617/mo gross → $1,597/mo countable) should resolve to **QI**, same $202.90/month — run both to confirm the exact crossover point, not just one side of it.
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,616` per month (100% FPL for household of 1 is $1,330/mo; after PE's $20/mo general SSI disregard, countable income = $1,596/mo = exactly 120% FPL), Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Current Benefits**: Select no current benefits
@@ -293,7 +295,7 @@ starts at $1,597/mo.
 **Expected**: Not eligible (income at/above the QI ceiling)
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1955` (age 71), Relationship: `Head of Household`, Has income: `Yes`, Social Security income: `$1,816` per month (after the $20/mo disregard, countable income = $1,796/mo — Missouri's own published 135% FPL figure), Citizenship: `U.S. Citizen`, Insurance: `Medicare`
 - **Assets**: Household resources: `$3,000`

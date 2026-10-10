@@ -134,34 +134,20 @@ class Screen(models.Model):
     utm_content = models.CharField(max_length=128, blank=True, null=True)
     utm_term = models.CharField(max_length=128, blank=True, null=True)
 
-    @property
-    def frozen(self):
-        return self.validations.count() > 0
-
     def get_reference_date(self) -> date:
         """
-        Get the reference date for age calculations.
-        For frozen screens (with validations), use the earliest validation's created_date
-        to keep ages consistent over time. For non-frozen screens, use current date.
+        Get the reference date for age calculations: the current date.
 
-        Memoized per instance. `order_by()` builds a fresh queryset, so this read can
-        never be served by `prefetch_related` — and callers reach it once per household
-        member, from inside per-program calculators (`is_dependent`, and the SSDI/BSP
-        family), so uncached it is an N+1 on members x programs. Nothing invalidates the
-        cache: an instance lives for one request, and a reference date that shifts
-        mid-request is a bug in its own right, since the whole point is to keep ages
-        consistent (two calls either side of midnight would otherwise disagree on an
-        unfrozen screen).
+        Memoized per instance. Nothing invalidates the cache: an instance lives for one
+        request, and a reference date that shifts mid-request is a bug in its own right,
+        since the whole point is to keep ages consistent (two calls either side of
+        midnight would otherwise disagree).
         """
         cached = getattr(self, "_reference_date", None)
         if cached is not None:
             return cached
 
-        earliest_validation = self.validations.order_by("created_date").first()
-        if earliest_validation and earliest_validation.created_date:
-            self._reference_date = earliest_validation.created_date.date()
-        else:
-            self._reference_date = timezone.now().date()
+        self._reference_date = timezone.now().date()
         return self._reference_date
 
     def calc_gross_income(self, frequency, types, exclude=[]):
@@ -211,7 +197,8 @@ class Screen(models.Model):
         household_members = self.household_members.all()
         for household_member in household_members:
             has_child_relationship = household_member.relationship in child_relationship or "all" in child_relationship
-            if household_member.age >= age_min and household_member.age <= age_max and has_child_relationship:
+            age = household_member.calc_age()
+            if age is not None and age_min <= age <= age_max and has_child_relationship:
                 children += 1
             if household_member.pregnant and include_pregnant:
                 children += 1
@@ -222,7 +209,8 @@ class Screen(models.Model):
         adults = 0
         household_members = self.household_members.all()
         for household_member in household_members:
-            if household_member.age >= age_max:
+            age = household_member.calc_age()
+            if age is not None and age >= age_max:
                 adults += 1
         return adults
 
@@ -325,7 +313,7 @@ class Screen(models.Model):
             return unit
 
         for member in other_tax_unit:
-            if unit["head"] is None or member.age > unit["head"].age:
+            if unit["head"] is None or (member.calc_age() or 0) > (unit["head"].calc_age() or 0):
                 unit["head"] = member
 
         spouse_id = self.relationship_map()[unit["head"].id]
@@ -644,11 +632,12 @@ class HouseholdMember(models.Model):
             return False
 
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
+        age = self.calc_age()
 
         # Path 1: Qualifying Child
         is_qualifying_child = (
             has_eligible_relationship
-            and (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
+            and ((age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability())
             and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
         )
 
@@ -683,12 +672,23 @@ class HouseholdMember(models.Model):
 
         return self.birth_year_month.month
 
-    def calc_age(self) -> int:
+    def calc_age(self) -> Optional[int]:
         if self.birth_year_month is None:
             return self.age
 
         reference_date = self.screen.get_reference_date()
         return self.age_from_date(self.birth_year_month, reference_date)
+
+    def age_at_end_of_year(self, year: Optional[int]) -> Optional[int]:
+        """
+        Age on December 31 of ``year``, for rules judged over a tax or claim year
+        rather than on the screening date. Falls back to ``calc_age()`` when the birth
+        year or the year is unknown.
+        """
+        if self.birth_year is None or year is None:
+            return self.calc_age()
+
+        return max(year - self.birth_year, 0)
 
     @staticmethod
     def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:

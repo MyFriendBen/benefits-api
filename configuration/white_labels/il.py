@@ -2296,21 +2296,28 @@ class IlConfigurationData(ConfigurationData):
     # override only the keys IL customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        "theme": {"default": "default"},
+        # twoOneOneChicago carries 211 Metro Chicago's palette; see styleController.ts.
+        "theme": {"default": "default", "211chicago": "twoOneOneChicago"},
         "logoSource": {
             "default": "MFB_ILLogo",
+            "211chicago": "Chicago211_MFBLogo",
         },
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
             },
+            "211chicago": {
+                "id": "referrerHook.logoAlts.211chicago",
+                "defaultMessage": "211 Metro Chicago and MyFriendBen home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
         },
-        "logoClass": {"default": "logo"},
+        # The co-brand lockup is ~4:1, wider than the default .logo rule expects.
+        "logoClass": {"default": "logo", "211chicago": "chicago211-logo-size"},
         "shareLink": {
             "default": "",
         },
@@ -2327,6 +2334,51 @@ class IlConfigurationData(ConfigurationData):
                 "referralSource",
                 "signUpInfo",
             ],
+            # 211 Metro Chicago runs its own intake and contact capture, so the
+            # sign-up step is dropped to avoid asking a caller for the same
+            # details twice. referralSource stays in the list for parity with the
+            # default; the screener skips it whenever the referrer code is known.
+            "211chicago": [
+                "zipcode",
+                # the hhSize and hhData have to be consecutive
+                "householdSize",
+                "householdData",
+                "hasExpenses",
+                "householdAssets",
+                "hasBenefits",
+                "acuteHHConditions",
+                "referralSource",
+            ],
+        },
+        "uiOptions": {
+            # Overrides the base's empty list so the results page omits the Immediate Help tab.
+            "default": ["no_results_more_help"],
+            # getReferrer resolves referrerData[key][referrer] ?? referrerData[key].default,
+            # so a referrer list REPLACES the default rather than extending it:
+            # no_results_more_help has to be repeated here or 211chicago users would get
+            # the Immediate Help tab back that the rest of Illinois no longer sees.
+            #
+            # il_show_211_link renders the 211 Metro Chicago resource deep links at
+            # the top of the Additional Resources tab; no_zipcode_change_state hides
+            # the "not in Illinois?" prompt on the zipcode step.
+            #
+            # white_header is not cosmetic: their logo is blue on transparent, and
+            # the default header bar is filled with --primary-color, which is now
+            # that same brand blue. Without this the mark is near-invisible.
+            "211chicago": [
+                "no_results_more_help",
+                "il_show_211_link",
+                "no_zipcode_change_state",
+                "white_header",
+            ],
+        },
+        # Every IL referrer hides the Immediate Help tab (no_results_more_help above), so the
+        # base message's "go to the Immediate Help tab" would point at a tab that isn't there.
+        "noResultMessage": {
+            "default": {
+                "_label": "noResultMessage.noImmediateHelp",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. You can find other support matched to your needs in the Additional Resources tab.",
+            },
         },
         "defaultLanguage": {"default": "en-us"},
     }

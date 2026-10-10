@@ -35,27 +35,21 @@ class Command(BaseCommand):
             self.stdout.write(f"No '{self.MIGRATION_SOURCE_DB}' db set up", self.style.ERROR)
             return
 
-        source_screens: list[Screen] = (
-            Screen.objects.using(self.MIGRATION_SOURCE_DB)
-            .filter(validations__isnull=True)
-            .prefetch_related(
-                Prefetch("user", queryset=User.objects.order_by("pk")),
-                Prefetch("white_label", queryset=WhiteLabel.objects.order_by("pk")),
-                Prefetch("household_members", queryset=HouseholdMember.objects.order_by("pk")),
-                Prefetch("household_members__income_streams", queryset=IncomeStream.objects.order_by("pk")),
-                Prefetch("household_members__insurance", queryset=Insurance.objects.order_by("pk")),
-                Prefetch(
-                    "household_members__energy_calculator", queryset=EnergyCalculatorMember.objects.order_by("pk")
-                ),
-                Prefetch("eligibility_snapshots", queryset=EligibilitySnapshot.objects.order_by("pk")),
-                Prefetch(
-                    "eligibility_snapshots__program_snapshots",
-                    queryset=ProgramEligibilitySnapshot.objects.order_by("pk"),
-                ),
-                Prefetch("expenses", queryset=Expense.objects.order_by("pk")),
-                Prefetch("messages", queryset=Message.objects.order_by("pk")),
-                Prefetch("energy_calculator", queryset=EnergyCalculatorScreen.objects.order_by("pk")),
-            )
+        source_screens: list[Screen] = Screen.objects.using(self.MIGRATION_SOURCE_DB).prefetch_related(
+            Prefetch("user", queryset=User.objects.order_by("pk")),
+            Prefetch("white_label", queryset=WhiteLabel.objects.order_by("pk")),
+            Prefetch("household_members", queryset=HouseholdMember.objects.order_by("pk")),
+            Prefetch("household_members__income_streams", queryset=IncomeStream.objects.order_by("pk")),
+            Prefetch("household_members__insurance", queryset=Insurance.objects.order_by("pk")),
+            Prefetch("household_members__energy_calculator", queryset=EnergyCalculatorMember.objects.order_by("pk")),
+            Prefetch("eligibility_snapshots", queryset=EligibilitySnapshot.objects.order_by("pk")),
+            Prefetch(
+                "eligibility_snapshots__program_snapshots",
+                queryset=ProgramEligibilitySnapshot.objects.order_by("pk"),
+            ),
+            Prefetch("expenses", queryset=Expense.objects.order_by("pk")),
+            Prefetch("messages", queryset=Message.objects.order_by("pk")),
+            Prefetch("energy_calculator", queryset=EnergyCalculatorScreen.objects.order_by("pk")),
         )
         main_checks = self._key_checks()
 

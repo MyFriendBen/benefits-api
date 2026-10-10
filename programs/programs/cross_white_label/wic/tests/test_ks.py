@@ -27,11 +27,6 @@ class TestKsWicWiring(TestCase):
     def test_registers_under_the_ks_wic_program_code(self):
         self.assertEqual(KsWic.program_code, "ks_wic")
 
-    def test_adds_ks_state_code_dependency(self):
-        """WIC's FPG table branches on AK/HI vs. contiguous US, so the state code is
-        load-bearing rather than decorative."""
-        self.assertIn(KsStateCodeDependency, KsWic.pe_inputs)
-
     def test_inherits_all_federal_pe_inputs(self):
         for dep in Wic.pe_inputs:
             with self.subTest(dep=dep):

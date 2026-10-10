@@ -1,12 +1,19 @@
+from typing import Optional
+
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
-from django.db.models import Q
+from django.db.models import Model, Q
+from django.http import HttpRequest
 from django.core.exceptions import PermissionDenied
 from rest_framework.authtoken.models import TokenProxy
 from rest_framework.authtoken.admin import TokenAdmin
 from unfold.admin import ModelAdmin, forms
+from programs.federal import FEDERAL_WHITE_LABEL
 from .models import User
+
+# Program pickers that may offer federal programs; see `_set_select_queryset`.
+FEDERAL_REFERENCE_FIELDS = frozenset({"remove_programs", "required_programs", "excludes_programs"})
 
 
 class SecureAdmin(ModelAdmin):
@@ -69,7 +76,9 @@ class SecureAdmin(ModelAdmin):
 
         return form
 
-    def _set_select_queryset(self, field_name: str, field: forms.ModelMultipleChoiceField, obj, request):
+    def _set_select_queryset(
+        self, field_name: str, field: forms.ModelMultipleChoiceField, obj: Optional[Model], request: HttpRequest
+    ) -> None:
         user: User = request.user
 
         # filter the white label field
@@ -85,6 +94,13 @@ class SecureAdmin(ModelAdmin):
         # rather than being filtered out by these scoping rules.
         if hasattr(field.queryset.model, "white_label"):
             shared = Q(white_label__isnull=True)
+            # Federal programs are shown to every white label, so a white label's rows may point
+            # at one where the link only *references* it: a referrer hiding it, or a program
+            # requiring or excluding it. Fields that attach state content to a program (a
+            # warning's `programs`, a translation override's `program`) stay scoped, or that
+            # content would follow the federal program into every other white label.
+            if field_name in FEDERAL_REFERENCE_FIELDS:
+                shared |= Q(white_label__code=FEDERAL_WHITE_LABEL)
 
             if not self._is_superuser(request):
                 field.queryset = field.queryset.filter(Q(white_label__in=user.white_labels.all()) | shared)

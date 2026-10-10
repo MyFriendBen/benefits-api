@@ -30,7 +30,7 @@ def make_member(age=40, insurance="none"):
     "none", "dont_know", "medicaid", "medicare", "employer", "private".
     """
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
 
     def has_insurance_types(types, strict=True):
         wanted = set(types)

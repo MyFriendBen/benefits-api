@@ -192,7 +192,7 @@ is shown as potentially eligible. Primary regression test.
 
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `1`
 * Person 1: Birth month/year `March 2004` (age 22), `headOfHousehold`, wages: $3,750/month (~$45,000/year)
 
@@ -209,7 +209,7 @@ eligible. Tests that the threshold is "at or below," not "strictly below."
 
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `1`
 * Person 1: Birth month/year `March 2004` (age 22), `headOfHousehold`, wages: $8,333/month (~$99,996/year, at the $100,000 limit)
 
@@ -225,7 +225,7 @@ ineligible. Primary screen-out case.
 
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `1`
 * Person 1: Birth month/year `March 2004` (age 22), `headOfHousehold`, wages: $8,334/month (~$100,008/year, just over the $100,000 limit)
 
@@ -241,7 +241,7 @@ Tests the second income tier.
 
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `3`
 * Person 1: Birth month/year `March 1980` (age 46), `headOfHousehold`, wages: $12,499/month (~$149,988/year)
 * Person 2: Birth month/year `March 2004` (age 22), `child`, no income
@@ -259,7 +259,7 @@ ineligible.
 
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `3`
 * Person 1: Birth month/year `March 1980` (age 46), `headOfHousehold`, wages: $12,501/month (~$150,012/year)
 * Person 2: Birth month/year `March 2004` (age 22), `child`, no income
@@ -278,7 +278,7 @@ household sizes above 3.
 
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `4`
 * Person 1: Birth month/year `March 1980` (age 46), `headOfHousehold`, wages: $12,899/month (~$154,788/year, at the $154,800 limit)
 * Person 2: Birth month/year `March 2004` (age 22), `child`, no income
@@ -297,7 +297,7 @@ this scenario.
 
 **Steps**:
 
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `4`
 * Person 1: Birth month/year `March 1980` (age 46), `headOfHousehold`, wages: $12,901/month (~$154,812/year)
 * Person 2: Birth month/year `March 2004` (age 22), `child`, no income

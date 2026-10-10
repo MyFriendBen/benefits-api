@@ -21,7 +21,7 @@ from programs.framework.pe_dependencies import member
 
 def make_member(age: int | None = 40, disabled=False, visually_impaired=False, long_term_disability=False):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.disabled = disabled
     member.visually_impaired = visually_impaired
     member.long_term_disability = long_term_disability

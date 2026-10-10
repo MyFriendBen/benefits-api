@@ -12,8 +12,7 @@
     "year": 2026,
     "legal_status_required": [
       "citizen",
-      "gc_5plus",
-      "refugee"
+      "gc_5plus"
     ],
     "name": "Children's Health Insurance Program (CHIP)",
     "description": "CHIP gives free or low-cost health coverage to children under 19. It pays for doctor visits, dental and vision care, hospital stays, and prescriptions.\n\nIn Kansas, CHIP is part of KanCare. If your child qualifies, you pick a KanCare health plan that covers their care.\n\nCHIP is for families who earn too much for Medicaid but still need help paying for coverage. Depending on your income, you may pay a small monthly premium.\n\nYou apply for CHIP through KanCare. The same form also checks if your child can get Medicaid.",

@@ -177,7 +177,7 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `75001`, Select county `Collin`
+- **Location**: Enter ZIP code `75001`, Select county `Dallas`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1961` (age 65), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,632`, Frequency: `Monthly`, Citizenship: `U.S. Citizen`
 - **Assets**: Total household assets: `$9,400`
@@ -192,7 +192,7 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `75001`, Select county `Collin`
+- **Location**: Enter ZIP code `75001`, Select county `Dallas`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1959` (age 67), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,275` monthly, Assets: `$8,000` (below $9,430 resource limit)
 
@@ -355,8 +355,33 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 - https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/appendix-ix-medicare-savings-program-information
 - https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview
 
-## JSON Test Cases
-File: `validations/management/commands/import_validations/data/tx_medicare_savings_program.json`
-
 ## Program Configuration
 File: `programs/management/commands/import_program_config_data/data/tx_medicare_savings_program_initial_config.json`
+
+## Data gap: which poverty-guideline edition applies
+
+**Unresolved.** This spec states the thresholds as percentages — QMB 100%, SLMB 120%,
+QI 135% — but never says which edition of the guideline they are applied against, or
+whether Texas lags the January publication. Medicare Savings Program limits are set by the
+states within federal bounds, and states adopt a new guideline on their own schedules, so
+the percentage alone does not determine the answer.
+
+**Interim position: PolicyEngine is treated as the source of truth.** Probed at request
+period 2026, the outer eligibility boundary for a single 68-year-old on Social Security
+is 135% of the **2026** guideline plus SSI's $20/month general income exclusion:
+**$21,546 + $240 = $21,786/year**. The probe bisects to $12 (a dollar a month) and last
+found eligibility at $21,784, within that resolution of $21,786. The 2025-based figure
+($21,128 + $240 = $21,368) is $418 away, so the edition is unambiguous. The program is
+therefore configured for 2026. Build boundary scenarios from $21,786, not from the probe's
+output. Reproduce with `qa/MFB-1786-threshold-probe.py`.
+
+**What still needs establishing:** the governing rule and Texas's adoption date, so the
+edition follows a citation rather than an observation. If PolicyEngine does not model a
+state's adoption lag, a household screened before Texas adopts the new guideline would be
+told the wrong answer, and this probe could not distinguish that case.
+
+**Also correct while here:** the note at the countable-income scenario gives the 135%
+ceiling as $1,694.25/month and labels it "2025 FPL". That figure is 135% of the **2024**
+guideline ($15,060 × 1.35 ÷ 12). The 2025 figure is $1,760.62 and the 2026 figure is
+$1,795.50. The scenario's expected outcome is unaffected — the household is well clear of
+the ceiling either way — but the stated figure is a year out.

@@ -1,9 +1,8 @@
-"""Household builders and a base test case for custom (MFB) calculator tests.
+"""A base test case for custom (MFB) calculator tests.
 
-The PolicyEngine side of `pe_integration` builds a household for a recorded request,
-so its ids are explicit and its amounts are verbatim from a spec scenario. A custom
-calculator reads the same `Screen` but computes locally, so nothing here needs a fixed
-primary key and a test can let Django assign them.
+The household builders live in `households`, shared with `pe_integration`. The PolicyEngine
+side passes explicit ids, because a cassette replays only against the household it was
+recorded from; a custom calculator computes locally, so a test here lets Django assign them.
 
 What a custom test needs, measured across the files that hand-roll a household today:
 a white label always, an income stream usually, and a `Program` row carrying an FPL year
@@ -29,138 +28,13 @@ from programs.programs.testing_fixtures.households import (
     add_expense,
     add_income,
     add_insurance,
-    SCREENER_MEMBER_DEFAULTS,
-    birth_year_month_for_age,
+    add_member,
     make_program,
+    make_screen,
     make_white_label,
+    set_age,
 )
-from screener.models import HouseholdMember, Insurance, Screen
-
-
-def make_screen(
-    white_label_code: str = "test",
-    state_code: str = "TS",
-    household_size: int = 1,
-    zipcode: str = "",
-    county: str = "",
-    household_assets: int = 0,
-    **kwargs,
-) -> Screen:
-    """A household to run a calculator against.
-
-    `household_size` is what the calculator reads for FPL and SMI lookups, and it is
-    not derived from the members added afterwards — a test that needs them to agree
-    has to say so, because some scenarios deliberately disagree.
-
-    `is_test=True` marks the row the way the screener marks its own test traffic. Nothing
-    in the eligibility path reads it — only `set_screen_is_test`, the serializers, and the
-    view filters — so it is a labelling convenience rather than a behavioural switch.
-    """
-    return Screen.objects.create(
-        white_label=make_white_label(white_label_code, state_code),
-        zipcode=zipcode,
-        county=county,
-        household_size=household_size,
-        household_assets=household_assets,
-        completed=False,
-        is_test=True,
-        **kwargs,
-    )
-
-
-def add_member(
-    screen: Screen,
-    relationship: str = "headOfHousehold",
-    age: float = 30,
-    monthly_income: int = 0,
-    yearly_income: int = 0,
-    income_type: str = "wages",
-    stored_age: bool = True,
-    **kwargs,
-) -> HouseholdMember:
-    """Add a household member, and their income when the scenario states one.
-
-    `monthly_income` and `yearly_income` describe a member by what they earn, at whichever
-    frequency the scenario states — an annual figure is not divided down, because a limit
-    tested at the boundary rarely survives the rounding. Both may be given. Call
-    `add_income` directly for a second stream or a frequency other than these two.
-
-    `age` is stated as the scenario states it and may be fractional — `3.5` is three years
-    six months, for the calculators that read `fraction_age()` rather than a whole-year age.
-    `birth_year_month` is what the member's age is: `calc_age()` and `fraction_age()` derive
-    it, and the stored `age` column is only a copy.
-
-    Pass `birth_year_month` instead when the scenario turns on an absolute calendar date
-    rather than an age — a program start date or an enrollment window — since a birth month
-    derived from today would drift out of that window as the calendar moves. The stored
-    `age` is then derived from it. Passing both is allowed only when they agree, so a member
-    can never be two different people.
-
-    The condition checkboxes (`student`, `pregnant`, `disabled`, …) default to False, as the
-    screener sends them when none is ticked. Pass `None` explicitly for a row that lacks one.
-
-    `stored_age=False` saves the member with a null `age`, as every member will be once the
-    column is dropped, so a calculator still reading it fails in its own tests.
-
-    An `Insurance` row comes with the member, defaulting to uninsured, because the
-    relation is one-to-one and non-null: a calculator reading `member.insurance` raises
-    `RelatedObjectDoesNotExist` without it. Override with `add_insurance`.
-    """
-    for field, default in SCREENER_MEMBER_DEFAULTS.items():
-        kwargs.setdefault(field, default)
-
-    reference_date = screen.get_reference_date()
-    birth_year_month = kwargs.get("birth_year_month")
-
-    if "birth_year_month" not in kwargs and age is not None:
-        kwargs["birth_year_month"] = birth_year_month_for_age(age, reference_date)
-    elif birth_year_month is not None:
-        derived = HouseholdMember.age_from_date(birth_year_month, reference_date)
-        if age is None:
-            age = derived
-        elif int(age) != derived:
-            raise ValueError(
-                f"age={age} disagrees with birth_year_month={birth_year_month}, which is {derived} "
-                f"on {reference_date}. Pass one of them."
-            )
-
-    # The screener sets `has_income` from the streams, which `add_income` mirrors. An explicit
-    # value is reapplied afterwards, for a row written through the API that disagrees.
-    explicit_has_income = kwargs.pop("has_income", None)
-
-    household_member = HouseholdMember.objects.create(
-        screen=screen,
-        relationship=relationship,
-        age=age if stored_age else None,
-        has_income=False,
-        **kwargs,
-    )
-    Insurance.objects.create(household_member=household_member)
-
-    if monthly_income:
-        add_income(household_member, monthly_income, income_type=income_type)
-
-    if yearly_income:
-        add_income(household_member, yearly_income, income_type=income_type, frequency="yearly")
-
-    if explicit_has_income is not None and household_member.has_income != explicit_has_income:
-        household_member.has_income = explicit_has_income
-        household_member.save(update_fields=["has_income"])
-
-    return household_member
-
-
-def set_age(member: HouseholdMember, age: Optional[float], stored_age: bool = True) -> HouseholdMember:
-    """Change an existing member's age, keeping `birth_year_month` in step.
-
-    Assigning `member.age` alone leaves the birth month saying otherwise, and `calc_age()`
-    reads the birth month. `None` clears both, for a member whose age the screener lacks.
-    """
-    member.birth_year_month = None if age is None else birth_year_month_for_age(age, member.screen.get_reference_date())
-    member.age = age if stored_age else None
-    member.save(update_fields=["age", "birth_year_month"])
-
-    return member
+from screener.models import HouseholdMember, Screen
 
 
 class CustomCalculatorTestCase(TestCase):

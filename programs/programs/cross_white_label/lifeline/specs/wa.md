@@ -136,7 +136,7 @@
 
 ---
 
-## Validation Scenarios
+## Test Scenarios
 
 ### Scenario 1: Single adult on SNAP with low income in Washington State
 

@@ -1,6 +1,7 @@
 import hashlib
 import requests
-from typing import Optional
+from typing import Any, Optional
+from uuid import UUID
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
@@ -22,7 +23,9 @@ from screener.models import (
     ProgramEligibilitySnapshot,
 )
 from rest_framework import viewsets, views, status, mixins, throttling
+from rest_framework.exceptions import NotFound
 from rest_framework import permissions
+from rest_framework.request import Request
 from rest_framework.response import Response
 from screener.serializers import (
     ScreenSerializer,
@@ -38,10 +41,11 @@ from screener.serializers import (
     RemImpactSerializer,
     CurrentBenefitToggleSerializer,
 )
-from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
+from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
+from programs.federal import filter_programs_by_name, visible_program, visible_to, visible_to_code
 from programs.models import (
     Document,
     Navigator,
@@ -56,9 +60,9 @@ from programs.categories import ProgramCategoryCapCalculator, category_cap_calcu
 from django.core.exceptions import ObjectDoesNotExist
 from programs.warnings import warning_calculators
 from programs.serializers import HasBenefitsProgramSerializer
-from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
 from .urgent_needs import eligible_urgent_needs
+from .navigators import navigators_for_program
 from drf_yasg.utils import swagger_auto_schema
 import math
 import json
@@ -147,7 +151,7 @@ class ScreenCurrentBenefitsView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Screen.objects.all()
 
-    def patch(self, request, screen_uuid):
+    def patch(self, request: Request, screen_uuid: UUID) -> Response:
         serializer = CurrentBenefitToggleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         name_abbreviated = serializer.validated_data["name_abbreviated"]
@@ -160,11 +164,24 @@ class ScreenCurrentBenefitsView(views.APIView):
         # the locked screen's white label rather than a pre-lock read.
         with transaction.atomic():
             screen = get_object_or_404(Screen.objects.select_for_update(), uuid=screen_uuid)
-            program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=name_abbreviated)
+            # Not a get(): a federal row and the deactivated state row it replaced share a name,
+            # and get() would raise MultipleObjectsReturned on the pair.
+            program = visible_program(screen.white_label, name_abbreviated, "current benefit toggle")
+            if program is None:
+                raise NotFound(
+                    f"No program '{name_abbreviated}' is offered to white label '{screen.white_label.code}'."
+                )
+            # Match the screen's rows by name, not by `program`: a screen saved before its program
+            # moved to federal still points at the deactivated state row. Clearing every row with
+            # this name lets an untick remove that old row, and a tick replace it with the federal
+            # one rather than add a second row for the same benefit.
+            CurrentBenefit.objects.filter(
+                visible_to(screen.white_label, prefix="program__"),
+                screen=screen,
+                program__name_abbreviated=name_abbreviated,
+            ).delete()
             if has:
-                CurrentBenefit.objects.get_or_create(screen=screen, program=program)
-            else:
-                CurrentBenefit.objects.filter(screen=screen, program=program).delete()
+                CurrentBenefit.objects.create(screen=screen, program=program)
             current_benefits = sorted(
                 CurrentBenefit.objects.filter(screen=screen).values_list("program__name_abbreviated", flat=True)
             )
@@ -312,7 +329,6 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
         urgent_needs = urgent_need_results(screen, eligibility)
         external_api_failures = get_external_api_failures()
-    validations = ValidationSerializer(screen.validations.all(), many=True).data
 
     results = {
         "programs": eligibility,
@@ -320,7 +336,6 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         "screen_id": screen.id,
         "default_language": screen.request_language_code,
         "missing_programs": missing_programs,
-        "validations": validations,
         "program_categories": categories,
         "pe_data": _pe_data,
         # Unlike pe_data (admin-only, popped below), this is sent to all users so the
@@ -338,33 +353,6 @@ def translations_prefetch_name(prefix: str, fields):
     return [f"{prefix}{f}__translations" for f in fields]
 
 
-def filter_by_county(navigators: list, county: Optional[str]) -> list:
-    result = []
-    for nav in navigators:
-        counties = nav.counties.all()
-        if len(counties) == 0 or (county is not None and any(county in c.name for c in counties)):
-            result.append(nav)
-    return result
-
-
-def filter_by_required_programs_eligibility(navigators: list, program_eligibility: dict) -> list:
-    result = []
-    for nav in navigators:
-        required = nav.eligibility_programs.all()
-        if not required or all(
-            getattr(program_eligibility.get(p.name_abbreviated), "eligible", False) for p in required
-        ):
-            result.append(nav)
-    return result
-
-
-def referrer_prioritization(eligibility_filtered: list, primary_navigators: list) -> list:
-    if not primary_navigators:
-        return eligibility_filtered
-    referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
-    return referrer_navigators if referrer_navigators else eligibility_filtered
-
-
 def update_navigators(
     eligible_program_data: list,
     program_eligibility: dict,
@@ -372,12 +360,15 @@ def update_navigators(
     screen_county: Optional[str],
     referrer,
 ) -> None:
+    """Attach each eligible program's navigators to its results entry, in place.
+
+    The selection itself lives in `screener.navigators` so Benji's context builder can
+    run the same three filters against the same inputs — see that module for why the
+    two consumers must not drift.
+    """
     primary_navs = list(referrer.primary_navigators.all()) if referrer is not None else []
     for program, idx in eligible_program_data:
-        all_navigators = [pn.navigator for pn in program.program_navigators.all()]
-        county_filtered = filter_by_county(all_navigators, screen_county)
-        eligibility_filtered = filter_by_required_programs_eligibility(county_filtered, program_eligibility)
-        navigators = referrer_prioritization(eligibility_filtered, primary_navs)
+        navigators = navigators_for_program(program, program_eligibility, screen_county, primary_navs)
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
@@ -431,7 +422,9 @@ CALC_ORDER = (
 )
 
 
-def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
+def eligibility_results(
+    screen: Screen, batch: bool = False, pe_version: Optional[str] = None
+) -> tuple[list[dict[str, Any]], bool, list[dict[str, Any]], PEData]:
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,
@@ -440,12 +433,15 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     except ObjectDoesNotExist:
         referrer = None
 
-    excluded_programs = []
+    # By name, not id: a program moved to federal gets a new row under the same name, and a
+    # referrer that removed the old state row means to remove its replacement too.
+    excluded_names = []
     if referrer is not None:
-        excluded_programs = [p.id for p in referrer.remove_programs.all()]
+        excluded_names = [p.name_abbreviated for p in referrer.remove_programs.all()]
 
     all_programs = (
-        Program.objects.filter(active=True, category__isnull=False, white_label=screen.white_label)
+        Program.objects.filter(visible_to(screen.white_label), active=True, category__isnull=False)
+        .select_related("white_label")
         .prefetch_related(
             "legal_status_required",
             "year",
@@ -475,8 +471,16 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             "category",
             *translations_prefetch_name("category__", ProgramCategory.objects.translated_fields),
         )
-        .exclude(id__in=excluded_programs)
+        .exclude(name_abbreviated__in=excluded_names)
+        # Explicit so the response order is stable: CALC_ORDER only reorders its own programs and
+        # keeps the rest in query order, which without this is whatever Postgres returns and
+        # shifts with the query plan or an edited row.
+        .order_by("id")
     )
+    # Every name below keys a dict (`program_by_abbr`, `program_eligibility`), so a name active
+    # under both this white label and `federal` would silently drop one row from the PE payload
+    # while still displaying both.
+    all_programs = filter_programs_by_name(all_programs, "eligibility_results")
     data = []
 
     try:
@@ -505,13 +509,15 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     # Built after `program_by_abbr` on purpose. `force_calculated_codes()` contains no
     # PolicyEngine program, and keeping the two lists separate makes that structural — a
     # row added here can never reach `pe_calculators` and perturb the shared PE payload.
-    upstream_only_programs = list(
+    upstream_only_programs = filter_programs_by_name(
         Program.objects.filter(
-            white_label=screen.white_label,
+            visible_to(screen.white_label),
             name_abbreviated__in=force_calculated_codes(),
         )
         .exclude(name_abbreviated__in=list(program_by_abbr))
-        .select_related("year")
+        .select_related("year", "white_label")
+        .order_by("id"),
+        "eligibility_results upstream",
     )
     upstream_only_ids = {program.id for program in upstream_only_programs}
 
@@ -528,7 +534,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     pe_programs = pe_calculators.keys()
 
-    def sort_first(program):
+    def sort_first(program: Program) -> int:
         if program.name_abbreviated not in CALC_ORDER:
             return len(CALC_ORDER)
 
@@ -897,12 +903,15 @@ class HasBenefitsProgramsView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Program.objects.none()  # Required for DjangoModelPermissions
 
-    def get(self, request, white_label):
-        programs = Program.objects.filter(
-            active=True,
-            show_in_has_benefits_step=True,
-            white_label__code=white_label,
-        ).select_related("name", "website_description", "category__name")
+    def get(self, request: Request, white_label: str) -> Response:
+        programs = filter_programs_by_name(
+            Program.objects.filter(
+                visible_to_code(white_label),
+                active=True,
+                show_in_has_benefits_step=True,
+            ).select_related("name", "website_description", "category__name", "white_label"),
+            "has-benefits step",
+        )
 
         serializer = HasBenefitsProgramSerializer(programs, many=True)
         return Response(serializer.data)
@@ -914,30 +923,35 @@ class ReferralSourcesView(views.APIView):
     Response shape:
         {
             "generic": {"friend": "Friend / Family", ...},
-            "partners": {"bia": "Benefits in Action", ...}
+            "partners": {"bia": "Benefits in Action", ...},
+            "hidden": {"211chicago": "211 Metro Chicago", ...}
         }
 
-    Both groups are sorted alphabetically by display name.
+    generic and partners are the dropdown options. hidden holds referrers with
+    show_in_dropdown=False: not offered in the dropdown, but still known, so a
+    ?referrer= link to one skips the referral step like any other referrer.
+
+    All groups are sorted alphabetically by display name.
     """
 
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Referrer.objects.none()  # Required for DjangoModelPermissions
 
     def get(self, request, white_label):
-        referrers = Referrer.objects.filter(
-            white_label__code=white_label,
-            show_in_dropdown=True,
-        ).order_by("name")
+        referrers = Referrer.objects.filter(white_label__code=white_label).order_by("name")
 
         generic = {}
         partners = {}
+        hidden = {}
         for ref in referrers:
-            if ref.is_partner:
+            if not ref.show_in_dropdown:
+                hidden[ref.referrer_code] = ref.name
+            elif ref.is_partner:
                 partners[ref.referrer_code] = ref.name
             else:
                 generic[ref.referrer_code] = ref.name
 
-        return Response({"generic": generic, "partners": partners})
+        return Response({"generic": generic, "partners": partners, "hidden": hidden})
 
 
 class RemImpactView(views.APIView):

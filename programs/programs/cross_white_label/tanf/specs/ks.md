@@ -213,7 +213,7 @@ Note: For shared living, the per-person increment for family sizes 5+ is not a f
 
 Benefit = Payment Standard − Countable Income. If countable income ≥ payment standard, benefit = $0.
 
-> **Storage convention:** All benefit values in this spec are expressed as monthly figures for readability. The validation JSON (`ks_tanf.json`) stores `expected_results.value` as annual amounts (monthly × 12). Example: $403/month → 4836 in the JSON.
+> **Storage convention:** All benefit values in this spec are expressed as monthly figures for readability. The calculator returns annual amounts (monthly × 12). Example: $403/month → 4836.
 
 ### Data Gaps
 
@@ -234,18 +234,18 @@ Source: [KS DCF Cash Assistance Payment Standards](https://www.dcf.ks.gov/servic
 
 ## Test Scenarios
 
-*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios 1, 10, and 15 are reflected in the validation JSON (`ks_tanf.json`). All other scenarios are for QA coverage and traceability. Scenarios marked ⚠️ PE depend on MFB-level logic not yet in PE and should be confirmed via the PE delta report.*
+*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios marked ⚠️ PE depend on MFB-level logic not yet in PE and should be confirmed via the PE delta report.*
 
 Payment standard assumptions: non-shared living (inclusivity assumption). County tiers per KEESM Appendix T-2. Income disregard: countable = (earnings − $90) × 40% (minimum $0), applied per employed person.
 
 ---
 
-### Scenario 1: Single parent, 2 children, no income (Golden Path) ✓ in validation JSON
+### Scenario 1: Single parent, 2 children, no income (Golden Path)
 
 **What we're checking**: A single parent with two young children and no income qualifies under Criterion 1 (child presence) and Criterion 3 (income below 30% FPL). High Population county tier.
 **Expected**: Eligible — $403/month (payment standard family 3, High Pop, non-shared: $403 − $0 countable = $403).
 **Steps**:
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `3`, assets: $500
 * Person 1: Birth month/year `March 1996` (age 30), `headOfHousehold`, no income, insurance: none
 * Person 2: Birth month/year `January 2020` (age 6), `child`, no income, insurance: none
@@ -260,7 +260,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: HOH under 18 with a qualifying infant. Criterion 6 requires caretakers to be 18+, but narrow exceptions exist. PE does not implement this check — with the MFB inclusivity assumption the household is still shown as potentially eligible.
 **Expected**: Eligible — $326/month *(PE dependent — confirm via delta report before go-live)*.
 **Steps**:
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `2`, assets: $200
 * Person 1: Birth month/year `March 2009` (age 17), `headOfHousehold`, no income, insurance: none
 * Person 2: Birth month/year `March 2026` (age 0), `child`, no income, insurance: none
@@ -274,7 +274,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: Household with gross income just under the 30% FPL ceiling. Validates that the earned income disregard formula is applied correctly and eligibility is granted at the boundary.
 **Expected**: Eligible — $175/month (countable = ($660 − $90) × 40% = $228; payment standard $403 − $228 = $175).
 **Steps**:
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `3`, assets: $200
 * Person 1: Birth month/year `April 1992` (age 34), `headOfHousehold`, wages: $660/month, insurance: none
 * Person 2: Birth month/year `March 2018` (age 8), `child`, no income, insurance: none
@@ -290,7 +290,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: Household with gross income just over the 30% FPL ceiling is correctly rejected. Validates the income gate is enforced.
 **Expected**: Not eligible (no value).
 **Steps**:
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `2`, assets: $200
 * Person 1: Birth month/year `April 1992` (age 34), `headOfHousehold`, wages: $545/month, insurance: none
 * Person 2: Birth month/year `March 2018` (age 8), `child`, no income, insurance: none
@@ -305,7 +305,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: Household with liquid assets just over the $3,000 resource limit is rejected regardless of income (Criterion 4).
 **Expected**: Not eligible (no value).
 **Steps**:
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `3`, assets: $3,001
 * Person 1: Birth month/year `April 1990` (age 36), `headOfHousehold`, no income, insurance: none
 * Person 2: Birth month/year `March 2015` (age 11), `child`, no income, insurance: none
@@ -320,7 +320,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: Caretaker who just turned 18 — boundary condition for the age-18+ requirement (Criterion 6). PE does not currently implement this check.
 **Expected**: Eligible — $326/month *(PE dependent)*.
 **Steps**:
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `2`, assets: $200
 * Person 1: Birth month/year `June 2008` (age 18), `headOfHousehold`, no income, insurance: none
 * Person 2: Birth month/year `March 2022` (age 4), `child`, no income, insurance: none
@@ -334,7 +334,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: HOH age 17 caring for a 15-year-old sibling. Under the caretaker age-18+ rule (Criterion 6) the household would be ineligible unless a minor exception applies, but PE's `ks_tanf_eligible` has no applicant-capacity check and MFB does not add an MFB-side gate (pure-PE calculator — see Implementation Notes). Under the inclusivity assumption the household is therefore shown as potentially eligible; DCF confirms capacity at application.
 **Expected**: Eligible — $326/month (Shawnee = High Population tier, family 2, non-shared: $326 − $0 countable = $326). *Minor-capacity gate is a deferred PE limitation (Criterion 6); revisit if PE implements it.*
 **Steps**:
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `2`, assets: $200
 * Person 1: Birth month/year `March 2009` (age 17), `headOfHousehold`, no income, insurance: none
 * Person 2: Birth month/year `March 2011` (age 15), `sisterOrBrother`, no income, insurance: none
@@ -348,7 +348,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: Earned income disregard applied to a larger household. Validates that countable income is correctly calculated and subtracted from a higher payment standard.
 **Expected**: Eligible — $404/month (countable applied per employed person: HOH ($300 − $90) × 40% = $84, spouse ($200 − $90) × 40% = $44, total $128; payment standard family 5, High Pop $532 − $128 = $404).
 **Steps**:
-* Location: ZIP `66502`, county `Riley`
+* Location: ZIP `66502`, county `Riley County`
 * Household size: `5`, assets: $400
 * Person 1: Birth month/year `April 1991` (age 35), `headOfHousehold`, wages: $300/month, insurance: none
 * Person 2: Birth month/year `June 1993` (age 32), `spouse`, wages: $200/month, insurance: none
@@ -367,7 +367,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: Extended-family caretaker pathway. Validates that `grandChild` relationship values are recognized as qualifying children and that a non-parent caretaker household passes eligibility (Criterion 8).
 **Expected**: Eligible — $403/month (payment standard family 3, High Pop, non-shared: $403 − $0 = $403).
 **Steps**:
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `3`, assets: $1,200
 * Person 1: Birth month/year `March 1964` (age 62), `headOfHousehold`, no income, insurance: none
 * Person 2: Birth month/year `January 2016` (age 10), `grandChild`, no income, insurance: none
@@ -377,12 +377,12 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 
 ---
 
-### Scenario 10: Adult-only household — no qualifying child (Primary Exclusion) ✓ in validation JSON
+### Scenario 10: Adult-only household — no qualifying child (Primary Exclusion)
 
 **What we're checking**: The most common TANF ineligibility reason — no dependent child present (Criterion 1 fails). Income level is irrelevant; the household is rejected at the first criterion.
 **Expected**: Not eligible (no value).
 **Steps**:
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `1`, assets: $1,000
 * Person 1: Birth month/year `March 1991` (age 35), `headOfHousehold`, wages: $1,200/month, insurance: none
 
@@ -395,7 +395,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: Alternative eligibility pathway under Criterion 2. A pregnant adult with no children qualifies; confirms pregnancy confers eligibility independently of child presence.
 **Expected**: Eligible — $197/month (countable = ($200 − $90) × 40% = $44; payment standard family 1, High Pop $241 − $44 = $197).
 **Steps**:
-* Location: ZIP `66604`, county `Shawnee`
+* Location: ZIP `66604`, county `Shawnee County`
 * Household size: `1`, assets: $200
 * Person 1: Birth month/year `May 1994` (age 32), `headOfHousehold`, pregnant: yes, wages: $200/month, insurance: none
 
@@ -408,7 +408,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: T-2 county tier lookup for the lowest payment tier. Validates that the Rural payment standard is applied when `county` maps to Group I in the T-2 lookup.
 **Expected**: Eligible — $342/month (countable = ($200 − $90) × 40% = $44; payment standard family 3, Rural $386 − $44 = $342).
 **Steps**:
-* Location: ZIP `66749`, county `Allen`
+* Location: ZIP `66749`, county `Allen County`
 * Household size: `3`, assets: $200
 * Person 1: Birth month/year `April 1990` (age 36), `headOfHousehold`, wages: $200/month, insurance: none
 * Person 2: Birth month/year `March 2018` (age 8), `child`, no income, insurance: none
@@ -423,7 +423,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: T-2 county tier lookup for the highest payment tier. Validates that the HC+HP payment standard is applied when `county` maps to Group V.
 **Expected**: Eligible — $429/month (payment standard family 3, HC+HP, non-shared: $429 − $0 = $429).
 **Steps**:
-* Location: ZIP `66062`, county `Johnson`
+* Location: ZIP `66062`, county `Johnson County`
 * Household size: `3`, assets: $200
 * Person 1: Birth month/year `April 1990` (age 36), `headOfHousehold`, no income, insurance: none
 * Person 2: Birth month/year `March 2018` (age 8), `child`, no income, insurance: none
@@ -438,7 +438,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 **What we're checking**: SSI recipients are excluded from the TANF assistance unit (Criterion 12). The HOH's $900 SSI income is not counted; only the child remains in the unit, giving a family-of-1 payment standard.
 **Expected**: Eligible — $241/month (HOH excluded from unit; family 1, High Pop, non-shared: $241 − $0 countable = $241).
 **Steps**:
-* Location: ZIP `67202`, county `Sedgwick`
+* Location: ZIP `67202`, county `Sedgwick County`
 * Household size: `2`, assets: $500
 * Person 1: Birth month/year `April 1980` (age 46), `headOfHousehold`, SSI (`income_streams[].type: "sSI"`): $900/month — excluded from TANF unit, insurance: none
 * Person 2: Birth month/year `March 2022` (age 4), `child`, no income, insurance: none
@@ -447,12 +447,12 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 
 ---
 
-### Scenario 15: Income disregard + county tier — single parent, earned income, Johnson County ✓ in validation JSON
+### Scenario 15: Income disregard + county tier — single parent, earned income, Johnson County
 
 **What we're checking**: The $90 + 60% earned income disregard formula and the T-2 HC+HP county tier lookup together. Uses a mid-range income to produce a non-zero countable amount and tests the highest-tier payment standard.
 **Expected**: Eligible — $268/month (gross $300 < ~$541 (30% FPL for family 2) ✓; countable = ($300 − $90) × 40% = $84; payment standard family 2, HC+HP $352 − $84 = $268).
 **Steps**:
-* Location: ZIP `66062`, county `Johnson`
+* Location: ZIP `66062`, county `Johnson County`
 * Household size: `2`, assets: $300
 * Person 1: Birth month/year `June 1998` (age 28), `headOfHousehold`, wages: $300/month, insurance: none
 * Person 2: Birth month/year `March 2024` (age 2), `child`, no income, insurance: none

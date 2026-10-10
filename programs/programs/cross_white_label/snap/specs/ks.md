@@ -213,7 +213,7 @@ for reference.
 **Benefit math** (FY2026): gross $1,200/mo earned; net = 1,200 − 209 std − 240 (20% earned) = $751; benefit = 298 max − 0.30 × 751 = **$72/mo**.
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: Head of Household, Sex: Male, Not a student enrolled in higher education, Not pregnant, No disability, U.S. citizen
 - **Income**: Employment income: `$1,200` per month, No other income sources
@@ -231,7 +231,7 @@ for reference.
 **Expected**: Eligible — $6,432/yr ($536/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+- **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 - **Household**: Number of people: `4`
 - **Person 1**: Birth month/year: `January 1987` (age 39), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$3,400` per month
 - **Person 2**: Birth month/year: `January 1989` (age 37), Relationship: Spouse, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, No income
@@ -252,7 +252,7 @@ for reference.
 **Expected**: Eligible — $3,540/yr ($295/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$2,291` per month ($1 below the HH2 limit of $2,292)
 - **Person 2**: Birth month/year: `January 2021` (age 5), Relationship: Child, Sex: Male, No income
@@ -270,7 +270,7 @@ for reference.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$1,800` per month (above the HH1 limit of $1,696)
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
@@ -286,7 +286,7 @@ for reference.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+- **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, No disability, U.S. citizen
 - **Income**: Unemployment income: `$1,650` per month (unearned; below the gross limit of $1,696, but with only the $209 standard deduction and no earned-income or shelter deductions, net ≈ $1,441, above the net limit of $1,305)
@@ -304,7 +304,7 @@ for reference.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+- **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$1,000` per month (well under the income limits)
 - **Assets**: `$5,000` in countable resources (above the $3,000 limit)
@@ -322,7 +322,7 @@ for reference.
 **Benefit math** (FY2026): the calculated benefit falls below the SNAP minimum, so the household receives the **minimum allotment** of $24/mo — see *Benefit Value → Minimum allotment*.
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: Head of Household, Not a student, Not pregnant, Not disabled (using the age 60+ exemption)
 - **Income**: Social Security retirement income: `$1,800` per month (above the HH1 gross limit of $1,696)
@@ -341,7 +341,7 @@ for reference.
 **Expected**: Eligible — $1,080/yr ($90/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, Not a student, Not pregnant, Disabled, U.S. citizen
 - **Income**: SSI income `$900`/month (reported SSI receipt)
@@ -359,7 +359,7 @@ for reference.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Location**: Enter ZIP code `66045`, Select county `Douglas County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 2006` (age 20), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), No exemption — `student_works_20_plus_hrs` = **No**, `student_has_work_study` = **No**, `student_job_training_program` = **No**, No dependent child, No disability
 - **Income**: No earned or unearned income, Total gross monthly income: `$0`
@@ -376,7 +376,7 @@ for reference.
 **Expected**: Eligible — $864/yr ($72/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Location**: Enter ZIP code `66045`, Select county `Douglas County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), Exemption — `student_job_training_program` = **Yes**; `student_works_20_plus_hrs` = **No**, `student_has_work_study` = **No**, No disability
 - **Income**: Employment income `$1,200`/month
@@ -393,7 +393,7 @@ for reference.
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$1,500` per month
 - **Person 2**: Birth month/year: `January 2019` (age 7), Relationship: Child, Sex: Male, No income
@@ -410,7 +410,7 @@ for reference.
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1991` (age 35), Relationship: Head of Household, Not a student, Not pregnant, No disability, U.S. citizen
 - **Income**: Employment income: `$1,500` per month ($18,000/year)
@@ -428,7 +428,7 @@ for reference.
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66603`, Select county `Shawnee`
+- **Location**: Enter ZIP code `66603`, Select county `Shawnee County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: Head of Household, Not a student, Not pregnant, Not disabled (age 60+ exemption)
 - **Income**: Social Security retirement income: `$14,000` per year (~$1,167/month)
@@ -447,7 +447,7 @@ for reference.
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte County`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `January 1991` (age 35), Relationship: Head of Household, Not a student, No disability, U.S. citizen, Employment income: `$30,000` per year ($2,500/month)
 - **Person 2**: Birth month/year: `January 1993` (age 33), Relationship: Spouse, No income, No disability, U.S. citizen
@@ -466,7 +466,7 @@ for reference.
 **Expected**: Eligible — $1,728/yr ($144/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: Head of Household, Not a student, No disability, U.S. citizen
 - **Income**: Employment income `$900`/month
@@ -484,7 +484,7 @@ for reference.
 **Expected**: Eligible — $7,212/yr ($601/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `5`
 - **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Employment income: `$3,500`/month
 - **Person 2**: Birth month/year: `January 1988` (age 38), Relationship: Spouse, No income
@@ -503,7 +503,7 @@ for reference.
 **Expected**: Eligible — $1,884/yr ($157/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, **Disabled**, Not a student, U.S. citizen
 - **Income**: Social Security disability (SSDI) `$1,500`/month
@@ -522,7 +522,7 @@ for reference.
 **Expected**: Eligible — $2,880/yr ($240/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Not a student, No disability, U.S. citizen
 - **Income**: Cash assistance (TANF) `$400`/month
@@ -540,7 +540,7 @@ for reference.
 **Expected**: Eligible — $864/yr ($72/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Location**: Enter ZIP code `66045`, Select county `Douglas County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), Exemption — `student_works_20_plus_hrs` = **Yes**; `student_has_work_study` = **No**, `student_job_training_program` = **No**, No dependent child, No disability
 - **Income**: Employment income `$1,200`/month
@@ -557,7 +557,7 @@ for reference.
 **Expected**: Eligible — $864/yr ($72/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Location**: Enter ZIP code `66045`, Select county `Douglas County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), Exemption — `student_has_work_study` = **Yes**; `student_works_20_plus_hrs` = **No**, `student_job_training_program` = **No**, No dependent child, No disability
 - **Income**: Employment income `$1,200`/month
@@ -574,7 +574,7 @@ for reference.
 **Expected**: Eligible — $3,840/yr ($320/mo)
 
 **Steps**:
-- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Location**: Enter ZIP code `66045`, Select county `Douglas County`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `January 2000` (age 26), Relationship: Head of Household, Student status: enrolled in higher education full-time (`student` = Yes, `student_full_time` = **Yes**), Not married, Exemption is the dependent child (Person 2) — `student_works_20_plus_hrs` = **No**, `student_has_work_study` = **No**, `student_job_training_program` = **No**, No disability
 - **Person 2**: Birth month/year: `January 2018` (age 8), Relationship: Child, No income
@@ -593,7 +593,7 @@ for reference.
 **Benefit math** (FY2026): the calculated benefit falls below the SNAP minimum, so the household receives the **minimum allotment** of $24/mo — see *Benefit Value → Minimum allotment*.
 
 **Steps**:
-- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte County`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, Disabled, Not a student, U.S. citizen
 - **Income**: SSI income `$900`/month (reported SSI receipt), Pension `$2,000`/month
@@ -625,9 +625,7 @@ Previously triaged and cleared for MFB — #8296 (COFA) and OBBBA non-citizen na
 - [Legal Information Institute — 7 U.S.C. § 2014](https://www.law.cornell.edu/uscode/text/7/2014)
 
 
-## JSON Test Cases
-
-File: `validations/management/commands/import_validations/data/ks_snap.json`
+## Expected Scenario Outcomes
 
 Scenarios 1–14. Expected `eligible`:
 - `true`: 1, 2, 3, 7, 8, 10, 12, 13, 14

@@ -51,4 +51,4 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(member.age >= self.min_age)
+        e.condition(member.calc_age() >= self.min_age)

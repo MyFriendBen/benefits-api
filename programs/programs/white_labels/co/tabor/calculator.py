@@ -20,8 +20,9 @@ class Tabor(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
 
-        # age
-        e.condition(member.age >= Tabor.min_age)
+        # age at the end of the tax year
+        age = member.age_at_end_of_year(self.tax_year)
+        e.condition(age is not None and age >= Tabor.min_age)
 
     def member_value(self, member: HouseholdMember) -> int:
         income = member.calc_gross_income("yearly", ["all"])

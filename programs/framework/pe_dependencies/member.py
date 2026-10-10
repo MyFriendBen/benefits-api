@@ -451,7 +451,7 @@ class SsiCountableResourcesDependency(Member):
 
     def value(self):
         ssi_assets = 0
-        if self.member.age >= 19:
+        if self.member.calc_age() >= 19:
             ssi_assets = self.screen.household_assets / self.screen.num_adults()
 
         return int(ssi_assets)
@@ -506,7 +506,7 @@ class CostOfAttendingCollegeDependency(Member):
     dependencies = ("age", "student")
 
     def value(self):
-        return 22_288 * (self.member.age >= 16 and self.member.student)
+        return 22_288 * (self.member.calc_age() >= 16 and self.member.student)
 
 
 class PellGrantMonthsInSchoolDependency(Member):

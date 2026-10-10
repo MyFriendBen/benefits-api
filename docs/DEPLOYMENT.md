@@ -22,7 +22,7 @@ All composite actions are located in `.github/actions/`:
 1. **setup-python-django** - Sets up Python 3.12 with pip caching and installs dependencies from `requirements.txt`
 2. **run-django-checks** - Runs Django system checks and database migrations
 3. **deploy-to-heroku** - Installs Heroku CLI and deploys using `akhileshns/heroku-deploy@v3.14.15`
-4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config, validations)
+4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config)
 5. **slack-notify** - Sends deployment notifications with status (success/failure/in-progress/completed-with-warnings)
 6. **run-tests** - Configurable test execution with VCR modes and optional Codecov upload
 
@@ -133,8 +133,7 @@ gh workflow view "Deploy to Staging"
 3. **Code deploys to Heroku Staging** (only if tests pass)
 4. Database migrations run (`python manage.py migrate`)
 5. Configurations are added (`python manage.py add_config --all`)
-6. Validations run (`python manage.py validate`)
-7. Slack notification sent on failure only
+6. Slack notification sent on failure only
 
 **Important**: Deployment will NOT proceed if tests or linting fail. Fix the issues and push again.
 
@@ -211,10 +210,8 @@ When you create a draft release, the following automated process begins:
 2. **Code deployment** - Exact code from the release tag is deployed to Heroku Production (30-minute timeout)
 3. **Database migrations** - `python manage.py migrate`
 4. **Configuration updates** - `python manage.py add_config --all`
-5. **Pull validations** - `python manage.py pull_validations` from staging
-6. **Run validations** - `python manage.py validate`
-7. **Sync translations** - Export from production → Validate JSON → Save to `mfb-translations` repo → Import to staging
-8. **Slack notifications** - Status updates sent to team at each stage (in-progress, success/warnings, or failure)
+5. **Sync translations** - Export from production → Validate JSON → Save to `mfb-translations` repo → Import to staging
+6. **Slack notifications** - Status updates sent to team at each stage (in-progress, success/warnings, or failure)
 
 **Important**:
 - Tests run automatically on draft creation, but **do not block** manual publishing
@@ -742,7 +739,6 @@ These secrets are configured in the repository settings and used by the deployme
 
 #### Notifications & Monitoring
 - `SLACK_WEBHOOK_URL` - Webhook for deployment notifications
-- `VALIDATION_SHEET_ID` - Google Sheets ID for validation results (e.g., `1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY`)
 
 #### External API Integrations (for production pre-deployment tests)
 - `HUD_API_TOKEN` - HUD API authentication token (required for real API integration tests)
@@ -885,3 +881,45 @@ If you need to regenerate the `TRANSLATIONS_REPO_TOKEN`:
 - **Heroku logs**: `heroku logs --tail -a cobenefits-api`
 - **Team discussion**: Post in Slack #deployments channel
 - **File issue**: `gh issue create`
+
+## Annual: rolling programs onto the new poverty guidelines
+
+HHS publishes new poverty guidelines each January. Nothing rolls programs onto them
+automatically, and the failure is silent — a program left on the old edition keeps
+returning a plausible number that is quietly wrong, and no test catches it because no test
+sees a live database.
+
+**1. Add the year to the constant.** `_FPL_DEFAULTS` in `programs/models.py`. Until this
+lands, nothing can be moved to the new edition, and `programs/vintage_tests.py` fails on
+`test_fpl_defaults_covers_the_current_calendar_year` from 1 January — which is the reminder.
+
+**2. Deploy.** `sync_fpl_values` runs on every release and materialises the new year into
+`FederalPovertyLimitValue`, which is what the analytics bands read. It does *not* create a
+`FederalPoveryLimit` row or move any program.
+
+**3. Create the `FederalPoveryLimit` row**, with `year` and `period` both set to the new
+year. They must match: production carries a legacy row whose `year` is `2022` and whose
+`period` resolves to `2024`, and anything selecting by label alone lands on the wrong
+edition.
+
+**4. Decide per program, and record it.** Do not roll everything forward. Several programs
+are deliberately on an older edition because the agency administering them is — ACA
+marketplace subsidies are adjudicated against the guideline in effect when open enrollment
+opened, weatherization follows the Department of Energy's effective-date lag, and Illinois'
+CBRAP uses a per-round parameter. `programs/vintage.py` records which, and why. A program
+absent from that map is one nobody has researched, not one that is fine.
+
+**5. Check what actually happened.**
+
+```bash
+heroku run -a cobenefits-api "python manage.py audit_program_vintage"
+```
+
+Reports any program whose edition disagrees with the recorded intent, has no year set, or
+has no recorded intent. `--check` exits non-zero so it can gate something; the deploy runs
+it report-only with `--ignore-unmapped`.
+
+A program with **no year at all** is the case to treat as urgent rather than untidy. For a
+PolicyEngine program `pe_period` raises, `can_calc()` does not filter it out, and the
+exception escapes both handlers in `calc_pe_eligibility` to reach an unguarded view — so one
+misconfigured program returns a 500 for every program on the screen, not just its own.

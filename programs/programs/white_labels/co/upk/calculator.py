@@ -21,7 +21,7 @@ class UniversalPreschool(ProgramCalculator):
 
         # age
         min_age = UniversalPreschool.qualifying_age if qualifying_condition else UniversalPreschool.age
-        e.condition(min_age <= member.age <= UniversalPreschool.age)
+        e.condition(min_age <= member.calc_age() <= UniversalPreschool.age)
 
     def member_value(self, member: HouseholdMember):
         qualifying_condition = self._has_qualifying_condition(member)
@@ -29,7 +29,7 @@ class UniversalPreschool(ProgramCalculator):
         if not qualifying_condition:
             return UniversalPreschool.amount_15_hr
 
-        if member.age == UniversalPreschool.age:
+        if member.calc_age() == UniversalPreschool.age:
             return UniversalPreschool.amount_30_hr
 
         return UniversalPreschool.amount_10_hr

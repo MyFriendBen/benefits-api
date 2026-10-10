@@ -101,12 +101,12 @@
 
      | Period | Categories |
      |---|---|
-     | Current, no-wait (through 2026-09-30) | AI born in Canada, Amerasians, asylees, Cuban/Haitian entrants, withholding-of-removal grantees, Iraqi/Afghan SIVs, refugees, trafficking victims (§ 1805.020.10.10.05); COFA migrants since 2024-03-09 (§ 1805.020.10.20) |
-     | Current, 5-year bar | LPRs, parolees ≥1yr, conditional entrants (pre-4/1/1980), battered immigrants (P.L. 104-208) — military/veteran/spouse/dependent exceptions apply (§ 1805.020.10.10.10) |
-     | From 2026-10-01 (CMS SHO #26-001, P.L. 119-21 § 71109; confirmed by MO DSS's H.R. 1 page) | Only 4 groups keep federal funding: citizens/nationals, LPRs (bar unchanged), Cuban/Haitian entrants, COFA migrants. Refugees, asylees, and other humanitarian groups lose the federal funding basis; MO DSS has already notified affected households |
+     | Through 2026-09-30, no-wait | AI born in Canada, Amerasians, asylees, Cuban/Haitian entrants, withholding-of-removal grantees, Iraqi/Afghan SIVs, refugees, trafficking victims (§ 1805.020.10.10.05); COFA migrants since 2024-03-09 (§ 1805.020.10.20) |
+     | Through 2026-09-30, 5-year bar | LPRs, parolees ≥1yr, conditional entrants (pre-4/1/1980), battered immigrants (P.L. 104-208) — military/veteran/spouse/dependent exceptions apply (§ 1805.020.10.10.10) |
+     | From 2026-10-01 (current; CMS SHO #26-001, P.L. 119-21 § 71109; confirmed by MO DSS's H.R. 1 page) | Only 4 groups keep federal funding: citizens/nationals, LPRs (bar unchanged), Cuban/Haitian entrants, COFA migrants. Refugees, asylees, and other humanitarian groups lose the federal funding basis; MO DSS has already notified affected households |
 
-   - **Committed MFB handling**: `legal_status_required` keeps its current 5 values (`citizen`, `refugee`, `gc_5plus`, `gc_5less`, `otherWithWorkPermission`) through 2026-09-30. **Effective 2026-10-01, remove `refugee`** — the only one of MFB's 6 status values that maps to a group federal CHIP funding excludes starting that date. Single config-file change, dated to Missouri's own effective date. `otherWithWorkPermission` remains a coarse inclusive bucket by design, since MFB's schema can't separately distinguish the statuses within it.
-   - **Current handling (through 2026-09-30)**: only `non_citizen` excluded. `gc_5less` stays inclusive because the 5-year bar has undetectable exceptions (military/veteran/spouse/dependent) — excluding it risks hiding eligible households. Inclusion ≠ confirmed CHIP-qualified status; the real determination happens at application.
+   - **Committed MFB handling (current, from 2026-10-01)**: `legal_status_required` is `citizen`, `gc_5plus`, `gc_5less`, `otherWithWorkPermission`. `refugee` was removed on 2026-10-01 — the only one of MFB's 6 status values that maps entirely to a group federal CHIP funding excludes from that date. `otherWithWorkPermission` remains a coarse inclusive bucket by design, since MFB's schema can't separately distinguish the statuses within it (COFA migrants and Cuban/Haitian entrants keep eligibility; parolees and other humanitarian groups don't).
+   - **Excluded statuses**: `non_citizen` and `refugee`. `gc_5less` stays inclusive because the 5-year bar has undetectable exceptions (military/veteran/spouse/dependent) — excluding it risks hiding eligible households. Inclusion ≠ confirmed CHIP-qualified status; the real determination happens at application.
    - Source: 42 CFR § 457.320(b)(6), (c), (d); 8 U.S.C. § 1613 (5-year bar); DSS Manual §§ 1805.020.00, .10.10.05, .10.10.10, .10.20; [CMS's CHIPRA § 214 election list](https://www.medicaid.gov/medicaid/enrollment-strategies/medicaid-and-chip-coverage-of-lawfully-residing-children-pregnant-women) (updated 2026-04-02, Missouri not listed); CMS SHO #26-001 implementing P.L. 119-21 § 71109; [MO DSS H.R. 1 Participant Resources](https://mydss.mo.gov/hr1/participant-resources)
 
 ## Priority Criteria
@@ -170,7 +170,7 @@ Note: $303,540,996 ÷ 108,596 = $2,795.14 is PE's **net** per-capita figure (`ch
 [ ] Income-boundary (lower routing + ceiling) eligibility, gross value, and premium are all determined live by PE's `is_chip_eligible_child`/`chip_gross`/`mo_chip_premium` output — no MFB-side Appendix A/Appendix E recomputation runs instead of or alongside PE, and no MFB override neutralizes a PE result to force a match.
 [ ] The `medicaid` enrollment field maps to PE's `receives_medicaid` input; PE's own eligibility output honors it and excludes the child (Scenario 11).
 [ ] Coarse `private`/`employer` insurance selections do not gate eligibility — inclusive handling per criterion 3 (no dedicated core scenario; unmodelable data gap).
-[ ] Immigration/legal-status visibility is driven entirely by `legal_status_required` config, with `refugee` removed effective 2026-10-01 per criterion 8.
+[ ] Immigration/legal-status visibility is driven entirely by `legal_status_required` config, with `refugee` removed (done 2026-10-01) per criterion 8.
 [ ] Household sizes 1–8 are supported end-to-end through the current screener UI; sizes 9+ follow the same eligibility criteria but are out of scope for value-calculation testing until the UI cap changes (Scenario 17).
 
 **Benefit value calculation**
@@ -207,7 +207,7 @@ Two notes on the age-sensitive scenarios, since CHIP's under-19 gate is an age *
 **Expected**: Eligible, **$2,527.85/year**
 
 **Steps**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `March 1985` (age 41), Relationship: `headOfHousehold`, Has income: Yes, Employment income: `$4,167` per month (~$50,000/year), Insurance: `none`, Citizenship: US Citizen
 - **Person 2**: Birth month/year: `June 1987` (age 39), Relationship: `spouse`, Has income: No, Insurance: `none`, Citizenship: US Citizen

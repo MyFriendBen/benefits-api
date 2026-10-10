@@ -169,7 +169,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 **What we're checking**: A typical Massachusetts household with a child born within the past year qualifies for the base $50 deposit.
 **Expected**: Eligible, $50.00
 
-- **Location**: ZIP `02101` (Suffolk County)
+- **Location**: ZIP `02101`, county `Boston`
 - **Household**: 2 people
 - Person 1: `headOfHousehold`, born March 1994
 - Person 2: `child`, born February 2026
@@ -182,7 +182,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 **What we're checking**: BabySteps has no income limit; a high-income household with a qualifying child is still eligible for the full $50.
 **Expected**: Eligible, $50.00
 
-- **Location**: ZIP `02139` (Middlesex County)
+- **Location**: ZIP `02139`, county `Cambridge`
 - **Household**: 3 people
 - Person 1: `headOfHousehold`, born March 1991, employment income $6,250/month
 - Person 2: `spouse`, born June 1992, employment income $5,417/month
@@ -196,7 +196,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 **What we're checking**: A household with two children who both qualify under the birth pathway receives $50 for each child, not a single flat household amount.
 **Expected**: Eligible, $100.00
 
-- **Location**: ZIP `01201` (Berkshire County)
+- **Location**: ZIP `01201`, county `Pittsfield`
 - **Household**: 4 people
 - Person 1: `headOfHousehold`, born March 1990
 - Person 2: `spouse`, born August 1991
@@ -211,7 +211,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 **What we're checking**: A household with one child inside the birth-pathway window and one older sibling past the first-birthday cutoff. Only the child inside the window is valued; per-child evaluation means the ineligible sibling does not block the eligible child.
 **Expected**: Eligible, $50.00 (only the recent-birth child qualifies)
 
-- **Location**: ZIP `02148` (Middlesex County)
+- **Location**: ZIP `02148`, county `Malden`
 - **Household**: 4 people
 - Person 1: `headOfHousehold`, born March 1990
 - Person 2: `spouse`, born June 1991
@@ -226,7 +226,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 **What we're checking**: A Massachusetts household containing only members reported under non-beneficiary roles (`headOfHousehold`, `spouse`) has no BabySteps beneficiary candidate present, and is therefore ineligible.
 **Expected**: Ineligible
 
-- **Location**: ZIP `01201` (Berkshire County)
+- **Location**: ZIP `01201`, county `Pittsfield`
 - **Household**: 2 people
 - Person 1: `headOfHousehold`, born March 1990
 - Person 2: `spouse`, born August 1991
@@ -239,7 +239,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 **What we're checking**: A household currently receiving SNAP is still eligible for the base $50 deposit; SNAP receipt is neither required nor an exclusion for the base program.
 **Expected**: Eligible, $50.00
 
-- **Location**: ZIP `02148` (Middlesex County)
+- **Location**: ZIP `02148`, county `Malden`
 - **Household**: 3 people
 - Person 1: `headOfHousehold`, born March 1990, employment income $2,800/month
 - Person 2: `spouse`, born August 1989, employment income $2,200/month
@@ -254,7 +254,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 **What we're checking**: A household member reported under a relationship value other than `child` — here `grandChild`, a committed beneficiary candidate — is evaluated as a potential beneficiary. BabySteps' rule is about Massachusetts residency and birth/adoption timing, not being the head of household's biological son or daughter.
 **Expected**: Eligible, $50.00
 
-- **Location**: ZIP `02101` (Suffolk County)
+- **Location**: ZIP `02101`, county `Boston`
 - **Household**: 2 people
 - Person 1: `headOfHousehold`, born March 1968
 - Person 2: `grandChild`, born March 2026
@@ -269,7 +269,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 
 **Internal assertion (required)**: the unit test must assert `birth_pathway_eligible == true` for Person 2, in addition to the top-level eligible/$50.00 result. This pins the inclusive month-level boundary specifically, rather than leaving it to the top-level result.
 
-- **Location**: ZIP `02148` (Middlesex County)
+- **Location**: ZIP `02148`, county `Malden`
 - **Household**: 2 people
 - Person 1: `headOfHousehold`, born May 1990
 - Person 2: `child`, born July 2025 (turning one this month)
@@ -284,7 +284,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 
 **Internal assertion (required)**: the unit test must assert `birth_pathway_eligible == false` for Person 2, alongside the top-level ineligible/$0.00 result.
 
-- **Location**: ZIP `02139` (Middlesex County)
+- **Location**: ZIP `02139`, county `Cambridge`
 - **Household**: 2 people
 - Person 1: `headOfHousehold`, born March 1990
 - Person 2: `child`, born June 2025 (birth pathway closed as of the frozen July 22, 2026 evaluation date — 13 months, one month past the window)
@@ -299,7 +299,7 @@ All scenarios and expected results are evaluated as of July 22, 2026. Automated 
 
 **Internal assertion (required)**: the unit test must assert `birth_pathway_eligible == true` for both under-one children and `false` for the two-year-old.
 
-- **Location**: ZIP `02148` (Middlesex County)
+- **Location**: ZIP `02148`, county `Malden`
 - **Household**: 5 people
 - Person 1: `headOfHousehold`, born March 1990
 - Person 2: `domesticPartner`, born March 1991

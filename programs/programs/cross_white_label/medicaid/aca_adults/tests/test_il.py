@@ -26,7 +26,7 @@ FPL_ONE_PERSON = 15_060
 
 def make_member(age=30, relationship="headOfHousehold", pregnant=False, medicaid=False):
     member = Mock()
-    member.age = age
+    member.calc_age = Mock(return_value=age)
     member.relationship = relationship
     member.pregnant = pregnant
     member.has_insurance.side_effect = lambda kind: medicaid and kind == "medicaid"

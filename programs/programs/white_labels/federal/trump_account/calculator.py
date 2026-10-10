@@ -41,7 +41,7 @@ class TrumpAccount(ProgramCalculator):
         else:
             birth_year_month = member.birth_year_month
             in_pilot_window = birth_year_month is not None and self.pilot_start <= birth_year_month <= self.pilot_end
-            e.condition(member.age <= self.max_age and in_pilot_window)
+            e.condition(member.calc_age() <= self.max_age and in_pilot_window)
 
     def value(self, e: Eligibility):
         # Eligibility is already gated on the pilot window in member_eligible,

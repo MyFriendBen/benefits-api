@@ -94,7 +94,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 **Expected**: Eligible — **$15,664/year** (1 eligible child)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1996` (age 30), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,500` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year: `September 2022` (age 3), Relationship: `Child`, Has income: `No`
@@ -110,7 +110,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,200` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year: `January 2020` (age 6), Relationship: `Child`, Has income: `No`
@@ -126,7 +126,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 **Expected**: Eligible — **$15,664/year** (one eligible child)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$3,100` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Spouse)**: Birth month/year: `June 1992` (age 33), Relationship: `Spouse`, Has income: `No`
@@ -142,7 +142,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$3,200` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Spouse)**: Birth month/year: `June 1992` (age 33), Relationship: `Spouse`, Has income: `No`
@@ -158,7 +158,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 **Expected**: Eligible — **$15,664/year** (one eligible child)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1985` (age 41), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$4,000` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year: `May 2022` (age 4), Relationship: `Foster Child`, Has income: `No`
@@ -173,7 +173,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 **Expected**: Eligible — **$31,328/year** (2 eligible children × $15,664 = $31,328)
 
 **Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 - **Household**: Number of people: `4`
 - **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,500` per month, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year: `September 2021` (age 4), Relationship: `Child`, Has income: `No`

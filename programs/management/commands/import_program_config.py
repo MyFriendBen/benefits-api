@@ -15,6 +15,7 @@ from programs.models import (
     LegalStatus,
     BaseProgram,
 )
+from programs.federal import FEDERAL_WHITE_LABEL, conflicting_active_programs
 from screener.models import WhiteLabel
 from configuration.models import Configuration
 from integrations.clients.google_translate import Translate
@@ -180,6 +181,11 @@ class Command(BaseCommand):
             )
             return
 
+        # Federal programs are shown to every white label, so a name active under both
+        # `federal` and a state white label is a duplicate. Refuse it here, before any writes.
+        if program_config.get("active"):
+            self._refuse_active_federal_duplicate(white_label, program_name)
+
         # Validate navigator county names against this white label's convention BEFORE any
         # writes (now that we know the import will proceed), scoped to the navigators this run
         # will actually (re)create — so a mismatch fails loudly without blocking over counties
@@ -236,37 +242,34 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
             raise
 
+    def _refuse_active_federal_duplicate(self, white_label: WhiteLabel, program_name: str) -> None:
+        """Raise if importing this program active would duplicate an active one on the other side.
+
+        Importing under `federal` conflicts with any active state row of the same name, and
+        importing under a state white label conflicts with an active federal row. The program's
+        own move deactivates the state rows first.
+        """
+        codes = [p.white_label.code for p in conflicting_active_programs(white_label.code, program_name)]
+        if codes:
+            raise CommandError(
+                f"Program '{program_name}' is already active under {', '.join(codes)}. Federal programs are "
+                f"shown to every white label, so the same name can't also be active under "
+                f"{'a state white label' if white_label.code == FEDERAL_WHITE_LABEL else 'federal'}. "
+                'Deactivate the other row first, or import this one with "active": false.'
+            )
+
     def _get_valid_county_names(self, white_label: WhiteLabel) -> Optional[set]:
         """
         Return the set of valid county-name strings for a white label, taken from its
         `counties_by_zipcode` configuration — the same values the screener stores in
         `Screen.county`. Returns None when no such configuration exists (in which case
-        county validation is skipped), read the same way `add_counties` reads it.
+        county validation is skipped).
         """
-        config_obj = (
-            Configuration.objects.filter(name="counties_by_zipcode", white_label=white_label, active=True)
-            .order_by("-id")
-            .first()
-        )
-        if config_obj is None:
-            return None
-
-        data = config_obj.data
-        if isinstance(data, str):
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError as e:
-                raise CommandError(
-                    f"'counties_by_zipcode' config for white label '{white_label.code}' is not valid JSON: {e}"
-                ) from e
+        try:
+            data = Configuration.counties_by_zipcode(white_label)
+        except ValueError as e:
+            raise CommandError(str(e)) from e
         if data is None:
-            return None
-        if not isinstance(data, dict):
-            raise CommandError(
-                f"'counties_by_zipcode' config for white label '{white_label.code}' must be a JSON object, "
-                f"got {type(data).__name__}."
-            )
-        if not data:
             return None
 
         valid = set()

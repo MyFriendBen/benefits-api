@@ -126,7 +126,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `4`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Filing status: `Married Filing Jointly`, Has income: Yes, Employment income: `$4,500` per month ($54,000/year)
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `September 1991` (age 34), Has income: Yes, Employment income: `$3,000` per month ($36,000/year)
@@ -144,7 +144,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1990` (age 35), Relationship: `Head of Household`, Has income: Yes, Earned income: `$220` monthly (approximately $2,640/year, just above the $2,500 threshold), Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `December 2009` (age 16, turns 17 in December 2026 — still 16 at end of tax year 2025), Relationship: `Child`, Has income: No
@@ -160,7 +160,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1988` (age 37), Relationship: `Head of Household`, Has income: Yes, Employment income: `$16,625` per month ($199,500/year), Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `September 2017` (age 8), Relationship: `Child`, Has income: No
@@ -176,7 +176,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1988` (age 37), Relationship: `Head of Household`, Has income: Yes, Employment income: `$16,667` per month (approximately $200,004/year), Filing status: `Single`
 - **Person 2 (Child)**: Birth month/year: `September 2016` (age 9), Relationship: `Child`, Has income: No
@@ -192,7 +192,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1988` (age 37), Relationship: `Head of Household`, Has income: Yes, Employment income: `$250,000` annually, Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `January 2018` (age 8), Relationship: `Child`, Has income: No
@@ -208,7 +208,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1990` (age 35), Relationship: `Head of Household`, Has income: Yes, Earned income: `$4,500` monthly (~$54,000/year), Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `January 2026` (age 0 — newborn), Relationship: `Child`, Has income: No
@@ -224,7 +224,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible ($500 — Credit for Other Dependents)
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1985` (age 40), Relationship: `Head of Household`, Has income: Yes, Earned income: `$55,000` annually, Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `January 2009` (age 17), Relationship: `Child`, Has income: No
@@ -240,7 +240,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1988` (age 37), Relationship: `Head of Household`, Has income: Yes, Employment income: `$55,000` annually, Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `August 2015` (age 10), Relationship: `Child`, Has income: No
@@ -256,7 +256,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1990` (age 35), Relationship: `Head of Household`, Has income: Yes, Employment income: `$4,500` per month ($54,000/year), Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `September 2018` (age 7), Relationship: `Child`, Has income: No
@@ -272,7 +272,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1990` (age 35), Relationship: `Head of Household`, Has income: Yes, Employment income: `$3,200` per month (~$38,400/year), Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `September 2017` (age 8), Relationship: `Child`, Has income: No
@@ -288,7 +288,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98101`, Select county `King`
+- **Location**: Enter ZIP code `98101`, Select county `King County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1990` (age 35), Relationship: `Head of Household`, Has income: Yes, Earned income: `$2,500` annually ($208.33/month), No other income
 - **Person 2 (Child)**: Birth month/year: `January 2018` (age 8), Relationship: `Child`, Has income: No
@@ -304,7 +304,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible (two qualifying children under 17 present)
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `5`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1985` (age 40), Has income: Yes, Earned income: `$5,500` per month ($66,000/year), Citizenship: US Citizen
 - **Person 2 (Child — qualifies)**: Relationship: `Child`, Birth month/year: `September 2016` (age 9), Has income: No, Citizenship: US Citizen
@@ -323,7 +323,7 @@ Pat identified these four as the key scenarios to run:
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
+- **Location**: Enter ZIP code `98103`, Select county `King County`
 - **Household**: Number of people: `6`
 - **Person 1 (Head of Household)**: Birth month/year: `June 1988` (age 37), Relationship: `Head of Household`, Has income: Yes, Gross income: `$5,500` per month (wages), Citizenship: US Citizen
 - **Person 2 (Child)**: Birth month/year: `January 2024` (age 2), Relationship: `Child`, Has income: No, Citizenship: US Citizen
@@ -341,9 +341,6 @@ Pat identified these four as the key scenarios to run:
 
 - https://www.irs.gov/credits-deductions/individuals/child-tax-credit
 - https://www.irs.gov/forms-pubs/about-schedule-8812-form-1040
-
-## JSON Test Cases
-File: `validations/management/commands/import_validations/data/wa_ctc.json`
 
 ## Generated Program Configuration
 File: `programs/management/commands/import_program_config_data/data/wa_ctc_initial_config.json`

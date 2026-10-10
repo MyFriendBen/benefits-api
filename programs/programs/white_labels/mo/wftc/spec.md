@@ -7,7 +7,8 @@
 - **State:** Missouri
 - **White label:** `mo`
 - **Engine / Tier:** PolicyEngine, State (custom)
-- **Policy years:** TY2023, TY2024, TY2025
+- **Policy year:** 2025 — the program's configured `year`. For a tax credit that is the tax year a household screening now files: the calendar year just ended, rolling over on January 1. Every scenario below is evaluated at TY2025 unless it names another year.
+- **Year-parameter checks:** TY2023, TY2024, TY2026 (Scenarios 2, 9, 10, 11, 17). These are not reachable outcomes — the program has one configured year — but they prove the wrapper reads year-specific parameters from PolicyEngine for the year it is sent rather than hard-coding one. Scenario 17 also guards the January 1, 2027 rollover to TY2026.
 
 ---
 
@@ -16,7 +17,8 @@
 1. **Allowed a federal Earned Income Credit (EIC) for the same tax year.**
    - **Screener fields:** `has_income`, `income_streams`, `HouseholdMember.birth_year`, `HouseholdMember.birth_month`, `HouseholdMember.relationship`
    - Federal EITC eligibility is delegated to the existing federal EITC calculator ([MFB-1264](https://linear.app/myfriendben/issue/MFB-1264)). This gate is satisfied whenever PE's `eitc` variable is `> $0`.
-   - **Committed basis:** PE's current-year `eitc` calculation is MFB's proxy for the federal EIC amount Form MO-WFTC Line 5 asks the filer to enter (Line 27 for TY2023–TY2024; Line 27a for TY2025). This is a calculated proxy, since MFB has no access to a taxpayer's filed federal return.
+   - **Qualifying-child inputs are the tax year's, not the screening date's.** Age is sent as of December 31 of the tax year (`AgeAtEndOfClaimYearDependency`), so a child who was 18 at the end of the tax year still qualifies after turning 19 (Scenario 19). Full-time college student status is declared on this program (`FullTimeCollegeStudentDependency`), so a student under 24 qualifies (Scenario 18). Both are needed because the program runs on the prior tax year while the SNAP, TANF and Medicaid inputs that also send the student flag run on the current one; measured at PE 2.9.0, either gap alone took a $285 credit to $0.
+   - **Committed basis:** PE's tax-year `eitc` calculation is MFB's proxy for the federal EIC amount Form MO-WFTC Line 5 asks the filer to enter (Line 27 for TY2023–TY2024; Line 27a for TY2025). This is a calculated proxy, since MFB has no access to a taxpayer's filed federal return.
    - **Operative quote (Form MO-WFTC 2025, Line 1):** "Did you qualify for the Federal Earned Income Credit (EIC) on Federal Form 1040 or 1040-SR? ... No - STOP. You do not qualify for the Missouri Working Family Tax Credit."
    - **Source:** RSMo 143.177; Form MO-WFTC, Line 1
 
@@ -53,7 +55,7 @@
 
    - **MFB data gap, not a Missouri exclusion:** MFB's `investment` field maps to PE's `long_term_capital_gains`; `rental` maps to PE's `rental_income` — a coarse total with no Schedule E/Form 4797/8814/passive-activity detail. MFB can't reconstruct Worksheet 1 Line 14 from this.
    - **Committed handling:** delegate the gate to PolicyEngine's `mo_wftc_eligible`, which approximates Missouri's test with `eitc_relevant_investment_income` — a measure that counts rental income dollar-for-dollar against the threshold. Neither MFB nor PolicyEngine implements Missouri's real branching test: MFB cannot reconstruct Worksheet 1 from a coarse `rental` total, and PolicyEngine's own code notes it substitutes the federal EITC investment measure. Accepting PE's approximation keeps one source of truth for the whole credit rather than overriding the gate.
-   - **Direction of the error, disclosed:** PE's measure disqualifies at the threshold on rental income alone, so a filer whose true Worksheet 1 result would have cleared the limit can be shown ineligible. Verified at PE 1.786.5: holding a household fixed at $40,000 wages with one child and varying only rental income, `mo_wftc_eligible` flips `False` between $4,400 and $4,401 — the same TY2025 boundary that governs interest and dividends. The Department of Revenue makes the actual determination, and the screener does not claim to reproduce Worksheet 1. An earlier draft of this criterion committed to the opposite handling (rental excluded from the gate, which would have required overriding PolicyEngine); that was reversed in favor of PE's single implementation. No new screener fields are required.
+   - **Direction of the error, disclosed:** PE's measure disqualifies at the threshold on rental income alone, so a filer whose true Worksheet 1 result would have cleared the limit can be shown ineligible. Verified at PE 1.786.5: holding a household fixed at $40,000 wages with one child and varying only rental income, `mo_wftc_eligible` flips `False` between $4,400 and $4,401 — the same TY2025 boundary that governs interest and dividends. Re-confirmed at PE 2.9.0 for interest and dividends by Scenarios 7–8. The Department of Revenue makes the actual determination, and the screener does not claim to reproduce Worksheet 1. An earlier draft of this criterion committed to the opposite handling (rental excluded from the gate, which would have required overriding PolicyEngine); that was reversed in favor of PE's single implementation. No new screener fields are required.
    - The DOR FAQ's generalized "equal to or greater than" wording is not controlling for TY2024/TY2025; the year-specific form lines above are implemented instead.
    - **TY2023 comparator — disclosed source conflict:** official 2023 sources conflict — Line 3's checkbox/instructions and the current DOR FAQ use `>=` $4,050, while the form's front-page summary ("cannot exceed") and Worksheet 1 fallback ("exceeds") both use `>` $4,050, matching TY2024/2025's comparator.
    - **Committed rule:** disqualify only when investment income is `> $4,050` for TY2023. Exactly $4,050 remains eligible. Single committed implementation, not an open fork.
@@ -105,30 +107,31 @@ None. MO WFTC is a non-competitive tax credit.
 
 Binding directives not already fully stated above:
 
-- **Read PE's `mo_wftc` as the binding result.** PolicyEngine models the whole chain — `mo_wftc_eligible` for the gate, `mo_wftc_potential` for `eligible × eitc × rate`, `mo_wftc_liability_cap` for the Form MO-WFTC Lines 7-9 netting (including the Property Tax Credit), and `mo_wftc` for the final smaller-of result. The calculator is a thin `PolicyEngineTaxUnitCalulator` wrapper: `pe_name = "mo_wftc"`, the federal `Eitc.pe_inputs` set, plus `MoStateCodeDependency`.
-  - Verified at PE 1.786.5 (PolicyEngine's `current`): 15 of the 16 scenarios below match to the dollar, including all four investment-income boundary pairs, both Property-Tax-Credit netting cases, the TY2023 10% rate, and the Joint path. Scenario 15 is the one intentional divergence and its expectation reflects PE's behavior.
+- **Read PE's `mo_wftc` as the binding result.** PolicyEngine models the whole chain — `mo_wftc_eligible` for the gate, `mo_wftc_potential` for `eligible × eitc × rate`, `mo_wftc_liability_cap` for the Form MO-WFTC Lines 7-9 netting (including the Property Tax Credit), and `mo_wftc` for the final smaller-of result. The calculator is a thin `PolicyEngineTaxUnitCalulator` wrapper: `pe_name = "mo_wftc"`, the federal `Eitc.pe_inputs` set with the age input swapped for the tax-year age, plus the full-time student flag (Criterion 1), real estate taxes and rent (Criterion 6), and `MoStateCodeDependency`.
+  - Verified at PE 2.9.0 (PolicyEngine's `current` on 2026-10-05): all 19 scenarios below match to the dollar, including all four investment-income boundary pairs, the three Property-Tax-Credit netting cases, the TY2023 10% rate, and the Joint path. Scenario 15 is the one place PE departs from Missouri's own test, and its expectation reflects PE's behavior. Scenarios 1–16 were first verified at PE 1.786.5 and returned the same values at 2.9.0, apart from Scenarios 14 and 16, which were rebuilt.
   - An earlier draft of this section directed building the credit from parts — PE's `eitc`, the rate, remaining liability, and the Property Tax Credit — with an MFB-computed investment gate. That was reversed: it would have duplicated arithmetic PE already performs correctly, and it required overriding PE's eligibility gate to preserve a rental exemption we cannot actually substantiate (criterion 5).
   - Note `mo_income_tax_before_credits` is a **person**-level variable, not tax-unit; requesting it on `tax_units` returns HTTP 500. The thin wrapper never reads it, but anyone reconstructing the liability cap by hand needs to sum it across people.
-- **Renters: rent is deliberately not sent to PolicyEngine.** PolicyEngine's property tax credit counts 20% of gross rent alongside real estate taxes, so `RentDependency` would make `mo_property_tax_credit` correct for a renter. It is omitted anyway, because it cannot change a WFTC result. Missouri's renter income limit is $27,500 for TY2025 against $30,000 for an owner-occupied homestead, and Missouri liability for the households in these scenarios does not turn positive until roughly $28,400 of wages — so wherever a renter's property tax credit is non-zero the liability cap is already $0, and wherever the cap is positive the renter's credit has phased out. Measured at PE 1.786.5 across an 11-point wage sweep from $24,000 to $32,000 with $12,000 annual rent: sending rent moved `mo_property_tax_credit` from $0 to as much as $107 while `mo_wftc` stayed identical at every point, a $0 difference throughout.
-  - This is why no renter Test Scenario appears below. A renter case can be constructed that returns not eligible (for example $27,100 wages with $12,000 rent), but it returns not eligible with or without the rent input, so it would pass either way and could not detect the omission. Scenario 16's positive-credit-after-PTC case is only reachable for an owner, who gets the higher homestead income limit.
-  - Revisit if Missouri's renter limit rises relative to the liability threshold, or if a scenario emerges where the two windows overlap. Adding the input also invalidates every recorded cassette, since the request body gains a `rent` field.
+- **Rent is sent, though it cannot change a TY2025 result.** PolicyEngine's property tax credit counts 20% of gross rent alongside real estate taxes. At TY2025 a renter's credit phases out before Missouri liability turns positive: Missouri's renter income limit is $27,500 against $30,000 for an owner-occupied homestead, and liability for a 66-year-old head of household with one child turns positive between $28,000 and $28,500 of wages. Measured at PE 2.9.0 across wages from $26,000 to $36,000 with $12,000 annual rent: the renter's credit fell from $107 to $0 by $28,000, and `mo_wftc` was identical with and without rent at every point.
+  - It is declared anyway because the program rolls to TY2026 on January 1, 2027, and Missouri's 2026 Property Tax Credit expansion (RSMo §135.030: limits of $38,200–$48,000) removes the gap. At TY2026 a renter's credit of $326–$654 absorbs all remaining liability across the same wage range, and omitting rent would pay up to $216. Scenario 17 pins that at TY2026.
+  - `mo_pts` sends the same `RentDependency`, so where both programs run on one period the values agree and nothing splits.
 - **Rounding is PE's.** `mo_wftc` already applies Form MO-WFTC's line-by-line rounding and the Line 6 vs. Line 9 smaller-of comparison; the screener truncates to whole dollars on output as it does for every program. Do not re-implement the rounding sequence on top of PE's result.
 
 ---
 
 ## Acceptance Criteria
 
-- Federal EITC base uses PE's current-year `eitc` as the Line 27/27a proxy (Criterion 1).
+- Federal EITC base uses PE's tax-year `eitc` as the Line 27/27a proxy (Criterion 1).
+- Qualifying-child age is measured on December 31 of the tax year, and full-time student status is sent on the tax year (Criterion 1).
 - Only Missouri-screened households are evaluated.
 - Relationship structure produces the intended Single/HOH or Joint treatment (Criterion 3).
 - Unmodeled MFS, Surviving Spouse, dependent-filer, and detailed-residency facts receive the committed inclusive handling (Criteria 2–4).
 - The investment-income gate is PolicyEngine's `mo_wftc_eligible`, whose measure counts rental income; the accepted error direction is documented in Criterion 5 and pinned by Scenario 15.
 - Year-specific thresholds/comparators applied correctly: `>` $4,050 TY2023; `>` $4,300 TY2024; `>` $4,400 TY2025.
 - TY2023 uses 10%; TY2024 and forward use 20% (per current MO DOR guidance).
-- Property Tax Credit reduces remaining liability before the WFTC cap; Line 42 assumed $0.
+- Property Tax Credit, from real estate taxes and rent, reduces remaining liability before the WFTC cap; Line 42 assumed $0.
 - A household with $0 remaining liability returns not eligible.
 - Final value is the smaller of the rate-based amount and remaining liability, via the line-by-line rounding sequence; annual, rounded to a whole dollar.
-- All 16 executable scenarios match both policy-correct eligibility and rounded value.
+- All 19 executable scenarios match both policy-correct eligibility and rounded value.
 
 ---
 
@@ -139,6 +142,12 @@ Binding directives not already fully stated above:
 > PolicyEngine result of `104.83` is shown to the user as **$104**. Expected values
 > below state the truncated figure. An earlier draft rounded instead, which overstated
 > six scenarios by $1.
+>
+> **Ages are birth month and year.** The tests pin the screening date to February 1 after the
+> tax year, when a household screens to file it. Members are born in June unless a scenario
+> says otherwise, so their age on the screening date equals their age on December 31 of the
+> tax year; Scenario 19 is the one where the two differ. Ages in parentheses are for TY2025
+> unless the scenario names another year.
 
 
 ### Scenario 1: HOH Golden Path, Uncapped Credit
@@ -146,7 +155,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $333
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -158,12 +167,12 @@ Binding directives not already fully stated above:
 
 ---
 
-### Scenario 2: TY2023, 10% Rate
-**What this tests**: Validates that TY2023's 10% rate applies instead of TY2024+'s 20% rate.
+### Scenario 2: TY2023, 10% Rate (Year-Parameter Check)
+**What this tests**: Validates that TY2023's 10% rate applies instead of TY2024+'s 20% rate. A year-parameter check: no household is evaluated at TY2023 (see Program Details).
 **Expected**: Eligible, $104
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 33 in TY2023), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 8 in TY2023), Has income: `No`
@@ -180,7 +189,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$6,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -197,7 +206,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$25,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -214,7 +223,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $292
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$35,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -231,7 +240,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$55,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -248,7 +257,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $192
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,400` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -265,7 +274,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,401` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -277,12 +286,12 @@ Binding directives not already fully stated above:
 
 ---
 
-### Scenario 9: Investment Income at the TY2023 Exact Threshold ($4,050)
+### Scenario 9: Investment Income at the TY2023 Exact Threshold ($4,050) (Year-Parameter Check)
 **What this tests**: Verifies that TY2023's `>` comparator passes at exactly $4,050 — the threshold itself remains eligible; only amounts above it disqualify.
 **Expected**: Eligible, $40
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 33 in TY2023), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,050` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 8 in TY2023), Has income: `No`
@@ -294,12 +303,12 @@ Binding directives not already fully stated above:
 
 ---
 
-### Scenario 10: Investment Income at the TY2024 Exact Threshold ($4,300)
+### Scenario 10: Investment Income at the TY2024 Exact Threshold ($4,300) (Year-Parameter Check)
 **What this tests**: Validates that TY2024 applies its own distinct threshold and `>` comparator.
 **Expected**: Eligible, $152
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 34 in TY2024), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,300` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 9 in TY2024), Has income: `No`
@@ -311,12 +320,12 @@ Binding directives not already fully stated above:
 
 ---
 
-### Scenario 11: Investment Income $1 Over the TY2024 Threshold ($4,301)
+### Scenario 11: Investment Income $1 Over the TY2024 Threshold ($4,301) (Year-Parameter Check)
 **What this tests**: Verifies that the immediate next dollar above the TY2024 threshold fails.
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 34 in TY2024), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Investment Income (Dividends/Interest)`, Income amount: `$4,301` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 9 in TY2024), Has income: `No`
@@ -333,7 +342,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $16
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `1`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1995` (age 30), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$18,000` per year
 - **Current Benefits**: Select `None`
@@ -349,7 +358,7 @@ Binding directives not already fully stated above:
 **Expected**: Eligible, $401
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$45,000` per year
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `June 1990` (age 35), Has income: `No`
@@ -367,13 +376,13 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$28,400` per year, Annual real estate taxes paid: `$1,200`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$29,500` per year, Annual real estate taxes paid: `$1,100`
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
 - **Current Benefits**: Select `None`
 
-**Calculation or eligibility explanation**: The Property Tax Credit reduces remaining Missouri tax liability before the WFTC cap. Because the Property Tax Credit fully absorbs the remaining liability in this household, the household is not eligible for MO WFTC.
+**Calculation or eligibility explanation**: The Property Tax Credit reduces remaining Missouri tax liability before the WFTC cap. `mo_income_tax_before_credits` is $23.24 and the Property Tax Credit is $149, so remaining liability is $0 and the household is not eligible. Without `real_estate_taxes` the same household is eligible for $23, so the scenario detects the input going missing. Measured at PE 2.9.0. (An earlier version used $28,400 of wages and $1,200 of taxes, whose liability was about $1 — it detected a missing input by a single dollar.)
 
 **Relevant evidence or source**: Criterion 6; Benefit Value item 3.
 
@@ -384,7 +393,7 @@ Binding directives not already fully stated above:
 **Expected**: Not eligible, $0
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$40,000` per year; also Income type: `Rental Income`, Income amount: `$5,000` per year
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
@@ -402,18 +411,71 @@ Missouri's real test would route this filer to Publication 596 Worksheet 1, whos
 
 ### Scenario 16: Property Tax Credit Partially Reduces Liability (Positive WFTC Remains)
 **What this tests**: Verifies the distinct partial-offset interaction — the Property Tax Credit reduces remaining Missouri liability without exhausting it, leaving a smaller but still-positive WFTC — as opposed to Scenario 14's full-exhaustion case.
-**Expected**: Eligible, $14
+**Expected**: Eligible, $11
 
 **Household inputs**:
-- **Location**: Enter ZIP code `65101`, Select county `Cole`
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$30,000` per year, Annual real estate taxes paid: `$1,010`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$29,900` per year, Annual real estate taxes paid: `$1,000`
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 10), Has income: `No`
 - **Current Benefits**: Select `None`
 
-**Calculation or eligibility explanation**: Scenario 14 proves PTC can fully exhaust remaining liability; Scenario 5 proves the ordinary liability cap with no PTC involved. Neither proves the distinct case where PTC applies and reduces liability only partially, leaving a positive WFTC below the uncapped rate-based amount. This household sits at Missouri's $30,000 net-household-income Property Tax Credit ceiling — right at, not over, the limit. The Property Tax Credit amount is taken directly from the official 2025 Property Tax Credit Claim Chart: for the $29,901–$30,000 income row and $1,001–$1,025 real-estate-tax-paid column, the chart gives a credit of $20 — at $1,010 in real estate taxes paid, this household falls in that column. `mo_income_tax_before_credits = $34.99` (Line 7; from Missouri's ordinary income tax computation, not the PTC chart — real estate taxes paid do not affect it). Line 42 assumed $0; Line 8 = $0 + $20 = $20. Remaining liability = max(0, $35 − $20) = $15. Federal EITC here is $3,265.33, so 20% × $3,265 = $653 comfortably exceeds remaining liability — the credit is capped by the reduced liability, not by the rate. PolicyEngine computes the cap without the intermediate whole-dollar rounding the form's worksheet describes, so it works from $34.985 rather than $35 and returns `mo_wftc = 14.985001` — measured at PE 1.786.5, and the value recorded in this scenario's cassette. Truncated for display that is the expected **$14**. The `$35 − $20 = $15` line-rounded figure above is what Form MO-WFTC's own worksheet yields; the difference is a fraction of a dollar of pre-rounding liability, and PolicyEngine's unrounded value is what ships.
+**Calculation or eligibility explanation**: Scenario 14 proves PTC can fully exhaust remaining liability; Scenario 5 proves the ordinary liability cap with no PTC involved. Neither proves the distinct case where PTC applies and reduces liability only partially, leaving a positive WFTC below the uncapped rate-based amount. `mo_income_tax_before_credits = $32.48` (Line 7; real estate taxes paid do not affect it). PolicyEngine's claim-chart lookup gives a Property Tax Credit of $21. Line 42 assumed $0; Line 8 = $21. Remaining liability = $32.48 − $21 = $11.49. Federal EITC here is $3,281.31, so 20% × EITC = $656.26 comfortably exceeds remaining liability — the credit is capped by the reduced liability, not by the rate. `mo_wftc = 11.49`, measured at PE 2.9.0 and recorded in this scenario's cassette; shown as **$11**.
+
+How much room TY2025 allows is narrow and worth stating. Missouri liability for this household turns positive only around $28,250 of wages, and the owner-occupied Property Tax Credit ends at the $30,000 net-household-income ceiling, where liability is still only about $35; the credit itself moves in $25 steps of property tax. So no TY2025 household leaves more than roughly $15–20 on each side. This one leaves $11 before WFTC reaches $0 and $21 before the Property Tax Credit stops applying, and sits $100 of wages under the ceiling. The earlier version ($30,000 wages, $1,010 taxes, $14.98) sat exactly on the ceiling, where any shift in PolicyEngine's income measure would remove the credit altogether.
 
 **Relevant evidence or source**: RSMo §135.030; Form MO-PTS (2025); 2025 Property Tax Credit Claim Chart; Benefit Value item 3 (whole-dollar rounding sequence).
+
+---
+
+### Scenario 17: Renter's Property Tax Credit Absorbs Liability at TY2026 (Year-Parameter Check)
+**What this tests**: Verifies that rent, not just real estate taxes, feeds the Property Tax Credit that nets against liability — the renter counterpart of Scenario 14. Run at TY2026, the year the program rolls to on January 1, 2027, because at TY2025 rent cannot change the result (Implementation, "Rent is sent").
+**Expected**: Not eligible
+
+**Household inputs**:
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
+- **Household**: Number of people: `2`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1959` (age 67 in TY2026), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$33,000` per year, Rent: `$12,000` per year
+- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2015` (age 11 in TY2026), Has income: `No`
+- **Current Benefits**: Select `None`
+
+**Calculation or eligibility explanation**: At TY2026 Missouri liability is $101.72 and the rent-based Property Tax Credit is $385, which absorbs all of it, so the household is not eligible. Without `rent` the same household is eligible for $101. Measured at PE 2.9.0; there is no 2026 claim chart yet, so the credit is PolicyEngine's implementation of the 2026 statute.
+
+**Relevant evidence or source**: Criterion 6; Benefit Value item 3; RSMo §135.030 (2026 limits).
+
+---
+
+### Scenario 18: Full-Time Student Child
+**What this tests**: Verifies that a full-time college student under 24 is a qualifying child, which requires the student flag on the tax year (Criterion 1).
+**Expected**: Eligible, $285
+
+**Household inputs**:
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
+- **Household**: Number of people: `2`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$35,000` per year
+- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2005` (age 20), Student: `Yes`, full-time, Has income: `No`
+- **Current Benefits**: Select `None`
+
+**Calculation or eligibility explanation**: The student counts as a qualifying child, so the federal EITC is $2,466.33 and 20% of it ($493.27) exceeds remaining Missouri liability; the credit is capped at liability, $285.39, shown as $285. Without the student flag on the tax year the child does not qualify, the federal EITC for this household is $0, and the result is not eligible. Measured at PE 2.9.0.
+
+**Relevant evidence or source**: Criterion 1; IRC §32(c)(3) (qualifying child age test).
+
+---
+
+### Scenario 19: Child Turned 19 After the Tax Year
+**What this tests**: Verifies that a child's age is measured on December 31 of the tax year, not on the screening date (Criterion 1).
+**Expected**: Eligible, $285
+
+**Household inputs**:
+- **Location**: Enter ZIP code `65101`, Select county `Cole County`
+- **Household**: Number of people: `2`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `June 1990` (age 35), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$35,000` per year
+- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `January 2007` (age 18 on December 31, 2025; 19 on the February 2026 screening date), Student: `No`, Has income: `No`
+- **Current Benefits**: Select `None`
+
+**Calculation or eligibility explanation**: At 18 on December 31, 2025 the child is a qualifying child for TY2025, giving the same $285 as Scenario 18. Sent the screening-date age of 19, a non-student is not a qualifying child and the result is not eligible. Measured at PE 2.9.0.
+
+**Relevant evidence or source**: Criterion 1; IRC §32(c)(3).
 
 ---
 
@@ -421,7 +483,7 @@ Missouri's real test would route this filer to Publication 596 Worksheet 1, whos
 
 **Missouri statute**
 - RSMo §143.177 — MO Working Family Tax Credit Act. https://www.revisor.mo.gov/main/OneSection.aspx?section=143.177 — eligible taxpayer definition, filing-status list, 20% statutory ceiling, nonrefundable/no-carryforward.
-- RSMo §135.030 — Property Tax Credit eligibility and income ceilings. https://www.revisor.mo.gov/main/OneSection.aspx?section=135.030 — owner-occupied 2025 net-household-income upper limit of $30,000, basis for Scenario 16's income ceiling.
+- RSMo §135.030 — Property Tax Credit eligibility and income ceilings. https://www.revisor.mo.gov/main/OneSection.aspx?section=135.030 — owner-occupied 2025 net-household-income upper limit of $30,000, the ceiling Scenario 16 sits just under; the 2026 limits ($38,200–$48,000) behind Scenario 17.
 
 **Missouri forms and instructions**
 - Form MO-WFTC (2023). https://dor.mo.gov/forms/MO-WFTC_2023.pdf — Line 2 (MFS only), Line 3 (investment income; form wording reads `>=` $4,050, MFB commits to `>` — see Criterion 5), Line 5 (federal EIC, Line 27), Line 6 (10%).
@@ -429,7 +491,7 @@ Missouri's real test would route this filer to Publication 596 Worksheet 1, whos
 - Form MO-WFTC (2025, Rev. 12-2025). https://dor.mo.gov/forms/MO-WFTC_2025.pdf — Line 2 (MFS or dependent), Line 3 (`>` $4,400), Line 5 (Line 27a), Line 6 (20%), Lines 7–9 (liability cap), Line 10 (smaller-of final credit).
 - MO-1040 Instructions. https://dor.mo.gov/forms/MO-1040%20Instructions_2025.pdf — Line 42 (Misc. Tax Credits), Line 43 (Property Tax Credit), Line 44 (WFTC), rounding rule.
 - Form MO-PTS (2025). https://dor.mo.gov/forms/MO-PTS_2025.pdf — Property Tax Credit Schedule; HOH uses the Single PTC filing status; owner-occupied net-household-income ceiling.
-- 2025 Property Tax Credit Claim Chart. https://dor.mo.gov/forms/Property%20Tax%20Claim%20Chart_2025.pdf — income-band × property-tax-paid lookup used for Scenario 16's $20 PTC.
+- 2025 Property Tax Credit Claim Chart. https://dor.mo.gov/forms/Property%20Tax%20Claim%20Chart_2025.pdf — income-band × property-tax-paid lookup behind Scenarios 14 and 16's credits.
 
 **Missouri DOR guidance**
 - MO Working Family Tax Credit FAQ. https://dor.mo.gov/faq/taxation/individual/missouri-working-family-tax-credit.html — "Eligibility Requirements" (positive remaining liability).
@@ -440,8 +502,8 @@ Missouri's real test would route this filer to Publication 596 Worksheet 1, whos
 **PolicyEngine source**
 - `PolicyEngine/policyengine-us`, `.../mo/tax/income/credits/mo_wftc.py`, `mo_wftc_potential.py`, `mo_wftc_liability_cap.py` — WFTC formula; PTC netted against remaining liability before the WFTC cap.
 - `.../credits/mo_wftc_eligible.py` — federal-EITC/MFS/dependent/investment-income eligibility gate.
-- `.../gov/irs/credits/earned_income/eitc_relevant_investment_income.py`, `.../gov/irs/tax/federal_income/net_investment_income.py`, parameter `gov.irs.investment.income.sources` — confirms `eitc_relevant_investment_income` includes `rental_income`, the reason Implementation requires an independent Missouri investment-income gate.
+- `.../gov/irs/credits/earned_income/eitc_relevant_investment_income.py`, `.../gov/irs/tax/federal_income/net_investment_income.py`, parameter `gov.irs.investment.income.sources` — confirms `eitc_relevant_investment_income` includes `rental_income`, the measure behind Criterion 5's accepted approximation.
 - `.../mo_ptc_taxunit_eligible.py` — Property Tax Credit age/disability eligibility paths.
 
 **MFB backend source**
-- `MyFriendBen/benefits-api`, `programs/framework/pe_dependencies/member.py` — `InvestmentIncomeDependency` (→ PE `long_term_capital_gains`), `RentalIncomeDependency` (→ PE `rental_income`), `TaxUnitHeadDependency`, `TaxUnitSpouseDependency`, `RentDependency`, `PropertyTaxExpenseDependency`.
+- `MyFriendBen/benefits-api`, `programs/framework/pe_dependencies/member.py` — `InvestmentIncomeDependency` (→ PE `long_term_capital_gains`), `RentalIncomeDependency` (→ PE `rental_income`), `TaxUnitHeadDependency`, `TaxUnitSpouseDependency`, `RentDependency`, `PropertyTaxExpenseDependency`, `AgeAtEndOfClaimYearDependency`, `FullTimeCollegeStudentDependency`.

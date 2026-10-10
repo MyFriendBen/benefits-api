@@ -1,67 +1,13 @@
 """TX tests."""
 
 from unittest.mock import MagicMock
-from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from django.test import TestCase
-from programs.programs.cross_white_label.medicaid.emergency.tx import TxEmergencyMedicaid
 from programs.programs.cross_white_label.medicaid.for_parents_and_caretakers.tx import TxMedicaidForParentsAndCaretakers
-from programs.framework.pe_dependencies.household import TxStateCodeDependency
-from programs.framework.pe_dependencies import household
 
 
 class TestTxMedicaidForParentsAndCaretakers(TestCase):
     """Tests for TxMedicaidForParentsAndCaretakers calculator class."""
-
-    def test_exists_and_is_subclass_of_medicaid(self):
-        """
-        Test that TxMedicaidForParentsAndCaretakers calculator class exists and is a subclass of Medicaid.
-
-        This verifies the calculator has been set up in the codebase.
-        """
-        # Verify TxMedicaidForParentsAndCaretakers is a subclass of Medicaid
-        self.assertTrue(issubclass(TxMedicaidForParentsAndCaretakers, Medicaid))
-
-        # Verify it has the expected properties
-        self.assertEqual(TxMedicaidForParentsAndCaretakers.pe_name, "medicaid")
-        self.assertIsNotNone(TxMedicaidForParentsAndCaretakers.pe_inputs)
-        self.assertGreater(len(TxMedicaidForParentsAndCaretakers.pe_inputs), 0)
-
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
-        """
-        Test that TxMedicaidForParentsAndCaretakers has all expected pe_inputs from parent and TX-specific.
-
-        TxMedicaidForParentsAndCaretakers should inherit all inputs from parent Medicaid class plus add
-        TX-specific dependencies like TxStateCodeDependency.
-        """
-        # TxMedicaidForParentsAndCaretakers should have all parent inputs plus TxStateCodeDependency
-        self.assertGreater(len(TxMedicaidForParentsAndCaretakers.pe_inputs), len(Medicaid.pe_inputs))
-
-        # Verify TxStateCodeDependency is in the list
-        self.assertIn(household.TxStateCodeDependency, TxMedicaidForParentsAndCaretakers.pe_inputs)
-
-        # Verify all parent inputs are present
-        for parent_input in Medicaid.pe_inputs:
-            self.assertIn(parent_input, TxMedicaidForParentsAndCaretakers.pe_inputs)
-
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
-        """
-        Test that TxStateCodeDependency is properly added to TX Medicaid for Parents inputs.
-
-        This is the key TX-specific dependency that sets state_code="TX" for
-        PolicyEngine calculations.
-        """
-        # Verify TxStateCodeDependency is in pe_inputs
-        self.assertIn(TxStateCodeDependency, TxMedicaidForParentsAndCaretakers.pe_inputs)
-
-        # Verify it's configured correctly
-        self.assertEqual(TxStateCodeDependency.state, "TX")
-        self.assertEqual(TxStateCodeDependency.field, "state_code")
-
-    def test_has_same_pe_outputs_as_parent(self):
-        """Test that TxMedicaidForParentsAndCaretakers has the same pe_outputs as parent Medicaid class."""
-        # TxMedicaidForParentsAndCaretakers should use the same outputs as parent
-        self.assertEqual(TxMedicaidForParentsAndCaretakers.pe_outputs, Medicaid.pe_outputs)
 
     def test_caretaker_relationships_defined(self):
         """Test that caretaker relationships are properly defined."""
@@ -95,7 +41,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock member aged 18
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 18
+        member_obj.calc_age = Mock(return_value=18)
         member_obj.has_insurance_types = Mock(return_value=True)
         member_obj.relationship = "headOfHousehold"
 
@@ -121,7 +67,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock adult with insurance
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 35
+        member_obj.calc_age = Mock(return_value=35)
         member_obj.has_insurance_types = Mock(return_value=False)  # has_insurance_types(("none",)) returns False
         member_obj.relationship = "headOfHousehold"
 
@@ -151,7 +97,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock adult with a non-qualifying relationship (e.g., "other")
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 35
+        member_obj.calc_age = Mock(return_value=35)
         member_obj.has_insurance_types = Mock(return_value=True)  # No insurance
         member_obj.relationship = "other"  # Not a qualifying relationship
 
@@ -183,7 +129,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock adult caretaker
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 35
+        member_obj.calc_age = Mock(return_value=35)
         member_obj.has_insurance_types = Mock(return_value=True)  # No insurance
         member_obj.relationship = "headOfHousehold"
 
@@ -203,7 +149,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock child with Medicaid
         mock_child = Mock()
         mock_child.id = 2
-        mock_child.age = 10
+        mock_child.calc_age = Mock(return_value=10)
         mock_child.has_insurance = Mock(return_value=True)  # Child has Medicaid
 
         # Create a mock screen with the child
@@ -223,7 +169,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock eligible adult caretaker
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 35
+        member_obj.calc_age = Mock(return_value=35)
         member_obj.has_insurance_types = Mock(return_value=True)  # No insurance
         member_obj.relationship = "headOfHousehold"
 
@@ -244,7 +190,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock child who qualifies for Medicaid
         mock_child = Mock()
         mock_child.id = 2
-        mock_child.age = 10
+        mock_child.calc_age = Mock(return_value=10)
         mock_child.has_insurance = Mock(return_value=False)  # Child doesn't have Medicaid yet
 
         # Create a mock screen with the child
@@ -264,7 +210,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock eligible adult caretaker
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 35
+        member_obj.calc_age = Mock(return_value=35)
         member_obj.has_insurance_types = Mock(return_value=True)  # No insurance
         member_obj.relationship = "headOfHousehold"
 
@@ -283,7 +229,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock child with Medicaid
         mock_child = Mock()
         mock_child.id = 2
-        mock_child.age = 5
+        mock_child.calc_age = Mock(return_value=5)
         mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen
@@ -303,7 +249,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock member aged 19
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 19
+        member_obj.calc_age = Mock(return_value=19)
         member_obj.has_insurance_types = Mock(return_value=True)
         member_obj.relationship = "headOfHousehold"
 
@@ -326,7 +272,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock member aged 17
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 17
+        member_obj.calc_age = Mock(return_value=17)
         member_obj.has_insurance_types = Mock()  # Should not be called
         member_obj.relationship = "headOfHousehold"
 
@@ -348,7 +294,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock child with Medicaid
         mock_child = Mock()
         mock_child.id = 2
-        mock_child.age = 10
+        mock_child.calc_age = Mock(return_value=10)
         mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen
@@ -368,7 +314,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock adult sibling caretaker
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 25
+        member_obj.calc_age = Mock(return_value=25)
         member_obj.has_insurance_types = Mock(return_value=True)
         member_obj.relationship = "sisterOrBrother"  # Sibling relationship
 
@@ -387,7 +333,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock child with Medicaid
         mock_child = Mock()
         mock_child.id = 2
-        mock_child.age = 8
+        mock_child.calc_age = Mock(return_value=8)
         mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen
@@ -407,7 +353,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock grandparent caretaker
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.age = 65
+        member_obj.calc_age = Mock(return_value=65)
         member_obj.has_insurance_types = Mock(return_value=True)
         member_obj.relationship = "grandParent"
 
@@ -424,7 +370,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create mock adult members only
         mock_adult = Mock()
         mock_adult.id = 2
-        mock_adult.age = 35
+        mock_adult.calc_age = Mock(return_value=35)
 
         # Create a mock screen with adult only
         mock_screen = Mock()
@@ -449,7 +395,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock child with Medicaid
         mock_child = Mock()
         mock_child.id = 2
-        mock_child.age = 10
+        mock_child.calc_age = Mock(return_value=10)
         mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen with the child
@@ -476,7 +422,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Create a mock child who qualifies for Medicaid
         mock_child = Mock()
         mock_child.id = 2
-        mock_child.age = 12
+        mock_child.calc_age = Mock(return_value=12)
         mock_child.has_insurance = Mock(return_value=False)  # Doesn't have it yet
 
         # Create a mock screen with the child

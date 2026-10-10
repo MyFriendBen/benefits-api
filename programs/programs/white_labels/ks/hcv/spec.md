@@ -279,7 +279,7 @@ Ages are derived from `birth_year_month` via `calc_age()` / `age_from_date()` ag
 
 ## Test Scenarios
 
-All ages are computed as of the pinned reference date **2026-08-27**. `Screen.get_reference_date()` falls back to the current date for an unfrozen screen, so tests must freeze or pass this date rather than relying on the ambient clock.
+All ages are computed as of the pinned reference date **2026-08-27**. `Screen.get_reference_date()` returns the current date, so tests must freeze or pass this date rather than relying on the ambient clock.
 
 Each scenario's **Current Benefits** line is a results-layer condition, not a calculator input. `eligibility_results` sets `already_has` from `screen.has_benefit("ks_hcv")` *after* `household_eligible` and `household_value` have run, and the frontend filter reads it; neither calculator method consults it. A unit test of `KsHcv` will not exercise that line.
 
@@ -331,7 +331,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$7,980/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 2BR proxy $1,180/mo (3-person household → 2BR). Gross annual income $21,600 ($1,800/mo). 2 dependents (children under 18) × $500 = $1,000/yr deduction → adjusted annual income $20,600 → monthly adjusted $1,716.67. TTP = max(0.30 × $1,716.67 = $515, 0.10 × $1,800 = $180, $0 min rent) = $515/mo. HAP = $1,180 − $515 = $665/mo × 12 = **$7,980/yr**. (Divergence D4)
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `3` people
 - **Person 1**: Birth month/year `March 1991` (age 35), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800/month`
 - **Person 2**: Birth month/year `September 2016` (age 9), Relationship: Child, Has income: No
@@ -347,7 +347,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$3,600/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 0BR proxy $840/mo (single person → 0BR under MFB's statewide default). Gross monthly income $1,800, no dependents, not elderly/disabled — adjusted income = gross. TTP = max(0.30 × $1,800 = $540, 0.10 × $1,800 = $180, $0) = $540/mo. HAP = $840 − $540 = $300/mo × 12 = **$3,600/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `1` person
 - **Person 1**: Birth month/year `September 1991` (age 34), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800/month`, Not currently receiving Section 8/HCV
 
@@ -360,7 +360,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$6,540/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 2BR proxy $1,180/mo. Combined gross monthly income $2,200 ($1,500 + $700) → annual $26,400. 2 dependents × $500 = $1,000/yr deduction → adjusted annual $25,400 → monthly adjusted $2,116.67. TTP = max(0.30 × $2,116.67 = $635, 0.10 × $2,200 = $220, $0) = $635/mo. HAP = $1,180 − $635 = $545/mo × 12 = **$6,540/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `4` people
 - **Person 1**: Birth month/year `March 1986` (age 40), Relationship: Head of Household, Has income: Yes, Employment income: `$1,500/month`
 - **Person 2**: Birth month/year `September 1988` (age 37), Relationship: Spouse, Has income: Yes, Employment income: `$700/month`
@@ -377,7 +377,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$1/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 1BR proxy $910/mo (2-person household → 1BR). Gross annual income $38,000 ($3,166.67/mo) — at or below the Wichita 2-person VLI limit of $38,600, so eligible at Criterion 1. No dependents, not elderly/disabled, so adjusted income equals gross. TTP = max(0.30 × $3,166.67 = $950, 0.10 × $3,166.67 = $316.67 → $317, $0) = $950/mo. Monthly HAP = max(0, $910 − $950) = $0, so the annual value floors at **$1/yr** rather than $0 — see the nominal-value floor under Formula and rounding. (Divergence D3)
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `2` people
 - **Person 1**: Birth month/year `March 1988` (age 38), Relationship: Head of Household, Has income: Yes, Employment income: `$38,000/year`
 - **Person 2**: Birth month/year `September 1990` (age 35), Relationship: Spouse, Has income: No
@@ -392,7 +392,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$6,828/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 0BR proxy $840/mo (single person → 0BR). Gross annual income $11,400 ($950/mo SS). Head is 76 (elderly, sole household member) → elderly/disabled family deduction $550/yr applies. Adjusted annual = $11,400 − $550 = $10,850 → monthly adjusted $904.1667. TTP = max(0.30 × $904.1667 = $271.25 → $271, 0.10 × $950 = $95, $0) = $271/mo. HAP = $840 − $271 = $569/mo × 12 = **$6,828/yr**. (Divergence D4)
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `1` person
 - **Person 1**: Birth month/year `March 1950` (age 76), Relationship: Head of Household, Has income: Yes, Income type: Social Security (`sSRetirement`), Amount: `$950/month`, Not currently receiving Section 8/HCV
 
@@ -405,7 +405,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$8,088/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 0BR proxy $840/mo (single person → 0BR). Gross annual income $7,200 ($600/mo SSI). Head is disabled (sole household member) → elderly/disabled family deduction $550/yr applies. Adjusted annual = $7,200 − $550 = $6,650 → monthly adjusted $554.1667. TTP = max(0.30 × $554.1667 = $166.25 → $166, 0.10 × $600 = $60, $0) = $166/mo. HAP = $840 − $166 = $674/mo × 12 = **$8,088/yr**. (Divergence D4)
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `1` person
 - **Person 1**: Birth month/year `June 1989` (age 37), Relationship: Head of Household, Has disability: Yes, recorded as `long_term_disability: true` (`disabled` left unset), Has income: Yes, Income type: SSI (`sSI`), Amount: `$600/month`, Not currently receiving Section 8/HCV
 
@@ -418,7 +418,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$6,012/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 2BR proxy $1,180/mo. Combined gross monthly income $2,350 ($950 SS + $1,400 wages) → annual $28,200. Head (grandparent, 68) is elderly, and the elderly/disabled deduction is a household-level flag keyed to head/co-head/spouse only — it applies here since the head themself is 62+. Dependent count excludes head/spouse: the adult child (35, no disability/student flag) is not a dependent; the grandchild (8, under 18) is 1 dependent × $500 = $500/yr. Total deductions = $550 (elderly) + $500 (dependent) = $1,050/yr. Adjusted annual = $28,200 − $1,050 = $27,150 → monthly adjusted $2,262.50. TTP = max(0.30 × $2,262.50 = $678.75 → $679, 0.10 × $2,350 = $235, $0) = $679/mo. HAP = $1,180 − $679 = $501/mo × 12 = **$6,012/yr**. (Divergence D4)
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `3` people
 - **Person 1**: Birth month/year `March 1958` (age 68), Relationship: Head of Household, Has income: Yes, Income type: Social Security (`sSRetirement`), Amount: `$950/month`
 - **Person 2**: Birth month/year `September 1990` (age 35), Relationship: Child, Has income: Yes, Employment income: `$1,400/month`
@@ -434,7 +434,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$2,436/year** — Topeka, KS MSA (Shawnee County) FY2026 area FMR 4BR proxy $1,411/mo. Combined gross monthly income $4,150 ($1,400 + $1,200 + $950 + $600) → annual $49,800. Elderly/disabled deduction does not apply — the elderly parent (68) and the sibling are neither head nor spouse (head is 36, spouse is 33, neither elderly/disabled). Dependents (excluding head/spouse): the parent and sibling are adults with no stated disability/student status, so not dependents; the 3 children (12, 9, 5) are all under 18 → 3 × $500 = $1,500/yr deduction. Adjusted annual = $49,800 − $1,500 = $48,300 → monthly adjusted $4,025. TTP = max(0.30 × $4,025 = $1,207.50 → $1,208, 0.10 × $4,150 = $415, $0) = $1,208/mo. HAP = $1,411 − $1,208 = $203/mo × 12 = **$2,436/yr**.
 
 **Steps**:
-- **Location**: ZIP code `66604`, county `Shawnee`
+- **Location**: ZIP code `66604`, county `Shawnee County`
 - **Household**: `7` people
 - **Person 1**: Birth month/year `March 1990` (age 36), Relationship: Head of Household, Has income: Yes, Employment income: `$1,400/month`
 - **Person 2**: Birth month/year `September 1992` (age 33), Relationship: Spouse, Has income: Yes, Employment income: `$1,200/month`
@@ -454,7 +454,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$9,504/year** — Topeka, KS MSA (Shawnee County) FY2026 area FMR 0BR proxy $792/mo. Zero income → adjusted income $0. TTP = max(0.30 × $0 = $0, 0.10 × $0 = $0, $0 minimum rent) = $0/mo. HAP = $792 − $0 = $792/mo × 12 = **$9,504/yr**.
 
 **Steps**:
-- **Location**: ZIP code `66604`, county `Shawnee`
+- **Location**: ZIP code `66604`, county `Shawnee County`
 - **Household**: `1` person
 - **Person 1**: Birth month/year `September 1991` (age 34), Relationship: Head of Household, Has income: No (no income from any source), Not currently receiving Section 8/HCV
 
@@ -467,7 +467,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$6,504/year** — Topeka, KS MSA (Shawnee County) FY2026 area FMR 2BR proxy $1,057/mo. Head's gross annual income $21,600 ($1,800/mo). Person 3 has `relationship` = `fosterChild` ("Foster Child / Kinship Care") and receives a $150/month care payment reported under `cashAssistanceOther` (the non-TANF cash-assistance stream — `cashAssistance` is the TANF field specifically); it is excluded by the member-level exclusion — (b)(4) covers the payment itself and (b)(8) the member's income, and either reaches it here — so countable gross monthly income remains $1,800 (not $1,950). Both Person 2 and Person 3 count as dependents — `family_size`/dependent-count is not reduced for an unconfirmed `fosterChild`-relationship member (Criterion 1) — so 2 dependents × $500 = $1,000/yr deduction → adjusted annual $20,600 → monthly adjusted $1,716.67. TTP = max(0.30 × $1,716.67 = $515.00 → $515, 0.10 × $1,800 = $180, $0) = $515/mo. HAP = $1,057 − $515 = $542/mo × 12 = **$6,504/yr**. (Divergence D2)
 
 **Steps**:
-- **Location**: ZIP code `66604`, county `Shawnee`
+- **Location**: ZIP code `66604`, county `Shawnee County`
 - **Household**: `3` people
 - **Person 1**: Birth month/year `March 1991` (age 35), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800/month`
 - **Person 2**: Birth month/year `September 2016` (age 9), Relationship: Child, Has income: No
@@ -483,7 +483,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$5,520/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 1BR proxy $910/mo (2-person household → 1BR). Person 1 has $900/month employment income plus a separate $200/month workers' compensation payment; the workers' compensation amount is excluded under § 5.609(b)(5), so it does not count toward income eligibility or TTP. Countable combined gross monthly income = $900 (Person 1, wages only) + $600 (Person 2) = $1,500. No dependents, not elderly/disabled. TTP = max(0.30 × $1,500 = $450, 0.10 × $1,500 = $150, $0) = $450/mo. HAP = $910 − $450 = $460/mo × 12 = **$5,520/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `2` people
 - **Person 1**: Birth month/year `March 1988` (age 38), Relationship: Head of Household, Has income: Yes, Employment income: `$900/month`, Income type: Workers' compensation (`workersComp`), Amount: `$200/month`
 - **Person 2**: Birth month/year `June 1990` (age 36), Relationship: Spouse, Has income: Yes, Employment income: `$600/month`
@@ -500,7 +500,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$9,684/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 3BR proxy $1,550/mo (5-person household → 3BR). Adult combined gross monthly income $2,600 ($1,800 + $800) → annual $31,200. Person 3 (age 13) has $200/month part-time earned income; as employment income of a household member under 18, it is excluded under § 5.609(b)(3) and does not add to countable income (countable annual income remains $31,200, not $33,600). All 3 children remain dependents regardless of the income exclusion — 3 × $500 = $1,500/yr deduction → adjusted annual $29,700 → monthly adjusted $2,475. TTP = max(0.30 × $2,475 = $742.50 → $743, 0.10 × $2,600 = $260, $0) = $743/mo. HAP = $1,550 − $743 = $807/mo × 12 = **$9,684/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `5` people
 - **Person 1**: Birth month/year `March 1988` (age 38), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800/month`
 - **Person 2**: Birth month/year `June 1990` (age 36), Relationship: Spouse, Has income: Yes, Employment income: `$800/month`
@@ -518,7 +518,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$3,408/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 3BR proxy $1,550/mo (5-person household → 3BR). Gross annual income $52,150, exactly the Wichita 5-person FY2026 VLI limit — eligible on the `<=` comparison; at $52,151 the household is ineligible — asserted as Scenario 20 rather than left as prose here. 3 dependents (children under 18) × $500 = $1,500/yr deduction → adjusted annual $50,650 → monthly adjusted $4,220.8333. TTP = max(0.30 × $4,220.8333 = $1,266.25 → $1,266, 0.10 × $4,345.8333 = $434.58 → $435, $0) = $1,266/mo. HAP = $1,550 − $1,266 = $284/mo × 12 = **$3,408/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `5` people
 - **Person 1**: Birth month/year `March 1985` (age 41), Relationship: Head of Household, Has income: Yes, Employment income: `$52,150/year`
 - **Person 2**: Birth month/year `September 1987` (age 38), Relationship: Spouse, Has income: No
@@ -536,7 +536,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Not eligible — Wichita, KS HMFA 1-person FY2026 VLI limit $33,800/yr. Gross annual income $66,000 ($5,500/mo) exceeds it, so the household fails Criterion 1 and no value is computed.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `1` person
 - **Person 1**: Birth month/year `March 1988` (age 38), Relationship: Head of Household, Has income: Yes, Employment income: `$5,500/month`
 - **Current Benefits**: Section 8 / HCV: No
@@ -550,7 +550,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$8,040/year** — Kansas City, MO-KS HMFA, ZIP 66103 (Wyandotte County) SAFMR 1BR proxy $1,180/mo (2-person household → 1BR) — not the area-wide Kansas City, MO-KS HMFA FY2026 FMR of $1,197/mo for 1BR. Combined gross monthly income $1,700 ($1,000 + $700) → annual $20,400, well below the Kansas City, MO-KS HMFA 2-person VLI limit of $45,400. No dependents, not elderly/disabled. TTP = max(0.30 × $1,700 = $510, 0.10 × $1,700 = $170, $0) = $510/mo. HAP = $1,180 − $510 = $670/mo × 12 = **$8,040/yr**.
 
 **Steps**:
-- **Location**: ZIP code `66103`, county `Wyandotte`
+- **Location**: ZIP code `66103`, county `Wyandotte County`
 - **Household**: `2` people
 - **Person 1**: Birth month/year `March 1990` (age 36), Relationship: Head of Household, Has income: Yes, Employment income: `$1,000/month`
 - **Person 2**: Birth month/year `June 1992` (age 34), Relationship: Spouse, Has income: Yes, Employment income: `$700/month`
@@ -565,7 +565,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$6,600/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 1BR proxy $910/mo (1-person household, pregnant → effective size 2 → 1BR). Gross annual income $14,400 ($1,200/mo) — `household_size` remains 1 for the income-limit comparison. No dependents (pregnancy does not itself create a dependent), not elderly/disabled. TTP = max(0.30 × $1,200 = $360, 0.10 × $1,200 = $120, $0) = $360/mo. HAP = $910 − $360 = $550/mo × 12 = **$6,600/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `1` person
 - **Person 1**: Birth month/year `January 1999` (age 27), Relationship: Head of Household, Pregnant: **Yes** (`pregnant: true`), Has income: Yes, Employment income: `$1,200/month`, Not currently receiving Section 8/HCV
 
@@ -578,7 +578,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$2,460/year** — Wichita, KS HMFA `family_size` = `household_size` = 3 (no reduction — see Criterion 1). Applicable VLI limit for family_size 3 = $43,450/yr; the family_size-2 limit, $38,600/yr, would have wrongly applied under the incorrect reduction and would have made this household ineligible. Gross annual income $40,000 ($3,333.33/mo, head only) is below $43,450 → eligible at Criterion 1. Bedroom size: 3-person household → 2BR, Wichita SAFMR $1,180/mo. 2 dependents (both children, including the `fosterChild`-relationship member per Criterion 1's default) × $500 = $1,000/yr deduction → adjusted annual $39,000 → monthly adjusted $3,250. TTP = max(0.30 × $3,250 = $975, 0.10 × $3,333.33 = $333.33 → $333, $0) = $975/mo. HAP = $1,180 − $975 = $205/mo × 12 = **$2,460/yr**. (Divergence D2)
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `3` people
 - **Person 1**: Birth month/year `March 1988` (age 38), Relationship: Head of Household, Has income: Yes, Employment income: `$40,000/year`
 - **Person 2**: Birth month/year `January 2016` (age 10), Relationship: Child, Has income: No
@@ -594,7 +594,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$7,320/year** — Wichita, KS HMFA, ZIP 67202 SAFMR 1BR $910/mo (2-person household → 1BR). Person 2 is 20, a dependent (not head or spouse) with `student_full_time` = true, earning $500/mo = $6,000/yr; § 5.609(b)(14) counts the first $500/yr and excludes the remaining $5,500 ((b)(3) does not apply — Person 2 is over 18). Countable gross annual income = $12,000 + $500 = $12,500, below the Wichita 2-person VLI limit of $38,600 → eligible at Criterion 1. Person 2 still counts as a dependent → 1 × $500 = $500/yr deduction → adjusted annual $12,000 → monthly adjusted $1,000. TTP = max(0.30 × $1,000 = $300, 0.10 × $1,041.67 = $104.17 → $104, $0) = $300/mo. HAP = $910 − $300 = $610/mo × 12 = **$7,320/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `2` people
 - **Person 1**: Birth month/year `March 1985` (age 41), Relationship: Head of Household, Has income: Yes, Employment income: `$1,000/month`
 - **Person 2**: Birth month/year `April 2006` (age 20), Relationship: Child, Student: Yes, Full-time student: Yes, Has income: Yes, Employment income: `$500/month`
@@ -609,7 +609,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$4,620/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 2BR proxy $1,180/mo (3-person household → 2BR). Income and deductions are identical to Scenario 1: gross annual $21,600, 2 dependents × $500 = $1,000/yr deduction → adjusted annual $20,600 → monthly adjusted $1,716.67 → TTP = max(0.30 × $1,716.67 = $515, 0.10 × $1,800 = $180, $0 min rent) = $515/mo. Reported housing cost $900/mo > $0, so `gross_rent_proxy = min($1,180, $900) = $900`. HAP = max(0, $900 − $515) = $385/mo × 12 = **$4,620/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `3` people
 - **Person 1**: Birth month/year `March 1991` (age 35), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800/month`
 - **Person 2**: Birth month/year `September 2016` (age 9), Relationship: Child, Has income: No
@@ -626,7 +626,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Not eligible — Wichita, KS HMFA 5-person FY2026 VLI limit $52,150/yr. Gross annual income $52,151 exceeds it by $1, so the household fails Criterion 1 and no value is computed. Scenario 13 is the same household at $52,150, which qualifies and returns $3,408/yr — an off-by-one in the comparator flips one of this pair.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `5` people
 - **Person 1**: Birth month/year `March 1985` (age 41), Relationship: Head of Household, Has income: Yes, Employment income: `$52,151/year`
 - **Person 2**: Birth month/year `September 1987` (age 38), Relationship: Spouse, Has income: No
@@ -644,7 +644,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$7,980/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 2BR proxy $1,180/mo. Gross annual income $21,600. 2 dependents × $500 = $1,000 → adjusted $20,600 → monthly adjusted $1,716.67. TTP = max(0.30 × $1,716.67 = $515, 0.10 × $1,800 = $180, $0) = $515/mo. No rent is reported, so `calc_expenses("monthly", ["rent"])` returns $0 and the proxy falls back to the payment standard: HAP = $1,180 − $515 = $665/mo × 12 = **$7,980/yr**.
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `3` people
 - **Person 1**: Birth month/year `March 1991` (age 35), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800/month`
 - **Person 2**: Birth month/year `September 2016` (age 9), Relationship: Child, Has income: No
@@ -661,7 +661,7 @@ Scenario 21 is the one place a gap's handling is load-bearing rather than merely
 **Expected**: Eligible — **$5,148/year** — Wichita, KS HMFA (ZIP 67202) FY2026 SAFMR 1BR proxy $910/mo (2-person household → 1BR). Combined gross annual income $19,800 ($950 + $700 = $1,650/mo), below the Wichita 2-person VLI limit of $38,600. No dependents. Head and spouse are both 62+, so the elderly/disabled family deduction applies **once**: adjusted annual $19,800 − $550 = $19,250 → monthly adjusted $1,604.1667. TTP = max(0.30 × $1,604.1667 = $481.25 → $481, 0.10 × $1,650 = $165, $0) = $481/mo. HAP = $910 − $481 = $429/mo × 12 = **$5,148/yr**. (Divergence D4)
 
 **Steps**:
-- **Location**: ZIP code `67202`, county `Sedgwick`
+- **Location**: ZIP code `67202`, county `Sedgwick County`
 - **Household**: `2` people
 - **Person 1**: Birth month/year `March 1958` (age 68), Relationship: Head of Household, Has income: Yes, Income type: Social Security (`sSRetirement`), Amount: `$950/month`
 - **Person 2**: Birth month/year `June 1961` (age 65), Relationship: Spouse, Has income: Yes, Income type: Social Security (`sSRetirement`), Amount: `$700/month`

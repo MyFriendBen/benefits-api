@@ -42,7 +42,7 @@ class Cha(ProgramCalculator):
 
         # Age: Head of household must be at least 18 years old
         head_of_household = self.screen.get_head()
-        e.condition(head_of_household.age >= self.min_head_of_household_age, messages.older_than(18))
+        e.condition(head_of_household.calc_age() >= self.min_head_of_household_age, messages.older_than(18))
 
         # Income test: ≤80% AMI for Family Housing and Senior/Disabled Housing
         # Using Standard Section 8 Income Limits

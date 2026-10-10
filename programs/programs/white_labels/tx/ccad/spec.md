@@ -60,17 +60,17 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ## Test Scenarios
 
-Scenarios marked `[validation]` are included in `tx_ccad.json` as automated validations run in CI. All scenarios are covered by unit tests in `programs/programs/white_labels/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
+All scenarios are covered by unit tests in `programs/programs/white_labels/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
 
 ---
 
-### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL `[validation]`
+### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL
 
 **Checks**: Core age-based eligibility (65+) with income clearly below threshold
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
+- **Location**: ZIP `78701`, County `Travis`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, Social Security Retirement `$1,500/month`, no disability, no insurance, no current benefits
 
@@ -84,7 +84,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSDI `$3,990/month` ($47,880/year = exactly 300% FPL for household of 1 in 2026), no insurance
 
@@ -98,7 +98,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
+- **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1956` (age 70), Head of Household, U.S. Citizen, Social Security Retirement `$3,990/month` ($47,880/year = exactly 300% FPL for 2026), no insurance, no current benefits
 
@@ -106,13 +106,13 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 4: 72-Year-Old with Income Just Above 300% FPL `[validation]`
+### Scenario 4: 72-Year-Old with Income Just Above 300% FPL
 
 **Checks**: Income exceeding threshold is correctly rejected
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
+- **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1954` (age 72), Head of Household, U.S. Citizen, Social Security Retirement `$4,900/month`, no disability, no insurance, no current benefits
 
@@ -126,7 +126,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `75001`, County `Collin`
+- **Location**: ZIP `75001`, County `Dallas`
 - **Household**: 1 person
 - **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSI/SSDI `$943/month`, Medicaid
 
@@ -192,7 +192,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 10: Categorically Eligible — SNAP Recipient Above 300% FPL `[validation]`
+### Scenario 10: Categorically Eligible — SNAP Recipient Above 300% FPL
 
 **Checks**: Categorical eligibility path — SNAP recipient qualifies regardless of income
 **Expected**: Eligible
@@ -212,7 +212,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
+- **Location**: ZIP `78701`, County `Travis`
 - **Household**: 1 person, currently receiving TANF
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no insurance
 
@@ -226,7 +226,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Expected**: Eligible
 
 **Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
+- **Location**: ZIP `78701`, County `Travis`
 - **Household**: 1 person
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), Medicaid insurance, no SSI income
 
@@ -240,7 +240,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Expected**: Not eligible (income above 300% FPL, only the ineligible member has Medicaid)
 
 **Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
+- **Location**: ZIP `78701`, County `Travis`
 - **Household**: 2 people
 - **Person 1 (Head)**: DOB `January 1958` (age 68), no insurance, Social Security Retirement `$6,000/month` (above 300% FPL for household size 2: $61,320/year in 2025)
 - **Person 2**: DOB `June 1990` (age 35), Medicaid, no income

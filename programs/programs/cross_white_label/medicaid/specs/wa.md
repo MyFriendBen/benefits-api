@@ -99,12 +99,13 @@
     * Impact: Low (narrow — requires prior CDC-program screening; fully unscreenable but important to surface for the population it serves)
 
 10. **U.S. citizenship or qualifying immigration status**
-    * **Comprehensive Apple Health adult pathways (criteria 2, 3, 6):** `citizen`, `gc_5plus`, `refugee`, `otherWithWorkPermission`. `gc_5less` is subject to the federally-mandated 5-year bar (8 U.S.C. § 1613) for adult pathways.
+    * **Comprehensive Apple Health adult pathways (criteria 2, 3, 6):** `citizen`, `gc_5plus`, `otherWithWorkPermission` (COFA migrants, Cuban/Haitian entrants). `gc_5less` is subject to the federally-mandated 5-year bar (8 U.S.C. § 1613) for adult pathways. Through 2026-09-30 `refugee` also qualified; from 2026-10-01 (P.L. 119-21 §71109; CMS SHO #26-001) refugee and asylee adults are limited to AEM, like `non_citizen` adults.
     * **Pregnant (criterion 5) and kids (criterion 4):** Above PLUS `gc_5less` — WA elected the CHIPRA option to waive the 5-year bar for lawfully residing pregnant individuals and children (8 U.S.C. § 1612(b)).
     * **Alien Emergency Medical (AEM) — narrow federal exception:** Federal Medicaid emergency-only coverage (42 U.S.C. § 1396b(v)(3); WAC 182-507) for `non_citizen` and `gc_5less` adults with a qualifying medical emergency. Applicant must still meet an Apple Health pathway's income/categorical rules. ⚠️ Not directly screenable (the screener cannot determine current emergency status); surface AEM in the program description for `non_citizen` / `gc_5less` adult users.
     * **Granular detail not captured (minor data gap):** specific exempt subcategories beyond the 6 categorical values (trafficking victims, COFA migrants, sponsor deeming).
-    * **Config:** `legal_status_required` lists all 6 values (`non_citizen` justified by AEM; `gc_5less` justified by CHIPRA + AEM). Calculator routes each person to the correct pathway.
-    * Screener fields: per-member `legal_status`
+    * **Config:** `legal_status_required` is `citizen`, `gc_5plus`, `non_citizen`, `otherWithWorkPermission`, `refugee` (`non_citizen` justified by AEM). `gc_5less` was removed in the five-year-bar fix. `refugee` was deliberately **kept** on 2026-10-01 (decided 2026-10-01): refugee adults now qualify for exactly what `non_citizen` adults do (AEM), and this one card stands in for both full coverage and AEM, so removing `refugee` alone would show the card to undocumented users but not to refugees. This is an interim choice. Once AEM is modeled as its own program, revisit it: remove `refugee` and add `otherHealthCarePregnant` (WA still covers lawfully residing pregnant people), and reconsider `non_citizen`, which is tied to modeling Apple Health Expansion as its own program.
+    * **No calculator reads legal status.** `legal_status_required` is applied only as a household-level results-page filter, so it can't route individual members to a pathway.
+    * Screener fields: none (the citizenship filter on the results page, not a screener question)
     * Source: 8 U.S.C. § 1611, § 1612, § 1613; 42 U.S.C. § 1396b(v); 42 CFR § 435.406; WAC 182-503-0535; WAC 182-507 (AEM); HCA Noncitizens (https://www.hca.wa.gov/free-or-low-cost-health-care/i-need-medical-dental-or-vision-care/noncitizens)
 
 11. **Must not be an inmate of a public institution (except as an inpatient in a medical institution)** ⚠️ *data gap*
@@ -197,9 +198,9 @@ The following changes to the MFB screener would close data gaps identified in th
 
 ## Test Scenarios
 
-*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios 1, 3, and 7 below are reflected in the validation JSON (`wa_apple_health.json`) as the validation suite's core 3 (golden path, primary exclusion, edge case). All other scenarios are documented here for broader QA coverage and traceability.*
+*All scenarios use 2026 FPL values (matching the config's `year` field).*
 
-### Scenario 1: Low-Income Single Adult Eligible (Golden Path) ✓ in validation JSON
+### Scenario 1: Low-Income Single Adult Eligible (Golden Path)
 
 **What we're checking**: A single adult aged 30 with very low income qualifies under ACA Adult Expansion (criterion 2: 19–64 at ≤138% FPL).
 **Expected**: Eligible, value $5,652 annual (1 EXPANSION_ADULT × $5,652/yr; displays as $471/month with `value_format: null`).
@@ -223,7 +224,7 @@ The following changes to the MFB screener would close data gaps identified in th
 
 ---
 
-### Scenario 3: Single Adult Above 138% FPL Ineligible ✓ in validation JSON
+### Scenario 3: Single Adult Above 138% FPL Ineligible
 
 **What we're checking**: Adult with income above the 138% FPL threshold ($1,835 for HH1) is correctly determined ineligible (criterion 2 upper bound).
 **Expected**: Not eligible (no value).
@@ -273,7 +274,7 @@ The following changes to the MFB screener would close data gaps identified in th
 
 ---
 
-### Scenario 7: Mixed Household — Eligible Child, Ineligible Parents ✓ in validation JSON
+### Scenario 7: Mixed Household — Eligible Child, Ineligible Parents
 
 **What we're checking**: In a multi-member household, eligibility is independent per member. Parents over 138% FPL ($3,142 HH3) but child under 215% effective free tier ($4,896 HH3) for kids (criterion 4 free tier).
 **Expected**: Eligible (child only); value $2,796 annual (1 CHILD × $2,796/yr; displays as $233/month with `value_format: null`); parents ineligible and contribute $0.

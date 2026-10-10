@@ -1,8 +1,13 @@
+import logging
+
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
 from integrations.services.sheets.cache import GoogleSheetsCache
+from programs.models import FederalPoveryLimit
 from screener.models import HouseholdMember
 from sentry_sdk import capture_message
+
+logger = logging.getLogger(__name__)
 
 
 class ACACache(GoogleSheetsCache):
@@ -37,13 +42,74 @@ class ACASubsidiesNC(ProgramCalculator):
     ineligible_insurance_types = ["va"]
     county_values = ACACache()
 
+    #: A coverage year is adjudicated against the poverty guideline in effect when its open
+    #: enrollment opened, which is the prior year's edition -- 26 U.S.C. 36B. So 2026
+    #: coverage uses the 2025 guideline ($15,650 for a household of one, 90 FR 5917), not
+    #: the 2026 one.
+    COVERAGE_YEAR_FPL_LAG = 1
+
+    def _fpl_edition(self) -> FederalPoveryLimit:
+        """The poverty guideline edition this coverage year is judged against.
+
+        `program.year` names the COVERAGE year here, the same as it does for the
+        PolicyEngine-backed ACA programs (`cross_white_label/aca`). Those get the statutory
+        lag applied inside PolicyEngine -- see `aca/specs/ks.md`, which records that 2026
+        coverage is scored against the 2025 guideline. This calculator reads the table
+        directly instead of going through PolicyEngine, so it has to apply the same lag
+        itself or it bands households a year too generously.
+
+        Returns an unsaved row: only `period` matters, `as_dict()` keys the constant off it,
+        and constructing one avoids depending on a FederalPoveryLimit row existing for the
+        prior year.
+
+        Falls back to the configured edition if the prior one cannot be resolved. A guideline
+        one year too new is a slightly wrong income band; raising here would mean North
+        Carolina shows no ACA estimate at all.
+        """
+        configured = self.program.year
+        if configured is None:
+            # Distinct from an unreadable period: there is no configured coverage year to
+            # lag from, so there is nothing to fall back to. Raising names the misconfigured
+            # program, where letting None reach get_limit() would surface as an AttributeError
+            # several frames away. `tx_hcv` fails the same way for the same reason.
+            raise ValueError("ACASubsidiesNC: no coverage year configured for nc_aca_mfb_version")
+
+        try:
+            coverage_year = int(configured.period)
+        except ValueError:
+            logger.warning(
+                "ACASubsidiesNC: non-numeric FederalPoveryLimit period %r; "
+                "banding against it directly rather than the prior year's guideline.",
+                getattr(configured, "period", None),
+            )
+            return configured
+
+        prior = str(coverage_year - self.COVERAGE_YEAR_FPL_LAG)
+        edition = FederalPoveryLimit(year=prior, period=prior)
+
+        try:
+            edition.as_dict()
+        except KeyError:
+            logger.warning(
+                "ACASubsidiesNC: no poverty guideline defined for %s, the edition %s "
+                "coverage should be judged against; banding against %s instead.",
+                prior,
+                coverage_year,
+                configured.period,
+            )
+            return configured
+
+        return edition
+
     def household_eligible(self, e: Eligibility):
         # Medicade eligibility
         e.condition(not self.program_eligible("nc_medicaid"), messages.must_not_have_benefit("Medicaid"))
 
-        # Income
-        fpl = self.program.year.as_dict()
-        income_band = int(fpl[self.screen.household_size] * ACASubsidiesNC.percent_of_fpl)
+        # Income. get_limit() rather than as_dict()[size]: the raw dict stops at size 8 and
+        # raises KeyError past it, where get_limit() extrapolates with the per-additional-
+        # person amount. Unreachable while the screener caps households at 8, but a bare
+        # KeyError here would take out the whole results response if that cap ever moves.
+        income_band = int(self._fpl_edition().get_limit(self.screen.household_size) * ACASubsidiesNC.percent_of_fpl)
         gross_income = int(self.screen.calc_gross_income("yearly", ("all",)))
         e.condition(gross_income < income_band, messages.income(gross_income, income_band))
 

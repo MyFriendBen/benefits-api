@@ -64,7 +64,8 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 9. **U.S. citizen or qualified immigrant, subject to the federal 5-year bar for most green-card holders**
 - Screener fields: handled via `legal_status_required` config (not a screener or calculator gate)
 - Source: KEESM §2664.1 → §2140 (Citizenship and Alienage) → §2142: 15 qualified-non-citizen categories exempt from any wait, plus 3 categories (including ordinary LPRs) subject to a 5-year wait.
-- **Handling:** No calculator in `benefits-api` checks immigration status; `legal_status_required` is a `Program`-level filter and is the sole restriction mechanism, so it must encode the actual rule. Set to `["citizen", "refugee", "gc_5plus", "otherWithWorkPermission"]` — excluding `non_citizen` (undocumented/DACA, ineligible for non-emergency Medicaid) and `gc_5less` (LPR under the 5-year bar). `refugee` is the platform's merged "Refugee/Asylee" bucket and `otherWithWorkPermission` ("Other Lawful") is the broad catch-all for the remaining §2142.1 categories (COFA, VAWA, humanitarian parolees). Matches TX's adult-Medicaid precedent (`["citizen", "gc_5plus", "refugee"]`). This is a config-level restriction, not a data gap.
+- **Handling:** No calculator in `benefits-api` checks immigration status; `legal_status_required` is a `Program`-level filter and is the sole restriction mechanism, so it must encode the actual rule. Set to `["citizen", "gc_5plus", "otherWithWorkPermission"]` — excluding `non_citizen` (undocumented/DACA, ineligible for non-emergency Medicaid), `gc_5less` (LPR under the 5-year bar) and `refugee`. `otherWithWorkPermission` ("Other Lawful") is the broad catch-all for the remaining §2142.1 categories. Matches `ks_medicaid`. This is a config-level restriction, not a data gap.
+- **Effective 2026-10-01** (P.L. 119-21 §71109; CMS SHO #26-001): federally funded Medicaid, including Working Healthy, is limited to citizens/nationals, LPRs, Cuban/Haitian entrants and COFA migrants. `refugee` (the platform's merged "Refugee/Asylee" bucket) was removed, because refugees and asylees lose eligibility. `otherWithWorkPermission` stays: COFA migrants and Cuban/Haitian entrants in it keep eligibility, while the humanitarian parolees, VAWA self-petitioners and T-visa holders in it lose it. The screener can't separate them, so this is a known over-inclusion.
 
 10. **Not convicted of medical assistance fraud** — ⚠️ *true data gap (no screener field)*
 - Screener fields: none
@@ -103,7 +104,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66612`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66612`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
@@ -119,7 +120,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66002`, Select county `Atchison`
+* **Location**: Enter ZIP code `66002`, Select county `Atchison County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `June 2010` (age 16), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$200`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$500`
@@ -135,7 +136,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `No`, Monthly SSDI: `$1,200`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
@@ -151,7 +152,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66612`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66612`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `No`, Currently employed: `Yes`, Monthly wages: `$1,800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
@@ -167,7 +168,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 1981` (age 44), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$7,900`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
@@ -183,7 +184,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 1981` (age 44), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,500`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
@@ -199,7 +200,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66612`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66612`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$15,000`
@@ -215,7 +216,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66612`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66612`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$20,000`
@@ -231,7 +232,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66604`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66604`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 1986` (age 39), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,200`, Citizenship: `US Citizen`, Insurance: `Medicaid (currently enrolled)`
 * **Assets**: `$3,000`
@@ -247,7 +248,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 2010` (age 16), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$1,000`
@@ -263,7 +264,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `September 2010` (age 15), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$1,000`
@@ -279,7 +280,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `January 1962` (age 64), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,200`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
@@ -295,7 +296,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,200`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
@@ -311,7 +312,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66044`, Select county `Douglas`
+* **Location**: Enter ZIP code `66044`, Select county `Douglas County`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `March 1984` (age 42), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,200`, Citizenship: `US Citizen`, Insurance: `None`
 * **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: `Spouse`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$950`, Citizenship: `US Citizen`, Insurance: `None`
@@ -328,7 +329,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66612`, Select county `Shawnee`
+* **Location**: Enter ZIP code `66612`, Select county `Shawnee County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,200`, Monthly SSI: `$700`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$2,000`
@@ -344,7 +345,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$50`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$2,000`
@@ -360,7 +361,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, `visually_impaired`: `Yes`, `long_term_disability`: `No`, Currently employed: `Yes`, Monthly wages: `$1,200`, Insurance: `None`
 * **Assets**: `$3,000`
 
@@ -375,7 +376,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `2`
 * **Person 1** (parent): Birth month/year: `March 1980` (age 46), Relationship: `Head of Household`, no earned income, Insurance: `None`
 * **Person 2** (minor applicant): Birth month/year: `March 2009` (age 17), Relationship: `Child`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Insurance: `None`
@@ -392,7 +393,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `2`
 * **Person 1** (minor applicant): Birth month/year: `March 2009` (age 17), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Insurance: `None`
 * **Person 2** (parent): Birth month/year: `March 1980` (age 46), Relationship: `Parent`, no earned income, Insurance: `None`
@@ -409,7 +410,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1** (minor applicant): Birth month/year: `March 2009` (age 17), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Insurance: `None`
 * **Assets**: `$2,000`
@@ -425,7 +426,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Location**: Enter ZIP code `66502`, Select county `Riley County`
 * **Household**: Number of people: `2`
 * **Person 1** (parent): Birth month/year: `March 1980` (age 46), Relationship: `Head of Household`, no earned income, Insurance: `None`
 * **Person 2** (minor applicant): Birth month/year: `March 2010` (age 16), Relationship: `Child`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Citizenship: `US Citizen`, Insurance: `None`
@@ -442,7 +443,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 **Steps**:
 
-* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick County`
 * **Household**: Number of people: `1`
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$100`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`

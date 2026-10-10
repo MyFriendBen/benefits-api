@@ -80,7 +80,7 @@ class DenverPropertyTaxRelief(ProgramCalculator):
         if self.screen.has_expense(["mortgage"]) and has_child:
             other_condition = True
 
-        if member.age >= DenverPropertyTaxRelief.age_eligible:
+        if member.calc_age() >= DenverPropertyTaxRelief.age_eligible:
             other_condition = True
 
         if member.disabled or self.screen.has_base_benefit("ssi") or self.screen.has_base_benefit("ssdi"):
