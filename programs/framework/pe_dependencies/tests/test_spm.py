@@ -871,7 +871,7 @@ class TestSchoolMealOutputDependencies(TestCase):
 
     ``SchoolMealNetSubsidy`` and ``SchoolMealTier`` are the ``pe_outputs`` of the federal
     ``SchoolLunch`` calculator (and therefore of every state NSLP subclass — il_nslp,
-    ks_nslp, mo_nslp, tx_nslp, wa_nslp). The field strings below are what get written into
+    ks_nslp, mo_nslp, nc_nslp, tx_nslp, wa_nslp). The field strings below are what get written into
     the PE request so PE returns them; a typo silently yields no value rather than an error,
     so pin them. ``SchoolMealDailySubsidy`` is the per-day figure and is deliberately *not*
     what the calculators value households on — it is defined but unused, and is pinned here
