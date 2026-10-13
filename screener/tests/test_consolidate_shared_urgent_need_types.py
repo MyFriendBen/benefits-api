@@ -6,6 +6,8 @@ built here.
 """
 
 import importlib
+import json
+from pathlib import Path
 from unittest.mock import patch
 
 from django.conf import settings
@@ -91,3 +93,18 @@ class TestConsolidateSharedUrgentNeedTypes(TestCase):
             set(UrgentNeedType.objects.values_list("external_name", flat=True)), set(migration.SHARED_TYPES)
         )
         self.assertFalse(UrgentNeedType.objects.filter(white_label__isnull=False).exists())
+
+
+def test_every_urgent_need_config_names_a_shared_type() -> None:
+    """
+    The importer never edits an existing type, so a config carrying an old
+    per-white-label name would fail, and a stray name or icon would be rejected.
+    """
+    data_dir = Path(__file__).resolve().parents[2] / "programs/management/commands/import_urgent_need_config_data/data"
+    configs = sorted(data_dir.glob("*.json"))
+    assert configs
+
+    for path in configs:
+        category_type = json.loads(path.read_text(encoding="utf-8"))["need"]["category_type"]
+        assert category_type == {"external_name": category_type["external_name"]}, path.name
+        assert category_type["external_name"] in migration.SHARED_TYPES, path.name

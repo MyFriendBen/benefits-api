@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_community_care_network_clinics",
     "category_type": {
-      "external_name": "ks_free_low_cost_medical_care",
-      "name": "Free or lower cost health care",
-      "icon": "free_health_care"
+      "external_name": "free_low_cost_health_care"
     },
     "type_short": [
       "free low cost medical care"
