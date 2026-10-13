@@ -85,9 +85,24 @@ def suite_pin() -> str:
 
 
 def pe_test_files() -> list[str]:
-    """Every test module built on PeIntegrationTestCase, relative to the repo root."""
+    """Every test module built on PeIntegrationTestCase, relative to the repo root.
+
+    Requires the harness import as well as the name, so a file that only mentions the class (in a
+    fixture string, say) isn't run as a PolicyEngine test module.
+    """
     result = subprocess.run(
-        ["git", "grep", "-l", "PeIntegrationTestCase", "--", "programs/**/test_*.py"],
+        [
+            "git",
+            "grep",
+            "-l",
+            "--all-match",
+            "-e",
+            "testing_fixtures.pe_integration import",
+            "-e",
+            "PeIntegrationTestCase",
+            "--",
+            "programs/**/test_*.py",
+        ],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,

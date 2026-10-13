@@ -72,7 +72,7 @@ class TestDiffCaptures(SimpleTestCase):
 
 OVERRIDDEN = '''"""Docstring."""
 
-from programs.programs.testing_fixtures.pe_integration import PeIntegrationTestCase
+from harness import PeIntegrationTestCase
 
 PE_VERSION = "1.815.1"
 PE_VERSION_REASON = (
