@@ -721,11 +721,20 @@ class UrgentNeedTypeTranslationAdmin(TranslationAdminViews):
         external_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
         icon = forms.ChoiceField(choices=get_urgent_need_icon_choices, widget=forms.Select(attrs={"class": "input"}))
 
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            # Leaving the white label blank creates a shared type, which urgent
+            # needs in any white label can use.
+            white_label = self.fields["white_label"]
+            white_label.required = False
+            white_label.choices = [("", "Shared (all white labels)"), *white_label.choices]
+
     Model = UrgentNeedType
 
     def _new_object(self, form: Form) -> models.Model:
         return self.Model.objects.new_urgent_need_type(
-            form["white_label"].value(), form["external_name"].value(), form["icon"].value()
+            form["white_label"].value() or None, form["external_name"].value(), form["icon"].value()
         )
 
     def _filter_query_set(self, request):

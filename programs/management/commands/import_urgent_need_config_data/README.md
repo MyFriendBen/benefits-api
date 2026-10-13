@@ -18,7 +18,7 @@ programs/management/commands/
 The `import_urgent_need_config` command creates or updates urgent needs with translations and related entities. It:
 
 - Creates/updates an `UrgentNeed` with auto-translated fields
-- Creates/associates `UrgentNeedType` (category_type) with icon + translation
+- Associates a shared `UrgentNeedType` (category_type), or creates one with icon + translation
 - Creates/associates `UrgentNeedCategory` (type_short)
 - Optionally associates functions, counties, required expense types, and FPL year
 - Validates required fields with clear errors
@@ -57,8 +57,7 @@ python manage.py import_urgent_need_config programs/management/commands/import_u
   "need": {
     "external_name": "tx_diaper_bank",
     "category_type": {
-      "external_name": "diapers_and_baby_supplies",
-      "name": "Diapers and baby supplies"
+      "external_name": "baby_supplies"
     },
     "type_short": ["baby supplies"],
     "translations": {
@@ -96,7 +95,7 @@ python manage.py import_urgent_need_config programs/management/commands/import_u
 
 ### Urgent Need
 - **need.external_name** (required): Unique identifier.
-- **category_type.external_name** (required): Created if missing. Optional `name` (translated) and `icon`.
+- **category_type.external_name** (required): One of the shared types below. A new type needs `name` (translated) and `icon`, and is created shared; an unknown `external_name` without `name` fails the import.
 - **type_short** (required): One or more categories (`UrgentNeedCategory.name`).
 - **translations** (required): English strings for all translatable fields; auto-translated to other languages.
   - Required keys: `name`, `description`, `link`, `warning`, `website_description`.
@@ -185,11 +184,18 @@ and the naming convention differs per white label:
 An empty `counties` array means all counties. A near-miss like `"Sedgwick"` for `ks` silently
 never matches.
 
-### Omit `category_type.name` / `icon` when reusing an existing type
+### Category types are shared rows
 
-The importer overwrites both whenever the config supplies them, so pointing a new urgent need at
-an `UrgentNeedType` that other urgent needs already share will relabel their section header.
-Supply `external_name` only in that case.
+Every white label uses the same `UrgentNeedType` rows: `food_or_groceries`, `job_resources`,
+`child_development`, `baby_supplies`, `behavioral_health`, `civil_legal_needs`,
+`managing_housing_costs`, `family_planning`, `low-cost_dental_care`, `medical_expenses_and_debt`,
+`aging_resources`, `disability_resources`, `transportation`, `free_low_cost_health_care`,
+`education_resources`, `savings`, `funeral_burial_or_cremation_costs`, `veterans_resources`,
+`homeless_services`. Supply `external_name` only.
+
+The importer never changes an existing type. A config whose `name` or `icon` disagrees with it
+fails, since applying it would relabel the section for every white label. Rename or re-icon a
+type in the admin.
 
 ### `required_expense_types` is an eligibility gate
 
