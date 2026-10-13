@@ -3,9 +3,7 @@
   "need": {
     "external_name": "tx_diaper_bank",
     "category_type": {
-      "external_name": "diapers_and_baby_supplies",
-      "name": "Diapers and baby supplies",
-      "icon": "Baby_supplies"
+      "external_name": "baby_supplies"
     },
     "type_short": ["baby supplies"],
     "functions": ["tx_diaper_bank"],

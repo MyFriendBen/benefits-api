@@ -3,9 +3,7 @@
   "need": {
     "external_name": "tx_arete_health_shield",
     "category_type": {
-      "external_name": "tx_behavioral_health",
-      "name": "Behavioral Health",
-      "icon": "behavioral_health"
+      "external_name": "behavioral_health"
     },
     "type_short": ["mental health"],
     "translations": {

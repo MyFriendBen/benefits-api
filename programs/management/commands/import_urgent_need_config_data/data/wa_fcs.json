@@ -3,7 +3,7 @@
   "need": {
     "external_name": "wa_fcs",
     "category_type": {
-      "external_name": "wa_housing_rent_utilities"
+      "external_name": "managing_housing_costs"
     },
     "type_short": ["housing"],
     "functions": [],

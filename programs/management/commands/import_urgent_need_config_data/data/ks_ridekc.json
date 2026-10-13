@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_ridekc",
     "category_type": {
-      "external_name": "ks_transportation",
-      "name": "Transportation",
-      "icon": "transportation"
+      "external_name": "transportation"
     },
     "type_short": [
       "transportation"

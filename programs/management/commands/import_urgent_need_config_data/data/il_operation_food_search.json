@@ -5,7 +5,7 @@
   "need": {
     "external_name": "il_operation_food_search",
     "category_type": {
-      "external_name": "il_food_or_groceries"
+      "external_name": "food_or_groceries"
     },
     "type_short": [
       "food"
