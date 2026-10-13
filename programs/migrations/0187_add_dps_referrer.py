@@ -32,23 +32,12 @@ def add_referrer(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> No
         )
 
 
-def remove_referrer(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
-    WhiteLabel = apps.get_model("screener", "WhiteLabel")
-    white_label = WhiteLabel.objects.filter(code=WHITE_LABEL_CODE).order_by("id").first()
-    if white_label is None:
-        return
-
-    with schema_editor.connection.cursor() as cursor:
-        cursor.execute(
-            "DELETE FROM programs_referrer WHERE white_label_id = %s AND referrer_code = %s",
-            [white_label.id, REFERRER_CODE],
-        )
-
-
 class Migration(migrations.Migration):
     dependencies = [
         ("programs", "0186_rename_nc_nslp"),
         ("screener", "0168_household_rows_default_id_ordering"),
     ]
 
-    operations = [migrations.RunPython(add_referrer, remove_referrer)]
+    # No-op reverse, as in 0183: don't delete a partner row that may have picked up
+    # webhook/navigator/remove_programs config in the admin since.
+    operations = [migrations.RunPython(add_referrer, migrations.RunPython.noop)]
