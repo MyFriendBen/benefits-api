@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.conf import settings
@@ -194,7 +196,16 @@ def has_translation_access(translation: Translation, user: User) -> bool:
 
     # only allow acces if the user can access all the models it is attached to
     for reverse in reverse_instances:
-        if reverse.instance.white_label.id not in allowed_white_labels:
+        white_label = reverse.instance.white_label
+
+        # A null white_label means the row is shared across white labels, so
+        # any white label admin may edit it, matching SharedRowAdminMixin.
+        if white_label is None:
+            if not allowed_white_labels.exists():
+                return False
+            continue
+
+        if white_label.id not in allowed_white_labels:
             return False
 
     return True
@@ -721,7 +732,7 @@ class UrgentNeedTypeTranslationAdmin(TranslationAdminViews):
         external_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
         icon = forms.ChoiceField(choices=get_urgent_need_icon_choices, widget=forms.Select(attrs={"class": "input"}))
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, **kwargs)
 
             # Leaving the white label blank creates a shared type, which urgent

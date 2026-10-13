@@ -17,6 +17,7 @@ from programs.models import UrgentNeed, UrgentNeedType, UrgentNeedTypeDataContro
 from programs.serializers import UrgentNeedTypeSerializer
 from screener.models import WhiteLabel
 from translations.models import Translation
+from translations.views import has_translation_access
 
 
 def make_type(external_name: str, white_label: str | None = None, name: str = "") -> UrgentNeedType:
@@ -26,7 +27,9 @@ def make_type(external_name: str, white_label: str | None = None, name: str = ""
     return urgent_need_type
 
 
-def make_need(external_name: str, white_label: WhiteLabel, category_type: UrgentNeedType, **overrides) -> UrgentNeed:
+def make_need(
+    external_name: str, white_label: WhiteLabel, category_type: UrgentNeedType, **overrides: bool
+) -> UrgentNeed:
     need = UrgentNeed.objects.new_urgent_need(white_label=white_label.code, name=external_name, phone_number=None)
     need.category_type = category_type
     need.active = overrides.get("active", True)
@@ -166,3 +169,36 @@ class TestSharedUrgentNeedTypeAdmin(TestCase):
     def test_shared_type_can_be_changed(self) -> None:
         self.assertTrue(self.model_admin.has_change_permission(self.request, self.shared))
         self.assertFalse(self.model_admin.has_change_permission(self.request, self.mo_scoped))
+
+    def test_shared_type_cannot_be_deleted_by_a_white_label_admin(self) -> None:
+        """Deleting a shared type would strip it from every white label."""
+        co_scoped = make_type("co_only", white_label="co")
+
+        self.assertFalse(self.model_admin.has_delete_permission(self.request, self.shared))
+        self.assertTrue(self.model_admin.has_delete_permission(self.request, co_scoped))
+
+    def test_shared_type_can_be_deleted_by_a_superuser(self) -> None:
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.assertTrue(self.model_admin.has_delete_permission(self.request, self.shared))
+
+    def test_white_label_is_read_only_for_a_white_label_admin(self) -> None:
+        """Otherwise one state's admin could re-scope a shared type to their own white label."""
+        self.assertIn("white_label", self.model_admin.get_readonly_fields(self.request, self.shared))
+
+    def test_white_label_is_editable_by_a_superuser(self) -> None:
+        self.user.is_superuser = True
+        self.user.save()
+
+        self.assertNotIn("white_label", self.model_admin.get_readonly_fields(self.request, self.shared))
+
+    def test_shared_types_name_translation_is_accessible(self) -> None:
+        """The 'Translate: Name' link must not 500 on a type with no white label."""
+        self.assertTrue(has_translation_access(self.shared.name, self.user))
+        self.assertFalse(has_translation_access(self.mo_scoped.name, self.user))
+
+    def test_shared_types_name_translation_needs_a_white_label(self) -> None:
+        self.user.white_labels.clear()
+
+        self.assertFalse(has_translation_access(self.shared.name, self.user))

@@ -666,6 +666,24 @@ class SharedRowAdminMixin:
 
         return super().has_obj_permission(request, obj)
 
+    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        # Deleting a shared row strips it from every white label, so only a
+        # superuser may.
+        if obj is not None and obj.white_label is None and not self._is_superuser(request):
+            return False
+
+        return super().has_delete_permission(request, obj)
+
+    def get_readonly_fields(self, request: HttpRequest, obj: Any = None) -> tuple[str, ...]:
+        readonly = tuple(super().get_readonly_fields(request, obj))
+
+        # Changing white_label moves a row between shared and scoped, which
+        # hides it from, or exposes it to, every other white label.
+        if not self._is_superuser(request):
+            readonly += ("white_label",)
+
+        return readonly
+
     def shared(self, obj: Any) -> bool:
         return obj.white_label is None
 

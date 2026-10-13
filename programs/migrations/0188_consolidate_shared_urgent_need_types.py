@@ -23,10 +23,17 @@
 #   * No frontend code reads a type's external_name; types render from icon and
 #     translated name.
 
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.db import migrations
+from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+from django.db.migrations.state import StateApps
 
 from integrations.clients.google_translate import Translate, is_auto_translatable
+
+if TYPE_CHECKING:
+    from programs.models import UrgentNeedType
 
 # shared external_name -> (icon, canonical English name)
 SHARED_TYPES = {
@@ -197,7 +204,7 @@ SOURCES = {
 RETIRED_ICONS = ["Baby_supplies"]
 
 
-def forward(apps, schema_editor):
+def forward(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     # Real models rather than apps.get_model: new_urgent_need_type and
     # add_translation need parler internals unavailable on historical models.
     from programs.models import CategoryIconName, ProgramCategory, UrgentNeed, UrgentNeedType
@@ -259,7 +266,7 @@ def forward(apps, schema_editor):
         icon.delete()
 
 
-def _set_name(urgent_need_type, text):
+def _set_name(urgent_need_type: "UrgentNeedType", text: str) -> None:
     """
     Set the English display name and machine-translate the rest.
 
@@ -294,7 +301,7 @@ def _set_name(urgent_need_type, text):
         Translation.objects.edit_translation_by_id(translation.id, lang, translated_text, manual=False)
 
 
-def _delete_type(urgent_need_type):
+def _delete_type(urgent_need_type: "UrgentNeedType") -> None:
     """
     Delete a type and the name Translation it leaves orphaned.
 

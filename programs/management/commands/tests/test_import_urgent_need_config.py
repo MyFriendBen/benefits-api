@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 from django.core.management import call_command
@@ -303,14 +304,14 @@ def _need_config(white_label_code: str, external_name: str, category_type: dict)
     }
 
 
-def _import(tmp_path, config: dict) -> None:
+def _import(tmp_path: Path, config: dict) -> None:
     config_path = tmp_path / f"{config['need']['external_name']}.json"
     config_path.write_text(json.dumps(config))
     call_command("import_urgent_need_config", str(config_path))
 
 
 @pytest.mark.django_db
-def test_importing_into_a_shared_type_leaves_it_shared_and_unchanged(tmp_path):
+def test_importing_into_a_shared_type_leaves_it_shared_and_unchanged(tmp_path: Path) -> None:
     WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
     WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
 
@@ -326,7 +327,7 @@ def test_importing_into_a_shared_type_leaves_it_shared_and_unchanged(tmp_path):
 
 
 @pytest.mark.django_db
-def test_a_config_cannot_rename_an_existing_type(tmp_path):
+def test_a_config_cannot_rename_an_existing_type(tmp_path: Path) -> None:
     WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
     _import(tmp_path, _need_config("co", "co_food_bank", {"external_name": "food", "name": "Food"}))
 
@@ -339,7 +340,7 @@ def test_a_config_cannot_rename_an_existing_type(tmp_path):
 
 
 @pytest.mark.django_db
-def test_a_config_cannot_change_an_existing_types_icon(tmp_path):
+def test_a_config_cannot_change_an_existing_types_icon(tmp_path: Path) -> None:
     WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
     _import(tmp_path, _need_config("co", "co_food_bank", {"external_name": "food", "name": "Food", "icon": "food"}))
 
@@ -350,7 +351,7 @@ def test_a_config_cannot_change_an_existing_types_icon(tmp_path):
 
 
 @pytest.mark.django_db
-def test_an_unknown_type_without_a_name_fails_instead_of_creating_a_blank_header(tmp_path):
+def test_an_unknown_type_without_a_name_fails_instead_of_creating_a_blank_header(tmp_path: Path) -> None:
     WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
 
     with pytest.raises(CommandError, match="does not exist"):
