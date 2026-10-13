@@ -2,21 +2,21 @@
 Federal programs: one `Program` row under the `federal` white label, shown to every white
 label instead of a copy per state.
 
-A federal row reuses the `name_abbreviated` of the calculator it runs, which is the same
-name the state rows it replaces carry. Each program's move deactivates those state rows, so
-an *active* name under both `federal` and a state white label is a configuration error. The
-import command and the admin refuse to create one, and `audit_federal_programs` lists any
-for a cutover run by hand. A data migration or the shell can still make one, so the read
-paths here log it at ERROR and let the federal row win, because a stale row must not take a
-results page down with it.
+A federal row is prefixed like every other white label's — `federal_trump_account`, not
+`trump_account` — so no program is left under a bare name. The prefix is also the
+calculator's `program_code`, because the registry resolves a calculator by matching it to
+`Program.name_abbreviated`.
 
-Everything here matches on the name alone. A state row under another name (`ks_snap`,
-`tx_eitc`) is invisible to all of it and would show beside the federal row, so each move's
-own ticket lists every state row it switches off.
+That prefix means a federal row never shares a name with the state rows it replaces, so no
+name comparison can tell the two apart. There is therefore no name-based duplicate check:
+one would read as protection while being unable to fire. Each program's move still
+deactivates its state rows, and the move's own ticket lists every row it switches off,
+checked against prod — that list is what makes a move safe.
 
-An *inactive* state row sharing a federal row's name is the expected state after a move (rows
-are deactivated, not deleted, to keep snapshot history), so preferring the federal row there
-is silent.
+The helpers below match on the white label, not the name, and so are unaffected by the
+prefix. `preferred_program` and `filter_programs_by_name` resolve a name that matches two
+rows; with prefixed names they no longer find a collision to resolve, and are kept for the
+un-prefixed rows that predate this and for callers that key results by name.
 """
 
 import logging
@@ -53,54 +53,14 @@ def is_federal(program: "Program") -> bool:
     return program.white_label.code == FEDERAL_WHITE_LABEL
 
 
-def active_duplicates(names: Optional[Iterable[str]] = None) -> dict[str, list[str]]:
-    """Names active under both `federal` and another white label: `{name: [other codes]}`.
-
-    Limited to `names` when given. Empty means the configuration is clean.
-    """
-    from programs.models import Program
-
-    active = Program.objects.filter(active=True)
-    if names is not None:
-        active = active.filter(name_abbreviated__in=list(names))
-
-    federal_names = set(active.filter(white_label__code=FEDERAL_WHITE_LABEL).values_list("name_abbreviated", flat=True))
-    duplicates: dict[str, list[str]] = {}
-    rows = (
-        active.filter(name_abbreviated__in=federal_names)
-        .exclude(white_label__code=FEDERAL_WHITE_LABEL)
-        .values_list("name_abbreviated", "white_label__code")
-        .order_by("name_abbreviated", "white_label__code")
-    )
-    for name, code in rows:
-        duplicates.setdefault(name, []).append(code)
-    return duplicates
-
-
-def conflicting_active_programs(white_label_code: str, name_abbreviated: str) -> list["Program"]:
-    """Active programs that a program under `white_label_code` can't be active alongside.
-
-    For a federal program, the active state rows of the same name; for a state program, the
-    active federal row. Ordered by white label code, with `white_label` loaded.
-    """
-    from programs.models import Program
-
-    active = Program.objects.filter(name_abbreviated=name_abbreviated, active=True).select_related("white_label")
-    if white_label_code == FEDERAL_WHITE_LABEL:
-        active = active.exclude(white_label__code=FEDERAL_WHITE_LABEL)
-    else:
-        active = active.filter(white_label__code=FEDERAL_WHITE_LABEL)
-    return list(active.order_by("white_label__code"))
-
-
 def preferred_program(kept: Optional["Program"], candidate: "Program", where: str) -> "Program":
     """Of two programs with the same name, the one a screen should see.
 
-    A federal program reuses the name of the state rows it replaced, so a query built with
-    `visible_to` (a white label's own programs plus the federal ones) can match one name twice.
-    `kept` is the program already chosen for the name, or None when `candidate` is the first.
-    The database allows one row per (white label, name), so a name never matches more than one
-    state row and one federal row. The choice:
+    A query built with `visible_to` (a white label's own programs plus the federal ones) can
+    match one name twice where a federal row is not prefixed. `kept` is the program already
+    chosen for the name, or None when `candidate` is the first. The database allows one row
+    per (white label, name), so a name never matches more than one state row and one federal
+    row. The choice:
 
     - **An active row beats an inactive one.** Before a move the state row is live and a
       federal row may already exist inactive (the importer creates programs inactive); after
@@ -124,7 +84,7 @@ def preferred_program(kept: Optional["Program"], candidate: "Program", where: st
     if kept.active:
         logger.error(
             "Program '%s' is active under both white labels '%s' and '%s' (%s); using the federal row. "
-            "Run audit_federal_programs and deactivate the state row.",
+            "Deactivate the state row.",
             candidate.name_abbreviated,
             kept.white_label.code,
             candidate.white_label.code,

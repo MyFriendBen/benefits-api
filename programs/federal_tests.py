@@ -8,8 +8,6 @@ from django.test import TestCase
 
 from programs.federal import (
     FEDERAL_WHITE_LABEL,
-    active_duplicates,
-    conflicting_active_programs,
     filter_programs_by_name,
     preferred_program,
     visible_program,
@@ -126,44 +124,3 @@ class TestVisibleProgram(FederalHelpersTestCase):
         self.program(self.wa, "wa_only")
 
         self.assertIsNone(visible_program(self.co, "wa_only", "test"))
-
-
-class TestActiveDuplicates(FederalHelpersTestCase):
-    def test_lists_each_state_still_active_beside_the_federal_row(self) -> None:
-        self.program(self.federal, "shared")
-        self.program(self.co, "shared")
-        self.program(self.wa, "shared")
-        self.program(self.federal, "clean")
-        self.program(self.co, "clean", active=False)
-
-        self.assertEqual(active_duplicates(), {"shared": ["co", "wa"]})
-
-    def test_can_be_limited_to_names(self) -> None:
-        self.program(self.federal, "shared")
-        self.program(self.co, "shared")
-
-        self.assertEqual(active_duplicates(["other"]), {})
-        self.assertEqual(active_duplicates(["shared"]), {"shared": ["co"]})
-
-
-class TestConflictingActivePrograms(FederalHelpersTestCase):
-    def test_a_federal_program_conflicts_with_active_state_rows_of_its_name(self) -> None:
-        self.program(self.federal, "shared")
-        wa = self.program(self.wa, "shared")
-        co = self.program(self.co, "shared")
-        self.program(self.co, "other")
-
-        self.assertEqual(conflicting_active_programs(FEDERAL_WHITE_LABEL, "shared"), [co, wa])
-
-    def test_a_state_program_conflicts_only_with_the_active_federal_row(self) -> None:
-        federal = self.program(self.federal, "shared")
-        self.program(self.wa, "shared")
-
-        self.assertEqual(conflicting_active_programs("co", "shared"), [federal])
-
-    def test_inactive_rows_never_conflict(self) -> None:
-        self.program(self.federal, "shared", active=False)
-        self.program(self.co, "shared", active=False)
-
-        self.assertEqual(conflicting_active_programs(FEDERAL_WHITE_LABEL, "shared"), [])
-        self.assertEqual(conflicting_active_programs("co", "shared"), [])
