@@ -197,7 +197,15 @@ class TestMoSabScenarios(MoSabScenarioTestCase):
         child = add_member(screen, 2, "child", 22, visually_impaired=True)
         add_income(child, 400, income_type="pension")
 
-        self.assertIneligible(self.run_sab(screen))
+        eligibility = self.run_sab(screen)
+
+        self.assertIneligible(eligibility)
+        # Every other gate passes for Person 2, so her own denial is the resource test.
+        by_member = {m.member.id: m for m in eligibility.eligible_members}
+        self.assertEqual(set(by_member), {head.id, child.id})
+        for member in by_member.values():
+            self.assertFalse(member.eligible)
+            self.assertEqual(member.value, 0)
 
     def test_scenario_15_boarder_income_is_earned(self):
         """$1,200/month of boarder income carries the earned-income exemptions."""

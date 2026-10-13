@@ -59,6 +59,7 @@ EDITED_PROGRAMS = {
     "mo_snap": {"citizen", "gc_5plus", "gc_under18_no5"},
     "wa_tanf": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
     "mo_tanf": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
+    "mo_sab": {"citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
     "ks_tanf": {"citizen", "non_citizen", "gc_5plus", "refugee", "otherWithWorkPermission"},
     "wa_apple_health_medicaid": {
         "citizen",
