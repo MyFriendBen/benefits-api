@@ -1,6 +1,7 @@
 from datetime import date
 
 from integrations.clients.hud_income_limits import HudIncomeClientError, hud_client
+from integrations.external_api_status import HUD, record_external_api_failure
 from programs.co_county_zips import counties_from_screen
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
@@ -26,8 +27,9 @@ class NurturingFutures(ProgramCalculator):
       verifies income for the county; it does not waive the limit.
 
     The county's published limits are HUD's MTSP 30% figures for the Boulder MSA, so they
-    are read from HUD rather than kept here. If HUD is unavailable the program is hidden and
-    the failure is reported, never compared against a zero limit.
+    are read from HUD rather than kept here. If HUD is unavailable the program is hidden, the
+    error goes to Sentry, and the results page warns that results may be incomplete; the
+    household is never compared against a zero limit.
 
     Value: $600/month per household from January 2027.
 
@@ -63,6 +65,7 @@ class NurturingFutures(ProgramCalculator):
             )
         except HudIncomeClientError as error:
             capture_exception(error)
+            record_external_api_failure(HUD)
             e.condition(False, messages.income_limit_unknown())
             return
 

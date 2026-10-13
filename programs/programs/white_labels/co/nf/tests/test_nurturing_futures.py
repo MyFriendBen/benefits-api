@@ -7,6 +7,7 @@ for the Boulder MSA, so the boundary scenarios test the dollar amounts the count
 from datetime import date
 from typing import Optional
 
+from integrations.external_api_status import HUD, get_external_api_failures, track_external_api_failures
 from programs.framework.base import Eligibility
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.testing_fixtures.households import make_program
@@ -174,10 +175,23 @@ class TestHudLookup(NurturingFuturesTestCase):
         self.add_member(screen, age=30, yearly_income=20_000)
         self.add_child(screen)
 
-        with self.hud_ami(unavailable=True):
+        with self.hud_ami(unavailable=True), track_external_api_failures():
             e = self.calculate(screen)
+            failures = get_external_api_failures()
 
         self.assertFalse(e.eligible)
+        self.assertEqual(failures, [HUD], "the results page shows its incomplete-results banner")
+
+    def test_hud_answering_raises_no_banner(self):
+        screen = self.make_screen(household_size=2)
+        self.add_member(screen, age=30, yearly_income=20_000)
+        self.add_child(screen)
+
+        with track_external_api_failures():
+            self.run_calculator(screen)
+            failures = get_external_api_failures()
+
+        self.assertEqual(failures, [])
 
     def test_returning_participant_skips_hud(self):
         screen = self.make_screen(household_size=2)
