@@ -44,7 +44,7 @@ from decouple import config
 from django.core.cache import cache
 from django.test import TestCase
 
-from conftest import vcr_record_mode
+from conftest import PE_CAPTURE_DIR_ENV_VAR, vcr_record_mode
 from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
@@ -72,11 +72,11 @@ _TRUTHY = ("1", "true", "yes")
 # module that doesn't override. Must be one PolicyEngine currently serves (see docs/TESTING.md).
 PE_TEST_VERSION = "2.9.0"
 
-# Both used by the record_and_diff management command. The override replaces every test case's
+# Used by the record_and_diff management command. The override replaces every test case's
 # pe_version for the run, so the whole suite can be recorded at a new version without editing any
-# module. The capture directory collects each scenario's outcome (see capture_result).
+# module. The capture directory (PE_CAPTURE_DIR_ENV_VAR, from conftest) collects each scenario's
+# outcome (see capture_result).
 PE_VERSION_OVERRIDE_ENV_VAR = "PE_VERSION_OVERRIDE"
-PE_CAPTURE_DIR_ENV_VAR = "PE_CAPTURE_DIR"
 
 
 def check_pe_version_pin(test_name: str, pe_version: str, pe_version_reason: str) -> None:

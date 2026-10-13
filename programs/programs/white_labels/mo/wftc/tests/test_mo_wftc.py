@@ -28,6 +28,7 @@ from programs.programs.testing_fixtures.pe_integration import (
     make_screen,
     screener_value,
 )
+from programs.framework.base import Eligibility
 from screener.models import Expense, HouseholdMember, Screen
 from programs.programs.white_labels.mo.wftc.calculator import MoWftc
 from programs.framework.pe_dependencies import member
@@ -42,7 +43,7 @@ class MoWftcScenarioTestCase(PeIntegrationTestCase):
     screen_id = 0
     tax_year = "2025"
     # Set by the year-parameter guards, which deliberately run a year other than the configured one.
-    off_vintage = ""
+    off_vintage: str = ""
 
     def setUp(self):
         super().setUp()
@@ -78,7 +79,7 @@ class MoWftcScenarioTestCase(PeIntegrationTestCase):
             **kwargs,
         )
 
-    def run_wftc(self, screen):
+    def run_wftc(self, screen: Screen) -> Eligibility:
         return calc_pe_program(screen, MoWftc, self.program, off_vintage=self.off_vintage)
 
     def add_property_tax(self, member, amount):

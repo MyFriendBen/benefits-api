@@ -28,7 +28,7 @@ import json
 import logging
 import os
 import re
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 from asgiref.local import Local
@@ -230,6 +230,31 @@ def cassette_dir_for(test_dir: str) -> str:
         return os.path.join(test_dir, "cassettes")
 
     return os.path.join(root, os.path.relpath(os.path.abspath(test_dir), REPO_ROOT), "cassettes")
+
+
+# Set by record_and_diff on each pytest pass it runs. pe_integration.py::capture_result writes
+# each scenario's PolicyEngine outcome here, and record_test_outcome writes each test's
+# pass/fail/skip beneath it, so a scenario whose assertions fail at a new PolicyEngine version
+# is never mistaken for an unchanged one.
+PE_CAPTURE_DIR_ENV_VAR = "PE_CAPTURE_DIR"
+TEST_OUTCOMES_SUBDIR = "outcomes"
+
+
+def record_test_outcome(report: pytest.TestReport) -> None:
+    """Append a test phase's outcome under the capture directory, when one is set.
+
+    Every failed or skipped phase is written, but a pass only for the call phase: a test passed
+    when its call passed and nothing else failed. record_and_diff reads the worst outcome per test.
+    """
+    capture_dir = os.getenv(PE_CAPTURE_DIR_ENV_VAR)
+    if not capture_dir or (report.passed and report.when != "call"):
+        return
+
+    outcomes_dir = os.path.join(capture_dir, TEST_OUTCOMES_SUBDIR)
+    os.makedirs(outcomes_dir, exist_ok=True)
+    worker = os.getenv("PYTEST_XDIST_WORKER", "main")
+    with open(os.path.join(outcomes_dir, f"{worker}.jsonl"), "a") as f:
+        f.write(json.dumps({"test": report.nodeid, "outcome": report.outcome}) + "\n")
 
 
 def cassette_name(request) -> str:
@@ -462,6 +487,7 @@ def pytest_runtest_makereport(item, call):
     """
     report = yield
     setattr(item, f"rep_{report.when}", report)
+    record_test_outcome(report)
     return report
 
 
@@ -499,7 +525,7 @@ def _discard_failed_recording(cassette_path: str, contents_before: Optional[byte
 
 
 @pytest.fixture(scope="module")
-def vcr_config(request):
+def vcr_config(request: pytest.FixtureRequest) -> dict[str, Any]:
     """
     Configure VCR with security-focused defaults.
 
