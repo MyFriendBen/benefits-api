@@ -112,6 +112,8 @@ def test_import_urgent_need_creates_entities(tmp_path):
     # Category type translation set
     category_type = UrgentNeedType.objects.get(external_name="diapers_and_baby_supplies")
     assert category_type.name.safe_translation_getter("text", any_language=False) == "Diapers and baby supplies"
+    # Created shared, not scoped to the importing white label
+    assert category_type.white_label is None
 
 
 @pytest.mark.django_db
@@ -150,7 +152,7 @@ def test_import_urgent_need_override_recreates(tmp_path):
         "white_label": {"code": "test"},
         "need": {
             "external_name": "override_need",
-            "category_type": {"external_name": "ct_one"},
+            "category_type": {"external_name": "ct_one", "name": "Category One"},
             "type_short": ["one"],
             "translations": {
                 "name": "Need One",
@@ -281,3 +283,78 @@ def test_import_fails_on_empty_type_short(tmp_path):
 
     with pytest.raises(CommandError):
         call_command("import_urgent_need_config", str(path))
+
+
+def _need_config(white_label_code: str, external_name: str, category_type: dict) -> dict:
+    return {
+        "white_label": {"code": white_label_code},
+        "need": {
+            "external_name": external_name,
+            "category_type": category_type,
+            "type_short": ["food"],
+            "translations": {
+                "name": external_name,
+                "description": "Description",
+                "link": "https://example.com",
+                "warning": "",
+                "website_description": "Website description",
+            },
+        },
+    }
+
+
+def _import(tmp_path, config: dict) -> None:
+    config_path = tmp_path / f"{config['need']['external_name']}.json"
+    config_path.write_text(json.dumps(config))
+    call_command("import_urgent_need_config", str(config_path))
+
+
+@pytest.mark.django_db
+def test_importing_into_a_shared_type_leaves_it_shared_and_unchanged(tmp_path):
+    WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+    WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+
+    _import(tmp_path, _need_config("co", "co_food_bank", {"external_name": "food", "name": "Food", "icon": "food"}))
+    # The same name and icon are accepted; only the external_name is needed
+    _import(tmp_path, _need_config("mo", "mo_food_bank", {"external_name": "food", "name": "Food", "icon": "food"}))
+    _import(tmp_path, _need_config("mo", "mo_pantry", {"external_name": "food"}))
+
+    shared = UrgentNeedType.objects.get(external_name="food")
+    assert shared.white_label is None
+    assert shared.name.safe_translation_getter("text", any_language=False) == "Food"
+    assert set(shared.urgent_needs.values_list("white_label__code", flat=True)) == {"co", "mo"}
+
+
+@pytest.mark.django_db
+def test_a_config_cannot_rename_an_existing_type(tmp_path):
+    WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+    _import(tmp_path, _need_config("co", "co_food_bank", {"external_name": "food", "name": "Food"}))
+
+    with pytest.raises(CommandError, match="can't change an existing type"):
+        _import(tmp_path, _need_config("co", "co_pantry", {"external_name": "food", "name": "Groceries"}))
+
+    shared = UrgentNeedType.objects.get(external_name="food")
+    assert shared.name.safe_translation_getter("text", any_language=False) == "Food"
+    assert not UrgentNeed.objects.filter(external_name="co_pantry").exists()
+
+
+@pytest.mark.django_db
+def test_a_config_cannot_change_an_existing_types_icon(tmp_path):
+    WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+    _import(tmp_path, _need_config("co", "co_food_bank", {"external_name": "food", "name": "Food", "icon": "food"}))
+
+    with pytest.raises(CommandError, match="icon 'housing'"):
+        _import(tmp_path, _need_config("co", "co_pantry", {"external_name": "food", "icon": "housing"}))
+
+    assert UrgentNeedType.objects.get(external_name="food").icon_name == "food"
+
+
+@pytest.mark.django_db
+def test_an_unknown_type_without_a_name_fails_instead_of_creating_a_blank_header(tmp_path):
+    WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+
+    with pytest.raises(CommandError, match="does not exist"):
+        _import(tmp_path, _need_config("co", "co_food_bank", {"external_name": "fodo_or_groceries"}))
+
+    assert not UrgentNeedType.objects.filter(external_name="fodo_or_groceries").exists()
+    assert not UrgentNeed.objects.filter(external_name="co_food_bank").exists()
