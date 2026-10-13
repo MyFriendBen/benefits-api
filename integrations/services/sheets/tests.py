@@ -1,9 +1,9 @@
 """Tests for GoogleSheetsCache.get_data() — the shared fetch/cache/fallback logic
-used by roughly 10 program-specific Sheets-backed caches (BoulderAmiCache,
-CccapFplCache, RAGCache, ACACache, NcHeadStartMarketRatesCache,
-CoHeadStartCountyEligibleCache, LeapValueCache, CfhCountyValuesCache, Ami, Smi,
-IncomeLimitsCache). Exercised here directly against a minimal fake subclass
-rather than through any one of the real callers, since the logic under test
+used by roughly 10 program-specific Sheets-backed caches (CccapFplCache,
+RAGCache, ACACache, NcHeadStartMarketRatesCache, CoHeadStartCountyEligibleCache,
+LeapValueCache, CfhCountyValuesCache, Ami, Smi, IncomeLimitsCache). Exercised
+here directly against a minimal fake subclass rather than through any one of
+the real callers, since the logic under test
 (caching, stale fallback, error handling) is identical across all of them."""
 
 from unittest.mock import patch
