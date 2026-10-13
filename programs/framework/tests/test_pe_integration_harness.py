@@ -14,12 +14,13 @@ change, not about the harness. Re-record after reviewing the new body.
 """
 
 import pytest
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 
 from programs.programs.testing_fixtures.pe_integration import (
     PE_TEST_VERSION,
     PeIntegrationTestCase,
     check_pe_version_pin,
+    check_program_vintage,
     add_income,
     add_member,
     calc_pe_program,
@@ -87,3 +88,22 @@ class TestCheckPeVersionPin(SimpleTestCase):
 
     def test_the_default_pin_is_the_suite_pin(self) -> None:
         self.assertEqual(PeIntegrationTestCase.pe_version, PE_TEST_VERSION)
+
+
+class TestCheckProgramVintage(TestCase):
+    """A scenario runs at the edition programs/vintage.py records, unless it says why not."""
+
+    def test_the_recorded_edition_passes(self) -> None:
+        check_program_vintage(make_program("mo", "mo_pts", year="2025", state_code="MO"))
+
+    def test_another_year_fails(self) -> None:
+        program = make_program("mo", "mo_pts", year="2026", state_code="MO")
+
+        with self.assertRaisesMessage(AssertionError, "programs/vintage.py records 2025"):
+            check_program_vintage(program)
+
+    def test_another_year_with_a_reason_passes(self) -> None:
+        check_program_vintage(make_program("mo", "mo_pts", year="2026", state_code="MO"), "year-parameter guard")
+
+    def test_a_program_with_no_recorded_vintage_is_not_checked(self) -> None:
+        check_program_vintage(make_program("mo", "not_in_vintage", year="1999", state_code="MO"))

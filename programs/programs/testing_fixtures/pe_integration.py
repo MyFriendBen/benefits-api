@@ -49,6 +49,7 @@ from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
 from programs.util import Dependencies
+from programs.vintage import PROGRAM_VINTAGE
 from programs.programs.testing_fixtures import households
 from programs.programs.testing_fixtures.households import add_income, make_program  # noqa: F401 -- re-exports
 from screener.models import HouseholdMember, Screen
@@ -194,8 +195,14 @@ def calc_pe_program(
     calculator_class: type,
     program: Program,
     missing_dependencies: Optional[Dependencies] = None,
+    off_vintage: str = "",
 ) -> Eligibility:
     """Run one PolicyEngine calculator end to end and return its Eligibility.
+
+    The program's year must be the edition ``programs/vintage.py`` records for it, so scenarios
+    test the year production serves. A scenario that deliberately runs another year — one proving
+    the calculator reads year-specific parameters, say — passes ``off_vintage`` saying why. See
+    ``check_program_vintage``.
 
     Deliberately does not go through ``calc_pe_eligibility``: that function catches every
     exception, reports it to Sentry and returns an empty result, which would turn a cassette
@@ -207,6 +214,8 @@ def calc_pe_program(
     is a property that reads ``self.program.year``, so a class would yield a property object
     as the period key rather than the period.
     """
+    check_program_vintage(program, off_vintage)
+
     calculator = calculator_class(screen, program, missing_dependencies or Dependencies())
 
     # The one production step we can't skip silently. calc_pe_eligibility drops a calculator
@@ -231,6 +240,25 @@ def calc_pe_program(
     capture_result(eligible=bool(eligibility.eligible), value=math.trunc(eligibility.value))
 
     return eligibility
+
+
+def check_program_vintage(program: Program, off_vintage: str = "") -> None:
+    """Fail a scenario whose program year isn't the edition production is meant to be on.
+
+    ``Program.year`` is the PolicyEngine request period, so a test built at another year asserts
+    values no household is shown. Only programs with an entry in ``PROGRAM_VINTAGE`` are checked;
+    one without is unresearched, and ``audit_program_vintage`` reports it.
+    """
+    vintage = PROGRAM_VINTAGE.get((program.white_label.code, program.name_abbreviated))
+    if vintage is None or off_vintage.strip():
+        return
+
+    if program.year.period != vintage.edition:
+        raise AssertionError(
+            f"{program.name_abbreviated} is built at {program.year.period}, but programs/vintage.py records "
+            f"{vintage.edition} ({vintage.rule}). Build the scenario at {vintage.edition}, or pass off_vintage "
+            "to calc_pe_program saying why this scenario runs another year."
+        )
 
 
 def capture_result(eligible: Optional[bool] = None, value: Optional[int] = None, error: Optional[str] = None) -> None:

@@ -163,6 +163,8 @@ Three rules make a PolicyEngine cassette replayable — the helpers enforce them
 2. **Pin the model version.** Every test case records at `PE_TEST_VERSION` (`pe_integration.py`) unless it overrides `pe_version`, and an override must set `pe_version_reason`. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
 3. **Assert the truncated value** with `screener_value(...)`. PolicyEngine returns fractional dollars; the API truncates before serving, so whole dollars are what the spec and the user see.
 
+**Build each scenario at the program's recorded year.** `calc_pe_program` fails a scenario whose `Program.year` differs from the edition `programs/vintage.py` records for that program, since `year` is the PolicyEngine request period and a test at another year asserts values no household is shown. A scenario that deliberately runs another year — one proving the calculator reads year-specific parameters — passes `off_vintage` saying why. Programs with no entry in `programs/vintage.py` aren't checked.
+
 ### Recording and verifying
 
 Run these with `pytest`, **not** `manage.py test` — VCR is a pytest fixture, so under the Django runner these tests would hit PolicyEngine live on every run.
