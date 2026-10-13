@@ -515,7 +515,7 @@ class TestFederalDeactivationInAdmin(ProgramAdminTestCase):
         self.assertFalse(federal.active)
         message = warning.call_args.args[1]
         self.assertIn("hidden from every white label", message)
-        self.assertIn("Check its state versions", message)
+        self.assertIn("Check that its state versions", message)
 
     def test_moving_a_federal_program_to_a_state_while_switching_it_off_still_warns(self) -> None:
         federal = self.program(self.federal, "fed_account")
@@ -596,5 +596,5 @@ class TestFederalProgramsInAdmin(ProgramAdminTestCase):
 
         message = warning.call_args.args[1]
         self.assertIn("hidden from every white label", message)
-        self.assertIn("Check its state versions", message)
+        self.assertIn("Check that its state versions", message)
         self.assertNotIn("No state version replaces it", message)

@@ -226,7 +226,7 @@ class ProgramAdmin(SecureAdmin):
         messages.warning(
             request,
             f"Federal program '{obj.name_abbreviated}' is now inactive and hidden from every white label. "
-            "Check its state versions are active if the program is still meant to be offered.",
+            "Check that its state versions are active if the program is still meant to be offered.",
         )
 
     @admin.display(ordering="name", description="Program")
