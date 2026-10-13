@@ -89,6 +89,34 @@ class TestMoSabPeInput(MoSabTestBase):
 
         self.assertEqual(people["1"]["employment_income"][YEAR], 500 * 12)
 
+    def test_sends_each_unearned_source_policyengine_counts_for_sab(self):
+        """PolicyEngine reads these as zero when unsent, which shows a claimant with income over
+        the standard as eligible."""
+        screen = self.build()
+        add_income(self.head, 1_100, income_type="workersComp")
+        add_income(self.head, 200, income_type="alimony")
+        add_income(self.head, 300, income_type="cashAssistanceOther")
+
+        people = self.payload(screen)["people"]
+
+        self.assertEqual(people["1"]["workers_compensation"][YEAR], 1_100 * 12)
+        self.assertEqual(people["1"]["alimony_income"][YEAR], 200 * 12)
+        self.assertEqual(people["1"]["financial_assistance"][YEAR], 300 * 12)
+
+    def test_each_unearned_source_is_a_declared_input(self):
+        for dep in (
+            dependency.member.WorkersCompensationDependency,
+            dependency.member.AlimonyIncomeDependency,
+            dependency.member.NonTanfCashAssistanceIncomeDependency,
+        ):
+            self.assertIn(dep, MoSab.pe_inputs)
+
+    def test_unearned_sources_are_zero_for_a_member_who_reports_none(self):
+        people = self.payload(self.build())["people"]
+
+        for field in ("workers_compensation", "alimony_income", "financial_assistance"):
+            self.assertEqual(people["1"][field][YEAR], 0)
+
     def test_does_not_use_the_shared_wages_only_mapping(self):
         self.assertNotIn(dependency.member.EmploymentIncomeDependency, MoSab.pe_inputs)
         self.assertIn(dependency.member.MoSabEarnedIncomeDependency, MoSab.pe_inputs)

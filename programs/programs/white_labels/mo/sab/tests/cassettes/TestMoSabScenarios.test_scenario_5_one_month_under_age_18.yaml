@@ -5,15 +5,16 @@ interactions:
       {"2026": 0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
       0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 3600},
       "social_security": {"2026": 0}, "unemployment_compensation": {"2026": 0}, "taxable_ira_distributions":
-      {"2026": 0}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
-      {"2026": false}, "mo_ssp": {"2026-07": null}}}, "tax_units": {"main_tax_unit":
-      {"members": ["1"]}}, "families": {"family": {"members": ["1"]}}, "households":
-      {"household": {"members": ["1"], "state_code": {"2026": "MO"}, "county_str":
-      {"2026": "COLE_COUNTY_MO"}, "zip_code": {"2026": "65101"}}}, "spm_units": {"spm_unit":
-      {"members": ["1"], "tanf": {"2026": null}, "receives_tanf": {"2026": false},
-      "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
-      "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "version":
-      "2.18.0"}'
+      {"2026": 0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026":
+      0}, "financial_assistance": {"2026": 0}, "ssi": {"2026": null}, "receives_ssi":
+      {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false}, "mo_ssp": {"2026-07":
+      null}}}, "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families": {"family":
+      {"members": ["1"]}}, "households": {"household": {"members": ["1"], "state_code":
+      {"2026": "MO"}, "county_str": {"2026": "COLE_COUNTY_MO"}, "zip_code": {"2026":
+      "65101"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf": {"2026": null},
+      "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
+      "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
+      "marital_units": {}}, "version": "2.18.0"}'
     headers:
       Accept:
       - '*/*'
@@ -22,7 +23,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1081'
+      - '1186'
       Content-Type:
       - application/json
       User-Agent:
@@ -36,35 +37,37 @@ interactions:
         "SAB"}, "ssi_countable_resources": {"2026": 0}, "employment_income": {"2026":
         0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
         {"2026": 3600}, "social_security": {"2026": 0}, "unemployment_compensation":
-        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "ssi": {"2026": 0.0},
-        "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
-        "mo_ssp": {"2026-07": 0.0}}}, "tax_units": {"main_tax_unit": {"members": ["1"]}},
-        "families": {"family": {"members": ["1"]}}, "households": {"household": {"members":
-        ["1"], "state_code": {"2026": "MO"}, "county_str": {"2026": "COLE_COUNTY_MO"},
-        "zip_code": {"2026": "65101"}}}, "spm_units": {"spm_unit": {"members": ["1"],
-        "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
-        {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-        {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.18.0", "data_version": null, "dataset": null}}'
+        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "workers_compensation":
+        {"2026": 0}, "alimony_income": {"2026": 0}, "financial_assistance": {"2026":
+        0}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "mo_ssp": {"2026-07": 0.0}}}, "tax_units": {"main_tax_unit":
+        {"members": ["1"]}}, "families": {"family": {"members": ["1"]}}, "households":
+        {"household": {"members": ["1"], "state_code": {"2026": "MO"}, "county_str":
+        {"2026": "COLE_COUNTY_MO"}, "zip_code": {"2026": "65101"}}}, "spm_units":
+        {"spm_unit": {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026":
+        false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026":
+        false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}},
+        "policyengine_bundle": {"model_version": "2.18.0", "data_version": null, "dataset":
+        null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1178'
+      - '1283'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Thu, 08 Oct 2026 18:36:48 GMT
+      - Tue, 13 Oct 2026 20:26:17 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-3f62ee398490bcee7ebe8fcf750484d6-c3ecf4660bd4aae7-00
+      - 00-139bb788741aa3ee4d09c0b68d587f69-6f299a38f84a7d0a-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 3f62ee398490bcee7ebe8fcf750484d6
+      - 139bb788741aa3ee4d09c0b68d587f69
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -72,7 +75,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - b19dfaea-b355-4f37-a5d6-c62ece309cc0
+      - 9fb14a43-4d5d-4413-92f0-fca97c5888b6
       x-policyengine-route-channel:
       - current
     status:
