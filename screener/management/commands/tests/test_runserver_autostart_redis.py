@@ -22,16 +22,12 @@ def _import_command():
         django.conf.settings = types.SimpleNamespace()
         django.contrib = types.ModuleType("django.contrib")
         django.contrib.staticfiles = types.ModuleType("django.contrib.staticfiles")
-        django.contrib.staticfiles.management = types.ModuleType(
-            "django.contrib.staticfiles.management"
-        )
+        django.contrib.staticfiles.management = types.ModuleType("django.contrib.staticfiles.management")
         django.contrib.staticfiles.management.commands = types.ModuleType(
             "django.contrib.staticfiles.management.commands"
         )
 
-        rs_mod = types.ModuleType(
-            "django.contrib.staticfiles.management.commands.runserver"
-        )
+        rs_mod = types.ModuleType("django.contrib.staticfiles.management.commands.runserver")
 
         class BaseCommand:
             def __init__(self):
@@ -48,18 +44,10 @@ def _import_command():
         sys.modules["django"] = django
         sys.modules["django.conf"] = django.conf
         sys.modules["django.contrib"] = django.contrib
-        sys.modules[
-            "django.contrib.staticfiles"
-        ] = django.contrib.staticfiles
-        sys.modules[
-            "django.contrib.staticfiles.management"
-        ] = django.contrib.staticfiles.management
-        sys.modules[
-            "django.contrib.staticfiles.management.commands"
-        ] = django.contrib.staticfiles.management.commands
-        sys.modules[
-            "django.contrib.staticfiles.management.commands.runserver"
-        ] = rs_mod
+        sys.modules["django.contrib.staticfiles"] = django.contrib.staticfiles
+        sys.modules["django.contrib.staticfiles.management"] = django.contrib.staticfiles.management
+        sys.modules["django.contrib.staticfiles.management.commands"] = django.contrib.staticfiles.management.commands
+        sys.modules["django.contrib.staticfiles.management.commands.runserver"] = rs_mod
 
     from screener.management.commands.runserver import Command
 
@@ -139,7 +127,7 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
     called = {}
 
     def fake_check_call(args):
-        called['args'] = args
+        called["args"] = args
         return 0
 
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
@@ -147,11 +135,11 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
     cmd = Command()
     cmd._maybe_start_redis({})
 
-    assert 'args' in called
-    assert '--maxmemory' in called['args']
-    assert '25mb' in called['args']
-    assert '--maxmemory-policy' in called['args']
-    assert 'allkeys-lru' in called['args']
+    assert "args" in called
+    assert "--maxmemory" in called["args"]
+    assert "25mb" in called["args"]
+    assert "--maxmemory-policy" in called["args"]
+    assert "allkeys-lru" in called["args"]
 
 
 def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
@@ -180,7 +168,7 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
     called = {}
 
     def fake_check_call(args):
-        called['args'] = args
+        called["args"] = args
         return 0
 
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
@@ -188,6 +176,6 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
     cmd = Command()
     cmd._maybe_start_redis({})
 
-    assert 'args' in called
+    assert "args" in called
     # For WSL we expect wsl to be invoked (first arg)
-    assert any('wsl' in str(a).lower() for a in called['args'])
+    assert any("wsl" in str(a).lower() for a in called["args"])

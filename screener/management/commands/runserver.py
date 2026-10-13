@@ -44,9 +44,7 @@ class Command(StaticFilesRunserver):
             try:
                 self._maybe_start_redis(options)
             except Exception as exc:  # defensive: never hard-fail runserver
-                self.stdout.write(
-                    f"Warning: auto-start redis failed: {exc}. Continuing without redis."
-                )
+                self.stdout.write(f"Warning: auto-start redis failed: {exc}. Continuing without redis.")
 
         return super().handle(*args, **options)
 
@@ -125,32 +123,32 @@ class Command(StaticFilesRunserver):
             wsl_tmp = f"/tmp/mfb-redis-{uuid.uuid4().hex}"
             # Build the redis-server command to run inside WSL. Use -- to
             # pass args to the Linux binary; prefer wsl -- <cmd> form.
-            redis_cmd = " ".join([
-                "redis-server",
-                "--port",
-                str(port),
-                "--maxmemory",
-                "25mb",
-                "--maxmemory-policy",
-                "allkeys-lru",
-                "--save",
-                "''",
-                "--appendonly",
-                "no",
-                "--dir",
-                wsl_tmp,
-                "--daemonize",
-                "yes",
-            ])
+            redis_cmd = " ".join(
+                [
+                    "redis-server",
+                    "--port",
+                    str(port),
+                    "--maxmemory",
+                    "25mb",
+                    "--maxmemory-policy",
+                    "allkeys-lru",
+                    "--save",
+                    "''",
+                    "--appendonly",
+                    "no",
+                    "--dir",
+                    wsl_tmp,
+                    "--daemonize",
+                    "yes",
+                ]
+            )
             # Ensure the tmp dir exists and then run the command inside WSL
             runner = [wsl_bin, "--", "bash", "-lc", f"mkdir -p {wsl_tmp} && {redis_cmd}"]
 
         try:
             subprocess.check_call(runner)
         except (OSError, subprocess.CalledProcessError) as exc:
-            self.stdout.write(
-                f"Failed to start redis-server: {exc}. Continuing without redis."
-            )
+            self.stdout.write(f"Failed to start redis-server: {exc}. Continuing without redis.")
             return
 
     def _build_native_args(self, redis_bin: str, port: int, tmpdir: str) -> list:
