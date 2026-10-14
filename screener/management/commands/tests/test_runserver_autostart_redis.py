@@ -166,11 +166,7 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
     # Also patch the top-level subprocess.check_call as a fallback for test
     # environments that may reference it directly.
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
-    # Patch Popen in the runserver module so no real process is spawned.
-    monkeypatch.setattr(
-        "screener.management.commands.runserver.subprocess.Popen",
-        lambda *a, **k: type("P", (), {"pid": 12345})(),
-    )
+    # No Popen stub required for this test; check_call is patched.
 
     cmd = Command()
     cmd._maybe_start_redis({})
@@ -218,11 +214,7 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
     # Also patch the top-level subprocess.check_call as a fallback for test
     # environments that may reference it directly.
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
-    # Patch Popen in the runserver module so no real process is spawned.
-    monkeypatch.setattr(
-        "screener.management.commands.runserver.subprocess.Popen",
-        lambda *a, **k: type("P", (), {"pid": 12345})(),
-    )
+    # No Popen stub required for this test; check_call is patched.
 
     cmd = Command()
     cmd._maybe_start_redis({})
