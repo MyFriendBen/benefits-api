@@ -6,6 +6,7 @@ import shutil
 import socket
 import subprocess
 import tempfile
+import time
 import uuid
 from urllib.parse import urlparse
 
@@ -177,6 +178,36 @@ class Command(StaticFilesRunserver):
             self.stdout.write(f"Failed to start redis-server: {exc}. Continuing without redis.")
             return
 
+        # If we started a foreground process (for example Memurai) the Popen
+        # call returns even if the process exits immediately during
+        # initialization. Do a short, bounded readiness check: ensure the
+        # process hasn't exited and that Redis accepts connections on the
+        # configured port. If the process exits or we fail to connect within
+        # the timeout, consider the auto-start unsuccessful and continue.
+        if process is not None:
+            ready = False
+            start = time.monotonic()
+            timeout = 3.0  # seconds, bounded so runserver doesn't block
+            interval = 0.1
+            while time.monotonic() - start < timeout:
+                # If process has exited early, bail out
+                if process.poll() is not None:
+                    self.stdout.write(
+                        f"Local redis process (PID {process.pid}) exited early with code {process.returncode}; skipping auto-start."
+                    )
+                    return
+                try:
+                    with socket.create_connection((host, port), timeout=1):
+                        ready = True
+                        break
+                except OSError:
+                    # not yet ready; sleep and retry until timeout
+                    time.sleep(interval)
+
+            if not ready:
+                self.stdout.write("Timed out waiting for local redis to accept connections; continuing without redis.")
+                return
+
         # At this point the start attempt succeeded. Do a best-effort pid
         # discovery and print a short confirmation with a stop instruction.
         pid = None
@@ -195,7 +226,14 @@ class Command(StaticFilesRunserver):
                                 [pgrep, "-f", f"redis-server.*--port {port}"],
                                 stderr=subprocess.DEVNULL,
                             )
-                            pid = out.decode().strip().splitlines()[-1]
+                            # check_output may return an empty byte string if the
+                            # process briefly exited or pgrep matched nothing; avoid
+                            # indexing an empty list which raises IndexError.
+                            lines = out.decode().strip().splitlines()
+                            if lines:
+                                pid = lines[-1]
+                            else:
+                                pid = None
                         except subprocess.CalledProcessError:
                             pid = None
 
