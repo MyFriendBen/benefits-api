@@ -1770,18 +1770,24 @@ class MoConfigurationData(ConfigurationData):
 
     # MO uses generic MFB branding and the default step directory, so it inherits
     # everything from base and overrides only the values that are MO-specific:
-    # the share link, the state name, and the Kansas City metro referrer.
+    # the share link, the state name, and the 2-1-1 referrers.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        # "uwgkc" is United Way of Greater Kansas City, whose 2-1-1 covers the metro on both sides
-        # of the state line. The same referrer code is configured identically in ks.py, since each
-        # state path loads its own config.
-        "theme": {"default": "default", "uwgkc": "uwgkc"},
-        "logoSource": {"default": "MFB_Logo", "uwgkc": "MO211_MFBLogo"},
+        # "211mo" is the statewide 2-1-1 Missouri referrer (ks.py has "211ks"). "uwgkc" is the
+        # United Way of Greater Kansas City code it replaced: it no longer appears in the
+        # referral-source menu, but an old ?referrer=uwgkc link still gets the same branding and
+        # its screens stay attributed to UWGKC. It spans the state line, so it is configured in
+        # both ks.py and mo.py, since each state path loads its own config.
+        "theme": {"default": "default", "211mo": "uwgkc", "uwgkc": "uwgkc"},
+        "logoSource": {"default": "MFB_Logo", "211mo": "MO211_MFBLogo", "uwgkc": "MO211_MFBLogo"},
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
+            },
+            "211mo": {
+                "id": "referrerHook.logoAlts.mo211",
+                "defaultMessage": "211 Missouri and MyFriendBen home page button",
             },
             "uwgkc": {
                 "id": "referrerHook.logoAlts.mo211",
@@ -1792,15 +1798,23 @@ class MoConfigurationData(ConfigurationData):
         # referrer's list replaces `default` rather than merging with it, so every referrer
         # repeats the flag.
         # The co-branded logo's MyFriendBen wordmark is dark navy, which would disappear against
-        # the theme's dark blue header, so this referrer gets the white header treatment.
-        "uiOptions": {"default": ["no_results_more_help"], "uwgkc": ["no_results_more_help", "white_header"]},
-        "logoClass": {"default": "logo", "uwgkc": "uwgkc-logo-size"},
+        # the theme's dark blue header, so the 2-1-1 referrers get the white header treatment.
+        # `211mo` swaps the site footer for the 2-1-1 Missouri footer (Dial 2-1-1 bar plus the
+        # partner's about and disclaimer text).
+        "uiOptions": {
+            "default": ["no_results_more_help"],
+            "211mo": ["no_results_more_help", "white_header", "211mo"],
+            "uwgkc": ["no_results_more_help", "white_header", "211mo"],
+        },
+        "logoClass": {"default": "logo", "211mo": "uwgkc-logo-size", "uwgkc": "uwgkc-logo-size"},
         "shareLink": {
             "default": "https://screener.myfriendben.org/mo/step-1",
+            "211mo": "https://screener.myfriendben.org/mo/step-1?referrer=211mo",
             "uwgkc": "https://screener.myfriendben.org/mo/step-1?referrer=uwgkc",
         },
-        "stateOptions": {"default": [], "uwgkc": ["ks", "mo"]},
-        # Blank for uwgkc: its logo already carries "Missouri", so the header's separate state name
-        # would repeat it underneath the artwork.
-        "stateName": {"default": "Missouri", "uwgkc": ""},
+        # 2-1-1 Missouri serves Missouri only; uwgkc spanned the state line.
+        "stateOptions": {"default": [], "211mo": ["mo"], "uwgkc": ["ks", "mo"]},
+        # Blank for the 2-1-1 referrers: their logo already carries "Missouri", so the header's
+        # separate state name would repeat it underneath the artwork.
+        "stateName": {"default": "Missouri", "211mo": "", "uwgkc": ""},
     }
