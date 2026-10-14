@@ -93,7 +93,7 @@ def test_no_redis_binary_prints_hint(monkeypatch, capsys):
     assert "redis-server not found on PATH; skipping auto-start" in captured.out
 
 
-def test_port_already_listening(monkeypatch):
+def test_port_already_listening(monkeypatch, tmp_path):
     Command = _import_command()
     settings = DummySettings(redis_url="redis://localhost:9999", debug=True)
     monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
@@ -110,7 +110,19 @@ def test_port_already_listening(monkeypatch):
         return DummySocket()
 
     monkeypatch.setattr("socket.create_connection", fake_create_connection)
-    monkeypatch.setattr("shutil.which", lambda _name: "/usr/bin/redis-server")
+    # Provide a harmless dummy executable so any accidental execution path
+    # doesn't raise FileNotFoundError in test environments.
+    dummy = tmp_path / "redis-server"
+    dummy.write_text("#!/usr/bin/env true\n")
+    try:
+        dummy.chmod(0o755)
+    except PermissionError:
+        pass
+
+    monkeypatch.setattr("shutil.which", lambda _name: str(dummy))
+    monkeypatch.setattr(
+        "screener.management.commands.runserver.shutil.which", lambda _name: str(dummy)
+    )
 
     cmd = Command()
     # Should detect listener and return without attempting spawn
@@ -127,8 +139,23 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
         raise OSError()
 
     monkeypatch.setattr("socket.create_connection", fake_create_connection)
-    # redis-server exists
-    monkeypatch.setattr("shutil.which", lambda _name: "/usr/bin/redis-server")
+    # redis-server exists. Create a harmless dummy executable in tmp_path and
+    # return its path from shutil.which so the test doesn't fail with
+    # FileNotFoundError on environments that don't have /usr/bin/redis-server.
+    dummy = tmp_path / "redis-server"
+    dummy.write_text("#!/usr/bin/env true\n")
+    # Make executable on POSIX; on Windows this is a no-op but the file still
+    # exists so attempts to execute it will fail differently but not with
+    # FileNotFoundError.
+    try:
+        dummy.chmod(0o755)
+    except PermissionError:
+        pass
+
+    monkeypatch.setattr("shutil.which", lambda _name: str(dummy))
+    monkeypatch.setattr(
+        "screener.management.commands.runserver.shutil.which", lambda _name: str(dummy)
+    )
 
     # record the args passed to subprocess.check_call
     called = {}
@@ -143,6 +170,11 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
     # Also patch the top-level subprocess.check_call as a fallback for test
     # environments that may reference it directly.
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
+    # Patch Popen in the runserver module so no real process is spawned.
+    monkeypatch.setattr(
+        "screener.management.commands.runserver.subprocess.Popen",
+        lambda *a, **k: type("P", (), {"pid": 12345})(),
+    )
 
     cmd = Command()
     cmd._maybe_start_redis({})
@@ -173,6 +205,7 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
         return None
 
     monkeypatch.setattr("shutil.which", fake_which)
+    monkeypatch.setattr("screener.management.commands.runserver.shutil.which", fake_which)
 
     # Force platform to Windows
     monkeypatch.setattr("platform.system", lambda: "Windows")
@@ -189,6 +222,11 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
     # Also patch the top-level subprocess.check_call as a fallback for test
     # environments that may reference it directly.
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
+    # Patch Popen in the runserver module so no real process is spawned.
+    monkeypatch.setattr(
+        "screener.management.commands.runserver.subprocess.Popen",
+        lambda *a, **k: type("P", (), {"pid": 12345})(),
+    )
 
     cmd = Command()
     cmd._maybe_start_redis({})
