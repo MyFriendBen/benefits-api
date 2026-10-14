@@ -117,6 +117,28 @@ class TestMoSabPeInput(MoSabTestBase):
         for field in ("workers_compensation", "alimony_income", "financial_assistance"):
             self.assertEqual(people["1"][field][YEAR], 0)
 
+    def test_an_18_year_olds_assets_reach_policyengine(self):
+        """SAB admits applicants at 18; the shared SSI resource mapping drops everyone under 19."""
+        screen = make_screen(
+            2,
+            white_label_code="mo",
+            state_code="MO",
+            household_size=1,
+            zipcode="65101",
+            county="Cole County",
+            household_assets=10_000,
+        )
+        self.program = make_program("mo", "mo_sab", YEAR)
+        add_member(screen, 1, "headOfHousehold", 18, visually_impaired=True)
+
+        people = self.payload(screen)["people"]
+
+        self.assertEqual(people["1"]["ssi_countable_resources"][YEAR], 10_000)
+
+    def test_uses_the_sab_resource_mapping_not_the_shared_one(self):
+        self.assertIn(dependency.member.MoSabCountableResourcesDependency, MoSab.pe_inputs)
+        self.assertNotIn(dependency.member.SsiCountableResourcesDependency, MoSab.pe_inputs)
+
     def test_does_not_use_the_shared_wages_only_mapping(self):
         self.assertNotIn(dependency.member.EmploymentIncomeDependency, MoSab.pe_inputs)
         self.assertIn(dependency.member.MoSabEarnedIncomeDependency, MoSab.pe_inputs)

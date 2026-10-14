@@ -19,7 +19,7 @@ class MoSab(PolicyEngineMembersCalculator):
         dependency.member.AgeDependency,
         dependency.member.IsBlindDependency,
         dependency.member.MoSspLivingArrangementSabDependency,
-        dependency.member.SsiCountableResourcesDependency,
+        dependency.member.MoSabCountableResourcesDependency,
         # Earned income: Missouri's boarder rule replaces the shared wages-only mapping.
         dependency.member.MoSabEarnedIncomeDependency,
         dependency.member.SelfEmploymentIncomeDependency,

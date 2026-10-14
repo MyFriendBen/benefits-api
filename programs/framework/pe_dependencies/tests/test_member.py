@@ -1992,6 +1992,82 @@ class TestSsiCountableResourcesDependency(TestCase):
         self.assertEqual(value, 2000)
 
 
+class TestMoSabCountableResourcesDependency(TestCase):
+    """
+    MoSab's version of the countable-resources split, which starts counting adults at 18, the
+    program's age floor, where the shared dependency starts at 19.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Cole County",
+            household_size=2,
+            household_assets=10_000,
+            completed=False,
+        )
+
+    def _value(self, person):
+        return member.MoSabCountableResourcesDependency(self.screen, person, {}).value()
+
+    def test_writes_the_same_field_as_the_shared_dependency(self):
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        dep = member.MoSabCountableResourcesDependency(self.screen, head, {})
+
+        self.assertEqual(dep.field, member.SsiCountableResourcesDependency.field)
+        self.assertEqual(dep.dependencies, member.SsiCountableResourcesDependency.dependencies)
+
+    def test_an_18_year_old_is_attributed_assets(self):
+        """The shared dependency sends 0 here, so the resource limit never applied."""
+        eighteen = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=18)
+
+        self.assertEqual(self._value(eighteen), 10_000)
+        self.assertEqual(member.SsiCountableResourcesDependency(self.screen, eighteen, {}).value(), 0)
+
+    def test_a_lone_18_year_old_does_not_divide_by_zero(self):
+        """num_adults() counts from 19 by default, so a lone 18-year-old is zero adults."""
+        eighteen = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=18)
+
+        self.assertEqual(self.screen.num_adults(), 0)
+        self.assertEqual(self._value(eighteen), 10_000)
+
+    def test_a_17_year_old_is_attributed_nothing(self):
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+        seventeen = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=17)
+
+        self.assertEqual(self._value(seventeen), 0)
+        self.assertEqual(self._value(head), 10_000)
+
+    def test_assets_are_split_across_adults_counted_from_18(self):
+        eighteen = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=18)
+        parent = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+
+        self.assertEqual(self._value(eighteen), 5_000)
+        self.assertEqual(self._value(parent), 5_000)
+
+    def test_matches_the_shared_dependency_from_19(self):
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+        nineteen = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19)
+
+        for person in (head, nineteen):
+            self.assertEqual(
+                self._value(person), member.SsiCountableResourcesDependency(self.screen, person, {}).value()
+            )
+
+    def test_value_is_an_int(self):
+        self.screen.household_assets = 10_001
+        self.screen.save()
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+        eighteen = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=18)
+
+        value = self._value(eighteen)
+
+        self.assertIsInstance(value, int)
+        self.assertEqual(value, 5_000)
+
+
 class TestSsiEarnedAndUnearnedIncomeDependencies(TestCase):
     """
     Tests for SsiEarnedIncomeDependency / SsiUnearnedIncomeDependency. SSI applies a

@@ -442,6 +442,32 @@ class SsdiReportedDependency(Member):
         return self.member.calc_gross_income("yearly", ["sSDisability"])
 
 
+class MoSabCountableResourcesDependency(Member):
+    """
+    ``SsiCountableResourcesDependency`` with Missouri SAB's age floor of 18 in place of 19.
+
+    The shared dependency sends nothing for anyone under 19, because ``Screen.num_adults()``
+    only counts members 19 and over. SAB admits applicants at 18, so an 18-year-old's assets
+    would never reach the resource test and an over-limit claimant would read as eligible.
+    The household total is still split evenly across adults, here counted from 18, so the
+    adult count is at least one for any member this sends a value for.
+    """
+
+    field = "ssi_countable_resources"
+    dependencies = (
+        "household_assets",
+        "age",
+    )
+
+    min_age = 18
+
+    def value(self):
+        if self.member.calc_age() < self.min_age:
+            return 0
+
+        return int(self.screen.household_assets / self.screen.num_adults(age_max=self.min_age))
+
+
 class SsiCountableResourcesDependency(Member):
     field = "ssi_countable_resources"
     dependencies = (

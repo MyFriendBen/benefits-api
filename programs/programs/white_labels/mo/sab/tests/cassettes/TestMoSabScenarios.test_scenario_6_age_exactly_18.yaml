@@ -2,7 +2,7 @@ interactions:
 - request:
     body: '{"household": {"people": {"1": {"age": {"2026": 18}, "is_blind": {"2026":
       true}, "mo_ssp_living_arrangement": {"2026": "SAB"}, "ssi_countable_resources":
-      {"2026": 0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+      {"2026": 500}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
       0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 3600},
       "social_security": {"2026": 0}, "unemployment_compensation": {"2026": 0}, "taxable_ira_distributions":
       {"2026": 0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026":
@@ -23,7 +23,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1186'
+      - '1188'
       Content-Type:
       - application/json
       User-Agent:
@@ -34,7 +34,7 @@ interactions:
     body:
       string: '{"status": "ok", "message": null, "result": {"people": {"1": {"age":
         {"2026": 18}, "is_blind": {"2026": true}, "mo_ssp_living_arrangement": {"2026":
-        "SAB"}, "ssi_countable_resources": {"2026": 0}, "employment_income": {"2026":
+        "SAB"}, "ssi_countable_resources": {"2026": 500}, "employment_income": {"2026":
         0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
         {"2026": 3600}, "social_security": {"2026": 0}, "unemployment_compensation":
         {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "workers_compensation":
@@ -53,21 +53,21 @@ interactions:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1285'
+      - '1287'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 13 Oct 2026 20:26:18 GMT
+      - Wed, 14 Oct 2026 18:27:06 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-556f20a04e9e5d761810ea4d2d4731b5-b1ff4cba6785861c-00
+      - 00-55c29118be67865053502a0a49a4e592-a14bc0a0af7da30d-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 556f20a04e9e5d761810ea4d2d4731b5
+      - 55c29118be67865053502a0a49a4e592;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -75,7 +75,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 7f1fc371-cca9-4faa-8f89-8e74bc9d060e
+      - fb3462ec-a9e8-4d2e-826e-f1ffc3399761
       x-policyengine-route-channel:
       - current
     status:
