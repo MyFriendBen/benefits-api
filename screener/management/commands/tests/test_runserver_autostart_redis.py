@@ -120,9 +120,7 @@ def test_port_already_listening(monkeypatch, tmp_path):
         pass
 
     monkeypatch.setattr("shutil.which", lambda _name: str(dummy))
-    monkeypatch.setattr(
-        "screener.management.commands.runserver.shutil.which", lambda _name: str(dummy)
-    )
+    monkeypatch.setattr("screener.management.commands.runserver.shutil.which", lambda _name: str(dummy))
 
     cmd = Command()
     # Should detect listener and return without attempting spawn
@@ -153,9 +151,7 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
         pass
 
     monkeypatch.setattr("shutil.which", lambda _name: str(dummy))
-    monkeypatch.setattr(
-        "screener.management.commands.runserver.shutil.which", lambda _name: str(dummy)
-    )
+    monkeypatch.setattr("screener.management.commands.runserver.shutil.which", lambda _name: str(dummy))
 
     # record the args passed to subprocess.check_call
     called = {}
