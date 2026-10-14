@@ -78,6 +78,7 @@ def test_no_redis_binary_prints_hint(monkeypatch, capsys):
     Command = _import_command()
     settings = DummySettings(redis_url="redis://localhost:6379", debug=True)
     monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
+
     # Ensure the test proceeds to binary discovery even if a real Redis is
     # listening on localhost:6379 on the developer machine.
     def fake_create_connection(addr, timeout=1):
@@ -136,6 +137,11 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
         called["args"] = args
         return 0
 
+    # Patch the subprocess.check_call used by the runserver module so the
+    # fake is invoked regardless of the test environment.
+    monkeypatch.setattr("screener.management.commands.runserver.subprocess.check_call", fake_check_call)
+    # Also patch the top-level subprocess.check_call as a fallback for test
+    # environments that may reference it directly.
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
 
     cmd = Command()
@@ -177,6 +183,11 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
         called["args"] = args
         return 0
 
+    # Patch the subprocess.check_call used by the runserver module so the
+    # fake is invoked regardless of the test environment.
+    monkeypatch.setattr("screener.management.commands.runserver.subprocess.check_call", fake_check_call)
+    # Also patch the top-level subprocess.check_call as a fallback for test
+    # environments that may reference it directly.
     monkeypatch.setattr("subprocess.check_call", fake_check_call)
 
     cmd = Command()
