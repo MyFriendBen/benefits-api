@@ -78,6 +78,12 @@ def test_no_redis_binary_prints_hint(monkeypatch, capsys):
     Command = _import_command()
     settings = DummySettings(redis_url="redis://localhost:6379", debug=True)
     monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
+    # Ensure the test proceeds to binary discovery even if a real Redis is
+    # listening on localhost:6379 on the developer machine.
+    def fake_create_connection(addr, timeout=1):
+        raise OSError()
+
+    monkeypatch.setattr("socket.create_connection", fake_create_connection)
     monkeypatch.setattr("shutil.which", lambda _name: None)
 
     cmd = Command()

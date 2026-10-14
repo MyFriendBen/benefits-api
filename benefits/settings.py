@@ -331,8 +331,21 @@ django_heroku.settings(locals())
 
 # Cache Configuration
 # Uses Redis in production (REDIS_URL is set automatically by the Heroku Redis add-on).
-# Falls back to in-memory cache for local development when REDIS_URL is not set.
+# For local development, if DEBUG is True and REDIS_URL is not explicitly set,
+# default to a loopback Redis URL so the `runserver` helper can auto-start
+# Redis. Developers can opt out by setting AUTO_START_REDIS=false in the
+# environment or by setting REDIS_URL to a different value.
 REDIS_URL = config("REDIS_URL", default=None)
+
+# Provide a sensible default for local development so `manage.py runserver`
+# can auto-start a local Redis without additional configuration. Only apply
+# this when DEBUG is True and the developer hasn't explicitly disabled the
+# helper via AUTO_START_REDIS.
+if DEBUG and not REDIS_URL:
+    if os.environ.get("AUTO_START_REDIS", "true").lower() not in ("0", "false", "no"):
+        # Use loopback host and standard Redis port 6379, DB 0. This will
+        # trigger the runserver helper to attempt to start Redis locally.
+        REDIS_URL = "redis://127.0.0.1:6379/0"
 
 if REDIS_URL:
     CACHES = {

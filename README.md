@@ -77,6 +77,12 @@ for your local white label to exercise the full chain.
 
 ## Redis in local development
 
+By default, when `DEBUG = True` and `REDIS_URL` is not explicitly set, the
+project will default `REDIS_URL` to a loopback address so `manage.py runserver`
+can auto-start a local Redis. You can disable this helper by setting
+`AUTO_START_REDIS=false` in your environment or by providing your own
+`REDIS_URL`.
+
 When `REDIS_URL` is set and points at a loopback address (localhost / 127.0.0.1)
 and Django is running with `DEBUG = True`, `manage.py runserver` will attempt
 to auto-start a small, local `redis-server` so the development environment
@@ -124,24 +130,20 @@ Console messages developers will see
 The implementation emits short, human-friendly messages so it's clear what
 happened. Examples (angle-bracket tokens are replaced by the actual values):
 
-- When a listener is already present on the target port:
-
-   Redis already listening on <host>:<port>; skipping auto-start.
-
 - When `redis-server` (or Memurai) is found and started natively:
 
-   Starting local redis-server using '<binary>' on port <port> (daemonized).
-   To stop: redis-cli -p <port> shutdown
+  Starting local redis-server using '<binary>' on port <port> (daemonized).
+  To stop: redis-cli -p <port> shutdown
 
 - When no native binary is found but WSL is used to start Redis:
 
-   Starting local redis-server inside WSL (via 'wsl') on port <port> (daemonized).
-   To stop: wsl -- redis-cli -p <port> shutdown
+  Starting local redis-server inside WSL (via 'wsl') on port <port> (daemonized).
+  To stop: wsl -- redis-cli -p <port> shutdown
 
 - When no binary is found at all:
 
-   redis-server not found on PATH; to enable auto-start install Redis (or
-   Memurai on Windows), or set AUTO_START_REDIS=false or use --no-redis; continuing without starting Redis.
+  redis-server not found on PATH; to enable auto-start install Redis (or
+  Memurai on Windows), or set AUTO_START_REDIS=false or use --no-redis; continuing without starting Redis.
 
 Behavior when auto-start is skipped
 

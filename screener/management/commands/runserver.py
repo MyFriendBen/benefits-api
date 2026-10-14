@@ -117,7 +117,12 @@ class Command(StaticFilesRunserver):
         # /tmp using a UUID; for native we use tempfile on the host.
         if start_mode == "native":
             tmpdir = tempfile.mkdtemp(prefix="mfb-redis-")
-            args = self._build_native_args(str(redis_bin), port, tmpdir)
+            # Detect Memurai (common Windows Redis alternative). Memurai does
+            # not support --daemonize and runs in the foreground, so we must
+            # start it with Popen and not pass the daemonize flag.
+            bin_name = os.path.basename(str(redis_bin)).lower()
+            is_memurai = "memurai" in bin_name
+            args = self._build_native_args(str(redis_bin), port, tmpdir, daemonize=not is_memurai)
             runner = args
         else:  # wsl
             wsl_tmp = f"/tmp/mfb-redis-{uuid.uuid4().hex}"
@@ -145,15 +150,81 @@ class Command(StaticFilesRunserver):
             # Ensure the tmp dir exists and then run the command inside WSL
             runner = [wsl_bin, "--", "bash", "-lc", f"mkdir -p {wsl_tmp} && {redis_cmd}"]
 
+        process = None
         try:
-            subprocess.check_call(runner)
-        except (OSError, subprocess.CalledProcessError) as exc:
+            if start_mode == "native" and is_memurai:
+                # Start Memurai (foreground) without waiting for it to exit.
+                # Use DEVNULL to avoid tying up file descriptors and detach
+                # from the parent as much as possible. Keep the Popen object so
+                # we can report the PID to the user.
+                process = subprocess.Popen(
+                    runner,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL,
+                    close_fds=True,
+                )
+            else:
+                # For native redis-server (daemonizes) and the WSL path we
+                # expect the child process to return quickly; check_call will
+                # raise on failure.
+                subprocess.check_call(runner)
+        except OSError as exc:
+            # Executable not found or other OS-level error
+            self.stdout.write(f"Failed to start redis-server: {exc}. Continuing without redis.")
+            return
+        except subprocess.CalledProcessError as exc:
             self.stdout.write(f"Failed to start redis-server: {exc}. Continuing without redis.")
             return
 
-    def _build_native_args(self, redis_bin: str, port: int, tmpdir: str) -> list:
-        """Return the argument list to start a native redis-server."""
-        return [
+        # At this point the start attempt succeeded. Do a best-effort pid
+        # discovery and print a short confirmation with a stop instruction.
+        pid = None
+        if start_mode == "native":
+            # If we started Memurai with Popen we can report its pid.
+            if process is not None:
+                pid = str(process.pid)
+            else:
+                # Try to discover the pid for a daemonized native redis-server
+                # on POSIX with pgrep.
+                if platform.system() != "Windows":
+                    pgrep = shutil.which("pgrep")
+                    if pgrep:
+                        try:
+                            out = subprocess.check_output(
+                                [pgrep, "-f", f"redis-server.*--port {port}"],
+                                stderr=subprocess.DEVNULL,
+                            )
+                            pid = out.decode().strip().splitlines()[-1]
+                        except subprocess.CalledProcessError:
+                            pid = None
+
+        # Print a short confirmation so the developer knows how to stop the
+        # helper Redis instance.
+        if pid:
+            self.stdout.write(
+                f"Started local redis-server (PID {pid}) on {host}:{port}. "
+                f"To stop: kill {pid} or 'redis-cli -p {port} shutdown'"
+            )
+        else:
+            if start_mode == "wsl":
+                self.stdout.write(
+                    f"Started local redis-server inside WSL on {host}:{port} (pid unknown). "
+                    f"To stop: wsl -- redis-cli -p {port} shutdown"
+                )
+            else:
+                self.stdout.write(
+                    f"Started local redis-server on {host}:{port} (pid unknown). "
+                    f"To stop: 'redis-cli -p {port} shutdown'"
+                )
+
+    def _build_native_args(self, redis_bin: str, port: int, tmpdir: str, daemonize: bool = True) -> list:
+        """Return the argument list to start a native redis-server.
+
+        If `daemonize` is False the returned args omit the `--daemonize yes`
+        flags (useful for Memurai on Windows which runs in the foreground).
+        """
+        args = [
             redis_bin,
             "--port",
             str(port),
@@ -167,34 +238,7 @@ class Command(StaticFilesRunserver):
             "no",
             "--dir",
             tmpdir,
-            "--daemonize",
-            "yes",
         ]
-
-        pid = None
-        # Try to discover the pid (best-effort, non-fatal). On POSIX use
-        # pgrep; on Windows when using native redis-server we can't reliably
-        # pgrep here, and for WSL we skip pid detection.
-        if platform.system() != "Windows" and start_mode != "wsl":
-            pgrep = shutil.which("pgrep")
-            if pgrep:
-                try:
-                    out = subprocess.check_output(
-                        [pgrep, "-f", f"redis-server.*--port {port}"],
-                        stderr=subprocess.DEVNULL,
-                    )
-                    # take the last matched pid
-                    pid = out.decode().strip().splitlines()[-1]
-                except subprocess.CalledProcessError:
-                    pid = None
-
-        if pid:
-            self.stdout.write(
-                f"Started local redis-server (PID {pid}) on {host}:{port}. "
-                f"To stop: kill {pid} or 'redis-cli -p {port} shutdown'"
-            )
-        else:
-            self.stdout.write(
-                f"Started local redis-server on {host}:{port} (pid unknown). "
-                f"To stop: 'redis-cli -p {port} shutdown'"
-            )
+        if daemonize:
+            args.extend(["--daemonize", "yes"])
+        return args
