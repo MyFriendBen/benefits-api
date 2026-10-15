@@ -18,7 +18,7 @@ from programs.models import (
     Referrer,
     _get_fpl_data,
 )
-from screener.models import WhiteLabel
+from screener.models import Screen, WhiteLabel
 
 
 class ProgramNameAbbreviatedNormalizationTests(TestCase):
@@ -305,6 +305,27 @@ class SwitchKsMo211ReferrersMigrationTests(TestCase):
         self.assertFalse(Referrer.objects.filter(referrer_code__in=["211ks", "211mo"]).exists())
         self.assertTrue(self._referrer(self.ks, "uwgkc").show_in_dropdown)
         self.assertTrue(self._referrer(self.mo, "uwgsl").show_in_dropdown)
+
+    def test_reverse_keeps_a_new_referrer_that_screens_carry(self) -> None:
+        """Deleting it would turn those screens' dashboard partner into "Other"."""
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+        Screen.objects.create(white_label=self.ks, referrer_code="211ks", completed=False)
+
+        self.migration.restore_referrers(global_apps, self.schema_editor)
+
+        self.assertTrue(Referrer.objects.filter(white_label=self.ks, referrer_code="211ks").exists())
+        self.assertFalse(Referrer.objects.filter(white_label=self.mo, referrer_code="211mo").exists())
+
+    def test_hides_retired_referrers_on_every_white_label_with_the_code(self) -> None:
+        """The referral-options endpoint reads every white label with the code, not just the oldest."""
+        duplicate = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        Referrer.objects.create(
+            white_label=duplicate, referrer_code="uwgkc", name="uwgkc", show_in_dropdown=True, is_partner=True
+        )
+
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        self.assertFalse(self._referrer(duplicate, "uwgkc").show_in_dropdown)
 
     def test_skips_a_database_without_the_white_labels(self) -> None:
         Referrer.objects.all().delete()

@@ -69,11 +69,20 @@ def restore_referrers(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> No
         if white_label_id is None:
             continue
 
-        # Screen.referrer_code is a CharField, not a foreign key, so removing a
-        # Referrer leaves existing screens' attribution strings intact.
+        # Keep a row any screen already carries: the dashboards name a screen's
+        # partner from it, the same reason the retired codes are hidden rather
+        # than deleted.
         with db.cursor() as cursor:
             cursor.execute(
-                "DELETE FROM programs_referrer WHERE white_label_id = %s AND referrer_code = %s",
+                """
+                DELETE FROM programs_referrer r
+                WHERE r.white_label_id = %s AND r.referrer_code = %s
+                  AND NOT EXISTS (
+                      SELECT 1 FROM screener_screen s
+                      WHERE s.white_label_id = r.white_label_id
+                        AND s.referrer_code = r.referrer_code
+                  )
+                """,
                 [white_label_id, referrer_code],
             )
 
@@ -81,18 +90,18 @@ def restore_referrers(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> No
 def _set_dropdown_visibility(apps: Apps, schema_editor: BaseDatabaseSchemaEditor, visible: bool) -> None:
     db = schema_editor.connection
 
+    # Every white label with the code, not just the oldest: the referral-options
+    # endpoint reads referrers across all of them, so a retired code left
+    # visible on a duplicate would stay in the menu.
     for code, referrer_codes in HIDDEN_REFERRERS.items():
-        white_label_id = _white_label_id(apps, code)
-        if white_label_id is None:
-            continue
-
         with db.cursor() as cursor:
             cursor.execute(
                 """
                 UPDATE programs_referrer SET show_in_dropdown = %s
-                WHERE white_label_id = %s AND referrer_code = ANY(%s)
+                WHERE referrer_code = ANY(%s)
+                  AND white_label_id IN (SELECT id FROM screener_whitelabel WHERE code = %s)
                 """,
-                [visible, white_label_id, list(referrer_codes)],
+                [visible, list(referrer_codes), code],
             )
 
 
