@@ -5,6 +5,11 @@ from typing import ClassVar
 
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.pe_dependencies.receipt import (
+    SSI_INCOME_TYPE,
+    screen_reports_snap,
+    screen_reports_tanf,
+)
 from screener.models import HouseholdMember
 
 
@@ -28,9 +33,8 @@ class MfbHeadStart(ProgramCalculator, abstract=True):
     - ``school_eligibility_cutoff_date``: (month, day) a child must turn 3 by to count as 3
     - ``compulsory_school_age``: the age a child must be under
     - ``weekly_price`` and ``program_weeks``: the value is their product per eligible child
-    - ``public_assistance_programs``: its own SNAP/TANF/SSI program codes, read tolerantly
-      through ``any_program_eligible``. Leave it empty where the state has none. A state that
-      sets it must also list the codes in ``gates_on_any``.
+    - ``gates_on_any``: its own SNAP/TANF/SSI program codes, read tolerantly through
+      ``any_program_eligible``. Leave it empty where the state has none.
     """
 
     min_age = 3
@@ -39,10 +43,6 @@ class MfbHeadStart(ProgramCalculator, abstract=True):
     compulsory_school_age: ClassVar[int]
     weekly_price: ClassVar[float]
     program_weeks: ClassVar[int]
-
-    public_assistance_programs = ()
-    public_assistance_base_programs = ("tanf", "ssi", "snap")
-    public_assistance_income_types = ("cashAssistance", "sSI")
 
     # 45 CFR 1305.2 "Income": wages, business income, unemployment and pensions. Taxable
     # gifts and military pay exclusions can't be told apart in the screener's data.
@@ -102,7 +102,14 @@ class MfbHeadStart(ProgramCalculator, abstract=True):
         return cutoff
 
     def household_eligible(self, e: Eligibility) -> None:
-        if self._income_eligible() or self._public_assistance_eligible():
+        income = self._countable_income()
+        income_limit = self._income_limit()
+        if income <= income_limit:
+            e.condition(True, messages.income(income, income_limit))
+            return
+
+        if self._public_assistance_eligible():
+            e.condition(True, messages.presumed_eligibility())
             return
 
         # Foster care qualifies the foster child only, not their siblings.
@@ -110,32 +117,29 @@ class MfbHeadStart(ProgramCalculator, abstract=True):
             if member_eligibility.member.relationship != "fosterChild":
                 member_eligibility.condition(False)
 
-        gross_income = self._countable_income()
-        income_limit = self._income_limit()
-        e.condition(
-            any(member_eligibility.eligible for member_eligibility in e.eligible_members),
-            messages.income(gross_income, income_limit),
-        )
+        if not any(member_eligibility.eligible for member_eligibility in e.eligible_members):
+            e.condition(False, messages.income(income, income_limit))
 
-    def _countable_income(self) -> int:
+    def _countable_income(self) -> float:
         """Gross income, less housing costs above 30% of it (45 CFR 1302.12(i)(1)(ii))."""
         gross = self.screen.calc_gross_income("yearly", list(self.countable_income_types))
         housing = self.screen.calc_expenses("yearly", list(self.housing_expense_types))
         excess_housing = max(0, housing - self.housing_cost_share * gross)
 
-        return int(gross - excess_housing)
+        return gross - excess_housing
 
     def _income_limit(self) -> int:
         return int(self.program.year.get_limit(self.screen.household_size))
 
-    def _income_eligible(self) -> bool:
-        return self._countable_income() <= self._income_limit()
-
     def _public_assistance_eligible(self) -> bool:
-        receives = any(self.screen.has_base_benefit(program) for program in self.public_assistance_base_programs)
-        has_income = self.screen.calc_gross_income("yearly", list(self.public_assistance_income_types)) > 0
-
-        return receives or has_income or self.any_program_eligible(self.public_assistance_programs)
+        """Receives TANF, SSI or SNAP, or is eligible for one of the state's own."""
+        return (
+            screen_reports_snap(self.screen)
+            or screen_reports_tanf(self.screen)
+            or self.screen.has_base_benefit("ssi")
+            or self.screen.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0
+            or self.any_program_eligible(self.gates_on_any)
+        )
 
     def member_value(self, member: HouseholdMember) -> int:
         return round(self.weekly_price * self.program_weeks)

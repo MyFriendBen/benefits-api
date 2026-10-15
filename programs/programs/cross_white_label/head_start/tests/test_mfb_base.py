@@ -11,6 +11,7 @@ from unittest.mock import Mock
 
 from django.test import SimpleTestCase
 
+import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility, ProgramCalculator
 from programs.programs.cross_white_label.head_start.mfb_base import MfbHeadStart
 from programs.programs.cross_white_label.head_start.base import HeadStart
@@ -32,7 +33,6 @@ class StateHeadStart(MfbHeadStart):
 
 class GatedStateHeadStart(StateHeadStart):
     program_code = "test_gated_head_start"
-    public_assistance_programs = ("test_snap",)
     gates_on_any = ("test_snap",)
 
 
@@ -167,10 +167,19 @@ class TestIncomePovertyLine(SimpleTestCase):
             ["rent", "mortgage", "propertyTax", "homeownersInsurance", "heating", "cooling", "otherUtilities"],
         )
 
+    def test_cents_over_the_limit_are_ineligible(self):
+        """$2,276.67 a month is $27,320.04 a year, over the $27,320 limit for 3."""
+        self.assertFalse(run(make_calculator(income={"wages": 27_320.04})).eligible)
+
     def test_income_failure_reports_the_adjusted_income_and_limit(self):
-        eligibility = run(make_calculator(income={"wages": 40_000}))
+        """$40,000 gross, $15,000 housing: $3,000 over 30%, so $37,000 is reported."""
+        eligibility = run(make_calculator(income={"wages": 40_000}, housing=15_000))
         self.assertFalse(eligibility.eligible)
-        self.assertEqual(len(eligibility.fail_messages), 1)
+        self.assertEqual(eligibility.fail_messages, [messages.income(37_000, 27_320)])
+
+    def test_income_pass_reports_the_adjusted_income_and_limit(self):
+        eligibility = run(make_calculator(income={"wages": 20_000}))
+        self.assertEqual(eligibility.pass_messages, [messages.income(20_000, 27_320)])
 
 
 class TestPublicAssistance(SimpleTestCase):
@@ -196,8 +205,12 @@ class TestPublicAssistance(SimpleTestCase):
         calculator = make_calculator(income={**self.over_income, "cashAssistanceOther": 100})
         self.assertFalse(run(calculator).eligible)
 
+    def test_public_assistance_pass_reports_presumed_eligibility(self):
+        eligibility = run(make_calculator(income=self.over_income, base_benefits=("snap",)))
+        self.assertEqual(eligibility.pass_messages, [messages.presumed_eligibility()])
+        self.assertEqual(eligibility.fail_messages, [])
+
     def test_no_program_codes_by_default(self):
-        self.assertEqual(MfbHeadStart.public_assistance_programs, ())
         self.assertEqual(StateHeadStart.gates_on_any, ())
 
     def test_eligible_for_a_state_program_qualifies(self):
@@ -231,6 +244,13 @@ class TestFosterCare(SimpleTestCase):
         self.assertTrue(by_member[id(foster)].eligible)
         self.assertFalse(by_member[id(sibling)].eligible)
         self.assertEqual(eligibility.value, 9_938)
+
+    def test_foster_route_reports_no_income_message(self):
+        """The household is over income, so there is no income check to report as passed."""
+        members = [make_member(age=4, relationship="fosterChild")]
+        eligibility = run(make_calculator(members=members, income=self.over_income))
+        self.assertEqual(eligibility.pass_messages, [])
+        self.assertEqual(eligibility.fail_messages, [])
 
     def test_foster_child_must_still_be_preschool_age(self):
         members = [make_member(age=7, relationship="fosterChild")]
