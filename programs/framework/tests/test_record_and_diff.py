@@ -2,6 +2,7 @@
 
 import ast
 import json
+import subprocess
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -17,6 +18,7 @@ from programs.management.commands.record_and_diff import (
     ERROR,
     FAILED,
     PASSED,
+    REPO_ROOT,
     SKIPPED,
     UNCHANGED,
     Capture,
@@ -25,6 +27,7 @@ from programs.management.commands.record_and_diff import (
     adopt,
     classify_scenario,
     diff_captures,
+    format_rewrite,
     load_capture,
     module_classes,
     remove_override,
@@ -200,6 +203,28 @@ class TestAdopt(SimpleTestCase):
             adopt(diff, Path("/nonexistent"), "2.9.0")
 
         write_text.assert_not_called()
+
+    def test_writes_nothing_when_black_fails(self) -> None:
+        diff = {"target_version": "2.18.0", "modules": {}}
+        failed = subprocess.CompletedProcess(args=[], returncode=123, stdout="", stderr="cannot format")
+
+        with (
+            patch(f"{adopt.__module__}.subprocess.run", return_value=failed),
+            patch("pathlib.Path.write_text") as write_text,
+            self.assertRaisesMessage(CommandError, "black failed"),
+        ):
+            adopt(diff, Path("/nonexistent"), "2.9.0")
+
+        write_text.assert_not_called()
+
+
+class TestFormatRewrite(SimpleTestCase):
+    def test_formats_with_the_repo_config(self) -> None:
+        self.assertEqual(format_rewrite(REPO_ROOT / "x.py", "x = ( 1 )\n"), "x = 1\n")
+
+    def test_rejects_invalid_python(self) -> None:
+        with self.assertRaisesMessage(CommandError, "would break it"):
+            format_rewrite(REPO_ROOT / "x.py", "def (\n")
 
 
 OVERRIDDEN = '''"""Docstring."""

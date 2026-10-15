@@ -393,11 +393,36 @@ def copy_module_cassettes(module: str, source: str, cassette_root: Path) -> None
             shutil.copyfile(cassette, committed_dir / cassette.name)
 
 
+def format_rewrite(path: Path, source: str) -> str:
+    """``source`` as black would write it at ``path``, failing the command if it isn't valid Python.
+
+    Formats in memory, with ``--stdin-filename`` so black applies the repo's config, so that a
+    failure surfaces before ``adopt`` writes anything.
+    """
+    try:
+        ast.parse(source)
+    except SyntaxError as error:
+        raise CommandError(f"Rewriting {path} would break it ({error}); nothing was adopted.")
+
+    formatted = subprocess.run(
+        [sys.executable, "-m", "black", "-q", "--stdin-filename", str(path), "-"],
+        input=source,
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+    )
+    if formatted.returncode != 0:
+        raise CommandError(f"black failed on the rewrite of {path} ({formatted.stderr.strip()}); nothing was adopted.")
+
+    return formatted.stdout
+
+
 def adopt(diff: dict[str, Any], cassette_root: Path, previous_pin: str) -> dict[str, list[str]]:
     """Move the suite to the target version, keeping changed and erroring modules on what they had.
 
-    Every rewritten source is parsed before anything is written, so a rewrite that breaks a
-    module fails the command and leaves the tree untouched.
+    Every rewritten source is parsed and formatted before anything is written, so a rewrite that
+    breaks a module fails the command and leaves the tree untouched. Only copying the recorded
+    cassettes runs after the writes; if that fails, the error says how to restore the tree.
     """
     target = diff["target_version"]
     modules = diff["modules"]
@@ -429,22 +454,20 @@ def adopt(diff: dict[str, Any], cassette_root: Path, previous_pin: str) -> dict[
                 rewrites[path] = add_override(source, previous_pin, HOLD_REASONS[info["status"]].format(target=target))
             result["held"].append(module)
 
-    for path, source in rewrites.items():
-        try:
-            ast.parse(source)
-        except SyntaxError as error:
-            raise CommandError(f"Rewriting {path} would break it ({error}); nothing was adopted.")
+    rewrites = {path: format_rewrite(path, source) for path, source in rewrites.items()}
 
     for path, source in rewrites.items():
         path.write_text(source)
 
-    for module in result["adopted"]:
-        copy_module_cassettes(module, (REPO_ROOT / module).read_text(), cassette_root)
-
-    if rewrites:
-        formatted = subprocess.run([sys.executable, "-m", "black", "-q", *map(str, rewrites)], cwd=REPO_ROOT)
-        if formatted.returncode != 0:
-            raise CommandError(f"black failed on the rewritten files: {', '.join(map(str, rewrites))}")
+    try:
+        for module in result["adopted"]:
+            copy_module_cassettes(module, (REPO_ROOT / module).read_text(), cassette_root)
+    except OSError as error:
+        rewritten = ", ".join(str(path.relative_to(REPO_ROOT)) for path in rewrites)
+        raise CommandError(
+            f"Copying recorded cassettes failed ({error}) after these files were rewritten: {rewritten}. "
+            "The tree is half-adopted; restore those files and the adopted modules' cassettes with git, then rerun."
+        )
 
     return result
 
