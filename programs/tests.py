@@ -252,10 +252,10 @@ class FederalPovertyLimitValueTests(TestCase):
 
 
 class SwitchKsMo211ReferrersMigrationTests(TestCase):
-    """Covers migration 0187's RunPython, which --nomigrations skips."""
+    """Covers migration 0189's RunPython, which --nomigrations skips."""
 
     def setUp(self) -> None:
-        self.migration = import_module("programs.migrations.0187_add_211ks_211mo_referrers")
+        self.migration = import_module("programs.migrations.0189_add_211ks_211mo_referrers")
         self.schema_editor = SimpleNamespace(connection=connection)
         self.ks = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
         self.mo = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")

@@ -107,7 +107,7 @@ def _set_dropdown_visibility(apps: Apps, schema_editor: BaseDatabaseSchemaEditor
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0186_rename_nc_nslp"),
+        ("programs", "0188_rekey_211_metro_chicago_referrer"),
     ]
 
     operations = [migrations.RunPython(switch_referrers, restore_referrers)]
