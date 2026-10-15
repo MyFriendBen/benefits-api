@@ -355,7 +355,7 @@ class TestAgeGate(SafesrTestCase):
     def test_claim_year_falls_back_when_no_ceiling_is_published_for_the_configured_year(self):
         # The fallback is shared so the age gate and the ceiling can never
         # describe different years.
-        self.set_claim_year(2099)
+        self.set_claim_year(2026)
         self.assertEqual(self.make_calculator(self.household())._claim_year(), max(KsSafesr.income_limit_by_year))
 
 
