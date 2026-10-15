@@ -171,6 +171,11 @@ class TestIncomePovertyLine(SimpleTestCase):
         """$2,276.67 a month is $27,320.04 a year, over the $27,320 limit for 3."""
         self.assertFalse(run(make_calculator(income={"wages": 27_320.04})).eligible)
 
+    def test_income_failure_by_cents_shows_the_cents(self):
+        eligibility = run(make_calculator(income={"wages": 27_320.04}))
+        self.assertEqual(eligibility.fail_messages[0][1], " $27320.04 ")
+        self.assertEqual(eligibility.fail_messages[0][3], " $27320.00")
+
     def test_income_failure_reports_the_adjusted_income_and_limit(self):
         """$40,000 gross, $15,000 housing: $3,000 over 30%, so $37,000 is reported."""
         eligibility = run(make_calculator(income={"wages": 40_000}, housing=15_000))
