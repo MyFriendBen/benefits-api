@@ -563,6 +563,9 @@ class ConfigurationData:
         "stateOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": ""},
+        # Partner phone number shown in a referrer's branded footer, formatted for display; the
+        # frontend builds the tel: link from its digits. Empty hides the footer's phone link.
+        "footerPhone": {"default": ""},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

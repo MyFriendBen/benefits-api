@@ -2053,6 +2053,11 @@ class NcConfigurationData(ConfigurationData):
             "default": "en-us",
             "hfed": "es",
         },
+        "footerPhone": {
+            "default": "",
+            "211nc": "1-(888)-892-1162",
+            "hfed": "1-844-438-6827",
+        },
     }
 
     footer_data = {
