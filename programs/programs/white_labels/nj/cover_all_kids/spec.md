@@ -6,9 +6,9 @@
 - **Program Key**: `nj_cover_all_kids`
 - **White Label**: NJ
 - **Engine**: `MFB`
-- **Calculator**: N/A - not yet implemented
-- **Calculator added**: N/A - not yet implemented
-- **Spec last verified**: 2026-10-14
+- **Calculator**: `white_labels/nj/cover_all_kids`, class `NjCoverAllKids`
+- **Calculator added**: 2026-10-14
+- **Spec last verified**: 2026-10-15
 - **Rules last changed**: N/A - standalone
 
 ## 2. Inheritance & Variance
@@ -53,14 +53,14 @@
    - Source: NJ FamilyCare, Who is Eligible? — "Children under 19 are eligible with higher incomes up to 355% of the Federal Poverty Level (FPL) ($9,763/month for a family of four)." — [snapshot `2026-10-06--njfc-who-is-eligible`](sources/2026-10-06--njfc-who-is-eligible/content.md), accessed 2026-10-06
    - Conflicting source: N/A
 
-3. `income_limit` — **Children under 19 are eligible with household MAGI income up to 355% of the Federal Poverty Level; MAGI leaves out SSI, child support, gifts and workers' compensation, and counts a dependent's income only if the dependent must file a federal tax return**
+3. `income_limit` — **Children under 19 are eligible with household MAGI income up to 355% of the Federal Poverty Level; MAGI leaves out SSI, child support, gifts, workers' compensation and cash assistance such as TANF, and counts a dependent's income only if the dependent must file a federal tax return**
    - Label: Household MAGI income at or below 355% FPL
    - Routes: N/A - single path
    - Evaluation scope: `household`
    - Inheritance status: `N/A`
    - Enforced by: `calculator`
    - Fields: `type` (IncomeStream), `amount` (IncomeStream), `frequency` (IncomeStream), `relationship` (HouseholdMember), `birth_year_month` (HouseholdMember), `age` (HouseholdMember), `visually_impaired` (HouseholdMember), `year` (Program)
-   - Logic: sum of `HouseholdMember.calc_gross_income("monthly", ["all"], exclude=["sSI", "childSupport", "gifts", "workersComp"])` over members where `HouseholdMember.is_in_tax_unit()` is `true` <= `3.55` × the `Program.year` FPL for that member count ÷ `12` passes. A member who is neither `is_head()` nor `is_spouse()` adds their income to the sum only if they must file, which is true when any of these holds on yearly amounts, with A = `$2,050` for each of `calc_age()` >= `65` and `visually_impaired`:
+   - Logic: sum of `HouseholdMember.calc_gross_income("monthly", ["all"], exclude=["sSI", "childSupport", "gifts", "workersComp", "cashAssistance", "cashAssistanceOther"])` over members where `HouseholdMember.is_in_tax_unit()` is `true` <= `3.55` × the `Program.year` FPL for that member count ÷ `12` passes. A member who is neither `is_head()` nor `is_spouse()` adds their income to the sum only if they must file, which is true when any of these holds on yearly amounts, with A = `$2,050` for each of `calc_age()` >= `65` and `visually_impaired`:
      - unearned income > `$1,350` + A
      - earned income > `$16,100` + A
      - earned plus unearned income > the smaller of (the larger of `$1,350` and earned income + `$450`) and `$16,100`, plus A
@@ -77,9 +77,11 @@
    - Source: 42 CFR 435.603(h)(1), Budget period, Applicants and new enrollees — "Financial eligibility for Medicaid for applicants, and other individuals not receiving Medicaid benefits at the point at which eligibility for Medicaid is being determined, must be based on current monthly household income and family size." — [snapshot `2026-10-07--42-cfr-435-603`](sources/2026-10-07--42-cfr-435-603/content.md), accessed 2026-10-07
    - Source: 42 CFR 435.603(d)(2)(i), Income of children and tax dependents — "The MAGI-based income of an individual who is included in the household of his or her natural, adopted or step parent and is not expected to be required to file a tax return under section 6012(a)(1) of the Code for the taxable year in which eligibility for Medicaid is being determined, is not included in household income whether or not the individual files a tax return." — [snapshot `2026-10-07--42-cfr-435-603`](sources/2026-10-07--42-cfr-435-603/content.md), accessed 2026-10-07
    - Source: 42 CFR 435.603(d)(2)(ii) — "The MAGI-based income of a tax dependent described in paragraph (f)(2)(i) of this section who is not expected to be required to file a tax return under section 6012(a)(1) of the Code for the taxable year in which eligibility for Medicaid is being determined is not included in the household income of the taxpayer whether or not such tax dependent files a tax return." — [snapshot `2026-10-07--42-cfr-435-603`](sources/2026-10-07--42-cfr-435-603/content.md), accessed 2026-10-07
+   - Source: 42 CFR 435.603(e), MAGI-based income — "For the purposes of this section, MAGI-based income means income calculated using the same financial methodologies used to determine modified adjusted gross income as defined in section 36B(d)(2)(B) of the Code" — [snapshot `2026-10-07--42-cfr-435-603`](sources/2026-10-07--42-cfr-435-603/content.md), accessed 2026-10-07
    - Source: HealthCare.gov, What to include as income, "Don't count these income types" — "Child support", "Gifts", "Supplemental Security Income (SSI)", "Worker's compensation" — [snapshot `2026-10-14--healthcare-gov-what-to-include-as-income`](sources/2026-10-14--healthcare-gov-what-to-include-as-income/content.md), accessed 2026-10-14
    - Source: HealthCare.gov, What to include as income, "Count these income types" — "Federal taxable wages (from your job)", "Self-employment income", "Social Security", "Social Security Disability Income (SSDI)", "Unemployment compensation", "Retirement or pension income", "Investment income", "Rental and royalty income" — [snapshot `2026-10-14--healthcare-gov-what-to-include-as-income`](sources/2026-10-14--healthcare-gov-what-to-include-as-income/content.md), accessed 2026-10-14
    - Source: HealthCare.gov, What to include as income, "Do I include my dependents' income from things like summer jobs, work-study, and limited part-time work?" — "Count their income only if they need to file a federal tax return." — [snapshot `2026-10-14--healthcare-gov-what-to-include-as-income`](sources/2026-10-14--healthcare-gov-what-to-include-as-income/content.md), accessed 2026-10-14
+   - Source: IRS Publication 501 (2025), Support Test (To Be a Qualifying Relative), Tax-exempt income — "Tax-exempt income includes certain social security benefits, welfare benefits, nontaxable life insurance proceeds, Armed Forces family allotments, nontaxable pensions, and tax-exempt interest." — [snapshot `2026-10-14--irs-pub-501-2025`](sources/2026-10-14--irs-pub-501-2025/content.md), accessed 2026-10-14
    - Source: IRS Publication 501 (2025), Table 2, Single dependents not 65 or older or blind — "You must file a return if any of the following apply. Your unearned income was more than $1,350. Your earned income was more than $15,750. Your gross income was more than the larger of: $1,350, or Your earned income (up to $15,300) plus $450." — [snapshot `2026-10-14--irs-pub-501-2025`](sources/2026-10-14--irs-pub-501-2025/content.md), accessed 2026-10-14
    - Source: IRS Publication 501 (2025), Table 2 — "Earned income includes salaries, wages, tips, professional fees, and taxable scholarship and fellowship grants. Gross income is the total of your unearned and earned income." — [snapshot `2026-10-14--irs-pub-501-2025`](sources/2026-10-14--irs-pub-501-2025/content.md), accessed 2026-10-14
    - Source: IRS Publication 501 (2025), Table 8, line 7b — "If born before January 2, 1961, or blind, multiply $2,000 ($1,600 if married) by the number in the box above." — [snapshot `2026-10-14--irs-pub-501-2025`](sources/2026-10-14--irs-pub-501-2025/content.md), accessed 2026-10-14
@@ -256,7 +258,7 @@
 | Slug | Scenarios |
 |---|---|
 | `age_under_19` | 1, 4, 5 |
-| `income_limit` | 1, 2, 3, 6, 7, 8 |
+| `income_limit` | 1, 2, 3, 6, 7, 8, 9 |
 | `immigration_status_any` | — enforced by the program record; verified by `verify-program-record` |
 
 **Known scenario gaps**: `tax_household_rules` (degrades `income_limit`), `magi_income_definition` (degrades `income_limit`), `dependent_marital_status` (degrades `income_limit`), `self_employment_net_earnings` (degrades `income_limit`)
@@ -390,6 +392,22 @@
 * Person 4: age 12, child, no income
 
 **Kills**: a calculator that counts every income type the screener collects, including income MAGI leaves out.
+
+### Scenario 9: TANF cash assistance doesn't count
+
+**Checking**: `income_limit` — $2,000/month in TANF would put this family over the limit if it counted
+
+**Expected**: Eligible — $7,830/year estimated ($3,915 × 2 eligible members)
+
+**Steps**:
+
+* Location: ZIP `07102`, county `Essex County`
+* Person 1: age 38, head of household, wages $8,000/month, TANF cash assistance $2,000/month
+* Person 2: age 37, spouse, no income
+* Person 3: age 8, child, no income
+* Person 4: age 12, child, no income
+
+**Kills**: a calculator that counts public assistance, which is tax-exempt and so outside MAGI.
 
 ## 9. Research Sources
 

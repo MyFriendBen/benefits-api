@@ -144,12 +144,26 @@ class TestSpecScenarios(NjCoverAllKidsTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, PER_CHILD * 2)
 
+    def test_9_tanf_does_not_count(self):
+        screen = self.make_screen(household_size=4)
+        head = self.add_member(screen, "headOfHousehold", 38, monthly_income=8_000)
+        self.add_income(head, 2_000, "cashAssistance")
+        self.add_member(screen, "spouse", 37)
+        self.add_member(screen, "child", 8)
+        self.add_member(screen, "child", 12)
+
+        e = self.calculate(screen)
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, PER_CHILD * 2)
+
 
 class TestMagiExclusions(NjCoverAllKidsTestCase):
-    """SSI, child support, gifts and workers' compensation leave household income; the rest stays."""
+    """SSI, child support, gifts, workers' compensation and cash assistance leave household income;
+    the rest stays."""
 
     def test_each_excluded_type_is_left_out(self):
-        for income_type in ("sSI", "childSupport", "gifts", "workersComp"):
+        for income_type in ("sSI", "childSupport", "gifts", "workersComp", "cashAssistance", "cashAssistanceOther"):
             with self.subTest(income_type=income_type):
                 screen, (head, *_) = self.family(head_wages=8_000)
                 self.add_income(head, 2_000, income_type)

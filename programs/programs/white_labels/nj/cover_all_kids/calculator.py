@@ -10,9 +10,10 @@ class NjCoverAllKids(ProgramCalculator):
 
     Immigration status is open on the program row (`legal_status_required`), not here.
 
-    Income is MAGI for the screener's tax unit: SSI, child support, gifts and workers'
-    compensation are left out, and a dependent's income counts only if the dependent must
-    file a federal return for the year eligibility is judged in. The filing test follows
+    Income is MAGI for the screener's tax unit: SSI, child support, gifts, workers'
+    compensation and cash assistance (TANF and other, which is tax-exempt) are left out, and a
+    dependent's income counts only if the dependent must file a federal return for the year
+    eligibility is judged in. The filing test follows
     IRS Publication 501, Table 2 (single dependents) with the 2026 amounts from
     Rev. Proc. 2025-32.
 
@@ -28,7 +29,7 @@ class NjCoverAllKids(ProgramCalculator):
     fpl_percent = 3.55
     member_amount = 3_915
 
-    excluded_income_types = ["sSI", "childSupport", "gifts", "workersComp"]
+    excluded_income_types = ["sSI", "childSupport", "gifts", "workersComp", "cashAssistance", "cashAssistanceOther"]
     earned_income_types = ["wages", "selfEmployment"]
     social_security_types = ["sSDisability", "sSRetirement", "sSSurvivor", "sSDependent"]
 
