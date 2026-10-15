@@ -217,6 +217,13 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="DOE effective-date lag: the 200% column in force is the prior year's guideline",
         source="DOE Weatherization Program Notice 25-3",
     ),
+    ("nj", "nj_cover_all_kids"): Vintage(
+        edition="2026",
+        basis=Basis.TABLE_EDITION,
+        status=Status.CONFIRMED,
+        rule="NJ FamilyCare's published $9,763/month family-of-four limit is 355% of the 2026 guideline",
+        source="white_labels/nj/cover_all_kids/spec.md",
+    ),
     ("nc", "nc_aca"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
