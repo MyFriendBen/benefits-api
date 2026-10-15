@@ -2187,6 +2187,7 @@ class CoConfigurationData(ConfigurationData):
         },
         "uiOptions": {"default": ["no_results_more_help"], "211co": ["no_results_more_help", "211co"]},
         "defaultLanguage": {"default": "en-us"},
+        "footerPhone": {"default": "", "211co": "(866) 760-6489"},
     }
 
     override_text = {}
