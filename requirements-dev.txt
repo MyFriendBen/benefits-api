@@ -1,3 +1,4 @@
 # Local development tools. Not installed on Heroku, which reads requirements.txt only.
 -r requirements.txt
+black==26.5.1
 pre-commit==4.7.0

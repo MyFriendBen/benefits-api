@@ -13,7 +13,8 @@ Setup instructions are located in the [Wiki](https://github.com/Gary-Community-V
 ### Pre-commit hook
 
 A pre-commit hook runs [black](https://black.readthedocs.io/) on staged Python files, so formatting
-problems surface before CI rejects the PR. With the virtualenv at `venv/`, run once per clone:
+problems surface before CI rejects the PR. With a Python 3.11+ virtualenv at `venv/` (`.python-version`
+pins 3.12), run once per clone:
 
 ```bash
 make setup

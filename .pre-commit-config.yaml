@@ -2,8 +2,12 @@
 # CI (.github/workflows/format.yaml) runs the same black check on every PR;
 # this only catches it before you push.
 repos:
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    # Keep in sync with black in requirements.txt and format.yaml.
-    rev: 26.5.1
+  - repo: local
     hooks:
+      # Runs the black pinned in requirements-dev.txt, so there is no second pin to sync.
       - id: black
+        name: black
+        entry: venv/bin/python -m black
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
