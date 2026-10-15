@@ -1,16 +1,18 @@
 from django.db import migrations
+from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+from django.db.migrations.state import StateApps
 
 LIVE_CODE = "211_metro_chicago"
 SEEDED_CODE = "211chicago"
 NAME = "211 Metro Chicago"
 
 
-def _il_id(apps) -> int | None:
-    white_label = apps.get_model("screener", "WhiteLabel").objects.filter(code="il").first()
+def _il_id(apps: StateApps) -> int | None:
+    white_label = apps.get_model("screener", "WhiteLabel").objects.filter(code="il").order_by("id").first()
     return white_label.id if white_label else None
 
 
-def rekey_211_metro_chicago(apps, schema_editor) -> None:
+def rekey_211_metro_chicago(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     """Move the 211 Metro Chicago overlay onto the referrer code they already use.
 
     Prod has carried an admin-made `211_metro_chicago` row since before 0183 seeded
@@ -54,7 +56,7 @@ def rekey_211_metro_chicago(apps, schema_editor) -> None:
         )
 
 
-def restore_seeded_referrer(apps, schema_editor) -> None:
+def restore_seeded_referrer(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     """Put back 0183's hidden `211chicago` row. `211_metro_chicago` stays: in prod it
     predates this migration, so reversing must not delete it."""
     white_label_id = _il_id(apps)
@@ -74,7 +76,8 @@ def restore_seeded_referrer(apps, schema_editor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0186_rename_nc_nslp"),
+        ("programs", "0187_add_dps_referrer"),
+        ("screener", "0168_household_rows_default_id_ordering"),
     ]
 
     operations = [
