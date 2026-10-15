@@ -1,0 +1,9 @@
+# Local git hooks. Install once per clone with `make setup` (see README).
+# CI (.github/workflows/format.yaml) runs the same black check on every PR;
+# this only catches it before you push.
+repos:
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    # Keep in sync with black in requirements.txt and format.yaml.
+    rev: 26.5.1
+    hooks:
+      - id: black

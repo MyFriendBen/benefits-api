@@ -1,0 +1,3 @@
+# Local development tools. Not installed on Heroku, which reads requirements.txt only.
+-r requirements.txt
+pre-commit==4.7.0
