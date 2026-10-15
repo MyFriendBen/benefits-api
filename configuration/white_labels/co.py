@@ -2060,7 +2060,7 @@ class CoConfigurationData(ConfigurationData):
             "pueblo": "PC_MFBLogo",
             "pitkin": "PitkinCounty_MFBLogo",
             "cudenver": "CUDenver_Logo",
-            "dps": "DPS_MFBLogo",
+            "co_dps": "DPS_MFBLogo",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
@@ -2135,8 +2135,8 @@ class CoConfigurationData(ConfigurationData):
                 "id": "referrerHook.logoAlts.cudenver",
                 "defaultMessage": "CU Denver home page button",
             },
-            "dps": {
-                "id": "referrerHook.logoAlts.dps",
+            "co_dps": {
+                "id": "referrerHook.logoAlts.co_dps",
                 "defaultMessage": "Denver Public Schools and MyFriendBen home page button",
             },
         },

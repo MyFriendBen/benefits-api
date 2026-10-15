@@ -2,12 +2,12 @@ from django.db import migrations
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.migrations.state import StateApps
 
-# Denver Public Schools links to the CO screener at /co?referrer=dps.
+# Denver Public Schools links to the CO screener at /co?referrer=co_dps.
 # add_config only writes the referrer_data blob, so the partner row that gives
 # analytics a display name is created here. Hidden from the referral-source
 # menu: DPS users arrive by link, so the overlay already attributes them.
 WHITE_LABEL_CODE = "co"
-REFERRER_CODE = "dps"
+REFERRER_CODE = "co_dps"
 NAME = "Denver Public Schools"
 
 
