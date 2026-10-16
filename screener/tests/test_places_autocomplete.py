@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.test import TestCase, override_settings
 from benefits.tests.cache_override import LOCAL_CACHE
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
 from integrations.clients.google_places import GooglePlacesClient
@@ -128,7 +129,7 @@ class TestGooglePlacesClient(TestCase):
 
 @override_settings(CACHES=LOCAL_CACHE)
 class TestPlacesAutocompleteView(APITestCase):
-    """Integration tests for GET /api/places/autocomplete/."""
+    """Integration tests for GET /api/places/autocomplete/; POST runs the same cases below."""
 
     URL = "/api/places/autocomplete/"
 
@@ -136,6 +137,9 @@ class TestPlacesAutocompleteView(APITestCase):
         {"description": "123 Main St, Denver, CO 80014", "place_id": "abc123"},
         {"description": "123 Main Ave, Boulder, CO 80302", "place_id": "def456"},
     ]
+
+    def _call(self, params: dict[str, str] | None = None) -> Response:
+        return self.client.get(self.URL, params or {})
 
     def setUp(self):
         patcher = patch("screener.views.PlacesRateThrottle.allow_request", return_value=True)
@@ -145,12 +149,12 @@ class TestPlacesAutocompleteView(APITestCase):
     # ── empty / missing input ─────────────────────────────────────────────────
 
     def test_returns_empty_list_when_input_param_is_missing(self):
-        response = self.client.get(self.URL)
+        response = self._call()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
     def test_returns_empty_list_when_input_is_blank(self):
-        response = self.client.get(self.URL, {"input": "   "})
+        response = self._call({"input": "   "})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
@@ -159,7 +163,7 @@ class TestPlacesAutocompleteView(APITestCase):
     @patch("screener.views.GooglePlacesClient.autocomplete_address")
     def test_google_api_error_status_returns_502(self, mock_autocomplete):
         mock_autocomplete.side_effect = requests.RequestException("Google Places API error status: REQUEST_DENIED")
-        response = self.client.get(self.URL, {"input": "123 Main"})
+        response = self._call({"input": "123 Main"})
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
         self.assertIn("error", response.data)
 
@@ -168,24 +172,33 @@ class TestPlacesAutocompleteView(APITestCase):
         err = requests.HTTPError()
         err.response = Mock(status_code=403)
         mock_autocomplete.side_effect = err
-        response = self.client.get(self.URL, {"input": "123 Main"})
+        response = self._call({"input": "123 Main"})
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
         self.assertIn("error", response.data)
 
     @patch("screener.views.GooglePlacesClient.autocomplete_address")
     def test_network_failure_returns_502(self, mock_autocomplete):
         mock_autocomplete.side_effect = requests.RequestException("timeout")
-        response = self.client.get(self.URL, {"input": "123 Main"})
+        response = self._call({"input": "123 Main"})
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
         self.assertIn("error", response.data)
-        self.assertIn("detail", response.data)
+
+    @patch("screener.views.GooglePlacesClient.autocomplete_address")
+    def test_network_failure_does_not_echo_upstream_url(self, mock_autocomplete):
+        mock_autocomplete.side_effect = requests.ConnectionError(
+            "Max retries exceeded with url: /maps/api/place/autocomplete/json?input=123+Main&key=fake-test-key"
+        )
+        response = self._call({"input": "123 Main"})
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+        self.assertNotIn("fake-test-key", str(response.data))
+        self.assertNotIn("123+Main", str(response.data))
 
     # ── 200: happy path ───────────────────────────────────────────────────────
 
     @patch("screener.views.GooglePlacesClient.autocomplete_address")
     def test_happy_path_returns_predictions(self, mock_autocomplete):
         mock_autocomplete.return_value = self.MOCK_PREDICTIONS
-        response = self.client.get(self.URL, {"input": "123 Main"})
+        response = self._call({"input": "123 Main"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]["description"], "123 Main St, Denver, CO 80014")
@@ -194,12 +207,19 @@ class TestPlacesAutocompleteView(APITestCase):
     @patch("screener.views.GooglePlacesClient.autocomplete_address")
     def test_input_is_trimmed_before_forwarding(self, mock_autocomplete):
         mock_autocomplete.return_value = []
-        self.client.get(self.URL, {"input": "  123 Main  "})
+        self._call({"input": "  123 Main  "})
         mock_autocomplete.assert_called_once_with("123 Main")
 
     @patch("screener.views.GooglePlacesClient.autocomplete_address")
     def test_returns_empty_list_when_no_predictions(self, mock_autocomplete):
         mock_autocomplete.return_value = []
-        response = self.client.get(self.URL, {"input": "zzz"})
+        response = self._call({"input": "zzz"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
+
+
+class TestPlacesAutocompleteViewPost(TestPlacesAutocompleteView):
+    """The same cases over POST, which carries the address in the JSON body instead of the URL."""
+
+    def _call(self, params: dict[str, str] | None = None) -> Response:
+        return self.client.post(self.URL, params or {}, format="json")
