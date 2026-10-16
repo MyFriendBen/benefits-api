@@ -1,0 +1,117 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"7812": {"age": {"2024": 41}, "is_full_time_college_student":
+      {"2024": false}}, "7813": {"age": {"2024": 17}, "is_full_time_college_student":
+      {"2024": false}}}, "tax_units": {"main_tax_unit": {"members": ["7812", "7813"]}},
+      "families": {"family": {"members": ["7812", "7813"]}}, "households": {"household":
+      {"members": ["7812", "7813"], "state_code": {"2024": "IL"}}}, "spm_units": {"spm_unit":
+      {"members": ["7812", "7813"], "il_tanf_countable_gross_earned_income": {"2024":
+      10800}, "il_tanf_countable_unearned_income": {"2024": 0}, "il_tanf": {"2024":
+      null}}}, "marital_units": {}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '609'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"7812": {"age":
+        {"2024": 41}, "is_full_time_college_student": {"2024": false}}, "7813": {"age":
+        {"2024": 17}, "is_full_time_college_student": {"2024": false}}}, "tax_units":
+        {"main_tax_unit": {"members": ["7812", "7813"]}}, "families": {"family": {"members":
+        ["7812", "7813"]}}, "households": {"household": {"members": ["7812", "7813"],
+        "state_code": {"2024": "IL"}}}, "spm_units": {"spm_unit": {"members": ["7812",
+        "7813"], "il_tanf_countable_gross_earned_income": {"2024": 10800}, "il_tanf_countable_unearned_income":
+        {"2024": 0}, "il_tanf": {"2024": 0.0}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "1.755.0", "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '730'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 01:34:31 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - 26f9b049-db66-4af9-b507-16abfda72cbc
+      traceparent:
+      - 00-67cc7151c60b4a2ac777782a0866ae8d-6926c5e025222f5e-01
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"household": {"people": {"7812": {"age": {"2024": 41}, "is_full_time_college_student":
+      {"2024": false}, "employment_income": {"2024": 7200}, "is_tax_unit_head": {"2024":
+      true}, "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent": {"2024":
+      false}}, "7813": {"age": {"2024": 17}, "is_full_time_college_student": {"2024":
+      false}, "employment_income": {"2024": 3600}, "is_tax_unit_head": {"2024": false},
+      "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent": {"2024": true}}},
+      "tax_units": {"main_tax_unit": {"members": ["7812", "7813"]}}, "families": {"family":
+      {"members": ["7812", "7813"]}}, "households": {"household": {"members": ["7812",
+      "7813"], "state_code": {"2024": "IL"}}}, "spm_units": {"spm_unit": {"members":
+      ["7812", "7813"], "il_tanf": {"2024": null}}}, "marital_units": {}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '809'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"7812": {"age":
+        {"2024": 41}, "is_full_time_college_student": {"2024": false}, "employment_income":
+        {"2024": 7200}, "is_tax_unit_head": {"2024": true}, "is_tax_unit_spouse":
+        {"2024": false}, "is_tax_unit_dependent": {"2024": false}}, "7813": {"age":
+        {"2024": 17}, "is_full_time_college_student": {"2024": false}, "employment_income":
+        {"2024": 3600}, "is_tax_unit_head": {"2024": false}, "is_tax_unit_spouse":
+        {"2024": false}, "is_tax_unit_dependent": {"2024": true}}}, "tax_units": {"main_tax_unit":
+        {"members": ["7812", "7813"]}}, "families": {"family": {"members": ["7812",
+        "7813"]}}, "households": {"household": {"members": ["7812", "7813"], "state_code":
+        {"2024": "IL"}}}, "spm_units": {"spm_unit": {"members": ["7812", "7813"],
+        "il_tanf": {"2024": 5165.0}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "1.755.0", "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '933'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 01:34:31 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - 69022444-b60b-451a-8af5-33cf3ab90d66
+      traceparent:
+      - 00-6c023423fe2b4df08848f953ca2df090-7526fc82439983bd-01
+    status:
+      code: 200
+      message: OK
+version: 1
