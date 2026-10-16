@@ -22,6 +22,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
 from benefits.cache_config import redis_pool_kwargs
+from benefits.sentry_scrub import scrub_event
 
 EXTRA_LANG_INFO = {
     "am": {
@@ -327,6 +328,7 @@ if config("SENTRY_DSN", None) is not None:
         dsn=config("SENTRY_DSN"),
         integrations=[DjangoIntegration()],
         environment="dev" if DEBUG else "production",
+        before_send=scrub_event,
     )
 
 django_heroku.settings(locals())
