@@ -36,6 +36,10 @@ from screener.models import Insurance
 # 1.821.2 and frontier 1.821.10 return identical values for every scenario here, so no
 # PolicyEngineConfig pin is needed to ship.
 PE_VERSION = "1.821.2"
+PE_VERSION_REASON = (
+    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
+    "re-recorded at PE_TEST_VERSION."
+)
 YEAR = "2026"
 
 # Age 35 at the 2026 coverage year, stated in the spec as birth month/year March 1991. Fixed
@@ -47,6 +51,7 @@ AGE = 35
 @pytest.mark.integration
 class TestKsAcaScenarios(PeIntegrationTestCase):
     pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     def _single_adult(self, screen_id, zipcode, county, annual_income, employer_coverage=False):
         """The spec's household: one adult, no dependents.
