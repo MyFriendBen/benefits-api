@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_wichita_public_library",
     "category_type": {
-      "external_name": "ks_education_resources",
-      "name": "Education and literacy",
-      "icon": "job_resources"
+      "external_name": "education_resources"
     },
     "type_short": [
       "job resources"

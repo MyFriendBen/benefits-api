@@ -632,18 +632,24 @@ class TranslationOverrideAdmin(SecureAdmin):
     action_buttons.allow_tags = True
 
 
-class ProgramCategoryAdmin(SecureAdmin):
-    search_fields = ("external_name",)
-    list_display = ["get_str", "external_name", "shared", "action_buttons"]
-    exclude = ["name", "description"]
+class SharedRowAdminMixin:
+    """
+    Admin behaviour for models whose rows can be shared across white labels.
 
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        return False
+    A null white_label means the row is shared: one row used by every white
+    label. SecureAdmin scopes to white_label__in=[user's white labels], which
+    hides shared rows from every non-superuser, so any white label admin may see
+    and edit them here. Because an edit is not scoped to the editor's own state,
+    the change form says so and names the white labels affected.
 
-    def get_queryset(self, request: HttpRequest) -> QuerySet[ProgramCategory]:
-        # SecureAdmin scopes to white_label__in=[user's white labels], which
-        # excludes shared categories because their white_label is null. Any
-        # white label admin may see and edit them.
+    `shared_usage_relation` names the reverse relation whose rows carry the
+    white labels using a shared row.
+    """
+
+    shared_usage_relation: str
+    shared_noun: str
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
         qs = super(SecureAdmin, self).get_queryset(request)
 
         if self._is_superuser(request):
@@ -651,16 +657,34 @@ class ProgramCategoryAdmin(SecureAdmin):
 
         return qs.filter(Q(white_label__in=request.user.white_labels.all()) | Q(white_label__isnull=True))
 
-    def has_obj_permission(self, request: HttpRequest, obj: ProgramCategory | None) -> bool:
-        # A shared category belongs to no single white label, so grant access to
-        # any white label admin rather than falling through to the
+    def has_obj_permission(self, request: HttpRequest, obj: Any) -> bool:
+        # A shared row belongs to no single white label, so grant access to any
+        # white label admin rather than falling through to the
         # `obj.white_label in ...` check, which is False for null.
         if obj is not None and obj.white_label is None and not self._is_superuser(request):
             return request.user.white_labels.exists()
 
         return super().has_obj_permission(request, obj)
 
-    def shared(self, obj: ProgramCategory) -> bool:
+    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        # Deleting a shared row strips it from every white label, so only a
+        # superuser may.
+        if obj is not None and obj.white_label is None and not self._is_superuser(request):
+            return False
+
+        return super().has_delete_permission(request, obj)
+
+    def get_readonly_fields(self, request: HttpRequest, obj: Any = None) -> tuple[str, ...]:
+        readonly = tuple(super().get_readonly_fields(request, obj))
+
+        # Changing white_label moves a row between shared and scoped, which
+        # hides it from, or exposes it to, every other white label.
+        if not self._is_superuser(request):
+            readonly += ("white_label",)
+
+        return readonly
+
+    def shared(self, obj: Any) -> bool:
         return obj.white_label is None
 
     shared.boolean = True
@@ -673,27 +697,32 @@ class ProgramCategoryAdmin(SecureAdmin):
         form_url: str = "",
         extra_context: dict | None = None,
     ) -> HttpResponse:
-        # A shared category is a single row used by every white label, so an edit
-        # here is not scoped to the editor's own state. Nothing else on the page
-        # conveys that, so say it explicitly and name who is affected.
-        category = self.get_queryset(request).filter(pk=object_id).first()
+        row = self.get_queryset(request).filter(pk=object_id).first()
 
-        if category is not None and category.white_label is None:
+        if row is not None and row.white_label is None:
+            usage = getattr(row, self.shared_usage_relation)
             affected = sorted(
-                {
-                    code
-                    for code in category.programs.values_list("white_label__code", flat=True).distinct()
-                    if code is not None
-                }
+                {code for code in usage.values_list("white_label__code", flat=True).distinct() if code is not None}
             )
             used_by = ", ".join(affected) if affected else "no white labels yet"
             messages.warning(
                 request,
-                f"“{category}” is a shared category. Changes to it — including its name and icon — "
+                f"“{row}” is a shared {self.shared_noun}. Changes to it — including its name and icon — "
                 f"apply to every white label that uses it ({used_by}), not just yours.",
             )
 
         return super().change_view(request, object_id, form_url, extra_context)
+
+
+class ProgramCategoryAdmin(SharedRowAdminMixin, SecureAdmin):
+    search_fields = ("external_name",)
+    list_display = ["get_str", "external_name", "shared", "action_buttons"]
+    exclude = ["name", "description"]
+    shared_usage_relation = "programs"
+    shared_noun = "category"
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
 
     def get_str(self, obj: ProgramCategory) -> str:
         return str(obj)
@@ -720,9 +749,11 @@ class ProgramCategoryAdmin(SecureAdmin):
     action_buttons.allow_tags = True
 
 
-class UrgentNeedTypeAdmin(SecureAdmin):
-    search_fields = ("name",)
-    list_display = ["get_str", "icon", "action_buttons"]
+class UrgentNeedTypeAdmin(SharedRowAdminMixin, SecureAdmin):
+    search_fields = ("external_name",)
+    list_display = ["get_str", "external_name", "icon", "shared", "action_buttons"]
+    shared_usage_relation = "urgent_needs"
+    shared_noun = "urgent need type"
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False

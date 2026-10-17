@@ -5,7 +5,7 @@
   "need": {
     "external_name": "ma_ticket_to_work",
     "category_type": {
-      "external_name": "ma_job_resources"
+      "external_name": "job_resources"
     },
     "type_short": [
       "job resources"
