@@ -50,7 +50,7 @@ class MedicareSavingsNC(MedicareSavings):
     def check_income_limits(self, e: MemberEligibility, member, spouse):
         """
         NC MQB-Q two-step income evaluation:
-        Step 1: SSI budgeting - individual or couple only, income <= 100% FPL, spouse income deemed.
+        Step 1: SSI budgeting - individual or couple only, income > 100% and <= 135% FPL, spouse income deemed.
         Step 2: Court-ordered family size - applicant + spouse + dependents under 18, no deeming.
         Eligible if either step passes.
         """
@@ -58,7 +58,7 @@ class MedicareSavingsNC(MedicareSavings):
         e.condition(self._passes_ssi_budgeting(member, spouse) or self._passes_family_size_methodology(member, spouse))
 
     def _passes_ssi_budgeting(self, member, spouse) -> bool:
-        """Step 1: individual/couple SSI budgeting, income <= 100% FPL.
+        """Step 1: individual/couple SSI budgeting, income > 100% and <= 135% FPL.
 
         1a. Classify the a/b into one of four categories:
 
@@ -112,9 +112,15 @@ class MedicareSavingsNC(MedicareSavings):
         if fpl is None:
             return False
 
-        if countable_income > fpl:
+        # Over 135% FPL (MQB-E ceiling): ineligible under SSI budgeting
+        if countable_income > fpl * self.max_income_percent:
             return False
-        # Income <= 100% FPL: only qualify for MSP if assets disqualify from full Medicaid
+        # 100-135% FPL (MQB-B / MQB-E): eligible
+
+        if countable_income > fpl:
+            return True
+        # <= 100% FPL: full Medicaid is the better benefit, so only show MSP
+        # if assets are over the Medicaid limit
         status = "married" if spouse else "single"
         return self.screen.household_assets > self.medicaid_asset_limit[status]
 

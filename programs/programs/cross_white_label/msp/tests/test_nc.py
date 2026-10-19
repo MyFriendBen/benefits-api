@@ -336,6 +336,62 @@ class TestJustOverFamilySizeLimit(TestCase):
         self.assertFalse(e.eligible)
 
 
+class TestScenario7SingleInMSPBand(TestCase):
+    """
+    Scenario 7: single, age 67, Medicare, SS $1,500/month, assets $5,000.
+    Countable: $18,000 - $240 disregard = $17,760.
+    $15,960 (100% FPL) < $17,760 <= $21,546 (135% FPL) → Step 1 passes directly, no asset check needed.
+    """
+
+    def setUp(self):
+        self.head = make_member(pk=1, age=67, yearly_unearned=18_000)
+        self.calculator = make_calculator([self.head], assets=5_000)
+
+    def test_head_is_eligible(self):
+        e = run_member_eligible(self.calculator, self.head)
+        self.assertTrue(e.eligible)
+
+
+class TestScenario8CoupleInMSPBand(TestCase):
+    """
+    Scenario 8: childless couple, both 65+, Medicare, combined SS $2,000/month, assets $8,000.
+    Classification: medicaid_couple (both Medicare-eligible, neither on SSI).
+    Combined countable: $24,000 - $240 disregard = $23,760.
+    $21,540 (100% FPL) < $23,760 <= $29,079 (135% FPL) → Step 1 passes, both eligible.
+    """
+
+    def setUp(self):
+        self.head = make_member(pk=1, age=67, yearly_unearned=12_000)
+        self.spouse = make_member(pk=2, age=65, relationship="spouse", yearly_unearned=12_000)
+        self.head.is_married.return_value = {"is_married": True, "married_to": self.spouse}
+        self.spouse.is_married.return_value = {"is_married": True, "married_to": self.head}
+        self.calculator = make_calculator([self.head, self.spouse], assets=8_000)
+
+    def test_head_is_eligible(self):
+        e = run_member_eligible(self.calculator, self.head)
+        self.assertTrue(e.eligible)
+
+    def test_spouse_is_eligible(self):
+        e = run_member_eligible(self.calculator, self.spouse)
+        self.assertTrue(e.eligible)
+
+
+class TestScenario9SingleOverMSPCeiling(TestCase):
+    """
+    Scenario 9: single, age 67, Medicare, SS $1,900/month, no dependents.
+    Countable: $22,800 - $240 disregard = $22,560.
+    $22,560 > $21,546 (135% FPL) → Step 1 fails; no dependents so Step 2 skipped → not eligible.
+    """
+
+    def setUp(self):
+        self.head = make_member(pk=1, age=67, yearly_unearned=22_800)
+        self.calculator = make_calculator([self.head], assets=5_000)
+
+    def test_head_is_not_eligible(self):
+        e = run_member_eligible(self.calculator, self.head)
+        self.assertFalse(e.eligible)
+
+
 class TestBenefitAmount(TestCase):
     """Eligible member receives the annual Part B premium: $203/month * 12 = $2,436/year."""
 
