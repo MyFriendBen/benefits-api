@@ -84,5 +84,7 @@ class MedicareSavings(ProgramCalculator):
 
         countable_income = earned + unearned + ssi
 
-        _, max_income = self.get_fpl_limits(self.screen.household_size)
+        household_size = 2 if spouse else 1
+
+        _, max_income = self.get_fpl_limits(household_size)
         e.condition(countable_income <= max_income)
