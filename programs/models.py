@@ -904,6 +904,25 @@ class Program(models.Model):
 
         return eligibility
 
+    def clean(self):
+        # Catches the admin case: year_type is still "hardcoded" but someone
+        # picked a dynamic row (THIS_YEAR_CALENDAR/THIS_YEAR_FISCAL) directly in
+        # the year dropdown. That combination is inherently inconsistent, reject
+        # it at form-submit time rather than letting save() silently correct it
+        # out from under the admin. Scripts/commands that go straight to .save()
+        # (e.g. set_year_type demoting a program) skip clean() entirely, that
+        # path is handled by save() itself, below.
+        if self.year_type == "hardcoded" and self.year_id and self.year.year in DYNAMIC_FPL_YEARS:
+            raise ValidationError(
+                {
+                    "year": (
+                        "A hardcoded program can't point at a dynamic row "
+                        f"({self.year.year}). Set Year type to Calendar Year or Fiscal "
+                        "Year instead, or pick a specific year."
+                    )
+                }
+            )
+
     def save(self, *args, **kwargs):
         # Normalize name_abbreviated to lowercase. It's used as a case-sensitive
         # key in several places — the calculator registry lookup above (.lower()),
@@ -927,7 +946,13 @@ class Program(models.Model):
         elif self.year_type == "fiscal_year":
             self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_FISCAL")
         elif self.year_type == "hardcoded" and self.year_id and self.year.year in DYNAMIC_FPL_YEARS:
-            self.year = None
+            # Demoted from a dynamic type back to hardcoded (e.g. via
+            # set_year_type, which saves directly and never goes through
+            # clean()). Freeze it at whatever period the shared row currently
+            # has rather than leaving `year` empty, an empty `year` 500s
+            # PolicyEngine calculators that do program.year.period.
+            period = self.year.period
+            self.year, _ = FederalPoveryLimit.objects.get_or_create(year=period, defaults={"period": period})
         super().save(*args, **kwargs)
 
     class Meta:

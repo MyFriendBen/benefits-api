@@ -392,11 +392,14 @@ class ProgramYearTypeSaveTests(TestCase):
         program.refresh_from_db()
         self.assertEqual(program.year_id, self.fiscal_fpl.id)
 
-    def test_demoting_to_hardcoded_clears_year(self):
+    def test_demoting_to_hardcoded_freezes_at_the_current_period(self):
         """A program demoted back to hardcoded must not keep riding whatever
         shared dynamic row it was last synced to, or it silently keeps moving
         every time an admin rolls that row's year forward while looking
-        "hardcoded" (and therefore fixed) in the admin."""
+        "hardcoded" (and therefore fixed) in the admin. It also must not be
+        left with no year at all, that 500s PolicyEngine calculators that read
+        program.year.period, so it freezes at the row matching the dynamic
+        row's current period instead."""
         program = Program.objects.new_program(self.white_label.code, "snap")
         program.year_type = "calendar_year"
         program.save()
@@ -406,7 +409,21 @@ class ProgramYearTypeSaveTests(TestCase):
         program.year_type = "hardcoded"
         program.save()
         program.refresh_from_db()
-        self.assertIsNone(program.year_id)
+        self.assertIsNotNone(program.year_id)
+        self.assertEqual(program.year.year, self.calendar_fpl.period)
+        self.assertEqual(program.year.period, self.calendar_fpl.period)
+
+    def test_hardcoded_pointing_at_a_dynamic_row_fails_clean(self):
+        """The admin case: year_type is still "hardcoded" but the year dropdown
+        was set directly to a dynamic row. save() can't silently correct this
+        out from under the admin the way it does for a programmatic demotion
+        (set_year_type never calls clean()), so clean() must reject it."""
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "hardcoded"
+        program.year = self.calendar_fpl
+
+        with self.assertRaises(ValidationError):
+            program.clean()
 
 
 class FederalPovertyLimitPeriodValidationTests(TestCase):
