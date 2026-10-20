@@ -6,6 +6,7 @@ from .ks import KsConfigurationData
 from .ma import MaConfigurationData
 from .mo import MoConfigurationData
 from .nc import NcConfigurationData
+from .nj import NjConfigurationData
 from .tx import TxConfigurationData
 from .wa import WaConfigurationData
 from configuration.white_labels.cesn import (
@@ -21,6 +22,7 @@ white_label_config: dict[str, ConfigurationData] = {
     "ma": MaConfigurationData,
     "mo": MoConfigurationData,
     "nc": NcConfigurationData,
+    "nj": NjConfigurationData,
     "tx": TxConfigurationData,
     "wa": WaConfigurationData,
 }

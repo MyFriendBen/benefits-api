@@ -1,0 +1,39 @@
+{
+  "white_label": { "code": "nj" },
+  "program_category": { "external_name": "health_care" },
+  "program": {
+    "name_abbreviated": "nj_cover_all_kids",
+    "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+    "name": "NJ FamilyCare Cover All Kids",
+    "description_short": "Free or low-cost health coverage for New Jersey kids, whatever their immigration status",
+    "description": "Cover All Kids is part of NJ FamilyCare, New Jersey's public health insurance. It covers children no matter their immigration status.\n\nYour child gets a health plan that pays for check-ups, doctor visits, dental and eye care, prescriptions, hospital care, and mental health care. Most families pay nothing, and some pay small co-pays at the doctor. The amount we show is our estimate of what a similar private health plan would cost your family for one child for a year. The real price depends on where you live and your child's age.\n\nYou don't need a Social Security number or immigration papers for your child. You'll be asked where you live and how much your family earns. You can also apply by phone at 1-800-701-0710 (TTY: 711), with free interpreters, or in person at your County Board of Social Services. Coverage has to be renewed once a year, so watch for mail from NJ FamilyCare and reply on time.\n\nSelect \"Apply Online\" to start your NJ FamilyCare application.",
+    "website_description": "Free or low-cost health coverage for New Jersey kids, whatever their immigration status",
+    "learn_more_link": "https://nj.gov/coverallkids/",
+    "apply_button_link": "https://dmahs-nj.my.site.com/familycare/quickstart",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "year": "2026",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "nj_cover_all_kids_address_income",
+      "text": "Your address and family income. No Social Security number or immigration papers needed for your child"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "nj_familycare_health_benefits_coordinator",
+      "name": "NJ FamilyCare Health Benefits Coordinator",
+      "email": "",
+      "description": "NJ FamilyCare's health benefits coordinators take applications by phone and offer free interpreters in your language.",
+      "assistance_link": "https://nj.gov/coverallkids/faqs/",
+      "phone_number": "+18007010710"
+    }
+  ]
+}

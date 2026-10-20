@@ -342,8 +342,5 @@ Pat identified these four as the key scenarios to run:
 - https://www.irs.gov/credits-deductions/individuals/child-tax-credit
 - https://www.irs.gov/forms-pubs/about-schedule-8812-form-1040
 
-## JSON Test Cases
-File: `validations/management/commands/import_validations/data/wa_ctc.json`
-
 ## Generated Program Configuration
 File: `programs/management/commands/import_program_config_data/data/wa_ctc_initial_config.json`

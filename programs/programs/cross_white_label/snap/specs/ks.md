@@ -625,9 +625,7 @@ Previously triaged and cleared for MFB — #8296 (COFA) and OBBBA non-citizen na
 - [Legal Information Institute — 7 U.S.C. § 2014](https://www.law.cornell.edu/uscode/text/7/2014)
 
 
-## JSON Test Cases
-
-File: `validations/management/commands/import_validations/data/ks_snap.json`
+## Expected Scenario Outcomes
 
 Scenarios 1–14. Expected `eligible`:
 - `true`: 1, 2, 3, 7, 8, 10, 12, 13, 14

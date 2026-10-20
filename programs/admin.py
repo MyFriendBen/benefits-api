@@ -1,3 +1,5 @@
+from typing import Any, Optional
+
 from django.contrib import admin, messages
 from django.db.models import Max, Q, QuerySet
 from django.db.models import Field as ModelField
@@ -9,7 +11,9 @@ from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.utils.html import format_html
 from unfold.admin import TabularInline
+from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
+from .federal import is_federal
 from .models import (
     LegalStatus,
     Program,
@@ -98,10 +102,64 @@ class ProgramNavigatorInline(TabularInline):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+def deactivates_federal_program(form: forms.ModelForm) -> bool:
+    """Whether saving `form` switches off a federal program, which hides it from every white label.
+
+    Reads whether the program was federal when the form opened: by `save_model`, `form.instance`
+    already carries the submitted white label, so a program moved off federal would read as a
+    state one.
+    """
+    was_federal = getattr(form, "initially_federal", None)
+    if was_federal is None:
+        was_federal = form.instance.pk is not None and is_federal(form.instance)
+    return (
+        form.instance.pk is not None
+        and was_federal
+        and "active" in form.changed_data
+        and not form.cleaned_data.get("active")
+    )
+
+
+class ProgramAdminForm(forms.ModelForm):
+    confirm_federal_deactivation = forms.BooleanField(
+        required=False,
+        widget=UnfoldBooleanWidget,
+        label="Confirm deactivation",
+        help_text="This is a federal program. Unticking Active hides it from every white label, not one state.",
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.initially_federal: bool | None = is_federal(self.instance) if self.instance.pk is not None else None
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        if deactivates_federal_program(self) and not cleaned_data.get("confirm_federal_deactivation"):
+            self.add_error(
+                "confirm_federal_deactivation",
+                "Deactivating a federal program hides it from every white label. Tick this box to confirm.",
+            )
+        return cleaned_data
+
+
+class ProgramChangelistForm(forms.ModelForm):
+    """The list page's Active checkbox, locked on active federal programs.
+
+    Switching one off needs the confirmation on the edit form, which a list row can't show.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is not None and self.instance.active and is_federal(self.instance):
+            self.fields["active"].disabled = True
+
+
 class ProgramAdmin(SecureAdmin):
+    form = ProgramAdminForm
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "name_abbreviated", "active", "action_buttons"]
     list_editable = ["active"]
+    list_select_related = ["white_label"]
     list_filter = [
         "active",
         "low_confidence",
@@ -145,6 +203,31 @@ class ProgramAdmin(SecureAdmin):
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
+
+    def get_fields(self, request: HttpRequest, obj: Optional[Program] = None) -> list[str]:
+        fields = list(super().get_fields(request, obj))
+        if obj is not None and is_federal(obj) and obj.active:
+            fields.insert(fields.index("active") + 1, "confirm_federal_deactivation")
+        return fields
+
+    def get_changelist_form(self, request: HttpRequest, **kwargs: Any) -> type[forms.ModelForm]:
+        return super().get_changelist_form(request, form=ProgramChangelistForm, **kwargs)
+
+    def save_model(self, request: HttpRequest, obj: Program, form: forms.ModelForm, change: bool) -> None:
+        deactivated = deactivates_federal_program(form)
+        super().save_model(request, obj, form, change)
+        if not deactivated:
+            return
+
+        # Which state rows replace this one isn't stated: a federal program is prefixed
+        # (`federal_trump_account`), so the rows it replaces can't be found by name, and
+        # saying "no state version replaces it" from an empty name match would report a
+        # safe state that was never checked.
+        messages.warning(
+            request,
+            f"Federal program '{obj.name_abbreviated}' is now inactive and hidden from every white label. "
+            "Check that its state versions are active if the program is still meant to be offered.",
+        )
 
     @admin.display(ordering="name", description="Program")
     def get_str(self, obj: Program) -> str:

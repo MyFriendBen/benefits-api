@@ -387,9 +387,7 @@
 - [SNAP Benefit Calculator — Washington](https://snapbenefitcalculator.com/washington-snap-calculator/)
 
 
-## JSON Test Cases
-
-File: `validations/management/commands/import_validations/data/wa_snap.json`
+## Expected Scenario Outcomes
 
 Scenarios 1–12 (scenario 14 removed — the premise that a pregnant woman's unborn child counts as a second household member is incorrect for WA SNAP under federal rules and WAC 388-408-0015).
 

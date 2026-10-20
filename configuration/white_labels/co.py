@@ -2060,6 +2060,7 @@ class CoConfigurationData(ConfigurationData):
             "pueblo": "PC_MFBLogo",
             "pitkin": "PitkinCounty_MFBLogo",
             "cudenver": "CUDenver_Logo",
+            "dps": "DPS_MFBLogo",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
@@ -2134,6 +2135,10 @@ class CoConfigurationData(ConfigurationData):
                 "id": "referrerHook.logoAlts.cudenver",
                 "defaultMessage": "CU Denver home page button",
             },
+            "dps": {
+                "id": "referrerHook.logoAlts.dps",
+                "defaultMessage": "Denver Public Schools and MyFriendBen home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {"default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"}},
@@ -2182,6 +2187,7 @@ class CoConfigurationData(ConfigurationData):
         },
         "uiOptions": {"default": ["no_results_more_help"], "211co": ["no_results_more_help", "211co"]},
         "defaultLanguage": {"default": "en-us"},
+        "footerPhone": {"default": "", "211co": "(866) 760-6489"},
     }
 
     override_text = {}

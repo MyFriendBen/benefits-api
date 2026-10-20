@@ -14,6 +14,7 @@ new gating program is covered by these tests the day it is written.
 """
 
 import ast
+import inspect
 import re
 import subprocess
 import sys
@@ -67,14 +68,16 @@ def _string_assignments(class_node: ast.ClassDef) -> dict:
     return values
 
 
-def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> list:
+def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> tuple[list, list, list]:
     """Every program code passed to `self.program_eligible(...)` inside this class.
 
     Resolves a literal argument directly, and a loop variable back to the class attribute
-    it iterates. An argument that resolves to neither is reported so it cannot pass
-    unnoticed.
+    it iterates. `self.any_program_eligible(self.<attr>)` on an attribute this class does
+    not assign is a base reading codes its subclasses declare, so the attribute name is
+    returned for `_inherited_gates` to resolve. Any other argument is reported so it cannot
+    pass unnoticed.
     """
-    codes, unresolved = [], []
+    codes, unresolved, inherited = [], [], []
     # Loop variable -> the attribute it iterates: `for program in self.presumptive_eligibility`
     loop_sources = {}
     for node in ast.walk(class_node):
@@ -100,9 +103,24 @@ def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> list:
             codes.extend(attrs[loop_sources[arg.id]])
         elif isinstance(arg, ast.Attribute) and arg.attr in attrs:
             codes.extend(attrs[arg.attr])
+        elif node.func.attr == "any_program_eligible" and isinstance(arg, ast.Attribute):
+            inherited.append(arg.attr)
         else:
             unresolved.append(ast.dump(arg))
-    return codes, unresolved
+    return codes, unresolved, inherited
+
+
+def _inherited_gates(path: Path, class_name: str, attribute: str, registries: dict) -> list:
+    """(path, program_code, upstream) for each registered subclass of the class `class_name`
+    in `path`, read off the subclass's own value of `attribute`."""
+    gates = []
+    for code, Calculator in registries.items():
+        for ancestor in Calculator.__mro__[1:]:
+            if ancestor.__name__ == class_name and Path(inspect.getfile(ancestor)).resolve() == path.resolve():
+                subclass_path = Path(inspect.getfile(Calculator)).resolve()
+                gates.extend((subclass_path, code, upstream) for upstream in getattr(Calculator, attribute))
+                break
+    return gates
 
 
 def _all_calculator_classes() -> dict:
@@ -145,6 +163,7 @@ def _program_code(class_node: ast.ClassDef) -> Optional[str]:
 
 def find_program_gates():
     """Every (path, gating program_code, depended-on program code) in the tree."""
+    registries = _all_calculator_classes()
     gates = []
     for path in PROGRAMS_ROOT.rglob("*.py"):
         if "/tests/" in path.as_posix():
@@ -156,10 +175,12 @@ def find_program_gates():
             if not isinstance(node, ast.ClassDef):
                 continue
             attrs = _string_assignments(node)
-            codes, _ = _gate_arguments(node, attrs)
+            codes, _, inherited = _gate_arguments(node, attrs)
             gating_code = _program_code(node)
             for upstream_code in sorted(set(codes)):
                 gates.append((path, gating_code, upstream_code))
+            for attribute in sorted(set(inherited)):
+                gates.extend(_inherited_gates(path, node.name, attribute, registries))
     return gates
 
 
@@ -175,7 +196,7 @@ def find_unresolved_gate_arguments():
         for node in ast.walk(ast.parse(source)):
             if not isinstance(node, ast.ClassDef):
                 continue
-            _, bad = _gate_arguments(node, _string_assignments(node))
+            _, bad, _ = _gate_arguments(node, _string_assignments(node))
             for dump in bad:
                 unresolved.append((path, dump))
     return unresolved
@@ -204,6 +225,21 @@ class TestProgramGatesAreDiscoverable(SimpleTestCase):
         self.assertIn(("cesn_xceleap", "cesn_leap"), found)
         self.assertIn(("cesn_xceleap", "cesn_cowap"), found)
         self.assertIn(("cesn_bheap", "cesn_care"), found)
+
+    def test_a_base_reading_its_subclasses_codes_resolves_per_subclass(self):
+        """`MfbHeadStart` calls `any_program_eligible(self.gates_on_any)` and declares no
+        codes itself; each state subclass does. The gate belongs to the subclass, in its own
+        file, or the subclass's declaration reads as stale and its upstream goes unordered."""
+        from programs.programs.cross_white_label.head_start.mfb_base import MfbHeadStart
+
+        class GatedHeadStart(MfbHeadStart):
+            program_code = "test_gated_head_start"
+            gates_on_any = ("test_snap",)
+
+        base_path = Path(inspect.getfile(MfbHeadStart))
+        gates = _inherited_gates(base_path, "MfbHeadStart", "gates_on_any", {"test_gated_head_start": GatedHeadStart})
+
+        self.assertEqual(gates, [(Path(__file__).resolve(), "test_gated_head_start", "test_snap")])
 
     def test_every_gating_calculator_declares_a_program_code(self):
         for path, gating_code, _ in find_program_gates():

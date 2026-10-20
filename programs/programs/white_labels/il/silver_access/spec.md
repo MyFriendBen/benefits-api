@@ -69,7 +69,7 @@ None identified. Silver Access does not rank eligible applicants by any characte
 - **Methodology**: Household annual benefit = **$1,800 × (number of eligible members)**. The frontend displays this as ~$150 per eligible member per month.
   - "Eligible member" = a household member who satisfies criteria 2–6: within the income limit, lawfully present (citizen/LPR/DACA), not enrolled in/eligible for Medicaid or Medicare, and not covered by employer/VA insurance.
 - **Real-world cap (data gap):** actual assistance is capped at the residual premium after APTC (premium minus the member's APTC). The screener does not collect the plan premium or APTC amount, so the calculator **estimates at the $150/member/month cap → $1,800/member/year**. This may overstate the benefit for members whose residual premium is below $150/month. Surface the "up to $150" framing in the description.
-- **Display: monthly** via `value_format = null`. The annual value ($1,800/eligible member) is divided by 12 by the frontend and shown as ~$150/member/month. **All scenario expected values below are stated as annual dollar amounts** (the unit the calculator returns and the validation suite asserts).
+- **Display: monthly** via `value_format = null`. The annual value ($1,800/eligible member) is divided by 12 by the frontend and shown as ~$150/member/month. **All scenario expected values below are stated as annual dollar amounts** (the unit the calculator returns).
 - Source: Silver Access FAQs ("up to $150 per member per month"); 2026 Silver Access application (JotForm) terms ("assistance of up to $150 per member every month").
 
 ## Implementation Coverage

@@ -2,15 +2,23 @@ def translation(name, i, message):
     return {"default_message": message, "label": f"eligibility_message.{name}-{i}"}
 
 
+def _dollars(amount: float, other: float) -> str:
+    """Whole dollars, or cents when rounding would hide the difference from `other`."""
+    if amount != other and round(amount) == round(other):
+        return f"{amount:.2f}"
+
+    return str(round(amount))
+
+
 def income(income, max_income):
     """
     Household makes ${income} per year which must be less than ${max_income}
     """
     return (
         translation("income", 0, "Household makes"),
-        f" ${round(income)} ",
+        f" ${_dollars(income, max_income)} ",
         translation("income", 1, "per year which must be less than"),
-        f" ${round(max_income)}",
+        f" ${_dollars(max_income, income)}",
     )
 
 

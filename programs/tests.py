@@ -1,9 +1,11 @@
 from importlib import import_module
 from io import StringIO
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.apps import apps as global_apps
 from django.core.management import call_command
+from django.db import connection
 from django.db.utils import IntegrityError
 from django.test import SimpleTestCase, TestCase
 
@@ -13,9 +15,10 @@ from programs.models import (
     FederalPoveryLimit,
     FederalPovertyLimitValue,
     Program,
+    Referrer,
     _get_fpl_data,
 )
-from screener.models import WhiteLabel
+from screener.models import Screen, WhiteLabel
 
 
 class ProgramNameAbbreviatedNormalizationTests(TestCase):
@@ -246,3 +249,88 @@ class FederalPovertyLimitValueTests(TestCase):
         sync_fpl_values(dry_run=True)
 
         self.assertEqual(FederalPovertyLimitValue.objects.count(), before)
+
+
+class SwitchKsMo211ReferrersMigrationTests(TestCase):
+    """Covers migration 0189's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0189_add_211ks_211mo_referrers")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        self.ks = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        self.mo = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        for white_label, codes in ((self.ks, ("uwgkc", "uwplains")), (self.mo, ("uwgkc", "uwgsl"))):
+            for code in codes:
+                Referrer.objects.create(
+                    white_label=white_label, referrer_code=code, name=code, show_in_dropdown=True, is_partner=True
+                )
+
+    def _referrer(self, white_label: WhiteLabel, code: str) -> Referrer:
+        return Referrer.objects.get(white_label=white_label, referrer_code=code)
+
+    def test_adds_a_visible_partner_referrer_per_state(self) -> None:
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        for white_label, code, name in ((self.ks, "211ks", "2-1-1 Kansas"), (self.mo, "211mo", "2-1-1 Missouri")):
+            with self.subTest(code=code):
+                referrer = self._referrer(white_label, code)
+                self.assertEqual(referrer.name, name)
+                self.assertTrue(referrer.show_in_dropdown)
+                self.assertTrue(referrer.is_partner)
+
+    def test_hides_the_retired_referrers_without_deleting_them(self) -> None:
+        """Dashboards name past screens' partner from these rows, so they must survive."""
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        for white_label, code in ((self.ks, "uwgkc"), (self.ks, "uwplains"), (self.mo, "uwgkc"), (self.mo, "uwgsl")):
+            with self.subTest(white_label=white_label.code, code=code):
+                self.assertFalse(self._referrer(white_label, code).show_in_dropdown)
+
+    def test_keeps_an_existing_row_untouched(self) -> None:
+        Referrer.objects.create(
+            white_label=self.ks, referrer_code="211ks", name="Admin name", show_in_dropdown=False, is_partner=True
+        )
+
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        referrer = self._referrer(self.ks, "211ks")
+        self.assertEqual(referrer.name, "Admin name")
+        self.assertFalse(referrer.show_in_dropdown)
+
+    def test_reverse_restores_the_previous_menu(self) -> None:
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        self.migration.restore_referrers(global_apps, self.schema_editor)
+
+        self.assertFalse(Referrer.objects.filter(referrer_code__in=["211ks", "211mo"]).exists())
+        self.assertTrue(self._referrer(self.ks, "uwgkc").show_in_dropdown)
+        self.assertTrue(self._referrer(self.mo, "uwgsl").show_in_dropdown)
+
+    def test_reverse_keeps_a_new_referrer_that_screens_carry(self) -> None:
+        """Deleting it would turn those screens' dashboard partner into "Other"."""
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+        Screen.objects.create(white_label=self.ks, referrer_code="211ks", completed=False)
+
+        self.migration.restore_referrers(global_apps, self.schema_editor)
+
+        self.assertTrue(Referrer.objects.filter(white_label=self.ks, referrer_code="211ks").exists())
+        self.assertFalse(Referrer.objects.filter(white_label=self.mo, referrer_code="211mo").exists())
+
+    def test_hides_retired_referrers_on_every_white_label_with_the_code(self) -> None:
+        """The referral-options endpoint reads every white label with the code, not just the oldest."""
+        duplicate = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        Referrer.objects.create(
+            white_label=duplicate, referrer_code="uwgkc", name="uwgkc", show_in_dropdown=True, is_partner=True
+        )
+
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        self.assertFalse(self._referrer(duplicate, "uwgkc").show_in_dropdown)
+
+    def test_skips_a_database_without_the_white_labels(self) -> None:
+        Referrer.objects.all().delete()
+        WhiteLabel.objects.filter(code__in=["ks", "mo"]).delete()
+
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        self.assertFalse(Referrer.objects.exists())

@@ -38,7 +38,6 @@ The calculator should be intentionally inclusive where MFB does not capture scho
    - **How to implement:** Count household members with relationship `child`, `fosterChild`, or `grandChild` who are age 5 through 18, using `birth_month` and `birth_year` rather than relying only on deprecated `age`. Do not use the screener's `student` field for this check because that field is meant for postsecondary/student-status questions, not K-12 enrollment.
    - **Notes:** This is a screening proxy, not a perfect legal rule. Federal NSLP rules define a "child" by school enrollment/grade or certain eligible institution/afterschool settings, not by a simple household age band. Some students outside the age 5-18 proxy may qualify, such as a student still enrolled in high school, a child under 21 in an eligible institution/center, or a student with a disability in an eligible school program. MFB cannot verify grade level, K-12 enrollment, school-year start age, RCCI status, or eligible disability-program enrollment, so this should remain a partial data gap.
    - **Suggested screener improvement:** If MFB later adds a question, keep it simple, such as: "Does this child attend elementary, middle, or high school, or another school meal program?" Avoid using the postsecondary `student` field for this.
-   - **Dev note (validation):** `grandChild` is a valid relationship in the screener model and is used in production calculators (`il_ccap`, `co_first_step_savings`, `il_medicaid`). It is **not** currently in the `test_case_schema.json` relationship enum, so validation scenarios cannot include `grandChild` members. This is a schema limitation, not a spec issue. Validation coverage for grandchild households is deferred until the schema is updated.
    - **Sources:**
       - 7 CFR § 210.2
       - OSPI CNEEB Application
@@ -94,7 +93,6 @@ The calculator should be intentionally inclusive where MFB does not capture scho
      Note on the age-scoping alternative: an earlier draft justified keeping the flag unscoped by age on the grounds that scoping it would cost the former-foster-youth Medicaid and CO EITC pathways. **Neither is a current beneficiary.** PolicyEngine's Medicaid does not read `was_in_foster_care` at all — measured on a KS screen where the field *is* delivered, `medicaid` stayed `0.0` and `medicaid_category` stayed `"NONE"` — and CO never receives the field, because `CoHeadStart` is a custom `ProgramCalculator` with no `pe_inputs`. Both are **prospective** consumers that would need the adult signal once wired, so the argument holds as forward-looking rather than current. Today the two reasons above carry the decision on their own.
    - ⚠️ **WA does not receive the value at all.** The spillover above is real in `il`, `ks`, `ma`, `mo` and `tx`, where Head Start subclasses the PolicyEngine `HeadStart` base and therefore declares `FosterCareDependency`. `WaHeadStart` is a custom `ProgramCalculator` with no `pe_inputs`, and nothing else in WA declares that dependency, so `was_in_foster_care` is absent from every WA payload — verified against a WA screen with the tile ticked on both an adult and a preschooler. Neither the foster categorical pathway nor the spillover is live in WA today. Same in `co` and `nc`.
    - **Suggested screener improvement:** Do not add sensitive questions for this initial launch unless the team decides these pathways are important enough to screen directly. If added later, use simple optional yes/no questions, and avoid collecting more detail than needed.
-   - **Dev note (validation):** The `head_start` and `early_head_start` current benefits exist in the screener's current-benefits list but are **not** currently in the `test_case_schema.json` household properties. Validation scenarios that test the Head Start pathway (Spec Scenario 7 below) cannot be represented in the JSON format. Recommend a follow-up engineering ticket to add these fields to `test_case_schema.json` so the Head Start categorical pathway becomes validation-testable. Coverage gap is acknowledged in the current 3-scenario validation file.
    - **Sources:**
       - 7 CFR § 245.2
       - 7 CFR § 245.6(b)(8)
@@ -304,8 +302,6 @@ For mixed pay frequencies, annualize using the OSPI method:
 
 **Why this matters:** This validates the screenable child categorical pathway and checks that income does not block the categorical pathway.
 
-**Dev note:** This scenario cannot currently be expressed in the validation JSON because the `head_start` and `early_head_start` current benefits are not in `test_case_schema.json` household properties. See Criterion 5 dev note. The calculator should still implement this pathway.
-
 ### Scenario 8: Already receiving NSLP suppression
 
 **What this checks:** A household that reports already receiving NSLP should not receive a new recommendation for the same program.
@@ -341,9 +337,9 @@ For mixed pay frequencies, annualize using the OSPI method:
 
 **Why this matters:** This validates household-size income logic and the benefit value method for multiple likely eligible children.
 
-## Representative Validation Scenarios Used in `wa_nslp.json`
+## Representative Scenarios
 
-The validation file contains 3 scenarios chosen to give broad coverage of the eligibility space without duplicating test dimensions:
+These 3 scenarios were chosen to give broad coverage of the eligibility space without duplicating test dimensions:
 
 1. **Eligible by income — household of 3 with one school-age child below the free-meal income limit**
    - WA household of 3 (head + spouse + child age 7). Head earns `$2,000/mo` wages — well below the free-meal monthly limit (`$2,888` for HH size 3).
@@ -357,7 +353,7 @@ The validation file contains 3 scenarios chosen to give broad coverage of the el
    - WA household of 3 (head + spouse + child age 10). Head earns `$7,000/mo` wages — far above the reduced-price limit — but receiving SNAP (`has_benefit("snap")`).
    - Expected: eligible, estimated value `$828`. Validates the SNAP categorical pathway overrides the income test.
 
-These 3 cover: (a) the standard income-eligible golden path, (b) the most common disqualifying reason with a noise variable (Medicaid) thrown in, and (c) the highest-volume categorical override. Spec Scenarios 2 (boundary), 4 (no child), 6 (TANF), 7 (Head Start), 8 (suppression), and 9 (multi-child value scaling) are documented in the spec but not in `wa_nslp.json` due to either the 3-scenario design constraint or current test-schema limitations (see Criterion 5 dev note for Head Start).
+These 3 cover: (a) the standard income-eligible golden path, (b) the most common disqualifying reason with a noise variable (Medicaid) thrown in, and (c) the highest-volume categorical override.
 
 ## Source Verification Notes
 
