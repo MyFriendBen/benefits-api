@@ -68,6 +68,7 @@ class MfbHeadStart(ProgramCalculator, abstract=True):
         "income_type",
         "expense_type",
         "expense_amount",
+        "expense_frequency",
     ]
 
     def member_eligible(self, e: MemberEligibility) -> None:

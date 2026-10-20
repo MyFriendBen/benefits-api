@@ -16,11 +16,13 @@ from django.core.cache import cache
 from integrations.clients.hud_income_limits.client import (
     HudIncomeClient,
     HudIncomeClientError,
+    HudIncomeClientInputError,
     MtspAmiPercent,
     Section8AmiPercent,
 )
 from screener.models import Screen, WhiteLabel
 from benefits.tests.cache_override import LOCAL_CACHE
+from integrations.external_api_status import HUD, get_external_api_failures, track_external_api_failures
 
 
 # Shared test fixtures
@@ -888,3 +890,141 @@ class TestHudIncomeClientFmrAndSafmr(HudClientTestBase):
         client = self._client()
         with self.assertRaisesRegex(HudIncomeClientError, r"Bedroom count must be 0-4"):
             client.get_screen_fmr(self.screen, 5, 2026)
+
+
+class TestHudFailureReporting(HudClientTestBase):
+    """A failed lookup is reported where it happens, because the calculators swallow it.
+
+    Every HUD-backed calculator catches HudIncomeClientError and answers "not eligible
+    (income limit unknown)"; by then nothing knows the answer came from a failed lookup.
+    """
+
+    MTSP_RESPONSE = {"data": {"60percent": {"il60_p4": 79440}, "70percent": {"il70_p4": 88800}, "median_income": 90700}}
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.client = HudIncomeClient(api_token="test_token")
+        exc = patch("integrations.external_api_status.capture_exception")
+        msg = patch("integrations.external_api_status.capture_message")
+        self.sentry_exception = exc.start()
+        self.sentry_message = msg.start()
+        self.addCleanup(exc.stop)
+        self.addCleanup(msg.stop)
+
+    def lookup(self, call, *responses: Any) -> tuple[Exception, list[str]]:
+        """Run `call` against canned `_api_request` results inside a tracking context;
+        return the error it raised and the failures recorded."""
+        with track_external_api_failures(), patch.object(self.client, "_api_request", side_effect=responses):
+            with self.assertRaises(HudIncomeClientError) as raised:
+                call()
+            return raised.exception, get_external_api_failures()
+
+    def test_a_transport_failure_is_reported(self) -> None:
+        error, failures = self.lookup(
+            lambda: self.client.get_screen_mtsp_ami(self.screen, "60%", "2025"),
+            HudIncomeClientError("Connection failed."),
+        )
+
+        self.assertEqual(failures, [HUD])
+        self.sentry_exception.assert_called_once()
+        self.assertIs(self.sentry_exception.call_args.args[0], error)
+        self.sentry_message.assert_called_once()
+        self.assertEqual(self.sentry_message.call_args.kwargs["level"], "error")
+
+    def test_an_unrecognized_county_is_reported_like_an_outage(self) -> None:
+        """The household's outcome is identical either way: no income limit."""
+        self.screen.county = "Nowhere"
+
+        _, failures = self.lookup(
+            lambda: self.client.get_screen_il_ami(self.screen, "80%", "2025"), self.mock_counties_response
+        )
+
+        self.assertEqual(failures, [HUD])
+        self.sentry_exception.assert_called_once()
+
+    def test_a_response_missing_the_field_is_reported(self) -> None:
+        _, failures = self.lookup(
+            lambda: self.client.get_screen_mtsp_ami(self.screen, "80%", "2025"),
+            self.mock_counties_response,
+            self.MTSP_RESPONSE,
+        )
+
+        self.assertEqual(failures, [HUD])
+
+    def test_a_nested_lookup_reports_once(self) -> None:
+        """approximate_screen_mtsp_ami calls get_screen_mtsp_ami; both are decorated."""
+        _, failures = self.lookup(
+            lambda: self.client.approximate_screen_mtsp_ami(self.screen, "65%", "2025"),
+            HudIncomeClientError("Connection failed."),
+        )
+
+        self.assertEqual(failures, [HUD])
+        self.sentry_exception.assert_called_once()
+        self.sentry_message.assert_called_once()
+
+    def test_reports_once_without_a_tracking_context(self) -> None:
+        """The per-exception guard holds even where the per-run dedupe has nothing to use."""
+        with patch.object(self.client, "_api_request", side_effect=HudIncomeClientError("down")):
+            with self.assertRaises(HudIncomeClientError):
+                self.client.approximate_screen_mtsp_ami(self.screen, "65%", "2025")
+
+        self.sentry_exception.assert_called_once()
+
+    def test_a_household_over_eight_is_not_an_outage(self) -> None:
+        self.screen.household_size = 9
+
+        error, failures = self.lookup(lambda: self.client.get_screen_il_ami(self.screen, "80%", "2025"))
+
+        self.assertIsInstance(error, HudIncomeClientInputError)
+        self.assertEqual(failures, [])
+        self.sentry_exception.assert_not_called()
+        self.sentry_message.assert_not_called()
+
+    def test_too_many_bedrooms_is_not_an_outage(self) -> None:
+        error, failures = self.lookup(lambda: self.client.get_screen_fmr(self.screen, 5, 2026))
+
+        self.assertIsInstance(error, HudIncomeClientInputError)
+        self.assertEqual(failures, [])
+        self.sentry_message.assert_not_called()
+
+    def test_an_ami_percent_outside_the_mtsp_range_is_not_an_outage(self) -> None:
+        for percent in ("10%", "110%"):
+            with self.subTest(percent=percent):
+                error, failures = self.lookup(
+                    lambda: self.client.approximate_screen_mtsp_ami(self.screen, percent, "2025")
+                )
+
+                self.assertIsInstance(error, HudIncomeClientInputError)
+                self.assertEqual(failures, [])
+        self.sentry_message.assert_not_called()
+
+    def test_input_errors_are_still_hud_client_errors(self) -> None:
+        """Every calculator's existing `except HudIncomeClientError` keeps catching them."""
+        self.assertTrue(issubclass(HudIncomeClientInputError, HudIncomeClientError))
+
+    def test_a_successful_lookup_reports_nothing(self) -> None:
+        with track_external_api_failures(), patch.object(
+            self.client, "_api_request", side_effect=[self.mock_counties_response, self.MTSP_RESPONSE]
+        ):
+            self.assertEqual(self.client.get_screen_mtsp_ami(self.screen, "60%", "2025"), 79440)
+            self.assertEqual(get_external_api_failures(), [])
+
+        self.sentry_message.assert_not_called()
+
+
+class TestApiRequestDoesNotReportItself(HudClientTestBase):
+    """`_api_request` chains the requests error instead of sending its own event, so a
+    failure reaches Sentry once, from the public method, with the cause attached."""
+
+    def test_a_timeout_is_chained_not_captured(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+        timeout = requests.exceptions.Timeout("read timed out")
+
+        with patch.object(client._session, "get", side_effect=timeout), patch(
+            "integrations.external_api_status.capture_exception"
+        ) as sentry, patch("integrations.external_api_status.capture_message"):
+            with self.assertRaises(HudIncomeClientError) as raised:
+                client._api_request("fmr/listCounties/IL")
+
+        self.assertIs(raised.exception.__cause__, timeout)
+        sentry.assert_not_called()

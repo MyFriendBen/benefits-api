@@ -5,8 +5,9 @@ the list is non-empty. Integrations record into it, and `all_results` reads it b
 response. These run the real view path, so a failure recorded deep in a calculator or the
 PolicyEngine client has to survive the trip to the payload the frontend reads.
 
-Nurturing Futures stands in for every HUD-backed calculator: it is the one that records a
-HUD failure today.
+Nurturing Futures stands in for every HUD-backed calculator. The HUD client reports its own
+failures, so a HUD outage is simulated below the client's public methods, where the
+reporting runs, rather than by replacing them.
 """
 
 from datetime import date
@@ -22,7 +23,8 @@ from screener.models import Screen
 from screener.tests.helpers import seed_program
 from screener.views import all_results
 
-NF_HUD_LOOKUP = "programs.programs.white_labels.co.nf.calculator.hud_client.get_screen_mtsp_ami"
+HUD_ENTITY_LOOKUP = "integrations.clients.hud_income_limits.client.HudIncomeClient._get_entity_id"
+HUD_DATA_FETCH = "integrations.clients.hud_income_limits.client.HudIncomeClient._fetch_cached_data"
 NO_PE_RESULTS = {"eligibility": {}, "_pe_data": {}}
 
 
@@ -48,8 +50,15 @@ class TestExternalApiFailuresInResponse(TestCase):
                 record_external_api_failure(POLICY_ENGINE)
             return NO_PE_RESULTS
 
-        with patch(NF_HUD_LOOKUP, return_value=hud_limit, side_effect=hud_error), patch(
-            "screener.views.calc_pe_eligibility", side_effect=fake_pe
+        # MTSP 30% for a two-person household, in the shape HUD's mtspil endpoint returns.
+        hud_data = {"data": {"median_income": 1, "30percent": {"il30_p2": hud_limit}}}
+
+        with patch(HUD_ENTITY_LOOKUP, return_value="entity", side_effect=hud_error), patch(
+            HUD_DATA_FETCH, return_value=hud_data
+        ), patch("screener.views.calc_pe_eligibility", side_effect=fake_pe), patch(
+            "integrations.external_api_status.capture_exception"
+        ), patch(
+            "integrations.external_api_status.capture_message"
         ):
             return all_results(Screen.objects.get(pk=self.screen.pk))
 
@@ -60,12 +69,26 @@ class TestExternalApiFailuresInResponse(TestCase):
         results = self.results(hud_error=HudIncomeClientError("HUD unavailable"))
 
         self.assertEqual(results["external_api_failures"], [HUD])
+        self.assertTrue(results["missing_programs"], "the calculator swallowed the error, the flag did not")
+        self.assertFalse(self.nf_eligible(results))
+
+    def test_a_household_outside_huds_tables_is_not_an_outage(self):
+        """HUD publishes limits for 1-8 people. A larger household is ordinary input: the
+        program degrades as before, without a banner or a Sentry error."""
+        self.screen.household_size = 9
+        self.screen.save()
+
+        results = self.results()
+
+        self.assertEqual(results["external_api_failures"], [])
+        self.assertFalse(results["missing_programs"])
         self.assertFalse(self.nf_eligible(results))
 
     def test_hud_answering_reports_nothing(self):
         results = self.results(hud_limit=36_000)
 
         self.assertEqual(results["external_api_failures"], [])
+        self.assertFalse(results["missing_programs"])
         self.assertTrue(self.nf_eligible(results))
 
     def test_policy_engine_down_is_reported(self):

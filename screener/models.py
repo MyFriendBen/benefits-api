@@ -783,17 +783,36 @@ class IncomeStream(models.Model):
     def _hour_to_month(self):
         return self.amount * self.hours_worked * Decimal(4.35)
 
-    def missing_fields(self):
-        income_fields = (
-            "type",
-            "amount",
-            "frequency",
-        )
+    # The frequencies monthly() and yearly() convert. Any other value, "" included, matches
+    # no branch and raises UnboundLocalError mid-calculation, so it gates like a null.
+    SUPPORTED_FREQUENCIES: ClassVar[frozenset[str]] = frozenset(
+        {"monthly", "weekly", "biweekly", "semimonthly", "yearly", "hourly"}
+    )
 
+    def missing_fields(self) -> Dependencies:
         missing_fields = Dependencies()
-        for field in income_fields:
-            if getattr(self, field) is None:
-                missing_fields.add("income_" + field)
+
+        if self.type is None:
+            missing_fields.add("income_type")
+        elif not str(self.type).strip():
+            # A blank type matches no earned type in calc_gross_income, so it falls through
+            # to the unearned catch-all and is silently counted as unearned income.
+            missing_fields.add("income_type")
+            missing_fields.report_malformed("income_type", self.type, "blank; would count as unearned income")
+
+        if self.amount is None:
+            missing_fields.add("income_amount")
+
+        if self.frequency is None:
+            missing_fields.add("income_frequency")
+        elif self.frequency not in self.SUPPORTED_FREQUENCIES:
+            missing_fields.add("income_frequency")
+            missing_fields.report_malformed("income_frequency", self.frequency, "monthly()/yearly() can't convert it")
+        elif self.frequency == "hourly" and self.hours_worked is None:
+            # _hour_to_month needs hours_worked. Gated as income_amount because that is the
+            # token calculators declare when they read an amount; nothing declares hours.
+            missing_fields.add("income_amount")
+            missing_fields.report_malformed("income_hours_worked", None, "hourly income with no hours_worked")
 
         return missing_fields
 
@@ -836,14 +855,29 @@ class Expense(models.Model):
 
         return yearly
 
-    def missing_fields(self):
-        expense_fields = ("type", "amount")
+    # IncomeStream.SUPPORTED_FREQUENCIES without "hourly": these monthly()/yearly() have no
+    # hourly branch.
+    SUPPORTED_FREQUENCIES: ClassVar[frozenset[str]] = frozenset(
+        {"monthly", "weekly", "biweekly", "semimonthly", "yearly"}
+    )
 
+    def missing_fields(self) -> Dependencies:
         missing_fields = Dependencies()
 
-        for field in expense_fields:
-            if getattr(self, field) is None:
-                missing_fields.add("expense_" + field)
+        if self.type is None:
+            missing_fields.add("expense_type")
+        elif not str(self.type).strip():
+            missing_fields.add("expense_type")
+            missing_fields.report_malformed("expense_type", self.type, "blank; matches no expense type")
+
+        if self.amount is None:
+            missing_fields.add("expense_amount")
+
+        if self.frequency is None:
+            missing_fields.add("expense_frequency")
+        elif self.frequency not in self.SUPPORTED_FREQUENCIES:
+            missing_fields.add("expense_frequency")
+            missing_fields.report_malformed("expense_frequency", self.frequency, "monthly()/yearly() can't convert it")
 
         return missing_fields
 
@@ -999,6 +1033,10 @@ class EligibilitySnapshot(models.Model):
     #: An active row with no calculator registered under its name: the calculator was
     #: deleted from the code, or the row was imported ahead of it. Reported to Sentry.
     DROPPED_NO_CALCULATOR = "no_calculator"
+
+    #: A displayed program's calculator raised something other than `DependencyError`: a
+    #: bug, or screen data it could not handle. Reported to Sentry.
+    DROPPED_CALCULATOR_ERROR = "calculator_error"
 
 
 class NPSScore(models.Model):

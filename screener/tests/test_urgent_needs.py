@@ -17,6 +17,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from programs.models import UrgentNeedCategory
+from programs.urgent_needs.base import UrgentNeedFunction
 from screener.assistant import CONTEXT_PREFETCH, _build_context
 from screener.models import Screen, WhiteLabel
 from screener.views import urgent_need_results
@@ -156,6 +157,26 @@ class EligibleUrgentNeedsTests(TestCase):
 
         with patch("screener.urgent_needs.capture_message"):
             self.assertEqual(self.names(), ["hot_meals"])
+
+    def test_a_calculator_that_raises_drops_only_its_resource_and_reports_it(self):
+        """A calculator bug, or an integration it calls, must not 500 the results page."""
+
+        class Raises(UrgentNeedFunction):
+            def eligible(self) -> bool:
+                raise RuntimeError("boom")
+
+        broken = seed_urgent_need(self.white_label, "pantry", category="food", name="Pantry")
+        broken.functions.create(name="raises")
+        seed_urgent_need(self.white_label, "hot_meals", category="food", name="Hot Meals")
+
+        with patch.dict("screener.urgent_needs.urgent_need_functions", {"raises": Raises}), patch(
+            "screener.urgent_needs.capture_exception"
+        ) as capture_exception, patch("screener.urgent_needs.capture_message") as capture_message:
+            self.assertEqual(self.names(), ["hot_meals"])
+
+        capture_exception.assert_called_once()
+        self.assertEqual(capture_exception.call_args.kwargs["level"], "error")
+        self.assertEqual(capture_message.call_args.kwargs["fingerprint"], ["urgent-need-failure", str(broken.pk)])
 
     def test_a_resource_with_no_calculators_is_still_always_shown(self):
         """ "No gates declared" is a real configuration and must stay distinct from
