@@ -223,3 +223,9 @@ class TestPlacesAutocompleteViewPost(TestPlacesAutocompleteView):
 
     def _call(self, params: dict[str, str] | None = None) -> Response:
         return self.client.post(self.URL, params or {}, format="json")
+
+    def test_non_object_body_reads_as_missing_input(self):
+        for body in (["123 Main"], "123 Main"):
+            response = self.client.post(self.URL, body, format="json")
+            self.assertEqual(response.status_code, status.HTTP_200_OK, body)
+            self.assertEqual(response.data, [], body)

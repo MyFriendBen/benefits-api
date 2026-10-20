@@ -26,50 +26,70 @@ FAKE_KEY = "fake-places-key-for-tests"
 
 
 class ScrubEventTest(TestCase):
-    def test_drops_query_string_on_every_event(self) -> None:
-        event = {"request": {"url": "https://api.example/api/screens/", "query_string": "a=1"}}
-        scrubbed = scrub_event(event, {})
-        self.assertNotIn("query_string", scrubbed["request"])
-
-    def test_strips_query_from_request_url(self) -> None:
-        event = {"request": {"url": "https://api.example/api/screens/?a=1"}}
-        self.assertEqual(scrub_event(event, {})["request"]["url"], "https://api.example/api/screens/")
-
-    def test_keeps_body_and_frame_vars_outside_address_endpoints(self) -> None:
-        frame = {"function": "f", "vars": {"x": "1"}}
+    def test_filters_sensitive_params_in_request_query(self) -> None:
         event = {
-            "request": {"url": "https://api.example/api/screens/", "data": {"zipcode": "80000"}},
-            "exception": {"values": [{"stacktrace": {"frames": [frame]}}]},
+            "request": {
+                "url": "https://api.example/api/places/autocomplete/?input=742+Invented&lang=en",
+                "query_string": "address=742+Invented&upgrade=hvac",
+            }
+        }
+        scrubbed = scrub_event(event, {})["request"]
+        self.assertEqual(scrubbed["url"], "https://api.example/api/places/autocomplete/?input=[Filtered]&lang=en")
+        self.assertEqual(scrubbed["query_string"], "address=[Filtered]&upgrade=hvac")
+
+    def test_keeps_other_query_params(self) -> None:
+        url = "https://api.example/api/eligibility/1?admin=1&api_key_hint=x"
+        event = {"request": {"url": url, "query_string": "admin=1"}}
+        scrubbed = scrub_event(event, {})["request"]
+        self.assertEqual(scrubbed["url"], url)
+        self.assertEqual(scrubbed["query_string"], "admin=1")
+
+    def test_filters_sensitive_params_in_breadcrumbs(self) -> None:
+        event = {
+            "breadcrumbs": {
+                "values": [
+                    {
+                        "category": "httplib",
+                        "data": {
+                            "url": f"https://maps.example/json?input=742&key={FAKE_KEY}&types=address",
+                            "http.query": f"input=742&key={FAKE_KEY}&types=address",
+                        },
+                    }
+                ]
+            }
+        }
+        data = scrub_event(event, {})["breadcrumbs"]["values"][0]["data"]
+        self.assertEqual(data["url"], "https://maps.example/json?input=[Filtered]&key=[Filtered]&types=address")
+        self.assertEqual(data["http.query"], "input=[Filtered]&key=[Filtered]&types=address")
+
+    def test_filters_sensitive_keys_in_body_and_frame_vars(self) -> None:
+        event = {
+            "request": {"data": {"input": FAKE_ADDRESS, "upgrade": "hvac"}},
+            "exception": {
+                "values": [
+                    {
+                        "stacktrace": {
+                            "frames": [
+                                {
+                                    "vars": {
+                                        "address": FAKE_ADDRESS,
+                                        "params": {"key": FAKE_KEY},
+                                        "request": f"<Request: GET '/api/x/?address={FAKE_ADDRESS.replace(' ', '+')}'>",
+                                        "zipcode": "80000",
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
         }
         scrubbed = scrub_event(event, {})
-        self.assertIn("data", scrubbed["request"])
-        self.assertIn("vars", frame)
-
-    def test_drops_body_and_frame_vars_on_address_endpoints(self) -> None:
-        for url in (
-            "https://api.example/api/places/autocomplete/",
-            "https://api.example/api/screener-options/cesn/rem-impact/",
-        ):
-            frame = {"function": "f", "vars": {"address": FAKE_ADDRESS}}
-            event = {
-                "request": {"url": url, "data": {"address": FAKE_ADDRESS}},
-                "exception": {"values": [{"stacktrace": {"frames": [frame]}}]},
-            }
-            scrubbed = scrub_event(event, {})
-            self.assertNotIn("data", scrubbed["request"], url)
-            self.assertNotIn("vars", frame, url)
-
-    def test_strips_query_from_httplib_breadcrumbs(self) -> None:
-        crumb = {
-            "category": "httplib",
-            "data": {"url": "https://maps.example/json?key=k", "http.query": f"input=x&key={FAKE_KEY}"},
-        }
-        other = {"category": "query", "data": {"http.query": "kept"}}
-        event = {"breadcrumbs": {"values": [crumb, other]}}
-        scrub_event(event, {})
-        self.assertNotIn("http.query", crumb["data"])
-        self.assertEqual(crumb["data"]["url"], "https://maps.example/json")
-        self.assertEqual(other["data"]["http.query"], "kept")
+        blob = json.dumps(scrubbed)
+        self.assertNotIn("Invented", blob)
+        self.assertNotIn(FAKE_KEY, blob)
+        self.assertEqual(scrubbed["request"]["data"]["upgrade"], "hvac")
+        self.assertEqual(scrubbed["exception"]["values"][0]["stacktrace"]["frames"][0]["vars"]["zipcode"], "80000")
 
 
 class _RecordingTransport(Transport):
@@ -120,9 +140,15 @@ class AddressEndpointEventTest(TestCase):
     is what attaches the request URL and query string in production.
     """
 
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.app = get_wsgi_application()
+
     def setUp(self) -> None:
         server = HTTPServer(("127.0.0.1", 0), _MalformedUpstream)
         threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
         upstream = f"http://127.0.0.1:{server.server_port}"
         for target in (
@@ -146,7 +172,7 @@ class AddressEndpointEventTest(TestCase):
         }
         setup_testing_defaults(environ)
         statuses: list[str] = []
-        b"".join(get_wsgi_application()(environ, lambda s, _h, *_a: statuses.append(s)))
+        b"".join(self.app(environ, lambda s, _h, *_a: statuses.append(s)))
         return statuses[0]
 
     def _assert_clean(self, events: list[dict[str, Any]]) -> None:

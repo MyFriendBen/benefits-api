@@ -955,9 +955,12 @@ class ReferralSourcesView(views.APIView):
         return Response({"generic": generic, "partners": partners, "hidden": hidden})
 
 
-def _str_param(params: Mapping[str, Any], key: str) -> str:
-    """A request value as a stripped string; anything that isn't a string reads as missing."""
-    value = params.get(key)
+def _str_param(params: Any, key: str) -> str:
+    """A request value as a stripped string; anything that isn't a string reads as missing.
+
+    `params` is whatever the body parsed to, so a JSON list or string reads as all missing.
+    """
+    value = params.get(key) if isinstance(params, Mapping) else None
     return value.strip() if isinstance(value, str) else ""
 
 
@@ -980,7 +983,7 @@ class RemImpactView(views.APIView):
     def post(self, request, **_kwargs) -> Response:
         return self._impact(request.data)
 
-    def _impact(self, params: Mapping[str, Any]) -> Response:
+    def _impact(self, params: Any) -> Response:
         upgrade = _str_param(params, "upgrade")
         address = _str_param(params, "address")
         heating_fuel = _str_param(params, "heating_fuel")
@@ -1028,9 +1031,9 @@ class RemImpactView(views.APIView):
                 {"error": "Rewiring America request failed."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except ValueError as e:
+        except ValueError:
             return Response(
-                {"error": "Rewiring America returned an invalid response.", "detail": str(e)},
+                {"error": "Rewiring America returned an invalid response."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -1056,7 +1059,7 @@ class PlacesAutocompleteView(views.APIView):
     def post(self, request, **_kwargs) -> Response:
         return self._autocomplete(request.data)
 
-    def _autocomplete(self, params: Mapping[str, Any]) -> Response:
+    def _autocomplete(self, params: Any) -> Response:
         input_text = _str_param(params, "input")
 
         if not input_text:
