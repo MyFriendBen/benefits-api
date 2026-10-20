@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://myfriendben.org/schemas/data-layer-v1.json",
+  "title": "Benefit amount data layer",
+  "description": "Benefit amount tables for in-kind programs PolicyEngine does not compute a dollar value for (e.g. Medicaid, WIC). Not needed for pure cash pass-through programs (SNAP/TANF) — see PATTERNS.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["program", "state", "category_amounts", "source"],
+  "properties": {
+    "program": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "category_amounts": {
+      "type": "object",
+      "description": "Maps a category key (e.g. ADULT, INFANT) to a monthly dollar amount. No fixed key enum here deliberately — different programs use different taxonomies (Medicaid's 11 keys, WIC's 6).",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "source": {
+      "type": "object",
+      "description": "Required, not optional — see DECISIONS.md D-005. Distinguishes a real citation from an honest gap, rather than relying on free-text convention alone.",
+      "additionalProperties": false,
+      "required": ["status", "citation"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["cited", "unsourced", "guessed"]
+        },
+        "citation": {
+          "type": ["string", "null"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "const": "cited" } }
+          },
+          "then": {
+            "properties": { "citation": { "type": "string", "minLength": 1 } }
+          },
+          "else": {
+            "properties": { "citation": { "type": "null" } }
+          }
+        }
+      ]
+    }
+  }
+}

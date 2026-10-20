@@ -1,0 +1,10 @@
+{
+  "program": "snap",
+  "state": "co",
+  "pe_name": "snap",
+  "pe_entity": "spm_unit",
+  "state_dependency": "CoStateCodeDependency",
+  "extends": "snap",
+  "additional_inputs": [],
+  "pe_period_month": "01"
+}
