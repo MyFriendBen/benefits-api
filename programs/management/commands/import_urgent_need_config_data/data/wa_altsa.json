@@ -3,9 +3,7 @@
   "need": {
     "external_name": "wa_altsa",
     "category_type": {
-      "external_name": "wa_aging_resources",
-      "name": "Aging community resources",
-      "icon": "aging"
+      "external_name": "aging_resources"
     },
     "type_short": ["aging resources"],
     "functions": [],

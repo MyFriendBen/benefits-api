@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_legal_services_kansas_city",
     "category_type": {
-      "external_name": "ks_civil_legal_needs",
-      "name": "Civil legal needs",
-      "icon": "legal_services"
+      "external_name": "civil_legal_needs"
     },
     "type_short": [
       "legal services"

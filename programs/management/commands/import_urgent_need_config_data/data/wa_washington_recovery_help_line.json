@@ -3,9 +3,7 @@
   "need": {
     "external_name": "wa_washington_recovery_help_line",
     "category_type": {
-      "external_name": "wa_behavioral_health",
-      "name": "Behavioral health",
-      "icon": "behavioral_health"
+      "external_name": "behavioral_health"
     },
     "type_short": ["mental health"],
     "functions": [],

@@ -5,9 +5,7 @@
   "need": {
     "external_name": "mo_st_louis_area_diaper_bank",
     "category_type": {
-      "external_name": "mo_baby_supplies",
-      "name": "Diapers and other baby supplies",
-      "icon": "baby_supplies"
+      "external_name": "baby_supplies"
     },
     "type_short": [
       "baby supplies"
