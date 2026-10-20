@@ -28,7 +28,7 @@ def seed_dynamic_fpl_rows(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0180_ssi_msp_csfp_current_edition"),
+        ("programs", "0189_add_211ks_211mo_referrers"),
     ]
     operations = [
         migrations.RunPython(seed_dynamic_fpl_rows, migrations.RunPython.noop),
