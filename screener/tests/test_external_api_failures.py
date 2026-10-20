@@ -73,8 +73,9 @@ class TestExternalApiFailuresInResponse(TestCase):
         self.assertFalse(self.nf_eligible(results))
 
     def test_a_household_outside_huds_tables_is_not_an_outage(self):
-        """HUD publishes limits for 1-8 people. A larger household is ordinary input: the
-        program degrades as before, without a banner or a Sentry error."""
+        """HUD publishes limits for 1-8 people. The API rejects a larger household now, but
+        screens saved before that can still hold one: the program degrades as before, without
+        a banner or a Sentry error."""
         self.screen.household_size = 9
         self.screen.save()
 

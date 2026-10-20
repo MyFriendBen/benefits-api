@@ -95,7 +95,12 @@ class Screen(models.Model):
     is_13_or_older = models.BooleanField(blank=True, null=True)
     zipcode = models.CharField(max_length=5, blank=True, null=True)
     county = models.CharField(max_length=120, default=None, blank=True, null=True)
-    household_size = models.IntegerField(blank=True, null=True)
+    # Matches the screener and both tax-credit apps, which cap a household at 8. HUD's income
+    # limit tables stop at 8 too, so a larger household has no limit to compare against.
+    MAX_HOUSEHOLD_SIZE: ClassVar[int] = 8
+    household_size = models.IntegerField(
+        blank=True, null=True, validators=[MinValueValidator(1), MaxValueValidator(MAX_HOUSEHOLD_SIZE)]
+    )
     last_tax_filing_year = models.CharField(max_length=120, default=None, blank=True, null=True)
     household_assets = models.DecimalField(decimal_places=2, max_digits=10, default=None, blank=True, null=True)
     housing_situation = models.CharField(max_length=30, blank=True, null=True, default=None)
