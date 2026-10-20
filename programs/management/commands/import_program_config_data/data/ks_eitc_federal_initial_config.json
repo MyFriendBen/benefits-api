@@ -31,7 +31,8 @@
     "base_program": "eitc",
     "show_on_current_benefits": true,
     "has_calculator": true,
-    "show_in_has_benefits_step": false
+    "show_in_has_benefits_step": false,
+    "active": false
   },
   "documents": [
     {
