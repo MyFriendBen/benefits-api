@@ -342,6 +342,24 @@ class TestStructure(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 638)
 
+    def test_tax_exempt_income_does_not_raise_the_tax_the_credit_is_capped_at(self):
+        """Child support is never taxed, so $20,000 of wages leaves no tax as head of household
+        and the nonrefundable $500 for a dependent parent pays nothing."""
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 48, income={"wages": 20_000, "childSupport": 12_000})
+        self.member(screen, "parent", 74)
+
+        self.assert_eligible(self.calculate(screen), 0)
+
+    def test_a_filer_who_is_65_and_blind_adds_two_standard_deduction_amounts(self):
+        """Age and blindness are separate additions: $23,625 + 2 × $2,000 leaves $2,375 taxable
+        on $30,000, and the Tax Table row 2,375-2,400 is $239, so the $500 pays $239."""
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 70, visually_impaired=True, income={"wages": 30_000})
+        self.member(screen, "parent", 92)
+
+        self.assert_eligible(self.calculate(screen), 239)
+
     def test_a_senior_filer_gets_the_higher_standard_deduction(self):
         """At 65 the head of household deduction is $25,625, so $26,000 leaves $375 taxable:
         $39 of tax and no qualifying child, so the $500 other-dependent credit pays $39."""
@@ -393,6 +411,27 @@ class TestAgeOnlyHouseholds(FederalCtcTestCase):
         self.add_income(head, 40_000, "wages", "yearly")
 
         self.assert_eligible(self.calculate(screen), 2_200)
+
+    def test_an_age_only_child_is_aged_back_to_the_end_of_the_tax_year(self):
+        """Screened in 2026 at 17, the child was 16 at the end of 2025 and earns the full
+        child credit, not the $500 for an older dependent."""
+        screen = self.make_screen(household_size=2)
+        head = self.add_member(screen, "headOfHousehold", age=45, stored_age=True, screener_defaults=False)
+        self.add_member(screen, "child", age=17, stored_age=True, screener_defaults=False)
+        self.add_income(head, 40_000, "wages", "yearly")
+
+        self.assert_eligible(self.calculate(screen), 2_200)
+
+    def test_an_age_only_nineteen_year_old_was_eighteen_for_the_tax_year(self):
+        """At 18 for 2025 the child counts by age with no income limit, so $5,200 of wages
+        still leaves them an other dependent; at 19 they would fail the relative limit."""
+        screen = self.make_screen(household_size=2)
+        head = self.add_member(screen, "headOfHousehold", age=45, stored_age=True, screener_defaults=False)
+        child = self.add_member(screen, "child", age=19, stored_age=True, screener_defaults=False)
+        self.add_income(head, 40_000, "wages", "yearly")
+        self.add_income(child, 5_200, "wages", "yearly")
+
+        self.assert_eligible(self.calculate(screen), 500)
 
     def test_a_child_the_filers_age_is_an_other_dependent(self):
         screen = self.make_screen(household_size=2)

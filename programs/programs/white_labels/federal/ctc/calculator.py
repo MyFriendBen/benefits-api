@@ -145,11 +145,13 @@ class FederalCtc(ProgramCalculator):
     otherwise. The whole credit is the household's value; members carry none.
 
     Income is today's, not the tax year's. Earned income is wages and self-employment as
-    reported, and modified AGI is every income stream the filers report. Permanently and
+    reported, and modified AGI is every income stream the filers report less the types that
+    are never taxed (SSI, cash assistance, child support, gifts, workers' compensation,
+    veterans' benefits). Permanently and
     totally disabled is read as the screener's `disabled` and `long_term_disability` both
     ticked. Members recorded without a birth month (the Colorado tax-credit apps send age
-    alone, with no disability or student answers) are compared by age, their age is
-    today's, and missing answers read as no.
+    alone, with no disability or student answers) are compared by age, aged back to the end
+    of the tax year, and missing answers read as no.
 
     Residency, SSN, tiebreaker, filing-status and prior-disallowance rules have no screener
     field and are not evaluated. Citizenship is enforced by the program's
@@ -163,9 +165,19 @@ class FederalCtc(ProgramCalculator):
     ctc_child_age_limit = 17
     child_age_limit = 19
     student_age_limit = 24
-    # Welfare income is tax-exempt, so it is left out of a relative's gross income
-    # (spec section 5 `odc_relative_gross_income`).
-    relative_income_excluded_types = ["sSI", "cashAssistance", "cashAssistanceOther"]
+    # Income the screener collects that is never taxed: SSI, cash assistance, child support,
+    # gifts, workers' compensation and veterans' benefits. Left out of a relative's gross
+    # income (spec section 5 `odc_relative_gross_income`) and of the filers' income, so it
+    # neither tapers the credit nor raises the tax the nonrefundable part is capped at.
+    tax_exempt_income_types = [
+        "sSI",
+        "cashAssistance",
+        "cashAssistanceOther",
+        "childSupport",
+        "gifts",
+        "workersComp",
+        "veteran",
+    ]
 
     dependencies = ["age", "relationship", "income_amount", "income_frequency", "income_type"]
 
@@ -242,15 +254,19 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _modified_agi(self) -> Decimal:
-        """Every income stream the filers report (spec section 7, modified AGI)."""
-        return self._filer_income(["all"])
+        """Every taxable income stream the filers report (spec section 7, modified AGI)."""
+        return self._filer_income(["all"], self.tax_exempt_income_types)
 
     @cached_property
     def _income_tax(self) -> Decimal:
-        """Tax on gross income less the standard deduction and its 65-or-blind additions (spec section 7, tax)."""
+        """Tax on taxable income less the standard deduction and its additions (spec section 7, tax).
+
+        Each filer adds one amount for being 65 or older and another for being blind, so a
+        filer who is both adds two.
+        """
         params = self._params
         status = self._filing_status
-        extra_boxes = sum(1 for filer in self._filers if self._is_senior(filer) or bool(filer.visually_impaired))
+        extra_boxes = sum(int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers)
         deduction = params.standard_deduction[status] + params.extra_deduction[status] * extra_boxes
         taxable_income = max(self._modified_agi - deduction, Decimal(0))
 
@@ -311,11 +327,24 @@ class FederalCtc(ProgramCalculator):
         if member.relationship not in self.dependent_relationships:
             return False
 
-        income = member.calc_gross_income("yearly", ["all"], self.relative_income_excluded_types)
+        income = member.calc_gross_income("yearly", ["all"], self.tax_exempt_income_types)
         return income < self._params.qualifying_relative_income_limit
 
     def _age_at_year_end(self, member: HouseholdMember) -> Optional[int]:
-        return member.age_at_end_of_year(self.tax_year)
+        """
+        Age on the last day of the tax year. A member recorded with an age but no birth
+        month (the Colorado tax-credit apps) is aged back from today by the years between
+        the screen's date and the tax year, so a 17-year-old screened in 2026 is 16 for 2025.
+        """
+        if member.birth_year_month is not None:
+            return member.age_at_end_of_year(self.tax_year)
+
+        age = member.calc_age()
+        if age is None:
+            return None
+
+        years_since_tax_year = self.screen.get_reference_date().year - self.tax_year
+        return max(age - years_since_tax_year, 0)
 
     def _is_senior(self, filer: HouseholdMember) -> bool:
         """65 or older at the end of the tax year, for the extra standard deduction (spec section 7)."""
