@@ -337,6 +337,30 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 4_400)
 
+    def test_scenario_28_supported_parent_living_on_social_security(self):
+        screen = self.make_screen(household_size=3)
+        self.member(screen, "headOfHousehold", 48, income={"wages": 52_000})
+        self.member(screen, "child", 13)
+        self.member(screen, "parent", 74, income={"sSRetirement": 14_000})
+
+        self.assert_eligible(self.calculate(screen), 2_700)
+
+    def test_scenario_29_joint_filers_whose_social_security_would_tip_the_phase_out(self):
+        screen = self.make_screen(household_size=4)
+        self.member(screen, "headOfHousehold", 45, income={"wages": 395_000, "sSRetirement": 10_000})
+        self.member(screen, "spouse", 43)
+        self.member(screen, "child", 10)
+        self.member(screen, "child", 7)
+
+        self.assert_eligible(self.calculate(screen), 4_400)
+
+    def test_scenario_30_low_wage_head_on_social_security_disability_where_the_tax_cap_binds(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 40, income={"wages": 20_000, "sSDisability": 18_000})
+        self.member(screen, "child", 8)
+
+        self.assert_eligible(self.calculate(screen), 1_700)
+
 
 class TestStructure(FederalCtcTestCase):
     """Rules the spec states in sections 4 and 7 but no scenario reaches."""

@@ -147,7 +147,7 @@ class FederalCtc(ProgramCalculator):
     Income is today's, not the tax year's. Earned income is wages and self-employment as
     reported, and modified AGI is every income stream the filers report less the types that
     are never taxed (SSI, cash assistance, child support, gifts, workers' compensation,
-    veterans' benefits). Permanently and
+    veterans' benefits) and less Social Security, treated as untaxed. Permanently and
     totally disabled is read as the screener's `disabled` and `long_term_disability` both
     ticked. Members recorded without a birth month (the Colorado tax-credit apps send age
     alone, with no disability or student answers) are compared by age, aged back to the end
@@ -165,10 +165,15 @@ class FederalCtc(ProgramCalculator):
     ctc_child_age_limit = 17
     child_age_limit = 19
     student_age_limit = 24
-    # Income the screener collects that is never taxed: SSI, cash assistance, child support,
-    # gifts, workers' compensation and veterans' benefits. Left out of a relative's gross
-    # income (spec section 5 `odc_relative_gross_income`) and of the filers' income, so it
-    # neither tapers the credit nor raises the tax the nonrefundable part is capped at.
+    # Income the screener collects that is treated as untaxed: SSI, cash assistance, child
+    # support, gifts, workers' compensation and veterans' benefits, which are never taxed,
+    # and every Social Security benefit type, which is an approximation (spec section 7):
+    # only a portion of Social Security is taxable, and that portion depends on the rest of
+    # the return, which MFB households mostly sit below the thresholds for. Where the
+    # approximation misses, the estimated tax cap is lower, never the credit higher. Left
+    # out of a relative's gross income (spec section 5 `odc_relative_gross_income`) and of
+    # the filers' income, so it neither tapers the credit nor raises the tax the
+    # nonrefundable part is capped at.
     tax_exempt_income_types = [
         "sSI",
         "cashAssistance",
@@ -177,6 +182,10 @@ class FederalCtc(ProgramCalculator):
         "gifts",
         "workersComp",
         "veteran",
+        "sSDisability",
+        "sSSurvivor",
+        "sSRetirement",
+        "sSDependent",
     ]
 
     dependencies = ["age", "relationship", "income_amount", "income_frequency", "income_type"]
