@@ -27,7 +27,7 @@
     "estimated_value": "",
     "value_format": null,
     "website_description": "Monthly cash help for older adults and people who are blind or have a disability",
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true,
     "show_in_has_benefits_step": true,

@@ -17,7 +17,7 @@
         "estimated_value": "",
         "value_format": null,
         "website_description": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
-        "active": true,
+        "active": false,
         "low_confidence": false,
         "show_on_current_benefits": true,
         "show_in_has_benefits_step": true,

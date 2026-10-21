@@ -1,0 +1,84 @@
+{
+  "white_label": {
+    "code": "federal"
+  },
+  "program_category": {
+    "external_name": "cash"
+  },
+  "program": {
+    "name_abbreviated": "federal_ssi",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Supplemental Security Income (SSI)",
+    "description_short": "Monthly cash from Social Security for people who are 65 or older, blind, or disabled",
+    "description": "Supplemental Security Income (SSI) is a monthly cash payment from Social Security. It helps people with low income and limited savings or other assets. You may qualify if you are 65 or older, blind, or have a disability. Children with disabilities can get SSI too.\n\nSSI is paid once a month. The payment shown uses SSI's rules and is based on your income and, when applicable, income from your spouse or parents. Social Security will review your information and determine your final payment amount.\n\nIf you apply due to blindness or a disability, Social Security will see if you meet its medical rules.\n\nIf you work, some disability-related costs can lower the earnings Social Security counts. Examples include medical devices, attendant care, or special transportation for work. If you are blind, some other work costs can also lower your counted earnings. Examples include transportation to work, taxes, or work equipment.\n\nSocial Security will also ask if you gave away money, property, or investments in the last three years. It will also ask whether you sold any of them for less than they were worth. Either can make you ineligible for SSI for a time.\n\nApply as soon as you can. SSI does not pay for the months before your application takes effect. If you apply due to blindness or a disability, the medical decision usually takes six to eight months.\n\nSelect “Apply Online” to start on Social Security's SSI application page. You can also call Social Security at 1-800-772-1213 to make an appointment.",
+    "website_description": "Monthly cash from Social Security for people who are 65 or older, blind, or disabled",
+    "learn_more_link": "https://www.ssa.gov/ssi",
+    "apply_button_link": "https://www.ssa.gov/apply/ssi",
+    "apply_button_description": "",
+    "estimated_application_time": "60 minutes",
+    "estimated_decision_time": "",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "year": "2026",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true,
+    "base_program": "ssi",
+    "active": true
+  },
+  "documents": [
+    {
+      "external_name": "ssi_ssn",
+      "text": "Social Security card or number, if you have one"
+    },
+    {
+      "external_name": "ssi_proof_of_age",
+      "text": "Proof of age (birth certificate or other record with your date of birth)"
+    },
+    {
+      "external_name": "ssi_citizenship_or_immigration",
+      "text": "Proof of citizenship or immigration status (birth certificate, passport, green card, or other immigration document)"
+    },
+    {
+      "external_name": "ssi_income",
+      "text": "Proof of income (pay stubs, benefit letters, or bank statements)"
+    },
+    {
+      "external_name": "ssi_resources",
+      "text": "Proof of resources (bank statements, vehicle titles, or deeds for property other than your home)"
+    },
+    {
+      "external_name": "ssi_living_arrangements",
+      "text": "Proof of living arrangements (lease, rent receipt, deed, or property tax bill)"
+    },
+    {
+      "external_name": "ssi_medical_sources",
+      "text": "Medical information, if applying for disability or blindness (doctors, hospitals, and medications)"
+    },
+    {
+      "external_name": "ssi_work_history",
+      "text": "Work history, if applying due to disability or blindness (jobs, employers, and dates for the past 5 years)"
+    },
+    {
+      "external_name": "ssi_originals",
+      "text": "Original or certified copies only (no photocopies)"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ssa_ssi_application_help",
+      "name": "Social Security Administration",
+      "email": "",
+      "phone_number": "+18007721213",
+      "description": "Social Security takes SSI applications by phone or at a local office and will fill in the forms with you. You can also bring someone to help you.",
+      "assistance_link": "https://www.ssa.gov/agency/contact/"
+    }
+  ]
+}

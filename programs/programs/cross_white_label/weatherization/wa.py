@@ -36,7 +36,9 @@ class WaWap(ProgramCalculator):
         has_wa_wap_eligible_benefit = (
             self.screen.has_benefit("wa_snap")
             or self.screen.has_benefit("wa_tanf")
-            or self.screen.has_benefit("wa_ssi")
+            # SSI is the federal `federal_ssi` row (base_program "ssi"); the retired `wa_ssi`
+            # row still carries that base_program, so this reads both.
+            or self.screen.has_base_benefit("ssi")
             # Section 8 is the HCV program (base_program "section_8", e.g. wa_hcv);
             # has_base_benefit matches every white-label variant, whereas the bare
             # has_benefit("section_8") is a dead check — that name_abbreviated exists nowhere.

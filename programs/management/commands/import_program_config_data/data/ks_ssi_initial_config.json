@@ -24,6 +24,7 @@
     "estimated_delivery_time": "6 to 8 months",
     "estimated_value": "",
     "has_calculator": true,
+    "active": false,
     "show_on_current_benefits": true,
     "show_in_has_benefits_step": true,
     "website_description": "Monthly cash help for people 65 or older, blind, or disabled with low income and few assets"
