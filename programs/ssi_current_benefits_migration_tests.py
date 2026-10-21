@@ -1,4 +1,4 @@
-"""Run 0191's forwards against real rows, matched the way it matches them."""
+"""Run 0193's forwards against real rows, matched the way it matches them."""
 
 import importlib
 
@@ -11,7 +11,7 @@ from screener.models import CurrentBenefit, Screen, WhiteLabel
 
 class TestMoveStateSsiCurrentBenefits(TestCase):
     def setUp(self):
-        self.migration = importlib.import_module("programs.migrations.0191_move_state_ssi_current_benefits")
+        self.migration = importlib.import_module("programs.migrations.0193_move_state_ssi_current_benefits")
         self.federal_wl = WhiteLabel.objects.create(name="Federal Programs", code="federal")
         self.co = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         self.tx = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")

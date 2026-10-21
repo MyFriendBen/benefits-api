@@ -72,7 +72,7 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0190_add_denver_public_schools_referrer"),
+        ("programs", "0192_add_year_type_to_program"),
         ("screener", "0168_household_rows_default_id_ordering"),
     ]
 
