@@ -298,7 +298,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); 2026 SSI Annual Report §III.C, FBR $994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
     ),
     ("il", "ssi"): Vintage(
         edition="2026",
@@ -306,7 +306,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); 2026 SSI Annual Report §III.C, FBR $994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
     ),
     ("ma", "ssi"): Vintage(
         edition="2026",
@@ -314,7 +314,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); 2026 SSI Annual Report §III.C, FBR $994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
     ),
     ("tx", "tx_ssi"): Vintage(
         edition="2026",
@@ -322,7 +322,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); 2026 SSI Annual Report §III.C, FBR $994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
     ),
     ("federal", "federal_ssi"): Vintage(
         edition="2026",
@@ -330,7 +330,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); program-ops federal_ssi_spec.md §7, which prices the 2026 FBR at "
+        source="program-ops federal_ssi_spec.md section 7, which prices the 2026 FBR at "
         "$994 individual / $1,491 couple",
     ),
     ("il", "il_msp"): Vintage(

@@ -1,10 +1,10 @@
-"""Federal SSI scenarios, one per spec §8, plus the structural checks.
+"""Federal SSI scenarios, one per spec section 8, plus the structural checks.
 
 Every dollar figure is the 2026 federal benefit rate and exclusions, keyed by the program's
 year. The spec states each payment per month; the calculator carries the annual figure every
 program value does, so each assertion is the spec's monthly payment times twelve.
 
-§4's `citizenship_or_qualified_alien` has no scenario: it is `Enforced by: program-record`
+Section 4's `citizenship_or_qualified_alien` has no scenario: it is `Enforced by: program-record`
 (`legal_status_required`), which the calculator never reads. `residence_us` is enforced by
 the white label.
 """

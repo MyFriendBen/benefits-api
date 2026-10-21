@@ -10,30 +10,30 @@ from screener.models import HouseholdMember
 
 @dataclass(frozen=True)
 class SsiYear:
-    """One benefit year's SSI figures (20 CFR 416 subparts D, K and L)."""
+    """One benefit year's SSI figures: the rates, exclusions and limits of spec sections 4.8, 4.9 and 7."""
 
-    #: Federal benefit rate for an eligible individual, which is also the income limit.
+    #: Federal benefit rate for an eligible individual, which is also the income limit (spec section 7).
     individual_fbr: int
     #: Federal benefit rate for an eligible couple, and the couple's income limit.
     couple_fbr: int
-    #: Earned income a student under 22 may exclude in a month (the student earned income
-    #: exclusion; its yearly cap is not applied, since earlier months' earnings are unknown).
+    #: Earned income a student under 22 may exclude in a month (spec section 4.8, `income_limit`;
+    #: the yearly cap is not applied, since earlier months' earnings are unknown).
     student_exclusion: int
-    #: Countable resource limits, 20 CFR 416.1205(c).
+    #: Countable resource limits, alone and with a spouse (spec section 4.9, `resource_limit`).
     individual_resource_limit: int = 2_000
     couple_resource_limit: int = 3_000
-    #: The general exclusion from unearned income, 20 CFR 416.1124(c)(12).
+    #: The general exclusion: the first $20 of unearned income other than TANF is not counted.
     general_exclusion: int = 20
-    #: The flat earned income exclusion, 20 CFR 416.1112(c)(5); half the rest is excluded too.
+    #: The flat earned income exclusion; half of what remains after it is excluded too.
     earned_exclusion: int = 65
-    #: Infrequent or irregular income excluded in a quarter (20 CFR 416.1112(c)(1),
-    #: 416.1124(c)(6)), applied as a margin for someone otherwise just over the limit.
+    #: Infrequent or irregular income not counted in a quarter, applied as a margin for someone
+    #: otherwise just over the limit (spec section 5, `infrequent_income_exclusion`).
     infrequent_earned_margin: int = 30
     infrequent_unearned_margin: int = 60
 
     @property
     def ineligible_spouse_allowance(self) -> int:
-        """Spouse income at or under this deems nothing, 20 CFR 416.1163(d)(1)."""
+        """Spouse income at or under this deems nothing: the couple rate less the individual rate."""
         return self.couple_fbr - self.individual_fbr
 
     def resource_limit(self, people: int) -> int:
@@ -43,7 +43,7 @@ class SsiYear:
         return self.couple_fbr if people >= 2 else self.individual_fbr
 
 
-# 2026 SSI Annual Report §III.C and §III.E.4.
+# 2026 figures: benefit rates from spec section 7, the student exclusion from spec section 4.8.
 SSI_YEARS: dict[int, SsiYear] = {
     2026: SsiYear(individual_fbr=994, couple_fbr=1_491, student_exclusion=2_410),
 }
@@ -93,8 +93,13 @@ class Verdict:
 
 class FederalSsi(ProgramCalculator):
     """
-    Federal Supplemental Security Income (42 U.S.C. 1381 et seq.; 20 CFR 416): the federal
-    payment before any State supplement, computed per member.
+    Federal Supplemental Security Income: the federal payment before any State supplement,
+    computed per member.
+
+    Rules and figures: program-ops `programs/white_labels/federal/ssi/federal_ssi_spec.md`.
+    Routes are spec section 3; the criteria below are sections 4.1 to 4.5 (age, blindness,
+    disability, work test), 4.8 (`income_limit`, including deeming), 4.9 (`resource_limit`)
+    and 7 (the payment).
 
     A member qualifies by age (65 or older), blindness (`visually_impaired`) or disability
     (`disabled` or `long_term_disability`). SSA's own medical finding and the $1,690 work
@@ -110,12 +115,12 @@ class FederalSsi(ProgramCalculator):
 
     - the head and their `spouse` who both qualify are an eligible couple: one income
       computation against the couple rate, the payment split equally;
-    - a head or spouse whose partner does not qualify has the partner's income deemed under
-      20 CFR 416.1163: nothing when it is at or under the couple-minus-individual allowance,
+    - a head or spouse whose partner does not qualify has the partner's income deemed:
+      nothing when it is at or under the couple-minus-individual allowance,
       otherwise the pair is counted as a couple and the payment is the lesser of the
       individual and couple results;
-    - a `child` under 18 has the head's and head's spouse's income deemed under 20 CFR
-      416.1165, a `stepChild` only while the head's spouse is in the household. A parent who
+    - a `child` under 18 has the head's and head's spouse's income deemed, a `stepChild`
+      only while the head's spouse is in the household. A parent who
       reports SSI income is not an ineligible parent: the other parent's income is counted
       toward them as a spouse's, and only the couple's excess over the couple rate reaches
       the child. Deemed income is shared equally among the qualifying children;
@@ -253,7 +258,8 @@ class FederalSsi(ProgramCalculator):
 
     def _earnings_can_be_left_out(self, member: HouseholdMember) -> bool:
         """
-        Whether a failure on this member's earnings alone is passed. Blind and disabled
+        Whether a failure on this member's earnings alone is passed (spec section 4.8,
+        `impairment_related_work_expenses` and `blind_work_expenses`). Blind and disabled
         workers' work expenses lower counted earnings, and the screener does not collect
         them. Past 65 the exclusions continue only for someone who already received SSI as
         blind or disabled, read here as reporting SSI income.
@@ -292,7 +298,7 @@ class FederalSsi(ProgramCalculator):
         deemed_unearned: float = 0,
     ) -> float:
         """
-        Countable monthly income of `members` taken together (20 CFR 416.1112, 416.1124).
+        Countable monthly income of `members` taken together (spec section 4.8, `income_limit`).
 
         `applicants` are the members whose own earnings `rules.drop_earnings` leaves out;
         a deemor's earnings always count. `deemed_unearned` is income already deemed to the
@@ -328,11 +334,11 @@ class FederalSsi(ProgramCalculator):
 
     def _deemed_to_child(self, child: HouseholdMember, rules: CountingRules) -> float:
         """
-        Parents' income deemed to `child` as unearned income (20 CFR 416.1165(d)-(e)):
+        Parents' income deemed to `child` as unearned income (spec section 4.8 deeming):
         their countable income less the benefit rate for one parent or a parent couple,
         shared equally among the qualifying children.
 
-        A parent who reports SSI is deemed to first (POMS SI 01320.620): with one such
+        A parent who reports SSI is deemed to first: with one such
         parent, the other's income counts toward them as a spouse's and only the couple's
         excess over the couple rate reaches the children. With both reporting SSI, or a lone
         parent reporting it, nothing is deemed.
@@ -357,7 +363,8 @@ class FederalSsi(ProgramCalculator):
 
     def _resources_allow(self, member: HouseholdMember, unit: list[HouseholdMember], limit: int) -> bool:
         """
-        Whether the household's reported assets leave `member` eligible. Assets are one
+        Whether the household's reported assets leave `member` eligible (spec section 4.9,
+        `resource_limit`). Assets are one
         household figure, so when anyone outside the resource `unit` lives in the household
         they cannot be attributed and never rule the member out on their own.
         """
@@ -429,7 +436,7 @@ class FederalSsi(ProgramCalculator):
         return Verdict(False)
 
     def _eligible_couple_verdict(self, member: HouseholdMember, partner: HouseholdMember) -> Verdict:
-        """Both spouses qualify: one couple computation, the payment halved (42 U.S.C. 1382(b))."""
+        """Both spouses qualify: one couple computation, the payment split equally (spec section 7)."""
         couple = [member, partner]
         if not self._resources_allow(member, couple, self.params.couple_resource_limit):
             return Verdict(False)
@@ -443,9 +450,9 @@ class FederalSsi(ProgramCalculator):
 
     def _ineligible_spouse_verdict(self, member: HouseholdMember, partner: HouseholdMember) -> Verdict:
         """
-        Deeming from a spouse who does not qualify (20 CFR 416.1163). Spouse income at or
+        Deeming from a spouse who does not qualify (spec section 4.8 deeming). Spouse income at or
         under the allowance deems nothing. Above it the pair is counted as a couple, and the
-        payment is the lesser of the individual and couple results (416.1163(e)(2)): deeming
+        payment is the lesser of the individual and couple results (spec section 7): deeming
         can neither raise the payment nor qualify someone their own income does not.
         """
         params = self.params
@@ -476,7 +483,7 @@ class FederalSsi(ProgramCalculator):
 
     def _child_verdict(self, child: HouseholdMember) -> Verdict:
         """
-        A child under 18 with a parent in the household (20 CFR 416.1165, 416.1202(b)).
+        A child under 18 with a parent in the household (spec sections 4.8 and 4.9).
         """
         params = self.params
         parents = self._parents_of(child)
