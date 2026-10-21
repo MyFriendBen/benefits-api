@@ -1,3 +1,8 @@
+"""Federal Child and Dependent Care Credit.
+
+Rules and figures: program-ops `programs/white_labels/federal/cdcc/federal_cdcc_spec.md`.
+"""
+
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from functools import cached_property
@@ -12,9 +17,9 @@ from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 @dataclass(frozen=True)
 class CdccYear:
     """
-    One tax year's parameters for the credit: the applicable-percentage schedule, the
-    dollar limit on care expenses and the income a student or disabled spouse is deemed to
-    earn (spec section 7, Benefit Value, and the `earned_income` criterion).
+    One tax year's parameters for the credit: the applicable-percentage schedule and the
+    dollar limit on care expenses (spec section 7, Benefit Value) and the income a student
+    or disabled spouse is deemed to earn (spec section 4 `earned_income`).
 
     The schedule starts at ``top_rate`` for AGI up to ``top_rate_limit`` and loses one point
     for each ``first_step`` (or fraction) over it, but never below ``middle_rate``. Past
@@ -36,7 +41,7 @@ class CdccYear:
     deemed_spouse_monthly_income: tuple[int, int]
 
 
-# The 2026 schedule and limits as the spec states them (section 7, percentage table and terms).
+# Percentage schedule and dollar limits, spec section 7; deemed spouse income, spec section 4 `earned_income`.
 CDCC_YEARS: dict[int, CdccYear] = {
     2026: CdccYear(
         top_rate=50,
@@ -53,7 +58,8 @@ CDCC_YEARS: dict[int, CdccYear] = {
 
 
 def applicable_percentage(agi: float, is_joint: bool, params: CdccYear) -> int:
-    """The credit's percentage of work-related expenses for ``agi``, in whole points."""
+    """The credit's percentage of work-related expenses for ``agi``, in whole points (spec
+    section 7, percentage table)."""
     if agi <= params.top_rate_limit:
         return params.top_rate
 
@@ -109,14 +115,19 @@ class FederalCdcc(ProgramCalculator):
     ]
 
     def member_eligible(self, e: MemberEligibility) -> None:
+        # spec section 4 `qualifying_individual`
         e.condition(self._is_qualifying_individual(e.member))
 
     def household_eligible(self, e: Eligibility) -> None:
         e.condition(len(self._filers) > 0)
+        # spec section 4 `work_related_care_expenses`
         e.condition(self._care_expenses > 0)
+        # spec section 4 `earned_income`
         e.condition(all(self._earned_income(filer) > 0 for filer in self._filers))
 
     def household_value(self) -> int:
+        """Spec section 7 Benefit Value: percentage x min(care expenses, dollar limit, lowest
+        filer's earned income)."""
         params = self._params
         percentage = applicable_percentage(self._agi, self._is_joint, params)
         expense_limit = params.expense_limit[self._has_two_or_more_qualifying]
@@ -179,6 +190,7 @@ class FederalCdcc(ProgramCalculator):
         return self._qualifying_count >= 2
 
     def _is_qualifying_individual(self, member: HouseholdMember) -> bool:
+        """Spec section 4 `qualifying_individual`."""
         if member.relationship == "spouse":
             return bool(member.has_disability())
 
@@ -193,8 +205,9 @@ class FederalCdcc(ProgramCalculator):
 
     def _earned_income(self, filer: HouseholdMember) -> float:
         """
-        A filer's yearly earned income. A spouse who is a full-time student or has a
-        disability flag earns at least the deemed amount for all twelve months.
+        A filer's yearly earned income (spec section 4 `earned_income`). A spouse who is a
+        full-time student or has a disability flag earns at least the deemed amount for all
+        twelve months.
         """
         earned = filer.calc_gross_income("yearly", ["earned"])
 
