@@ -1,0 +1,83 @@
+{
+  "white_label": {
+    "code": "federal"
+  },
+  "program_category": {
+    "external_name": "tax_credit"
+  },
+  "program": {
+    "name_abbreviated": "federal_ctc",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Federal Child Tax Credit (CTC)",
+    "description_short": "Federal tax credit for families with children or other dependents",
+    "description": "This benefit includes two tax credits for people caring for children or other dependents. A tax credit lowers the amount of federal income tax you owe.\n\nThe Child Tax Credit is for qualifying children. Some people may also qualify for a refundable part of it, called the Additional Child Tax Credit. This part can be paid to you as a tax refund, and how much you get depends on how much you earn. The Credit for Other Dependents is for people you support who don't qualify for the Child Tax Credit. This can include older children, college students, or parents. It can lower the tax you owe, but it cannot be paid to you as a refund. The amount shown here is what we estimate your credits to be worth, based on what you shared about your household.\n\nA few things to know before you file. A child must have lived with you for more than half the year, and only one person can claim each child. The IRS generally processes federal tax returns filed online within 21 days. If you claim the Additional Child Tax Credit, your refund won't come before mid-February. If you missed these credits in a past year, you can usually still claim them. You have 3 years from when you filed that year's return, or 2 years from when you paid the tax, whichever is later. A refund from the Additional Child Tax Credit doesn't count as income for SNAP, TANF, Medicaid, or SSI. It also doesn't count as savings for at least 12 months after you get it.\n\nTo get these credits, file a federal tax return. Click 'File for Free' to prepare and file your return online at no cost. If you want someone to help you file, see Get Help Applying.",
+    "website_description": "Federal tax credit for families with children or other dependents",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/child-tax-credit",
+    "apply_button_link": "https://www.irs.gov/e-file-do-your-taxes-for-free",
+    "apply_button_description": "File for Free",
+    "estimated_application_time": "3 hours",
+    "estimated_decision_time": "21 days",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "base_program": "ctc",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "active": true
+  },
+  "documents": [
+    {
+      "external_name": "ctc_filer_identifier",
+      "text": "Your Social Security card (or an ITIN for your spouse, or if you only claim the Credit for Other Dependents)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ctc_dependent_identifier",
+      "text": "Bring a work-valid Social Security card for each child claimed for the Child Tax Credit; other dependents may use an SSN, ITIN, or ATIN.",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ctc_income_statements",
+      "text": "W-2 and 1099 forms from all your employers",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "irs_vita_tce",
+      "name": "IRS Volunteer Income Tax Assistance (VITA) and Tax Counseling for the Elderly (TCE)",
+      "email": "",
+      "description": "Free tax help, including preparing your return, at thousands of sites across the country for people who qualify, with language support available.",
+      "assistance_link": "https://www.irs.gov/individuals/irs-free-tax-return-preparation-programs",
+      "phone_number": "+18009069887"
+    },
+    {
+      "external_name": "aarp_foundation_tax_aide",
+      "name": "AARP Foundation Tax-Aide",
+      "email": "taxaide@aarp.org",
+      "description": "Tax-Aide is the nation's largest free tax assistance and preparation service, focused on people over 50 with low to moderate income. You do not need to be an AARP member to use it.",
+      "assistance_link": "https://www.aarp.org/money/taxes/aarp-taxaide/",
+      "phone_number": "+18882277669"
+    },
+    {
+      "external_name": "get_your_refund",
+      "name": "GetYourRefund",
+      "email": "support@getyourrefund.org",
+      "description": "A free IRS-certified virtual service that helps low-income households across America receive high quality tax services from the convenience of their home.",
+      "assistance_link": "https://www.getyourrefund.org/en",
+      "phone_number": ""
+    }
+  ]
+}
