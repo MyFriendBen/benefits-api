@@ -12,8 +12,9 @@ from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 @dataclass(frozen=True)
 class CdccYear:
     """
-    One tax year's parameters for the credit: the applicable-percentage schedule of
-    Form 2441, line 8, and the dollar limits of 26 U.S.C. § 21(c) and (d)(2).
+    One tax year's parameters for the credit: the applicable-percentage schedule, the
+    dollar limit on care expenses and the income a student or disabled spouse is deemed to
+    earn (spec section 7, Benefit Value, and the `earned_income` criterion).
 
     The schedule starts at ``top_rate`` for AGI up to ``top_rate_limit`` and loses one point
     for each ``first_step`` (or fraction) over it, but never below ``middle_rate``. Past
@@ -35,8 +36,7 @@ class CdccYear:
     deemed_spouse_monthly_income: tuple[int, int]
 
 
-# Instructions for Form 2441 (2026), draft dated 2026-08-21, Line 8, 2026 Phaseout Schedule;
-# limits from 26 U.S.C. § 21(c) and (d)(2).
+# The 2026 schedule and limits as the spec states them (section 7, percentage table and terms).
 CDCC_YEARS: dict[int, CdccYear] = {
     2026: CdccYear(
         top_rate=50,
@@ -68,15 +68,15 @@ def applicable_percentage(agi: float, is_joint: bool, params: CdccYear) -> int:
 
 class FederalCdcc(ProgramCalculator):
     """
-    Federal Child and Dependent Care Credit (26 U.S.C. § 21), figured as Form 2441 does.
+    Federal Child and Dependent Care Credit, figured the way the federal return does.
 
     The filers are the head and, on a joint return, the member recorded as ``spouse``. A
     qualifying individual is a member in a dependent relationship who is under 13 today or
     has a disability flag, or a spouse with a disability flag. The household also needs a
     child care or dependent care expense, and every filer needs earned income (wages or
     self-employment). A spouse who is a full-time student or has a disability flag is
-    deemed to earn $250 a month ($500 with two or more qualifying individuals), as
-    § 21(d)(2) provides.
+    deemed to earn $250 a month ($500 with two or more qualifying individuals), the
+    spec's `earned_income` rule.
 
     The credit is the applicable percentage for the filers' income times the smallest of
     the care expenses, the dollar limit ($3,000 for one qualifying individual, $6,000 for
