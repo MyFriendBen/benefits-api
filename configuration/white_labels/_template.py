@@ -288,7 +288,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # stepDirectory: Defines the screener flow (ORDER MATTERS!)
     #   - Array of step names that appear in order
     #   - householdSize and householdData MUST be consecutive
-    #   - "hasBenefits" shows category_benefits from above
+    #   - "hasBenefits" lists Programs with show_in_has_benefits_step=True (database-driven)
     #   - "acuteHHConditions" is the Additional Resources step
     #   - Can have multiple directories keyed by path for different flows
     #
@@ -339,7 +339,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
                 "householdData",
                 "hasExpenses",
                 "householdAssets",
-                "hasBenefits",  # Shows category_benefits
+                "hasBenefits",  # Programs with show_in_has_benefits_step=True
                 "acuteHHConditions",  # Additional Resources step
                 "referralSource",
                 "signUpInfo",
