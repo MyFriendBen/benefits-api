@@ -395,6 +395,20 @@ class TestScenarios(FederalEitcTestCase):
 
         self.assert_ineligible(self.calculate(screen))
 
+    def test_a_child_born_after_the_tax_year_is_not_counted(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 30, income={"wages": 9_000})
+        self.member(screen, "child", -1, month=2)
+
+        self.assert_eligible(self.calculate(screen), 649)
+
+    def test_a_disabled_child_born_after_the_tax_year_is_not_counted(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 22, income={"wages": 20_000})
+        self.member(screen, "child", -1, month=2, disabled=True)
+
+        self.assert_ineligible(self.calculate(screen))
+
     def test_scenario_38_agi_past_the_phase_out_start_earned_income_gives_the_smaller_amount(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 31, income={"wages": 3_000, "unemployment": 22_000})
