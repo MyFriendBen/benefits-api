@@ -1,11 +1,11 @@
-"""Federal CTC scenarios, one per spec §8, plus the tax computation and the structural rules.
+"""Federal CTC scenarios, one per spec section 8, plus the tax computation and the structural rules.
 
 Every age in the spec is the member's age at the end of the 2025 tax year, so members are
 built from a birth month and the clock is pinned: an age derived from today would put a
 boundary member on the wrong side of it as the calendar moves. Members built in the same
 year share a birth month, so two members of the same age are not younger than each other.
 
-§4's `child_citizenship` and `odc_citizenship` have no scenario: they are `Enforced by:
+Section 4's `child_citizenship` and `odc_citizenship` have no scenario: they are `Enforced by:
 program-record` (`legal_status_required`), which the calculator never reads.
 """
 
@@ -99,8 +99,7 @@ class TestRegistration(FederalCtcTestCase):
 
 
 class TestIncomeTax(FederalCtcTestCase):
-    """`income_tax` against rows of the 2025 Tax Table and the Tax Computation Worksheet
-    (2025 Instructions for Form 1040)."""
+    """`income_tax` against published rows of the 2025 Tax Table and the Tax Computation Worksheet."""
 
     brackets = CTC_YEARS[TAX_YEAR].tax_brackets
 
@@ -331,7 +330,7 @@ class TestScenarios(FederalCtcTestCase):
 
 
 class TestStructure(FederalCtcTestCase):
-    """Rules the spec states in §4 and §7 but no scenario reaches."""
+    """Rules the spec states in sections 4 and 7 but no scenario reaches."""
 
     def test_the_credit_is_capped_at_tax_plus_the_refundable_part(self):
         """Two other dependents and no qualifying child: the $1,000 is nonrefundable, so only

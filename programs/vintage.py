@@ -152,8 +152,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         basis=Basis.COVERAGE_YEAR,
         status=Status.CONFIRMED,
         rule=_PRIOR_TAX_YEAR,
-        source="26 U.S.C. 24 as amended by Pub. L. 119-21 (2025 parameters); 2025 Instructions for Schedule 8812; "
-        "program-ops programs/white_labels/federal/ctc/federal_ctc_spec.md",
+        source="program-ops programs/white_labels/federal/ctc/federal_ctc_spec.md, section 7 (2025 parameters)",
     ),
     ("il", "il_aca"): Vintage(
         edition="2026",

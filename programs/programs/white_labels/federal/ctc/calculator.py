@@ -19,7 +19,7 @@ Bracket = tuple[Optional[int], Decimal]
 
 @dataclass(frozen=True)
 class CtcYear:
-    """One tax year's parameters, keyed by filing status where they differ."""
+    """One tax year's parameters (spec section 7), keyed by filing status where they differ."""
 
     per_child_credit: int
     other_dependent_credit: int
@@ -28,7 +28,7 @@ class CtcYear:
     refundable_max: int
     refundable_rate: Decimal
     earned_income_floor: int
-    # The qualifying-relative gross income limit (26 U.S.C. § 152(d)(1)(B)).
+    # A relative counts as a dependent only with gross income under this (spec section 4 `odc_dependent`).
     qualifying_relative_income_limit: int
     standard_deduction: dict[str, int]
     # The addition to the standard deduction for each filer 65 or older or blind.
@@ -38,14 +38,14 @@ class CtcYear:
 
 
 def _brackets(*tops: int) -> tuple[Bracket, ...]:
-    """The seven ordinary income brackets from the top of each of the first six."""
+    """The seven ordinary income brackets from the top of each of the first six (spec section 7, tax)."""
     rates = ("0.10", "0.12", "0.22", "0.24", "0.32", "0.35")
     return tuple((top, Decimal(rate)) for top, rate in zip(tops, rates)) + ((None, Decimal("0.37")),)
 
 
-# 26 U.S.C. § 24(h) as amended in 2025; Rev. Proc. 2024-40 for the brackets, standard
-# deduction and qualifying-relative limit, as published in Publication 501 (2025) and the
-# 2025 Instructions for Form 1040 and Schedule 8812.
+# The 2025 tax year's figures, as spec section 7 states them: the credit amounts, phase-out,
+# refundable limb, qualifying-relative limit, standard deduction and the ordinary income
+# brackets the tax on taxable income is figured from.
 CTC_YEARS: dict[int, CtcYear] = {
     2025: CtcYear(
         per_child_credit=2_200,
@@ -67,12 +67,12 @@ CTC_YEARS: dict[int, CtcYear] = {
     ),
 }
 
-#: Taxable income from which the Tax Computation Worksheet replaces the Tax Table.
+#: Taxable income from which the Tax Computation Worksheet replaces the Tax Table (spec section 7, tax).
 TAX_TABLE_CEILING = 100_000
 
 
 def bracket_tax(amount: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
-    """The tax on ``amount`` from the bracket schedule, to the cent (the Tax Computation Worksheet)."""
+    """The tax on ``amount`` from the bracket schedule, to the cent: the Tax Computation Worksheet (spec section 7)."""
     tax = Decimal(0)
     lower = Decimal(0)
     for top, rate in brackets:
@@ -86,7 +86,7 @@ def bracket_tax(amount: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
 
 
 def tax_table_row(amount: Decimal) -> tuple[int, int]:
-    """The Tax Table row holding ``amount``: $5, $10, $10, then $25 rows to $3,000 and $50 rows above."""
+    """The Tax Table row holding ``amount``: $5, $10, $10, then $25 rows to $3,000 and $50 rows above (spec section 7)."""
     if amount < 5:
         return 0, 5
     if amount < 15:
@@ -101,7 +101,7 @@ def tax_table_row(amount: Decimal) -> tuple[int, int]:
 
 def income_tax(taxable_income: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
     """
-    Federal income tax on ``taxable_income``, as Form 1040 line 16 figures it.
+    Federal income tax on ``taxable_income`` before any credits (spec section 7, tax).
 
     Below $100,000 the Tax Table applies: each row is priced at its midpoint and rounded
     to the dollar, which reproduces the published rows. From $100,000 the Tax Computation
@@ -119,8 +119,11 @@ def income_tax(taxable_income: Decimal, brackets: tuple[Bracket, ...]) -> Decima
 
 class FederalCtc(ProgramCalculator):
     """
-    Federal Child Tax Credit and Credit for Other Dependents (26 U.S.C. § 24), estimated for
-    the program's tax year.
+    Federal Child Tax Credit and Credit for Other Dependents, estimated for the program's
+    tax year.
+
+    Rules and figures: program-ops `programs/white_labels/federal/ctc/federal_ctc_spec.md`.
+    Section references below are to that document.
 
     The filers are the head and, on a joint return, the member recorded as `spouse`. Every
     other member is claimed when they are the filers' dependent: a qualifying child (a
@@ -160,7 +163,8 @@ class FederalCtc(ProgramCalculator):
     ctc_child_age_limit = 17
     child_age_limit = 19
     student_age_limit = 24
-    # Welfare income Publication 501 names as tax-exempt, left out of a relative's gross income.
+    # Welfare income is tax-exempt, so it is left out of a relative's gross income
+    # (spec section 5 `odc_relative_gross_income`).
     relative_income_excluded_types = ["sSI", "cashAssistance", "cashAssistanceOther"]
 
     dependencies = ["age", "relationship", "income_amount", "income_frequency", "income_type"]
@@ -170,6 +174,7 @@ class FederalCtc(ProgramCalculator):
         e.condition(member in self._qualifying_children or member in self._other_dependents)
 
     def household_value(self) -> float:
+        # Spec section 7: credit amounts, phase-out, then the cap at tax plus the refundable limb.
         params = self._params
         status = self._filing_status
         children = len(self._qualifying_children)
@@ -210,6 +215,7 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _filers(self) -> list[HouseholdMember]:
+        """The head and, on a joint return, the spouse (spec section 7, filing status)."""
         members = self.screen.household_members.all()
         filers = [m for m in members if m.relationship == "headOfHousehold"]
         if self._is_joint:
@@ -219,6 +225,7 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _filing_status(self) -> str:
+        """Joint with a spouse, head of household for a lone filer with a dependent, else single (spec section 7)."""
         if self._is_joint:
             return JOINT
         if self._qualifying_children or self._other_dependents:
@@ -230,14 +237,17 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _earned_income(self) -> Decimal:
+        """Wages and self-employment as reported (spec section 7, earned income)."""
         return self._filer_income(["earned"])
 
     @cached_property
     def _modified_agi(self) -> Decimal:
+        """Every income stream the filers report (spec section 7, modified AGI)."""
         return self._filer_income(["all"])
 
     @cached_property
     def _income_tax(self) -> Decimal:
+        """Tax on gross income less the standard deduction and its 65-or-blind additions (spec section 7, tax)."""
         params = self._params
         status = self._filing_status
         extra_boxes = sum(1 for filer in self._filers if self._is_senior(filer) or bool(filer.visually_impaired))
@@ -248,7 +258,7 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _dependents(self) -> tuple[list[HouseholdMember], list[HouseholdMember]]:
-        """The members the filers claim: (qualifying children for the CTC, other dependents)."""
+        """The members the filers claim: (qualifying children for the CTC, other dependents). Spec section 3 routes."""
         children: list[HouseholdMember] = []
         others: list[HouseholdMember] = []
         for member in self.screen.household_members.all():
@@ -270,7 +280,8 @@ class FederalCtc(ProgramCalculator):
         return self._dependents[1]
 
     def _is_qualifying_child(self, member: HouseholdMember) -> bool:
-        """26 U.S.C. § 152(c): relationship, age, younger than a filer, and the support test by proxy."""
+        """A qualifying child: spec section 4 `child_relationship`, `odc_child_age`, `child_younger_than_filer`
+        and `child_is_dependent` (the support test by income proxy)."""
         if member.relationship not in self.child_relationships:
             return False
 
@@ -291,12 +302,12 @@ class FederalCtc(ProgramCalculator):
         return member.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2
 
     def _is_ctc_child(self, member: HouseholdMember) -> bool:
-        """A qualifying child who has not reached 17 by the end of the tax year (26 U.S.C. § 24(c)(1))."""
+        """A qualifying child who has not reached 17 by the end of the tax year (spec section 4 `child_age`)."""
         age = self._age_at_year_end(member)
         return age is not None and age < self.ctc_child_age_limit
 
     def _is_qualifying_relative(self, member: HouseholdMember) -> bool:
-        """26 U.S.C. § 152(d): a relative whose gross income is under the year's limit."""
+        """A qualifying relative: any relative whose gross income is under the year's limit (spec section 4 `odc_dependent`)."""
         if member.relationship not in self.dependent_relationships:
             return False
 
@@ -307,12 +318,13 @@ class FederalCtc(ProgramCalculator):
         return member.age_at_end_of_year(self.tax_year)
 
     def _is_senior(self, filer: HouseholdMember) -> bool:
+        """65 or older at the end of the tax year, for the extra standard deduction (spec section 7)."""
         age = self._age_at_year_end(filer)
         return age is not None and age >= self._params.senior_age
 
     @staticmethod
     def _is_permanently_disabled(member: HouseholdMember) -> bool:
-        """The screener's stand-in for permanently and totally disabled (26 U.S.C. § 22(e)(3))."""
+        """The screener's stand-in for permanently and totally disabled (spec section 5 `disability_definition`)."""
         return bool(member.disabled) and bool(member.long_term_disability)
 
     @staticmethod
