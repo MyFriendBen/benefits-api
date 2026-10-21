@@ -1,4 +1,4 @@
-"""`0191_move_state_ctc_current_benefits` against real rows, matched the way it matches them."""
+"""`0193_move_state_ctc_current_benefits` against real rows, matched the way it matches them."""
 
 import importlib
 
@@ -11,7 +11,7 @@ from screener.models import CurrentBenefit, Screen, WhiteLabel
 
 class TestMoveStateCtcCurrentBenefits(TestCase):
     def setUp(self):
-        self.migration = importlib.import_module("programs.migrations.0191_move_state_ctc_current_benefits")
+        self.migration = importlib.import_module("programs.migrations.0193_move_state_ctc_current_benefits")
         self.federal_wl = WhiteLabel.objects.create(name="Federal", code="federal")
         self.co = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         self.tx = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")

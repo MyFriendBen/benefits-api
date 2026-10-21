@@ -24,7 +24,7 @@ def move_ctc_current_benefits(apps: Apps, schema_editor: BaseDatabaseSchemaEdito
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0190_add_denver_public_schools_referrer"),
+        ("programs", "0192_add_year_type_to_program"),
         ("screener", "0148_add_currentbenefit"),
     ]
 
