@@ -16,7 +16,6 @@ class Command(BaseCommand):
         {"abbr": "awd_medicaid", "external": "awd_medivaid"},
         {"abbr": "emergency_medicaid", "external": "emergency_medicaid"},
         {"abbr": "medicare_savings", "external": "medicare_savings"},
-        {"abbr": "ssi", "external": "ssi"},
         {"abbr": "trua", "external": "trua"},
         {"abbr": "rhc", "external": "rhc"},
         {"abbr": "wic", "external": "wic"},
