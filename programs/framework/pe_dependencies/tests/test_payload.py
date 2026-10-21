@@ -23,7 +23,7 @@ from programs.programs.cross_white_label.nslp.base import SchoolLunch
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.cross_white_label.wic.base import Wic
-from programs.programs.cross_white_label.ssi.base import Ssi
+from programs.programs.white_labels.ma.ssp.calculator import MaStateSupplementProgram
 from programs.programs.white_labels.federal.acp.calculator import Acp
 from programs.framework.pe_dependencies import household
 from programs.programs.cross_white_label.medicaid.chip.mo import MoChip
@@ -314,7 +314,8 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         super().setUp()
 
         # WIC is deliberately absent: it reads the ungated `wic`, so no floor applies to it.
-        self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf}
+        # SSI is computed in our own code and reads no PolicyEngine output.
+        self.gated_output_programs = {"snap": Snap, "tanf": Tanf}
 
     def _drop(self, programs, comparable_version):
         return _drop_unreadable_programs(programs, comparable_version)
@@ -420,7 +421,8 @@ class TestPeInputVersionGating(PeInputTestBase):
     def setUp(self):
         super().setUp()
 
-        self.ssi = Ssi
+        # Composes `ssi_inputs`, which carries the gated `meets_ssi_disability_criteria`.
+        self.ssi = MaStateSupplementProgram
         self.head_id = str(self.head.id)
 
     def _meets_ssi_field_present(self, version):
@@ -470,7 +472,7 @@ class TestPeInputVersionGating(PeInputTestBase):
         self.assertTrue(self._meets_ssi_field_present("frontier"))
 
     def test_ungated_input_always_present(self):
-        # A non-gated input (is_disabled) is sent regardless of version. Ssi carries a
+        # A non-gated input (is_disabled) is sent regardless of version. ssi_inputs carries a
         # gated input too, so an unpinned request resolves current — mock it offline.
         with self._mock_unpinned(None):
             result = pe_input(self.screen, [self.ssi], pe_version=None)
