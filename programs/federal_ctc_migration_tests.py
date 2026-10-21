@@ -93,6 +93,28 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
 
         self.assertEqual(self._programs_of(screen), ["federal_ctc"])
 
+    def test_the_federal_row_named_as_a_source_is_skipped_and_its_rows_kept(self):
+        from programs.current_benefits_moves import move_current_benefits
+
+        federal = self._federal()
+        screen = self._screen(self.co)
+        self._has(screen, federal)
+        self._has(self._screen(self.tx), self.tx_ctc)
+        lines: list[str] = []
+
+        result = move_current_benefits(
+            Program,
+            WhiteLabel,
+            CurrentBenefit,
+            "federal_ctc",
+            [("federal", "federal_ctc"), ("tx", "tx_ctc")],
+            out=lines.append,
+        )
+
+        self.assertEqual(CurrentBenefit.objects.filter(program=federal).count(), 2)
+        self.assertEqual((result.moved, result.duplicates_dropped), (1, 0))
+        self.assertTrue(any("is the federal row itself, skipped" in line for line in lines))
+
     def test_without_a_federal_row_nothing_is_touched(self):
         screen = self._screen(self.co)
         self._has(screen, self.co_ctc)

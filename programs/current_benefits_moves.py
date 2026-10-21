@@ -68,6 +68,11 @@ def move_current_benefits(
         state = Program.objects.filter(white_label=white_label, name_abbreviated=name_abbreviated).first()
         if state is None:
             continue
+        if state.pk == federal.pk:
+            # Naming the target as a source would match every federal row as a "duplicate"
+            # and delete it before the update ran.
+            out(f"  {white_label_code}/{name_abbreviated}: is the federal row itself, skipped")
+            continue
 
         screens_on_federal = CurrentBenefit.objects.filter(program=federal).values_list("screen_id", flat=True)
         duplicates = CurrentBenefit.objects.filter(program=state, screen_id__in=screens_on_federal)

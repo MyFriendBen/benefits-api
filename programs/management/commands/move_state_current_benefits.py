@@ -15,7 +15,7 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError
 
-from programs.current_benefits_moves import STATE_ROWS_BY_FEDERAL_PROGRAM, move_current_benefits
+from programs.current_benefits_moves import FEDERAL_WHITE_LABEL, STATE_ROWS_BY_FEDERAL_PROGRAM, move_current_benefits
 from programs.models import Program
 from screener.models import CurrentBenefit, WhiteLabel
 
@@ -58,6 +58,10 @@ class Command(BaseCommand):
                 white_label, sep, name = item.partition(":")
                 if not sep or not white_label or not name:
                     raise CommandError(f"--from expects <white label code>:<name_abbreviated>, got {item!r}")
+                if white_label == FEDERAL_WHITE_LABEL:
+                    raise CommandError(
+                        f"--from {item!r} names the federal white label; rows move onto a federal program, not from one."
+                    )
                 rows.append((white_label, name))
             return tuple(rows)
 

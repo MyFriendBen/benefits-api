@@ -87,6 +87,16 @@ class TestMoveStateCurrentBenefits(TestCase):
         with self.assertRaises(CommandError):
             self._run("federal_other")
 
+    def test_a_from_on_the_federal_white_label_is_rejected_before_anything_runs(self):
+        federal = self._federal()
+        screen = self._screen(self.co)
+        CurrentBenefit.objects.create(screen=screen, program=federal)
+
+        with self.assertRaises(CommandError):
+            self._run("federal_ctc", "--from", "federal:federal_ctc")
+
+        self.assertEqual(self._programs_of(screen), ["federal_ctc"])
+
     def test_a_malformed_from_is_rejected(self):
         self._federal()
         with self.assertRaises(CommandError):
