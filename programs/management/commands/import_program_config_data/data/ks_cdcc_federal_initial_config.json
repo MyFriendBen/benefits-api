@@ -7,6 +7,7 @@
   },
   "program": {
     "name_abbreviated": "ks_cdcc_federal",
+    "active": false,
     "external_name": "ks_cdcc_federal",
     "year": "2026",
     "legal_status_required": [

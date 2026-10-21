@@ -11,7 +11,8 @@ restated in a test file per state:
 - A state code it sends is its own. A copied ``TxStateCodeDependency`` in a Kansas class
   computes Texas rules for Kansas households, and nothing else fails.
 - It sends its state code unless it is a federal passthrough: a class that only relabels
-  a federal credit for one white label (``KsCdccFederal``), reading its base's
+  a federal credit for one white label (none remain; the federal programs now live on the
+  ``federal`` white label), reading its base's
   variable from exactly its base's inputs, because PolicyEngine reads no state for it.
 - It reads its base's variable or its own state's. Each state's TANF reads ``<state>_tanf``
   in place of the federal ``tanf_if_takes_up``; MassHealth reads the federal ``medicaid``
@@ -45,7 +46,7 @@ def state_of(calculator: type):
     the white label is one — ``cesn`` is a Colorado sub-brand with no PolicyEngine programs
     of its own. ``white_labels/federal/`` belongs to no state. Under ``cross_white_label``,
     ``base.py`` holds the federal class and every other module is named for its state —
-    ``snap/tx.py``, ``cdcc/ks.py``.
+    ``snap/tx.py``, ``tanf/ks.py``.
     """
     parts = calculator.__module__.split(".")
 
