@@ -29,7 +29,7 @@ def deactivate(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0189_add_211ks_211mo_referrers"),
+        ("programs", "0192_add_year_type_to_program"),
     ]
 
     operations = [
