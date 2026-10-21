@@ -11,7 +11,7 @@ restated in a test file per state:
 - A state code it sends is its own. A copied ``TxStateCodeDependency`` in a Kansas class
   computes Texas rules for Kansas households, and nothing else fails.
 - It sends its state code unless it is a federal passthrough: a class that only relabels
-  a federal credit for one white label (``TxEitc``, ``KsCdccFederal``), reading its base's
+  a federal credit for one white label (``TxEitc``, ``KsEitcFederal``), reading its base's
   variable from exactly its base's inputs, because PolicyEngine reads no state for it.
 - It reads its base's variable or its own state's. Each state's TANF reads ``<state>_tanf``
   in place of the federal ``tanf_if_takes_up``; MassHealth reads the federal ``medicaid``

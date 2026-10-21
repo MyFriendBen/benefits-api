@@ -9,6 +9,7 @@
     },
     "program": {
         "name_abbreviated": "mo_cdcc_federal",
+        "active": false,
         "external_name": "mo_cdcc_federal",
         "year": "2026",
         "legal_status_required": [
