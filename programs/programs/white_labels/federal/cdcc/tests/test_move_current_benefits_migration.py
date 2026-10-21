@@ -1,4 +1,4 @@
-"""Migration 0191 moves "already has this benefit" rows from the state federal-CDCC copies
+"""Migration 0193 moves "already has this benefit" rows from the state federal-CDCC copies
 onto `federal_cdcc`, run against real rows the way the vintage migration tests do."""
 
 import importlib
@@ -9,7 +9,7 @@ from django.test import TestCase
 from programs.models import Program
 from screener.models import CurrentBenefit, Screen, WhiteLabel
 
-MIGRATION = "programs.migrations.0191_move_state_cdcc_current_benefits"
+MIGRATION = "programs.migrations.0193_move_state_cdcc_current_benefits"
 
 
 class TestMoveStateCdccCurrentBenefits(TestCase):
