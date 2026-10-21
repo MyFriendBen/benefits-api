@@ -4,6 +4,10 @@ from django.db.migrations.state import StateApps
 
 # The link partners actually received is /co/step-1?referrer=denver-public-schools,
 # so co.py's DPS branding is now keyed to that code and this adds its partner row.
+# add_config only writes referrer_data, never Referrer rows. Staging and prod got
+# this row in the admin, so this is a no-op there; it exists so local and rebuilt
+# databases also have it, without which the link still shows the referral-source
+# step and its screens get no partner name.
 # 0187's `dps` row stays: the dashboards name a screen's partner by joining
 # Screen.referrer_code/referral_source to this table, and a screen already
 # carries `dps`.
@@ -19,7 +23,7 @@ def add_referrer(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor) -> No
         return
 
     # Raw SQL and DO NOTHING for the same reasons as 0187: the historical model
-    # has no _parler_meta, and prod's row is made in the admin before this deploys.
+    # has no _parler_meta, and the admin-made row must keep its values.
     with schema_editor.connection.cursor() as cursor:
         cursor.execute(
             """
