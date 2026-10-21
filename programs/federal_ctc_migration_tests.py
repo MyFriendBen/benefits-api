@@ -48,7 +48,7 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         self._has(co_screen, self.coctc)
         self._has(tx_screen, self.tx_ctc)
 
-        self.migration.move_current_benefits(django_apps, None)
+        self.migration.move_ctc_current_benefits(django_apps, None)
 
         self.assertEqual(self._programs_of(co_screen), ["coctc", "federal_ctc"])
         self.assertEqual(self._programs_of(tx_screen), ["federal_ctc"])
@@ -64,7 +64,7 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         self._has(il_screen, self.il_ctc)
         self._has(il_screen, self.il_federal_ctc)
 
-        self.migration.move_current_benefits(django_apps, None)
+        self.migration.move_ctc_current_benefits(django_apps, None)
 
         self.assertEqual(self._programs_of(co_screen), ["coctc"])
         self.assertEqual(self._programs_of(il_screen), ["federal_ctc", "il_ctc"])
@@ -78,7 +78,7 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         self._has(screen, self.co_ctc)
         self._has(screen, federal)
 
-        self.migration.move_current_benefits(django_apps, None)
+        self.migration.move_ctc_current_benefits(django_apps, None)
 
         self.assertEqual(self._programs_of(screen), ["federal_ctc"])
         self.assertEqual(CurrentBenefit.objects.filter(screen=screen).count(), 1)
@@ -88,8 +88,8 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         screen = self._screen(self.tx)
         self._has(screen, self.tx_ctc)
 
-        self.migration.move_current_benefits(django_apps, None)
-        self.migration.move_current_benefits(django_apps, None)
+        self.migration.move_ctc_current_benefits(django_apps, None)
+        self.migration.move_ctc_current_benefits(django_apps, None)
 
         self.assertEqual(self._programs_of(screen), ["federal_ctc"])
 
@@ -97,6 +97,6 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         screen = self._screen(self.co)
         self._has(screen, self.co_ctc)
 
-        self.migration.move_current_benefits(django_apps, None)
+        self.migration.move_ctc_current_benefits(django_apps, None)
 
         self.assertEqual(self._programs_of(screen), ["ctc"])

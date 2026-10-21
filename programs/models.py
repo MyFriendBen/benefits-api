@@ -6,7 +6,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
-from programs.util import Dependencies
+from programs.util import Dependencies, UnregisteredCalculatorError
+from sentry_sdk import capture_message
 from typing import Optional, TypedDict, Union
 from programs.translation_overrides import warning_calculators
 
@@ -896,7 +897,17 @@ class Program(models.Model):
         # from this module. At import time that cycle is unresolvable.
         from programs.programs import calculators
 
-        Calculator = calculators[self.name_abbreviated.lower()]
+        name = self.name_abbreviated.lower()
+        if name not in calculators:
+            # Reported and dropped rather than raised: an active row with no calculator
+            # would otherwise fail every program on the results page.
+            capture_message(
+                f"Program {self.white_label.code}/{name} has no registered calculator; left out of the results.",
+                level="error",
+            )
+            raise UnregisteredCalculatorError(self.white_label.code, name)
+
+        Calculator = calculators[name]
 
         calculator = Calculator(screen, self, data, missing_dependencies)
 

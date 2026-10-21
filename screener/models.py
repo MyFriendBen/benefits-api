@@ -996,6 +996,10 @@ class EligibilitySnapshot(models.Model):
     #: have been decoupled fell back to dropping its dependents.
     DROPPED_UPSTREAM_ERROR = "force_calculated_upstream_error"
 
+    #: An active row with no calculator registered under its name: the calculator was
+    #: deleted from the code, or the row was imported ahead of it. Reported to Sentry.
+    DROPPED_NO_CALCULATOR = "no_calculator"
+
 
 class NPSScore(models.Model):
     eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
