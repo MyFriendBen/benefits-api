@@ -157,11 +157,12 @@ class ProgramChangelistForm(forms.ModelForm):
 class ProgramAdmin(SecureAdmin):
     form = ProgramAdminForm
     search_fields = ("name__translations__text",)
-    list_display = ["get_str", "name_abbreviated", "active", "action_buttons"]
+    list_display = ["get_str", "name_abbreviated", "year_type", "active", "action_buttons"]
     list_editable = ["active"]
     list_select_related = ["white_label"]
     list_filter = [
         "active",
+        "year_type",
         "low_confidence",
         "show_on_current_benefits",
         "show_in_has_benefits_step",
@@ -186,6 +187,7 @@ class ProgramAdmin(SecureAdmin):
         "name_abbreviated",
         "external_name",
         "year",
+        "year_type",
         "value_format",
         "category",
         "active",

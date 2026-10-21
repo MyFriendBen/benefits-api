@@ -1,13 +1,17 @@
-from django.core.management.base import BaseCommand
-from programs.models import Program, FederalPoveryLimit
+from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
-    help = "Update FPL field for all programs to this year's FederalPoveryLimit"
+    help = (
+        "Deprecated (MFB-564): used to force every program onto one shared "
+        "'THIS YEAR' row. That would now corrupt year_type classification, use "
+        "set_year_type instead."
+    )
 
     def handle(self, *args, **options):
-        fpl_this_year = FederalPoveryLimit.objects.get(year="THIS YEAR")
-
-        Program.objects.update(year=fpl_this_year)
-
-        self.stdout.write(self.style.SUCCESS("Successfully updated FPL field for all programs"))
+        raise CommandError(
+            "fpl_fix is deprecated: it force-updates every program's year regardless of "
+            "year_type, which would silently reassign fiscal_year and hardcoded programs "
+            "onto the calendar sentinel row. Use `set_year_type` to reclassify specific "
+            "programs instead."
+        )

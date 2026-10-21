@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -74,11 +75,33 @@ def _get_fpl_data() -> dict:
     return _FPL_DEFAULTS
 
 
+# Sentinel FederalPoveryLimit.year values shared by every calendar_year/fiscal_year
+# Program (and, potentially, UrgentNeed). Their `period` is rolled forward by
+# set_year_type/the yearly FPL update, not owned by any single program, so code
+# importing per-program data must never blindly overwrite `period` on these rows.
+DYNAMIC_FPL_YEARS = {"THIS_YEAR_CALENDAR", "THIS_YEAR_FISCAL"}
+
+
 class FederalPoveryLimit(models.Model):
     year = models.CharField(max_length=32, unique=True)
     period = models.CharField(max_length=32)
 
     MAX_DEFINED_SIZE = 8
+
+    def clean(self):
+        if self.period not in _get_fpl_data():
+            raise ValidationError(
+                {"period": f"No FPL data defined for period '{self.period}'. Add it to _FPL_DEFAULTS first."}
+            )
+
+    def save(self, *args, **kwargs):
+        # Fail here, at write time, with a clear message instead of deep inside
+        # eligibility calculation: as_dict()/get_limit() do a bare
+        # _get_fpl_data()[self.period] lookup and raise a bare KeyError, which
+        # otherwise only surfaces later when some program using this row gets
+        # screened, crashing the results endpoint for every program on it.
+        self.clean()
+        super().save(*args, **kwargs)
 
     def get_limit(self, household_size: int):
         limits = self.as_dict()
@@ -583,6 +606,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "excludes_programs": list[str],
             "value_format": Optional[str],
             "white_label": str,
+            "year_type": str,
         },
     )
 
@@ -609,6 +633,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
             "white_label": program.white_label.code,
+            "year_type": program.year_type,
         }
 
     def from_model_data(self, data: DataType):
@@ -620,14 +645,20 @@ class ProgramDataController(ModelDataController["Program"]):
         program.low_confidence = data["low_confidence"]
         program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
+        program.year_type = data.get("year_type", "hardcoded")
 
         # get or create fpl
         fpl = data["fpl"]
         if fpl is not None:
             try:
                 fpl_instance = FederalPoveryLimit.objects.get(year=fpl["year"])
-                fpl_instance.period = fpl["period"]
-                fpl_instance.save()
+                # Dynamic rows are shared by every program/need pointing at them, so
+                # importing one program's (possibly stale) exported snapshot must
+                # not silently roll the shared period back for everyone else on it.
+                # Only a genuinely per-row hardcoded year is safe to overwrite here.
+                if fpl["year"] not in DYNAMIC_FPL_YEARS:
+                    fpl_instance.period = fpl["period"]
+                    fpl_instance.save()
             except FederalPoveryLimit.DoesNotExist:
                 fpl_instance = FederalPoveryLimit.objects.create(year=fpl["year"], period=fpl["period"])
             program.year = fpl_instance
@@ -741,6 +772,16 @@ class Program(models.Model):
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
+    )
+    YEAR_TYPE_CHOICES = [
+        ("hardcoded", "Hardcoded"),
+        ("fiscal_year", "Fiscal Year"),
+        ("calendar_year", "Calendar Year"),
+    ]
+    year_type = models.CharField(
+        max_length=32,
+        default="hardcoded",
+        choices=YEAR_TYPE_CHOICES,
     )
     category = models.ForeignKey(
         ProgramCategory,
@@ -863,6 +904,25 @@ class Program(models.Model):
 
         return eligibility
 
+    def clean(self):
+        # Catches the admin case: year_type is still "hardcoded" but someone
+        # picked a dynamic row (THIS_YEAR_CALENDAR/THIS_YEAR_FISCAL) directly in
+        # the year dropdown. That combination is inherently inconsistent, reject
+        # it at form-submit time rather than letting save() silently correct it
+        # out from under the admin. Scripts/commands that go straight to .save()
+        # (e.g. set_year_type demoting a program) skip clean() entirely, that
+        # path is handled by save() itself, below.
+        if self.year_type == "hardcoded" and self.year_id and self.year.year in DYNAMIC_FPL_YEARS:
+            raise ValidationError(
+                {
+                    "year": (
+                        "A hardcoded program can't point at a dynamic row "
+                        f"({self.year.year}). Set Year type to Calendar Year or Fiscal "
+                        "Year instead, or pick a specific year."
+                    )
+                }
+            )
+
     def save(self, *args, **kwargs):
         # Normalize name_abbreviated to lowercase. It's used as a case-sensitive
         # key in several places — the calculator registry lookup above (.lower()),
@@ -873,6 +933,26 @@ class Program(models.Model):
         # convention.
         if self.name_abbreviated:
             self.name_abbreviated = self.name_abbreviated.lower()
+
+        # Keep `year` in sync with `year_type` so the two can never drift,
+        # regardless of whether this save comes from the admin, a script, or a
+        # management command. Dynamic year types always point at the shared
+        # sentinel FederalPoveryLimit row; "hardcoded" programs manage their own
+        # `year` FK by hand, so leave it untouched in that case. Note: this only
+        # fires on .save(), a bulk .update() bypasses it, same caveat as the
+        # name_abbreviated normalization above.
+        if self.year_type == "calendar_year":
+            self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_CALENDAR")
+        elif self.year_type == "fiscal_year":
+            self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_FISCAL")
+        elif self.year_type == "hardcoded" and self.year_id and self.year.year in DYNAMIC_FPL_YEARS:
+            # Demoted from a dynamic type back to hardcoded (e.g. via
+            # set_year_type, which saves directly and never goes through
+            # clean()). Freeze it at whatever period the shared row currently
+            # has rather than leaving `year` empty, an empty `year` 500s
+            # PolicyEngine calculators that do program.year.period.
+            period = self.year.period
+            self.year, _ = FederalPoveryLimit.objects.get_or_create(year=period, defaults={"period": period})
         super().save(*args, **kwargs)
 
     class Meta:
@@ -1180,8 +1260,13 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
         if fpl is not None:
             try:
                 fpl_instance = FederalPoveryLimit.objects.get(year=fpl["year"])
-                fpl_instance.period = fpl["period"]
-                fpl_instance.save()
+                # Dynamic rows are shared by every program/need pointing at them, so
+                # importing one program's (possibly stale) exported snapshot must
+                # not silently roll the shared period back for everyone else on it.
+                # Only a genuinely per-row hardcoded year is safe to overwrite here.
+                if fpl["year"] not in DYNAMIC_FPL_YEARS:
+                    fpl_instance.period = fpl["period"]
+                    fpl_instance.save()
             except FederalPoveryLimit.DoesNotExist:
                 fpl_instance = FederalPoveryLimit.objects.create(year=fpl["year"], period=fpl["period"])
             need.year = fpl_instance
