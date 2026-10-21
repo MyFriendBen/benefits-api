@@ -8,6 +8,12 @@ class NcMedicaid(Medicaid):
     program_code = "nc_medicaid"
     pe_inputs = [
         *Medicaid.pe_inputs,
+        # PolicyEngine's `is_blind` is a pure input defaulting to False and feeds its
+        # aged/blind/disabled SSI classification, which the SSI-recipient Medicaid pathway
+        # reads. Declared here rather than relied on from a sibling program: PolicyEngine
+        # inputs are pooled per request, but SSI is computed in our own code, so no other NC
+        # program sends it. Mirrors MoHealthNet. It only ever widens eligibility.
+        dependency.member.IsBlindDependency,
         dependency.household.NcStateCodeDependency,
     ]
 
