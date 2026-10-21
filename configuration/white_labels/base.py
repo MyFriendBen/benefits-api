@@ -493,20 +493,6 @@ class ConfigurationData:
     # Example: {"80202": {"Denver County": "Denver County"}}
     counties_by_zipcode = {}
 
-    # ==================================================================================
-    # CATEGORY BENEFITS - Step 10: "Do you already have any benefits?"
-    # ==================================================================================
-    # Override this in your white label config with benefits available in your state.
-    # For detailed documentation on structure and naming conventions, see:
-    #     configuration/white_labels/_template.py (search for "category_benefits")
-    #     configuration/white_labels/README.md
-    # ==================================================================================
-    # Base default is empty; each white label overrides with its own benefits.
-    # For the expected structure and naming conventions, see:
-    #     configuration/white_labels/_template.py (search for "category_benefits")
-    #     configuration/white_labels/README.md
-    category_benefits = {}
-
     # Links to consent/terms pages, keyed by language code.
     consent_to_contact = {
         "en-us": "https://www.myfriendben.org/terms-and-conditions/",

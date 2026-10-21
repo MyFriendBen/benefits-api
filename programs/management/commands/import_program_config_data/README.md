@@ -433,31 +433,17 @@ value — a test that only checks eligibility passes while the amount is wrong.
 - **Calculator First**: Always create the calculator code before importing the program
 - **Name Matching**: The `name_abbreviated` in your JSON must exactly match the calculator key
 - **One-Time Import**: This tool only creates new programs. Updates require manual database changes or new migrations
-- **Category Benefits**: If your program should appear in the "Additional Resources" step, you must also configure it in `configuration/white_labels/{state_code}.py` - see details below
+- **Has-Benefits Checkbox**: If your program should appear on the "Do you already have any benefits?" step, set `show_in_has_benefits_step` to `true` in the JSON - see details below
 
-## Critical Integration: Category Benefits
+## Critical Integration: Has-Benefits Checkbox
 
-When creating a new program, you may need to update the white label configuration to enable the "I already have this" checkbox functionality in the "Additional Resources" step.
+The checkboxes on the "Do you already have any benefits?" step are driven by the database, not by white label config. `HasBenefitsProgramsView` (`screener/views.py`) serves every `Program` with `show_in_has_benefits_step=True`, using the program's own name and description translations.
 
 ### The Naming Convention Chain
 
-The benefit key in `category_benefits` creates a critical chain that must be consistent:
+1. **Program Flag**: `show_in_has_benefits_step: true` in the import JSON (or toggled in the Django admin) puts the program's checkbox on the step.
 
-1. **Config Key**: In `configuration/white_labels/{code}.py`
-   ```python
-   category_benefits = {
-       "food": {
-           "benefits": {
-               "snap": {  # ← This key is critical!
-                   "name": {"_label": "", "_default_message": "SNAP"},
-                   "description": {"_label": "", "_default_message": "..."}
-               }
-           }
-       }
-   }
-   ```
-
-2. **Frontend Field**: In `benefits-calculator/src/Assets/updateScreen.ts`, the benefit key is sent as part of `current_benefits`.
+2. **Frontend Field**: In `benefits-calculator/src/Assets/updateScreen.ts`, the program's `name_abbreviated` is sent as part of `current_benefits`.
 
 3. **Backend Lookup**: In `screener/models.py`, `has_benefit(name_abbreviated)` checks `self.current_benefits.all()` for a `CurrentBenefit` record whose linked program has a matching `name_abbreviated`
 
@@ -474,23 +460,9 @@ Multiple programs can check the same benefit field. For example:
 
 If your program needs an "I already have this" checkbox:
 
-1. **Add to white label config** (`configuration/white_labels/{code}.py`):
-   ```python
-   category_benefits = {
-       "food": {
-           "benefits": {
-               "my_program": {  # ← Use a consistent key
-                   "name": {"_label": "", "_default_message": "My Program Name"},
-                   "description": {"_label": "", "_default_message": "Description"}
-               }
-           }
-       }
-   }
-   ```
+1. **Set the flag** in the program's import JSON: `"show_in_has_benefits_step": true`.
 
-2. **Register the program** with a `name_abbreviated` matching the config key. To group white-label variants of one real-world benefit, give them a shared `Program.base_program` so `has_base_benefit()` matches any variant.
-
-For complete details, see: `configuration/white_labels/_template.py` (lines 243-303)
+2. **Group variants** if needed. To treat white-label variants of one real-world benefit as equivalent, give them a shared `Program.base_program` so `has_base_benefit()` matches any variant.
 
 ## Troubleshooting
 
