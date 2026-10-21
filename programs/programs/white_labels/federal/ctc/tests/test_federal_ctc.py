@@ -328,6 +328,15 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 0.15)
 
+    def test_scenario_27_joint_filers_with_child_support_near_the_phase_out(self):
+        screen = self.make_screen(household_size=4)
+        self.member(screen, "headOfHousehold", 45, income={"wages": 395_000, "childSupport": 10_000})
+        self.member(screen, "spouse", 43)
+        self.member(screen, "child", 10)
+        self.member(screen, "child", 7)
+
+        self.assert_eligible(self.calculate(screen), 4_400)
+
 
 class TestStructure(FederalCtcTestCase):
     """Rules the spec states in sections 4 and 7 but no scenario reaches."""
