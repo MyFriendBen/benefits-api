@@ -25,71 +25,62 @@ FAKE_ADDRESS = "742 Invented Lane, Nowhere, CO 80000"
 FAKE_KEY = "fake-places-key-for-tests"
 
 
+PLACES_URL = "https://api.example/api/places/autocomplete/"
+REM_URL = "https://api.example/api/screener-options/cesn/rem-impact/"
+
+
+def _event(url: str) -> dict[str, Any]:
+    return {
+        "request": {
+            "url": url,
+            "query_string": f"address={FAKE_ADDRESS.replace(' ', '+')}",
+            "data": {"address": FAKE_ADDRESS},
+        },
+        "exception": {"values": [{"stacktrace": {"frames": [{"function": "f", "vars": {"address": FAKE_ADDRESS}}]}}]},
+        "threads": {"values": [{"stacktrace": {"frames": [{"function": "f", "vars": {"address": FAKE_ADDRESS}}]}}]},
+        "breadcrumbs": {
+            "values": [
+                {
+                    "category": "httplib",
+                    "data": {
+                        "url": f"https://maps.example/json?input=742+Invented&key={FAKE_KEY}",
+                        "http.query": f"input=742+Invented&key={FAKE_KEY}",
+                        "http.fragment": "",
+                    },
+                },
+                {"category": "query", "data": {"http.query": "kept"}},
+            ]
+        },
+    }
+
+
 class ScrubEventTest(TestCase):
-    def test_filters_sensitive_params_in_request_query(self) -> None:
-        event = {
-            "request": {
-                "url": "https://api.example/api/places/autocomplete/?input=742+Invented&lang=en",
-                "query_string": "address=742+Invented&upgrade=hvac",
-            }
-        }
-        scrubbed = scrub_event(event, {})["request"]
-        self.assertEqual(scrubbed["url"], "https://api.example/api/places/autocomplete/?input=[Filtered]&lang=en")
-        self.assertEqual(scrubbed["query_string"], "address=[Filtered]&upgrade=hvac")
+    def test_drops_everything_that_can_carry_an_address_on_address_endpoints(self) -> None:
+        for url in (PLACES_URL, REM_URL, PLACES_URL.rstrip("/"), f"{REM_URL}?address=742+Invented"):
+            scrubbed = scrub_event(_event(url), {})
+            request = scrubbed["request"]
+            self.assertEqual(request["url"], url.split("?")[0], url)
+            self.assertNotIn("query_string", request, url)
+            self.assertNotIn("data", request, url)
+            for key in ("exception", "threads"):
+                self.assertNotIn("vars", scrubbed[key]["values"][0]["stacktrace"]["frames"][0], url)
+            httplib, other = scrubbed["breadcrumbs"]["values"]
+            self.assertEqual(httplib["data"], {"url": "https://maps.example/json"}, url)
+            self.assertEqual(other["data"], {"http.query": "kept"}, url)
 
-    def test_keeps_other_query_params(self) -> None:
-        url = "https://api.example/api/eligibility/1?admin=1&api_key_hint=x"
-        event = {"request": {"url": url, "query_string": "admin=1"}}
-        scrubbed = scrub_event(event, {})["request"]
-        self.assertEqual(scrubbed["url"], url)
-        self.assertEqual(scrubbed["query_string"], "admin=1")
+    def test_leaves_other_endpoints_alone(self) -> None:
+        for url in (
+            "https://api.example/api/eligibility/1",
+            "https://api.example/api/places/autocomplete/extra/",
+            "https://api.example/api/screener-options/cesn/referrers/",
+        ):
+            event = _event(url)
+            expected = json.loads(json.dumps(event))
+            self.assertEqual(scrub_event(event, {}), expected, url)
 
-    def test_filters_sensitive_params_in_breadcrumbs(self) -> None:
-        event = {
-            "breadcrumbs": {
-                "values": [
-                    {
-                        "category": "httplib",
-                        "data": {
-                            "url": f"https://maps.example/json?input=742&key={FAKE_KEY}&types=address",
-                            "http.query": f"input=742&key={FAKE_KEY}&types=address",
-                        },
-                    }
-                ]
-            }
-        }
-        data = scrub_event(event, {})["breadcrumbs"]["values"][0]["data"]
-        self.assertEqual(data["url"], "https://maps.example/json?input=[Filtered]&key=[Filtered]&types=address")
-        self.assertEqual(data["http.query"], "input=[Filtered]&key=[Filtered]&types=address")
-
-    def test_filters_sensitive_keys_in_body_and_frame_vars(self) -> None:
-        event = {
-            "request": {"data": {"input": FAKE_ADDRESS, "upgrade": "hvac"}},
-            "exception": {
-                "values": [
-                    {
-                        "stacktrace": {
-                            "frames": [
-                                {
-                                    "vars": {
-                                        "address": FAKE_ADDRESS,
-                                        "params": {"key": FAKE_KEY},
-                                        "request": f"<Request: GET '/api/x/?address={FAKE_ADDRESS.replace(' ', '+')}'>",
-                                        "zipcode": "80000",
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ]
-            },
-        }
-        scrubbed = scrub_event(event, {})
-        blob = json.dumps(scrubbed)
-        self.assertNotIn("Invented", blob)
-        self.assertNotIn(FAKE_KEY, blob)
-        self.assertEqual(scrubbed["request"]["data"]["upgrade"], "hvac")
-        self.assertEqual(scrubbed["exception"]["values"][0]["stacktrace"]["frames"][0]["vars"]["zipcode"], "80000")
+    def test_event_without_request_is_unchanged(self) -> None:
+        event = {"message": "background job failed"}
+        self.assertEqual(scrub_event(event, {}), {"message": "background job failed"})
 
 
 class _RecordingTransport(Transport):
@@ -102,13 +93,13 @@ class _RecordingTransport(Transport):
 
 
 class _MalformedUpstream(BaseHTTPRequestHandler):
-    """200 with a body the clients don't expect, so the views raise an unhandled exception."""
+    """200 with a prediction missing `place_id`, so the Places view raises with the address in its locals."""
 
     def do_GET(self) -> None:
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(json.dumps({"status": "OK", "predictions": [{"unexpected": 1}]}).encode())
+        self.wfile.write(json.dumps({"status": "OK", "predictions": [{"description": FAKE_ADDRESS}]}).encode())
 
     def log_message(self, *_args: Any) -> None:
         pass
@@ -178,7 +169,7 @@ class AddressEndpointEventTest(TestCase):
     def _assert_clean(self, events: list[dict[str, Any]]) -> None:
         self.assertTrue(events, "expected the unhandled exception to reach Sentry")
         blob = json.dumps(events)
-        for leaked in ("Invented", "742", FAKE_KEY):
+        for leaked in ("Invented", "Nowhere", FAKE_KEY):
             self.assertNotIn(leaked, blob)
 
     def test_places_get(self) -> None:
@@ -198,5 +189,13 @@ class AddressEndpointEventTest(TestCase):
         body = {"upgrade": "hvac__heat_pump", "address": FAKE_ADDRESS, "heating_fuel": "natural_gas"}
         with _recording_sentry() as events:
             status = self._wsgi("POST", "/api/screener-options/cesn/rem-impact/", body=body)
+        self.assertTrue(status.startswith("500"), status)
+        self._assert_clean(events)
+
+    @patch("screener.views.RemImpactSerializer", side_effect=KeyError("fuel_results"))
+    def test_rem_impact_get(self, _serializer: Any) -> None:
+        query = f"upgrade=hvac__heat_pump&address={FAKE_ADDRESS.replace(' ', '+')}&heating_fuel=natural_gas"
+        with _recording_sentry() as events:
+            status = self._wsgi("GET", "/api/screener-options/cesn/rem-impact/", query)
         self.assertTrue(status.startswith("500"), status)
         self._assert_clean(events)
