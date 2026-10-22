@@ -1,5 +1,7 @@
 import json
+import os
 import tempfile
+import unittest
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -560,6 +562,30 @@ class ProgramOpsRecordsTest(TestCase):
         output = self._run()
 
         self.assertRegex(output, r"Failed:\s+1")
+
+    def test_record_that_is_not_utf8_fails_alone(self) -> None:
+        """A record that can't be decoded is reported as failed; the other configs still import."""
+        (self.record_dir / "latin1_program_record.json").write_bytes(b"\xff\xfe{}")
+        self._write_record(self.PROGRAM)
+
+        output = self._run()
+
+        self.assertRegex(output, r"Failed:\s+1")
+        self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root can read a file with no permissions")
+    def test_record_that_cannot_be_opened_fails_alone(self) -> None:
+        """A record the process can't open is reported as failed; the other configs still import."""
+        locked = self.record_dir / "locked_program_record.json"
+        locked.write_text(json.dumps(self._config("co_locked_program")), encoding="utf-8")
+        locked.chmod(0)
+        self.addCleanup(locked.chmod, 0o644)
+        self._write_record(self.PROGRAM)
+
+        output = self._run()
+
+        self.assertRegex(output, r"Failed:\s+1")
+        self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
 
     def test_program_declared_in_both_places_fails_the_run(self) -> None:
         self._write_record(self.PROGRAM)

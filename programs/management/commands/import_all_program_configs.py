@@ -525,7 +525,13 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING(f"{'─' * 60}\n"))
 
     def _get_program_info(self, config_file: Path) -> dict[str, str] | None:
-        """Extract program info from a config file."""
+        """
+        Extract program info from a config file, or None if it can't be read.
+
+        Never raises: a file that can't be opened or decoded is left for the import itself to
+        report as failed, so one bad file doesn't stop every other config. ValueError covers
+        both invalid JSON and bytes that aren't UTF-8.
+        """
         try:
             with open(config_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
@@ -533,7 +539,7 @@ class Command(BaseCommand):
                     "white_label": config.get("white_label", {}).get("code", "unknown"),
                     "program_name": config.get("program", {}).get("name_abbreviated", "unknown"),
                 }
-        except (json.JSONDecodeError, KeyError, TypeError, AttributeError):
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
             return None
 
     def _import_config(
