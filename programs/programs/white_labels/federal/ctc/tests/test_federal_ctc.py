@@ -397,6 +397,34 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 15)
 
+    def test_scenario_36_child_living_on_ssi(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 31, income={"wages": 10_000})
+        self.member(screen, "child", 12, income={"sSI": 12_000})
+
+        self.assert_eligible(self.calculate(screen), 1_125)
+
+    def test_scenario_37_disabled_adult_child_with_earnings(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 58, income={"wages": 40_000})
+        self.member(screen, "child", 30, disabled=True, long_term_disability=True, income={"wages": 8_000})
+
+        self.assert_eligible(self.calculate(screen), 500)
+
+    def test_scenario_38_student_aged_24_with_earnings(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 52, income={"wages": 40_000})
+        self.member(screen, "child", 24, student=True, income={"wages": 6_000})
+
+        self.assert_ineligible(self.calculate(screen))
+
+    def test_scenario_39_sibling_marked_disabled_but_not_long_term(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 16, income={"wages": 14_000})
+        self.member(screen, "sisterOrBrother", 16, disabled=True, long_term_disability=False)
+
+        self.assert_eligible(self.calculate(screen), 0)
+
 
 class TestAgeOnlyHouseholds(FederalCtcTestCase):
     """The Colorado tax-credit apps send `age` with no birth month, and no disability or
