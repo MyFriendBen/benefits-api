@@ -186,3 +186,118 @@ class TestIsDependent(TestCase):
         disabled_adult = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=30, disabled=True)
         self._add_yearly_income(disabled_adult, 8_000)
         self.assertTrue(disabled_adult.is_dependent())
+
+    # MFB-1693 regression: qualifying-child path has no income/support test.
+    # These mirror the originally reported bug scenarios (SSI child, high-earning
+    # teenager) and assert both is_dependent() and the knock-on is_in_tax_unit() /
+    # PolicyEngine tax-unit grouping.
+
+    def test_child_with_ssi_income_and_zero_parent_income(self):
+        """A child receiving $750/month SSI with a parent earning $0 stays a
+        qualifying child (and in the main tax unit) — SSI is unearned income but the
+        qualifying-child path no longer tests income at all."""
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=child, type="sSI", amount=750, frequency="monthly"
+        )
+        # self.head (the parent) has no income streams at all: $0.
+
+        self.assertTrue(child.is_dependent())
+        self.assertTrue(child.is_in_tax_unit())
+        self.assertFalse(self.screen.has_members_outside_of_tax_unit())
+
+    def test_teen_earning_more_than_parent_still_qualifying_child(self):
+        """A 16-year-old earning $1,300/month while the parent earns $1,000/month
+        previously failed the qualifying-child support test ($15,600 > $12,000/2 = $6,000)
+        and was split into a separate tax unit. Age/relationship alone now control."""
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16)
+        self._add_yearly_income(self.head, 12_000)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=child, type="wages", amount=1_300, frequency="monthly"
+        )
+
+        self.assertTrue(child.is_dependent())
+        self.assertTrue(child.is_in_tax_unit())
+        self.assertFalse(self.screen.has_members_outside_of_tax_unit())
+
+    def test_teen_earning_less_than_parent_qualifying_child(self):
+        """Control case: the same household but the child earns only $200/month, which
+        passed the old support test too — behavior must be unchanged (still a dependent)."""
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16)
+        self._add_yearly_income(self.head, 12_000)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=child, type="wages", amount=200, frequency="monthly"
+        )
+
+        self.assertTrue(child.is_dependent())
+        self.assertTrue(child.is_in_tax_unit())
+        self.assertFalse(self.screen.has_members_outside_of_tax_unit())
+
+    def test_qualifying_relative_threshold_still_enforced(self):
+        """The qualifying-relative path's income threshold is untouched by this fix:
+        an adult (not a qualifying child by age) above the threshold is still excluded."""
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25, student=False)
+        self._add_yearly_income(adult_child, threshold + 1)
+
+        self.assertFalse(adult_child.is_dependent())
+        self.assertFalse(adult_child.is_in_tax_unit())
+        self.assertTrue(self.screen.has_members_outside_of_tax_unit())
+
+    def test_age_19_non_student_high_income_not_qualifying_child(self):
+        """Boundary: age 19, not a student, with high income — fails the qualifying-child
+        age/student test and fails the qualifying-relative income test, so not a dependent."""
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        member = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19, student=False)
+        self._add_yearly_income(member, threshold + 1)
+
+        self.assertFalse(member.is_dependent())
+        self.assertFalse(member.is_in_tax_unit())
+
+    def test_disabled_adult_high_income_still_qualifying_child(self):
+        """Boundary: disability keeps someone on the qualifying-child path regardless of
+        age or income — a high earner with a disability is still a dependent."""
+        disabled_adult = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=40, disabled=True)
+        self._add_yearly_income(disabled_adult, 500_000)
+
+        self.assertTrue(disabled_adult.is_dependent())
+        self.assertTrue(disabled_adult.is_in_tax_unit())
+
+    def test_non_eligible_relationship_high_earning_child_age_not_dependent(self):
+        """Boundary: relationship gate still applies on the qualifying-child path —
+        a young high earner with an ineligible relationship (e.g. roommate) is not swept
+        in just because the income test was removed."""
+        roommate_child = HouseholdMember.objects.create(screen=self.screen, relationship="roommate", age=10)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=roommate_child, type="wages", amount=50_000, frequency="yearly"
+        )
+
+        self.assertFalse(roommate_child.is_dependent())
+        self.assertFalse(roommate_child.is_in_tax_unit())
+
+    def test_pe_payload_keeps_ssi_child_in_main_tax_unit(self):
+        """End-to-end: the serialized PolicyEngine payload for the SSI-child scenario
+        groups the child into the main tax unit alongside the head, not a split unit."""
+        from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+        from programs.framework.pe_dependencies.payload import pe_input
+        from programs.programs.cross_white_label.snap.base import Snap
+
+        self.screen.household_size = 2
+        self.screen.zipcode = "80202"
+        self.screen.county = "Denver County"
+        self.screen.save()
+
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=child, type="sSI", amount=750, frequency="monthly"
+        )
+
+        result = pe_input(self.screen, [Snap])
+        tax_units = result["household"]["tax_units"]
+
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        main_tax_members = tax_units[MAIN_TAX_UNIT]["members"]
+        self.assertIn(str(self.head.id), main_tax_members)
+        self.assertIn(str(child.id), main_tax_members)
+        self.assertNotIn(SECONDARY_TAX_UNIT, tax_units)
+
