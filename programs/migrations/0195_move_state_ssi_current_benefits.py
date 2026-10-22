@@ -72,7 +72,7 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0192_add_year_type_to_program"),
+        ("programs", "0194_deactivate_state_ssdi"),
         ("screener", "0168_household_rows_default_id_ordering"),
     ]
 
