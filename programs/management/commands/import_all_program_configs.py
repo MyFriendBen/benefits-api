@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
+from programs.framework.gates import all_calculator_classes
 from programs.management.commands.import_program_config import (
     RECONCILE_SECTIONS,
     Command as ImportProgramConfigCommand,
@@ -44,8 +46,14 @@ class Command(BaseCommand):
     Import all program configurations that haven't been imported yet.
 
     This command scans the import_program_config_data/data/ directory for JSON
-    configuration files and imports any that haven't already been processed.
-    It works similar to Django migrations - tracking which imports have been run.
+    configuration files, plus the program records in a program-ops checkout, and
+    imports any that haven't already been processed. It works similar to Django
+    migrations - tracking which imports have been run.
+
+    program-ops is the source of truth for the programs it holds a record for, so a
+    program declared in both places fails the run. A record is only picked up once
+    its program has a registered calculator. Without a program-ops checkout the
+    command reads the data directory alone.
 
     Usage:
       python manage.py import_all_program_configs
@@ -60,6 +68,7 @@ class Command(BaseCommand):
       --file       Process a specific file only
       --reconcile  Additively apply configs to programs that already exist
       --only       With --reconcile, limit to given sections (repeatable)
+      --program-ops-dir  Read program records from this program-ops checkout
 
     A config whose program already exists is skipped and left pending — a skip is
     never recorded as an import, so nothing becomes permanently unreachable. Use
@@ -73,6 +82,10 @@ class Command(BaseCommand):
 
     # Path to the data directory containing JSON config files
     DATA_DIR = Path(__file__).parent / "import_program_config_data" / "data"
+
+    # A program-ops checkout next to this repo, where the program records it holds live.
+    PROGRAM_OPS_DIR = Path(settings.BASE_DIR).parent / "program-ops"
+    PROGRAM_OPS_RECORD_GLOB = "programs/**/*_program_record.json"
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
@@ -106,13 +119,18 @@ class Command(BaseCommand):
             help="With --reconcile, limit the pass to these sections. Repeatable. Defaults to all of them. "
             "A partial pass records nothing, since only part of each config is applied.",
         )
+        parser.add_argument(
+            "--program-ops-dir",
+            type=Path,
+            help=f"Path to a program-ops checkout to read program records from. Defaults to {self.PROGRAM_OPS_DIR}.",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         """Orchestrates the import process based on command options."""
         if not self._validate_data_directory():
             return
 
-        json_files = self._discover_config_files()
+        json_files = self._discover_config_files(options.get("program_ops_dir") or self.PROGRAM_OPS_DIR)
         if not json_files:
             self.stdout.write(self.style.WARNING("No JSON configuration files found in data directory."))
             return
@@ -154,9 +172,66 @@ class Command(BaseCommand):
             return False
         return True
 
-    def _discover_config_files(self) -> list[Path]:
-        """Return a sorted list of JSON config files in the data directory."""
-        return sorted(self.DATA_DIR.glob("*.json"))
+    def _discover_config_files(self, program_ops_dir: Path) -> list[Path]:
+        """
+        Return the data directory's config files followed by the importable program-ops records.
+
+        Raises if a program or a filename appears twice: two copies of one program drift apart
+        without anyone noticing, and tracking rows are keyed by filename.
+        """
+        config_files = sorted(self.DATA_DIR.glob("*.json")) + self._discover_program_ops_records(program_ops_dir)
+        self._check_for_duplicates(config_files)
+        return config_files
+
+    def _discover_program_ops_records(self, program_ops_dir: Path) -> list[Path]:
+        """
+        Return the program-ops records whose program has a registered calculator.
+
+        A record is often written before its calculator merges. Importing it then would create
+        a row nothing can calculate, so it waits until the calculator ships. A record whose
+        program can't be read is kept, so the import reports it rather than it vanishing.
+        """
+        if not program_ops_dir.is_dir():
+            self.stdout.write(
+                self.style.WARNING(f"No program-ops checkout at {program_ops_dir}; reading the data directory only.")
+            )
+            return []
+
+        calculators = all_calculator_classes()
+        importable: list[Path] = []
+        waiting: list[str] = []
+        for record in sorted(program_ops_dir.glob(self.PROGRAM_OPS_RECORD_GLOB)):
+            program_name = (self._get_program_info(record) or {}).get("program_name", "unknown")
+            if program_name != "unknown" and program_name not in calculators:
+                waiting.append(record.name)
+            else:
+                importable.append(record)
+
+        if waiting:
+            self.stdout.write(f"Waiting for a calculator, not imported: {', '.join(waiting)}")
+        return importable
+
+    def _check_for_duplicates(self, config_files: list[Path]) -> None:
+        """Raise if two config files share a filename or declare the same program."""
+        by_filename: dict[str, Path] = {}
+        by_program: dict[tuple[str, str], Path] = {}
+        for config_file in config_files:
+            if config_file.name in by_filename:
+                raise CommandError(
+                    f"Two config files are named {config_file.name}: {by_filename[config_file.name]} and {config_file}."
+                )
+            by_filename[config_file.name] = config_file
+
+            program_info = self._get_program_info(config_file)
+            if not program_info or "unknown" in program_info.values():
+                continue
+            program = (program_info["white_label"], program_info["program_name"])
+            if program in by_program:
+                raise CommandError(
+                    f"{program[0]}/{program[1]} is declared twice: {by_program[program]} and {config_file}. "
+                    f"Keep the program-ops record and delete the data directory copy."
+                )
+            by_program[program] = config_file
 
     def _get_import_records(self) -> dict[str, str]:
         """Return {filename: content_hash} for every config already recorded as imported."""
