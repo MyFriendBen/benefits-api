@@ -25,19 +25,15 @@ FEDERAL_SSI = ("federal", "federal_ssi")
 def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     """Move every CurrentBenefit row on a state SSI row onto `federal_ssi`.
 
-    Does nothing when the federal row is absent: a fresh or test database has no programs
-    at all, and an environment where the record has not been imported yet has nothing to
-    move onto. Both are reported so the gap is visible. A screen that already holds the
+    Fails closed: when rows are waiting on the state SSI rows and the federal row has not
+    been imported, there is nothing to move them onto, so the migration raises rather than
+    leaving them stranded on rows that are switched off. A database with no state rows
+    either (fresh or test) has nothing to do and says so. A screen that already holds the
     federal row keeps that one and loses the state row, since (screen, program) is unique.
     Re-running finds no state rows and does nothing.
     """
     Program = apps.get_model("programs", "Program")
     CurrentBenefit = apps.get_model("screener", "CurrentBenefit")
-
-    federal = Program.objects.filter(white_label__code=FEDERAL_SSI[0], name_abbreviated=FEDERAL_SSI[1]).first()
-    if federal is None:
-        print("  federal/federal_ssi does not exist in this environment; no current-benefit rows moved")
-        return
 
     state_program_ids = [
         program.id
@@ -45,6 +41,17 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
         for program in Program.objects.filter(white_label__code=white_label_code, name_abbreviated=name_abbreviated)
     ]
     state_rows = CurrentBenefit.objects.filter(program_id__in=state_program_ids)
+
+    federal = Program.objects.filter(white_label__code=FEDERAL_SSI[0], name_abbreviated=FEDERAL_SSI[1]).first()
+    if federal is None:
+        waiting = state_rows.count()
+        if waiting:
+            raise RuntimeError(
+                f"federal/federal_ssi must be imported before this migration runs: {waiting} current-benefit "
+                "rows on state SSI rows are waiting to move (see PR #1839 Deployment step 2)"
+            )
+        print("  federal/federal_ssi does not exist in this environment and no state SSI rows hold current benefits")
+        return
 
     screens_already_federal = set(
         CurrentBenefit.objects.filter(program=federal, screen_id__in=state_rows.values("screen_id")).values_list(
