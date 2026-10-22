@@ -45,6 +45,10 @@ from programs.programs.testing_fixtures.pe_integration import (
 from screener.models import Insurance
 
 PE_VERSION = "1.815.1"
+PE_VERSION_REASON = (
+    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
+    "re-recorded at PE_TEST_VERSION."
+)
 YEAR = "2026"
 
 
@@ -52,6 +56,7 @@ class MoChipScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder."""
 
     pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0
