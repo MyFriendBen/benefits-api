@@ -19,7 +19,7 @@ Bracket = tuple[Optional[int], Decimal]
 
 @dataclass(frozen=True)
 class CtcYear:
-    """One tax year's parameters (spec section 7), keyed by filing status where they differ."""
+    """One tax year's figures (spec section 7), keyed by filing status where they differ."""
 
     per_child_credit: int
     other_dependent_credit: int
@@ -28,24 +28,22 @@ class CtcYear:
     refundable_max: int
     refundable_rate: Decimal
     earned_income_floor: int
-    # A relative counts as a dependent only with gross income under this (spec section 4 `odc_dependent`).
+    # Spec section 4 `odc_dependent`.
     qualifying_relative_income_limit: int
     standard_deduction: dict[str, int]
-    # The addition to the standard deduction for each filer 65 or older or blind.
+    # Spec section 7, standard deduction additions.
     extra_deduction: dict[str, int]
     senior_age: int
     tax_brackets: dict[str, tuple[Bracket, ...]]
 
 
 def _brackets(*tops: int) -> tuple[Bracket, ...]:
-    """The seven ordinary income brackets from the top of each of the first six (spec section 7, tax)."""
+    """The bracket schedule from the tops of all but the last bracket (spec section 7, tax)."""
     rates = ("0.10", "0.12", "0.22", "0.24", "0.32", "0.35")
     return tuple((top, Decimal(rate)) for top, rate in zip(tops, rates)) + ((None, Decimal("0.37")),)
 
 
-# The 2025 tax year's figures, as spec section 7 states them: the credit amounts, phase-out,
-# refundable limb, qualifying-relative limit, standard deduction and the ordinary income
-# brackets the tax on taxable income is figured from.
+# Each tax year's figures, as spec section 7 states them.
 CTC_YEARS: dict[int, CtcYear] = {
     2025: CtcYear(
         per_child_credit=2_200,
@@ -72,7 +70,7 @@ TAX_TABLE_CEILING = 100_000
 
 
 def bracket_tax(amount: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
-    """The tax on ``amount`` from the bracket schedule, to the cent: the Tax Computation Worksheet (spec section 7)."""
+    """Tax from the bracket schedule to the cent, as the Tax Computation Worksheet figures it (spec section 7)."""
     tax = Decimal(0)
     lower = Decimal(0)
     for top, rate in brackets:
@@ -86,7 +84,7 @@ def bracket_tax(amount: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
 
 
 def tax_table_row(amount: Decimal) -> tuple[int, int]:
-    """The Tax Table row holding ``amount``: $5, $10, $10, then $25 rows to $3,000 and $50 rows above (spec section 7)."""
+    """The Tax Table row holding ``amount`` (spec section 7, tax)."""
     if amount < 5:
         return 0, 5
     if amount < 15:
@@ -100,13 +98,8 @@ def tax_table_row(amount: Decimal) -> tuple[int, int]:
 
 
 def income_tax(taxable_income: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
-    """
-    Federal income tax on ``taxable_income`` before any credits (spec section 7, tax).
-
-    Below $100,000 the Tax Table applies: each row is priced at its midpoint and rounded
-    to the dollar, which reproduces the published rows. From $100,000 the Tax Computation
-    Worksheet applies the brackets exactly.
-    """
+    """Income tax before credits: Tax Table rows priced at their midpoint below the ceiling, the
+    brackets exactly above it (spec section 7, tax)."""
     if taxable_income <= 0:
         return Decimal(0)
 
@@ -119,43 +112,20 @@ def income_tax(taxable_income: Decimal, brackets: tuple[Bracket, ...]) -> Decima
 
 class FederalCtc(ProgramCalculator):
     """
-    Federal Child Tax Credit and Credit for Other Dependents, estimated for the program's
-    tax year.
+    Federal Child Tax Credit and Credit for Other Dependents for the program's tax year.
+    Rules and figures: program-ops `programs/white_labels/federal/ctc/federal_ctc_spec.md`;
+    section references below are to it.
 
-    Rules and figures: program-ops `programs/white_labels/federal/ctc/federal_ctc_spec.md`.
-    Section references below are to that document.
-
-    The filers are the head and, on a joint return, the member recorded as `spouse`. Every
-    other member is claimed when they are the filers' dependent: a qualifying child (a
-    child, stepchild, foster child, grandchild or sibling who is younger than a filer or
-    permanently disabled, under 19 at the end of the tax year, under 24 if a student, or
-    permanently disabled, and whose own income is at most half the household's) or a
-    qualifying relative (any relative the screener records whose income, less SSI and cash
-    assistance, is under the year's limit). A qualifying child under 17 at the end of the
-    tax year earns the child credit; every other dependent earns the credit for other
-    dependents. A spouse, partner, roommate or housemate is never a dependent.
-
-    The credit is the per-child and per-dependent amounts, reduced $50 for each $1,000 or
-    part of it by which the filers' income exceeds the threshold for their filing status.
-    It is then limited to income tax before credits plus the refundable part: 15% of earned
-    income over the floor, capped per qualifying child. Income tax is figured on gross
-    income less the standard deduction, with the additions for filers 65 or older or blind,
-    under the Tax Table or Tax Computation Worksheet; a return files jointly where there is
-    a spouse, as head of household where a lone filer claims a dependent, and single
-    otherwise. The whole credit is the household's value; members carry none.
-
-    Income is today's, not the tax year's. Earned income is wages and self-employment as
-    reported, and modified AGI is every income stream the filers report less the types that
-    are never taxed (SSI, cash assistance, child support, gifts, workers' compensation,
-    veterans' benefits) and less Social Security, treated as untaxed. Permanently and
-    totally disabled is read as the screener's `disabled` and `long_term_disability` both
-    ticked. Members recorded without a birth month (the Colorado tax-credit apps send age
-    alone, with no disability or student answers) are compared by age, aged back to the end
-    of the tax year, and missing answers read as no.
-
-    Residency, SSN, tiebreaker, filing-status and prior-disallowance rules have no screener
-    field and are not evaluated. Citizenship is enforced by the program's
-    ``legal_status_required``.
+    Stand-ins: filers are the head plus a member recorded as `spouse` (joint return); any
+    relative the screener records can be a dependent, a spouse, partner or roommate never;
+    `disabled` + `long_term_disability` is permanently and totally disabled; a child's income
+    against half the household's is the support test. Deviations: income is today's, not the
+    tax year's; the never-taxed types and, by approximation, every Social Security type are
+    left out of income (section 7). Age-only members (the Colorado tax-credit apps) are
+    compared by age, aged back to the tax year's end, with missing answers read as no. The
+    credit is the household's value; a missing parameter year falls back to the latest and
+    reports to Sentry. Residency, SSN, tiebreaker, filing-status and prior-disallowance
+    rules are not evaluated; citizenship is enforced by ``legal_status_required``.
     """
 
     program_code = "federal_ctc"
@@ -165,15 +135,10 @@ class FederalCtc(ProgramCalculator):
     ctc_child_age_limit = 17
     child_age_limit = 19
     student_age_limit = 24
-    # Income the screener collects that is treated as untaxed: SSI, cash assistance, child
-    # support, gifts, workers' compensation and veterans' benefits, which are never taxed,
-    # and every Social Security benefit type, which is an approximation (spec section 7):
-    # only a portion of Social Security is taxable, and that portion depends on the rest of
-    # the return, which MFB households mostly sit below the thresholds for. Where the
-    # approximation misses, the estimated tax cap is lower, never the credit higher. Left
-    # out of a relative's gross income (spec section 5 `odc_relative_gross_income`) and of
-    # the filers' income, so it neither tapers the credit nor raises the tax the
-    # nonrefundable part is capped at.
+    # The never-taxed types, plus every Social Security type by approximation (spec section 7):
+    # left out of the filers' income and of a relative's gross income (section 5
+    # `odc_relative_gross_income`). Where the approximation misses, the estimated tax cap is
+    # lower, never the credit higher.
     tax_exempt_income_types = [
         "sSI",
         "cashAssistance",
@@ -195,7 +160,7 @@ class FederalCtc(ProgramCalculator):
         e.condition(member in self._qualifying_children or member in self._other_dependents)
 
     def household_value(self) -> float:
-        # Spec section 7: credit amounts, phase-out, then the cap at tax plus the refundable limb.
+        # Spec section 7.
         params = self._params
         status = self._filing_status
         children = len(self._qualifying_children)
@@ -213,12 +178,8 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _params(self) -> CtcYear:
-        """
-        The tax year's parameters. A year with none yet (a rollover the table wasn't updated
-        for) is priced with the latest year we have and reported, rather than raising: an
-        exception from a displayed program fails the whole results page, and this program
-        shows in every white label.
-        """
+        """The tax year's figures; a year with none is priced with the latest and reported to
+        Sentry rather than raising, since an exception here fails every white label's results page."""
         tax_year = self.tax_year
         if tax_year in CTC_YEARS:
             return CTC_YEARS[tax_year]
@@ -246,7 +207,7 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _filing_status(self) -> str:
-        """Joint with a spouse, head of household for a lone filer with a dependent, else single (spec section 7)."""
+        """Spec section 7, filing status."""
         if self._is_joint:
             return JOINT
         if self._qualifying_children or self._other_dependents:
@@ -258,7 +219,7 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _earned_income(self) -> Decimal:
-        """Wages and self-employment as reported (spec section 7, earned income)."""
+        """The screener's earned types as reported (spec section 7, earned income)."""
         return self._filer_income(["earned"])
 
     @cached_property
@@ -268,11 +229,7 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _income_tax(self) -> Decimal:
-        """Tax on taxable income less the standard deduction and its additions (spec section 7, tax).
-
-        Each filer adds one amount for being 65 or older and another for being blind, so a
-        filer who is both adds two.
-        """
+        """Spec section 7, tax."""
         params = self._params
         status = self._filing_status
         extra_boxes = sum(int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers)
@@ -305,8 +262,7 @@ class FederalCtc(ProgramCalculator):
         return self._dependents[1]
 
     def _is_qualifying_child(self, member: HouseholdMember) -> bool:
-        """A qualifying child: spec section 4 `child_relationship`, `odc_child_age`, `child_younger_than_filer`
-        and `child_is_dependent` (the support test by income proxy)."""
+        """Spec section 4 `child_relationship`, `odc_child_age`, `child_younger_than_filer`, `child_is_dependent`."""
         if member.relationship not in self.child_relationships:
             return False
 
@@ -321,18 +277,16 @@ class FederalCtc(ProgramCalculator):
             if age >= self.child_age_limit and not (bool(member.student) and age < self.student_age_limit):
                 return False
 
-        # A child who provides over half their own support is not a qualifying child. The
-        # screener collects no support, so a child earning over half the household's income
-        # stands in for one.
+        # The support test by proxy: the child's income against half the household's.
         return member.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2
 
     def _is_ctc_child(self, member: HouseholdMember) -> bool:
-        """A qualifying child who has not reached 17 by the end of the tax year (spec section 4 `child_age`)."""
+        """Spec section 4 `child_age`."""
         age = self._age_at_year_end(member)
         return age is not None and age < self.ctc_child_age_limit
 
     def _is_qualifying_relative(self, member: HouseholdMember) -> bool:
-        """A qualifying relative: any relative whose gross income is under the year's limit (spec section 4 `odc_dependent`)."""
+        """Spec section 4 `odc_dependent`."""
         if member.relationship not in self.dependent_relationships:
             return False
 
@@ -340,11 +294,8 @@ class FederalCtc(ProgramCalculator):
         return income < self._params.qualifying_relative_income_limit
 
     def _age_at_year_end(self, member: HouseholdMember) -> Optional[int]:
-        """
-        Age on the last day of the tax year. A member recorded with an age but no birth
-        month (the Colorado tax-credit apps) is aged back from today by the years between
-        the screen's date and the tax year, so a 17-year-old screened in 2026 is 16 for 2025.
-        """
+        """Age at the tax year's end; a member with an age but no birth month is aged back by the
+        years between the screen's date and the tax year."""
         if member.birth_year_month is not None:
             return member.age_at_end_of_year(self.tax_year)
 
@@ -356,7 +307,7 @@ class FederalCtc(ProgramCalculator):
         return max(age - years_since_tax_year, 0)
 
     def _is_senior(self, filer: HouseholdMember) -> bool:
-        """65 or older at the end of the tax year, for the extra standard deduction (spec section 7)."""
+        """Spec section 7, standard deduction addition for age."""
         age = self._age_at_year_end(filer)
         return age is not None and age >= self._params.senior_age
 

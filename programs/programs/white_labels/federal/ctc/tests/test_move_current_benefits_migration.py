@@ -1,6 +1,7 @@
 """`0193_move_state_ctc_current_benefits` against real rows, matched the way it matches them."""
 
 import importlib
+from unittest.mock import patch
 
 from django.apps import apps as django_apps
 from django.test import TestCase
@@ -8,10 +9,13 @@ from django.test import TestCase
 from programs.models import Program
 from screener.models import CurrentBenefit, Screen, WhiteLabel
 
+MIGRATION = "programs.migrations.0193_move_state_ctc_current_benefits"
+
 
 class TestMoveStateCtcCurrentBenefits(TestCase):
     def setUp(self):
-        self.migration = importlib.import_module("programs.migrations.0193_move_state_ctc_current_benefits")
+        # Migration module names start with a digit, so they can only be imported by string.
+        self.migration = importlib.import_module(MIGRATION)
         self.federal_wl = WhiteLabel.objects.create(name="Federal", code="federal")
         self.co = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         self.tx = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
@@ -41,6 +45,9 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
     def _programs_of(self, screen: Screen) -> list[str]:
         return sorted(cb.program.name_abbreviated for cb in screen.current_benefits.all())
 
+    def _run(self) -> None:
+        self.migration.move_ctc_current_benefits(django_apps, None)
+
     def test_rows_on_the_state_rows_move_to_the_federal_row(self):
         federal = self._federal()
         co_screen, tx_screen = self._screen(self.co), self._screen(self.tx)
@@ -48,7 +55,7 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         self._has(co_screen, self.coctc)
         self._has(tx_screen, self.tx_ctc)
 
-        self.migration.move_ctc_current_benefits(django_apps, None)
+        self._run()
 
         self.assertEqual(self._programs_of(co_screen), ["coctc", "federal_ctc"])
         self.assertEqual(self._programs_of(tx_screen), ["federal_ctc"])
@@ -64,7 +71,7 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         self._has(il_screen, self.il_ctc)
         self._has(il_screen, self.il_federal_ctc)
 
-        self.migration.move_ctc_current_benefits(django_apps, None)
+        self._run()
 
         self.assertEqual(self._programs_of(co_screen), ["coctc"])
         self.assertEqual(self._programs_of(il_screen), ["federal_ctc", "il_ctc"])
@@ -78,7 +85,7 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         self._has(screen, self.co_ctc)
         self._has(screen, federal)
 
-        self.migration.move_ctc_current_benefits(django_apps, None)
+        self._run()
 
         self.assertEqual(self._programs_of(screen), ["federal_ctc"])
         self.assertEqual(CurrentBenefit.objects.filter(screen=screen).count(), 1)
@@ -88,37 +95,30 @@ class TestMoveStateCtcCurrentBenefits(TestCase):
         screen = self._screen(self.tx)
         self._has(screen, self.tx_ctc)
 
-        self.migration.move_ctc_current_benefits(django_apps, None)
-        self.migration.move_ctc_current_benefits(django_apps, None)
+        self._run()
+        self._run()
 
         self.assertEqual(self._programs_of(screen), ["federal_ctc"])
 
     def test_the_federal_row_named_as_a_source_is_skipped_and_its_rows_kept(self):
-        from programs.current_benefits_moves import move_current_benefits
-
+        """A row list that names the target itself must not match every federal row as a
+        duplicate and delete it before the update."""
         federal = self._federal()
         screen = self._screen(self.co)
         self._has(screen, federal)
         self._has(self._screen(self.tx), self.tx_ctc)
-        lines: list[str] = []
+        rows = (("federal", "federal_ctc"), *self.migration.STATE_FEDERAL_CTC_ROWS)
 
-        result = move_current_benefits(
-            Program,
-            WhiteLabel,
-            CurrentBenefit,
-            "federal_ctc",
-            [("federal", "federal_ctc"), ("tx", "tx_ctc")],
-            out=lines.append,
-        )
+        with patch.object(self.migration, "STATE_FEDERAL_CTC_ROWS", rows), patch("builtins.print") as out:
+            self._run()
 
         self.assertEqual(CurrentBenefit.objects.filter(program=federal).count(), 2)
-        self.assertEqual((result.moved, result.duplicates_dropped), (1, 0))
-        self.assertTrue(any("is the federal row itself, skipped" in line for line in lines))
+        self.assertTrue(any("is the federal row itself, skipped" in str(c.args[0]) for c in out.call_args_list))
 
     def test_without_a_federal_row_nothing_is_touched(self):
         screen = self._screen(self.co)
         self._has(screen, self.co_ctc)
 
-        self.migration.move_ctc_current_benefits(django_apps, None)
+        self._run()
 
         self.assertEqual(self._programs_of(screen), ["ctc"])

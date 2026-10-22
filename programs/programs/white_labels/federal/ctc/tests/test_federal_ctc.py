@@ -366,8 +366,7 @@ class TestStructure(FederalCtcTestCase):
     """Rules the spec states in sections 4 and 7 but no scenario reaches."""
 
     def test_the_credit_is_capped_at_tax_plus_the_refundable_part(self):
-        """Two other dependents and no qualifying child: the $1,000 is nonrefundable, so only
-        the $638 of income tax on $30,000 as head of household ($6,375 taxable) is paid."""
+        """Other dependents only: the credit is nonrefundable, so income tax before credits caps it."""
         screen = self.make_screen(household_size=3)
         self.member(screen, "headOfHousehold", 48, income={"wages": 30_000})
         self.member(screen, "child", 17)
@@ -376,8 +375,7 @@ class TestStructure(FederalCtcTestCase):
         self.assert_eligible(self.calculate(screen), 638)
 
     def test_tax_exempt_income_does_not_raise_the_tax_the_credit_is_capped_at(self):
-        """Child support is never taxed, so $20,000 of wages leaves no tax as head of household
-        and the nonrefundable $500 for a dependent parent pays nothing."""
+        """Child support is never taxed, so it does not raise the tax the credit is capped at."""
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 48, income={"wages": 20_000, "childSupport": 12_000})
         self.member(screen, "parent", 74)
@@ -385,8 +383,7 @@ class TestStructure(FederalCtcTestCase):
         self.assert_eligible(self.calculate(screen), 0)
 
     def test_a_filer_who_is_65_and_blind_adds_two_standard_deduction_amounts(self):
-        """Age and blindness are separate additions: $23,625 + 2 × $2,000 leaves $2,375 taxable
-        on $30,000, and the Tax Table row 2,375-2,400 is $239, so the $500 pays $239."""
+        """Age and blindness are separate standard-deduction additions."""
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 70, visually_impaired=True, income={"wages": 30_000})
         self.member(screen, "parent", 92)
@@ -394,8 +391,7 @@ class TestStructure(FederalCtcTestCase):
         self.assert_eligible(self.calculate(screen), 239)
 
     def test_a_senior_filer_gets_the_higher_standard_deduction(self):
-        """At 65 the head of household deduction is $25,625, so $26,000 leaves $375 taxable:
-        $39 of tax and no qualifying child, so the $500 other-dependent credit pays $39."""
+        """A filer 65 or older gets the standard-deduction addition for age."""
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 65, income={"wages": 26_000})
         self.member(screen, "parent", 90)
@@ -446,8 +442,7 @@ class TestAgeOnlyHouseholds(FederalCtcTestCase):
         self.assert_eligible(self.calculate(screen), 2_200)
 
     def test_an_age_only_child_is_aged_back_to_the_end_of_the_tax_year(self):
-        """Screened in 2026 at 17, the child was 16 at the end of 2025 and earns the full
-        child credit, not the $500 for an older dependent."""
+        """An age-only child is aged back to the end of the tax year."""
         screen = self.make_screen(household_size=2)
         head = self.add_member(screen, "headOfHousehold", age=45, stored_age=True, screener_defaults=False)
         self.add_member(screen, "child", age=17, stored_age=True, screener_defaults=False)
@@ -456,8 +451,7 @@ class TestAgeOnlyHouseholds(FederalCtcTestCase):
         self.assert_eligible(self.calculate(screen), 2_200)
 
     def test_an_age_only_nineteen_year_old_was_eighteen_for_the_tax_year(self):
-        """At 18 for 2025 the child counts by age with no income limit, so $5,200 of wages
-        still leaves them an other dependent; at 19 they would fail the relative limit."""
+        """An age-only member is a year younger for the tax year, so counts by age with no income limit."""
         screen = self.make_screen(household_size=2)
         head = self.add_member(screen, "headOfHousehold", age=45, stored_age=True, screener_defaults=False)
         child = self.add_member(screen, "child", age=19, stored_age=True, screener_defaults=False)
