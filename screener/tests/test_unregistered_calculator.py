@@ -15,7 +15,11 @@ from screener.views import eligibility_results
 class TestUnregisteredCalculator(TestCase):
     def setUp(self) -> None:
         self.co = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
-        category = ProgramCategory.objects.new_program_category(white_label=None, external_name="cash", icon="")
+        # A name nothing seeds: migration 0172 creates the shared "cash" category, so a test
+        # that creates it too errors under a migrated test database.
+        category = ProgramCategory.objects.new_program_category(
+            white_label=None, external_name="unregistered_calculator_test", icon=""
+        )
         fpl = FederalPoveryLimit.objects.create(year="2025", period="2025")
         # A real MFB calculator the household qualifies for, beside a row with none.
         self.trump_account = self._program("federal_trump_account", category, fpl)
