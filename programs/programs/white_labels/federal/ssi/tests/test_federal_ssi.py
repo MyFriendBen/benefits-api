@@ -449,3 +449,25 @@ class TestScenarios(FederalSsiTestCase):
         self.member(screen, "headOfHousehold", 66, disabled=True, income={"sSI": 200, "wages": 2_500})
 
         self.assert_eligible(self.calculate(screen), INDIVIDUAL_FBR)
+
+    def test_scenario_42_disabled_child_whose_parents_only_income_is_other_cash_assistance(self):
+        screen = self.make_screen(household_size=2, household_assets=0)
+        parent = self.member(screen, "headOfHousehold", 40, income={"cashAssistanceOther": 3_500})
+        child = self.member(screen, "child", 10, disabled=True)
+
+        e = self.calculate(screen)
+
+        self.assert_eligible(e, INDIVIDUAL_FBR)
+        self.assert_member(e, child, INDIVIDUAL_FBR)
+        self.assert_member(e, parent, None)
+
+    def test_scenario_43_older_adult_whose_ineligible_spouses_only_income_is_other_cash_assistance(self):
+        screen = self.make_screen(household_size=2, household_assets=0)
+        head = self.member(screen, "headOfHousehold", 70, income={"sSRetirement": 500})
+        spouse = self.member(screen, "spouse", 50, disabled=False, income={"cashAssistanceOther": 3_500})
+
+        e = self.calculate(screen)
+
+        self.assert_eligible(e, 514)
+        self.assert_member(e, head, 514)
+        self.assert_member(e, spouse, None)

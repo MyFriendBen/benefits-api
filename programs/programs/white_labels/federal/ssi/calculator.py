@@ -337,11 +337,15 @@ class FederalSsi(ProgramCalculator):
 
         return self._individual_verdict(member)
 
-    def _rule_passes(self, members: list[HouseholdMember]) -> list[CountingRules]:
-        """The counting passes, strictest first; a relaxation is listed only when it could change the answer."""
-        has_other_cash = any(self._income(m).other_cash > 0 for m in members)
+    def _rule_passes(
+        self, applicants: list[HouseholdMember], deemors: Iterable[HouseholdMember] = ()
+    ) -> list[CountingRules]:
+        """The counting passes, strictest first; a relaxation is listed only when it could change the
+        answer. Other cash assistance is left out wherever it is counted toward the unit, a deemor's
+        included; only an applicant's own earnings can be left out."""
+        has_other_cash = any(self._income(m).other_cash > 0 for m in [*applicants, *deemors])
         has_droppable_earnings = any(
-            self._earnings_can_be_left_out(m) and self._income(m).earned_after_student_exclusion > 0 for m in members
+            self._earnings_can_be_left_out(m) and self._income(m).earned_after_student_exclusion > 0 for m in applicants
         )
 
         passes = []
@@ -387,18 +391,16 @@ class FederalSsi(ProgramCalculator):
             return Verdict(False)
 
         partner_income = self._income(partner)
-        spouse_income = (
-            partner_income.earned + partner_income.unearned + partner_income.tanf + partner_income.other_cash
-        )
-        deeming_applies = spouse_income > params.ineligible_spouse_allowance
+        spouse_income = partner_income.earned + partner_income.unearned + partner_income.tanf
 
-        for rules in self._rule_passes([member]):
+        for rules in self._rule_passes([member], deemors=[partner]):
             own = self._countable_income([member], rules, applicants=[member])
             if own >= params.individual_fbr:
                 continue
             payment = params.individual_fbr - own
 
-            if deeming_applies:
+            counted_spouse_income = spouse_income + (0 if rules.drop_other_cash else partner_income.other_cash)
+            if counted_spouse_income > params.ineligible_spouse_allowance:
                 couple = self._countable_income([member, partner], rules, applicants=[member])
                 if couple >= params.couple_fbr:
                     continue
@@ -419,7 +421,7 @@ class FederalSsi(ProgramCalculator):
         if not self._resources_allow(child, [child, *counted_parents], limit):
             return Verdict(False)
 
-        for rules in self._rule_passes([child]):
+        for rules in self._rule_passes([child], deemors=parents):
             deemed = self._deemed_to_child(child, rules)
             countable = self._countable_income([child], rules, applicants=[child], deemed_unearned=deemed)
             if countable < params.individual_fbr:
