@@ -331,6 +331,11 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         urgent_needs = urgent_need_results(screen, eligibility)
         external_api_failures = get_external_api_failures()
 
+    # A failed integration means some answer came from a fallback: HUD-backed programs
+    # degrade to "not eligible (income limit unknown)" rather than dropping out, so nothing
+    # in the eligibility loop would otherwise flag them.
+    missing_programs = missing_programs or bool(external_api_failures)
+
     results = {
         "programs": eligibility,
         "urgent_needs": urgent_needs,
@@ -496,6 +501,7 @@ def eligibility_results(
     snapshot = EligibilitySnapshot.objects.create(screen=screen, is_batch=batch, had_error=True)
 
     missing_dependencies = screen.missing_fields()
+    _report_malformed_screen_data(screen, missing_dependencies)
 
     program_by_abbr = {p.name_abbreviated: p for p in all_programs}
 
@@ -541,7 +547,9 @@ def eligibility_results(
 
         return CALC_ORDER.index(program.name_abbreviated)
 
-    missing_programs = False
+    # Flagged whether or not a calculator declares the malformed field: one that reads it
+    # without declaring it computed from data we know is bad.
+    missing_programs = bool(missing_dependencies.malformed)
 
     # make certain benifits calculate first so that they can be used in other benefits
     all_programs = sorted(all_programs, key=sort_first)
@@ -599,13 +607,16 @@ def eligibility_results(
                     dropped_programs[program.name_abbreviated] = reason
                 continue
             except Exception as e:
-                # Only reachable for a force-calculated upstream: this row was not being
-                # calculated at all before, so adding it must not be able to make the
-                # response worse than it already was. Leaving the key absent lets the
-                # dependent's gate raise and drop it exactly as it did before.
+                # A bug, or screen data the calculator could not handle. Drop just this
+                # program, loudly, rather than 500 the response and lose every other one.
                 if not skip:
-                    raise
+                    missing_programs = True
+                    dropped_programs[program.name_abbreviated] = EligibilitySnapshot.DROPPED_CALCULATOR_ERROR
+                    _report_program_failure(screen, program, e)
+                    continue
 
+                # A force-calculated upstream is never displayed. Leaving its key absent lets
+                # the dependent's gate raise and drop it exactly as before it was calculated.
                 capture_exception(e, level="error")
                 capture_message(
                     f"Force-calculated upstream {program.name_abbreviated} raised; programs "
@@ -652,14 +663,23 @@ def eligibility_results(
         # upstream whose warnings will never be rendered
         if not skip and eligibility.eligible:
             for warning in program.warning_messages.all():
-                if warning.calculator not in warning_calculators:
-                    raise Exception(f"{warning.calculator} is not a valid calculator name")
+                # A broken warning costs only itself: the program's result is still right,
+                # so it is skipped and reported at warning level rather than 500ing the
+                # response or marking the results incomplete.
+                calculator = warning_calculators.get(warning.calculator)
+                if calculator is None:
+                    _report_warning_failure(
+                        screen, program, warning, f"'{warning.calculator}' is not a valid calculator name"
+                    )
+                    continue
 
-                warning_calculator = warning_calculators[warning.calculator](
-                    screen, warning, eligibility, missing_dependencies, program=program
-                )
+                try:
+                    shown = calculator(screen, warning, eligibility, missing_dependencies, program=program).calc()
+                except Exception as e:
+                    _report_warning_failure(screen, program, warning, "its calculator raised", error=e)
+                    continue
 
-                if warning_calculator.calc():
+                if shown:
                     warnings.append(WarningMessageSerializer(warning).data)
 
         if not skip and program.active:
@@ -779,6 +799,67 @@ def eligibility_results(
         eligible_programs.append(clean_program)
 
     return eligible_programs, missing_programs, categories, pe_data
+
+
+def _report_malformed_screen_data(screen: Screen, missing_dependencies: Dependencies) -> None:
+    """Report fields holding a value we can't compute with, as one event per screen.
+
+    Unlike an unanswered question this is corruption or serializer drift. The message is
+    static and the fingerprint is the set of fields, so Sentry opens one issue per kind of
+    bad data rather than one per screen.
+    """
+    malformed = missing_dependencies.malformed
+    if not malformed:
+        return
+
+    fields = sorted({m.field for m in malformed})
+    capture_message(
+        "Malformed screen data treated as missing; programs declaring these fields were skipped "
+        "and the results are flagged incomplete.",
+        level="error",
+        contexts={
+            "screen": {"id": screen.id, "white_label": screen.white_label.code},
+            "malformed_data": {"fields": fields, "values": [m.describe() for m in malformed]},
+        },
+        fingerprint=["malformed-screen-data", *fields],
+    )
+
+
+def _report_program_failure(screen: Screen, program: Program, error: Exception) -> None:
+    """Report a displayed program whose calculator raised. The message is fingerprinted on
+    the program, one issue per broken calculator; the exception groups on its own stack so
+    two bugs in one program stay apart."""
+    context = {
+        "program": {"name_abbreviated": program.name_abbreviated, "id": program.id},
+        "screen": {"id": screen.id, "white_label": screen.white_label.code},
+    }
+    capture_exception(error, level="error", contexts=context)
+    capture_message(
+        "A program's calculator raised; the program was dropped for this screen.",
+        level="error",
+        contexts=context,
+        fingerprint=["program-eligibility-failure", program.name_abbreviated],
+    )
+
+
+def _report_warning_failure(
+    screen: Screen, program: Program, warning: WarningMessage, reason: str, error: Exception | None = None
+) -> None:
+    """Report a warning message skipped because it couldn't be evaluated. Fingerprinted on
+    the warning's calculator, so one broken calculator is one issue across programs."""
+    context = {
+        "program": {"name_abbreviated": program.name_abbreviated, "id": program.id},
+        "warning": {"id": warning.id, "external_name": warning.external_name, "calculator": warning.calculator},
+        "screen": {"id": screen.id, "white_label": screen.white_label.code},
+    }
+    if error is not None:
+        capture_exception(error, level="warning", contexts=context)
+    capture_message(
+        f"Skipped a warning message on {program.name_abbreviated}: {reason}.",
+        level="warning",
+        contexts=context,
+        fingerprint=["warning-message-failure", warning.calculator],
+    )
 
 
 class GetProgramTranslation:

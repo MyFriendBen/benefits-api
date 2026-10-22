@@ -1,12 +1,10 @@
 from datetime import date
 
 from integrations.clients.hud_income_limits import HudIncomeClientError, hud_client
-from integrations.external_api_status import HUD, record_external_api_failure
 from programs.co_county_zips import counties_from_screen
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
 from screener.models import HouseholdMember
-from sentry_sdk import capture_exception
 
 
 class NurturingFutures(ProgramCalculator):
@@ -63,9 +61,8 @@ class NurturingFutures(ProgramCalculator):
             income_limit = hud_client.get_screen_mtsp_ami(
                 self.screen, NurturingFutures.ami_percent, NurturingFutures.ami_year, county_override=self.county
             )
-        except HudIncomeClientError as error:
-            capture_exception(error)
-            record_external_api_failure(HUD)
+        except HudIncomeClientError:
+            # The client has already reported the failure and flagged the results incomplete.
             e.condition(False, messages.income_limit_unknown())
             return
 

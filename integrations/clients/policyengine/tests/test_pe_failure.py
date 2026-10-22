@@ -119,6 +119,23 @@ class TestCalcPeEligibilityFailure(TestCase):
         self.assertTrue(self._error_messages(capture_message))
         self.assertEqual(failures, [POLICY_ENGINE])
 
+    def test_payload_assembly_failure_degrades_instead_of_raising(self):
+        """A dependency crashing on screen data it can't handle (an unconvertible expense
+        frequency raises UnboundLocalError in `Expense.yearly()`) must cost the screen its
+        PolicyEngine programs, not 500 the whole response."""
+        error = UnboundLocalError("cannot access local variable 'yearly'")
+
+        with patch.object(pe, "build_pe_input", side_effect=error), patch.object(
+            pe, "capture_message"
+        ) as capture_message, patch.object(pe, "capture_exception") as capture_exception, track_external_api_failures():
+            result = pe.calc_pe_eligibility(self.screen, self.calculators)
+            failures = get_external_api_failures()
+
+        self.assertEqual(result["eligibility"], {})
+        capture_exception.assert_called_once_with(error, level="error")
+        self.assertTrue(self._error_messages(capture_message))
+        self.assertEqual(failures, [POLICY_ENGINE])
+
     def test_no_fallback_second_engine_never_tried(self):
         # Even if a second engine were present, a first-engine failure returns immediately
         # (degraded) — we never silently try another endpoint.

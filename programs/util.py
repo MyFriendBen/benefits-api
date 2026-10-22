@@ -1,10 +1,53 @@
+from typing import Any, Iterable, NamedTuple
+
+
+class MalformedValue(NamedTuple):
+    """A screener field holding a value we can't compute with, as opposed to no value.
+
+    Kept structured so the reporter can group Sentry events by field rather than by a
+    message embedding the value, which would open one issue per screen.
+    """
+
+    field: str
+    value: Any
+    detail: str
+
+    def describe(self) -> str:
+        return f"{self.field}={self.value!r} ({self.detail})"
+
+
 class Dependencies(set):
+    """Screener fields unusable for a screen. A calculator declaring one is skipped.
+
+    A field is unusable either because it was never answered (null: ordinary partial input,
+    quiet) or because it holds a value we can't compute with (a defect, recorded in
+    `malformed` so `eligibility_results` can report it).
+    """
+
+    def __init__(self, *args: Iterable[str]) -> None:
+        super().__init__(*args)
+        self.malformed: list[MalformedValue] = []
+
     def has(self, *iter):
         for dependency in iter:
             if dependency in self:
                 return True
 
         return False
+
+    def report_malformed(self, field: str, value: Any, detail: str) -> None:
+        """Record why `field` is unusable. Callers still `add()` the dependency name."""
+        self.malformed.append(MalformedValue(field, value, detail))
+
+    def update(self, *others: Iterable[str]) -> None:
+        """Union the others in, keeping their malformed-value detail.
+
+        Overridden rather than offered as a separate method so the aggregation in
+        `Screen.missing_fields()` can't drop the detail by calling the usual one.
+        """
+        for other in others:
+            super().update(other)
+            self.malformed.extend(getattr(other, "malformed", ()))
 
 
 class DependencyError(Exception):
