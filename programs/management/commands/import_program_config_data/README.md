@@ -72,10 +72,27 @@ python manage.py import_all_program_configs --file tx_snap_initial_config.json
 
 ### How It Works
 
-1. Scans `import_program_config_data/data/` directory for JSON files
+1. Scans `import_program_config_data/data/` directory for JSON files, plus the
+   `programs/**/*_program_record.json` records in a program-ops checkout (`../program-ops` by default)
 2. Checks the `ProgramConfigImport` database table to see which files have already been imported
 3. Imports only the pending (new) configuration files
 4. Records each successful import in the database
+
+### program-ops records
+
+program-ops is the source of truth for every program it holds a record for. Don't copy a record
+into `data/`: a `data/` config for a program program-ops holds is ignored with a warning.
+
+- A record is imported only once its program has a registered calculator. Until then it is listed as
+  waiting.
+- Records leave `active` out, so they import switched off. Turn the program on in the admin.
+- Without a program-ops checkout (staging and production today), the command reads `data/` only.
+  Import a record there by piping it to `import_program_config`:
+
+  ```bash
+  heroku run --no-tty -a <app> -- 'cat > /tmp/record.json && python manage.py import_program_config /tmp/record.json' \
+    < ../program-ops/programs/white_labels/federal/ssdi/federal_ssdi_program_record.json
+  ```
 
 ### Options
 
@@ -84,6 +101,7 @@ python manage.py import_all_program_configs --file tx_snap_initial_config.json
 | `--dry-run` | Show what would be imported without making any changes |
 | `--list` | Display status of all config files (imported or pending) |
 | `--file <filename>` | Import a specific file only (still tracks it) |
+| `--program-ops-dir <path>` | Read program records from this program-ops checkout instead of `../program-ops`; fails if the path doesn't exist |
 
 ### Database Tracking
 
