@@ -572,6 +572,18 @@ class ProgramOpsRecordsTest(TestCase):
 
         self.assertFalse(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
 
+    def test_copy_of_a_record_waiting_for_its_calculator_fails_the_run(self) -> None:
+        """A copy is caught when it's added, not only once the calculator merges."""
+        self._write_record("co_unbuilt_program")
+        (self.data_dir / "co_unbuilt_program_initial_config.json").write_text(
+            json.dumps(self._config("co_unbuilt_program")), encoding="utf-8"
+        )
+
+        with self.assertRaisesMessage(CommandError, "co/co_unbuilt_program is declared twice"):
+            self._run()
+
+        self.assertFalse(Program.objects.filter(name_abbreviated="co_unbuilt_program").exists())
+
     def test_without_a_checkout_the_data_directory_is_still_imported(self) -> None:
         (self.data_dir / "co_local_program_initial_config.json").write_text(
             json.dumps(self._config("co_local_program")), encoding="utf-8"

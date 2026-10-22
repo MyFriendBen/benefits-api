@@ -177,30 +177,36 @@ class Command(BaseCommand):
         Return the data directory's config files followed by the importable program-ops records.
 
         Raises if a program or a filename appears twice: two copies of one program drift apart
-        without anyone noticing, and tracking rows are keyed by filename.
+        without anyone noticing, and tracking rows are keyed by filename. Every record is checked,
+        including one still waiting for its calculator, so a copy is caught when it's added rather
+        than when the calculator merges.
         """
-        config_files = sorted(self.DATA_DIR.glob("*.json")) + self._discover_program_ops_records(program_ops_dir)
-        self._check_for_duplicates(config_files)
-        return config_files
+        data_files = sorted(self.DATA_DIR.glob("*.json"))
+        records = self._find_program_ops_records(program_ops_dir)
+        self._check_for_duplicates(data_files + records)
+        return data_files + self._importable_records(records)
 
-    def _discover_program_ops_records(self, program_ops_dir: Path) -> list[Path]:
-        """
-        Return the program-ops records whose program has a registered calculator.
-
-        A record is often written before its calculator merges. Importing it then would create
-        a row nothing can calculate, so it waits until the calculator ships. A record whose
-        program can't be read is kept, so the import reports it rather than it vanishing.
-        """
+    def _find_program_ops_records(self, program_ops_dir: Path) -> list[Path]:
+        """Return every program record in the program-ops checkout, or none without one."""
         if not program_ops_dir.is_dir():
             self.stdout.write(
                 self.style.WARNING(f"No program-ops checkout at {program_ops_dir}; reading the data directory only.")
             )
             return []
+        return sorted(program_ops_dir.glob(self.PROGRAM_OPS_RECORD_GLOB))
 
+    def _importable_records(self, records: list[Path]) -> list[Path]:
+        """
+        Return the records whose program has a registered calculator.
+
+        A record is often written before its calculator merges. Importing it then would create
+        a row nothing can calculate, so it waits until the calculator ships. A record whose
+        program can't be read is kept, so the import reports it rather than it vanishing.
+        """
         calculators = all_calculator_classes()
         importable: list[Path] = []
         waiting: list[str] = []
-        for record in sorted(program_ops_dir.glob(self.PROGRAM_OPS_RECORD_GLOB)):
+        for record in records:
             program_name = (self._get_program_info(record) or {}).get("program_name", "unknown")
             if program_name != "unknown" and program_name not in calculators:
                 waiting.append(record.name)
