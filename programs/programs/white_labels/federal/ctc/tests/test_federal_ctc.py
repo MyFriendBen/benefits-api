@@ -286,49 +286,42 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 2_150)
 
-    def test_scenario_21_earnings_just_above_the_refundable_credits_floor(self):
-        screen = self.make_screen(household_size=2)
-        self.member(screen, "headOfHousehold", 31, income={"wages": 2_600})
-        self.member(screen, "child", 5)
-
-        self.assert_eligible(self.calculate(screen), 15)
-
-    def test_scenario_22_an_other_dependent_and_no_tax(self):
+    def test_scenario_21_an_other_dependent_and_no_tax(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 48, income={"wages": 20_000})
         self.member(screen, "parent", 74)
 
         self.assert_eligible(self.calculate(screen), 0)
 
-    def test_scenario_23_single_filer_one_dollar_past_full_phase_out(self):
+    def test_scenario_22_single_filer_one_dollar_past_full_phase_out(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 39, income={"wages": 244_001})
         self.member(screen, "child", 11)
 
         self.assert_eligible(self.calculate(screen), 0)
 
-    def test_scenario_24_eighteen_year_old_with_earnings(self):
+    def test_scenario_23_eighteen_year_old_with_earnings(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 45, income={"wages": 40_000})
         self.member(screen, "child", 18, income={"wages": 5_200})
 
         self.assert_eligible(self.calculate(screen), 500)
 
-    def test_scenario_25_nineteen_year_old_non_student_with_earnings(self):
+    def test_scenario_24_nineteen_year_old_non_student_with_earnings(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 45, income={"wages": 40_000})
         self.member(screen, "child", 19, income={"wages": 5_200})
 
         self.assert_ineligible(self.calculate(screen))
 
-    def test_scenario_26_earnings_one_dollar_over_the_refundable_credits_floor(self):
+    def test_scenario_25_earnings_one_dollar_over_the_refundable_credits_floor(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 31, income={"wages": 2_501})
         self.member(screen, "child", 5)
 
         self.assert_eligible(self.calculate(screen), 0.15)
 
-    def test_scenario_27_joint_filers_with_child_support_near_the_phase_out(self):
+    def test_scenario_26_joint_filers_with_child_support_near_the_phase_out(self):
         screen = self.make_screen(household_size=4)
         self.member(screen, "headOfHousehold", 45, income={"wages": 395_000, "childSupport": 10_000})
         self.member(screen, "spouse", 43)
@@ -337,7 +330,7 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 4_400)
 
-    def test_scenario_28_supported_parent_living_on_social_security(self):
+    def test_scenario_27_supported_parent_living_on_social_security(self):
         screen = self.make_screen(household_size=3)
         self.member(screen, "headOfHousehold", 48, income={"wages": 52_000})
         self.member(screen, "child", 13)
@@ -345,7 +338,7 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 2_700)
 
-    def test_scenario_29_joint_filers_whose_social_security_would_tip_the_phase_out(self):
+    def test_scenario_28_joint_filers_whose_social_security_would_tip_the_phase_out(self):
         screen = self.make_screen(household_size=4)
         self.member(screen, "headOfHousehold", 45, income={"wages": 395_000, "sSRetirement": 10_000})
         self.member(screen, "spouse", 43)
@@ -354,42 +347,42 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 4_400)
 
-    def test_scenario_30_low_wage_head_on_social_security_disability_where_the_tax_cap_binds(self):
+    def test_scenario_29_low_wage_head_on_social_security_disability_where_the_tax_cap_binds(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 40, income={"wages": 20_000, "sSDisability": 18_000})
         self.member(screen, "child", 8)
 
         self.assert_eligible(self.calculate(screen), 1_700)
 
-    def test_scenario_31_filer_who_is_65_and_blind_claiming_a_parent(self):
+    def test_scenario_30_filer_who_is_65_and_blind_claiming_a_parent(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 70, visually_impaired=True, income={"wages": 30_000})
         self.member(screen, "parent", 92)
 
         self.assert_eligible(self.calculate(screen), 239)
 
-    def test_scenario_32_student_child_under_24_with_earnings(self):
+    def test_scenario_31_student_child_under_24_with_earnings(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 50, income={"wages": 40_000})
         self.member(screen, "child", 22, student=True, income={"wages": 6_000})
 
         self.assert_eligible(self.calculate(screen), 500)
 
-    def test_scenario_33_domestic_partner_with_no_income(self):
+    def test_scenario_32_domestic_partner_with_no_income(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
         self.member(screen, "domesticPartner", 28)
 
         self.assert_ineligible(self.calculate(screen))
 
-    def test_scenario_34_supported_parent_living_on_ssi(self):
+    def test_scenario_33_supported_parent_living_on_ssi(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 48, income={"wages": 52_000})
         self.member(screen, "parent", 74, income={"sSI": 11_000})
 
         self.assert_eligible(self.calculate(screen), 500)
 
-    def test_scenario_35_roommate_with_high_earnings(self):
+    def test_scenario_34_roommate_with_high_earnings(self):
         screen = self.make_screen(household_size=3)
         self.member(screen, "headOfHousehold", 31, income={"wages": 2_600})
         self.member(screen, "child", 5)
@@ -397,28 +390,28 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 15)
 
-    def test_scenario_36_child_living_on_ssi(self):
+    def test_scenario_35_child_living_on_ssi(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 31, income={"wages": 10_000})
         self.member(screen, "child", 12, income={"sSI": 12_000})
 
         self.assert_eligible(self.calculate(screen), 1_125)
 
-    def test_scenario_37_disabled_adult_child_with_earnings(self):
+    def test_scenario_36_disabled_adult_child_with_earnings(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 58, income={"wages": 40_000})
         self.member(screen, "child", 30, disabled=True, long_term_disability=True, income={"wages": 8_000})
 
         self.assert_eligible(self.calculate(screen), 500)
 
-    def test_scenario_38_student_aged_24_with_earnings(self):
+    def test_scenario_37_student_aged_24_with_earnings(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 52, income={"wages": 40_000})
         self.member(screen, "child", 24, student=True, income={"wages": 6_000})
 
         self.assert_ineligible(self.calculate(screen))
 
-    def test_scenario_39_sibling_marked_disabled_but_not_long_term(self):
+    def test_scenario_38_sibling_marked_disabled_but_not_long_term(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 16, income={"wages": 14_000})
         self.member(screen, "sisterOrBrother", 16, disabled=True, long_term_disability=False)
