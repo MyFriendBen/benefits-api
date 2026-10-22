@@ -1,0 +1,83 @@
+{
+  "white_label": {
+    "code": "federal"
+  },
+  "program_category": {
+    "external_name": "tax_credit"
+  },
+  "program": {
+    "name_abbreviated": "federal_eitc",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Earned Income Tax Credit (EITC)",
+    "description_short": "Federal tax credit for workers that can lower the tax you owe or increase your refund",
+    "description": "The Earned Income Tax Credit (EITC) is a federal tax credit for people who work. It can lower the tax you owe. Even if you do not owe any federal income tax, you may still get money from the EITC as part of your tax refund.\n\nYou claim the EITC once a year on your federal tax return. The amount shown is our estimate based on the information you entered in this screener.\n\nIf you are counting a child for the EITC, the child generally must have lived with you in the United States for more than half of the tax year. If your child did not, check the IRS rules before counting that child for the EITC. The IRS also uses your income from the tax year you are filing for, including your earned and investment income, rather than what you earn now. If your income has changed since then, your credit may be different from the amount shown.\n\nIf you file your taxes early and claim the EITC, the IRS cannot send your refund before mid-February. This delay applies to your entire refund, not just the EITC portion.\n\nGetting an EITC refund does not count as income for federally funded benefits such as SNAP, Medicaid, SSI, TANF, or housing assistance. It also does not count as a resource for at least 12 months after you receive it.\n\nSelect “File for Free” to see the IRS’s free filing options.",
+    "website_description": "Federal tax credit for workers that can lower the tax you owe or increase your refund",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit/how-to-claim-the-earned-income-tax-credit-eitc",
+    "apply_button_link": "https://www.irs.gov/filing/irs-free-file-do-your-taxes-for-free",
+    "apply_button_description": "File for Free",
+    "estimated_application_time": "3 hours",
+    "estimated_decision_time": "",
+    "estimated_delivery_time": "3 weeks if you e-file, 6 or more if you mail it",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "year": "2025",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "base_program": "eitc",
+    "active": true
+  },
+  "documents": [
+    {
+      "external_name": "eitc_ssn_cards",
+      "text": "For free tax prep: Social Security cards for you, your spouse and each child; the EITC needs numbers valid for work, not an ITIN"
+    },
+    {
+      "external_name": "eitc_photo_id",
+      "text": "For free tax prep: photo ID for you and your spouse if filing jointly"
+    },
+    {
+      "external_name": "eitc_wage_statements",
+      "text": "For free tax prep: your 2025 W-2s, 1099s and other income statements, including self-employment records"
+    },
+    {
+      "external_name": "eitc_bank_account",
+      "text": "For free tax prep: your bank routing and account numbers for direct deposit, such as a blank check"
+    },
+    {
+      "external_name": "eitc_schedule_eic",
+      "text": "Schedule EIC, filed with your tax return if you claim a qualifying child"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "eitc_vita_tce",
+      "name": "IRS VITA and TCE free tax help",
+      "description": "Free tax preparation by IRS-certified volunteers at community centers, libraries and schools. For people with low to moderate incomes, people with disabilities and people who speak limited English; TCE sites focus on people 60 and older. Find a site or call 800-906-9887.",
+      "email": "",
+      "assistance_link": "https://freetaxassistance.for.irs.gov/s/sitelocator",
+      "phone_number": "+18009069887"
+    },
+    {
+      "external_name": "eitc_getyourrefund",
+      "name": "GetYourRefund",
+      "description": "Free online tax help from Code for America, made for households with low to moderate incomes. Upload your ID and tax documents and IRS-certified VITA volunteers prepare and file your return, which can take 2 to 3 weeks. Or file yourself with free software and chat or email help.",
+      "email": "support@getyourrefund.org",
+      "assistance_link": "https://www.getyourrefund.org/en"
+    },
+    {
+      "external_name": "eitc_aarp_tax_aide",
+      "name": "AARP Foundation Tax-Aide",
+      "description": "Free tax preparation by IRS-certified volunteers at libraries, banks and community centers in all 50 states, from early February to mid-April. It focuses on people over 50 with low to moderate income, and you don't need to be an AARP member.",
+      "email": "taxaide@aarp.org",
+      "assistance_link": "https://www.aarp.org/money/taxes/aarp-taxaide/",
+      "phone_number": "+18882277669"
+    }
+  ]
+}

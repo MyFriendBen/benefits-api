@@ -18,7 +18,8 @@
         "estimated_application_time": "45 minutes",
         "estimated_delivery_time": "21 days after filing",
         "estimated_value": "",
-        "website_description": "Federal tax credit that reduces what you owe or increases your tax refund"
+        "website_description": "Federal tax credit that reduces what you owe or increases your tax refund",
+        "active": false
     },
     "documents": [
         {
