@@ -26,7 +26,7 @@ def deactivate_state_ssdi(apps, schema_editor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0189_add_211ks_211mo_referrers"),
+        ("programs", "0193_deactivate_state_federal_eitc"),
     ]
     operations = [
         # noop reverse: rolling back should not put a second SSDI result in front of every
