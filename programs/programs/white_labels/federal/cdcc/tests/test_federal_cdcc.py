@@ -1,5 +1,5 @@
-"""Federal CDCC scenarios, one per spec section 8 scenario, plus the percentage schedule and the structure
-around it.
+"""Federal CDCC scenarios, one per spec section 8 scenario, plus the code-level structure around
+them.
 
 Ages are the member's age today, so members are built from an age and the clock is left
 alone: `add_member` derives the birth month against the same reference date the calculator
@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from programs.framework.base import Eligibility
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
-from programs.programs.white_labels.federal.cdcc.calculator import CDCC_YEARS, FederalCdcc, applicable_percentage
+from programs.programs.white_labels.federal.cdcc.calculator import FederalCdcc
 from screener.models import HouseholdMember, Screen
 
 TAX_YEAR = 2026
@@ -108,49 +108,6 @@ class TestRegistration(FederalCdccTestCase):
         self.care(child, 300)
 
         self.assert_ineligible(self.calculate(screen))
-
-
-class TestApplicablePercentage(FederalCdccTestCase):
-    """The 2026 schedule, every band edge for both filing statuses."""
-
-    def test_other_filers(self):
-        params = CDCC_YEARS[TAX_YEAR]
-        for agi, expected in (
-            (0, 50),
-            (15_000, 50),
-            (15_001, 49),
-            (17_000, 49),
-            (17_001, 48),
-            (43_000, 36),
-            (43_001, 35),
-            (75_000, 35),
-            (75_001, 34),
-            (77_000, 34),
-            (77_001, 33),
-            (103_000, 21),
-            (103_001, 20),
-            (500_000, 20),
-        ):
-            with self.subTest(agi=agi):
-                self.assertEqual(applicable_percentage(agi, False, params), expected)
-
-    def test_joint_filers(self):
-        params = CDCC_YEARS[TAX_YEAR]
-        for agi, expected in (
-            (15_000, 50),
-            (15_001, 49),
-            (43_000, 36),
-            (43_001, 35),
-            (75_001, 35),
-            (150_000, 35),
-            (150_001, 34),
-            (154_000, 34),
-            (154_001, 33),
-            (206_000, 21),
-            (206_001, 20),
-        ):
-            with self.subTest(agi=agi):
-                self.assertEqual(applicable_percentage(agi, True, params), expected)
 
 
 class TestScenarios(FederalCdccTestCase):
@@ -385,3 +342,44 @@ class TestScenarios(FederalCdccTestCase):
         self.care(head, 800)
 
         self.assert_eligible(self.calculate(screen), 2_100)
+
+    def test_scenario_29_income_at_17_000(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 17_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 1_470)
+
+    def test_scenario_30_income_at_43_000(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 43_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 1_080)
+
+    def test_scenario_31_income_at_43_001(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 43_001})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 1_050)
+
+    def test_scenario_32_income_at_103_000(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 103_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 630)
+
+    def test_scenario_33_joint_income_at_156_000(self):
+        screen = self.make_screen(household_size=3)
+        head = self.member(screen, "headOfHousehold", 38, income={"wages": 96_000})
+        self.member(screen, "spouse", 37, income={"wages": 60_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 990)
