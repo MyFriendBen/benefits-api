@@ -71,6 +71,18 @@ class TestRegistration(FederalCtcTestCase):
         `Program.name_abbreviated`, so the federal row's prefixed name has to be here."""
         self.assertEqual(FederalCtc.program_code, "federal_ctc")
 
+    def test_the_credit_is_the_households_and_names_no_member(self):
+        """The dependents size the credit and gate it, but the filers claim it, so the
+        results report the household as eligible rather than the children."""
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 41, income={"wages": 40_000})
+        self.member(screen, "child", 8)
+
+        e = self.calculate(screen)
+
+        self.assert_eligible(e, 2_200)
+        self.assertEqual(e.reported_members, [])
+
     def test_dependencies_are_what_the_tax_credit_apps_send(self):
         """The Colorado tax-credit apps send age, relationship and income only; requiring a
         disability or student answer would drop the program from their results."""

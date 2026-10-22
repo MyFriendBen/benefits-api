@@ -64,6 +64,18 @@ class TestRegistration(FederalEitcTestCase):
         `Program.name_abbreviated`, so the federal row's prefixed name has to be here."""
         self.assertEqual(FederalEitc.program_code, "federal_eitc")
 
+    def test_the_credit_is_the_households_and_names_no_member(self):
+        """A qualifying child sizes the credit, but the filers claim it, so the results
+        report the household as eligible rather than every member."""
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 41, income={"wages": 20_000})
+        self.member(screen, "child", 8)
+
+        e = self.calculate(screen)
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.reported_members, [])
+
     def test_a_tax_year_with_no_parameters_uses_the_latest_and_reports_it(self):
         """A rollover the parameters weren't updated for must not raise: an exception from
         a displayed program fails the whole results page, in every white label."""

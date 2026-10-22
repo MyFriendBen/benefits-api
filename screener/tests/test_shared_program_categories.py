@@ -62,6 +62,7 @@ class _FakeEligibility:
     def __init__(self, value: int, eligible_members: list):
         self.value = value
         self.eligible_members = eligible_members
+        self.reported_members = eligible_members
         self.eligible = True
 
 

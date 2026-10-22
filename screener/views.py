@@ -701,7 +701,7 @@ def eligibility_results(
             program_translations = GetProgramTranslation(screen, program, missing_dependencies)
 
             member_data = []
-            for member_eligibility in eligibility.eligible_members:
+            for member_eligibility in eligibility.reported_members:
                 member_data.append(
                     {
                         "frontend_id": str(member_eligibility.member.frontend_id),
