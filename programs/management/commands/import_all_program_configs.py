@@ -51,7 +51,7 @@ class Command(BaseCommand):
     migrations - tracking which imports have been run.
 
     program-ops is the source of truth for the programs it holds a record for, so a
-    program declared in both places fails the run. A record is only picked up once
+    data directory config for one of them is ignored with a warning. A record is only picked up once
     its program has a registered calculator. Without a program-ops checkout the
     command reads the data directory alone.
 
@@ -130,7 +130,11 @@ class Command(BaseCommand):
         if not self._validate_data_directory():
             return
 
-        json_files = self._discover_config_files(options.get("program_ops_dir") or self.PROGRAM_OPS_DIR)
+        program_ops_dir = options.get("program_ops_dir")
+        if program_ops_dir and not program_ops_dir.is_dir():
+            raise CommandError(f"No program-ops checkout at {program_ops_dir}.")
+
+        json_files = self._discover_config_files(program_ops_dir or self.PROGRAM_OPS_DIR)
         if not json_files:
             self.stdout.write(self.style.WARNING("No JSON configuration files found in data directory."))
             return
@@ -176,15 +180,40 @@ class Command(BaseCommand):
         """
         Return the data directory's config files followed by the importable program-ops records.
 
-        Raises if a program or a filename appears twice: two copies of one program drift apart
-        without anyone noticing, and tracking rows are keyed by filename. Every record is checked,
-        including one still waiting for its calculator, so a copy is caught when it's added rather
-        than when the calculator merges.
+        A data directory config for a program that program-ops also holds is dropped with a
+        warning: the record is the source of truth, and a stale copy shouldn't block every
+        developer's import until it's deleted. Every record counts, including one still waiting
+        for its calculator. Raises if a filename repeats, since tracking rows are keyed by
+        filename, or if two records declare one program, since neither can win.
         """
-        data_files = sorted(self.DATA_DIR.glob("*.json"))
         records = self._find_program_ops_records(program_ops_dir)
+        data_files = self._drop_data_copies(sorted(self.DATA_DIR.glob("*.json")), records)
         self._check_for_duplicates(data_files + records)
         return data_files + self._importable_records(records)
+
+    def _drop_data_copies(self, data_files: list[Path], records: list[Path]) -> list[Path]:
+        """Return the data directory configs whose program has no program-ops record."""
+        recorded = {self._program_key(record): record for record in records}
+        kept: list[Path] = []
+        for data_file in data_files:
+            record = recorded.get(self._program_key(data_file))
+            if record:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Ignoring {data_file.name}: program-ops holds this program in {record}. "
+                        f"Delete the data directory copy."
+                    )
+                )
+            else:
+                kept.append(data_file)
+        return kept
+
+    def _program_key(self, config_file: Path) -> tuple[str, str] | None:
+        """Return (white label, program) for a config, or None if either can't be read."""
+        program_info = self._get_program_info(config_file)
+        if not program_info or "unknown" in program_info.values():
+            return None
+        return (program_info["white_label"], program_info["program_name"])
 
     def _find_program_ops_records(self, program_ops_dir: Path) -> list[Path]:
         """Return every program record in the program-ops checkout, or none without one."""
@@ -228,14 +257,12 @@ class Command(BaseCommand):
                 )
             by_filename[config_file.name] = config_file
 
-            program_info = self._get_program_info(config_file)
-            if not program_info or "unknown" in program_info.values():
+            program = self._program_key(config_file)
+            if program is None:
                 continue
-            program = (program_info["white_label"], program_info["program_name"])
             if program in by_program:
                 raise CommandError(
-                    f"{program[0]}/{program[1]} is declared twice: {by_program[program]} and {config_file}. "
-                    f"Keep the program-ops record and delete the data directory copy."
+                    f"{program[0]}/{program[1]} is declared twice: {by_program[program]} and {config_file}."
                 )
             by_program[program] = config_file
 

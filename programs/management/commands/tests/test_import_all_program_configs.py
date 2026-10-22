@@ -481,8 +481,8 @@ class ProgramOpsRecordsTest(TestCase):
     """
     program-ops records are imported alongside the data directory.
 
-    program-ops is the source of truth for the programs it holds a record for, so a program
-    declared in both places fails the run, and a record waits until its calculator is registered.
+    program-ops is the source of truth for the programs it holds a record for, so a data directory
+    copy of one is ignored, and a record waits until its calculator is registered.
     """
 
     PROGRAM = "co_record_program"
@@ -587,35 +587,56 @@ class ProgramOpsRecordsTest(TestCase):
         self.assertRegex(output, r"Failed:\s+1")
         self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
 
-    def test_program_declared_in_both_places_fails_the_run(self) -> None:
-        self._write_record(self.PROGRAM)
-        (self.data_dir / f"{self.PROGRAM}_initial_config.json").write_text(
-            json.dumps(self._config(self.PROGRAM)), encoding="utf-8"
+    def _write_data_copy(self, program_name: str) -> None:
+        (self.data_dir / f"{program_name}_initial_config.json").write_text(
+            json.dumps(self._config(program_name)), encoding="utf-8"
         )
+
+    def test_record_wins_over_a_data_directory_copy(self) -> None:
+        self._write_record(self.PROGRAM)
+        self._write_data_copy(self.PROGRAM)
+
+        output = self._run()
+
+        self.assertIn(f"Ignoring {self.PROGRAM}_initial_config.json", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
+        self.assertEqual(
+            list(ProgramConfigImport.objects.values_list("filename", flat=True)),
+            [f"{self.PROGRAM}_program_record.json"],
+        )
+
+    def test_copy_of_a_record_waiting_for_its_calculator_is_ignored(self) -> None:
+        """The record holds the program even before its calculator merges."""
+        self._write_record("co_unbuilt_program")
+        self._write_data_copy("co_unbuilt_program")
+
+        output = self._run()
+
+        self.assertIn("Ignoring co_unbuilt_program_initial_config.json", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated="co_unbuilt_program").exists())
+
+    def test_two_records_for_one_program_fail_the_run(self) -> None:
+        self._write_record(self.PROGRAM)
+        other_dir = self.program_ops_dir / "programs" / "white_labels" / "co" / "other"
+        other_dir.mkdir()
+        (other_dir / "other_program_record.json").write_text(json.dumps(self._config(self.PROGRAM)), encoding="utf-8")
 
         with self.assertRaisesMessage(CommandError, f"co/{self.PROGRAM} is declared twice"):
             self._run()
 
         self.assertFalse(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
 
-    def test_copy_of_a_record_waiting_for_its_calculator_fails_the_run(self) -> None:
-        """A copy is caught when it's added, not only once the calculator merges."""
-        self._write_record("co_unbuilt_program")
-        (self.data_dir / "co_unbuilt_program_initial_config.json").write_text(
-            json.dumps(self._config("co_unbuilt_program")), encoding="utf-8"
-        )
-
-        with self.assertRaisesMessage(CommandError, "co/co_unbuilt_program is declared twice"):
-            self._run()
-
-        self.assertFalse(Program.objects.filter(name_abbreviated="co_unbuilt_program").exists())
+    def test_explicit_program_ops_dir_that_does_not_exist_fails(self) -> None:
+        with self.assertRaisesMessage(CommandError, "No program-ops checkout at"):
+            self._run("--program-ops-dir", str(Path(self.temp_dir.name) / "missing"))
 
     def test_without_a_checkout_the_data_directory_is_still_imported(self) -> None:
         (self.data_dir / "co_local_program_initial_config.json").write_text(
             json.dumps(self._config("co_local_program")), encoding="utf-8"
         )
+        self.program_ops_dir.rename(Path(self.temp_dir.name) / "moved")
 
-        output = self._run("--program-ops-dir", str(Path(self.temp_dir.name) / "missing"))
+        output = self._run()
 
         self.assertIn("No program-ops checkout at", output)
         self.assertTrue(Program.objects.filter(name_abbreviated="co_local_program").exists())

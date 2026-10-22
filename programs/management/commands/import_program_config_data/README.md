@@ -81,7 +81,7 @@ python manage.py import_all_program_configs --file tx_snap_initial_config.json
 ### program-ops records
 
 program-ops is the source of truth for every program it holds a record for. Don't copy a record
-into `data/`: a program declared in both places fails the run.
+into `data/`: a `data/` config for a program program-ops holds is ignored with a warning.
 
 - A record is imported only once its program has a registered calculator. Until then it is listed as
   waiting.
@@ -101,7 +101,7 @@ into `data/`: a program declared in both places fails the run.
 | `--dry-run` | Show what would be imported without making any changes |
 | `--list` | Display status of all config files (imported or pending) |
 | `--file <filename>` | Import a specific file only (still tracks it) |
-| `--program-ops-dir <path>` | Read program records from this program-ops checkout instead of `../program-ops` |
+| `--program-ops-dir <path>` | Read program records from this program-ops checkout instead of `../program-ops`; fails if the path doesn't exist |
 
 ### Database Tracking
 
