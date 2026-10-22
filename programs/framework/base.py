@@ -20,13 +20,20 @@ class MemberEligibility:
             self.eligible = False
 
 
+#: The benefit is paid per member: each eligible member carries a value and is reported.
+MEMBER = "member"
+#: The benefit is one amount for the household: members are evaluated but not reported.
+HOUSEHOLD = "household"
+
+
 class Eligibility:
-    def __init__(self):
+    def __init__(self, payment_unit: str = MEMBER):
         self.eligible: bool = True
         self.pass_messages = []
         self.fail_messages = []
         self.eligible_members: list[MemberEligibility] = []
         self.household_value: int = 0
+        self.payment_unit = payment_unit
 
     def condition(self, passed: bool, message=None):
         """
@@ -61,6 +68,19 @@ class Eligibility:
         Store a members eligibility
         """
         self.eligible_members.append(member_eligibility)
+
+    @property
+    def reported_members(self) -> list[MemberEligibility]:
+        """
+        The member verdicts shown outside the calculator: the results API and the category
+        caps. A household-unit program keeps its member verdicts for its own rules and for
+        the at-least-one-member gate, but reports none, so the household is the eligible
+        party rather than whichever members happened to satisfy a member-scoped rule.
+        """
+        if self.payment_unit == HOUSEHOLD:
+            return []
+
+        return self.eligible_members
 
     @property
     def value(self) -> int:
@@ -106,6 +126,13 @@ class ProgramCalculator:
     amount = 0
     member_amount = 0
 
+    #: Who the benefit is paid for, matching the spec's section 7 `Payment unit`. ``MEMBER``
+    #: (the default) pays and reports each eligible member. ``HOUSEHOLD`` pays one amount
+    #: for the household: `member_eligible` still runs and still gates the household on at
+    #: least one member passing, but no member is reported or paid, so the results show the
+    #: household as the eligible party.
+    payment_unit: str = MEMBER
+
     #: Upstream program codes this calculator reads through `program_eligible` or
     #: `member_program_eligible`. Those raise when the upstream was not calculated, so
     #: `can_calc` also requires the upstream's own screener fields — see
@@ -144,7 +171,7 @@ class ProgramCalculator:
         Combine the eligibility for the household and the members
         """
 
-        e = Eligibility()
+        e = Eligibility(payment_unit=self.payment_unit)
 
         one_member_eligible = False
         for member in self.screen.household_members.all():
@@ -184,7 +211,7 @@ class ProgramCalculator:
 
         e.household_value = self.household_value()
 
-        for member_eligibility in e.eligible_members:
+        for member_eligibility in e.reported_members:
             if member_eligibility.eligible:
                 member_value = self.member_value(member_eligibility.member)
                 member_eligibility.value = member_value

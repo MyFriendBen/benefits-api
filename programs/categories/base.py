@@ -95,7 +95,7 @@ class ProgramCategoryCapCalculator:
                 continue
 
             eligibility = self.eligibility[program]
-            for member_eligibility in eligibility.eligible_members:
+            for member_eligibility in eligibility.reported_members:
                 member_id = str(member_eligibility.member.frontend_id)
 
                 if member_id not in member_values:
