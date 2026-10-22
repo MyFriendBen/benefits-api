@@ -562,10 +562,10 @@ class HouseholdSizeRangeTests(TestCase):
     HUD's income limit tables stop there too.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
-    def serializer(self, household_size) -> ScreenSerializer:
+    def serializer(self, household_size: int | None) -> ScreenSerializer:
         return ScreenSerializer(
             data={
                 "white_label": self.white_label.code,
@@ -576,18 +576,18 @@ class HouseholdSizeRangeTests(TestCase):
             }
         )
 
-    def test_one_through_eight_are_accepted(self):
+    def test_one_through_eight_are_accepted(self) -> None:
         for size in (1, Screen.MAX_HOUSEHOLD_SIZE):
             with self.subTest(size=size):
                 serializer = self.serializer(size)
                 self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    def test_unanswered_is_accepted(self):
+    def test_unanswered_is_accepted(self) -> None:
         """The screener sends null until the household-size step is answered."""
         serializer = self.serializer(None)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
-    def test_outside_one_through_eight_is_rejected(self):
+    def test_outside_one_through_eight_is_rejected(self) -> None:
         for size in (0, -1, Screen.MAX_HOUSEHOLD_SIZE + 1):
             with self.subTest(size=size):
                 serializer = self.serializer(size)

@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from typing import ClassVar, Optional
 from datetime import date
 from django.db import models
@@ -571,7 +572,7 @@ class HouseholdMember(models.Model):
         # exactly, so an unordered query can make the same household stop matching.
         ordering = ["id"]
 
-    def calc_gross_income(self, frequency, types, exclude=[]):
+    def calc_gross_income(self, frequency: str, types: Collection[str], exclude: Collection[str] = ()) -> float:
         gross_income = 0
 
         income_streams = self.income_streams.all()
@@ -582,7 +583,12 @@ class HouseholdMember(models.Model):
             include_all = "all" in types
             specific_match = income_stream.type in types
             earned_income_match = "earned" in types and income_stream.type in EARNED_INCOME_TYPES
-            unearned_income_match = "unearned" in types and income_stream.type not in EARNED_INCOME_TYPES
+            # A blank type is unknown, not unearned; `missing_fields()` reports it.
+            unearned_income_match = (
+                "unearned" in types
+                and bool(income_stream.type and str(income_stream.type).strip())
+                and income_stream.type not in EARNED_INCOME_TYPES
+            )
             if include_all or earned_income_match or unearned_income_match or specific_match:
                 if frequency == "monthly":
                     gross_income += income_stream.monthly()

@@ -3,7 +3,7 @@
 Calculators are stubbed through `Program.eligibility`: what is under test is how the loop
 handles what a calculator does, not any program's rule. A crash drops that one program
 instead of 500ing the response; malformed screen data is reported once per screen; an
-unanswered field stays quiet.
+unanswered field stays quiet. A broken warning message costs only itself.
 """
 
 from typing import Optional
@@ -14,9 +14,11 @@ from django.test import TestCase
 from programs.framework.base import Eligibility
 from programs.models import FederalPoveryLimit, Program, ProgramCategory
 from programs.programs.testing_fixtures.households import add_income, add_member, make_screen
-from programs.util import DependencyError
+from programs.util import Dependencies, DependencyError
+from programs.warnings import warning_calculators
+from programs.warnings.base import WarningCalculator
 from screener.models import EligibilitySnapshot, Screen
-from screener.tests.helpers import seed_program
+from screener.tests.helpers import seed_program, seed_warning
 from screener.views import eligibility_results
 
 BROKEN = "test_broken"
@@ -31,7 +33,7 @@ def eligible() -> Eligibility:
 
 
 class MissingProgramsTestCase(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.screen = make_screen(household_size=1)
         self.member = add_member(self.screen, age=30)
         category = ProgramCategory.objects.new_program_category(white_label="test", external_name="cash", icon="")
@@ -49,7 +51,9 @@ class MissingProgramsTestCase(TestCase):
         """Run the loop with `BROKEN` raising `broken_raises` (or eligible when None) and
         every other program eligible. Sentry is patched and returned for assertions."""
 
-        def fake_eligibility(program_self, screen, data, missing_dependencies):
+        def fake_eligibility(
+            program_self: Program, screen: Screen, data: dict, missing_dependencies: Dependencies
+        ) -> Eligibility:
             if program_self.name_abbreviated == BROKEN and broken_raises is not None:
                 raise broken_raises
             return eligible()
@@ -64,6 +68,7 @@ class MissingProgramsTestCase(TestCase):
 
         return {
             "published": sorted(entry["name_abbreviated"] for entry in data),
+            "warnings": {entry["name_abbreviated"]: entry["warning_messages"] for entry in data},
             "missing_programs": missing_programs,
             "dropped": EligibilitySnapshot.objects.filter(screen=self.screen)
             .latest("submission_date")
@@ -74,14 +79,14 @@ class MissingProgramsTestCase(TestCase):
 
 
 class TestACalculatorCrash(MissingProgramsTestCase):
-    def test_drops_only_that_program(self):
+    def test_drops_only_that_program(self) -> None:
         result = self.run_results(broken_raises=UnboundLocalError("monthly"))
 
         self.assertEqual(result["published"], [WORKING])
         self.assertTrue(result["missing_programs"])
         self.assertEqual(result["dropped"], {BROKEN: EligibilitySnapshot.DROPPED_CALCULATOR_ERROR})
 
-    def test_is_reported_as_an_error_naming_the_program(self):
+    def test_is_reported_as_an_error_naming_the_program(self) -> None:
         error = RuntimeError("boom")
         result = self.run_results(broken_raises=error)
 
@@ -95,7 +100,7 @@ class TestACalculatorCrash(MissingProgramsTestCase):
 
 
 class TestAnUnansweredField(MissingProgramsTestCase):
-    def test_drops_the_program_quietly(self):
+    def test_drops_the_program_quietly(self) -> None:
         """Ordinary partial-screen input: flagged, never reported."""
         result = self.run_results(broken_raises=DependencyError())
 
@@ -105,7 +110,7 @@ class TestAnUnansweredField(MissingProgramsTestCase):
         result["capture_exception"].assert_not_called()
         result["capture_message"].assert_not_called()
 
-    def test_a_null_income_frequency_is_not_reported(self):
+    def test_a_null_income_frequency_is_not_reported(self) -> None:
         income = add_income(self.member, 1_000)
         income.frequency = None
         income.save()
@@ -117,7 +122,7 @@ class TestAnUnansweredField(MissingProgramsTestCase):
 
 
 class TestMalformedScreenData(MissingProgramsTestCase):
-    def test_is_reported_once_and_flags_the_results(self):
+    def test_is_reported_once_and_flags_the_results(self) -> None:
         """Flagged whether or not a calculator declares the field: these stubs declare
         nothing, which is the case that used to compute from bad data in silence."""
         add_income(self.member, 1_000, frequency="fortnightly")
@@ -133,10 +138,56 @@ class TestMalformedScreenData(MissingProgramsTestCase):
         values = " ".join(message["contexts"]["malformed_data"]["values"])
         self.assertIn("'fortnightly'", values)
 
-    def test_a_clean_screen_reports_nothing(self):
+    def test_a_clean_screen_reports_nothing(self) -> None:
         add_income(self.member, 1_000)
 
         result = self.run_results()
 
         self.assertFalse(result["missing_programs"])
         result["capture_message"].assert_not_called()
+
+
+class RaisingWarning(WarningCalculator):
+    def calc(self) -> bool:
+        raise RuntimeError("warning boom")
+
+
+class TestABrokenWarning(MissingProgramsTestCase):
+    """A warning is advisory: one that can't be evaluated is skipped and reported at
+    warning level. The program's result is still right, so nothing is flagged incomplete."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.working = Program.objects.get(white_label=self.screen.white_label, name_abbreviated=WORKING)
+        seed_warning(self.working, "_show", "Shown")
+
+    def assert_skipped_quietly(self, result: dict) -> None:
+        self.assertEqual(result["published"], [BROKEN, WORKING])
+        self.assertEqual(len(result["warnings"][WORKING]), 1)
+        self.assertFalse(result["missing_programs"])
+        self.assertEqual(result["dropped"], {})
+        message = result["capture_message"].call_args.kwargs
+        self.assertEqual(message["level"], "warning")
+        self.assertEqual(message["contexts"]["program"]["name_abbreviated"], WORKING)
+
+    def test_an_unknown_calculator_name_is_skipped(self) -> None:
+        seed_warning(self.working, "_renamed_away", "Never shown", external_name="renamed_away")
+
+        result = self.run_results()
+
+        self.assert_skipped_quietly(result)
+        result["capture_message"].assert_called_once()
+        self.assertEqual(
+            result["capture_message"].call_args.kwargs["fingerprint"], ["warning-message-failure", "_renamed_away"]
+        )
+        result["capture_exception"].assert_not_called()
+
+    def test_a_raising_calculator_is_skipped(self) -> None:
+        seed_warning(self.working, "_test_raises", "Never shown", external_name="test_raises")
+
+        with patch.dict(warning_calculators, {"_test_raises": RaisingWarning}):
+            result = self.run_results()
+
+        self.assert_skipped_quietly(result)
+        result["capture_exception"].assert_called_once()
+        self.assertEqual(result["capture_exception"].call_args.kwargs["level"], "warning")

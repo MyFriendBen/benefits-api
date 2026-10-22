@@ -662,14 +662,23 @@ def eligibility_results(
         # upstream whose warnings will never be rendered
         if not skip and eligibility.eligible:
             for warning in program.warning_messages.all():
-                if warning.calculator not in warning_calculators:
-                    raise Exception(f"{warning.calculator} is not a valid calculator name")
+                # A broken warning costs only itself: the program's result is still right,
+                # so it is skipped and reported at warning level rather than 500ing the
+                # response or marking the results incomplete.
+                calculator = warning_calculators.get(warning.calculator)
+                if calculator is None:
+                    _report_warning_failure(
+                        screen, program, warning, f"'{warning.calculator}' is not a valid calculator name"
+                    )
+                    continue
 
-                warning_calculator = warning_calculators[warning.calculator](
-                    screen, warning, eligibility, missing_dependencies, program=program
-                )
+                try:
+                    shown = calculator(screen, warning, eligibility, missing_dependencies, program=program).calc()
+                except Exception as e:
+                    _report_warning_failure(screen, program, warning, "its calculator raised", error=e)
+                    continue
 
-                if warning_calculator.calc():
+                if shown:
                     warnings.append(WarningMessageSerializer(warning).data)
 
         if not skip and program.active:
@@ -829,6 +838,26 @@ def _report_program_failure(screen: Screen, program: Program, error: Exception) 
         level="error",
         contexts=context,
         fingerprint=["program-eligibility-failure", program.name_abbreviated],
+    )
+
+
+def _report_warning_failure(
+    screen: Screen, program: Program, warning: WarningMessage, reason: str, error: Exception | None = None
+) -> None:
+    """Report a warning message skipped because it couldn't be evaluated. Fingerprinted on
+    the warning's calculator, so one broken calculator is one issue across programs."""
+    context = {
+        "program": {"name_abbreviated": program.name_abbreviated, "id": program.id},
+        "warning": {"id": warning.id, "external_name": warning.external_name, "calculator": warning.calculator},
+        "screen": {"id": screen.id, "white_label": screen.white_label.code},
+    }
+    if error is not None:
+        capture_exception(error, level="warning", contexts=context)
+    capture_message(
+        f"Skipped a warning message on {program.name_abbreviated}: {reason}.",
+        level="warning",
+        contexts=context,
+        fingerprint=["warning-message-failure", warning.calculator],
     )
 
 

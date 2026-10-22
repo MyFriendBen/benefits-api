@@ -7,9 +7,12 @@ wrong answer silently (a blank income type counts as unearned income). Those now
 null and are recorded in `Dependencies.malformed`, which `eligibility_results` reports.
 """
 
+from unittest.mock import MagicMock
+
 from django.test import SimpleTestCase, TestCase
 
 from programs.programs.testing_fixtures.households import add_expense, add_income, add_member, make_screen
+from programs.programs.white_labels.co.tabor.calculator import Tabor
 from programs.util import Dependencies, MalformedValue
 from screener.models import Expense, IncomeStream
 
@@ -19,25 +22,25 @@ class TestIncomeStreamMissingFields(SimpleTestCase):
         values = {"type": "wages", "amount": 100, "frequency": "monthly", "hours_worked": None, **fields}
         return IncomeStream(**values).missing_fields()
 
-    def test_a_complete_row_is_not_missing_anything(self):
+    def test_a_complete_row_is_not_missing_anything(self) -> None:
         deps = self.missing()
 
         self.assertEqual(deps, set())
         self.assertEqual(deps.malformed, [])
 
-    def test_every_frequency_the_screener_offers_is_supported(self):
+    def test_every_frequency_the_screener_offers_is_supported(self) -> None:
         for frequency in ("monthly", "weekly", "biweekly", "semimonthly", "yearly"):
             with self.subTest(frequency=frequency):
                 self.assertEqual(self.missing(frequency=frequency), set())
         self.assertEqual(self.missing(frequency="hourly", hours_worked=40), set())
 
-    def test_nulls_are_missing_but_not_malformed(self):
+    def test_nulls_are_missing_but_not_malformed(self) -> None:
         deps = self.missing(type=None, amount=None, frequency=None)
 
         self.assertEqual(deps, {"income_type", "income_amount", "income_frequency"})
         self.assertEqual(deps.malformed, [], "an unanswered field is not a defect")
 
-    def test_an_unsupported_frequency_is_malformed(self):
+    def test_an_unsupported_frequency_is_malformed(self) -> None:
         for frequency in ("", "fortnightly"):
             with self.subTest(frequency=frequency):
                 deps = self.missing(frequency=frequency)
@@ -47,7 +50,7 @@ class TestIncomeStreamMissingFields(SimpleTestCase):
                     deps.malformed, [MalformedValue("income_frequency", frequency, deps.malformed[0].detail)]
                 )
 
-    def test_a_blank_type_is_malformed_rather_than_unearned(self):
+    def test_a_blank_type_is_malformed_rather_than_unearned(self) -> None:
         for income_type in ("", "   "):
             with self.subTest(income_type=income_type):
                 deps = self.missing(type=income_type)
@@ -55,7 +58,7 @@ class TestIncomeStreamMissingFields(SimpleTestCase):
                 self.assertEqual(deps, {"income_type"})
                 self.assertEqual([m.field for m in deps.malformed], ["income_type"])
 
-    def test_hourly_income_without_hours_gates_the_amount(self):
+    def test_hourly_income_without_hours_gates_the_amount(self) -> None:
         """`_hour_to_month` multiplies by `hours_worked`; a null raised TypeError."""
         deps = self.missing(frequency="hourly", hours_worked=None)
 
@@ -68,24 +71,24 @@ class TestExpenseMissingFields(SimpleTestCase):
         values = {"type": "rent", "amount": 100, "frequency": "monthly", **fields}
         return Expense(**values).missing_fields()
 
-    def test_a_complete_row_is_not_missing_anything(self):
+    def test_a_complete_row_is_not_missing_anything(self) -> None:
         self.assertEqual(self.missing(), set())
 
-    def test_a_null_frequency_is_reported(self):
+    def test_a_null_frequency_is_reported(self) -> None:
         """Expense never emitted a frequency token, so a null reached `yearly()`."""
         deps = self.missing(frequency=None)
 
         self.assertEqual(deps, {"expense_frequency"})
         self.assertEqual(deps.malformed, [])
 
-    def test_hourly_is_not_an_expense_frequency(self):
+    def test_hourly_is_not_an_expense_frequency(self) -> None:
         """Expense's `monthly()`/`yearly()` have no hourly branch."""
         deps = self.missing(frequency="hourly")
 
         self.assertEqual(deps, {"expense_frequency"})
         self.assertEqual([m.field for m in deps.malformed], ["expense_frequency"])
 
-    def test_a_blank_type_is_malformed(self):
+    def test_a_blank_type_is_malformed(self) -> None:
         deps = self.missing(type="")
 
         self.assertEqual(deps, {"expense_type"})
@@ -93,7 +96,7 @@ class TestExpenseMissingFields(SimpleTestCase):
 
 
 class TestScreenMissingFieldsCarriesTheDetail(TestCase):
-    def test_malformed_detail_survives_the_aggregation(self):
+    def test_malformed_detail_survives_the_aggregation(self) -> None:
         """Screen and member aggregate their rows with `update()`; the detail has to come
         along or `eligibility_results` has nothing to report."""
         screen = make_screen(household_size=1)
@@ -109,7 +112,7 @@ class TestScreenMissingFieldsCarriesTheDetail(TestCase):
 
 
 class TestDependencies(SimpleTestCase):
-    def test_update_carries_malformed_detail_from_every_source(self):
+    def test_update_carries_malformed_detail_from_every_source(self) -> None:
         a, b = Dependencies(), Dependencies()
         a.add("income_type")
         a.report_malformed("income_type", "", "blank")
@@ -122,15 +125,47 @@ class TestDependencies(SimpleTestCase):
         self.assertEqual(deps, {"income_type", "expense_type"})
         self.assertEqual([m.field for m in deps.malformed], ["income_type", "expense_type"])
 
-    def test_update_accepts_plain_iterables(self):
+    def test_update_accepts_plain_iterables(self) -> None:
         deps = Dependencies()
         deps.update({"county"}, ["zipcode"])
 
         self.assertEqual(deps, {"county", "zipcode"})
         self.assertEqual(deps.malformed, [])
 
-    def test_describe_names_the_field_and_value(self):
+    def test_describe_names_the_field_and_value(self) -> None:
         self.assertEqual(
             MalformedValue("income_frequency", "fortnightly", "unsupported").describe(),
             "income_frequency='fortnightly' (unsupported)",
         )
+
+
+class TestBlankIncomeTypeIsNotUnearned(TestCase):
+    """Gating only protects calculators that declare `income_type`; the HCV calculators read
+    `["unearned"]` without it, so the sum itself has to leave a blank type out."""
+
+    def setUp(self) -> None:
+        self.screen = make_screen(household_size=1)
+        self.member = add_member(self.screen, age=30)
+        add_income(self.member, 1_000, income_type="")
+        add_income(self.member, 200, income_type="sSI")
+
+    def test_a_blank_type_is_left_out_of_unearned(self) -> None:
+        self.assertEqual(self.member.calc_gross_income("monthly", ["unearned"]), 200)
+
+    def test_a_blank_type_still_counts_toward_all_income(self) -> None:
+        self.assertEqual(self.member.calc_gross_income("monthly", ["all"]), 1_200)
+
+
+class TestTaborGatesOnIncome(TestCase):
+    def test_hourly_income_without_hours_gates_tabor(self) -> None:
+        """TABOR sums every income stream, so an hourly row with no hours has to gate it
+        rather than raise TypeError inside `_hour_to_month`."""
+        screen = make_screen(household_size=1)
+        member = add_member(screen, age=30)
+        income = add_income(member, 20, frequency="hourly")
+        income.hours_worked = None
+        income.save()
+
+        calculator = Tabor(screen, MagicMock(), {}, screen.missing_fields())
+
+        self.assertFalse(calculator.can_calc())
