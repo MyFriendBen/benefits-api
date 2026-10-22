@@ -5,7 +5,7 @@ NJ SUN Bucks (``NjSunBucks``): NJ's values, and one test per Test Scenario in th
 The federal rules are tested against stand-in states in ``test_base.py``; these run the spec's
 households end to end through real screener rows.
 
-Scenarios 1-5 and 8-13 report SNAP, TANF, Head Start or school meals as a current benefit. NJ
+Scenarios 1-5, 8, 10-14 and 19 report SNAP, TANF, Head Start or school meals as a current benefit. NJ
 has no Program row for some of them yet, so the tests seed a stand-in row with the right
 ``base_program`` so the rule is covered once the screener can send it.
 """
@@ -194,6 +194,17 @@ class TestSchoolMealsAndIncome(NjSunBucksTestCase):
 
         self.assert_eligible(eligibility)
         self.assertEqual(eligibility.pass_messages, [messages.presumed_eligibility()])
+
+    def test_scenario_19_school_meals_household_with_two_adults_and_a_child(self):
+        screen = self.household(3, head_wages=200_000, head_age=38)
+        self.add_member(screen, "spouse", 40)
+        self.add_member(screen, "child", 10)
+        self.receive(screen, "nslp")
+
+        eligibility = self.calculate(screen)
+
+        self.assert_eligible(eligibility)
+        self.assertEqual([m.value for m in eligibility.eligible_members], [0, 0, 120])
 
     def test_scenario_15_well_under_the_income_limit(self):
         screen = self.household(1, head_wages=20_000, head_age=17)
