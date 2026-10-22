@@ -2,9 +2,9 @@
 
 A `CurrentBenefit` row points at a `Program`. When a program moves to the federal white
 label, the households that ticked a state row have to point at the federal one or the
-credit shows as new. The same move runs from a data migration (with historical models)
-and from the `move_state_current_benefits` command (with the real ones), so the logic
-takes its models as arguments.
+credit shows as new. The move runs from a data migration with historical models, and can be
+re-run by hand from a shell with the real ones for an environment where the federal row did
+not yet exist when the migration ran, so the logic takes its models as arguments.
 """
 
 from dataclasses import dataclass

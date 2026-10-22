@@ -7,8 +7,8 @@ from programs.current_benefits_moves import STATE_ROWS_BY_FEDERAL_PROGRAM, move_
 # The federal Child Tax Credit is one `federal_ctc` row on the `federal` white label, which
 # every white label sees. "Already has CTC" rows on the nine state copies it replaces move
 # onto it. Without a `federal_ctc` row (a fresh or test database, or an environment where the
-# record has not been imported yet) nothing is touched; `manage.py move_state_current_benefits
-# federal_ctc` finishes the move once it exists.
+# record has not been imported yet) nothing is touched; re-running `move_current_benefits`
+# from a shell with the real models finishes the move once it exists.
 FEDERAL_PROGRAM = "federal_ctc"
 
 
