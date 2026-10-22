@@ -1,5 +1,6 @@
 import hashlib
 import requests
+from collections.abc import Mapping
 from typing import Any, Optional
 from uuid import UUID
 from django.http import HttpResponse
@@ -956,21 +957,39 @@ class ReferralSourcesView(views.APIView):
         return Response({"generic": generic, "partners": partners, "hidden": hidden})
 
 
+def _str_param(params: Any, key: str) -> str:
+    """A request value as a stripped string; anything that isn't a string reads as missing.
+
+    `params` is whatever the body parsed to, so a JSON list or string reads as all missing.
+    """
+    value = params.get(key) if isinstance(params, Mapping) else None
+    return value.strip() if isinstance(value, str) else ""
+
+
 class RemImpactView(views.APIView):
     """
     Proxies a request to the Rewiring America REM /api/v1/rem/address endpoint
     and returns only the total cost delta (bill impact) and total emissions delta
     that the frontend needs to render the Calculate Impact results view.
+
+    POST takes the address in the JSON body so it stays out of request URLs, which
+    Heroku's router logs and Sentry captures. GET is kept until every frontend sends POST.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
 
     def get(self, request, **_kwargs) -> Response:
-        upgrade = request.query_params.get("upgrade")
-        address = request.query_params.get("address")
-        heating_fuel = request.query_params.get("heating_fuel")
-        water_heater_fuel = request.query_params.get("water_heater_fuel") or None
+        return self._impact(request.query_params)
+
+    def post(self, request, **_kwargs) -> Response:
+        return self._impact(request.data)
+
+    def _impact(self, params: Any) -> Response:
+        upgrade = _str_param(params, "upgrade")
+        address = _str_param(params, "address")
+        heating_fuel = _str_param(params, "heating_fuel")
+        water_heater_fuel = _str_param(params, "water_heater_fuel") or None
 
         if not all([upgrade, address, heating_fuel]):
             return Response(
@@ -1008,14 +1027,15 @@ class RemImpactView(views.APIView):
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except requests.RequestException as e:
+        except requests.RequestException:
+            # No str(e): connection errors embed the upstream URL, address included.
             return Response(
-                {"error": "Rewiring America request failed.", "detail": str(e)},
+                {"error": "Rewiring America request failed."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except ValueError as e:
+        except ValueError:
             return Response(
-                {"error": "Rewiring America returned an invalid response.", "detail": str(e)},
+                {"error": "Rewiring America returned an invalid response."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -1028,13 +1048,21 @@ class PlacesAutocompleteView(views.APIView):
     Proxies address autocomplete requests to the Google Places API,
     keeping the API key server-side. Returns US street address predictions
     restricted to street-level addresses.
+
+    POST takes the typed text in the JSON body for the same reason as RemImpactView.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PlacesRateThrottle]
 
     def get(self, request, **_kwargs) -> Response:
-        input_text = request.query_params.get("input", "").strip()
+        return self._autocomplete(request.query_params)
+
+    def post(self, request, **_kwargs) -> Response:
+        return self._autocomplete(request.data)
+
+    def _autocomplete(self, params: Any) -> Response:
+        input_text = _str_param(params, "input")
 
         if not input_text:
             return Response([], status=status.HTTP_200_OK)
@@ -1048,9 +1076,10 @@ class PlacesAutocompleteView(views.APIView):
                 {"error": f"Google Places API error: {http_status}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except requests.RequestException as e:
+        except requests.RequestException:
+            # No str(e): connection errors embed the upstream URL, API key included.
             return Response(
-                {"error": "Google Places request failed.", "detail": str(e)},
+                {"error": "Google Places request failed."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
