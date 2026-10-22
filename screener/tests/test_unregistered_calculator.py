@@ -14,7 +14,8 @@ from screener.views import eligibility_results
 
 class TestUnregisteredCalculator(TestCase):
     def setUp(self) -> None:
-        self.co = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        # get_or_create: a migrated test database already seeds the Colorado white label.
+        self.co, _ = WhiteLabel.objects.get_or_create(code="co", defaults={"name": "Colorado", "state_code": "CO"})
         # A name nothing seeds: migration 0172 creates the shared "cash" category, so a test
         # that creates it too errors under a migrated test database.
         category = ProgramCategory.objects.new_program_category(
