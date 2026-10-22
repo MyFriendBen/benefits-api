@@ -17,15 +17,10 @@ from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 @dataclass(frozen=True)
 class CdccYear:
     """
-    One tax year's parameters for the credit: the applicable-percentage schedule and the
-    dollar limit on care expenses (spec section 7, Benefit Value) and the income a student
-    or disabled spouse is deemed to earn (spec section 4 `earned_income`).
-
-    The schedule starts at ``top_rate`` for AGI up to ``top_rate_limit`` and loses one point
-    for each ``first_step`` (or fraction) over it, but never below ``middle_rate``. Past
-    ``middle_rate_limit`` it loses one point for each ``second_step`` (or fraction) over that,
-    but never below ``floor_rate``. The second reduction is the only place joint and other
-    filers differ, so those two are indexed by ``is_joint``: ``(other, joint)``.
+    One tax year's parameters (spec section 7 Benefit Value; deemed spouse income from
+    section 4 `earned_income`). The percentage steps down from ``top_rate`` to ``middle_rate``
+    and then to ``floor_rate``; joint and other filers differ only in the second step, so
+    those two fields are indexed ``(other, joint)``.
     """
 
     top_rate: int
@@ -58,8 +53,7 @@ CDCC_YEARS: dict[int, CdccYear] = {
 
 
 def applicable_percentage(agi: float, is_joint: bool, params: CdccYear) -> int:
-    """The credit's percentage of work-related expenses for ``agi``, in whole points (spec
-    section 7, percentage table)."""
+    """The applicable percentage for ``agi``, in whole points (spec section 7 table)."""
     if agi <= params.top_rate_limit:
         return params.top_rate
 
@@ -74,29 +68,16 @@ def applicable_percentage(agi: float, is_joint: bool, params: CdccYear) -> int:
 
 class FederalCdcc(ProgramCalculator):
     """
-    Federal Child and Dependent Care Credit, figured the way the federal return does.
+    Federal Child and Dependent Care Credit; rules and figures are in the spec named above.
 
-    The filers are the head and, on a joint return, the member recorded as ``spouse``. A
-    qualifying individual is a member in a dependent relationship who is under 13 today or
-    has a disability flag, or a spouse with a disability flag. The household also needs a
-    child care or dependent care expense, and every filer needs earned income (wages or
-    self-employment). A spouse who is a full-time student or has a disability flag is
-    deemed to earn $250 a month ($500 with two or more qualifying individuals), the
-    spec's `earned_income` rule.
-
-    The credit is the applicable percentage for the filers' income times the smallest of
-    the care expenses, the dollar limit ($3,000 for one qualifying individual, $6,000 for
-    two or more) and the lowest-earning filer's earned income.
-
-    Approximations the screener forces: gross income stands in for adjusted gross income,
-    a disability flag stands in for being incapable of self-care, a full-time-student flag
-    deems income for all twelve months, every child care or dependent care expense counts
-    (kindergarten, overnight camp, a related provider and medical-deduction overlap are not
-    asked), employer dependent care benefits do not reduce the limit, and the credit is not
-    capped at the tax owed. Ages are today's, not the tax year's.
-
-    A missing disability or student answer reads as false rather than dropping the program,
-    so the Colorado tax-credit apps' age-only screens still see the credit.
+    Screener mapping: filers are the head and, on a joint return, the ``spouse`` member; a
+    qualifying individual is a ``DEPENDENT_ELIGIBLE_RELATIONSHIPS`` member under the age limit
+    today or with any disability flag, or a ``spouse`` with one; care expenses are the
+    ``childCare`` and ``dependentCare`` types; earned income is the ``earned`` income group.
+    Deviations: filers' gross income stands in for AGI; a disability flag for incapable of
+    self-care; deemed spouse income runs all twelve months; no tax-owed cap; ages are today's.
+    Residency, custody, provider, schooling and employer-benefit rules are not evaluated.
+    Missing disability or student answers read as no, so age-only screens still see the credit.
     """
 
     program_code = "federal_cdcc"
@@ -126,8 +107,7 @@ class FederalCdcc(ProgramCalculator):
         e.condition(all(self._earned_income(filer) > 0 for filer in self._filers))
 
     def household_value(self) -> int:
-        """Spec section 7 Benefit Value: percentage x min(care expenses, dollar limit, lowest
-        filer's earned income)."""
+        """Spec section 7 Benefit Value, carried on the household; members carry no value."""
         params = self._params
         percentage = applicable_percentage(self._agi, self._is_joint, params)
         expense_limit = params.expense_limit[self._has_two_or_more_qualifying]
@@ -144,10 +124,9 @@ class FederalCdcc(ProgramCalculator):
     @cached_property
     def _params(self) -> CdccYear:
         """
-        The tax year's parameters. A year with none yet (a rollover the table wasn't updated
-        for) is priced with the latest year we have and reported, rather than raising: an
-        exception from a displayed program fails the whole results page, and this program
-        shows in every white label.
+        The tax year's parameters. A year with none yet is priced with the latest year and
+        reported to Sentry rather than raising: an exception from a program shown in every
+        white label fails the whole results page.
         """
         tax_year = self.tax_year
         if tax_year in CDCC_YEARS:
@@ -204,11 +183,7 @@ class FederalCdcc(ProgramCalculator):
         return age is not None and age < self.qualifying_child_age_limit
 
     def _earned_income(self, filer: HouseholdMember) -> float:
-        """
-        A filer's yearly earned income (spec section 4 `earned_income`). A spouse who is a
-        full-time student or has a disability flag earns at least the deemed amount for all
-        twelve months.
-        """
+        """Spec section 4 `earned_income`; the deemed spouse amount is a floor, not an addition."""
         earned = filer.calc_gross_income("yearly", ["earned"])
 
         if filer.relationship == "spouse" and (filer.student_full_time or filer.has_disability()):

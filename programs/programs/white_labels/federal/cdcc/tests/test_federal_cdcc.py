@@ -1,8 +1,7 @@
 """Federal CDCC scenarios, one per spec section 8 scenario, plus the percentage schedule and the structure
 around it.
 
-Every age in the spec is the member's age today (the under-13 rule is read off the screening
-date, not the end of the tax year), so members are built from an age and the clock is left
+Ages are the member's age today, so members are built from an age and the clock is left
 alone: `add_member` derives the birth month against the same reference date the calculator
 reads.
 
