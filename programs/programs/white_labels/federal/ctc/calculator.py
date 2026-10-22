@@ -118,8 +118,8 @@ class FederalCtc(ProgramCalculator):
 
     Stand-ins: filers are the head plus a member recorded as `spouse` (joint return); any
     relative the screener records can be a dependent, a spouse, partner or roommate never;
-    `disabled` + `long_term_disability` is permanently and totally disabled; `student`
-    (half-time college enrolment) is the student test. Deviations: income is today's, not the
+    `disabled` + `long_term_disability` stands in for permanently and totally disabled, and
+    `student` (half-time college enrolment) for the student test. Deviations: income is today's, not the
     tax year's; the never-taxed types and, by approximation, every Social Security type are
     left out of income (section 7); a child's support test compares their countable income
     with the rest of the household's. Age-only members (the Colorado tax-credit apps) are
