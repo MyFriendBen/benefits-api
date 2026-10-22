@@ -143,3 +143,26 @@ receipt_contract = [
     spm.ReceivesSnapDependency,
     spm.TakesUpSnapIfEligibleDependency,
 ]
+
+# The inputs PolicyEngine needs to model SSI for a household, for the programs whose own
+# formula reads PolicyEngine's SSI (Massachusetts' state supplement and EAEDC). SSI itself is
+# computed in our own code (`programs/programs/white_labels/federal/ssi`), so no calculator
+# reads PolicyEngine's `ssi_if_takes_up` output.
+#
+# Two of these are load-bearing rather than boilerplate: `meets_ssi_disability_criteria`,
+# without which a disabled non-aged, non-blind member reads as not SSI-disabled (version
+# gated, so it only reaches models that define it), and `ssi_countable_resources`, the hard
+# resource cutoff, which splits the household's reported assets across its adults.
+ssi_inputs = [
+    member.SsiCountableResourcesDependency,
+    *receipt_contract,
+    member.IsBlindDependency,
+    member.IsDisabledDependency,
+    member.MeetsSsiDisabilityCriteriaDependency,
+    member.SsiEarnedIncomeDependency,
+    member.SsiUnearnedIncomeDependency,
+    member.AgeDependency,
+    member.TaxUnitSpouseDependency,
+    member.TaxUnitHeadDependency,
+    member.TaxUnitDependentDependency,
+]

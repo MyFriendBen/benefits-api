@@ -1,7 +1,6 @@
 """MaEaedc."""
 
 from programs.framework.pe_base import PolicyEngineSpmCalulator
-from programs.programs.cross_white_label.ssi.base import Ssi
 import programs.framework.pe_dependencies as dependency
 
 
@@ -24,7 +23,7 @@ class MaEaedc(PolicyEngineSpmCalulator):
         dependency.member.TaxUnitDependentDependency,
         dependency.member.MaTotalHoursWorkedDependency,
         dependency.member.IsDisabledDependency,
-        *Ssi.pe_inputs,
+        *dependency.ssi_inputs,
         dependency.household.MaStateCodeDependency,
     ]
     pe_outputs = [dependency.spm.MaEaedc]
