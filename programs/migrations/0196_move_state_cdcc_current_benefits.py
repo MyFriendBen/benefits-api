@@ -48,7 +48,7 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0194_deactivate_state_ssdi"),
+        ("programs", "0195_move_state_ctc_current_benefits"),
         ("screener", "0150_backfill_screen_current_benefits"),
     ]
 
