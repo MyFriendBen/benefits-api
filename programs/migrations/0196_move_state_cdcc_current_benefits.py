@@ -20,30 +20,40 @@ FEDERAL_ROW = ("federal", "federal_cdcc")
 def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     """Repoint "already has this benefit" rows from the state copies to `federal_cdcc`.
 
-    Needs the federal row to exist, so it runs after the program record is imported. When it
-    does not, nothing is moved and the skip is logged: the move can't be done without a
-    destination, and this also covers every CI run, which builds an empty database. A screen
-    that already holds the federal row keeps it and its state row is deleted, since the table
-    is unique on (screen, program). Re-running finds nothing left to move.
+    Needs the federal row to exist, so it runs after the program record is imported. It fails
+    closed: when the federal row is absent and state rows are waiting to move, it raises so
+    the deploy stops rather than leaving them behind silently. When the federal row is absent
+    and there is nothing to move (a fresh or test database), it logs and does nothing. A
+    screen that already holds the federal row keeps it and its state row is deleted, since
+    the table is unique on (screen, program). Re-running finds nothing left to move.
     """
     Program = apps.get_model("programs", "Program")
     CurrentBenefit = apps.get_model("screener", "CurrentBenefit")
 
-    federal = Program.objects.filter(white_label__code=FEDERAL_ROW[0], name_abbreviated=FEDERAL_ROW[1]).first()
-    if federal is None:
-        logger.warning("federal/federal_cdcc does not exist; no current-benefit rows moved. Move them by hand.")
-        return
-
-    for white_label_code, name_abbreviated in STATE_FEDERAL_CDCC_ROWS:
-        state_rows = CurrentBenefit.objects.filter(
+    state_rows = [
+        row
+        for white_label_code, name_abbreviated in STATE_FEDERAL_CDCC_ROWS
+        for row in CurrentBenefit.objects.filter(
             program__white_label__code=white_label_code, program__name_abbreviated=name_abbreviated
         )
-        for row in state_rows:
-            if CurrentBenefit.objects.filter(screen_id=row.screen_id, program=federal).exists():
-                row.delete()
-            else:
-                row.program = federal
-                row.save(update_fields=["program"])
+    ]
+
+    federal = Program.objects.filter(white_label__code=FEDERAL_ROW[0], name_abbreviated=FEDERAL_ROW[1]).first()
+    if federal is None:
+        if state_rows:
+            raise RuntimeError(
+                f"federal/federal_cdcc must be imported before this migration runs: {len(state_rows)} "
+                "current-benefit rows on state CDCC rows are waiting to move (see PR #1837 Deployment step 2)"
+            )
+        logger.warning("federal/federal_cdcc does not exist and no current-benefit rows wait on it; nothing to move.")
+        return
+
+    for row in state_rows:
+        if CurrentBenefit.objects.filter(screen_id=row.screen_id, program=federal).exists():
+            row.delete()
+        else:
+            row.program = federal
+            row.save(update_fields=["program"])
 
 
 class Migration(migrations.Migration):
