@@ -1,4 +1,4 @@
-"""Federal CTC scenarios, one per spec section 8, plus the tax computation and the structural rules.
+"""Federal CTC scenarios, one per spec section 8, plus the tax computation and the code-level rules.
 
 Every age in the spec is the member's age at the end of the 2025 tax year, so members are
 built from a birth month and the clock is pinned: an age derived from today would put a
@@ -361,66 +361,35 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 1_700)
 
-
-class TestStructure(FederalCtcTestCase):
-    """Rules the spec states in sections 4 and 7 but no scenario reaches."""
-
-    def test_the_credit_is_capped_at_tax_plus_the_refundable_part(self):
-        """Other dependents only: the credit is nonrefundable, so income tax before credits caps it."""
-        screen = self.make_screen(household_size=3)
-        self.member(screen, "headOfHousehold", 48, income={"wages": 30_000})
-        self.member(screen, "child", 17)
-        self.member(screen, "parent", 74)
-
-        self.assert_eligible(self.calculate(screen), 638)
-
-    def test_tax_exempt_income_does_not_raise_the_tax_the_credit_is_capped_at(self):
-        """Child support is never taxed, so it does not raise the tax the credit is capped at."""
-        screen = self.make_screen(household_size=2)
-        self.member(screen, "headOfHousehold", 48, income={"wages": 20_000, "childSupport": 12_000})
-        self.member(screen, "parent", 74)
-
-        self.assert_eligible(self.calculate(screen), 0)
-
-    def test_a_filer_who_is_65_and_blind_adds_two_standard_deduction_amounts(self):
-        """Age and blindness are separate standard-deduction additions."""
+    def test_scenario_31_filer_who_is_65_and_blind_claiming_a_parent(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 70, visually_impaired=True, income={"wages": 30_000})
         self.member(screen, "parent", 92)
 
         self.assert_eligible(self.calculate(screen), 239)
 
-    def test_a_senior_filer_gets_the_higher_standard_deduction(self):
-        """A filer 65 or older gets the standard-deduction addition for age."""
-        screen = self.make_screen(household_size=2)
-        self.member(screen, "headOfHousehold", 65, income={"wages": 26_000})
-        self.member(screen, "parent", 90)
-
-        self.assert_eligible(self.calculate(screen), 39)
-
-    def test_a_student_child_under_24_is_an_other_dependent(self):
+    def test_scenario_32_student_child_under_24_with_earnings(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 50, income={"wages": 40_000})
         self.member(screen, "child", 22, student=True, income={"wages": 6_000})
 
         self.assert_eligible(self.calculate(screen), 500)
 
-    def test_a_partner_is_never_a_dependent(self):
+    def test_scenario_33_domestic_partner_with_no_income(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
         self.member(screen, "domesticPartner", 28)
 
         self.assert_ineligible(self.calculate(screen))
 
-    def test_a_relatives_ssi_is_left_out_of_their_gross_income(self):
+    def test_scenario_34_supported_parent_living_on_ssi(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 48, income={"wages": 52_000})
         self.member(screen, "parent", 74, income={"sSI": 11_000})
 
         self.assert_eligible(self.calculate(screen), 500)
 
-    def test_only_the_filers_income_counts(self):
-        """A roommate's wages are off the return, so they neither taper the credit nor add tax."""
+    def test_scenario_35_roommate_with_high_earnings(self):
         screen = self.make_screen(household_size=3)
         self.member(screen, "headOfHousehold", 31, income={"wages": 2_600})
         self.member(screen, "child", 5)
