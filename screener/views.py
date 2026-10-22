@@ -43,7 +43,7 @@ from screener.serializers import (
 )
 from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
-from programs.util import DependencyError, Dependencies, UpstreamAbsentError
+from programs.util import DependencyError, Dependencies, UnregisteredCalculatorError, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
 from programs.federal import filter_programs_by_name, visible_program, visible_to, visible_to_code
 from programs.models import (
@@ -589,11 +589,13 @@ def eligibility_results(
                 # reports that for itself when its own gate raises.
                 if not skip:
                     missing_programs = True
-                    dropped_programs[program.name_abbreviated] = (
-                        EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
-                        if isinstance(e, UpstreamAbsentError)
-                        else EligibilitySnapshot.DROPPED_MISSING_FIELD
-                    )
+                    if isinstance(e, UnregisteredCalculatorError):
+                        reason = EligibilitySnapshot.DROPPED_NO_CALCULATOR
+                    elif isinstance(e, UpstreamAbsentError):
+                        reason = EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
+                    else:
+                        reason = EligibilitySnapshot.DROPPED_MISSING_FIELD
+                    dropped_programs[program.name_abbreviated] = reason
                 continue
             except Exception as e:
                 # Only reachable for a force-calculated upstream: this row was not being

@@ -48,7 +48,6 @@ class Command(BaseCommand):
         {"abbr": "cfhc", "external": "cfhc"},
         {"abbr": "myspark", "external": "myspark"},
         {"abbr": "snap", "external": "snap"},
-        {"abbr": "ctc", "external": "ctc"},
         {"abbr": "medicaid", "external": "medicaid"},
         {"abbr": "andcs", "external": "andcs"},
         {"abbr": "oap", "external": "oap"},

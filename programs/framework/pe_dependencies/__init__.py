@@ -14,6 +14,16 @@ irs_gross_income = [
     member.RetirementDistributionsDependency,
 ]
 
+# What a child tax credit is computed from: each member's age, the tax unit's dependent and
+# spouse structure, and every IRS gross income stream. The state credits (`Coctc`, `Ilctc`)
+# send this plus their state code; the federal credit is an MFB calculator and sends nothing.
+ctc_inputs = [
+    member.AgeDependency,
+    member.TaxUnitDependentDependency,
+    member.TaxUnitSpouseDependency,
+    *irs_gross_income,
+]
+
 # Every variable in PolicyEngine's `gov.usda.wic.income.sources` (7 CFR 246.7(d)(2)(ii)(A))
 # that the screener collects. WIC keeps its own source list and does NOT read
 # `school_meal_countable_income`, so a calculator sending none of these gets PE's

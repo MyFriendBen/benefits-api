@@ -147,6 +147,13 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="validated against a real Colorado Works award to the dollar",
         source="partner case review, 2026-09",
     ),
+    ("federal", "federal_ctc"): Vintage(
+        edition="2025",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule=_PRIOR_TAX_YEAR,
+        source="program-ops programs/white_labels/federal/ctc/federal_ctc_spec.md, section 7 (2025 parameters)",
+    ),
     ("il", "il_aca"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
@@ -445,13 +452,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("co", "ctc"): Vintage(
-        edition="2024",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("co", "dptr"): Vintage(
         edition="2024",
         basis=Basis.TABLE_EDITION,
@@ -508,13 +508,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("co_tax_calculator", "ctc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("co_tax_calculator", "eitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
@@ -524,13 +517,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
     ),
     ("co_tax_calculator", "fatc"): Vintage(
         edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("il", "ctc"): Vintage(
-        edition="2024",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
         rule=_TAX_YEAR_UNSETTLED,
@@ -557,22 +543,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("ks", "ks_ctc"): Vintage(
-        edition="2026",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("ks", "ks_eitc"): Vintage(
         edition="2026",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("ma", "ctc"): Vintage(
-        edition="2024",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
         rule=_TAX_YEAR_UNSETTLED,
@@ -594,13 +566,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
     ),
     ("ma", "ma_maeitc"): Vintage(
         edition="2024",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("mo", "mo_ctc"): Vintage(
-        edition="2026",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
         rule=_TAX_YEAR_UNSETTLED,
@@ -628,13 +593,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_PRIOR_TAX_YEAR,
         source="Form MO-WFTC (2025); programs/programs/white_labels/mo/wftc/spec.md, validated at TY2025",
     ),
-    ("nc", "ctc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("nc", "eitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
@@ -642,21 +600,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("tx", "tx_ctc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("tx", "tx_eitc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("wa", "wa_ctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
