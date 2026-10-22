@@ -236,14 +236,14 @@ class TestScenarios(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 2_700)
 
-    def test_scenario_14_child_earning_exactly_half_the_households_income(self):
+    def test_scenario_14_child_earning_exactly_as_much_as_the_rest_of_the_household(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 40, income={"wages": 40_000})
         self.member(screen, "child", 16, income={"wages": 40_000})
 
         self.assert_eligible(self.calculate(screen), 2_200)
 
-    def test_scenario_15_child_earning_a_dollar_over_half_the_households_income(self):
+    def test_scenario_15_child_earning_a_dollar_more_than_the_rest_of_the_household(self):
         screen = self.make_screen(household_size=2)
         self.member(screen, "headOfHousehold", 40, income={"wages": 40_000})
         self.member(screen, "child", 16, income={"wages": 40_001})

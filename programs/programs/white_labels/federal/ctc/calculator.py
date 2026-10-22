@@ -323,7 +323,7 @@ class FederalCtc(ProgramCalculator):
 
     @staticmethod
     def _is_permanently_disabled(member: HouseholdMember) -> bool:
-        """The screener's stand-in for permanently and totally disabled (spec section 5 `disability_definition`)."""
+        """The screener's stand-in for permanently and totally disabled (spec section 4 `disability_definition`)."""
         return bool(member.disabled) and bool(member.long_term_disability)
 
     @staticmethod
