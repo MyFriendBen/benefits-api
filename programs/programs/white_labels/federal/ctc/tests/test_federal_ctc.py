@@ -410,24 +410,43 @@ class TestAgeOnlyHouseholds(FederalCtcTestCase):
 
         self.assert_eligible(self.calculate(screen), 2_200)
 
-    def test_an_age_only_child_is_aged_back_to_the_end_of_the_tax_year(self):
-        """An age-only child is aged back to the end of the tax year."""
+    def test_an_age_only_child_is_taken_at_the_reported_age(self):
+        """A child reported as 17 is 17 for the tax year: an other dependent, not a qualifying child."""
         screen = self.make_screen(household_size=2)
         head = self.add_member(screen, "headOfHousehold", age=45, stored_age=True, screener_defaults=False)
         self.add_member(screen, "child", age=17, stored_age=True, screener_defaults=False)
         self.add_income(head, 40_000, "wages", "yearly")
 
-        self.assert_eligible(self.calculate(screen), 2_200)
+        self.assert_eligible(self.calculate(screen), 500)
 
-    def test_an_age_only_nineteen_year_old_was_eighteen_for_the_tax_year(self):
-        """An age-only member is a year younger for the tax year, so counts by age with no income limit."""
+    def test_an_age_only_nineteen_year_old_is_nineteen_for_the_tax_year(self):
+        """Reported as 19, the child is past the under-19 path and at the relative income limit."""
         screen = self.make_screen(household_size=2)
         head = self.add_member(screen, "headOfHousehold", age=45, stored_age=True, screener_defaults=False)
         child = self.add_member(screen, "child", age=19, stored_age=True, screener_defaults=False)
         self.add_income(head, 40_000, "wages", "yearly")
         self.add_income(child, 5_200, "wages", "yearly")
 
-        self.assert_eligible(self.calculate(screen), 500)
+        self.assert_ineligible(self.calculate(screen))
+
+    def test_a_disabled_member_with_no_age_is_not_a_qualifying_child(self):
+        """Without an age the qualifying-child path cannot run, disabled or not; the member can
+        only be a relative, and $6,000 is over the relative limit."""
+        screen = self.make_screen(household_size=2)
+        head = self.add_member(screen, "headOfHousehold", age=45, stored_age=True, screener_defaults=False)
+        child = self.add_member(
+            screen,
+            "child",
+            age=None,
+            stored_age=True,
+            screener_defaults=False,
+            disabled=True,
+            long_term_disability=True,
+        )
+        self.add_income(head, 40_000, "wages", "yearly")
+        self.add_income(child, 6_000, "wages", "yearly")
+
+        self.assert_ineligible(self.calculate(screen))
 
     def test_a_child_the_filers_age_is_an_other_dependent(self):
         screen = self.make_screen(household_size=2)

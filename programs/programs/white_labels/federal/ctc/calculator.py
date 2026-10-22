@@ -119,11 +119,12 @@ class FederalCtc(ProgramCalculator):
     Stand-ins: filers are the head plus a member recorded as `spouse` (joint return); any
     relative the screener records can be a dependent, a spouse, partner or roommate never;
     `disabled` + `long_term_disability` is permanently and totally disabled; `student`
-    (half-time college enrolment) is the student test; a child's income against half the
-    household's is the support test. Deviations: income is today's, not the
+    (half-time college enrolment) is the student test. Deviations: income is today's, not the
     tax year's; the never-taxed types and, by approximation, every Social Security type are
-    left out of income (section 7). Age-only members (the Colorado tax-credit apps) are
-    compared by age, aged back to the tax year's end, with missing answers read as no. The
+    left out of income (section 7); a child's support test compares their countable income
+    with the rest of the household's. Age-only members (the Colorado tax-credit apps) are
+    compared by age, their reported age standing for age at the tax year's end, with missing
+    answers read as no. The
     credit is the household's value; a missing parameter year falls back to the latest and
     reports to Sentry. Residency, SSN, tiebreaker, filing-status and prior-disallowance
     rules are not evaluated; citizenship is enforced by ``legal_status_required``.
@@ -194,6 +195,9 @@ class FederalCtc(ProgramCalculator):
 
     @cached_property
     def _is_joint(self) -> bool:
+        # The literal `spouse` relationship, on purpose: `is_spouse()` and `relationship_map()`
+        # treat `domesticPartner` as spouse-equivalent, but for federal tax a domestic partner
+        # is neither a filer nor a dependent.
         return self.screen.is_joint()
 
     @cached_property
@@ -216,7 +220,10 @@ class FederalCtc(ProgramCalculator):
         return SINGLE
 
     def _filer_income(self, types: list[str], exclude: Optional[list[str]] = None) -> Decimal:
-        return Decimal(str(sum(filer.calc_gross_income("yearly", types, exclude or []) for filer in self._filers)))
+        return sum(
+            (Decimal(str(filer.calc_gross_income("yearly", types, exclude or []))) for filer in self._filers),
+            Decimal(0),
+        )
 
     @cached_property
     def _earned_income(self) -> Decimal:
@@ -267,19 +274,27 @@ class FederalCtc(ProgramCalculator):
         if member.relationship not in self.child_relationships:
             return False
 
+        age = self._age_at_year_end(member)
+        if age is None:
+            return False
+
         disabled = self._is_permanently_disabled(member)
         if not disabled and not any(self._is_younger(member, filer) for filer in self._filers):
             return False
+        if not disabled and age >= self.child_age_limit and not (bool(member.student) and age < self.student_age_limit):
+            return False
 
-        if not disabled:
-            age = self._age_at_year_end(member)
-            if age is None:
-                return False
-            if age >= self.child_age_limit and not (bool(member.student) and age < self.student_age_limit):
-                return False
+        # The support test by proxy: the child's countable income against the rest of the
+        # household's combined countable income.
+        others = sum(
+            (self._countable_income(other) for other in self.screen.household_members.all() if other.pk != member.pk),
+            Decimal(0),
+        )
+        return self._countable_income(member) <= others
 
-        # The support test by proxy: the child's income against half the household's.
-        return member.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2
+    def _countable_income(self, member: HouseholdMember) -> Decimal:
+        """Yearly income less the types treated as untaxed."""
+        return Decimal(str(member.calc_gross_income("yearly", ["all"], self.tax_exempt_income_types)))
 
     def _is_ctc_child(self, member: HouseholdMember) -> bool:
         """Spec section 4 `child_age`."""
@@ -291,21 +306,15 @@ class FederalCtc(ProgramCalculator):
         if member.relationship not in self.dependent_relationships:
             return False
 
-        income = member.calc_gross_income("yearly", ["all"], self.tax_exempt_income_types)
-        return income < self._params.qualifying_relative_income_limit
+        return self._countable_income(member) < self._params.qualifying_relative_income_limit
 
     def _age_at_year_end(self, member: HouseholdMember) -> Optional[int]:
-        """Age at the tax year's end; a member with an age but no birth month is aged back by the
-        years between the screen's date and the tax year."""
+        """Age at the tax year's end; a member with an age but no birth month is taken at the age
+        reported, which reads a year high for anyone with a birthday since year end."""
         if member.birth_year_month is not None:
             return member.age_at_end_of_year(self.tax_year)
 
-        age = member.calc_age()
-        if age is None:
-            return None
-
-        years_since_tax_year = self.screen.get_reference_date().year - self.tax_year
-        return max(age - years_since_tax_year, 0)
+        return member.calc_age()
 
     def _is_senior(self, filer: HouseholdMember) -> bool:
         """Spec section 7, standard deduction addition for age."""

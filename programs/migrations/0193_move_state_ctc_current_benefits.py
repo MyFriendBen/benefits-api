@@ -57,6 +57,8 @@ def move_ctc_current_benefits(apps: Apps, schema_editor: BaseDatabaseSchemaEdito
             print(f"  {white_label_code}/{name_abbreviated}: is the federal row itself, skipped")
             continue
 
+        # Refreshed each pass on purpose: a screen moved onto the federal row by an earlier
+        # state row is a duplicate for a later one, and is dropped rather than moved twice.
         screens_on_federal = CurrentBenefit.objects.filter(program=federal).values_list("screen_id", flat=True)
         duplicates = CurrentBenefit.objects.filter(program=state, screen_id__in=screens_on_federal)
         dropped_here = duplicates.delete()[0]
