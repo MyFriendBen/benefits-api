@@ -118,8 +118,9 @@ class FederalCtc(ProgramCalculator):
 
     Stand-ins: filers are the head plus a member recorded as `spouse` (joint return); any
     relative the screener records can be a dependent, a spouse, partner or roommate never;
-    `disabled` + `long_term_disability` stands in for permanently and totally disabled, and
-    `student` (half-time college enrolment) for the student test. Deviations: income is today's, not the
+    `disabled` + `long_term_disability` stands in for permanently and totally disabled, the
+    alternative to the younger-than-filer and age tests; `student` (half-time college enrolment)
+    stands in for the student test. Deviations: income is today's, not the
     tax year's; the never-taxed types and, by approximation, every Social Security type are
     left out of income (section 7); a child's support test compares their countable income
     with the rest of the household's. Age-only members (the Colorado tax-credit apps) are
@@ -270,7 +271,8 @@ class FederalCtc(ProgramCalculator):
         return self._dependents[1]
 
     def _is_qualifying_child(self, member: HouseholdMember) -> bool:
-        """Spec section 4 `child_relationship`, `odc_child_age`, `child_younger_than_filer`, `child_is_dependent`."""
+        """Spec section 4 `child_relationship`, `child_is_dependent`, and `child_younger_than_filer` /
+        `odc_child_age` or their `disability_definition` alternative."""
         if member.relationship not in self.child_relationships:
             return False
 
