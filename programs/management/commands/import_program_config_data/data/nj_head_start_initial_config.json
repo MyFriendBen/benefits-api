@@ -1,0 +1,306 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "program_category": {
+    "external_name": "child_care"
+  },
+  "program": {
+    "name_abbreviated": "nj_head_start",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Head Start",
+    "description_short": "Free preschool, meals, and family support for young children",
+    "description": "Head Start is a free preschool program. Children get early learning, meals, and health and dental checks, and parents get support too.\n\nLocal organizations run Head Start across New Jersey, some inside school district preschools. The value shown is our estimate of what a year of full-time preschool would cost at a licensed child care center. It will be lower if your child's program runs part-day.\n\nSeats are limited and go first to families with the most need. If a program is full, ask to join its waiting list. Tell the program if your child has an IEP or a developmental delay, or is in foster care, since some seats are kept for them. Where the school district offers free full-day preschool, Head Start puts younger children first, so you can apply to both.\n\nFoster care counts only if the state placed your child. If someone in your family earns most of their income from farm work, ask about Migrant and Seasonal Head Start.\n\nExpect an interview, in person or by phone. Once enrolled, your child can usually stay the next year even if your income goes up. In some districts, you can sign up at the school district's registration office.\n\nSelect “Find your local agency” to find a program near you and start your application.",
+    "website_description": "Free preschool, meals, and family support for young children",
+    "learn_more_link": "https://www.headstart.gov/how-apply",
+    "apply_button_link": "https://headstart.gov/center-locator?state=NJ&radius=50",
+    "apply_button_description": "Find your local agency",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_decision_time": "",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "year": "2026",
+    "base_program": "head_start",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "earned_income"
+    },
+    {
+      "external_name": "nj_head_start_benefit_proof",
+      "text": "Proof of SNAP, TANF, or SSI benefits, if your family gets them"
+    },
+    {
+      "external_name": "nj_head_start_foster_care",
+      "text": "A court order or state letter showing your child is in foster care, if that applies"
+    },
+    {
+      "external_name": "nj_head_start_immunization_records",
+      "text": "Your child's shot records, with at least one dose of each required vaccine"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "headstart_national_hotline"
+    },
+    {
+      "external_name": "nj_head_start_hopes_cap",
+      "name": "HOPES Community Action Partnership",
+      "email": "info@hopes.org",
+      "description": "Runs Head Start preschool with the Hoboken, Plainfield, Franklin and Manville school districts.",
+      "assistance_link": "https://www.hopes.org/preschool-head-start",
+      "phone_number": "+18556546737",
+      "counties": [
+        "Hudson County",
+        "Union County",
+        "Somerset County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_eocdc",
+      "name": "East Orange Child Development Corporation",
+      "email": "",
+      "description": "Runs Head Start preschool centers in East Orange.",
+      "assistance_link": "https://www.eocdcs.org/programs/head-start-program/",
+      "phone_number": "+19736761110",
+      "counties": [
+        "Essex County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_leaguers",
+      "name": "The Leaguers",
+      "email": "",
+      "description": "Runs Head Start centers in Newark, Irvington, Union Township, Roselle and Elizabeth.",
+      "assistance_link": "https://www.leaguers.org/",
+      "phone_number": "+19736430300",
+      "counties": [
+        "Essex County",
+        "Union County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_la_casa",
+      "name": "La Casa de Don Pedro",
+      "email": "",
+      "description": "Runs Head Start preschool centers in Newark.",
+      "assistance_link": "https://lacasadedonpedro.org/for-children/",
+      "phone_number": "+19734828312",
+      "counties": [
+        "Essex County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_montclair_cdc",
+      "name": "Montclair Child Development Center",
+      "email": "",
+      "description": "Runs Head Start centers in Montclair, Glen Ridge, Belleville and Orange.",
+      "assistance_link": "https://www.mcdcnj.org/",
+      "phone_number": "+19737830220",
+      "counties": [
+        "Essex County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_nhcac",
+      "name": "North Hudson Community Action Corporation",
+      "email": "",
+      "description": "Runs Head Start in North Bergen, Union City, Guttenberg, West New York, Secaucus, Kearny, Harrison and Weehawken.",
+      "assistance_link": "https://nhcac.org/services/early-childhood-education-head-start/enrollment-information/",
+      "phone_number": "+12012100200",
+      "counties": [
+        "Hudson County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_newark_public_schools",
+      "name": "Newark Public Schools Head Start",
+      "email": "",
+      "description": "Runs Head Start for Newark families through the Newark school district.",
+      "assistance_link": "https://www.nps.k12.nj.us/head-start/",
+      "phone_number": "+19737336234",
+      "counties": [
+        "Essex County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_ironbound",
+      "name": "Ironbound Community Corporation",
+      "email": "",
+      "description": "Runs Head Start preschool for families in Newark's Ironbound (ZIP codes 07105 and 07114).",
+      "assistance_link": "https://ironboundcc.org/pre-school-head-start/",
+      "phone_number": "+19735896873",
+      "counties": [
+        "Essex County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_greater_bergen",
+      "name": "Greater Bergen Community Action Head Start",
+      "email": "headstart@greaterbergen.org",
+      "description": "Runs Head Start centers in Bergen County, Jersey City and Paterson.",
+      "assistance_link": "https://www.gbcaheadstart.org/",
+      "phone_number": "+12013661020",
+      "counties": [
+        "Bergen County",
+        "Hudson County",
+        "Passaic County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_beof",
+      "name": "BEOF Stepping Stone Academy",
+      "email": "",
+      "description": "Runs Head Start (formerly Bayonne Head Start) for Bayonne families.",
+      "assistance_link": "https://beof.org/stepping-stone-academy/",
+      "phone_number": "+12014377702",
+      "counties": [
+        "Hudson County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_center_for_family_resources",
+      "name": "Center for Family Resources",
+      "email": "",
+      "description": "Runs Head Start across Passaic County, except Paterson and Passaic City.",
+      "assistance_link": "https://centerforfamilyresources.org/cfr/services/head-start/",
+      "phone_number": "+19739620055",
+      "counties": [
+        "Passaic County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_passaic_family",
+      "name": "Passaic Family Head Start",
+      "email": "",
+      "description": "Runs Head Start for families in Passaic City.",
+      "assistance_link": "https://www.passaicheadstart.org/registration/",
+      "phone_number": "+19732720900",
+      "counties": [
+        "Passaic County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_morris_county",
+      "name": "Head Start Community Program of Morris County",
+      "email": "friends@headstartmc.org",
+      "description": "Runs Head Start for families living in Morris County.",
+      "assistance_link": "https://www.headstartmc.org/blank-1-1-3-2",
+      "phone_number": "+19739891430",
+      "counties": [
+        "Morris County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_norwescap",
+      "name": "NORWESCAP Head Start",
+      "email": "",
+      "description": "Runs Head Start for families in Hunterdon, Morris, Sussex and Warren counties.",
+      "assistance_link": "https://norwescap.org/programs/head-start/",
+      "phone_number": "+19084547000",
+      "counties": [
+        "Hunterdon County",
+        "Morris County",
+        "Sussex County",
+        "Warren County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_chs",
+      "name": "Children's Home Society of New Jersey",
+      "email": "info@chsofnj.org",
+      "description": "Runs Head Start for families in Trenton.",
+      "assistance_link": "https://chsofnj.org/services/head-start-and-early-head-start/head-start-early-head-start-center-based-program/",
+      "phone_number": "+16096956274",
+      "counties": [
+        "Mercer County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_ocean",
+      "name": "O.C.E.A.N., Inc.",
+      "email": "",
+      "description": "Runs Head Start at six locations across Ocean County.",
+      "assistance_link": "https://www.oceaninc.org/headstartprogram",
+      "phone_number": "+17322445333",
+      "counties": [
+        "Ocean County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_acelero_monmouth_middlesex",
+      "name": "Acelero Learning Monmouth/Middlesex",
+      "email": "",
+      "description": "Runs Head Start centers in Monmouth and Middlesex counties.",
+      "assistance_link": "https://acelerolearning.com/region/monmouth-middlesex/",
+      "phone_number": "+17323168409",
+      "counties": [
+        "Monmouth County",
+        "Middlesex County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_quality_care",
+      "name": "Quality Care Services",
+      "email": "",
+      "description": "Runs Head Start in Cape May, Cumberland and Gloucester counties.",
+      "assistance_link": "https://www.qualityinc.org/",
+      "phone_number": "+18566288600",
+      "counties": [
+        "Cape May County",
+        "Cumberland County",
+        "Gloucester County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_gateway_cap",
+      "name": "Gateway Community Action Partnership",
+      "email": "",
+      "description": "Runs Head Start in Atlantic, Cape May, Cumberland, Gloucester, Salem and Mercer counties.",
+      "assistance_link": "https://gatewaycap.schoolinsites.com/headstart",
+      "phone_number": "+18564530803",
+      "counties": [
+        "Atlantic County",
+        "Cape May County",
+        "Cumberland County",
+        "Gloucester County",
+        "Salem County",
+        "Mercer County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_center_for_family_services",
+      "name": "Center for Family Services",
+      "email": "",
+      "description": "Runs Head Start for families in Camden City, Camden County and Burlington County.",
+      "assistance_link": "https://www.centerffs.org/early-learning/enroll-your-child-today",
+      "phone_number": "+18569642100",
+      "counties": [
+        "Camden County",
+        "Burlington County"
+      ]
+    },
+    {
+      "external_name": "nj_head_start_acelero_camden",
+      "name": "Acelero Learning Camden",
+      "email": "",
+      "description": "Runs Head Start centers in Camden.",
+      "assistance_link": "https://acelerolearning.com/region/camden-philadelphia/",
+      "phone_number": "+18562033900",
+      "counties": [
+        "Camden County"
+      ]
+    }
+  ]
+}
