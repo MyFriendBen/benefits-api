@@ -1,6 +1,7 @@
 from programs.framework.base import ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
+from programs.programs.shared.residency import lives_in
 
 
 class MaMiddleIncomeRental(ProgramCalculator):
@@ -42,7 +43,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         # Location check - must be Cambridge resident
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = lives_in(self.screen, self.eligible_city)
         e.condition(is_cambridge, messages.location())
 
         # Head of household must be at least 18
