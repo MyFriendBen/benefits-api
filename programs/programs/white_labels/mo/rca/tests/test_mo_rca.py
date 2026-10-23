@@ -37,7 +37,7 @@ class MoRcaTestCase(CustomCalculatorTestCase):
 
     def marks_by_id(self, result):
         return {
-            member_eligibility.member.id: member_eligibility.eligible for member_eligibility in result.eligible_members
+            member_eligibility.member.id: member_eligibility.eligible for member_eligibility in result.member_verdicts
         }
 
 

@@ -226,7 +226,7 @@ class TestWaHeadStartBenefitValue(TestCase):
         e.eligible = True
         self.assertEqual(calc.member_value(member), 10_381)
 
-    def test_two_eligible_members_double_value(self):
+    def test_two_member_verdicts_double_value(self):
         """Full calc() path: ages 4 + 2 → 2 × $10,381 = $20,762."""
         mock_program = Mock()
         mock_program.year.get_limit.return_value = 27320

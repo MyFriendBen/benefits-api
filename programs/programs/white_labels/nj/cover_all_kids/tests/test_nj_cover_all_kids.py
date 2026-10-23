@@ -36,7 +36,7 @@ class NjCoverAllKidsTestCase(CustomCalculatorTestCase):
         return screen, [head, *kids]
 
     def eligible_ids(self, e) -> set[int]:
-        return {m.member.id for m in e.eligible_members if m.eligible}
+        return {m.member.id for m in e.member_verdicts if m.eligible}
 
 
 class TestRegistration(NjCoverAllKidsTestCase):

@@ -640,7 +640,7 @@ class BuildContextTests(TestCase):
         self.assertEqual(self.eligible_names(context), ["snap"])
 
     def test_calculator_needing_member_eligibility_is_skipped(self):
-        """co_upk reads `eligibility.eligible_members`, which the snapshot has no
+        """co_upk reads `eligibility.member_verdicts`, which the snapshot has no
         breakdown for. It declares `needs_full_eligibility` so it's skipped
         explicitly instead of silently evaluating against an empty list."""
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)

@@ -2,7 +2,7 @@ from programs.models import Program
 from programs.framework.pe_dependencies.constants import ALL_TAX_UNITS
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember, Screen
-from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import HOUSEHOLD, Eligibility, MemberEligibility, ProgramCalculator
 from .pe_dependencies.base import PolicyEngineScreenInput
 from typing import List
 from integrations.clients.policyengine.engines import Sim
@@ -141,10 +141,14 @@ class PolicyEngineCalulator(ProgramCalculator):
 class PolicyEngineSpmCalulator(PolicyEngineCalulator):
     pe_category = "spm_units"
     pe_sub_category = "spm_unit"
+    # PolicyEngine values an SPM unit as a whole; no member carries a value of their own.
+    payment_unit = HOUSEHOLD
 
 
 class PolicyEngineTaxUnitCalulator(PolicyEngineCalulator):
     pe_category = "tax_units"
+    # The credit is the return's, summed across the household's tax units.
+    payment_unit = HOUSEHOLD
 
     def household_value(self):
         total = 0

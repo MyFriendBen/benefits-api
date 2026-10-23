@@ -75,7 +75,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 1)
 
     def test_member_ineligible_when_not_pregnant(self):
@@ -87,7 +87,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
 
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 0)
 
     def test_only_pregnant_member_eligible_in_household(self):
@@ -105,7 +105,7 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 1)  # Only pregnant spouse
 
     # Value Tests

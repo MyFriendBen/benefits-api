@@ -60,10 +60,9 @@ class _FakeMemberEligibility:
 
 
 class _FakeEligibility:
-    def __init__(self, value: int, eligible_members: list):
+    def __init__(self, value: int, member_verdicts: list):
         self.value = value
-        self.eligible_members = eligible_members
-        self.reported_members = eligible_members
+        self.member_verdicts = member_verdicts
         self.eligible = True
 
 

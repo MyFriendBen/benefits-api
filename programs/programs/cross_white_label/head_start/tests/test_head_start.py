@@ -298,7 +298,7 @@ class TestNCHeadStart(CustomCalculatorTestCase):
         )
 
         # Should have 1 eligible child (the 3-year-old) - parent doesn't count since not pregnant
-        eligible_children = [m for m in eligibility.eligible_members if m.member.relationship == "child" and m.eligible]
+        eligible_children = [m for m in eligibility.member_verdicts if m.member.relationship == "child" and m.eligible]
         self.assertEqual(len(eligible_children), 1, "Should have 1 eligible child (3-year-old)")
 
         # Value should be preschool rate * 12
@@ -335,7 +335,7 @@ class TestNCHeadStart(CustomCalculatorTestCase):
                 eligibility = calculator.calc()
 
                 # Check that child is eligible
-                self.assertTrue(len(eligibility.eligible_members) > 0, f"Child age {age} should be eligible")
+                self.assertTrue(len(eligibility.member_verdicts) > 0, f"Child age {age} should be eligible")
 
     @patch("programs.programs.cross_white_label.head_start.nc.NcHeadStartMarketRatesCache.get_data")
     def test_pregnant_member_eligible(self, mock_fetch):
@@ -353,7 +353,7 @@ class TestNCHeadStart(CustomCalculatorTestCase):
         eligibility = calculator.calc()
 
         # Should have 1 eligible member (the pregnant person using infant rate)
-        self.assertEqual(len(eligibility.eligible_members), 1, "Pregnant person should be eligible (uses infant rate)")
+        self.assertEqual(len(eligibility.member_verdicts), 1, "Pregnant person should be eligible (uses infant rate)")
 
     # ============================================================================
     # ADDITIONAL TESTS: County Market Rate Data
@@ -390,7 +390,7 @@ class TestNCHeadStart(CustomCalculatorTestCase):
         # Expected value: (956 + 942 + 844) * 12 = 2742 * 12 = $32,904
         expected_value = (956 + 942 + 844) * 12
 
-        eligible_children = [m for m in eligibility.eligible_members if m.member.relationship == "child"]
+        eligible_children = [m for m in eligibility.member_verdicts if m.member.relationship == "child"]
         self.assertEqual(len(eligible_children), 3, "Should have 3 eligible children")
         self.assertEqual(eligibility.value, expected_value, f"Estimated value should be ${expected_value}")
 

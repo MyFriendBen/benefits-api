@@ -27,7 +27,7 @@ class FamilyPlanningServices(ProgramCalculator):
         # Income
         fpl = self.program.year
         income_limit = int(
-            FamilyPlanningServices.fpl_percent * fpl.get_limit(self.screen.household_size + len(e.eligible_members))
+            FamilyPlanningServices.fpl_percent * fpl.get_limit(self.screen.household_size + len(e.member_verdicts))
         )
         gross_income = int(
             self.screen.calc_gross_income(

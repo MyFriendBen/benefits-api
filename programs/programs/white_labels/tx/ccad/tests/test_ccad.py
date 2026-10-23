@@ -164,10 +164,10 @@ class TestTxCcadSnapTanfCategoricalEligibility(TestCase):
 class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
     """SSI and Medicaid only count for the age-eligible member — not other household members."""
 
-    def _make_calc_with_members(self, eligible_members, household_income=99999, fpl_limit=5000):
+    def _make_calc_with_members(self, member_verdicts, household_income=99999, fpl_limit=5000):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         e = Eligibility()
-        for member in eligible_members:
+        for member in member_verdicts:
             e.add_member_eligibility(make_eligible_member_e(member))
         calc.household_eligible(e)
         return e.eligible

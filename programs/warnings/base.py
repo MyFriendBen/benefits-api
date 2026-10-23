@@ -23,7 +23,7 @@ class WarningCalculator:
     dependencies = tuple()
 
     # Set True if `eligible()` reads ANYTHING off `self.eligibility` other than
-    # `.eligible` — `eligible_members`, `household_value`, `pass_messages`,
+    # `.eligible` — `member_verdicts`, `household_value`, `pass_messages`,
     # `fail_messages`.
     #
     # The eligibility run (screener.views.eligibility_results) always passes a fully
@@ -35,7 +35,7 @@ class WarningCalculator:
     # compute against zeroes and return a plausible wrong answer. This flag lets such
     # callers skip it loudly instead (see `_warning_messages` in screener.assistant).
     #
-    # Scoped to the whole object rather than to `eligible_members` alone because the
+    # Scoped to the whole object rather than to `member_verdicts` alone because the
     # hazard is the silent-default behaviour, which is identical for every field on it.
     needs_full_eligibility = False
 
