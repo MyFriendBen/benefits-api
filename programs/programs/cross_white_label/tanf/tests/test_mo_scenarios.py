@@ -28,10 +28,11 @@ caretaker households that remain assert PolicyEngine's answer for their own reas
 exclusion. Neither depends on an NPCR branch. The two verified divergences the limitation
 produces are recorded in ``specs/mo.md`` under "Accepted PolicyEngine limitations".
 
-Scenario 11 is expected to fail and is skipped: the household's only income is the SSI
-child's, so ``HouseholdMember.is_dependent()`` puts that child in a separate tax unit,
-and PolicyEngine's caretaker test requires a dependent child in the *same* tax unit. That
-is shared screener logic, not a MoTanf concern — see the skip reason.
+Scenarios 11 and 19 previously skipped for MFB-1693 (the qualifying-child path
+incorrectly tested the child's own income/support) now pass: the fix in
+``HouseholdMember.is_dependent()`` removed that test, so SSI-only and high-earning
+student children stay in the main tax unit and PolicyEngine returns the spec's
+$136/month and $234/month respectively.
 """
 
 import pytest
@@ -278,17 +279,12 @@ class TestScenario10GrandparentHeadedHousehold(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-@pytest.mark.skip(
-    reason="Blocked on MFB-1693, not a MoTanf defect: the SSI child's income is the household's "
-    "only income, so HouseholdMember.is_dependent()'s support test (child income <= household "
-    "income / 2) can never pass and the child is placed in a separate tax unit. PolicyEngine's "
-    "caretaker test requires a dependent child in the same tax unit, so the payee loses their "
-    "qualifying child and the household is denied. Given a single tax unit PolicyEngine returns "
-    "the spec's $136/month. Fix belongs in shared screener tax-unit logic, which shapes every "
-    "PE program's payload (pe_dependencies/payload.py)."
-)
 class TestScenario11SsiChildPayeeOnly(MoTanfScenarioTestCase):
-    """SSI child excluded from the unit; payee still receives a size-1 grant → $136/month."""
+    """SSI child excluded from the unit; payee still receives a size-1 grant → $136/month.
+
+    Unskipped by MFB-1693: HouseholdMember.is_dependent()'s qualifying-child path no longer
+    tests income/support, so the SSI child stays in the main tax unit and PolicyEngine's
+    caretaker test sees its dependent child, returning the spec's $136/month."""
 
     screen_id = 13
 
@@ -402,18 +398,13 @@ class TestScenario18MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
 
 
 @pytest.mark.integration
-@pytest.mark.skip(
-    reason="Blocked on MFB-1693, same shared-screener defect as Scenario 11: "
-    "the student child's $15,600/yr is more than half the household's income, so "
-    "HouseholdMember.is_dependent() fails them on both the qualifying-child support test and "
-    "the qualifying-relative threshold, and they are placed in a separate tax unit. The "
-    "caretaker's tax unit then contains no dependent child. PolicyEngine exempts a student "
-    "child's earnings correctly and returns the spec's $234/month for a single tax unit — "
-    "verified live, with and without the student flags set."
-)
 class TestScenario19ChildStudentEarningsExcluded(MoTanfScenarioTestCase):
     """A full-time student child's $1,300/month is excluded at Gate 1 and in the grant,
-    which is the only reason the household is not denied outright → $234/month."""
+    which is the only reason the household is not denied outright → $234/month.
+
+    Unskipped by MFB-1693: the student child's own earnings no longer eject them from
+    the qualifying-child path (student under 24 + eligible relationship is sufficient),
+    so they remain in the main tax unit and PolicyEngine returns the spec's $234/month."""
 
     screen_id = 21
 
