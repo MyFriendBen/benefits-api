@@ -1,5 +1,6 @@
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.programs.shared.income import fpl_income_limit
 
 
 class WaHeadStart(ProgramCalculator):
@@ -68,7 +69,7 @@ class WaHeadStart(ProgramCalculator):
         )
 
         gross_income = self.screen.calc_gross_income("yearly", ["all"])
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        income_limit = fpl_income_limit(self.program.year, self.screen.household_size, self.fpl_percent)
 
         e.condition(
             categorical or has_foster_child or gross_income <= income_limit,
