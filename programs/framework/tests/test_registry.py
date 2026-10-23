@@ -31,7 +31,6 @@ from programs.framework.registry import (
     register,
 )
 from programs.programs.cross_white_label.medicaid.base import Medicaid
-from programs.programs.cross_white_label.cdcc.base import Cdcc
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.msp.base import Msp
 from programs.programs.cross_white_label.head_start.base import HeadStart
@@ -185,13 +184,13 @@ class RegistryCoversEveryCalculatorTests(SimpleTestCase):
         """A base with no Program row of its own claims no code.
 
         The temptation is to register a base directly under whichever state slug
-        first needs it — ``Cdcc`` under ``ks_cdcc_federal``, say. It reads as
+        first needs it — ``Msp`` under ``il_msp``, say. It reads as
         harmless while one state uses it and breaks when a second arrives, because
         the base and the new state's subclass then claim the same code.
         """
         from programs.programs.cross_white_label.medicaid.base import Medicaid
 
-        for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart):
+        for base in (Msp, Medicaid, HeadStart, EarlyHeadStart):
             with self.subTest(base=base.__name__):
                 self.assertNotIn(
                     "program_code",
@@ -265,7 +264,7 @@ class AbstractDeclarationTests(SimpleTestCase):
     def test_the_family_bases_declare_themselves_abstract(self):
         from programs.programs.cross_white_label.medicaid.base import Medicaid
 
-        for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Msp, Aca, Cdcc):
+        for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Msp, Aca):
             with self.subTest(cls=cls.__name__):
                 self.assertTrue(is_abstract(cls), f"{cls.__name__} backs no Program row")
 

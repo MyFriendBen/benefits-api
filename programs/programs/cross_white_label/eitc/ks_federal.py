@@ -12,9 +12,6 @@ class KsEitcFederal(Eitc):
     ``Kseitc``. That one reads ``ks_total_eitc`` and sends a state code; this one
     reads PolicyEngine's federal ``eitc`` unchanged and sends none, because
     nothing under ``gov/irs/credits/earned_income`` reads ``state_code``.
-
-    Mirrors ``ks_cdcc_federal``/``ks_cdcc``, the other Kansas federal-and-state
-    credit pair.
     """
 
     program_code = "ks_eitc_federal"
