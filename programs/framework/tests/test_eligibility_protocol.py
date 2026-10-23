@@ -15,7 +15,7 @@ import datetime
 
 from django.test import TestCase
 
-from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import HOUSEHOLD, MEMBER, Eligibility, MemberEligibility, ProgramCalculator
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember, Screen, WhiteLabel
 
@@ -177,6 +177,23 @@ class EligibilityValueTests(TestCase):
         self.assertEqual(e.eligible_members, [eligible, ineligible])
 
 
+class EligibilityPaymentUnitTests(TestCase):
+    """`payment_unit` says who the benefit is paid for; it never hides a verdict."""
+
+    def test_defaults_to_the_member_unit(self):
+        self.assertEqual(Eligibility().payment_unit, MEMBER)
+
+    def test_a_household_unit_keeps_every_verdict(self):
+        e = Eligibility(payment_unit=HOUSEHOLD)
+        eligible, ineligible = MemberEligibility(None), MemberEligibility(None)
+        ineligible.condition(False)
+        e.add_member_eligibility(eligible)
+        e.add_member_eligibility(ineligible)
+
+        self.assertEqual(e.payment_unit, HOUSEHOLD)
+        self.assertEqual(e.eligible_members, [eligible, ineligible])
+
+
 class ProgramCalculatorTestCase(TestCase):
     """A three-person household for the orchestration tests below."""
 
@@ -256,6 +273,75 @@ class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
 
         self.assertFalse(e.eligible)
         self.assertEqual(e.fail_messages, ["household rule"])
+
+
+class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
+    """A household-unit program evaluates its members but pays only the household."""
+
+    class HouseholdPaying(ProgramCalculator):
+        payment_unit = HOUSEHOLD
+        amount = 1_000
+        member_amount = 50
+
+    def test_the_default_unit_is_member(self):
+        class Plain(ProgramCalculator):
+            pass
+
+        e = self.calculator(Plain).eligible()
+
+        self.assertEqual(e.payment_unit, MEMBER)
+
+    def test_the_unit_is_carried_onto_the_eligibility(self):
+        e = self.calculator(self.HouseholdPaying).eligible()
+
+        self.assertEqual(e.payment_unit, HOUSEHOLD)
+
+    def test_members_are_still_evaluated(self):
+        class HouseholdChildrenOnly(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(e.member.relationship == "child")
+
+        e = self.calculator(HouseholdChildrenOnly).eligible()
+
+        self.assertTrue(e.eligible)
+        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
+
+    def test_a_member_rule_still_gates_the_household(self):
+        """The unit changes who is paid, not what is checked: a household program that
+        qualifies through a member-scoped rule still needs one member to pass."""
+
+        class HouseholdNoOne(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(False)
+
+        e = self.calculator(HouseholdNoOne).eligible()
+
+        self.assertFalse(e.eligible)
+
+    def test_household_eligible_can_still_read_the_members(self):
+        seen = []
+
+        class ReadsMembers(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(e.member.relationship == "child")
+
+            def household_eligible(self, e: Eligibility):
+                seen.extend(m.eligible for m in e.eligible_members)
+
+        self.calculator(ReadsMembers).eligible()
+
+        self.assertEqual(seen, [False, True])
+
+    def test_only_the_household_is_paid(self):
+        """`member_amount` is ignored: the household's value is the whole value."""
+        calc = self.calculator(self.HouseholdPaying)
+        e = calc.eligible()
+
+        calc.value(e)
+
+        self.assertEqual(e.household_value, 1_000)
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
+        self.assertEqual(e.value, 1_000)
 
 
 class ProgramCalculatorValueTests(ProgramCalculatorTestCase):

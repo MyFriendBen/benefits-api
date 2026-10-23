@@ -20,13 +20,23 @@ class MemberEligibility:
             self.eligible = False
 
 
+#: The benefit is paid per member: each eligible member carries a value of their own.
+MEMBER = "member"
+#: The benefit is one amount for the household, whatever the member verdicts say.
+HOUSEHOLD = "household"
+
+
 class Eligibility:
-    def __init__(self):
+    def __init__(self, payment_unit: str = MEMBER):
         self.eligible: bool = True
         self.pass_messages = []
         self.fail_messages = []
+        #: One verdict per household member, eligible or not, in household order.
         self.eligible_members: list[MemberEligibility] = []
         self.household_value: int = 0
+        #: Who the benefit is paid for; reported to the results API so the frontend can
+        #: show the household rather than the members as the eligible party.
+        self.payment_unit = payment_unit
 
     def condition(self, passed: bool, message=None):
         """
@@ -106,6 +116,13 @@ class ProgramCalculator:
     amount = 0
     member_amount = 0
 
+    #: Who the benefit is paid for, matching the spec's section 7 `Payment unit`. ``MEMBER``
+    #: (the default) pays each eligible member. ``HOUSEHOLD`` pays one amount for the
+    #: household: `member_eligible` still runs and still gates the household on at least one
+    #: member passing, but no member is paid, and the results API carries the unit so the
+    #: frontend shows the household as the eligible party.
+    payment_unit: str = MEMBER
+
     #: Upstream program codes this calculator reads through `program_eligible` or
     #: `member_program_eligible`. Those raise when the upstream was not calculated, so
     #: `can_calc` also requires the upstream's own screener fields — see
@@ -144,7 +161,7 @@ class ProgramCalculator:
         Combine the eligibility for the household and the members
         """
 
-        e = Eligibility()
+        e = Eligibility(payment_unit=self.payment_unit)
 
         one_member_eligible = False
         for member in self.screen.household_members.all():
@@ -183,6 +200,9 @@ class ProgramCalculator:
             return
 
         e.household_value = self.household_value()
+
+        if e.payment_unit == HOUSEHOLD:
+            return
 
         for member_eligibility in e.eligible_members:
             if member_eligibility.eligible:

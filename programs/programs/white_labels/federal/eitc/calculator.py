@@ -5,7 +5,7 @@ from typing import Optional
 
 from sentry_sdk import capture_message
 
-from programs.framework.base import Eligibility, ProgramCalculator
+from programs.framework.base import HOUSEHOLD, Eligibility, ProgramCalculator
 from screener.models import HouseholdMember
 
 
@@ -133,6 +133,8 @@ class FederalEitc(ProgramCalculator):
     """
 
     program_code = "federal_eitc"
+    # Spec section 7: one credit on the filers' return.
+    payment_unit = HOUSEHOLD
 
     child_relationships = ("child", "stepChild", "fosterChild", "grandChild", "sisterOrBrother", "stepSisterOrBrother")
     child_age_limit = 19
@@ -181,9 +183,6 @@ class FederalEitc(ProgramCalculator):
             credit = min(credit, eic_table(self._agi, column))
 
         return credit
-
-    def member_value(self, member: HouseholdMember) -> int:
-        return 0
 
     @cached_property
     def _params(self) -> EitcYear:
