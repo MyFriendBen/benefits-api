@@ -635,9 +635,8 @@ class HouseholdMember(models.Model):
         age = self.calc_age()
 
         # Path 1: Qualifying Child (income test removed per IRS rules)
-        is_qualifying_child = (
-            has_eligible_relationship
-            and ((age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability())
+        is_qualifying_child = has_eligible_relationship and (
+            (age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability()
         )
 
         # Path 2: Qualifying Relative (unchanged)

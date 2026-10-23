@@ -300,4 +300,3 @@ class TestIsDependent(TestCase):
         self.assertIn(str(self.head.id), main_tax_members)
         self.assertIn(str(child.id), main_tax_members)
         self.assertNotIn(SECONDARY_TAX_UNIT, tax_units)
-
