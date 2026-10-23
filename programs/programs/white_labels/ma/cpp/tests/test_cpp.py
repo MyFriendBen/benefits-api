@@ -218,7 +218,7 @@ class TestMaCppMemberEligibility(TestCase):
             self.assertTrue(eligibility.eligible)
 
             # Check per-member results: 3yo ineligible, 4yo eligible
-            child_eligibilities = [m for m in eligibility.eligible_members if m.member.calc_age() in [3, 4]]
+            child_eligibilities = [m for m in eligibility.member_verdicts if m.member.calc_age() in [3, 4]]
             three_yo = next(m for m in child_eligibilities if m.member.calc_age() == 3)
             four_yo = next(m for m in child_eligibilities if m.member.calc_age() == 4)
             self.assertFalse(three_yo.eligible)

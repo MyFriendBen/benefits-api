@@ -245,7 +245,7 @@ class TestFosterCare(SimpleTestCase):
         foster = make_member(age=4, relationship="fosterChild")
         sibling = make_member(age=4, relationship="child")
         eligibility = run(make_calculator(members=[foster, sibling], income=self.over_income))
-        by_member = {id(me.member): me for me in eligibility.eligible_members}
+        by_member = {id(me.member): me for me in eligibility.member_verdicts}
         self.assertTrue(by_member[id(foster)].eligible)
         self.assertFalse(by_member[id(sibling)].eligible)
         self.assertEqual(eligibility.value, 9_938)

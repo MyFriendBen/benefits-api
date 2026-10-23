@@ -291,7 +291,7 @@ class TestMaDhspAfterschoolValue(TestCase):
         calculator.value(eligibility)
 
         # Find eligible children members (not the parent)
-        eligible_children = [m for m in eligibility.eligible_members if m.eligible and m.member.age != 35]
+        eligible_children = [m for m in eligibility.member_verdicts if m.eligible and m.member.age != 35]
 
         # Default member_amount is 0, so each eligible child should have value 0
         for member_eligibility in eligible_children:
@@ -377,17 +377,17 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         self.assertEqual(eligibility.value, expected_annual)
         self.assertEqual(eligibility.household_value, expected_annual)
 
-    def test_eligible_members_tracked_correctly_for_multiple_children(self):
-        """Test that all eligible children are tracked in eligible_members."""
+    def test_member_verdicts_tracked_correctly_for_multiple_children(self):
+        """Test that all eligible children are tracked in member_verdicts."""
         calculator = self._create_calculator([5, 10, 14])  # 3 eligible children (ages 5, 10, 14)
         eligibility = calculator.eligible()
         calculator.value(eligibility)
 
         # Should have 4 member eligibilities: 1 parent + 3 children
-        self.assertEqual(len(eligibility.eligible_members), 4)
+        self.assertEqual(len(eligibility.member_verdicts), 4)
 
         # Count eligible members (children in K-8 range)
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 3)  # All 3 children are eligible
 
     def test_mixed_ages_only_k8_children_eligible(self):
@@ -402,7 +402,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         # Index 1 is age 3 - not eligible
         # Index 2 is age 8 - eligible
         # Index 3 is age 16 - not eligible
-        member_ages_and_eligibility = [(m.member.calc_age(), m.eligible) for m in eligibility.eligible_members]
+        member_ages_and_eligibility = [(m.member.calc_age(), m.eligible) for m in eligibility.member_verdicts]
 
         self.assertIn((35, False), member_ages_and_eligibility)  # Parent
         self.assertIn((3, False), member_ages_and_eligibility)  # Too young

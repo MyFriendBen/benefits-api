@@ -361,7 +361,7 @@ class TestTxFppValue(TestCase):
         self.assertTrue(e.eligible)
         self.assertAlmostEqual(e.value, 266.84)
 
-    def test_two_eligible_members_value_sums(self):
+    def test_two_member_verdicts_value_sums(self):
         members = [make_member(age=55), make_member(age=30)]
         calc = make_calculator(unearned=20_000, fpl_limit=15_000, members=members)
         e = calc.calc()

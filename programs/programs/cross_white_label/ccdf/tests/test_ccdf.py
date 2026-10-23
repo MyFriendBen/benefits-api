@@ -89,7 +89,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         eligibility = calc.eligible()
         # Should have one eligible member (the 3-year-old child)
         self.assertTrue(eligibility.eligible)
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 1)
 
     def test_member_ineligible_child_over_13(self):
@@ -103,7 +103,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         # Household eligible but no eligible members
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 0)
 
     def test_member_eligible_disabled_child_under_19(self):
@@ -117,7 +117,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         self.assertTrue(eligibility.eligible)
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 1)
 
     def test_member_ineligible_wrong_relationship(self):
@@ -131,7 +131,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         calc = self.make_calculator(screen)
         eligibility = calc.eligible()
         # No eligible members
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 0)
 
     def test_member_eligible_various_child_relationships(self):
@@ -150,7 +150,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         eligibility = calc.eligible()
         self.assertTrue(eligibility.eligible)
         # All 4 children should be eligible
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 4)
 
     # Value Calculation Tests
@@ -240,7 +240,7 @@ class TestIlChildCareAssistanceProgram(CustomCalculatorTestCase):
         expected_net = expected_subsidy - expected_copayment
 
         self.assertTrue(eligibility.eligible)
-        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        eligible_count = sum(1 for m in eligibility.member_verdicts if m.eligible)
         self.assertEqual(eligible_count, 3)
         self.assertEqual(eligibility.value, expected_net)
 

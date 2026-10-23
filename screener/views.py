@@ -701,7 +701,7 @@ def eligibility_results(
             program_translations = GetProgramTranslation(screen, program, missing_dependencies)
 
             member_data = []
-            for member_eligibility in eligibility.reported_members:
+            for member_eligibility in eligibility.member_verdicts:
                 member_data.append(
                     {
                         "frontend_id": str(member_eligibility.member.frontend_id),
@@ -730,6 +730,7 @@ def eligibility_results(
                     "legal_status_required": legal_status,
                     "estimated_value_override": program_translations.get_translation("estimated_value"),
                     "eligible": eligibility.eligible,
+                    "payment_unit": eligibility.payment_unit,
                     "members": member_data,
                     "failed_tests": eligibility.fail_messages,
                     "passed_tests": eligibility.pass_messages,

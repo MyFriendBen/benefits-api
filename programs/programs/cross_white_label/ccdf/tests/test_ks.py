@@ -605,7 +605,7 @@ class TestValueShape(KsCcapTestCase):
         # either clamp.
         eligibility = self.calc(self.baseline())
         self.assertEqual(eligibility.household_value, 13_147)
-        self.assertEqual([member.value for member in eligibility.eligible_members], [0, 0, 0])
+        self.assertEqual([member.value for member in eligibility.member_verdicts], [0, 0, 0])
 
     def test_value_is_truncated_rather_than_rounded(self):
         # $9,948.60 -> $9,948. The `math.trunc` in `screener/views.py` touches only

@@ -307,7 +307,7 @@ class TestCoHeadStartValue(CountySheetTestCase):
         calc = make_calculator(household_size=2, household_income=500, members=members)
         self.assertEqual(calc.calc().value, 2 * CoHeadStart.member_amount)
 
-    def test_ineligible_members_add_no_value(self):
+    def test_inmember_verdicts_add_no_value(self):
         members = [make_member(age=4), make_member(age=30)]
         calc = make_calculator(household_size=2, household_income=500, members=members)
         self.assertEqual(calc.calc().value, CoHeadStart.member_amount)

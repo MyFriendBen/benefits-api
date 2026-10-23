@@ -28,7 +28,7 @@ class TxCcad(ProgramCalculator):
 
         # SSI and Medicaid are individual — only counts if the age-eligible member has it
         if not presumed_eligible:
-            for member_e in e.eligible_members:
+            for member_e in e.member_verdicts:
                 if not member_e.eligible:
                     continue
                 member = member_e.member

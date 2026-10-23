@@ -20,9 +20,9 @@ class MemberEligibility:
             self.eligible = False
 
 
-#: The benefit is paid per member: each eligible member carries a value and is reported.
+#: The benefit is paid per member: each eligible member carries a value of their own.
 MEMBER = "member"
-#: The benefit is one amount for the household: members are evaluated but not reported.
+#: The benefit is one amount for the household, whatever the member verdicts say.
 HOUSEHOLD = "household"
 
 
@@ -31,8 +31,11 @@ class Eligibility:
         self.eligible: bool = True
         self.pass_messages = []
         self.fail_messages = []
-        self.eligible_members: list[MemberEligibility] = []
+        #: One verdict per household member, eligible or not, in household order.
+        self.member_verdicts: list[MemberEligibility] = []
         self.household_value: int = 0
+        #: Who the benefit is paid for; reported to the results API so the frontend can
+        #: show the household rather than the members as the eligible party.
         self.payment_unit = payment_unit
 
     def condition(self, passed: bool, message=None):
@@ -67,20 +70,7 @@ class Eligibility:
         """
         Store a members eligibility
         """
-        self.eligible_members.append(member_eligibility)
-
-    @property
-    def reported_members(self) -> list[MemberEligibility]:
-        """
-        The member verdicts shown outside the calculator: the results API and the category
-        caps. A household-unit program keeps its member verdicts for its own rules and for
-        the at-least-one-member gate, but reports none, so the household is the eligible
-        party rather than whichever members happened to satisfy a member-scoped rule.
-        """
-        if self.payment_unit == HOUSEHOLD:
-            return []
-
-        return self.eligible_members
+        self.member_verdicts.append(member_eligibility)
 
     @property
     def value(self) -> int:
@@ -89,7 +79,7 @@ class Eligibility:
         """
         total = self.household_value
 
-        for member in self.eligible_members:
+        for member in self.member_verdicts:
             total += member.value
 
         return total
@@ -127,10 +117,10 @@ class ProgramCalculator:
     member_amount = 0
 
     #: Who the benefit is paid for, matching the spec's section 7 `Payment unit`. ``MEMBER``
-    #: (the default) pays and reports each eligible member. ``HOUSEHOLD`` pays one amount
-    #: for the household: `member_eligible` still runs and still gates the household on at
-    #: least one member passing, but no member is reported or paid, so the results show the
-    #: household as the eligible party.
+    #: (the default) pays each eligible member. ``HOUSEHOLD`` pays one amount for the
+    #: household: `member_eligible` still runs and still gates the household on at least one
+    #: member passing, but no member is paid, and the results API carries the unit so the
+    #: frontend shows the household as the eligible party.
     payment_unit: str = MEMBER
 
     #: Upstream program codes this calculator reads through `program_eligible` or
@@ -211,7 +201,10 @@ class ProgramCalculator:
 
         e.household_value = self.household_value()
 
-        for member_eligibility in e.reported_members:
+        if e.payment_unit == HOUSEHOLD:
+            return
+
+        for member_eligibility in e.member_verdicts:
             if member_eligibility.eligible:
                 member_value = self.member_value(member_eligibility.member)
                 member_eligibility.value = member_value
@@ -338,7 +331,7 @@ class ProgramCalculator:
         if program_code not in self.data:
             raise UpstreamAbsentError(program_code)
 
-        for member_eligibility in self.data[program_code].eligible_members:
+        for member_eligibility in self.data[program_code].member_verdicts:
             if member_eligibility.member.id == member.id:
                 return member_eligibility.eligible
 

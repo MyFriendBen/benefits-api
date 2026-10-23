@@ -98,7 +98,7 @@ class TestSchoolAge(SimpleTestCase):
 
     def eligible_for_age(self, age: Optional[int]) -> bool:
         calculator = make_calculator(members=[make_member(age=age)], base_benefits=("nslp",))
-        return run(calculator).eligible_members[0].eligible
+        return run(calculator).member_verdicts[0].eligible
 
     def test_min_age_is_eligible(self):
         self.assertTrue(self.eligible_for_age(5))
@@ -128,7 +128,7 @@ class TestSchoolAgeWindow(SimpleTestCase):
     def eligible_born(self, birth_year_month: Optional[date], age: Optional[int] = 30) -> bool:
         member = make_member(age=age, birth_year_month=birth_year_month)
         calculator = make_calculator(members=[member], base_benefits=("nslp",), cls=WindowedStateSunBucks)
-        return run(calculator).eligible_members[0].eligible
+        return run(calculator).member_verdicts[0].eligible
 
     def test_reaching_min_age_on_the_last_day_is_eligible(self):
         self.assertTrue(self.eligible_born(date(2021, 8, 1)))
@@ -184,7 +184,7 @@ class TestEnrolledAutomatically(SimpleTestCase):
         members = [make_member(age=9, relationship="fosterChild"), make_member(age=10, relationship="child")]
         e = run(make_calculator(members=members, income=0, cls=AutoEnrollingStateSunBucks))
         self.assertTrue(e.eligible)
-        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
+        self.assertEqual([m.eligible for m in e.member_verdicts], [False, True])
 
     def test_household_with_only_a_hidden_foster_child_is_ineligible(self):
         members = [make_member(age=9, relationship="fosterChild")]
@@ -224,7 +224,7 @@ class TestCategoricalAndSchoolMeals(SimpleTestCase):
             make_member(age=35, relationship="headOfHousehold"),
         ]
         e = run(make_calculator(members=members, base_benefits=("nslp",)))
-        self.assertEqual([m.eligible for m in e.eligible_members], [True, True, False, False])
+        self.assertEqual([m.eligible for m in e.member_verdicts], [True, True, False, False])
 
 
 class TestIncomeApplication(SimpleTestCase):
@@ -274,7 +274,7 @@ class TestFosterChild(SimpleTestCase):
         members = [make_member(age=9, relationship="fosterChild"), make_member(age=10, relationship="child")]
         e = run(make_calculator(members=members, income=500_000))
         self.assertTrue(e.eligible)
-        self.assertEqual([m.eligible for m in e.eligible_members], [True, False])
+        self.assertEqual([m.eligible for m in e.member_verdicts], [True, False])
 
     def test_foster_child_outside_school_age_is_ineligible(self):
         members = [make_member(age=3, relationship="fosterChild")]
@@ -283,7 +283,7 @@ class TestFosterChild(SimpleTestCase):
     def test_under_income_siblings_all_qualify(self):
         members = [make_member(age=9, relationship="fosterChild"), make_member(age=10, relationship="child")]
         e = run(make_calculator(members=members, income=10_000))
-        self.assertEqual([m.eligible for m in e.eligible_members], [True, True])
+        self.assertEqual([m.eligible for m in e.member_verdicts], [True, True])
 
 
 class TestValue(SimpleTestCase):
@@ -292,7 +292,7 @@ class TestValue(SimpleTestCase):
     def test_value_is_120_per_eligible_child(self):
         members = [make_member(age=6), make_member(age=11), make_member(age=2)]
         e = run(make_calculator(members=members, base_benefits=("nslp",)))
-        self.assertEqual([m.value for m in e.eligible_members], [120, 120, 0])
+        self.assertEqual([m.value for m in e.member_verdicts], [120, 120, 0])
         self.assertEqual(e.value, 240)
 
     def test_ineligible_household_has_no_value(self):

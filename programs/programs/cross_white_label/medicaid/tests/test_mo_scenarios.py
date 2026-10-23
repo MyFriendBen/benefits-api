@@ -73,7 +73,7 @@ class TestMoHealthNetSmoke(PeIntegrationTestCase):
 
     def _member_values(self, eligibility):
         """Per-member values keyed by member id, so a scenario can assert each person."""
-        return {me.member.id: math.trunc(me.value) for me in eligibility.eligible_members if me.eligible}
+        return {me.member.id: math.trunc(me.value) for me in eligibility.member_verdicts if me.eligible}
 
     def _parent_and_child(self, parent_monthly_wages):
         """HH2: a parent at the given monthly wage plus their 11-year-old child."""

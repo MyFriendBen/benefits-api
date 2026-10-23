@@ -89,7 +89,7 @@ class TestCategorical(NjSunBucksTestCase):
         eligibility = self.calculate(screen)
 
         self.assert_eligible(eligibility, children=2)
-        self.assertEqual([m.value for m in eligibility.eligible_members], [0, 120, 120])
+        self.assertEqual([m.value for m in eligibility.member_verdicts], [0, 120, 120])
 
     def test_scenario_8_head_start_household_with_a_child_under_6(self):
         screen = self.household(2, head_wages=200_000)
@@ -168,7 +168,7 @@ class TestEnrolledAutomatically(NjSunBucksTestCase):
         eligibility = self.calculate(screen)
 
         self.assert_eligible(eligibility)
-        self.assertEqual([m.value for m in eligibility.eligible_members], [0, 0, 120])
+        self.assertEqual([m.value for m in eligibility.member_verdicts], [0, 0, 120])
 
 
 class TestSchoolAgeWindow(NjSunBucksTestCase):
@@ -204,7 +204,7 @@ class TestSchoolMealsAndIncome(NjSunBucksTestCase):
         eligibility = self.calculate(screen)
 
         self.assert_eligible(eligibility)
-        self.assertEqual([m.value for m in eligibility.eligible_members], [0, 0, 120])
+        self.assertEqual([m.value for m in eligibility.member_verdicts], [0, 0, 120])
 
     def test_scenario_15_well_under_the_income_limit(self):
         screen = self.household(1, head_wages=20_000, head_age=17)

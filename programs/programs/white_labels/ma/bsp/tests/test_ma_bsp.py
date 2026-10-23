@@ -386,7 +386,7 @@ class TestMemberEligibilityAndValue(MaBabyStepsTestCase):
 
         eligibility = self.calculate(screen)
 
-        valued = [m for m in eligibility.eligible_members if m.value > 0]
+        valued = [m for m in eligibility.member_verdicts if m.value > 0]
         self.assertEqual(len(valued), 1)
         self.assertEqual(valued[0].member.relationship, "child")
         self.assertEqual(eligibility.value, 50)

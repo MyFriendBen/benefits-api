@@ -115,11 +115,11 @@ class SunBucks(ProgramCalculator, abstract=True):
             return
 
         # Foster care qualifies the foster child only, not their siblings.
-        for member_eligibility in e.eligible_members:
+        for member_eligibility in e.member_verdicts:
             if member_eligibility.member.relationship != "fosterChild":
                 member_eligibility.condition(False)
 
-        if not any(member_eligibility.eligible for member_eligibility in e.eligible_members):
+        if not any(member_eligibility.eligible for member_eligibility in e.member_verdicts):
             e.condition(False, messages.income(income, income_limit))
 
     def _household_enrolled_through(self) -> Optional[str]:
