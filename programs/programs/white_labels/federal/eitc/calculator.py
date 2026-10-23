@@ -6,6 +6,7 @@ from typing import Optional
 from sentry_sdk import capture_message
 
 from programs.framework.base import Eligibility, ProgramCalculator
+from programs.programs.shared.tax_filers import is_younger, tax_filers
 from screener.models import HouseholdMember
 
 
@@ -215,12 +216,7 @@ class FederalEitc(ProgramCalculator):
 
     @cached_property
     def _filers(self) -> list[HouseholdMember]:
-        members = self.screen.household_members.all()
-        filers = [m for m in members if m.relationship == "headOfHousehold"]
-        if self._is_joint:
-            filers += [m for m in members if m.relationship == "spouse"]
-
-        return filers
+        return tax_filers(self.screen, self._is_joint)
 
     def _filer_income(self, types: list[str], exclude: Optional[list[str]] = None) -> float:
         return sum(filer.calc_gross_income("yearly", types, exclude or []) for filer in self._filers)
@@ -253,7 +249,7 @@ class FederalEitc(ProgramCalculator):
         if member.has_disability():
             return True
 
-        if not any(self._is_younger(member, filer) for filer in self._filers):
+        if not any(is_younger(member, filer) for filer in self._filers):
             return False
 
         age = member.age_at_end_of_year(self.tax_year)
@@ -264,18 +260,6 @@ class FederalEitc(ProgramCalculator):
             return True
 
         return bool(member.student_full_time) and age < self.student_age_limit
-
-    @staticmethod
-    def _is_younger(member: HouseholdMember, filer: HouseholdMember) -> bool:
-        """
-        Born in a later month than the filer. The screener has no day of birth, so a child
-        born in the filer's own month doesn't count as younger.
-        """
-        if member.birth_year_month is not None and filer.birth_year_month is not None:
-            return member.birth_year_month > filer.birth_year_month
-
-        member_age, filer_age = member.calc_age(), filer.calc_age()
-        return member_age is not None and filer_age is not None and member_age < filer_age
 
     def _is_childless_filer_age(self, filer: HouseholdMember) -> bool:
         age = filer.age_at_end_of_year(self.tax_year)

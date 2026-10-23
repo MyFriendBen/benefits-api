@@ -7,6 +7,7 @@ from typing import Optional
 from sentry_sdk import capture_message
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
+from programs.programs.shared.tax_filers import is_younger, tax_filers
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 
 JOINT = "joint"
@@ -204,12 +205,7 @@ class FederalCtc(ProgramCalculator):
     @cached_property
     def _filers(self) -> list[HouseholdMember]:
         """The head and, on a joint return, the spouse (spec section 7, filing status)."""
-        members = self.screen.household_members.all()
-        filers = [m for m in members if m.relationship == "headOfHousehold"]
-        if self._is_joint:
-            filers += [m for m in members if m.relationship == "spouse"]
-
-        return filers
+        return tax_filers(self.screen, self._is_joint)
 
     @cached_property
     def _filing_status(self) -> str:
@@ -281,7 +277,7 @@ class FederalCtc(ProgramCalculator):
             return False
 
         disabled = self._is_permanently_disabled(member)
-        if not disabled and not any(self._is_younger(member, filer) for filer in self._filers):
+        if not disabled and not any(is_younger(member, filer) for filer in self._filers):
             return False
         if not disabled and age >= self.child_age_limit and not (bool(member.student) and age < self.student_age_limit):
             return False
@@ -327,15 +323,3 @@ class FederalCtc(ProgramCalculator):
     def _is_permanently_disabled(member: HouseholdMember) -> bool:
         """The screener's stand-in for permanently and totally disabled (spec section 4 `disability_definition`)."""
         return bool(member.disabled) and bool(member.long_term_disability)
-
-    @staticmethod
-    def _is_younger(member: HouseholdMember, filer: HouseholdMember) -> bool:
-        """
-        Born in a later month than the filer. The screener has no day of birth, so a child
-        born in the filer's own month doesn't count as younger.
-        """
-        if member.birth_year_month is not None and filer.birth_year_month is not None:
-            return member.birth_year_month > filer.birth_year_month
-
-        member_age, filer_age = member.calc_age(), filer.calc_age()
-        return member_age is not None and filer_age is not None and member_age < filer_age
