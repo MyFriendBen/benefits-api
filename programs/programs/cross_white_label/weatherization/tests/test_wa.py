@@ -26,7 +26,7 @@ def make_calculator(
     fpl_limit=15_960,
     has_wa_snap=False,
     has_wa_tanf=False,
-    has_wa_ssi=False,
+    has_ssi=False,
     has_section_8=False,
     members=None,
 ):
@@ -38,12 +38,14 @@ def make_calculator(
         return {
             "wa_snap": has_wa_snap,
             "wa_tanf": has_wa_tanf,
-            "wa_ssi": has_wa_ssi,
         }.get(name, False)
 
     mock_screen.has_benefit = Mock(side_effect=benefit_side_effect)
-    # Section 8 is matched via base_program ("section_8" → wa_hcv), not an exact name.
-    mock_screen.has_base_benefit = Mock(side_effect=lambda base: has_section_8 if base == "section_8" else False)
+    # SSI (the federal `federal_ssi` row) and Section 8 (HCV, `wa_hcv`) are matched via
+    # base_program, not an exact name.
+    mock_screen.has_base_benefit = Mock(
+        side_effect=lambda base: {"ssi": has_ssi, "section_8": has_section_8}.get(base, False)
+    )
 
     mock_program = Mock()
     mock_program.year.get_limit = Mock(return_value=fpl_limit)
@@ -101,7 +103,19 @@ class TestWaWapHouseholdEligibility(TestCase):
         self.assertTrue(self._run(50_000, has_wa_tanf=True))
 
     def test_ssi_bypasses_income(self):
-        self.assertTrue(self._run(50_000, has_wa_ssi=True))
+        self.assertTrue(self._run(50_000, has_ssi=True))
+
+    def test_ssi_check_uses_base_benefit_not_exact_name(self):
+        """SSI is the federal `federal_ssi` row, so receipt must be read through
+        has_base_benefit("ssi"); the exact-name has_benefit("wa_ssi") lookup is dead."""
+        calc = make_calculator(yearly_income=50_000, has_ssi=True)
+        e = Eligibility()
+        me = MemberEligibility(make_member())
+        me.eligible = True
+        e.add_member_eligibility(me)
+        calc.household_eligible(e)
+        self.assertTrue(e.eligible)
+        calc.screen.has_base_benefit.assert_any_call("ssi")
 
     def test_section_8_bypasses_income(self):
         # Section 8 receipt (HCV, via base_program "section_8") is a categorical pathway.

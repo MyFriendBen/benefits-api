@@ -283,6 +283,20 @@ class TestCurrentBenefits(FederalProgramsTestCase):
 
         self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.wa)), {"ssi"})
 
+    def test_ssi_income_derives_the_prefixed_federal_ssi_row_by_base_program(self) -> None:
+        """The federal row is `federal_ssi`, not `ssi`, so the derivation has to match on
+        `base_program`: it writes the prefixed row, which `has_base_benefit("ssi")` then reads
+        for every calculator that gates on SSI receipt."""
+        self.program(self.federal, "federal_ssi", base_program="ssi")
+        self.program(self.co, "ssi", active=False, base_program="ssi")
+        screen = self.ssi_screen(self.co)
+
+        self.assertEqual(_derived_current_benefit_names(screen), {"federal_ssi", "ssi"})
+
+        _write_current_benefits(screen, [])
+        self.assertTrue(screen.has_benefit("federal_ssi"))
+        self.assertTrue(screen.has_base_benefit("ssi"))
+
     def test_ssi_income_ignores_a_federal_ssi_program_not_launched_yet(self) -> None:
         self.program(self.federal, "ssi", active=False, base_program="ssi")
         self.program(self.co, "co_ssi", active=False, base_program="ssi")
