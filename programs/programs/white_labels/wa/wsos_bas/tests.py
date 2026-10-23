@@ -234,7 +234,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
         calc.value(eligibility)
 
         self.assertEqual(eligibility.value, 22_500)
-        for member_eligibility in eligibility.member_verdicts:
+        for member_eligibility in eligibility.eligible_members:
             self.assertEqual(member_eligibility.value, 0)
 
     # --- MFI table boundaries ------------------------------------------------

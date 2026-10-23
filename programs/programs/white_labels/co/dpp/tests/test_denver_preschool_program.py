@@ -154,7 +154,7 @@ class TestDenverPreschoolProgramValue(TestCase):
         calc = make_calculator(members=[make_member(age=3), make_member(age=4)])
         self.assertEqual(calc.calc().value, 2 * DenverPreschoolProgram.member_amount)
 
-    def test_inmember_verdicts_add_no_value(self):
+    def test_ineligible_members_add_no_value(self):
         calc = make_calculator(members=[make_member(age=3), make_member(age=10)])
         self.assertEqual(calc.calc().value, DenverPreschoolProgram.member_amount)
 

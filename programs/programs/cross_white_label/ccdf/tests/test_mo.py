@@ -308,7 +308,7 @@ class TestNonScenarioBranches(MoChildCareSubsidyTestCase):
 
     def test_no_member_values(self):
         eligibility = self.calc(self.baseline())
-        self.assertTrue(all(member.value == 0 for member in eligibility.member_verdicts))
+        self.assertTrue(all(member.value == 0 for member in eligibility.eligible_members))
         self.assertEqual(eligibility.household_value, 11_340)
 
 

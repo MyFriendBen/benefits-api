@@ -32,7 +32,7 @@ class Eligibility:
         self.pass_messages = []
         self.fail_messages = []
         #: One verdict per household member, eligible or not, in household order.
-        self.member_verdicts: list[MemberEligibility] = []
+        self.eligible_members: list[MemberEligibility] = []
         self.household_value: int = 0
         #: Who the benefit is paid for; reported to the results API so the frontend can
         #: show the household rather than the members as the eligible party.
@@ -70,7 +70,7 @@ class Eligibility:
         """
         Store a members eligibility
         """
-        self.member_verdicts.append(member_eligibility)
+        self.eligible_members.append(member_eligibility)
 
     @property
     def value(self) -> int:
@@ -79,7 +79,7 @@ class Eligibility:
         """
         total = self.household_value
 
-        for member in self.member_verdicts:
+        for member in self.eligible_members:
             total += member.value
 
         return total
@@ -204,7 +204,7 @@ class ProgramCalculator:
         if e.payment_unit == HOUSEHOLD:
             return
 
-        for member_eligibility in e.member_verdicts:
+        for member_eligibility in e.eligible_members:
             if member_eligibility.eligible:
                 member_value = self.member_value(member_eligibility.member)
                 member_eligibility.value = member_value
@@ -331,7 +331,7 @@ class ProgramCalculator:
         if program_code not in self.data:
             raise UpstreamAbsentError(program_code)
 
-        for member_eligibility in self.data[program_code].member_verdicts:
+        for member_eligibility in self.data[program_code].eligible_members:
             if member_eligibility.member.id == member.id:
                 return member_eligibility.eligible
 

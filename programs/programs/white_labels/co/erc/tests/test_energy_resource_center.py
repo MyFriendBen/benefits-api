@@ -146,7 +146,7 @@ class TestEnergyResourceCenterEligible(TestCase):
     def test_every_member_is_recorded_on_the_eligibility(self):
         members = [make_member(age=30), make_member(age=5)]
         calc = make_calculator(household_size=2, household_income=1000, members=members)
-        self.assertEqual(len(calc.eligible().member_verdicts), 2)
+        self.assertEqual(len(calc.eligible().eligible_members), 2)
 
 
 class TestEnergyResourceCenterValue(TestCase):
@@ -160,7 +160,7 @@ class TestEnergyResourceCenterValue(TestCase):
         members = [make_member(age=30), make_member(age=5)]
         calc = make_calculator(household_size=2, household_income=1000, members=members)
         e = calc.calc()
-        self.assertTrue(all(me.value == 0 for me in e.member_verdicts))
+        self.assertTrue(all(me.value == 0 for me in e.eligible_members))
 
     def test_ineligible_household_is_worth_nothing(self):
         calc = make_calculator(household_size=1, household_income=9999)

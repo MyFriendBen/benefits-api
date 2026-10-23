@@ -311,7 +311,7 @@ class TestSpecScenarios(MoTwhaTestCase):
         self.assertEqual(result.contribution("sSDisability"), Decimal(3_325))
         self.assertEqual(result.disregards["ssdi"], Decimal(50))
 
-    def test_scenario_14_two_member_verdicts_each_receive_spouse_disregard(self):
+    def test_scenario_14_two_eligible_members_each_receive_spouse_disregard(self):
         """Both spouses are disabled workers and both independently qualify — $24,400.
 
         The intermediate proves the disregard is not conditioned on the spouse's disability

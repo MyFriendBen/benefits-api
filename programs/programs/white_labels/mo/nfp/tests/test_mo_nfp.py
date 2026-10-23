@@ -33,7 +33,7 @@ class TestMoNurseFamilyPartnership(CustomCalculatorTestCase):
     default_county = "St. Louis County"
 
     def eligible_member_count(self, eligibility):
-        return sum(1 for m in eligibility.member_verdicts if m.eligible)
+        return sum(1 for m in eligibility.eligible_members if m.eligible)
 
     # ------------------------------------------------------------------ #
     # Class attributes / registration
@@ -248,7 +248,7 @@ class TestMoNurseFamilyPartnership(CustomCalculatorTestCase):
         self.add_member(screen, relationship="spouse", age=32)
 
         eligibility = self.make_calculator(screen).calc()
-        values = {m.member.relationship: m.value for m in eligibility.member_verdicts}
+        values = {m.member.relationship: m.value for m in eligibility.eligible_members}
         self.assertEqual(values["headOfHousehold"], EXPECTED_VALUE)
         self.assertEqual(values["spouse"], 0)
 

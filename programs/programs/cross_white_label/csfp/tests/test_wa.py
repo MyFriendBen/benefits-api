@@ -113,7 +113,7 @@ class TestWaCsfpValue(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 600)
 
-    def test_no_member_verdicts_value_0(self):
+    def test_no_eligible_members_value_0(self):
         # No member is 60+, so household is ineligible
         young = make_member(age=45)
         calc = make_calculator(yearly_income=10_000, members=[young])

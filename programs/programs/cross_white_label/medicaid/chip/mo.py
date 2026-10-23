@@ -83,7 +83,7 @@ class MoChip(PolicyEngineMembersCalculator):
         # expressible: it is charged once, and capped so the netted total never falls below
         # min_value. Written as a negative household value rather than by adjusting the
         # children's values, so each child keeps the gross value PE gave them.
-        gross = sum(member.value for member in e.member_verdicts if member.eligible)
+        gross = sum(member.value for member in e.eligible_members if member.eligible)
 
         if gross <= 0:
             return

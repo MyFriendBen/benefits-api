@@ -18,7 +18,7 @@ class TestNcEmergencyMedicaid(CustomCalculatorTestCase):
 
         e = self.calculate(screen, data={"nc_medicaid": eligible_result()})
 
-        return e, sorted(m.member.calc_age() for m in e.member_verdicts if m.eligible)
+        return e, sorted(m.member.calc_age() for m in e.eligible_members if m.eligible)
 
     def test_max_age_is_inclusive(self):
         """Adults are covered through age 64; Medicare starts at 65."""
