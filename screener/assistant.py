@@ -677,7 +677,7 @@ def _warning_messages(
     `energy_calculator`, `num_adults` — or the program itself (`_prior_tax_year` reads
     its configured year). `screen.missing_fields()` is pure screen data (no
     PolicyEngine), and `Eligibility()` takes no constructor args, so the only input we
-    cannot reproduce is `member_verdicts`, which no snapshot stores. Calculators that
+    cannot reproduce is `eligible_members`, which no snapshot stores. Calculators that
     read it declare `needs_full_eligibility` and are skipped loudly below.
 
     Because the gates read the screen as it is *now* while the program list comes from

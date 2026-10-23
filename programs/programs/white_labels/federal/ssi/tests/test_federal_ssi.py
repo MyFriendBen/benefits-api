@@ -61,7 +61,7 @@ class FederalSsiTestCase(CustomCalculatorTestCase):
 
     def assert_member(self, e: Eligibility, member: HouseholdMember, monthly: Optional[float]) -> None:
         """`member` is paid `monthly` a month, or is not eligible when `monthly` is None."""
-        verdict = next(m for m in e.member_verdicts if m.member.id == member.id)
+        verdict = next(m for m in e.eligible_members if m.member.id == member.id)
         if monthly is None:
             self.assertFalse(verdict.eligible)
             self.assertEqual(verdict.value, 0)

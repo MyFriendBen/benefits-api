@@ -82,8 +82,8 @@ class TestRegistration(FederalCtcTestCase):
 
         self.assert_eligible(e, 2_200)
         self.assertEqual(e.payment_unit, HOUSEHOLD)
-        self.assertEqual([m.eligible for m in e.member_verdicts], [False, True])
-        self.assertEqual([m.value for m in e.member_verdicts], [0, 0])
+        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
 
     def test_dependencies_are_what_the_tax_credit_apps_send(self):
         """The Colorado tax-credit apps send age, relationship and income only; requiring a

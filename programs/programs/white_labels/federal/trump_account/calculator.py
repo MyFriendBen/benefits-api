@@ -45,7 +45,7 @@ class TrumpAccount(ProgramCalculator):
         if not e.eligible:
             return
 
-        for member_eligibility in e.member_verdicts:
+        for member_eligibility in e.eligible_members:
             if not member_eligibility.eligible:
                 continue
             member_eligibility.value = self.pilot_contribution

@@ -39,7 +39,7 @@ class TestKsNurseFamilyPartnership(CustomCalculatorTestCase):
     default_county = "Shawnee County"
 
     def eligible_member_count(self, eligibility):
-        return sum(1 for m in eligibility.member_verdicts if m.eligible)
+        return sum(1 for m in eligibility.eligible_members if m.eligible)
 
     # ------------------------------------------------------------------ #
     # Class attributes / registration

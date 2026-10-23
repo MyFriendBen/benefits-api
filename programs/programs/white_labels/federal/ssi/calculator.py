@@ -127,7 +127,7 @@ class FederalSsi(ProgramCalculator):
         if not e.eligible:
             return
 
-        for member_eligibility in e.member_verdicts:
+        for member_eligibility in e.eligible_members:
             if member_eligibility.eligible:
                 monthly = self._verdict(member_eligibility.member).monthly_payment
                 member_eligibility.value = round(monthly * 12)

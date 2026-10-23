@@ -34,7 +34,7 @@ class FederalSsdiTestCase(CustomCalculatorTestCase):
     stores_age = False
 
     def member_value(self, e: Eligibility, member: HouseholdMember) -> int:
-        for member_eligibility in e.member_verdicts:
+        for member_eligibility in e.eligible_members:
             if member_eligibility.member.id == member.id:
                 return member_eligibility.value if member_eligibility.eligible else 0
         raise AssertionError(f"member {member.id} was not evaluated")

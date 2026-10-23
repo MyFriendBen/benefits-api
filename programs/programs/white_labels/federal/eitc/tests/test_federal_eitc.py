@@ -75,7 +75,7 @@ class TestRegistration(FederalEitcTestCase):
 
         self.assertTrue(e.eligible)
         self.assertEqual(e.payment_unit, HOUSEHOLD)
-        self.assertEqual([m.value for m in e.member_verdicts], [0, 0])
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
 
     def test_a_tax_year_with_no_parameters_uses_the_latest_and_reports_it(self):
         """A rollover the parameters weren't updated for must not raise: an exception from

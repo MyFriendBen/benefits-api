@@ -58,7 +58,7 @@ class WaHeadStart(ProgramCalculator):
         )
 
         # Foster care categorical — any age-eligible member regardless of income (§ 1302.12(c)(1)(iv))
-        has_foster_child = any(me.eligible and me.member.relationship == "fosterChild" for me in e.member_verdicts)
+        has_foster_child = any(me.eligible and me.member.relationship == "fosterChild" for me in e.eligible_members)
 
         # TANF, SSI, SNAP categorical eligibility per OHS interpretation (ACF-IM-HS-22-03)
         categorical = (

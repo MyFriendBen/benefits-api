@@ -114,11 +114,11 @@ class MfbHeadStart(ProgramCalculator, abstract=True):
             return
 
         # Foster care qualifies the foster child only, not their siblings.
-        for member_eligibility in e.member_verdicts:
+        for member_eligibility in e.eligible_members:
             if member_eligibility.member.relationship != "fosterChild":
                 member_eligibility.condition(False)
 
-        if not any(member_eligibility.eligible for member_eligibility in e.member_verdicts):
+        if not any(member_eligibility.eligible for member_eligibility in e.eligible_members):
             e.condition(False, messages.income(income, income_limit))
 
     def _countable_income(self) -> float:

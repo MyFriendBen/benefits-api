@@ -174,7 +174,7 @@ class EligibilityValueTests(TestCase):
         e.add_member_eligibility(eligible)
         e.add_member_eligibility(ineligible)
 
-        self.assertEqual(e.member_verdicts, [eligible, ineligible])
+        self.assertEqual(e.eligible_members, [eligible, ineligible])
 
 
 class EligibilityPaymentUnitTests(TestCase):
@@ -191,7 +191,7 @@ class EligibilityPaymentUnitTests(TestCase):
         e.add_member_eligibility(ineligible)
 
         self.assertEqual(e.payment_unit, HOUSEHOLD)
-        self.assertEqual(e.member_verdicts, [eligible, ineligible])
+        self.assertEqual(e.eligible_members, [eligible, ineligible])
 
 
 class ProgramCalculatorTestCase(TestCase):
@@ -226,7 +226,7 @@ class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
         e = self.calculator(Everyone).eligible()
 
         self.assertTrue(e.eligible)
-        self.assertEqual(len(e.member_verdicts), 2)
+        self.assertEqual(len(e.eligible_members), 2)
 
     def test_the_household_is_ineligible_when_no_member_qualifies(self):
         """A program with per-member rules needs at least one member to pass."""
@@ -247,7 +247,7 @@ class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
         e = self.calculator(OnlyChildren).eligible()
 
         self.assertTrue(e.eligible)
-        self.assertEqual([m.eligible for m in e.member_verdicts], [False, True])
+        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
 
     def test_household_eligible_runs_after_the_members(self):
         """The ordering is load-bearing: a household rule may read member results."""
@@ -258,13 +258,13 @@ class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
                 e.condition(e.member.relationship == "child")
 
             def household_eligible(self, e: Eligibility):
-                seen.extend(m.eligible for m in e.member_verdicts)
+                seen.extend(m.eligible for m in e.eligible_members)
 
         self.calculator(CountsEligibleMembers).eligible()
 
         self.assertEqual(seen, [False, True])
 
-    def test_a_failing_household_rule_overrides_member_verdicts(self):
+    def test_a_failing_household_rule_overrides_eligible_members(self):
         class HouseholdSaysNo(ProgramCalculator):
             def household_eligible(self, e: Eligibility):
                 e.condition(False, "household rule")
@@ -304,7 +304,7 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
         e = self.calculator(HouseholdChildrenOnly).eligible()
 
         self.assertTrue(e.eligible)
-        self.assertEqual([m.eligible for m in e.member_verdicts], [False, True])
+        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
 
     def test_a_member_rule_still_gates_the_household(self):
         """The unit changes who is paid, not what is checked: a household program that
@@ -326,7 +326,7 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
                 e.condition(e.member.relationship == "child")
 
             def household_eligible(self, e: Eligibility):
-                seen.extend(m.eligible for m in e.member_verdicts)
+                seen.extend(m.eligible for m in e.eligible_members)
 
         self.calculator(ReadsMembers).eligible()
 
@@ -340,7 +340,7 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
         calc.value(e)
 
         self.assertEqual(e.household_value, 1_000)
-        self.assertEqual([m.value for m in e.member_verdicts], [0, 0])
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
         self.assertEqual(e.value, 1_000)
 
 
@@ -376,7 +376,7 @@ class ProgramCalculatorValueTests(ProgramCalculatorTestCase):
         self.assertEqual(e.household_value, 0)
         self.assertEqual(e.value, 0)
 
-    def test_only_member_verdicts_are_paid(self):
+    def test_only_eligible_members_are_paid(self):
         class PayingChildrenOnly(ProgramCalculatorValueTests.Paying):
             def member_eligible(self, e: MemberEligibility):
                 e.condition(e.member.relationship == "child")
@@ -386,7 +386,7 @@ class ProgramCalculatorValueTests(ProgramCalculatorTestCase):
 
         calc.value(e)
 
-        self.assertEqual([m.value for m in e.member_verdicts], [0, 50])
+        self.assertEqual([m.value for m in e.eligible_members], [0, 50])
         self.assertEqual(e.value, 1_050)
 
 

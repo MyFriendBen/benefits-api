@@ -8,8 +8,8 @@ Eligibility requirements:
   4. Member is not pregnant, is 12 or older, and is the head of household or their spouse
 
 Notes:
-  - The income limit is sized with `household_size + len(e.member_verdicts)`, and
-    `member_verdicts` holds EVERY member rather than only the eligible ones, so the
+  - The income limit is sized with `household_size + len(e.eligible_members)`, and
+    `eligible_members` holds EVERY member rather than only the eligible ones, so the
     FPL lookup lands at roughly double the true household size. That is a known bug
     tracked separately; the tests below deliberately pin the current behaviour so the
     suite stays green, and are flagged where they do so.
@@ -161,7 +161,7 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
     """
     Yearly income must be strictly below 265% FPL, excluding cash assistance.
 
-    The FPL size used is `household_size + len(e.member_verdicts)`. `member_verdicts`
+    The FPL size used is `household_size + len(e.eligible_members)`. `eligible_members`
     contains every member, not just the eligible ones, so these boundaries are wider
     than the program's real limits. That is a known bug tracked separately; the
     assertions below pin current behaviour and must be updated when it is fixed.

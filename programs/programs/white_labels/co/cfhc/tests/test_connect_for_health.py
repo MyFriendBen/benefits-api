@@ -314,7 +314,7 @@ class TestConnectForHealthValue(TestCase):
         calc = make_calculator(household_size=2, household_income=20_000, members=members)
         self.assertEqual(calc.calc().value, 12_000)
 
-    def test_inmember_verdicts_add_no_value(self):
+    def test_ineligible_members_add_no_value(self):
         members = [make_member(member_id=1, none=True), make_member(member_id=2, medicaid=True)]
         calc = make_calculator(household_size=2, household_income=20_000, members=members)
         self.assertEqual(calc.calc().value, 6_000)

@@ -216,7 +216,7 @@ class TestSpecScenarios(SafesrTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 750)
         self.assertEqual(e.household_value, 750)
-        self.assertEqual([m.value for m in e.member_verdicts], [0, 0])
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
 
     def test_s12_adult_childs_income_pushes_the_household_over(self):
         # The only scenario turning on a non-claimant adult's income being
