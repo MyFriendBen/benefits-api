@@ -284,8 +284,14 @@ class TestScenario11SsiChildPayeeOnly(MoTanfScenarioTestCase):
 
     Unskipped by MFB-1693: HouseholdMember.is_dependent()'s qualifying-child path no longer
     tests income/support, so the SSI child stays in the main tax unit and PolicyEngine's
-    caretaker test sees its dependent child, returning the spec's $136/month."""
+    caretaker test sees its dependent child, returning the spec's $136/month.
 
+    Pinned separately from the rest of this module: the module's ``1.815.1`` pin is no longer
+    served (422 unsupported_version), and this scenario didn't exist as a passing cassette to
+    carry forward, so it's recorded fresh at the version current when MFB-1693 landed rather
+    than waiting on MFB-1846 to re-pin the whole file."""
+
+    pe_version = "2.53.1"
     screen_id = 13
 
     def test_payee_only_unit(self):
@@ -404,8 +410,11 @@ class TestScenario19ChildStudentEarningsExcluded(MoTanfScenarioTestCase):
 
     Unskipped by MFB-1693: the student child's own earnings no longer eject them from
     the qualifying-child path (student under 24 + eligible relationship is sufficient),
-    so they remain in the main tax unit and PolicyEngine returns the spec's $234/month."""
+    so they remain in the main tax unit and PolicyEngine returns the spec's $234/month.
 
+    Pinned separately from the rest of this module — see TestScenario11SsiChildPayeeOnly."""
+
+    pe_version = "2.53.1"
     screen_id = 21
 
     def test_student_child_earnings_excluded(self):
