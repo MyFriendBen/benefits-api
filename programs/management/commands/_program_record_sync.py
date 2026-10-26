@@ -55,8 +55,8 @@ CATEGORY_KEYS = frozenset({"external_name", "name", "icon", "description", "tax_
 # Program fields a record manages. A field the record leaves out is managed as empty, so a value
 # set only in the admin shows up as an admin edit. `external_name` is the exception: it is
 # managed only when the record sets it, since a missing one means "generate one". `active` is
-# never managed: switching a program on is a release decision made per environment, so a new
-# program is created switched off and an import never changes it, whatever the record says.
+# not a record field at all: switching a program on is a release decision made per environment
+# in the admin, so a new program is created switched off and no import changes it.
 PROGRAM_SCALAR_FIELDS = (
     "low_confidence",
     "show_on_current_benefits",
@@ -66,13 +66,11 @@ PROGRAM_SCALAR_FIELDS = (
     "base_program",
 )
 PROGRAM_OPTIONAL_FIELDS = ("external_name",)
-IGNORED_PROGRAM_FIELDS = ("active",)
 PROGRAM_PROGRAM_LISTS = ("required_programs", "excludes_programs")
 PROGRAM_KEYS = frozenset(
     {"name_abbreviated", "year", "legal_status_required"}
     | set(PROGRAM_SCALAR_FIELDS)
     | set(PROGRAM_OPTIONAL_FIELDS)
-    | set(IGNORED_PROGRAM_FIELDS)
     | set(PROGRAM_PROGRAM_LISTS)
     | set(Program.objects.translated_fields)
 )
@@ -161,7 +159,11 @@ def validate_record(record: Any) -> list[str]:
         problems.append("program_category has no 'external_name' (use null for a program with no category)")
 
     program = record["program"]
-    problems += [f"unknown program key '{key}'" for key in sorted(set(program) - PROGRAM_KEYS)]
+    if "active" in program:
+        problems.append(
+            "program.active isn't a record field: a program is switched on or off in the admin, per environment"
+        )
+    problems += [f"unknown program key '{key}'" for key in sorted(set(program) - PROGRAM_KEYS - {"active"})]
     if "name_abbreviated" not in program:
         problems.append("program has no 'name_abbreviated'")
     if "base_program" in program and program["base_program"] not in BaseProgram.values:
@@ -446,9 +448,6 @@ class RecordSync:
                     baseline,
                     fresh,
                 )
-
-        if "active" in data:
-            plan.notes.append("program.active is in the record and ignored: imports never switch a program on or off.")
 
         year = data.get("year")
         self._add(

@@ -252,21 +252,14 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertTrue(self.program().active)
         self.assertNotIn("program.active", output)
 
-    def test_a_record_that_sets_active_is_ignored(self) -> None:
-        """Switching a program on is a release decision; no record makes it."""
+    def test_a_record_that_sets_active_fails(self) -> None:
+        """Switching a program on is a release decision made in the admin, so a record can't carry it."""
         self.record["program"]["active"] = True
 
         output = self.import_record()
 
-        self.assertFalse(self.program().active, "a new program is created switched off whatever the record says")
-        self.assertIn("program.active is in the record and ignored", output)
-
-        Program.objects.filter(pk=self.program().pk).update(active=True)
-        self.record["program"]["active"] = False
-        self.write(self.record)
-        self.run_import()
-
-        self.assertTrue(self.program().active, "an update never switches a program off either")
+        self.assertIn("program.active isn't a record field", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
 
     # ------------------------------------------------------------------ links
 
