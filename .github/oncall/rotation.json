@@ -3,8 +3,9 @@
   "members": [
     { "name": "David", "slack_id": "U0B2PB87YPR" },
     { "name": "Elliott", "slack_id": "U0ANHPCQRAS" },
-    { "name": "Caton", "slack_id": "U09HN2DMXEZ" }
+    { "name": "Caton", "slack_id": "U09HN2DMXEZ" },
+    { "name": "Elana", "slack_id": "U0BUR0VA6C8" }
   ],
-  "anchor_monday": "2026-06-01",
+  "anchor_monday": "2026-10-26",
   "_anchor_comment": "A Monday (YYYY-MM-DD) used as week 0. The person at members[0] is on-call the week of anchor_monday; the rotation advances by one each subsequent week. Keep this fixed once set."
 }
