@@ -30,35 +30,32 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     Program = apps.get_model("programs", "Program")
     CurrentBenefit = apps.get_model("screener", "CurrentBenefit")
 
-    state_rows = [
-        row
+    state_program_ids = [
+        program.id
         for white_label_code, name_abbreviated in STATE_FEDERAL_CDCC_ROWS
-        for row in CurrentBenefit.objects.filter(
-            program__white_label__code=white_label_code, program__name_abbreviated=name_abbreviated
-        )
+        for program in Program.objects.filter(white_label__code=white_label_code, name_abbreviated=name_abbreviated)
     ]
+    state_rows = CurrentBenefit.objects.filter(program_id__in=state_program_ids)
 
     federal = Program.objects.filter(white_label__code=FEDERAL_ROW[0], name_abbreviated=FEDERAL_ROW[1]).first()
     if federal is None:
-        if state_rows:
+        waiting = state_rows.count()
+        if waiting:
             raise RuntimeError(
-                f"federal/federal_cdcc must be imported before this migration runs: {len(state_rows)} "
+                f"federal/federal_cdcc must be imported before this migration runs: {waiting} "
                 "current-benefit rows on state CDCC rows are waiting to move (see PR #1837 Deployment step 2)"
             )
         logger.warning("federal/federal_cdcc does not exist and no current-benefit rows wait on it; nothing to move.")
         return
 
-    for row in state_rows:
-        if CurrentBenefit.objects.filter(screen_id=row.screen_id, program=federal).exists():
-            row.delete()
-        else:
-            row.program = federal
-            row.save(update_fields=["program"])
+    state_rows.filter(screen_id__in=CurrentBenefit.objects.filter(program=federal).values("screen_id")).delete()
+    # A screen belongs to one white label, so it holds at most one of the state rows.
+    state_rows.update(program=federal)
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0196_move_state_ssi_current_benefits"),
+        ("programs", "0197_navigator_email_no_auto"),
         ("screener", "0150_backfill_screen_current_benefits"),
     ]
 
