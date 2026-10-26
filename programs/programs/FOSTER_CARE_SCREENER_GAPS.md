@@ -109,7 +109,7 @@ care, asked about an existing household member with `relationship == "fosterChil
   from the dependent definition, but MFB's single `fosterChild` value conflates foster placement with
   kinship care. Resolved in the widening direction today, overstating the
   subsidy for a genuine foster placement.
-- `cross_white_label/eitc/specs/wa.md` criterion 9 — the IRS "eligible foster child" test requires formal
+- Federal EITC (program-ops `programs/white_labels/federal/eitc/federal_eitc_spec.md`, `child_placement`) — the IRS "eligible foster child" test requires formal
   placement by an agency, tribe, or court order. Informal arrangements do not qualify, producing false
   positives.
 

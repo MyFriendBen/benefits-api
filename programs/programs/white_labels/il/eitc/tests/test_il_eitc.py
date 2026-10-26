@@ -1,9 +1,9 @@
 """IL tests."""
 
-from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.white_labels.il.eitc.calculator import Ileitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from django.test import TestCase
+import programs.framework.pe_dependencies as dependency
 from programs.framework.pe_dependencies import tax as tax_dependency
 
 
@@ -19,8 +19,8 @@ class TestIleitc(TestCase):
         self.assertEqual(Ileitc.pe_name, "il_eitc")
 
     def test_pe_inputs_includes_federal_eitc_inputs(self):
-        """Test that federal EITC inputs are included."""
-        for parent_input in Eitc.pe_inputs:
+        """Test that `eitc_inputs` are included."""
+        for parent_input in dependency.eitc_inputs:
             self.assertIn(parent_input, Ileitc.pe_inputs)
 
     def test_pe_outputs_includes_ileitc(self):
