@@ -2,10 +2,6 @@ from .base import TaxUnit
 from .member import TaxUnitHeadDependency, TaxUnitSpouseDependency
 
 
-class Eitc(TaxUnit):
-    field = "eitc"
-
-
 class Coeitc(TaxUnit):
     field = "co_eitc"
 

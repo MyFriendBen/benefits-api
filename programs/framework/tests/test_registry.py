@@ -71,7 +71,7 @@ class WalkClassesTests(SimpleTestCase):
         self.assertGreater(len(pe), 50, "no PolicyEngine calculators discovered")
 
     def test_a_class_is_yielded_once_even_when_re_exported(self):
-        """``Eitc`` is imported by several state modules but defined in one."""
+        """``Snap`` is imported by several state modules but defined in one."""
         found = list(_walk_classes("programs.programs", ProgramCalculator))
 
         self.assertEqual(len(found), len(set(found)), "a class was yielded more than once")
