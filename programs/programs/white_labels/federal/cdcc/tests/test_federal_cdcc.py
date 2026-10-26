@@ -383,3 +383,29 @@ class TestScenarios(FederalCdccTestCase):
         self.care(head, 300)
 
         self.assert_eligible(self.calculate(screen), 990)
+
+    def test_scenario_34_child_support_left_out_of_income(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 14_000, "childSupport": 12_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 1_500)
+
+    def test_scenario_35_head_of_household_is_a_full_time_student_with_no_earnings(self):
+        screen = self.make_screen(household_size=3)
+        head = self.member(screen, "headOfHousehold", 30, student=True, student_full_time=True)
+        self.member(screen, "spouse", 32, income={"wages": 40_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 1_110)
+
+    def test_scenario_36_both_spouses_are_full_time_students_with_no_earnings(self):
+        screen = self.make_screen(household_size=3)
+        head = self.member(screen, "headOfHousehold", 30, student=True, student_full_time=True)
+        self.member(screen, "spouse", 29, student=True, student_full_time=True)
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_ineligible(self.calculate(screen))
