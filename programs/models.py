@@ -1487,7 +1487,9 @@ class NavigatorManager(models.Manager):
         "assistance_link",
         "description",
     )
-    no_auto_fields = ("assistance_link",)
+    # An email is an address, not text: machine translation turns it into a lookalike
+    # that reaches the wrong inbox (MFB-2292).
+    no_auto_fields = ("assistance_link", "email")
 
     def new_navigator(self, white_label: str, name: str, phone_number: Optional[str] = None):
         translations = {}

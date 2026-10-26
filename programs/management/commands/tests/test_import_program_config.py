@@ -22,6 +22,7 @@ from programs.models import (
 )
 from screener.models import WhiteLabel
 from configuration.models import Configuration
+from integrations.clients.google_translate import Translate as RealTranslate
 from translations.models import Translation
 
 
@@ -386,6 +387,28 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             call_command("import_program_config", config_file, stdout=out)
             self.assertIn("skipping navigator county validation", out.getvalue())
             self.assertTrue(Navigator.objects.filter(external_name="test_nav").exists())
+        finally:
+            Path(config_file).unlink()
+
+    def test_navigator_email_is_copied_not_translated(self):
+        """An email is an address, not text: every language gets the English value (MFB-2292)."""
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", [])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            # setUp mocks the whole Translate class, which leaves `languages` empty and
+            # turns the no_auto copy into a no-op.
+            with patch(
+                "programs.management.commands.import_program_config.Translate.languages", RealTranslate.languages
+            ):
+                call_command("import_program_config", config_file, stdout=StringIO())
+
+            email = Navigator.objects.get(external_name="test_nav").email
+            self.assertTrue(email.no_auto)
+            texts = {row.language_code: row.text for row in email.translations.all()}
+            self.assertGreater(len(texts), 1)
+            self.assertEqual(set(texts.values()), {"help@example.org"}, texts)
         finally:
             Path(config_file).unlink()
 
