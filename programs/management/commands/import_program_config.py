@@ -1265,8 +1265,8 @@ class Command(BaseCommand):
         This method updates those existing translations with the provided English text
         and auto-translates to all supported languages.
 
-        Note: assistance_link is marked as no_auto, so it will be copied to all languages
-        without machine translation.
+        Note: assistance_link and email are marked as no_auto, so they will be copied to all
+        languages without machine translation.
         """
         translated_fields = Navigator.objects.translated_fields
         self._bulk_update_entity_translations(navigator, translations, "navigator", translated_fields)
