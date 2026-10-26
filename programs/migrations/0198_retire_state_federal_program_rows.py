@@ -33,6 +33,50 @@ MOVES = {
     ),
 }
 
+# The state copies of the federal CTC and SSI, retired the same way; their current benefits
+# already moved in 0195 and 0196.
+OTHER_STATE_ROWS = (
+    ("co", "ctc"),
+    ("co_tax_calculator", "ctc"),
+    ("il", "ctc"),
+    ("ma", "ctc"),
+    ("nc", "ctc"),
+    ("ks", "ks_ctc"),
+    ("mo", "mo_ctc"),
+    ("tx", "tx_ctc"),
+    ("wa", "wa_ctc"),
+    ("co", "ssi"),
+    ("il", "ssi"),
+    ("ma", "ssi"),
+    ("nc", "ssi"),
+    ("cesn", "cesn_ssi"),
+    ("ks", "ks_ssi"),
+    ("mo", "mo_ssi"),
+    ("tx", "tx_ssi"),
+    ("wa", "wa_ssi"),
+)
+
+
+def hide_from_has_benefits_step(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
+    """Take every retired state row off the has-benefits step.
+
+    The step lists active rows with `show_in_has_benefits_step`, so these are hidden today
+    only because they are switched off. Clearing the flag keeps the federal row the only
+    tile for its program even if a state row is switched back on.
+    """
+    Program = apps.get_model("programs", "Program")
+
+    pairs = [pair for state_rows in MOVES.values() for pair in state_rows] + list(OTHER_STATE_ROWS)
+    hidden = 0
+    for white_label_code, name_abbreviated in pairs:
+        hidden += Program.objects.filter(
+            white_label__code=white_label_code,
+            name_abbreviated=name_abbreviated,
+            show_in_has_benefits_step=True,
+        ).update(show_in_has_benefits_step=False)
+
+    print(f"  took {hidden} retired state rows off the has-benefits step")
+
 
 def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     """Move every CurrentBenefit row on a state EITC or SSDI row onto its federal row.
@@ -63,7 +107,9 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
             if waiting:
                 missing.append(f"{federal_code}/{federal_name} ({waiting} rows waiting)")
             else:
-                print(f"  {federal_code}/{federal_name} does not exist in this environment and no state rows hold current benefits")
+                print(
+                    f"  {federal_code}/{federal_name} does not exist in this environment and no state rows hold current benefits"
+                )
             continue
         plans.append((federal_name, federal, state_rows))
 
@@ -108,4 +154,5 @@ class Migration(migrations.Migration):
         # No reverse: the state rows are off, so a row pointing at one would mark a benefit
         # nothing can show again.
         migrations.RunPython(forwards, migrations.RunPython.noop),
+        migrations.RunPython(hide_from_has_benefits_step, migrations.RunPython.noop),
     ]
