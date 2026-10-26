@@ -16,14 +16,8 @@ from unittest.mock import patch
 
 from programs.framework.base import Eligibility
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
-from programs.programs.white_labels.federal.ctc.calculator import (
-    CTC_YEARS,
-    HEAD_OF_HOUSEHOLD,
-    JOINT,
-    SINGLE,
-    FederalCtc,
-    income_tax,
-)
+from programs.programs.white_labels.federal.ctc.calculator import CTC_YEARS, FederalCtc
+from programs.programs.white_labels.federal.tax import HEAD_OF_HOUSEHOLD, JOINT, SINGLE, income_tax
 from screener.models import HouseholdMember, Screen
 
 TAX_YEAR = 2025

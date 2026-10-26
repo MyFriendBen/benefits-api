@@ -12,7 +12,14 @@ from typing import Optional
 from sentry_sdk import capture_message
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.white_labels.federal.ctc.calculator import FederalCtc
+from programs.programs.white_labels.federal.tax import (
+    HEAD_OF_HOUSEHOLD,
+    JOINT,
+    UNTAXED_INCOME_TYPES,
+    Bracket,
+    bracket_tax,
+    brackets,
+)
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 
 
@@ -36,9 +43,14 @@ class CdccYear:
     expense_limit: tuple[int, int]
     # Monthly earned income a student or disabled spouse is deemed to have, same indexing.
     deemed_spouse_monthly_income: tuple[int, int]
+    # Spec section 7 `tax_2026` and its terms, keyed by filing status.
+    standard_deduction: dict[str, int]
+    extra_deduction: dict[str, int]
+    senior_age: int
+    tax_brackets: dict[str, tuple[Bracket, ...]]
 
 
-# Percentage schedule and dollar limits, spec section 7; deemed spouse income, spec section 4 `earned_income`.
+# Percentage schedule, dollar limits and tax, spec section 7; deemed spouse income, spec section 4 `earned_income`.
 CDCC_YEARS: dict[int, CdccYear] = {
     2026: CdccYear(
         top_rate=50,
@@ -50,6 +62,13 @@ CDCC_YEARS: dict[int, CdccYear] = {
         second_step=(2_000, 4_000),
         expense_limit=(3_000, 6_000),
         deemed_spouse_monthly_income=(250, 500),
+        standard_deduction={JOINT: 32_200, HEAD_OF_HOUSEHOLD: 24_150},
+        extra_deduction={JOINT: 1_650, HEAD_OF_HOUSEHOLD: 2_050},
+        senior_age=65,
+        tax_brackets={
+            JOINT: brackets(24_800, 100_800, 211_400, 403_550, 512_450, 768_700),
+            HEAD_OF_HOUSEHOLD: brackets(17_700, 67_450, 105_700, 201_750, 256_200, 640_600),
+        },
     ),
 }
 
@@ -76,9 +95,10 @@ class FederalCdcc(ProgramCalculator):
     qualifying individual is a ``DEPENDENT_ELIGIBLE_RELATIONSHIPS`` member under the age limit
     today or with any disability flag, or a ``spouse`` with one; care expenses are the
     ``childCare`` and ``dependentCare`` types; earned income is the ``earned`` income group.
-    Deviations: filers' income less the federal CTC's untaxed types stands in for AGI; a
-    disability flag for incapable of self-care; deemed income runs all twelve months, for one
-    filer; no tax-owed cap; ages are today's.
+    Deviations: filers' income less the untaxed types stands in for AGI; a disability flag
+    for incapable of self-care; deemed income runs all twelve months, for one filer; tax owed
+    is the rate tables applied after the standard deduction, filing jointly with a ``spouse``
+    member and as head of household otherwise; ages are today's.
     Residency, custody, provider, schooling and employer-benefit rules are not evaluated.
     Missing disability or student answers read as no, so age-only screens still see the credit.
     """
@@ -87,8 +107,8 @@ class FederalCdcc(ProgramCalculator):
 
     qualifying_child_age_limit = 13
     care_expense_types = ("childCare", "dependentCare")
-    # Spec section 7 `agi`; shared with the federal CTC so both credits see the same income.
-    tax_exempt_income_types = FederalCtc.tax_exempt_income_types
+    # Spec section 7 `agi`.
+    tax_exempt_income_types = UNTAXED_INCOME_TYPES
 
     dependencies = [
         "age",
@@ -110,6 +130,8 @@ class FederalCdcc(ProgramCalculator):
         e.condition(self._care_expenses > 0)
         # spec section 4 `earned_income`
         e.condition(all(self._earned_income(filer) > 0 for filer in self._filers))
+        # spec section 4 `tax_liability`
+        e.condition(self._income_tax > 0)
 
     def household_value(self) -> int:
         """Spec section 7 Benefit Value, carried on the household; members carry no value."""
@@ -119,7 +141,7 @@ class FederalCdcc(ProgramCalculator):
         lowest_earned_income = min(self._earned_income(filer) for filer in self._filers)
 
         base = min(self._care_expenses, expense_limit, lowest_earned_income)
-        credit = Decimal(percentage) * Decimal(str(base)) / 100
+        credit = min(Decimal(percentage) * Decimal(str(base)) / 100, self._income_tax)
 
         return int(credit.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
@@ -160,6 +182,21 @@ class FederalCdcc(ProgramCalculator):
     @cached_property
     def _agi(self) -> float:
         return sum(filer.calc_gross_income("yearly", ["all"], self.tax_exempt_income_types) for filer in self._filers)
+
+    @cached_property
+    def _income_tax(self) -> Decimal:
+        """Spec section 7 `tax_2026`."""
+        params = self._params
+        status = JOINT if self._is_joint else HEAD_OF_HOUSEHOLD
+        extra_boxes = sum(int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers)
+        deduction = params.standard_deduction[status] + params.extra_deduction[status] * extra_boxes
+        taxable_income = max(Decimal(str(self._agi)) - deduction, Decimal(0))
+
+        return bracket_tax(taxable_income, params.tax_brackets[status])
+
+    def _is_senior(self, filer: HouseholdMember) -> bool:
+        age = filer.calc_age()
+        return age is not None and age >= self._params.senior_age
 
     @cached_property
     def _care_expenses(self) -> float:

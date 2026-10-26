@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from functools import cached_property
 from math import ceil
 from typing import Optional
@@ -7,14 +7,16 @@ from typing import Optional
 from sentry_sdk import capture_message
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
+from programs.programs.white_labels.federal.tax import (
+    HEAD_OF_HOUSEHOLD,
+    JOINT,
+    SINGLE,
+    UNTAXED_INCOME_TYPES,
+    Bracket,
+    brackets,
+    income_tax,
+)
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
-
-JOINT = "joint"
-HEAD_OF_HOUSEHOLD = "head_of_household"
-SINGLE = "single"
-
-#: A tax bracket: the taxable income it runs up to (None for the top bracket) and its rate.
-Bracket = tuple[Optional[int], Decimal]
 
 
 @dataclass(frozen=True)
@@ -37,12 +39,6 @@ class CtcYear:
     tax_brackets: dict[str, tuple[Bracket, ...]]
 
 
-def _brackets(*tops: int) -> tuple[Bracket, ...]:
-    """The bracket schedule from the tops of all but the last bracket (spec section 7, tax)."""
-    rates = ("0.10", "0.12", "0.22", "0.24", "0.32", "0.35")
-    return tuple((top, Decimal(rate)) for top, rate in zip(tops, rates)) + ((None, Decimal("0.37")),)
-
-
 # Each tax year's figures, as spec section 7 states them.
 CTC_YEARS: dict[int, CtcYear] = {
     2025: CtcYear(
@@ -58,56 +54,12 @@ CTC_YEARS: dict[int, CtcYear] = {
         extra_deduction={JOINT: 1_600, HEAD_OF_HOUSEHOLD: 2_000, SINGLE: 2_000},
         senior_age=65,
         tax_brackets={
-            JOINT: _brackets(23_850, 96_950, 206_700, 394_600, 501_050, 751_600),
-            HEAD_OF_HOUSEHOLD: _brackets(17_000, 64_850, 103_350, 197_300, 250_500, 626_350),
-            SINGLE: _brackets(11_925, 48_475, 103_350, 197_300, 250_525, 626_350),
+            JOINT: brackets(23_850, 96_950, 206_700, 394_600, 501_050, 751_600),
+            HEAD_OF_HOUSEHOLD: brackets(17_000, 64_850, 103_350, 197_300, 250_500, 626_350),
+            SINGLE: brackets(11_925, 48_475, 103_350, 197_300, 250_525, 626_350),
         },
     ),
 }
-
-#: Taxable income from which the Tax Computation Worksheet replaces the Tax Table (spec section 7, tax).
-TAX_TABLE_CEILING = 100_000
-
-
-def bracket_tax(amount: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
-    """Tax from the bracket schedule to the cent, as the Tax Computation Worksheet figures it (spec section 7)."""
-    tax = Decimal(0)
-    lower = Decimal(0)
-    for top, rate in brackets:
-        upper = amount if top is None else min(amount, Decimal(top))
-        if upper <= lower:
-            break
-        tax += (upper - lower) * rate
-        lower = upper
-
-    return tax
-
-
-def tax_table_row(amount: Decimal) -> tuple[int, int]:
-    """The Tax Table row holding ``amount`` (spec section 7, tax)."""
-    if amount < 5:
-        return 0, 5
-    if amount < 15:
-        return 5, 15
-    if amount < 25:
-        return 15, 25
-
-    width = 25 if amount < 3_000 else 50
-    low = int(amount) // width * width
-    return low, low + width
-
-
-def income_tax(taxable_income: Decimal, brackets: tuple[Bracket, ...]) -> Decimal:
-    """Income tax before credits: Tax Table rows priced at their midpoint below the ceiling, the
-    brackets exactly above it (spec section 7, tax)."""
-    if taxable_income <= 0:
-        return Decimal(0)
-
-    if taxable_income < TAX_TABLE_CEILING:
-        low, high = tax_table_row(taxable_income)
-        return bracket_tax(Decimal(low + high) / 2, brackets).quantize(Decimal(1), rounding=ROUND_HALF_UP)
-
-    return bracket_tax(taxable_income, brackets)
 
 
 class FederalCtc(ProgramCalculator):
@@ -138,23 +90,10 @@ class FederalCtc(ProgramCalculator):
     ctc_child_age_limit = 17
     child_age_limit = 19
     student_age_limit = 24
-    # The never-taxed types, plus every Social Security type by approximation (spec section 7):
-    # left out of the filers' income and of a relative's gross income (section 5
-    # `odc_relative_gross_income`). Where the approximation misses, the estimated tax cap is
-    # lower, never the credit higher.
-    tax_exempt_income_types = [
-        "sSI",
-        "cashAssistance",
-        "cashAssistanceOther",
-        "childSupport",
-        "gifts",
-        "workersComp",
-        "veteran",
-        "sSDisability",
-        "sSSurvivor",
-        "sSRetirement",
-        "sSDependent",
-    ]
+    # Spec section 7: left out of the filers' income and of a relative's gross income (section 5
+    # `odc_relative_gross_income`). Where the Social Security approximation misses, the estimated
+    # tax cap is lower, never the credit higher.
+    tax_exempt_income_types = UNTAXED_INCOME_TYPES
 
     dependencies = ["age", "relationship", "income_amount", "income_frequency", "income_type"]
 

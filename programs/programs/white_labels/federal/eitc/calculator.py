@@ -6,6 +6,7 @@ from typing import Optional
 from sentry_sdk import capture_message
 
 from programs.framework.base import Eligibility, ProgramCalculator
+from programs.programs.white_labels.federal.tax import UNTAXED_INCOME_TYPES
 from screener.models import HouseholdMember
 
 
@@ -142,19 +143,7 @@ class FederalEitc(ProgramCalculator):
     max_counted_children = 3
 
     investment_income_types = ["investment", "rental", "boarder"]
-    agi_excluded_income_types = [
-        "sSI",
-        "childSupport",
-        "gifts",
-        "workersComp",
-        "cashAssistance",
-        "cashAssistanceOther",
-        "sSDisability",
-        "sSRetirement",
-        "sSSurvivor",
-        "sSDependent",
-        "veteran",
-    ]
+    agi_excluded_income_types = UNTAXED_INCOME_TYPES
 
     dependencies = ["age", "relationship", "income_amount", "income_frequency", "income_type"]
 
