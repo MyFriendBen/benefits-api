@@ -469,3 +469,46 @@ class RecordSyncTestCase(TestCase):
         program = Program.objects.new_program(white_label="co", name_abbreviated="co_blank")
 
         self.assertEqual(self.english(program.estimated_decision_time), "")
+
+
+class LoudFailureTestCase(RecordSyncTestCase):
+    """A record that can't import fails where it's written, on a dry run, not later in an environment."""
+
+    def test_a_single_file_dry_run_rejects_a_partial_entry(self) -> None:
+        self.record["navigators"][0] = {"external_name": f"{PROGRAM}_nav_a", "description": "Only a description"}
+        path = self.write(self.record)
+
+        with self.assertRaisesMessage(CommandError, "is a partial entry, missing name, email, assistance_link"):
+            call_command("import_program_config", str(path), dry_run=True, stdout=io.StringIO())
+
+    def test_a_dry_run_of_a_new_navigator_without_its_fields_fails(self) -> None:
+        """The old configs get the check too: a navigator the import would create needs its fields."""
+        config = make_record()
+        del config["navigators"][0]["email"]
+        path = self.data_dir / f"{PROGRAM}_initial_config.json"
+        path.write_text(json.dumps(config), encoding="utf-8")
+
+        with self.assertRaisesMessage(
+            CommandError, f"navigators[0] ({PROGRAM}_nav_a) doesn't exist yet and has no email"
+        ):
+            call_command("import_program_config", str(path), dry_run=True, stdout=io.StringIO())
+
+    def test_a_dry_run_lets_a_missing_field_through_when_the_navigator_exists(self) -> None:
+        """Naming an existing row by external_name alone is a reference; nothing is missing."""
+        navigator = Navigator.objects.new_navigator(white_label="co", name=f"{PROGRAM}_nav_a")
+        navigator.external_name = f"{PROGRAM}_nav_a"
+        navigator.save()
+        config = make_record()
+        config["navigators"][0] = {"external_name": f"{PROGRAM}_nav_a"}
+        path = self.data_dir / f"{PROGRAM}_initial_config.json"
+        path.write_text(json.dumps(config), encoding="utf-8")
+
+        call_command("import_program_config", str(path), dry_run=True, stdout=io.StringIO())
+
+    def test_failures_are_repeated_at_the_end_of_the_run(self) -> None:
+        self.record["navigators"][0] = {"external_name": f"{PROGRAM}_nav_a", "description": "Only a description"}
+
+        output = self.import_record()
+
+        tail = output[output.rindex("need fixing before they import:") :]
+        self.assertIn(f"✗ {PROGRAM}_program_record.json: navigators[0]", tail)

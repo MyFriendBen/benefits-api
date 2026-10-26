@@ -55,6 +55,8 @@ class ImportResults:
     records_current: int = 0
     admin_edits_kept: int = 0
     conflicts: int = 0
+    # (file name, reason) for every config that failed, repeated at the end of the run.
+    failures: list[tuple[str, str]] = field(default_factory=list)
 
 
 class Command(BaseCommand):
@@ -539,11 +541,13 @@ class Command(BaseCommand):
                     )
                 else:
                     results.failed += 1
+                    results.failures.append((config_file.name, result.get("error", "Unknown error")))
                     self.stdout.write(
                         self.style.ERROR(f"✗ Failed: {config_file.name} - {result.get('error', 'Unknown error')}")
                     )
             except Exception as e:
                 results.failed += 1
+                results.failures.append((config_file.name, str(e)))
                 self.stdout.write(self.style.ERROR(f"✗ Error importing {config_file.name}: {str(e)}"))
 
         return results
@@ -682,6 +686,7 @@ class Command(BaseCommand):
 
     def _record_failed(self, results: ImportResults, record_file: Path, error: str) -> None:
         results.failed += 1
+        results.failures.append((record_file.name, error))
         self.stdout.write(self.style.ERROR(f"✗ Failed: {record_file.name} - {error}"))
 
     def _display_final_summary(self, results: ImportResults, dry_run: bool = False) -> None:
@@ -715,6 +720,14 @@ class Command(BaseCommand):
             # An unexpected entity creation is the signal to stop and look before applying,
             # so it never gets to hide in a wall of green.
             self.stdout.write(self.style.WARNING(create_line) if results.entities_to_create else create_line)
+
+        if results.failures:
+            # Repeated here, last, so a failure can't scroll away above a long run's output.
+            self.stdout.write(
+                self.style.ERROR(f"\n✗ {len(results.failures)} config(s) need fixing before they import:")
+            )
+            for name, error in results.failures:
+                self.stdout.write(self.style.ERROR(f"  ✗ {name}: {error}"))
 
         if results.partial_pass and (results.reconciled or results.already_current):
             self.stdout.write(

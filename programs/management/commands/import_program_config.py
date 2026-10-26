@@ -21,6 +21,7 @@ from integrations.clients.google_translate import Translate
 from django.conf import settings
 import argparse
 import json
+from pathlib import Path
 from typing import Any, Optional
 
 
@@ -136,6 +137,15 @@ class Command(BaseCommand):
 
         program_name = program_config["name_abbreviated"]
 
+        # A program-ops record is held to the record rules up front, on a dry run too, so a
+        # partial entry or a typo'd key fails where it is written rather than on staging.
+        if Path(getattr(config_file, "name", "")).name.endswith("_program_record.json"):
+            from programs.management.commands._program_record_sync import validate_record
+
+            problems = validate_record(config)
+            if problems:
+                raise CommandError("This record can't be imported:\n  - " + "\n  - ".join(problems))
+
         # Verify white label exists
         try:
             white_label = WhiteLabel.objects.get(code=white_label_code)
@@ -187,6 +197,7 @@ class Command(BaseCommand):
         self._validate_counties(config, white_label, existing_program=existing_program, overriding=overriding)
 
         if dry_run:
+            self._check_new_entities(config)
             self._print_dry_run_report(config, white_label_code, program_name)
             return
 
@@ -235,6 +246,27 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
             raise
+
+    def _check_new_entities(self, config: dict[str, Any]) -> None:
+        """
+        Fail a dry run the way the real import would, for documents and navigators it has to create.
+
+        The real import requires these fields only when the row doesn't exist yet. A dry run that
+        skipped the check reported "will use existing" for a navigator missing its name, and the
+        gap surfaced only when an environment without that row imported it.
+        """
+        problems = []
+        for i, doc in enumerate(config.get("documents", [])):
+            name = doc.get("external_name")
+            if name and "text" not in doc and not Document.objects.filter(external_name=name).exists():
+                problems.append(f"documents[{i}] ({name}) doesn't exist yet and has no 'text'")
+        for i, nav in enumerate(config.get("navigators", [])):
+            name = nav.get("external_name")
+            missing = [field for field in ("name", "email", "description", "assistance_link") if field not in nav]
+            if name and missing and not Navigator.objects.filter(external_name=name).exists():
+                problems.append(f"navigators[{i}] ({name}) doesn't exist yet and has no {', '.join(missing)}")
+        if problems:
+            raise CommandError("A real import would fail:\n  - " + "\n  - ".join(problems))
 
     def _get_valid_county_names(self, white_label: WhiteLabel) -> Optional[set]:
         """
