@@ -24,6 +24,8 @@ from django.conf import settings
 from django.core.management.base import CommandError, OutputWrapper
 from django.db import transaction
 
+from configuration.models import Configuration
+
 from integrations.clients.google_translate import Translate, TranslationIntegrityError, is_auto_translatable
 from programs.models import (
     BaseProgram,
@@ -51,9 +53,10 @@ TOP_LEVEL_KEYS = frozenset(
 CATEGORY_KEYS = frozenset({"external_name", "name", "icon", "description", "tax_category"})
 
 # Program fields a record manages. A field the record leaves out is managed as empty, so a value
-# set only in the admin shows up as an admin edit. `active` and `external_name` are the
-# exceptions: they are managed only when the record sets them, since a missing `active` must
-# never switch a live program off and a missing `external_name` means "generate one".
+# set only in the admin shows up as an admin edit. `external_name` is the exception: it is
+# managed only when the record sets it, since a missing one means "generate one". `active` is
+# never managed: switching a program on is a release decision made per environment, so a new
+# program is created switched off and an import never changes it, whatever the record says.
 PROGRAM_SCALAR_FIELDS = (
     "low_confidence",
     "show_on_current_benefits",
@@ -62,12 +65,14 @@ PROGRAM_SCALAR_FIELDS = (
     "value_format",
     "base_program",
 )
-PROGRAM_OPTIONAL_FIELDS = ("active", "external_name")
+PROGRAM_OPTIONAL_FIELDS = ("external_name",)
+IGNORED_PROGRAM_FIELDS = ("active",)
 PROGRAM_PROGRAM_LISTS = ("required_programs", "excludes_programs")
 PROGRAM_KEYS = frozenset(
     {"name_abbreviated", "year", "legal_status_required"}
     | set(PROGRAM_SCALAR_FIELDS)
     | set(PROGRAM_OPTIONAL_FIELDS)
+    | set(IGNORED_PROGRAM_FIELDS)
     | set(PROGRAM_PROGRAM_LISTS)
     | set(Program.objects.translated_fields)
 )
@@ -153,7 +158,7 @@ def validate_record(record: Any) -> list[str]:
         f"unknown program_category key '{key}'" for key in sorted(set(record["program_category"]) - CATEGORY_KEYS)
     ]
     if "external_name" not in record["program_category"]:
-        problems.append("program_category has no 'external_name'")
+        problems.append("program_category has no 'external_name' (use null for a program with no category)")
 
     program = record["program"]
     problems += [f"unknown program key '{key}'" for key in sorted(set(program) - PROGRAM_KEYS)]
@@ -338,6 +343,22 @@ class TranslationWriter:
         self.pending = []
 
 
+def valid_county_names(white_label: WhiteLabel) -> Optional[set[str]]:
+    """
+    The county names the screener stores in `Screen.county` for a white label.
+
+    Read from its `counties_by_zipcode` configuration. None when it has none, in which case
+    counties aren't checked.
+    """
+    try:
+        data = Configuration.counties_by_zipcode(white_label)
+    except ValueError as e:
+        raise CommandError(str(e)) from e
+    if data is None:
+        return None
+    return {name for county_map in data.values() if isinstance(county_map, dict) for name in county_map}
+
+
 class RecordSync:
     """Plan and apply one program-ops record against the program it describes."""
 
@@ -347,6 +368,19 @@ class RecordSync:
         self.translations = TranslationWriter(stdout, skip_translation=skip_translation)
         self.white_label = WhiteLabel.objects.get(code=record["white_label"]["code"])
         self.program_key = record["program"]["name_abbreviated"]
+
+    def create_program(self) -> Program:
+        """
+        Create the record's program, switched off, with nothing set yet.
+
+        Planning it afterwards with `fresh=True` fills every field from the record, so a new program
+        goes through the same code as an update.
+        """
+        return Program.objects.new_program(
+            white_label=self.white_label.code,
+            name_abbreviated=self.program_key,
+            external_name=self.record["program"].get("external_name"),
+        )
 
     # ------------------------------------------------------------------ planning
 
@@ -412,6 +446,9 @@ class RecordSync:
                     baseline,
                     fresh,
                 )
+
+        if "active" in data:
+            plan.notes.append("program.active is in the record and ignored: imports never switch a program on or off.")
 
         year = data.get("year")
         self._add(
@@ -695,11 +732,16 @@ class RecordSync:
             )
         program.save(update_fields=["year", "year_type"])
 
-    def _set_category(self, value: str) -> None:
-        try:
-            category = ProgramCategory.objects.get(external_name=value)
-        except ProgramCategory.DoesNotExist:
-            raise CommandError(f"program_category '{value}' doesn't exist") from None
+    def _set_category(self, value: Optional[str]) -> None:
+        category = None
+        if value is not None:
+            try:
+                category = ProgramCategory.objects.get(external_name=value)
+            except ProgramCategory.DoesNotExist:
+                raise CommandError(
+                    f"program_category '{value}' doesn't exist. A new category is shared by every white label, "
+                    f"so a developer adds it."
+                ) from None
         program = self._program()
         program.category = category
         program.save(update_fields=["category"])
@@ -790,9 +832,7 @@ class RecordSync:
         A county filter is an exact string match against the household's county, so a name in
         the wrong form would silently match nobody.
         """
-        from programs.management.commands.import_program_config import Command as ImportProgramConfigCommand
-
-        valid = ImportProgramConfigCommand()._get_valid_county_names(self.white_label)
+        valid = valid_county_names(self.white_label)
         invalid = [name for name in names if valid is not None and name not in valid]
         if invalid:
             raise CommandError(
@@ -926,9 +966,9 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
             values[name] = text
     if program.base_program:
         values["base_program"] = program.base_program
-    for name in ("external_name", "active"):
-        if name in previous:
-            values[name] = getattr(program, name)
+    # `active` is left out: an import never reads it, so writing it would only suggest it does.
+    if "external_name" in previous:
+        values["external_name"] = program.external_name
     if program.low_confidence or "low_confidence" in previous:
         values["low_confidence"] = program.low_confidence
     for name in PROGRAM_PROGRAM_LISTS:

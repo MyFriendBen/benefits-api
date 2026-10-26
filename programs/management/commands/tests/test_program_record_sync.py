@@ -83,7 +83,9 @@ def make_record(program: str = PROGRAM) -> dict[str, Any]:
     }
 
 
-class RecordSyncTestCase(TestCase):
+class RecordSyncBase(TestCase):
+    """A white label, poverty tables, a category, a temporary program-ops checkout, and mocked translation."""
+
     def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         WhiteLabel.objects.create(name="Federal", code="federal")
@@ -96,16 +98,14 @@ class RecordSyncTestCase(TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         root = Path(self.temp_dir.name)
-        self.data_dir = root / "data"
-        self.data_dir.mkdir()
         self.program_ops_dir = root / "program-ops"
+        self.program_ops_dir.mkdir()
 
         from programs.management.commands.import_all_program_configs import Command
 
-        for attr, value in (("DATA_DIR", self.data_dir), ("PROGRAM_OPS_DIR", self.program_ops_dir)):
-            patcher = patch.object(Command, attr, value)
-            patcher.start()
-            self.addCleanup(patcher.stop)
+        patcher = patch.object(Command, "PROGRAM_OPS_DIR", self.program_ops_dir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         calculators = patch(
             "programs.management.commands.import_all_program_configs.all_calculator_classes",
@@ -114,15 +114,11 @@ class RecordSyncTestCase(TestCase):
         calculators.start()
         self.addCleanup(calculators.stop)
 
-        for target in (
-            "programs.management.commands.import_program_config.Translate",
-            "programs.management.commands._program_record_sync.Translate",
-        ):
-            translate = patch(target)
-            mock = translate.start()
-            mock.return_value.bulk_translate.side_effect = fake_translate
-            mock.languages = ["es", "vi"]
-            self.addCleanup(translate.stop)
+        translate = patch("programs.management.commands._program_record_sync.Translate")
+        mock = translate.start()
+        mock.return_value.bulk_translate.side_effect = fake_translate
+        mock.languages = ["es", "vi"]
+        self.addCleanup(translate.stop)
 
         self.record = make_record()
 
@@ -153,6 +149,8 @@ class RecordSyncTestCase(TestCase):
     def admin_edit(self, translation: Translation, text: str) -> None:
         Translation.objects.edit_translation_by_id(translation.id, "en-us", text)
 
+
+class RecordSyncTestCase(RecordSyncBase):
     # ------------------------------------------------------------------ creation and baseline
 
     def test_first_import_creates_the_program_and_stores_a_baseline(self) -> None:
@@ -179,7 +177,7 @@ class RecordSyncTestCase(TestCase):
         output = self.run_import()
 
         self.assertIn("Matches the record", output)
-        self.assertRegex(output, r"Records current:\s+1")
+        self.assertRegex(output, r"Current:\s+1")
 
     # ------------------------------------------------------------------ three-way labels
 
@@ -192,7 +190,7 @@ class RecordSyncTestCase(TestCase):
 
         self.assertIn("Record changes (applied)", output)
         self.assertEqual(self.english(self.program().description), "Help buying groceries.")
-        self.assertRegex(output, r"Records updated:\s+1")
+        self.assertRegex(output, r"Updated:\s+1")
 
     def test_an_admin_edit_is_reported_and_kept(self) -> None:
         self.import_record()
@@ -254,14 +252,21 @@ class RecordSyncTestCase(TestCase):
         self.assertTrue(self.program().active)
         self.assertNotIn("program.active", output)
 
-    def test_a_record_that_sets_active_applies_it(self) -> None:
-        self.import_record()
+    def test_a_record_that_sets_active_is_ignored(self) -> None:
+        """Switching a program on is a release decision; no record makes it."""
         self.record["program"]["active"] = True
-        self.write(self.record)
 
+        output = self.import_record()
+
+        self.assertFalse(self.program().active, "a new program is created switched off whatever the record says")
+        self.assertIn("program.active is in the record and ignored", output)
+
+        Program.objects.filter(pk=self.program().pk).update(active=True)
+        self.record["program"]["active"] = False
+        self.write(self.record)
         self.run_import()
 
-        self.assertTrue(self.program().active)
+        self.assertTrue(self.program().active, "an update never switches a program off either")
 
     # ------------------------------------------------------------------ links
 
@@ -471,39 +476,70 @@ class RecordSyncTestCase(TestCase):
         self.assertEqual(self.english(program.estimated_decision_time), "")
 
 
-class LoudFailureTestCase(RecordSyncTestCase):
-    """A record that can't import fails where it's written, on a dry run, not later in an environment."""
+class RunTestCase(RecordSyncBase):
+    """What a run reads, what it waits for, and how it fails."""
 
-    def test_a_single_file_dry_run_rejects_a_partial_entry(self) -> None:
-        self.record["navigators"][0] = {"external_name": f"{PROGRAM}_nav_a", "description": "Only a description"}
-        path = self.write(self.record)
+    def test_a_dry_run_of_a_new_program_reports_its_failures(self) -> None:
+        """A dry run applies inside a transaction it rolls back, so it fails where a real run would."""
+        self.record["program"]["year"] = "1999"
 
-        with self.assertRaisesMessage(CommandError, "is a partial entry, missing name, email, assistance_link"):
-            call_command("import_program_config", str(path), dry_run=True, stdout=io.StringIO())
+        output = self.run_import_record_dry_run()
 
-    def test_a_dry_run_of_a_new_navigator_without_its_fields_fails(self) -> None:
-        """The old configs get the check too: a navigator the import would create needs its fields."""
-        config = make_record()
-        del config["navigators"][0]["email"]
-        path = self.data_dir / f"{PROGRAM}_initial_config.json"
-        path.write_text(json.dumps(config), encoding="utf-8")
+        self.assertIn("program.year '1999' has no FederalPovertyLimit row", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
 
-        with self.assertRaisesMessage(
-            CommandError, f"navigators[0] ({PROGRAM}_nav_a) doesn't exist yet and has no email"
-        ):
-            call_command("import_program_config", str(path), dry_run=True, stdout=io.StringIO())
+    def run_import_record_dry_run(self) -> str:
+        self.write(self.record)
+        return self.run_import("--dry-run")
 
-    def test_a_dry_run_lets_a_missing_field_through_when_the_navigator_exists(self) -> None:
-        """Naming an existing row by external_name alone is a reference; nothing is missing."""
-        navigator = Navigator.objects.new_navigator(white_label="co", name=f"{PROGRAM}_nav_a")
-        navigator.external_name = f"{PROGRAM}_nav_a"
-        navigator.save()
-        config = make_record()
-        config["navigators"][0] = {"external_name": f"{PROGRAM}_nav_a"}
-        path = self.data_dir / f"{PROGRAM}_initial_config.json"
-        path.write_text(json.dumps(config), encoding="utf-8")
+    def test_a_dry_run_of_a_new_program_creates_nothing(self) -> None:
+        output = self.run_import_record_dry_run()
 
-        call_command("import_program_config", str(path), dry_run=True, stdout=io.StringIO())
+        self.assertRegex(output, r"To create:\s+1")
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+        self.assertFalse(Navigator.objects.filter(external_name=f"{PROGRAM}_nav_a").exists())
+        self.assertFalse(ProgramConfigImport.objects.exists())
+
+    def test_a_new_program_without_its_calculator_waits(self) -> None:
+        self.write(make_record("co_unbuilt"), program="co_unbuilt")
+
+        output = self.run_import()
+
+        self.assertIn("Waiting for a calculator, not created: co_unbuilt_program_record.json", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated="co_unbuilt").exists())
+
+    def test_a_tracking_only_program_does_not_wait_for_a_calculator(self) -> None:
+        record = make_record("co_tracking")
+        record["program"]["has_calculator"] = False
+        record["program_category"] = {"external_name": None}
+        self.write(record, program="co_tracking")
+
+        self.run_import()
+
+        program = Program.objects.get(name_abbreviated="co_tracking")
+        self.assertFalse(program.has_calculator)
+        self.assertIsNone(program.category)
+
+    def test_an_existing_program_is_updated_even_without_a_calculator(self) -> None:
+        """The gate is about creating; a retired program whose calculator is gone still has a record."""
+        self.import_record()
+        self.record["program"]["description"] = "Retired."
+        self.write(self.record)
+
+        with patch("programs.management.commands.import_all_program_configs.all_calculator_classes", return_value={}):
+            self.run_import()
+
+        self.assertEqual(self.english(self.program().description), "Retired.")
+
+    def test_a_record_that_cannot_be_read_fails_alone(self) -> None:
+        directory = self.program_ops_dir / "programs" / "white_labels" / "co" / "broken"
+        directory.mkdir(parents=True)
+        (directory / "broken_program_record.json").write_text("{not json", encoding="utf-8")
+
+        output = self.import_record()
+
+        self.assertIn("✗ broken_program_record.json: can't be read", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=PROGRAM).exists())
 
     def test_failures_are_repeated_at_the_end_of_the_run(self) -> None:
         self.record["navigators"][0] = {"external_name": f"{PROGRAM}_nav_a", "description": "Only a description"}
@@ -512,3 +548,58 @@ class LoudFailureTestCase(RecordSyncTestCase):
 
         tail = output[output.rindex("need fixing before they import:") :]
         self.assertIn(f"✗ {PROGRAM}_program_record.json: navigators[0]", tail)
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
+    def test_a_failed_new_program_leaves_nothing_behind(self) -> None:
+        self.record["program"]["legal_status_required"] = ["not_a_status"]
+
+        self.import_record()
+
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
+    def test_two_records_for_one_program_fail_the_run(self) -> None:
+        self.write(self.record)
+        directory = self.program_ops_dir / "programs" / "white_labels" / "co" / "other"
+        directory.mkdir(parents=True)
+        (directory / "copy_program_record.json").write_text(json.dumps(self.record), encoding="utf-8")
+
+        with self.assertRaisesMessage(CommandError, f"co/{PROGRAM} is declared twice"):
+            self.run_import()
+
+    def test_without_a_checkout_the_run_fails(self) -> None:
+        with self.assertRaisesMessage(CommandError, "No program-ops checkout at"):
+            self.run_import("--program-ops-dir", str(Path(self.temp_dir.name) / "missing"))
+
+    def test_another_checkout_can_be_named(self) -> None:
+        self.write(self.record)
+        elsewhere = Path(self.temp_dir.name) / "elsewhere"
+        self.program_ops_dir.rename(elsewhere)
+
+        self.run_import("--program-ops-dir", str(elsewhere))
+
+        self.assertTrue(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
+    def test_list_shows_when_each_record_was_applied(self) -> None:
+        self.import_record()
+        self.write(make_record(OTHER), program=OTHER)
+
+        output = self.run_import("--list")
+
+        self.assertIn(f"✓ {PROGRAM}_program_record.json: applied", output)
+        self.assertIn(f"○ {OTHER}_program_record.json: never applied", output)
+
+    def test_file_limits_the_run_to_one_record(self) -> None:
+        self.write(self.record)
+        self.write(make_record(OTHER), program=OTHER)
+
+        self.run_import("--file", f"{OTHER}_program_record.json")
+
+        self.assertTrue(Program.objects.filter(name_abbreviated=OTHER).exists())
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
+
+class ProgramConfigImportModelTest(TestCase):
+    def test_str_names_the_file_and_program(self) -> None:
+        row = ProgramConfigImport.objects.create(filename="co_snap_program_record.json", program_name="co_snap")
+
+        self.assertIn("co_snap_program_record.json (co_snap)", str(row))
