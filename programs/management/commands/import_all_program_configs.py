@@ -8,13 +8,24 @@ from programs.management.commands.import_program_config import (
     RECONCILE_SECTIONS,
     Command as ImportProgramConfigCommand,
 )
+from programs.management.commands._program_record_sync import (
+    ADMIN_EDIT,
+    CONFLICT,
+    RecordSync,
+    owned_rows,
+    print_plan,
+    validate_record,
+)
 from programs.models import ProgramConfigImport, Program
 from screener.models import WhiteLabel
-from pathlib import Path
-from typing import Any
+from pathlib import Path, PurePosixPath
+from typing import Any, Optional
 import argparse
 import hashlib
 import json
+import shutil
+import sys
+import tempfile
 
 
 def config_content_hash(config_file: Path) -> str:
@@ -39,6 +50,11 @@ class ImportResults:
     entities_to_create: set[tuple[str, str]] = field(default_factory=set)
     reconcile: bool = False
     partial_pass: bool = False
+    # program-ops records, which are compared with the database on every run.
+    records_updated: int = 0
+    records_current: int = 0
+    admin_edits_kept: int = 0
+    conflicts: int = 0
 
 
 class Command(BaseCommand):
@@ -55,6 +71,12 @@ class Command(BaseCommand):
     its program has a registered calculator. Without a program-ops checkout the
     command reads the data directory alone.
 
+    A program-ops record creates its program and, after that, keeps it matching: every run
+    compares every record with the database (see _program_record_sync). Differences the record
+    made are applied; edits made in the admin are reported and kept unless --revert-admin-edits
+    is given; a field changed on both sides is a conflict and is skipped. A data directory config
+    only ever creates its program.
+
     Usage:
       python manage.py import_all_program_configs
       python manage.py import_all_program_configs --dry-run
@@ -69,6 +91,8 @@ class Command(BaseCommand):
       --reconcile  Additively apply configs to programs that already exist
       --only       With --reconcile, limit to given sections (repeatable)
       --program-ops-dir  Read program records from this program-ops checkout
+      --program-ops-stdin  Read program records from a JSON bundle on stdin (for heroku run)
+      --revert-admin-edits  Set fields edited in the admin back to what the record says
 
     A config whose program already exists is skipped and left pending — a skip is
     never recorded as an import, so nothing becomes permanently unreachable. Use
@@ -124,6 +148,22 @@ class Command(BaseCommand):
             type=Path,
             help=f"Path to a program-ops checkout to read program records from. Defaults to {self.PROGRAM_OPS_DIR}.",
         )
+        parser.add_argument(
+            "--program-ops-stdin",
+            action="store_true",
+            help='Read program records from stdin, as {"files": {"programs/.../x_program_record.json": "<text>"}}. '
+            "This is how program-ops' import script sends its records to a one-off dyno.",
+        )
+        parser.add_argument(
+            "--revert-admin-edits",
+            action="store_true",
+            help="Apply the record over fields that were edited in the admin. Without it they are reported and kept.",
+        )
+        parser.add_argument(
+            "--skip-translation",
+            action="store_true",
+            help="Copy English to every language instead of machine-translating it.",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         """Orchestrates the import process based on command options."""
@@ -131,9 +171,24 @@ class Command(BaseCommand):
             return
 
         program_ops_dir = options.get("program_ops_dir")
-        if program_ops_dir and not program_ops_dir.is_dir():
+        if program_ops_dir and options.get("program_ops_stdin"):
+            raise CommandError("Use --program-ops-dir or --program-ops-stdin, not both.")
+        self._bundle_dir: Optional[Path] = None
+        if options.get("program_ops_stdin"):
+            program_ops_dir = self._unpack_record_bundle(sys.stdin.read())
+        elif program_ops_dir and not program_ops_dir.is_dir():
             raise CommandError(f"No program-ops checkout at {program_ops_dir}.")
 
+        try:
+            self._run(program_ops_dir, options)
+        finally:
+            if self._bundle_dir is not None:
+                shutil.rmtree(self._bundle_dir, ignore_errors=True)
+
+    def _run(self, program_ops_dir: Optional[Path], options: dict[str, Any]) -> None:
+        self.revert_admin_edits = bool(options.get("revert_admin_edits"))
+        self.skip_translation = bool(options.get("skip_translation"))
+        self.record_files: set[Path] = set()
         json_files = self._discover_config_files(program_ops_dir or self.PROGRAM_OPS_DIR)
         if not json_files:
             self.stdout.write(self.style.WARNING("No JSON configuration files found in data directory."))
@@ -161,12 +216,24 @@ class Command(BaseCommand):
             self._show_summary(len(json_files), len(json_files), 0)
             return
 
+        record_files = [f for f in target_files if f in self.record_files]
+        data_files = [f for f in target_files if f not in self.record_files]
+
         # A reconcile dry run has to invoke the importer to report what it would change,
         # so it goes through the normal execution path rather than the file listing.
         if dry_run and not reconcile:
-            return self._handle_dry_run(target_files)
+            if data_files:
+                self._handle_dry_run(data_files)
+            if not record_files:
+                return
+            results = ImportResults()
+        elif data_files:
+            results = self._execute_imports(data_files, reconcile=reconcile, only=only, dry_run=dry_run)
+        else:
+            results = ImportResults(reconcile=reconcile)
 
-        results = self._execute_imports(target_files, reconcile=reconcile, only=only, dry_run=dry_run)
+        if record_files:
+            self._sync_records(record_files, results, dry_run=dry_run)
         self._display_final_summary(results, dry_run=dry_run)
 
     def _validate_data_directory(self) -> bool:
@@ -189,7 +256,10 @@ class Command(BaseCommand):
         records = self._find_program_ops_records(program_ops_dir)
         data_files = self._drop_data_copies(sorted(self.DATA_DIR.glob("*.json")), records)
         self._check_for_duplicates(data_files + records)
-        return data_files + self._importable_records(records)
+        self._check_for_shared_owners(records)
+        importable = self._importable_records(records)
+        self.record_files = set(importable)
+        return data_files + importable
 
     def _drop_data_copies(self, data_files: list[Path], records: list[Path]) -> list[Path]:
         """Return the data directory configs whose program has no program-ops record."""
@@ -266,6 +336,62 @@ class Command(BaseCommand):
                 )
             by_program[program] = config_file
 
+    def _check_for_shared_owners(self, records: list[Path]) -> None:
+        """
+        Raise if two records own the same navigator, document or warning message.
+
+        A full entry rewrites the row it names. Two records doing that for one row would each
+        overwrite the other on every run, and the row would end up with whichever ran last.
+        """
+        owners: dict[tuple[str, str], Path] = {}
+        for record_file in records:
+            try:
+                record = json.loads(record_file.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue  # reported when the record itself is processed
+            if not isinstance(record, dict):
+                continue
+            for row in owned_rows(record):
+                if row in owners:
+                    raise CommandError(
+                        f"{row[0]} '{row[1]}' is fully described by two records: {owners[row]} and {record_file}. "
+                        f"Keep the fields in one and list only its external_name in the other."
+                    )
+                owners[row] = record_file
+
+    def _unpack_record_bundle(self, bundle_text: str) -> Path:
+        """
+        Write a stdin bundle of program-ops records into a temporary checkout and return it.
+
+        Only `programs/**/*_program_record.json` paths are accepted, so the bundle can't write
+        anywhere else on the dyno.
+        """
+        try:
+            files = json.loads(bundle_text)["files"]
+        except (ValueError, KeyError, TypeError) as e:
+            raise CommandError(f"--program-ops-stdin needs a JSON bundle with a 'files' object: {e}") from None
+        if not isinstance(files, dict) or not files:
+            raise CommandError("--program-ops-stdin bundle has no files.")
+
+        for relative, text in files.items():
+            path = PurePosixPath(relative)
+            if (
+                path.is_absolute()
+                or ".." in path.parts
+                or path.parts[:1] != ("programs",)
+                or not path.name.endswith("_program_record.json")
+                or not isinstance(text, str)
+            ):
+                raise CommandError(f"--program-ops-stdin bundle has an unexpected entry: {relative!r}")
+
+        root = Path(tempfile.mkdtemp(prefix="program-ops-"))
+        self._bundle_dir = root
+        for relative, text in files.items():
+            target = root.joinpath(*PurePosixPath(relative).parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8")
+        return root
+
     def _get_import_records(self) -> dict[str, str]:
         """Return {filename: content_hash} for every config already recorded as imported."""
         return dict(ProgramConfigImport.objects.values_list("filename", "content_hash"))
@@ -314,7 +440,9 @@ class Command(BaseCommand):
         if reconcile:
             return json_files
 
-        return [f for f in json_files if self._is_pending(f, import_records)]
+        # A record is compared with the database on every run, since an admin edit doesn't
+        # change the file and so never makes it pending.
+        return [f for f in json_files if f in self.record_files or self._is_pending(f, import_records)]
 
     def _handle_dry_run(self, pending_files: list[Path]) -> None:
         """Display what would be imported without making any changes."""
@@ -446,21 +574,115 @@ class Command(BaseCommand):
             "changed": any(action != "linked" for _, _, action in declarations),
         }
 
-    def _record_import(self, config_file: Path, result: dict[str, Any]) -> None:
+    def _record_import(
+        self, config_file: Path, result: dict[str, Any], applied_record: Optional[dict[str, Any]] = None
+    ) -> None:
         """
         Record a config as applied, stamping the content hash it was applied from.
 
         update_or_create rather than get_or_create so that re-applying an edited config
-        refreshes the hash — otherwise the file would stay pending forever.
+        refreshes the hash — otherwise the file would stay pending forever. A program-ops
+        record also stores what it set, the baseline the next run compares against.
         """
-        ProgramConfigImport.objects.update_or_create(
-            filename=config_file.name,
-            defaults={
-                "program_name": result["program_name"],
-                "white_label_code": result["white_label_code"],
-                "content_hash": config_content_hash(config_file),
-            },
+        defaults: dict[str, Any] = {
+            "program_name": result["program_name"],
+            "white_label_code": result["white_label_code"],
+            "content_hash": config_content_hash(config_file),
+        }
+        if applied_record is not None:
+            defaults["applied_record"] = applied_record
+        ProgramConfigImport.objects.update_or_create(filename=config_file.name, defaults=defaults)
+
+    def _sync_records(self, record_files: list[Path], results: ImportResults, dry_run: bool) -> None:
+        """
+        Create each record's program if it's missing, then bring every program in line with its record.
+
+        Programs are created first, all of them, so a record naming another record's program in
+        `required_programs` or `eligibility_programs` resolves whichever order they're read in.
+        """
+        self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
+        self.stdout.write(f"program-ops records ({len(record_files)})" + (" — DRY RUN" if dry_run else ""))
+        self.stdout.write(self.style.WARNING(f"{'=' * 60}"))
+
+        loaded: list[tuple[Path, dict[str, Any]]] = []
+        for record_file in record_files:
+            try:
+                record = json.loads(record_file.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as e:
+                self._record_failed(results, record_file, f"can't be read: {e}")
+                continue
+            problems = validate_record(record)
+            if problems:
+                self._record_failed(results, record_file, "; ".join(problems))
+                continue
+            loaded.append((record_file, record))
+
+        to_sync: list[tuple[Path, dict[str, Any], Program, bool]] = []
+        for record_file, record in loaded:
+            program = Program.objects.filter(
+                white_label__code=record["white_label"]["code"],
+                name_abbreviated=record["program"]["name_abbreviated"],
+            ).first()
+            if program is not None:
+                to_sync.append((record_file, record, program, False))
+                continue
+
+            self.stdout.write(f"\n{record_file.name}: program doesn't exist yet, creating it")
+            if dry_run:
+                try:
+                    call_command(
+                        "import_program_config", str(record_file), dry_run=True, stdout=self.stdout, stderr=self.stderr
+                    )
+                    results.successful += 1
+                except Exception as e:
+                    self._record_failed(results, record_file, str(e))
+                continue
+            result = self._import_config(record_file, skip_translation=self.skip_translation)
+            if result["status"] != "success":
+                self._record_failed(results, record_file, result.get("error", result.get("reason", "not created")))
+                continue
+            results.successful += 1
+            program = Program.objects.get(
+                white_label__code=record["white_label"]["code"],
+                name_abbreviated=record["program"]["name_abbreviated"],
+            )
+            to_sync.append((record_file, record, program, True))
+
+        baselines = dict(
+            ProgramConfigImport.objects.filter(filename__in=[f.name for f, *_ in to_sync]).values_list(
+                "filename", "applied_record"
+            )
         )
+        for record_file, record, program, fresh in to_sync:
+            self.stdout.write(f"\n{record_file.name} ({program.white_label.code}/{program.name_abbreviated})")
+            try:
+                sync = RecordSync(record, self.stdout, skip_translation=self.skip_translation)
+                plan = sync.plan(program, baselines.get(record_file.name), fresh=fresh)
+                print_plan(plan, self.stdout, self.revert_admin_edits, dry_run=dry_run)
+                if not dry_run:
+                    sync.apply(plan, revert_admin_edits=self.revert_admin_edits)
+                    self._record_import(
+                        record_file,
+                        {"program_name": program.name_abbreviated, "white_label_code": program.white_label.code},
+                        applied_record=plan.next_baseline(),
+                    )
+            except Exception as e:
+                self._record_failed(results, record_file, str(e))
+                continue
+
+            if fresh:
+                continue
+            if plan.to_apply(self.revert_admin_edits):
+                results.records_updated += 1
+            elif not plan.changes:
+                results.records_current += 1
+            if not self.revert_admin_edits:
+                results.admin_edits_kept += len(plan.by_label(ADMIN_EDIT))
+            results.conflicts += len(plan.by_label(CONFLICT))
+
+    def _record_failed(self, results: ImportResults, record_file: Path, error: str) -> None:
+        results.failed += 1
+        self.stdout.write(self.style.ERROR(f"✗ Failed: {record_file.name} - {error}"))
 
     def _display_final_summary(self, results: ImportResults, dry_run: bool = False) -> None:
         """Display a summary of the completed run."""
@@ -475,6 +697,14 @@ class Command(BaseCommand):
             self.stdout.write(f"  {'Already current:':<17} {results.already_current}")
         self.stdout.write(f"  {'Skipped:':<17} {results.skipped}  (still pending — nothing was applied)")
         self.stdout.write(f"  {'Failed:':<17} {results.failed}")
+        if self.record_files:
+            updated_label = "Records to update:" if dry_run else "Records updated:"
+            self.stdout.write(f"  {updated_label:<20} {results.records_updated}")
+            self.stdout.write(f"  {'Records current:':<20} {results.records_current}")
+            kept = f"  {'Admin edits kept:':<20} {results.admin_edits_kept}"
+            self.stdout.write(self.style.WARNING(kept) if results.admin_edits_kept else kept)
+            conflicts = f"  {'Conflicts:':<20} {results.conflicts}"
+            self.stdout.write(self.style.ERROR(conflicts) if results.conflicts else conflicts)
 
         # Printed for every reconcile run, including one where everything skipped, so that the
         # two lines a production repair is gated on are never simply absent from the output.
@@ -575,6 +805,7 @@ class Command(BaseCommand):
         reconcile: bool = False,
         only: list[str] | None = None,
         dry_run: bool = False,
+        skip_translation: bool = False,
     ) -> dict[str, Any]:
         """
         Import or reconcile a single configuration file.
@@ -635,6 +866,8 @@ class Command(BaseCommand):
 
         # Call the import_program_config command
         command_options: dict[str, Any] = {"stdout": self.stdout, "stderr": self.stderr}
+        if skip_translation:
+            command_options["skip_translation"] = True
         plan_totals: dict[str, Any] = {}
         if reconcile:
             command_options["reconcile"] = True

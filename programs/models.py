@@ -534,16 +534,20 @@ class ProgramManager(models.Manager):
         "apply_button_link",
         "apply_button_description",
         "estimated_delivery_time",
+        "estimated_decision_time",
         "estimated_application_time",
         "estimated_value",
         "website_description",
     )
     no_auto_fields = ("apply_button_link", "learn_more_link")
+    # Fields a new program starts empty on rather than with the placeholder: an empty decision time
+    # means the wait varies, and an empty button description renders the default label.
+    blank_by_default_fields = ("apply_button_description", "estimated_decision_time")
 
     def new_program(self, white_label: str, name_abbreviated: str, external_name: Optional[str] = None):
         translations = {}
         for field in self.translated_fields:
-            default_message = "" if field == "apply_button_description" else BLANK_TRANSLATION_PLACEHOLDER
+            default_message = "" if field in self.blank_by_default_fields else BLANK_TRANSLATION_PLACEHOLDER
             translations[field] = Translation.objects.add_translation(
                 f"program.{name_abbreviated}_temporary_key-{field}",
                 default_message=default_message,
@@ -856,6 +860,13 @@ class Program(models.Model):
     estimated_delivery_time = models.ForeignKey(
         Translation,
         related_name="program_estimated_delivery_time",
+        blank=False,
+        null=False,
+        on_delete=models.PROTECT,
+    )
+    estimated_decision_time = models.ForeignKey(
+        Translation,
+        related_name="program_estimated_decision_time",
         blank=False,
         null=False,
         on_delete=models.PROTECT,
@@ -2123,6 +2134,12 @@ class ProgramConfigImport(models.Model):
         default="",
         help_text="SHA-256 of the config file when it was applied. A file whose hash no longer matches "
         "is treated as pending again, so edits to a config are picked up on the next run.",
+    )
+    applied_record = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="What a program-ops record set when it was last applied, field by field. Comparing it with "
+        "the record and the database tells a record edit from an admin edit.",
     )
 
     class Meta:
