@@ -90,16 +90,12 @@ for your local white label to exercise the full chain.
 
 ## Redis in local development
 
-By default, when `DEBUG = True` and `REDIS_URL` is not explicitly set, the
-project will default `REDIS_URL` to a loopback address so `manage.py runserver`
-can auto-start a local Redis. You can disable this helper by setting
-`AUTO_START_REDIS=false` in your environment or by providing your own
-`REDIS_URL`.
-
-When `REDIS_URL` is set and points at a loopback address (localhost / 127.0.0.1)
-and Django is running with `DEBUG = True`, `manage.py runserver` will attempt
-to auto-start a small, local `redis-server` so the development environment
-better mirrors Heroku's cache behavior.
+Set `REDIS_URL` in your `.env` to a loopback address (e.g.
+`redis://127.0.0.1:6379/0`) and `manage.py runserver` will attempt to
+auto-start a small, local `redis-server` so your development environment
+mirrors Heroku's cache behavior (25 MB maxmemory, `allkeys-lru` eviction).
+Leaving `REDIS_URL` unset is still the default and gives you an in-memory
+cache — nothing is started and nothing is required.
 
 High level rules
 
@@ -116,22 +112,26 @@ Platform notes
 - Linux / macOS: the command looks for `redis-server` on `PATH` and starts it
    with Heroku-like flags (25 MB maxmemory, `allkeys-lru`, no AOF, no saves)
    and `--daemonize yes` so it survives Ctrl-C of the dev server.
-- Windows: we try to detect a native Redis-compatible binary first (common
-   Windows service: Memurai / `memurai.exe`). If no native binary is found and
-   the `wsl` command is available, the command will attempt to start
-   `redis-server` inside WSL (this requires `redis-server` to be installed in
-   your default WSL distro). WSL startup is used as a fallback so Windows
-   developers who run Redis in WSL get the same auto-start convenience.
+- Windows: we try to detect a native Redis-compatible binary first (Memurai's
+   `memurai.exe`, or a native `redis-server.exe` build). Windows builds
+   generally can't daemonize (there's no `fork()`), so on Windows any native
+   binary is started in the foreground instead and left running when the dev
+   server exits. If no native binary is found and the `wsl` command is
+   available, the command will attempt to start `redis-server` inside WSL
+   (this requires `redis-server` to be installed in your default WSL distro).
 
 Notes about missing binaries and side effects
 
 - If no suitable binary is found (native or WSL) `runserver` will print a
    single-line hint and continue without starting Redis. The Django cache
    backend will remain configured to use Redis (i.e. cache misses will behave
-   according to your `django_redis` options such as `IGNORE_EXCEPTIONS=True`).
-- The WSL fallback depends on `wsl` being on your PATH and a working `redis-`
-   server inside your WSL distro. If either is missing, auto-start will be
-   skipped and a hint will be shown.
+   according to your `django_redis` options such as `IGNORE_EXCEPTIONS=True`),
+   so you'll still see the normal ignored-exception logging until Redis is
+   actually reachable — this is why the helper only engages when you've
+   explicitly opted into `REDIS_URL`.
+- The WSL fallback depends on `wsl` being on your PATH and a working
+   `redis-server` inside your WSL distro. If either is missing, auto-start
+   will be skipped and a hint will be shown.
 
 Temporary persistence and git
 
@@ -143,26 +143,36 @@ Console messages developers will see
 The implementation emits short, human-friendly messages so it's clear what
 happened. Examples (angle-bracket tokens are replaced by the actual values):
 
-- When `redis-server` (or Memurai) is found and started natively:
+- When Redis is found and started, and its PID is known (Memurai, native
+  Windows builds, or a POSIX daemonized `redis-server` found via `pgrep`):
 
-  Starting local redis-server using '<binary>' on port <port> (daemonized).
-  To stop: redis-cli -p <port> shutdown
+  Started local redis-server (PID <pid>) on <host>:<port>.
+  To stop: kill <pid> or 'redis-cli -p <port> shutdown'
+
+- When Redis starts but the PID can't be determined:
+
+  Started local redis-server on <host>:<port> (pid unknown).
+  To stop: 'redis-cli -p <port> shutdown'
 
 - When no native binary is found but WSL is used to start Redis:
 
-  Starting local redis-server inside WSL (via 'wsl') on port <port> (daemonized).
+  Started local redis-server inside WSL on <host>:<port> (pid unknown).
   To stop: wsl -- redis-cli -p <port> shutdown
 
 - When no binary is found at all:
 
-  redis-server not found on PATH; to enable auto-start install Redis (or
-  Memurai on Windows), or set AUTO_START_REDIS=false or use --no-redis; continuing without starting Redis.
+  redis-server not found on PATH; skipping auto-start. Install Redis or
+  use --no-redis / AUTO_START_REDIS=false.
+
+- If the spawned process exits immediately, or never becomes reachable within
+  a few seconds, `runserver` says so (`exited early`, or `Timed out waiting
+  for local redis to accept connections`) and continues without Redis.
 
 Behavior when auto-start is skipped
 
-- If `DEBUG` is False or `REDIS_URL` does not point at loopback, no auto-
-   start will be attempted. In those cases `runserver` continues as normal and
-   typically does not emit additional messages about Redis.
+- If `REDIS_URL` is unset, `DEBUG` is False, or `REDIS_URL` does not point at
+   loopback, no auto-start is attempted and `runserver` prints nothing about
+   Redis at all.
 
 Stopping the helper Redis instance
 

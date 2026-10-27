@@ -1,54 +1,23 @@
-import os
-import subprocess
-import sys
-import types
-
-import pytest
-
-
 class DummySettings:
     def __init__(self, redis_url=None, debug=True):
         self.REDIS_URL = redis_url
         self.DEBUG = debug
 
 
+class _DummySocket:
+    """Stands in for the context manager socket.create_connection returns."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
 def _import_command():
-    # Import the command module to make its Command class available
-    # Ensure minimal django scaffolding exists so importing the command
-    # doesn't require a full Django installation in this test environment.
-    if "django" not in sys.modules:
-        django = types.ModuleType("django")
-        django.conf = types.ModuleType("django.conf")
-        django.conf.settings = types.SimpleNamespace()
-        django.contrib = types.ModuleType("django.contrib")
-        django.contrib.staticfiles = types.ModuleType("django.contrib.staticfiles")
-        django.contrib.staticfiles.management = types.ModuleType("django.contrib.staticfiles.management")
-        django.contrib.staticfiles.management.commands = types.ModuleType(
-            "django.contrib.staticfiles.management.commands"
-        )
-
-        rs_mod = types.ModuleType("django.contrib.staticfiles.management.commands.runserver")
-
-        class BaseCommand:
-            def __init__(self):
-                pass
-
-            def add_arguments(self, parser):
-                pass
-
-            def handle(self, *a, **k):
-                pass
-
-        rs_mod.Command = BaseCommand
-
-        sys.modules["django"] = django
-        sys.modules["django.conf"] = django.conf
-        sys.modules["django.contrib"] = django.contrib
-        sys.modules["django.contrib.staticfiles"] = django.contrib.staticfiles
-        sys.modules["django.contrib.staticfiles.management"] = django.contrib.staticfiles.management
-        sys.modules["django.contrib.staticfiles.management.commands"] = django.contrib.staticfiles.management.commands
-        sys.modules["django.contrib.staticfiles.management.commands.runserver"] = rs_mod
-
+    # pytest-django (see pytest.ini: DJANGO_SETTINGS_MODULE) already runs
+    # django.setup() before test collection, so the real Django package is
+    # available here same as in every other test module in this project.
     from screener.management.commands.runserver import Command
 
     return Command
@@ -132,9 +101,20 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
     settings = DummySettings(redis_url="redis://localhost:6380", debug=True)
     monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
 
-    # No socket connection (port free)
+    # Force the POSIX daemonize/check_call path regardless of the host OS
+    # running this test (this file's CI/dev machines may be Linux or Windows).
+    monkeypatch.setattr("platform.system", lambda: "Linux")
+
+    # First call simulates the "is the port already in use" pre-check (port
+    # free); every call after that simulates the post-spawn readiness probe
+    # succeeding immediately so the test doesn't block on the 3s timeout.
+    calls = {"count": 0}
+
     def fake_create_connection(addr, timeout=1):
-        raise OSError()
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise OSError()
+        return _DummySocket()
 
     monkeypatch.setattr("socket.create_connection", fake_create_connection)
     # redis-server exists. Create a harmless dummy executable in tmp_path and
@@ -150,8 +130,14 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
     except PermissionError:
         pass
 
-    monkeypatch.setattr("shutil.which", lambda _name: str(dummy))
-    monkeypatch.setattr("screener.management.commands.runserver.shutil.which", lambda _name: str(dummy))
+    # Only resolve the redis-server binary itself, like the real shutil.which
+    # would -- otherwise the pgrep pid-discovery lookup below would also
+    # resolve to this dummy (non-executable) path and attempt to exec it.
+    def fake_which(name):
+        return str(dummy) if name in ("redis-server", "redis-server.exe") else None
+
+    monkeypatch.setattr("shutil.which", fake_which)
+    monkeypatch.setattr("screener.management.commands.runserver.shutil.which", fake_which)
 
     # record the args passed to subprocess.check_call
     called = {}
@@ -176,6 +162,68 @@ def test_spawn_redis_when_available(monkeypatch, tmp_path, capsys):
     assert "25mb" in called["args"]
     assert "--maxmemory-policy" in called["args"]
     assert "allkeys-lru" in called["args"]
+    assert "--daemonize" in called["args"]
+
+    captured = capsys.readouterr()
+    assert "Started local redis-server" in captured.out
+
+
+def test_spawn_redis_foreground_on_windows_native(monkeypatch, tmp_path, capsys):
+    """Native (non-Memurai) Windows builds generally can't daemonize, so the
+    command must run them in the foreground via Popen instead of passing
+    --daemonize and trusting the process to detach itself."""
+    Command = _import_command()
+    settings = DummySettings(redis_url="redis://localhost:6382", debug=True)
+    monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
+
+    monkeypatch.setattr("platform.system", lambda: "Windows")
+
+    calls = {"count": 0}
+
+    def fake_create_connection(addr, timeout=1):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise OSError()
+        return _DummySocket()
+
+    monkeypatch.setattr("socket.create_connection", fake_create_connection)
+
+    dummy = tmp_path / "redis-server.exe"
+    dummy.write_text("not a real binary\n")
+
+    def fake_which(name):
+        return str(dummy) if name in ("redis-server", "redis-server.exe") else None
+
+    monkeypatch.setattr("shutil.which", fake_which)
+    monkeypatch.setattr("screener.management.commands.runserver.shutil.which", fake_which)
+
+    class FakeProcess:
+        pid = 4321
+
+        def poll(self):
+            return None  # still running
+
+    popen_calls = {}
+
+    def fake_popen(args, **kwargs):
+        popen_calls["args"] = args
+        return FakeProcess()
+
+    monkeypatch.setattr("screener.management.commands.runserver.subprocess.Popen", fake_popen)
+
+    def fail_check_call(args):
+        raise AssertionError("check_call should not be used on native Windows; Popen should be used instead")
+
+    monkeypatch.setattr("screener.management.commands.runserver.subprocess.check_call", fail_check_call)
+
+    cmd = Command()
+    cmd._maybe_start_redis({})
+
+    assert "args" in popen_calls
+    assert "--daemonize" not in popen_calls["args"]
+
+    captured = capsys.readouterr()
+    assert "Started local redis-server (PID 4321)" in captured.out
 
 
 def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
@@ -183,9 +231,16 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
     settings = DummySettings(redis_url="redis://localhost:6381", debug=True)
     monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
 
-    # No socket connection (port free)
+    # First call simulates the "is the port already in use" pre-check (port
+    # free); every call after that simulates the post-spawn readiness probe
+    # succeeding immediately so the test doesn't block on the 3s timeout.
+    calls = {"count": 0}
+
     def fake_create_connection(addr, timeout=1):
-        raise OSError()
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise OSError()
+        return _DummySocket()
 
     monkeypatch.setattr("socket.create_connection", fake_create_connection)
 
@@ -222,3 +277,6 @@ def test_spawn_redis_in_wsl_when_on_windows(monkeypatch, tmp_path, capsys):
     assert "args" in called
     # For WSL we expect wsl to be invoked (first arg)
     assert any("wsl" in str(a).lower() for a in called["args"])
+
+    captured = capsys.readouterr()
+    assert "Started local redis-server inside WSL" in captured.out

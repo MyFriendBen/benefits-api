@@ -118,12 +118,12 @@ class Command(StaticFilesRunserver):
         # /tmp using a UUID; for native we use tempfile on the host.
         if start_mode == "native":
             tmpdir = tempfile.mkdtemp(prefix="mfb-redis-")
-            # Detect Memurai (common Windows Redis alternative). Memurai does
-            # not support --daemonize and runs in the foreground, so we must
-            # start it with Popen and not pass the daemonize flag.
-            bin_name = os.path.basename(str(redis_bin)).lower()
-            is_memurai = "memurai" in bin_name
-            args = self._build_native_args(str(redis_bin), port, tmpdir, daemonize=not is_memurai)
+            # Memurai, and native Redis builds on Windows generally, don't
+            # support --daemonize (there is no fork() on Windows), so run
+            # anything native on Windows in the foreground via Popen instead
+            # of trusting it to detach itself.
+            run_foreground = platform.system() == "Windows"
+            args = self._build_native_args(str(redis_bin), port, tmpdir, daemonize=not run_foreground)
             runner = args
         else:  # wsl
             wsl_tmp = f"/tmp/mfb-redis-{uuid.uuid4().hex}"
@@ -153,11 +153,12 @@ class Command(StaticFilesRunserver):
 
         process = None
         try:
-            if start_mode == "native" and is_memurai:
-                # Start Memurai (foreground) without waiting for it to exit.
-                # Use DEVNULL to avoid tying up file descriptors and detach
-                # from the parent as much as possible. Keep the Popen object so
-                # we can report the PID to the user.
+            if start_mode == "native" and run_foreground:
+                # Start the server (Memurai, or any native Windows build)
+                # in the foreground without waiting for it to exit. Use
+                # DEVNULL to avoid tying up file descriptors and detach from
+                # the parent as much as possible. Keep the Popen object so we
+                # can report the PID to the user.
                 process = subprocess.Popen(
                     runner,
                     stdout=subprocess.DEVNULL,
@@ -178,41 +179,42 @@ class Command(StaticFilesRunserver):
             self.stdout.write(f"Failed to start redis-server: {exc}. Continuing without redis.")
             return
 
-        # If we started a foreground process (for example Memurai) the Popen
-        # call returns even if the process exits immediately during
-        # initialization. Do a short, bounded readiness check: ensure the
-        # process hasn't exited and that Redis accepts connections on the
-        # configured port. If the process exits or we fail to connect within
-        # the timeout, consider the auto-start unsuccessful and continue.
-        if process is not None:
-            ready = False
-            start = time.monotonic()
-            timeout = 3.0  # seconds, bounded so runserver doesn't block
-            interval = 0.1
-            while time.monotonic() - start < timeout:
-                # If process has exited early, bail out
-                if process.poll() is not None:
-                    self.stdout.write(
-                        f"Local redis process (PID {process.pid}) exited early with code {process.returncode}; skipping auto-start."
-                    )
-                    return
-                try:
-                    with socket.create_connection((host, port), timeout=1):
-                        ready = True
-                        break
-                except OSError:
-                    # not yet ready; sleep and retry until timeout
-                    time.sleep(interval)
-
-            if not ready:
-                self.stdout.write("Timed out waiting for local redis to accept connections; continuing without redis.")
+        # A daemonized process can still fail to bind after check_call returns
+        # 0 (bad --dir permissions, a port race with something else), and a
+        # foreground process (Memurai, native Windows) can exit immediately
+        # during initialization. Do a short, bounded readiness check in both
+        # cases: ensure the process (if we're tracking one) hasn't exited and
+        # that Redis accepts connections on the configured port. If the
+        # process exits or we fail to connect within the timeout, consider
+        # the auto-start unsuccessful and continue.
+        ready = False
+        start = time.monotonic()
+        timeout = 3.0  # seconds, bounded so runserver doesn't block
+        interval = 0.1
+        while time.monotonic() - start < timeout:
+            # If we're tracking a process and it has exited early, bail out
+            if process is not None and process.poll() is not None:
+                self.stdout.write(
+                    f"Local redis process (PID {process.pid}) exited early with code {process.returncode}; skipping auto-start."
+                )
                 return
+            try:
+                with socket.create_connection((host, port), timeout=1):
+                    ready = True
+                    break
+            except OSError:
+                # not yet ready; sleep and retry until timeout
+                time.sleep(interval)
+
+        if not ready:
+            self.stdout.write("Timed out waiting for local redis to accept connections; continuing without redis.")
+            return
 
         # At this point the start attempt succeeded. Do a best-effort pid
         # discovery and print a short confirmation with a stop instruction.
         pid = None
         if start_mode == "native":
-            # If we started Memurai with Popen we can report its pid.
+            # If we started it in the foreground via Popen we can report its pid.
             if process is not None:
                 pid = str(process.pid)
             else:
@@ -234,7 +236,12 @@ class Command(StaticFilesRunserver):
                                 pid = lines[-1]
                             else:
                                 pid = None
-                        except subprocess.CalledProcessError:
+                        except (subprocess.CalledProcessError, OSError):
+                            # pgrep missing, not executable, or any other exec
+                            # failure: pid discovery is best-effort only, so
+                            # fall through to the "pid unknown" message below
+                            # rather than letting this abort a start that
+                            # already succeeded.
                             pid = None
 
         # Print a short confirmation so the developer knows how to stop the
