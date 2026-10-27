@@ -22,7 +22,6 @@ from programs.framework.pe_dependencies.constants import (
 from programs.programs.cross_white_label.nslp.base import SchoolLunch
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.tanf.base import Tanf
-from programs.programs.cross_white_label.wic.base import Wic
 from programs.programs.white_labels.ma.ssp.calculator import MaStateSupplementProgram
 from programs.programs.white_labels.federal.acp.calculator import Acp
 from programs.framework.pe_dependencies import household
@@ -281,16 +280,16 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
     def test_calculator_dependencies_are_merged(self):
         """Test that dependencies from multiple calculators are merged."""
 
-        result = pe_input(self.screen, [self.calculator_class, Wic])
+        result = pe_input(self.screen, [self.calculator_class, MoChip])
 
-        # Both SNAP and WIC dependencies should be present
+        # Both SNAP and CHIP dependencies should be present
         spm_unit = result["household"]["spm_units"]["spm_unit"]
         people = result["household"]["people"]
 
         # SNAP adds its would-be-benefit output
         self.assertIn("snap_if_takes_up", spm_unit)
 
-        # WIC adds pregnancy/breastfeeding fields to people
+        # CHIP adds per-member fields such as age
         head_id = str(self.head.id)
         self.assertIn("age", people[head_id])
 
@@ -313,7 +312,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
     def setUp(self):
         super().setUp()
 
-        # WIC is deliberately absent: it reads the ungated `wic`, so no floor applies to it.
         # SSI is computed in our own code and reads no PolicyEngine output.
         self.gated_output_programs = {"snap": Snap, "tanf": Tanf}
 
@@ -341,15 +339,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, (1, 750, 0))
 
         self.assertEqual(set(kept), {"acp", "nslp"})
-
-    def test_wic_survives_an_old_model(self):
-        """WIC reads the ungated `wic`, which every supported model defines, so it is not
-        exposed to the floor. Switching it to `wic_if_takes_up` would put it here for no
-        behavioral gain — the two are equal for every payload we send."""
-
-        kept = self._drop({"wic": Wic}, (1, 750, 0))
-
-        self.assertEqual(set(kept), {"wic"})
 
     def test_reports_the_drop(self):
         """Serving a screen quietly missing SNAP is the failure this guard exists to avoid

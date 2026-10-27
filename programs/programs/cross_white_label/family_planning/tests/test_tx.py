@@ -45,6 +45,7 @@ def make_member(age=30, medicaid=False, emergency_medicaid=False, employer=False
 
 def make_calculator(
     current_benefits=None,
+    base_benefits=None,
     has_chp=False,
     unearned=0,
     child_support_received=0,
@@ -70,6 +71,7 @@ def make_calculator(
     mock_program.year.get_limit.return_value = fpl_limit
 
     benefits = set(current_benefits or [])
+    base_benefits = set(base_benefits or [])
 
     def _gross(freq, types, exclude=None):
         exclude = exclude or []
@@ -86,6 +88,7 @@ def make_calculator(
 
     mock_screen = Mock()
     mock_screen.has_benefit = Mock(side_effect=lambda name_abbreviated: name_abbreviated in benefits)
+    mock_screen.has_base_benefit = Mock(side_effect=lambda base_program: base_program in base_benefits)
     mock_screen.has_insurance_types = Mock(side_effect=lambda types, strict=True: has_chp and "chp" in types)
     mock_screen.household_size = household_size
     mock_screen.calc_gross_income = Mock(side_effect=_gross)
@@ -301,9 +304,10 @@ class TestTxFppCountableIncome(TestCase):
 class TestTxFppAdjunctiveBypass(TestCase):
     """§4140 — SNAP / WIC / CHIP enrollment bypasses the income test."""
 
-    def _run(self, current_benefits=None, has_chp=False, unearned=99_999, fpl_limit=15_000):
+    def _run(self, current_benefits=None, base_benefits=None, has_chp=False, unearned=99_999, fpl_limit=15_000):
         calc = make_calculator(
             current_benefits=current_benefits,
+            base_benefits=base_benefits,
             has_chp=has_chp,
             unearned=unearned,
             fpl_limit=fpl_limit,
@@ -317,7 +321,8 @@ class TestTxFppAdjunctiveBypass(TestCase):
         self.assertTrue(self._run(current_benefits=["tx_snap"]))
 
     def test_wic_bypasses_income_test(self):
-        self.assertTrue(self._run(current_benefits=["tx_wic"]))
+        """WIC is one federal program, so any row in the `wic` group counts."""
+        self.assertTrue(self._run(base_benefits=["wic"]))
 
     def test_chip_bypasses_income_test(self):
         self.assertTrue(self._run(has_chp=True))
@@ -326,12 +331,9 @@ class TestTxFppAdjunctiveBypass(TestCase):
         self.assertFalse(self._run())
 
     def test_unprefixed_snap_does_not_bypass(self):
-        """Only the TX-scoped name bypasses. A bare "snap"/"wic" (e.g. a regression to the
-        legacy columns) must NOT trigger the §4140 bypass."""
+        """Only the TX-scoped name bypasses. A bare "snap" (e.g. a regression to the legacy
+        columns) must NOT trigger the §4140 bypass."""
         self.assertFalse(self._run(current_benefits=["snap"]))
-
-    def test_unprefixed_wic_does_not_bypass(self):
-        self.assertFalse(self._run(current_benefits=["wic"]))
 
     def test_tx_chip_current_benefit_does_not_bypass(self):
         """CHIP bypass comes from per-member insurance (has_insurance_types), not a current
