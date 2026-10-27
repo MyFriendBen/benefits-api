@@ -151,12 +151,12 @@ class AddressEndpointEventTest(TestCase):
             target.start()
             self.addCleanup(target.stop)
 
-    def _wsgi(self, method: str, path: str, query: str = "", body: dict[str, str] | None = None) -> str:
+    def _wsgi(self, method: str, path: str, body: dict[str, str] | None = None) -> str:
         raw = json.dumps(body).encode() if body is not None else b""
         environ: dict[str, Any] = {
             "REQUEST_METHOD": method,
             "PATH_INFO": path,
-            "QUERY_STRING": query,
+            "QUERY_STRING": "",
             "CONTENT_TYPE": "application/json",
             "CONTENT_LENGTH": str(len(raw)),
             "wsgi.input": BytesIO(raw),
@@ -172,12 +172,6 @@ class AddressEndpointEventTest(TestCase):
         for leaked in ("Invented", "Nowhere", FAKE_KEY):
             self.assertNotIn(leaked, blob)
 
-    def test_places_get(self) -> None:
-        with _recording_sentry() as events:
-            status = self._wsgi("GET", "/api/places/autocomplete/", f"input={FAKE_ADDRESS.replace(' ', '+')}")
-        self.assertTrue(status.startswith("500"), status)
-        self._assert_clean(events)
-
     def test_places_post(self) -> None:
         with _recording_sentry() as events:
             status = self._wsgi("POST", "/api/places/autocomplete/", body={"input": FAKE_ADDRESS})
@@ -189,13 +183,5 @@ class AddressEndpointEventTest(TestCase):
         body = {"upgrade": "hvac__heat_pump", "address": FAKE_ADDRESS, "heating_fuel": "natural_gas"}
         with _recording_sentry() as events:
             status = self._wsgi("POST", "/api/screener-options/cesn/rem-impact/", body=body)
-        self.assertTrue(status.startswith("500"), status)
-        self._assert_clean(events)
-
-    @patch("screener.views.RemImpactSerializer", side_effect=KeyError("fuel_results"))
-    def test_rem_impact_get(self, _serializer: Any) -> None:
-        query = f"upgrade=hvac__heat_pump&address={FAKE_ADDRESS.replace(' ', '+')}&heating_fuel=natural_gas"
-        with _recording_sentry() as events:
-            status = self._wsgi("GET", "/api/screener-options/cesn/rem-impact/", query)
         self.assertTrue(status.startswith("500"), status)
         self._assert_clean(events)

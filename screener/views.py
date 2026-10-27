@@ -1053,15 +1053,12 @@ class RemImpactView(views.APIView):
     and returns only the total cost delta (bill impact) and total emissions delta
     that the frontend needs to render the Calculate Impact results view.
 
-    POST takes the address in the JSON body so it stays out of request URLs, which
-    Heroku's router logs and Sentry captures. GET is kept until every frontend sends POST.
+    POST only: the address travels in the JSON body so it stays out of request URLs,
+    which Heroku's router logs and Sentry capture.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
-
-    def get(self, request, **_kwargs) -> Response:
-        return self._impact(request.query_params)
 
     def post(self, request, **_kwargs) -> Response:
         return self._impact(request.data)
@@ -1130,14 +1127,11 @@ class PlacesAutocompleteView(views.APIView):
     keeping the API key server-side. Returns US street address predictions
     restricted to street-level addresses.
 
-    POST takes the typed text in the JSON body for the same reason as RemImpactView.
+    POST only, with the typed text in the JSON body, for the same reason as RemImpactView.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PlacesRateThrottle]
-
-    def get(self, request, **_kwargs) -> Response:
-        return self._autocomplete(request.query_params)
 
     def post(self, request, **_kwargs) -> Response:
         return self._autocomplete(request.data)

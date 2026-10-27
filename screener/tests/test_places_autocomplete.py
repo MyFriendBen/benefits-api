@@ -129,7 +129,7 @@ class TestGooglePlacesClient(TestCase):
 
 @override_settings(CACHES=LOCAL_CACHE)
 class TestPlacesAutocompleteView(APITestCase):
-    """Integration tests for GET /api/places/autocomplete/; POST runs the same cases below."""
+    """Integration tests for POST /api/places/autocomplete/, which takes the typed text in the JSON body."""
 
     URL = "/api/places/autocomplete/"
 
@@ -139,12 +139,20 @@ class TestPlacesAutocompleteView(APITestCase):
     ]
 
     def _call(self, params: dict[str, str] | None = None) -> Response:
-        return self.client.get(self.URL, params or {})
+        return self.client.post(self.URL, params or {}, format="json")
 
     def setUp(self):
         patcher = patch("screener.views.PlacesRateThrottle.allow_request", return_value=True)
         patcher.start()
         self.addCleanup(patcher.stop)
+
+    # ── GET is gone: an address in the query string would land in the router logs ─
+
+    @patch("screener.views.GooglePlacesClient.autocomplete_address")
+    def test_get_is_not_allowed(self, mock_autocomplete: Mock) -> None:
+        response = self.client.get(self.URL, {"input": "123 Main"})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        mock_autocomplete.assert_not_called()
 
     # ── empty / missing input ─────────────────────────────────────────────────
 
@@ -216,13 +224,6 @@ class TestPlacesAutocompleteView(APITestCase):
         response = self._call({"input": "zzz"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
-
-
-class TestPlacesAutocompleteViewPost(TestPlacesAutocompleteView):
-    """The same cases over POST, which carries the address in the JSON body instead of the URL."""
-
-    def _call(self, params: dict[str, str] | None = None) -> Response:
-        return self.client.post(self.URL, params or {}, format="json")
 
     def test_non_object_body_reads_as_missing_input(self):
         for body in (["123 Main"], "123 Main"):
