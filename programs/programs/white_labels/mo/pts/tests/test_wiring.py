@@ -38,7 +38,7 @@ import programs.framework.pe_dependencies as dependency
 from integrations.clients.policyengine.registry import all_calculators
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies.payload import bucket_payload, build_pe_input, pe_input
-from programs.programs.cross_white_label.ssi.mo import MoSsi
+from programs.programs.cross_white_label.msp.mo import MoMsp
 from programs.models import WhiteLabel
 from screener.models import Expense, HouseholdMember, IncomeStream, Screen
 from programs.programs.white_labels.mo.pts.calculator import MoPts
@@ -320,7 +320,7 @@ class TestSharingAScreenWithOtherMoPrograms(MoPtsScenarioTestCase):
         return build_pe_input(
             screen,
             [
-                MoSsi(screen, program, screen.missing_fields()),
+                MoMsp(screen, program, screen.missing_fields()),
                 MoPts(screen, program, screen.missing_fields()),
             ],
         )

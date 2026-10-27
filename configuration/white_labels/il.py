@@ -2025,263 +2025,6 @@ class IlConfigurationData(ConfigurationData):
         "62999": {"Franklin": "Franklin"},
     }
 
-    category_benefits = {
-        "foodAndNutrition": {
-            "benefits": {
-                "snap": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.snap",
-                        "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.snap_desc",
-                        "_default_message": "Food assistance",
-                    },
-                },
-                "wic": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.il_wic",
-                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.il_wic_desc",
-                        "_default_message": "Food and breastfeeding assistance",
-                    },
-                },
-                "il_nslp": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.nslp",
-                        "_default_message": "National School Lunch Program: ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.nslp_desc",
-                        "_default_message": "Free school meals",
-                    },
-                },
-                "csfp": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.il_csfp",
-                        "_default_message": "Commodity Supplemental Food Program (CSFP): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.il_csfp_desc",
-                        "_default_message": "Monthly food packages for seniors",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "foodAndNutrition",
-                "_default_message": "Food and Nutrition",
-            },
-        },
-        "housingAndUtilities": {
-            "benefits": {
-                "lifeline": {
-                    "name": {"_label": "housingAndUtilities.lifeline", "_default_message": "Lifeline: "},
-                    "description": {
-                        "_label": "housingAndUtilities.lifeline_desc",
-                        "_default_message": "Phone or internet discount",
-                    },
-                },
-                "il_liheap": {
-                    "name": {
-                        "_label": "housingAndUtilities.il_liheap",
-                        "_default_message": "Low Income Home Energy Assistance Program (LIHEAP): ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.il_liheap_desc",
-                        "_default_message": "Help paying heating and cooling bills",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "housing",
-                "_default_message": "Housing and Utilities",
-            },
-        },
-        "cash": {
-            "benefits": {
-                "ssdi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssdi",
-                        "_default_message": "Social Security Disability Insurance (SSDI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssdi_desc",
-                        "_default_message": "Social security benefit for people with disabilities",
-                    },
-                },
-                "ssi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssi",
-                        "_default_message": "Supplemental Security Income (SSI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssi_desc",
-                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
-                    },
-                },
-                "tanf": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.il_tanf",
-                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.il_tanf_desc",
-                        "_default_message": "Cash assistance and work support",
-                    },
-                },
-                "il_aabd": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.il_aabd",
-                        "_default_message": "Aid to the Aged, Blind or Disabled (AABD): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.il_aabd_desc",
-                        "_default_message": "Cash assistance for aged, blind, or disabled individuals",
-                    },
-                },
-                "trump_account": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.trump_account",
-                        "_default_message": '530A ("Trump") Accounts: ',
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.trump_account_desc",
-                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
-                    },
-                },
-            },
-            "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
-        },
-        "transportation": {
-            "benefits": {
-                "il_bap": {
-                    "name": {
-                        "_label": "transportationBenefits.il_bap",
-                        "_default_message": "Benefits Access Program (BAP): ",
-                    },
-                    "description": {
-                        "_label": "transportationBenefits.il_bap_desc",
-                        "_default_message": "Transportation benefits for eligible individuals",
-                    },
-                },
-                "il_transit_reduced_fare": {
-                    "name": {
-                        "_label": "transportationBenefits.il_transit_reduced_fare",
-                        "_default_message": "Local Transit Reduced Fare: ",
-                    },
-                    "description": {
-                        "_label": "transportationBenefits.il_transit_reduced_fare_desc",
-                        "_default_message": "Reduced fare for public transit",
-                    },
-                },
-            },
-            "category_name": {"_label": "transportation", "_default_message": "Transportation"},
-        },
-        "taxCredits": {
-            "benefits": {
-                "eitc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.eitc",
-                        "_default_message": "Earned Income Tax Credit (EITC): ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.eitc_desc",
-                        "_default_message": "Federal tax credit - earned income",
-                    },
-                },
-                "ctc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.ctc",
-                        "_default_message": "Child Tax Credit (CTC): ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.ctc_desc",
-                        "_default_message": "Federal tax credit",
-                    },
-                },
-                "il_eitc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.il_eitc",
-                        "_default_message": "Illinois Earned Income Tax Credit (IL EITC): ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.il_eitc_desc",
-                        "_default_message": "Illinois state tax credit - earned income",
-                    },
-                },
-                "il_ctc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.il_ctc",
-                        "_default_message": "Illinois Child Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.il_ctc_desc",
-                        "_default_message": "Illinois state tax credit for children",
-                    },
-                },
-            },
-            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
-        },
-        "healthCare": {
-            "benefits": {
-                "il_aca": {
-                    "name": {
-                        "_label": "healthCareBenefits.il_aca",
-                        "_default_message": "ACA (Affordable Care Act) Premium Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.il_aca_desc",
-                        "_default_message": "Health insurance marketplace and premium tax credit.",
-                    },
-                },
-                "il_hbwd": {
-                    "name": {
-                        "_label": "healthCareBenefits.il_hbwd",
-                        "_default_message": "Health Benefits for Workers with Disabilities (HBWD): ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.il_hbwd_desc",
-                        "_default_message": "Medicaid buy-in program for working individuals with disabilities",
-                    },
-                },
-                "nfp": {
-                    "name": {
-                        "_label": "healthCareBenefits.nfp",
-                        "_default_message": "Nurse-Family Partnership (NFP): ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.nfp_desc",
-                        "_default_message": "Free nurse home visits for first-time pregnant parents",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "healthCare",
-                "_default_message": "Health Care",
-            },
-        },
-        "childCareYouthEducation": {
-            "benefits": {
-                "ccap": {
-                    "name": {
-                        "_label": "childCareYouthEducationBenefits.il_ccap",
-                        "_default_message": "Child Care Assistance Program (CCAP): ",
-                    },
-                    "description": {
-                        "_label": "childCareYouthEducationBenefits.il_ccap_desc",
-                        "_default_message": "Child care subsidies for working families and students",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "childCareYouthEducation",
-                "_default_message": "Child Care, Youth & Education",
-            },
-        },
-    }
-
     consent_to_contact = {
         "en-us": "https://www.myfriendben.org/terms-and-conditions/",
         "es": "https://www.myfriendben.org/terminos-condiciones/",
@@ -2296,23 +2039,28 @@ class IlConfigurationData(ConfigurationData):
     # override only the keys IL customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        "theme": {"default": "default"},
-        # Overrides the base's empty list so the results page omits the Immediate Help tab.
-        "uiOptions": {"default": ["no_results_more_help"]},
+        # twoOneOneChicago carries 211 Metro Chicago's palette; see styleController.ts.
+        "theme": {"default": "default", "211_metro_chicago": "twoOneOneChicago"},
         "logoSource": {
             "default": "MFB_ILLogo",
+            "211_metro_chicago": "Chicago211_MFBLogo",
         },
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
             },
+            "211_metro_chicago": {
+                "id": "referrerHook.logoAlts.211chicago",
+                "defaultMessage": "211 Metro Chicago and MyFriendBen home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
         },
-        "logoClass": {"default": "logo"},
+        # The co-brand lockup is ~4:1, wider than the default .logo rule expects.
+        "logoClass": {"default": "logo", "211_metro_chicago": "chicago211-logo-size"},
         "shareLink": {
             "default": "",
         },
@@ -2329,6 +2077,51 @@ class IlConfigurationData(ConfigurationData):
                 "referralSource",
                 "signUpInfo",
             ],
+            # 211 Metro Chicago runs its own intake and contact capture, so the
+            # sign-up step is dropped to avoid asking a caller for the same
+            # details twice. referralSource stays in the list for parity with the
+            # default; the screener skips it whenever the referrer code is known.
+            "211_metro_chicago": [
+                "zipcode",
+                # the hhSize and hhData have to be consecutive
+                "householdSize",
+                "householdData",
+                "hasExpenses",
+                "householdAssets",
+                "hasBenefits",
+                "acuteHHConditions",
+                "referralSource",
+            ],
+        },
+        "uiOptions": {
+            # Overrides the base's empty list so the results page omits the Immediate Help tab.
+            "default": ["no_results_more_help"],
+            # getReferrer resolves referrerData[key][referrer] ?? referrerData[key].default,
+            # so a referrer list REPLACES the default rather than extending it:
+            # no_results_more_help has to be repeated here or 211_metro_chicago users would get
+            # the Immediate Help tab back that the rest of Illinois no longer sees.
+            #
+            # il_show_211_link renders the 211 Metro Chicago resource deep links at
+            # the top of the Additional Resources tab; no_zipcode_change_state hides
+            # the "not in Illinois?" prompt on the zipcode step.
+            #
+            # white_header is not cosmetic: their logo is blue on transparent, and
+            # the default header bar is filled with --primary-color, which is now
+            # that same brand blue. Without this the mark is near-invisible.
+            "211_metro_chicago": [
+                "no_results_more_help",
+                "il_show_211_link",
+                "no_zipcode_change_state",
+                "white_header",
+            ],
+        },
+        # Every IL referrer hides the Immediate Help tab (no_results_more_help above), so the
+        # base message's "go to the Immediate Help tab" would point at a tab that isn't there.
+        "noResultMessage": {
+            "default": {
+                "_label": "noResultMessage.noImmediateHelp",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. You can find other support matched to your needs in the Additional Resources tab.",
+            },
         },
         "defaultLanguage": {"default": "en-us"},
     }

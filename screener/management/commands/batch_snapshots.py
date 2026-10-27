@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from integrations.external_api_status import track_external_api_failures
 from django.db.models import prefetch_related_objects
 from screener.models import Screen
 from screener.views import ELIGIBILITY_PREFETCH, eligibility_results
@@ -43,7 +44,10 @@ class Command(BaseCommand):
                 # Per screen rather than on the queryset, so --limit -1 doesn't hold every
                 # screen's members in memory at once.
                 prefetch_related_objects([screens[i]], *ELIGIBILITY_PREFETCH)
-                eligibility_results(screens[i], batch=True)
+                # Without a tracking context report_external_api_failure has nothing to
+                # deduplicate against, and an outage would send one event per HUD call.
+                with track_external_api_failures():
+                    eligibility_results(screens[i], batch=True)
                 time.sleep(1)
             except Exception as e:
                 errors.append(str(screens[i].id) + ": " + str(e))

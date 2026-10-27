@@ -902,8 +902,16 @@ class Command(BaseCommand):
         if "year" in configuration:
             year_value = configuration["year"]
             try:
-                year_obj = FederalPoveryLimit.objects.get(year=year_value, period=year_value)
+                year_obj = FederalPoveryLimit.objects.get(year=year_value)
                 program.year = year_obj
+                # A dynamic row's `year` FK must agree with `year_type`, or the program
+                # looks "hardcoded" in the admin while actually riding the shared row.
+                if year_value == "THIS_YEAR_CALENDAR":
+                    program.year_type = "calendar_year"
+                elif year_value == "THIS_YEAR_FISCAL":
+                    program.year_type = "fiscal_year"
+                else:
+                    program.year_type = "hardcoded"
                 self.stdout.write(f"  Year: {year_value}")
             except FederalPoveryLimit.DoesNotExist:
                 self.stdout.write(self.style.WARNING(f"  Warning: Year '{year_value}' not found"))
@@ -1257,8 +1265,8 @@ class Command(BaseCommand):
         This method updates those existing translations with the provided English text
         and auto-translates to all supported languages.
 
-        Note: assistance_link is marked as no_auto, so it will be copied to all languages
-        without machine translation.
+        Note: assistance_link and email are marked as no_auto, so they will be copied to all
+        languages without machine translation.
         """
         translated_fields = Navigator.objects.translated_fields
         self._bulk_update_entity_translations(navigator, translations, "navigator", translated_fields)

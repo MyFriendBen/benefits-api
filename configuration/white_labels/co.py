@@ -1727,301 +1727,6 @@ class CoConfigurationData(ConfigurationData):
         "82063": {"Jackson County": "Jackson County", "Larimer County": "Larimer County"},
     }
 
-    category_benefits = {
-        "cash": {
-            "benefits": {
-                "tanf": {
-                    "name": {
-                        "_label": "co.cashAssistanceBenefits.tanf",
-                        "_default_message": "Temporary Assistance for Needy Families/Colorado Works (TANF): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.tanf_desc",
-                        "_default_message": "Cash assistance and work support",
-                    },
-                },
-                "ssi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssi",
-                        "_default_message": "Supplemental Security Income (SSI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssi_desc",
-                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
-                    },
-                },
-                "andcs": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.andcs",
-                        "_default_message": "Aid to the Needy Disabled - Colorado Supplement (AND-CS): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.andcs_desc",
-                        "_default_message": "State cash assistance for individuals who are disabled and receiving SSI",
-                    },
-                },
-                "oap": {
-                    "name": {"_label": "cashAssistanceBenefits.oap", "_default_message": "Old Age Pension (OAP): "},
-                    "description": {
-                        "_label": "cashAssistanceBenefits.oap_desc",
-                        "_default_message": "State cash assistance for individuals 60 years of age or older",
-                    },
-                },
-                "ssdi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssdi",
-                        "_default_message": "Social Security Disability Insurance (SSDI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssdi_desc",
-                        "_default_message": "Social security benefit for people with disabilities",
-                    },
-                },
-                "trump_account": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.trump_account",
-                        "_default_message": '530A ("Trump") Accounts: ',
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.trump_account_desc",
-                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
-                    },
-                },
-            },
-            "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
-        },
-        "foodAndNutrition": {
-            "benefits": {
-                "snap": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.snap",
-                        "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.snap_desc",
-                        "_default_message": "Food assistance",
-                    },
-                },
-                "wic": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.wic",
-                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.wic_desc",
-                        "_default_message": "Food and breastfeeding assistance",
-                    },
-                },
-                "nslp": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.nslp",
-                        "_default_message": "National School Lunch Program: ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.nslp_desc",
-                        "_default_message": "Free school meals",
-                    },
-                },
-                "ede": {
-                    "name": {"_label": "foodAndNutritionBenefits.ede", "_default_message": "Everyday Eats: "},
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.ede_desc",
-                        "_default_message": "Food support for people 60 years of age or older",
-                    },
-                },
-            },
-            "category_name": {"_label": "foodAndNutrition", "_default_message": "Food and Nutrition"},
-        },
-        "childCare": {
-            "benefits": {
-                "ccap": {
-                    "name": {
-                        "_label": "childCareBenefits.cccap",
-                        "_default_message": "Colorado Child Care Assistance Program (CCCAP): ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.cccap_desc",
-                        "_default_message": "Help with child care costs",
-                    },
-                },
-                "denverpresc": {
-                    "name": {
-                        "_label": "childCareBenefits.denverpresc",
-                        "_default_message": "Denver Preschool Program: ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.denverpresc_desc",
-                        "_default_message": "Tuition credits for Denver preschoolers",
-                    },
-                },
-                "head_start": {
-                    "name": {"_label": "childCareBenefits.coheadstart", "_default_message": "Colorado Head Start: "},
-                    "description": {
-                        "_label": "childCareBenefits.coheadstart_desc",
-                        "_default_message": "Free early child care and preschool",
-                    },
-                },
-                "mydenver": {
-                    "name": {"_label": "childCareBenefits.mydenver", "_default_message": "MY Denver Card: "},
-                    "description": {
-                        "_label": "childCareBenefits.mydenver_desc",
-                        "_default_message": "Reduced-cost youth programs",
-                    },
-                },
-                "upk": {
-                    "name": {
-                        "_label": "childCareBenefits.univpresc",
-                        "_default_message": "Universal Preschool Colorado (UPK): ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.univpresc_desc",
-                        "_default_message": "Free preschool",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "childCareYouthAndEducation",
-                "_default_message": "Child Care, Youth, and Education",
-            },
-        },
-        "housingAndUtilities": {
-            "benefits": {
-                "lifeline": {
-                    "name": {"_label": "housingAndUtilities.lifeline", "_default_message": "Lifeline: "},
-                    "description": {
-                        "_label": "housingAndUtilities.lifeline_desc",
-                        "_default_message": "Phone or internet discount",
-                    },
-                },
-                "leap": {
-                    "name": {
-                        "_label": "housingAndUtilities.leap",
-                        "_default_message": "Low-Income Energy Assistance Program (LEAP): ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.leap_desc",
-                        "_default_message": "Help with winter heating bills",
-                    },
-                },
-                "cowap": {
-                    "name": {
-                        "_label": "housingAndUtilities.cowap",
-                        "_default_message": "Weatherization Assistance Program: ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.cowap_desc",
-                        "_default_message": "Free home energy upgrades",
-                    },
-                },
-                "coPropTaxRentHeatCreditRebate": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.coPropTaxRentHeatCreditRebate",
-                        "_default_message": "Colorado Property Tax/Rent/Heat Credit Rebate: ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.coPropTaxRentHeatCreditRebate_desc",
-                        "_default_message": "Cash to pay property tax, rent, and heat bills",
-                    },
-                },
-            },
-            "category_name": {"_label": "housingAndUtilities", "_default_message": "Housing and Utilities"},
-        },
-        "transportation": {
-            "benefits": {
-                "rtdlive": {
-                    "name": {"_label": "transportationBenefits.rtdlive", "_default_message": "RTD LiVE: "},
-                    "description": {
-                        "_label": "transportationBenefits.rtdlive_desc",
-                        "_default_message": "Discounted RTD fares",
-                    },
-                }
-            },
-            "category_name": {"_label": "transportation", "_default_message": "Transportation"},
-        },
-        "healthCare": {
-            "benefits": {
-                "dentallowincseniors": {
-                    "name": {
-                        "_label": "healthCareBenefits.dentallowincseniors",
-                        "_default_message": "Colorado Dental Health Program for Low-Income Seniors: ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.dentallowincseniors_desc",
-                        "_default_message": "Low-cost dental care for people 60 years of age or older",
-                    },
-                },
-                "nfp": {
-                    "name": {"_label": "healthCareBenefits.nfp", "_default_message": "Nurse-Family Partnership: "},
-                    "description": {
-                        "_label": "healthCareBenefits.nfp_desc",
-                        "_default_message": "Free nurse home visits for first-time pregnant parents",
-                    },
-                },
-                "cfhc": {
-                    "name": {
-                        "_label": "healthCareBenefits.connectForHealth",
-                        "_default_message": "Connect for Health/Premium Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.connectForHealth_desc",
-                        "_default_message": "Health insurance marketplace premium tax credit",
-                    },
-                },
-            },
-            "category_name": {"_label": "healthCare", "_default_message": "Health Care"},
-        },
-        "taxCredits": {
-            "benefits": {
-                "eitc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.eitc",
-                        "_default_message": "Earned Income Tax Credit (EITC): ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.eitc_desc",
-                        "_default_message": "Federal tax credit - earned income",
-                    },
-                },
-                "ctc": {
-                    "name": {"_label": "taxCreditBenefits.ctc", "_default_message": "Child Tax Credit (CTC): "},
-                    "description": {"_label": "taxCreditBenefits.ctc_desc", "_default_message": "Federal tax credit"},
-                },
-                "coeitc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.coeitc",
-                        "_default_message": "Colorado Earned Income Tax Credit/Expanded Earned Income Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.coeitc_desc",
-                        "_default_message": "State tax credit - earned income",
-                    },
-                },
-                "coctc": {
-                    "name": {"_label": "taxCreditBenefits.coctc", "_default_message": "Colorado Child Tax Credit: "},
-                    "description": {"_label": "taxCreditBenefits.coctc_desc", "_default_message": "State tax credit"},
-                },
-                "fatc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.fatc",
-                        "_default_message": "Family Affordability Tax Credit: ",
-                    },
-                    "description": {"_label": "taxCreditBenefits.fatc_desc", "_default_message": "State tax credit"},
-                },
-                "shitc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.seniorHousingIncomeTaxCredit",
-                        "_default_message": "Senior Housing Income Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.seniorHousingIncomeTaxCredit_desc",
-                        "_default_message": "State tax credit for people 65 years of age or older",
-                    },
-                },
-            },
-            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
-        },
-    }
-
     consent_to_contact = {
         "en-us": "https://www.myfriendben.org/terms-and-conditions/",
         "es": "https://www.myfriendben.org/terminos-condiciones/",
@@ -2060,6 +1765,7 @@ class CoConfigurationData(ConfigurationData):
             "pueblo": "PC_MFBLogo",
             "pitkin": "PitkinCounty_MFBLogo",
             "cudenver": "CUDenver_Logo",
+            "denver-public-schools": "DPS_MFBLogo",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
@@ -2134,6 +1840,10 @@ class CoConfigurationData(ConfigurationData):
                 "id": "referrerHook.logoAlts.cudenver",
                 "defaultMessage": "CU Denver home page button",
             },
+            "denver-public-schools": {
+                "id": "referrerHook.logoAlts.dps",
+                "defaultMessage": "Denver Public Schools and MyFriendBen home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {"default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"}},
@@ -2182,6 +1892,7 @@ class CoConfigurationData(ConfigurationData):
         },
         "uiOptions": {"default": ["no_results_more_help"], "211co": ["no_results_more_help", "211co"]},
         "defaultLanguage": {"default": "en-us"},
+        "footerPhone": {"default": "", "211co": "(866) 760-6489"},
     }
 
     override_text = {}

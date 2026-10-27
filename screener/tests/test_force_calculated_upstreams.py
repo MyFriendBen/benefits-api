@@ -223,11 +223,16 @@ class TestFailureIsNoWorseThanBefore(ForceCalculatedUpstreamTestCase):
 
         self.assertNotIn(DEPENDENT, result["published"])
 
-    def test_a_displayed_program_raising_something_else_still_propagates(self):
-        """The broad `except` is scoped to force-calculated rows. A bug in a program the
-        household was going to be shown is not something to swallow."""
-        with self.assertRaises(RuntimeError):
-            self.run_results({DEPENDENT: RuntimeError("boom")})
+    def test_a_displayed_program_raising_something_else_drops_only_that_program(self):
+        """A displayed program that raises is dropped and reported, not left to 500 the
+        response; the upstream still publishes. `test_missing_programs.py` covers the
+        reporting in detail."""
+        with patch("screener.views.capture_exception"), patch("screener.views.capture_message"):
+            result = self.run_results({DEPENDENT: RuntimeError("boom")})
+
+        self.assertNotIn(DEPENDENT, result["published"])
+        self.assertIn(UPSTREAM, result["published"])
+        self.assertTrue(result["missing_programs"])
 
 
 class TestDroppedProgramsAreRecordedWithAReason(ForceCalculatedUpstreamTestCase):

@@ -22,6 +22,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
 from benefits.cache_config import redis_pool_kwargs
+from benefits.sentry_scrub import scrub_event
 
 EXTRA_LANG_INFO = {
     "am": {
@@ -133,6 +134,8 @@ INSTALLED_APPS = [
     "configuration.apps.ConfigurationConfig",
     "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
+    # Retained only so migration 0005 (DeleteModel) applies in every environment;
+    # the app has no models, views, or commands. Remove once 0005 is deployed everywhere.
     "validations.apps.ValidationsConfig",
     "integrations.apps.IntegrationsConfig",
     "rest_framework",
@@ -325,6 +328,7 @@ if config("SENTRY_DSN", None) is not None:
         dsn=config("SENTRY_DSN"),
         integrations=[DjangoIntegration()],
         environment="dev" if DEBUG else "production",
+        before_send=scrub_event,
     )
 
 django_heroku.settings(locals())
@@ -463,6 +467,6 @@ GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
 GRAPH_MODELS = {
     "output": "./_mfb_uml.png",
     "group_models": True,
-    "app_labels": ["screener", "programs", "configuration", "validations", "authentication"],
+    "app_labels": ["screener", "programs", "configuration", "authentication"],
     "exclude_models": ["Translation"],
 }

@@ -1,4 +1,7 @@
+from programs.federal import filter_programs_by_name, visible_to_code
 from programs.models import Program, ProgramCategory, UrgentNeed, UrgentNeedType, Navigator
+from typing import Any
+
 from rest_framework import serializers
 from translations.serializers import ModelTranslationSerializer
 
@@ -54,7 +57,7 @@ class ProgramCategorySerializer(serializers.ModelSerializer):
         model = ProgramCategory
         fields = ("id", "name", "icon", "programs")
 
-    def get_programs(self, obj: ProgramCategory):
+    def get_programs(self, obj: ProgramCategory) -> list[dict[str, Any]]:
         # A shared category holds programs from every white label, so the
         # requested white label has to be applied here too. Without it a
         # category would list other states' programs.
@@ -62,7 +65,10 @@ class ProgramCategorySerializer(serializers.ModelSerializer):
 
         white_label = self.context.get("white_label")
         if white_label is not None:
-            programs = programs.filter(white_label__code=white_label)
+            programs = filter_programs_by_name(
+                programs.filter(visible_to_code(white_label)).select_related("white_label"),
+                "current benefits categories",
+            )
 
         return ProgramSerializer(programs, many=True).data
 

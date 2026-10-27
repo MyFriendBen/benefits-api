@@ -2,6 +2,7 @@
 Unit tests for Configuration app serializers.
 """
 
+import re
 from unittest.mock import MagicMock, patch
 from urllib.parse import urlparse
 from django.test import SimpleTestCase, TestCase
@@ -191,6 +192,31 @@ class TestLegalLinkConfiguration(SimpleTestCase):
                         )
 
 
+class TestFooterPhoneConfiguration(SimpleTestCase):
+    """
+    Asserts every referrer footer phone number is dialable. The frontend builds the tel: link from
+    the value's digits, so a typo'd number would display and dial wrong with no other check.
+    """
+
+    def test_footer_phones_are_dialable_us_numbers(self) -> None:
+        """Each non-empty footerPhone must hold 10 digits, or 11 starting with the country code 1."""
+        for code, white_label_data in white_label_config.items():
+            footer_phones = white_label_data.referrer_data.get("footerPhone", {})
+
+            for referrer, phone in footer_phones.items():
+                if phone == "":
+                    continue
+
+                digits = re.sub(r"\D", "", phone)
+
+                with self.subTest(white_label=code, referrer=referrer):
+                    self.assertTrue(
+                        len(digits) == 10 or (len(digits) == 11 and digits.startswith("1")),
+                        f'White label "{code}" has a footerPhone for "{referrer}" that is not a US '
+                        f"phone number: {phone!r}.",
+                    )
+
+
 class TestStateOptionsConfiguration(SimpleTestCase):
     """Guards the state dropdown's derived catalog and the per-referrer overrides that select from it."""
 
@@ -205,6 +231,7 @@ class TestStateOptionsConfiguration(SimpleTestCase):
         "ma": True,
         "mo": True,
         "nc": True,
+        "nj": False,
         "tx": True,
         "wa": True,
     }

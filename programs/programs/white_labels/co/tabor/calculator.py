@@ -15,7 +15,7 @@ class Tabor(ProgramCalculator):
         302_000: 350,
         math.inf: 565,
     }
-    dependencies = ["age"]
+    dependencies = ["age", "income_amount", "income_frequency"]
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member

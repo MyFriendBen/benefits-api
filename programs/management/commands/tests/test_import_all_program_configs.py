@@ -1,10 +1,13 @@
 import json
+import os
 import tempfile
+import unittest
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError
 from django.test import TestCase
 
@@ -30,6 +33,10 @@ class ImportAllProgramConfigsCommandTest(TestCase):
         self.err = StringIO()
         # Clear any existing import records
         ProgramConfigImport.objects.all().delete()
+        # A developer's own program-ops checkout would otherwise add its records to every run.
+        patcher = patch.object(self._get_command_class(), "PROGRAM_OPS_DIR", Path("/nonexistent/program-ops"))
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def test_model_creation(self):
         """Test that ProgramConfigImport model works correctly"""
@@ -219,6 +226,11 @@ class SkippedConfigTrackingTest(TestCase):
         patcher = patch.object(self._command_class(), "DATA_DIR", self.data_dir)
         patcher.start()
         self.addCleanup(patcher.stop)
+        program_ops_patcher = patch.object(
+            self._command_class(), "PROGRAM_OPS_DIR", Path(self.temp_dir.name) / "no-program-ops"
+        )
+        program_ops_patcher.start()
+        self.addCleanup(program_ops_patcher.stop)
 
         # Any test here that imports a config for a program that does not yet exist will
         # create one, and creating a program translates its fields. Translate() reads
@@ -463,6 +475,180 @@ class SkippedConfigTrackingTest(TestCase):
         command = self._command_class()()
         records = command._get_import_records()
         return [f.name for f in self.data_dir.glob("*.json") if command._is_pending(f, records)]
+
+
+class ProgramOpsRecordsTest(TestCase):
+    """
+    program-ops records are imported alongside the data directory.
+
+    program-ops is the source of truth for the programs it holds a record for, so a data directory
+    copy of one is ignored, and a record waits until its calculator is registered.
+    """
+
+    PROGRAM = "co_record_program"
+
+    def setUp(self) -> None:
+        ProgramConfigImport.objects.all().delete()
+        WhiteLabel.objects.get_or_create(code="co", defaults={"name": "Colorado", "state_code": "CO"})
+
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        root = Path(self.temp_dir.name)
+        self.data_dir = root / "data"
+        self.data_dir.mkdir()
+        self.program_ops_dir = root / "program-ops"
+        self.record_dir = self.program_ops_dir / "programs" / "white_labels" / "co" / "record_program"
+        self.record_dir.mkdir(parents=True)
+
+        from programs.management.commands.import_all_program_configs import Command
+
+        for attr, value in (("DATA_DIR", self.data_dir), ("PROGRAM_OPS_DIR", self.program_ops_dir)):
+            patcher = patch.object(Command, attr, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+        calculators_patcher = patch(
+            "programs.management.commands.import_all_program_configs.all_calculator_classes",
+            return_value={self.PROGRAM: MagicMock()},
+        )
+        calculators_patcher.start()
+        self.addCleanup(calculators_patcher.stop)
+
+        # Creating a program translates its fields; see SkippedConfigTrackingTest.setUp.
+        translate_patcher = patch("programs.management.commands.import_program_config.Translate")
+        translate = translate_patcher.start()
+        translate.return_value.bulk_translate.side_effect = lambda langs, texts: {
+            text: {lang: text for lang in langs} for text in texts
+        }
+        self.addCleanup(translate_patcher.stop)
+
+    def _config(self, program_name: str) -> dict:
+        return {
+            "white_label": {"code": "co"},
+            "program_category": {"external_name": "test_category", "icon": "icon", "name": "Test Category"},
+            "program": {"name_abbreviated": program_name},
+        }
+
+    def _write_record(self, program_name: str) -> Path:
+        record = self.record_dir / f"{program_name}_program_record.json"
+        record.write_text(json.dumps(self._config(program_name)), encoding="utf-8")
+        return record
+
+    def _run(self, *args: str) -> str:
+        out = StringIO()
+        call_command("import_all_program_configs", *args, stdout=out, stderr=StringIO())
+        return out.getvalue()
+
+    def test_record_with_a_calculator_is_imported_and_recorded(self) -> None:
+        self._write_record(self.PROGRAM)
+
+        self._run()
+
+        program = Program.objects.get(white_label__code="co", name_abbreviated=self.PROGRAM)
+        self.assertFalse(program.active, "A record without `active` imports switched off")
+        self.assertTrue(ProgramConfigImport.objects.filter(filename=f"{self.PROGRAM}_program_record.json").exists())
+
+    def test_record_without_a_calculator_waits(self) -> None:
+        self._write_record("co_unbuilt_program")
+
+        output = self._run()
+
+        self.assertIn("Waiting for a calculator, not imported: co_unbuilt_program_program_record.json", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated="co_unbuilt_program").exists())
+
+    def test_unreadable_record_is_reported_not_dropped(self) -> None:
+        (self.record_dir / "broken_program_record.json").write_text("{not json", encoding="utf-8")
+
+        output = self._run()
+
+        self.assertRegex(output, r"Failed:\s+1")
+
+    def test_record_that_is_not_utf8_fails_alone(self) -> None:
+        """A record that can't be decoded is reported as failed; the other configs still import."""
+        (self.record_dir / "latin1_program_record.json").write_bytes(b"\xff\xfe{}")
+        self._write_record(self.PROGRAM)
+
+        output = self._run()
+
+        self.assertRegex(output, r"Failed:\s+1")
+        self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root can read a file with no permissions")
+    def test_record_that_cannot_be_opened_fails_alone(self) -> None:
+        """A record the process can't open is reported as failed; the other configs still import."""
+        locked = self.record_dir / "locked_program_record.json"
+        locked.write_text(json.dumps(self._config("co_locked_program")), encoding="utf-8")
+        locked.chmod(0)
+        self.addCleanup(locked.chmod, 0o644)
+        self._write_record(self.PROGRAM)
+
+        output = self._run()
+
+        self.assertRegex(output, r"Failed:\s+1")
+        self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
+
+    def _write_data_copy(self, program_name: str) -> None:
+        (self.data_dir / f"{program_name}_initial_config.json").write_text(
+            json.dumps(self._config(program_name)), encoding="utf-8"
+        )
+
+    def test_record_wins_over_a_data_directory_copy(self) -> None:
+        self._write_record(self.PROGRAM)
+        self._write_data_copy(self.PROGRAM)
+
+        output = self._run()
+
+        self.assertIn(f"Ignoring {self.PROGRAM}_initial_config.json", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
+        self.assertEqual(
+            list(ProgramConfigImport.objects.values_list("filename", flat=True)),
+            [f"{self.PROGRAM}_program_record.json"],
+        )
+
+    def test_copy_of_a_record_waiting_for_its_calculator_is_ignored(self) -> None:
+        """The record holds the program even before its calculator merges."""
+        self._write_record("co_unbuilt_program")
+        self._write_data_copy("co_unbuilt_program")
+
+        output = self._run()
+
+        self.assertIn("Ignoring co_unbuilt_program_initial_config.json", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated="co_unbuilt_program").exists())
+
+    def test_two_records_for_one_program_fail_the_run(self) -> None:
+        self._write_record(self.PROGRAM)
+        other_dir = self.program_ops_dir / "programs" / "white_labels" / "co" / "other"
+        other_dir.mkdir()
+        (other_dir / "other_program_record.json").write_text(json.dumps(self._config(self.PROGRAM)), encoding="utf-8")
+
+        with self.assertRaisesMessage(CommandError, f"co/{self.PROGRAM} is declared twice"):
+            self._run()
+
+        self.assertFalse(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
+
+    def test_explicit_program_ops_dir_that_does_not_exist_fails(self) -> None:
+        with self.assertRaisesMessage(CommandError, "No program-ops checkout at"):
+            self._run("--program-ops-dir", str(Path(self.temp_dir.name) / "missing"))
+
+    def test_without_a_checkout_the_data_directory_is_still_imported(self) -> None:
+        (self.data_dir / "co_local_program_initial_config.json").write_text(
+            json.dumps(self._config("co_local_program")), encoding="utf-8"
+        )
+        self.program_ops_dir.rename(Path(self.temp_dir.name) / "moved")
+
+        output = self._run()
+
+        self.assertIn("No program-ops checkout at", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated="co_local_program").exists())
+
+    def test_program_ops_dir_option_overrides_the_default(self) -> None:
+        self._write_record(self.PROGRAM)
+        other_checkout = Path(self.temp_dir.name) / "elsewhere"
+        self.program_ops_dir.rename(other_checkout)
+
+        self._run("--program-ops-dir", str(other_checkout))
+
+        self.assertTrue(Program.objects.filter(name_abbreviated=self.PROGRAM).exists())
 
 
 class ProgramConfigImportModelTest(TestCase):

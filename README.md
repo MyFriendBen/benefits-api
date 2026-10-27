@@ -10,6 +10,19 @@ This is the repository for the backend Python/Django rules engine that takes hou
 
 Setup instructions are located in the [Wiki](https://github.com/Gary-Community-Ventures/benefits-api/wiki/Get-Started).
 
+### Pre-commit hook
+
+A pre-commit hook runs [black](https://black.readthedocs.io/) on staged Python files, so formatting
+problems surface before CI rejects the PR. With a Python 3.11+ virtualenv at `venv/` (`.python-version`
+pins 3.12), run once per clone:
+
+```bash
+make setup
+```
+
+This installs `requirements-dev.txt` and runs `pre-commit install`. If black reformats a file, the
+commit stops; `git add` the changes and commit again. To check every file: `venv/bin/pre-commit run --all-files`.
+
 ## Testing
 
 We use pytest for testing with two types of tests:

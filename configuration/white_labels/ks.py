@@ -28,7 +28,7 @@ class KsConfigurationData(ConfigurationData):
         "moreHelpOptions": [
             {
                 "name": {
-                    "_default_message": "Kansas 211 (United Way of Kansas)",
+                    "_default_message": "Kansas 211 (United Way of the Plains)",
                     "_label": "moreHelp.211.name.ks",
                 },
                 "link": "https://unitedwayplains.org/211-information-and-referral/",
@@ -1179,118 +1179,6 @@ class KsConfigurationData(ConfigurationData):
     }
 
     # ==========================================================================================
-    # CATEGORY BENEFITS
-    # Benefits shown on the "Do you already have any benefits?" step.
-    # ==========================================================================================
-
-    category_benefits = {
-        "foodAndNutrition": {
-            "benefits": {
-                "snap": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.snap",
-                        "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.snap_desc",
-                        "_default_message": "Food assistance",
-                    },
-                },
-                "wic": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.wic",
-                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.wic_desc",
-                        "_default_message": "Food and breastfeeding assistance",
-                    },
-                },
-                "nslp": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.nslp",
-                        "_default_message": "National School Lunch Program: ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.nslp_desc",
-                        "_default_message": "Free school meals",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "foodAndNutrition",
-                "_default_message": "Food and Nutrition",
-            },
-        },
-        "cash": {
-            "benefits": {
-                "ssdi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssdi",
-                        "_default_message": "Social Security Disability Insurance (SSDI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssdi_desc",
-                        "_default_message": "Social security benefit for people with disabilities",
-                    },
-                },
-                "ssi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssi",
-                        "_default_message": "Supplemental Security Income (SSI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssi_desc",
-                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
-                    },
-                },
-                "tanf": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.tanf",
-                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.tanf_desc",
-                        "_default_message": "Cash assistance for families with children",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "cashAssistance",
-                "_default_message": "Cash Assistance",
-            },
-        },
-        "healthCare": {
-            "benefits": {
-                "medicaid": {
-                    "name": {
-                        "_label": "healthCareBenefits.medicaid.ks",
-                        "_default_message": "KanCare (Medicaid): ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.medicaid_desc",
-                        "_default_message": "Free or low-cost health coverage",
-                    },
-                },
-                "medicare_savings": {
-                    "name": {
-                        "_label": "healthCareBenefits.medicare_savings",
-                        "_default_message": "Medicare Savings Program: ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.medicare_savings_desc",
-                        "_default_message": "Help paying Medicare premiums and costs",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "healthCare",
-                "_default_message": "Health Care",
-            },
-        },
-    }
-
-    # ==========================================================================================
     # REFERRER DATA
     # ==========================================================================================
 
@@ -1298,15 +1186,21 @@ class KsConfigurationData(ConfigurationData):
     # override only the keys KS customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        # "uwgkc" is United Way of Greater Kansas City, whose 2-1-1 covers the metro on both sides
-        # of the state line. The same referrer code is configured identically in mo.py, since each
-        # state path loads its own config.
-        "theme": {"default": "default", "uwgkc": "uwgkc"},
-        "logoSource": {"default": "MFB_Logo", "uwgkc": "KS211_MFBLogo"},
+        # "211ks" is the statewide 2-1-1 Kansas referrer (mo.py has "211mo"). "uwgkc" is the
+        # United Way of Greater Kansas City code it replaced: it no longer appears in the
+        # referral-source menu, but an old ?referrer=uwgkc link still gets the same branding and
+        # its screens stay attributed to UWGKC. It spans the state line, so it is configured in
+        # both ks.py and mo.py, since each state path loads its own config.
+        "theme": {"default": "default", "211ks": "uwgkc", "uwgkc": "uwgkc"},
+        "logoSource": {"default": "MFB_Logo", "211ks": "KS211_MFBLogo", "uwgkc": "KS211_MFBLogo"},
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
+            },
+            "211ks": {
+                "id": "referrerHook.logoAlts.ks211",
+                "defaultMessage": "211 Kansas and MyFriendBen home page button",
             },
             "uwgkc": {
                 "id": "referrerHook.logoAlts.ks211",
@@ -1317,18 +1211,26 @@ class KsConfigurationData(ConfigurationData):
         # referrer's list replaces `default` rather than merging with it, so every referrer
         # repeats the flag.
         # The co-branded logo's MyFriendBen wordmark is dark navy, which would disappear against
-        # the theme's dark blue header, so this referrer gets the white header treatment.
-        "uiOptions": {"default": ["no_results_more_help"], "uwgkc": ["no_results_more_help", "white_header"]},
+        # the theme's dark blue header, so the 2-1-1 referrers get the white header treatment.
+        # `211ks` swaps the site footer for the 2-1-1 Kansas footer (Dial 2-1-1 bar plus the
+        # partner's about and disclaimer text).
+        "uiOptions": {
+            "default": ["no_results_more_help"],
+            "211ks": ["no_results_more_help", "white_header", "211ks"],
+            "uwgkc": ["no_results_more_help", "white_header", "211ks"],
+        },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
         },
-        "logoClass": {"default": "logo", "uwgkc": "uwgkc-logo-size"},
+        "logoClass": {"default": "logo", "211ks": "uwgkc-logo-size", "uwgkc": "uwgkc-logo-size"},
         "shareLink": {
             "default": "https://screener.myfriendben.org/ks/step-1",
+            "211ks": "https://screener.myfriendben.org/ks/step-1?referrer=211ks",
             "uwgkc": "https://screener.myfriendben.org/ks/step-1?referrer=uwgkc",
         },
-        "stateOptions": {"default": [], "uwgkc": ["ks", "mo"]},
+        # 2-1-1 Kansas serves Kansas only; uwgkc spanned the state line.
+        "stateOptions": {"default": [], "211ks": ["ks"], "uwgkc": ["ks", "mo"]},
         "stepDirectory": {
             "default": [
                 "zipcode",
@@ -1344,7 +1246,7 @@ class KsConfigurationData(ConfigurationData):
             ],
         },
         "defaultLanguage": {"default": "en-us"},
-        # Blank for uwgkc: its logo already carries "Kansas", so the header's separate state name
-        # would repeat it underneath the artwork.
-        "stateName": {"default": "Kansas", "uwgkc": ""},
+        # Blank for the 2-1-1 referrers: their logo already carries "Kansas", so the header's
+        # separate state name would repeat it underneath the artwork.
+        "stateName": {"default": "Kansas", "211ks": "", "uwgkc": ""},
     }

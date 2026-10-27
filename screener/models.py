@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from typing import ClassVar, Optional
 from datetime import date
 from django.db import models
@@ -95,7 +96,12 @@ class Screen(models.Model):
     is_13_or_older = models.BooleanField(blank=True, null=True)
     zipcode = models.CharField(max_length=5, blank=True, null=True)
     county = models.CharField(max_length=120, default=None, blank=True, null=True)
-    household_size = models.IntegerField(blank=True, null=True)
+    # Matches the screener and both tax-credit apps, which cap a household at 8. HUD's income
+    # limit tables stop at 8 too, so a larger household has no limit to compare against.
+    MAX_HOUSEHOLD_SIZE: ClassVar[int] = 8
+    household_size = models.IntegerField(
+        blank=True, null=True, validators=[MinValueValidator(1), MaxValueValidator(MAX_HOUSEHOLD_SIZE)]
+    )
     last_tax_filing_year = models.CharField(max_length=120, default=None, blank=True, null=True)
     household_assets = models.DecimalField(decimal_places=2, max_digits=10, default=None, blank=True, null=True)
     housing_situation = models.CharField(max_length=30, blank=True, null=True, default=None)
@@ -134,34 +140,20 @@ class Screen(models.Model):
     utm_content = models.CharField(max_length=128, blank=True, null=True)
     utm_term = models.CharField(max_length=128, blank=True, null=True)
 
-    @property
-    def frozen(self):
-        return self.validations.count() > 0
-
     def get_reference_date(self) -> date:
         """
-        Get the reference date for age calculations.
-        For frozen screens (with validations), use the earliest validation's created_date
-        to keep ages consistent over time. For non-frozen screens, use current date.
+        Get the reference date for age calculations: the current date.
 
-        Memoized per instance. `order_by()` builds a fresh queryset, so this read can
-        never be served by `prefetch_related` — and callers reach it once per household
-        member, from inside per-program calculators (`is_dependent`, and the SSDI/BSP
-        family), so uncached it is an N+1 on members x programs. Nothing invalidates the
-        cache: an instance lives for one request, and a reference date that shifts
-        mid-request is a bug in its own right, since the whole point is to keep ages
-        consistent (two calls either side of midnight would otherwise disagree on an
-        unfrozen screen).
+        Memoized per instance. Nothing invalidates the cache: an instance lives for one
+        request, and a reference date that shifts mid-request is a bug in its own right,
+        since the whole point is to keep ages consistent (two calls either side of
+        midnight would otherwise disagree).
         """
         cached = getattr(self, "_reference_date", None)
         if cached is not None:
             return cached
 
-        earliest_validation = self.validations.order_by("created_date").first()
-        if earliest_validation and earliest_validation.created_date:
-            self._reference_date = earliest_validation.created_date.date()
-        else:
-            self._reference_date = timezone.now().date()
+        self._reference_date = timezone.now().date()
         return self._reference_date
 
     def calc_gross_income(self, frequency, types, exclude=[]):
@@ -580,7 +572,7 @@ class HouseholdMember(models.Model):
         # exactly, so an unordered query can make the same household stop matching.
         ordering = ["id"]
 
-    def calc_gross_income(self, frequency, types, exclude=[]):
+    def calc_gross_income(self, frequency: str, types: Collection[str], exclude: Collection[str] = ()) -> float:
         gross_income = 0
 
         income_streams = self.income_streams.all()
@@ -591,7 +583,12 @@ class HouseholdMember(models.Model):
             include_all = "all" in types
             specific_match = income_stream.type in types
             earned_income_match = "earned" in types and income_stream.type in EARNED_INCOME_TYPES
-            unearned_income_match = "unearned" in types and income_stream.type not in EARNED_INCOME_TYPES
+            # A blank type is unknown, not unearned; `missing_fields()` reports it.
+            unearned_income_match = (
+                "unearned" in types
+                and bool(income_stream.type and str(income_stream.type).strip())
+                and income_stream.type not in EARNED_INCOME_TYPES
+            )
             if include_all or earned_income_match or unearned_income_match or specific_match:
                 if frequency == "monthly":
                     gross_income += income_stream.monthly()
@@ -797,17 +794,36 @@ class IncomeStream(models.Model):
     def _hour_to_month(self):
         return self.amount * self.hours_worked * Decimal(4.35)
 
-    def missing_fields(self):
-        income_fields = (
-            "type",
-            "amount",
-            "frequency",
-        )
+    # The frequencies monthly() and yearly() convert. Any other value, "" included, matches
+    # no branch and raises UnboundLocalError mid-calculation, so it gates like a null.
+    SUPPORTED_FREQUENCIES: ClassVar[frozenset[str]] = frozenset(
+        {"monthly", "weekly", "biweekly", "semimonthly", "yearly", "hourly"}
+    )
 
+    def missing_fields(self) -> Dependencies:
         missing_fields = Dependencies()
-        for field in income_fields:
-            if getattr(self, field) is None:
-                missing_fields.add("income_" + field)
+
+        if self.type is None:
+            missing_fields.add("income_type")
+        elif not str(self.type).strip():
+            # A blank type matches no earned type in calc_gross_income, so it falls through
+            # to the unearned catch-all and is silently counted as unearned income.
+            missing_fields.add("income_type")
+            missing_fields.report_malformed("income_type", self.type, "blank; would count as unearned income")
+
+        if self.amount is None:
+            missing_fields.add("income_amount")
+
+        if self.frequency is None:
+            missing_fields.add("income_frequency")
+        elif self.frequency not in self.SUPPORTED_FREQUENCIES:
+            missing_fields.add("income_frequency")
+            missing_fields.report_malformed("income_frequency", self.frequency, "monthly()/yearly() can't convert it")
+        elif self.frequency == "hourly" and self.hours_worked is None:
+            # _hour_to_month needs hours_worked. Gated as income_amount because that is the
+            # token calculators declare when they read an amount; nothing declares hours.
+            missing_fields.add("income_amount")
+            missing_fields.report_malformed("income_hours_worked", None, "hourly income with no hours_worked")
 
         return missing_fields
 
@@ -850,14 +866,29 @@ class Expense(models.Model):
 
         return yearly
 
-    def missing_fields(self):
-        expense_fields = ("type", "amount")
+    # IncomeStream.SUPPORTED_FREQUENCIES without "hourly": these monthly()/yearly() have no
+    # hourly branch.
+    SUPPORTED_FREQUENCIES: ClassVar[frozenset[str]] = frozenset(
+        {"monthly", "weekly", "biweekly", "semimonthly", "yearly"}
+    )
 
+    def missing_fields(self) -> Dependencies:
         missing_fields = Dependencies()
 
-        for field in expense_fields:
-            if getattr(self, field) is None:
-                missing_fields.add("expense_" + field)
+        if self.type is None:
+            missing_fields.add("expense_type")
+        elif not str(self.type).strip():
+            missing_fields.add("expense_type")
+            missing_fields.report_malformed("expense_type", self.type, "blank; matches no expense type")
+
+        if self.amount is None:
+            missing_fields.add("expense_amount")
+
+        if self.frequency is None:
+            missing_fields.add("expense_frequency")
+        elif self.frequency not in self.SUPPORTED_FREQUENCIES:
+            missing_fields.add("expense_frequency")
+            missing_fields.report_malformed("expense_frequency", self.frequency, "monthly()/yearly() can't convert it")
 
         return missing_fields
 
@@ -1009,6 +1040,14 @@ class EligibilitySnapshot(models.Model):
     #: program the household would have seen; recorded because it means a gate that should
     #: have been decoupled fell back to dropping its dependents.
     DROPPED_UPSTREAM_ERROR = "force_calculated_upstream_error"
+
+    #: An active row with no calculator registered under its name: the calculator was
+    #: deleted from the code, or the row was imported ahead of it. Reported to Sentry.
+    DROPPED_NO_CALCULATOR = "no_calculator"
+
+    #: A displayed program's calculator raised something other than `DependencyError`: a
+    #: bug, or screen data it could not handle. Reported to Sentry.
+    DROPPED_CALCULATOR_ERROR = "calculator_error"
 
 
 class NPSScore(models.Model):

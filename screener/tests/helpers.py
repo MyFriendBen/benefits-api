@@ -10,6 +10,9 @@ from django.conf import settings
 from programs.models import (
     County,
     Document,
+    Navigator,
+    NavigatorLanguage,
+    ProgramNavigator,
     ExpenseType,
     Program,
     UrgentNeed,
@@ -153,3 +156,46 @@ def seed_urgent_need(
         need.functions.add(function)
 
     return need
+
+
+def seed_navigator(
+    program: Program,
+    external_name: str,
+    *,
+    name: str = "",
+    description: str = "",
+    email: str = "",
+    link: str = "",
+    phone_number: str = "",
+    county_names: tuple[str, ...] = (),
+    language_codes: tuple[str, ...] = (),
+    eligibility_programs: tuple[Program, ...] = (),
+    order: int = 999,
+) -> Navigator:
+    """Attach a Navigator to `program` through the ordered through table, with its
+    translations filled in.
+
+    `Navigator.objects.new_navigator` creates every translation as
+    BLANK_TRANSLATION_PLACEHOLDER, which both the results view and the assistant treat
+    as "no value", so anything a test wants to read back has to be written here. The
+    link goes through `ProgramNavigator` (not the legacy `programs` M2M) because that is
+    the table both consumers read.
+    """
+    navigator = Navigator.objects.new_navigator(program.white_label.code, external_name, phone_number or None)
+    for field, text in (("name", name), ("description", description), ("email", email), ("assistance_link", link)):
+        if text:
+            _set_default_text(getattr(navigator, field), text)
+
+    for county_name in county_names:
+        county, _ = County.objects.get_or_create(white_label=program.white_label, name=county_name)
+        navigator.counties.add(county)
+
+    for code in language_codes:
+        language, _ = NavigatorLanguage.objects.get_or_create(code=code)
+        navigator.languages.add(language)
+
+    for required in eligibility_programs:
+        navigator.eligibility_programs.add(required)
+
+    ProgramNavigator.objects.create(program=program, navigator=navigator, order=order)
+    return navigator

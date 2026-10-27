@@ -1,6 +1,8 @@
 import hashlib
 import requests
-from typing import Optional
+from collections.abc import Mapping
+from typing import Any, Optional
+from uuid import UUID
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
@@ -22,7 +24,9 @@ from screener.models import (
     ProgramEligibilitySnapshot,
 )
 from rest_framework import viewsets, views, status, mixins, throttling
+from rest_framework.exceptions import NotFound
 from rest_framework import permissions
+from rest_framework.request import Request
 from rest_framework.response import Response
 from screener.serializers import (
     ScreenSerializer,
@@ -38,10 +42,11 @@ from screener.serializers import (
     RemImpactSerializer,
     CurrentBenefitToggleSerializer,
 )
-from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
+from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
-from programs.util import DependencyError, Dependencies, UpstreamAbsentError
+from programs.util import DependencyError, Dependencies, UnregisteredCalculatorError, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
+from programs.federal import filter_programs_by_name, visible_program, visible_to, visible_to_code
 from programs.models import (
     Document,
     Navigator,
@@ -56,9 +61,9 @@ from programs.categories import ProgramCategoryCapCalculator, category_cap_calcu
 from django.core.exceptions import ObjectDoesNotExist
 from programs.warnings import warning_calculators
 from programs.serializers import HasBenefitsProgramSerializer
-from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
 from .urgent_needs import eligible_urgent_needs
+from .navigators import navigators_for_program
 from drf_yasg.utils import swagger_auto_schema
 import math
 import json
@@ -147,7 +152,7 @@ class ScreenCurrentBenefitsView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Screen.objects.all()
 
-    def patch(self, request, screen_uuid):
+    def patch(self, request: Request, screen_uuid: UUID) -> Response:
         serializer = CurrentBenefitToggleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         name_abbreviated = serializer.validated_data["name_abbreviated"]
@@ -160,11 +165,24 @@ class ScreenCurrentBenefitsView(views.APIView):
         # the locked screen's white label rather than a pre-lock read.
         with transaction.atomic():
             screen = get_object_or_404(Screen.objects.select_for_update(), uuid=screen_uuid)
-            program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=name_abbreviated)
+            # Not a get(): a federal row and the deactivated state row it replaced share a name,
+            # and get() would raise MultipleObjectsReturned on the pair.
+            program = visible_program(screen.white_label, name_abbreviated, "current benefit toggle")
+            if program is None:
+                raise NotFound(
+                    f"No program '{name_abbreviated}' is offered to white label '{screen.white_label.code}'."
+                )
+            # Match the screen's rows by name, not by `program`: a screen saved before its program
+            # moved to federal still points at the deactivated state row. Clearing every row with
+            # this name lets an untick remove that old row, and a tick replace it with the federal
+            # one rather than add a second row for the same benefit.
+            CurrentBenefit.objects.filter(
+                visible_to(screen.white_label, prefix="program__"),
+                screen=screen,
+                program__name_abbreviated=name_abbreviated,
+            ).delete()
             if has:
-                CurrentBenefit.objects.get_or_create(screen=screen, program=program)
-            else:
-                CurrentBenefit.objects.filter(screen=screen, program=program).delete()
+                CurrentBenefit.objects.create(screen=screen, program=program)
             current_benefits = sorted(
                 CurrentBenefit.objects.filter(screen=screen).values_list("program__name_abbreviated", flat=True)
             )
@@ -312,7 +330,11 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
         urgent_needs = urgent_need_results(screen, eligibility)
         external_api_failures = get_external_api_failures()
-    validations = ValidationSerializer(screen.validations.all(), many=True).data
+
+    # A failed integration means some answer came from a fallback: HUD-backed programs
+    # degrade to "not eligible (income limit unknown)" rather than dropping out, so nothing
+    # in the eligibility loop would otherwise flag them.
+    missing_programs = missing_programs or bool(external_api_failures)
 
     results = {
         "programs": eligibility,
@@ -320,7 +342,6 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         "screen_id": screen.id,
         "default_language": screen.request_language_code,
         "missing_programs": missing_programs,
-        "validations": validations,
         "program_categories": categories,
         "pe_data": _pe_data,
         # Unlike pe_data (admin-only, popped below), this is sent to all users so the
@@ -338,33 +359,6 @@ def translations_prefetch_name(prefix: str, fields):
     return [f"{prefix}{f}__translations" for f in fields]
 
 
-def filter_by_county(navigators: list, county: Optional[str]) -> list:
-    result = []
-    for nav in navigators:
-        counties = nav.counties.all()
-        if len(counties) == 0 or (county is not None and any(county in c.name for c in counties)):
-            result.append(nav)
-    return result
-
-
-def filter_by_required_programs_eligibility(navigators: list, program_eligibility: dict) -> list:
-    result = []
-    for nav in navigators:
-        required = nav.eligibility_programs.all()
-        if not required or all(
-            getattr(program_eligibility.get(p.name_abbreviated), "eligible", False) for p in required
-        ):
-            result.append(nav)
-    return result
-
-
-def referrer_prioritization(eligibility_filtered: list, primary_navigators: list) -> list:
-    if not primary_navigators:
-        return eligibility_filtered
-    referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
-    return referrer_navigators if referrer_navigators else eligibility_filtered
-
-
 def update_navigators(
     eligible_program_data: list,
     program_eligibility: dict,
@@ -372,12 +366,15 @@ def update_navigators(
     screen_county: Optional[str],
     referrer,
 ) -> None:
+    """Attach each eligible program's navigators to its results entry, in place.
+
+    The selection itself lives in `screener.navigators` so Benji's context builder can
+    run the same three filters against the same inputs — see that module for why the
+    two consumers must not drift.
+    """
     primary_navs = list(referrer.primary_navigators.all()) if referrer is not None else []
     for program, idx in eligible_program_data:
-        all_navigators = [pn.navigator for pn in program.program_navigators.all()]
-        county_filtered = filter_by_county(all_navigators, screen_county)
-        eligibility_filtered = filter_by_required_programs_eligibility(county_filtered, program_eligibility)
-        navigators = referrer_prioritization(eligibility_filtered, primary_navs)
+        navigators = navigators_for_program(program, program_eligibility, screen_county, primary_navs)
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
@@ -431,7 +428,9 @@ CALC_ORDER = (
 )
 
 
-def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
+def eligibility_results(
+    screen: Screen, batch: bool = False, pe_version: Optional[str] = None
+) -> tuple[list[dict[str, Any]], bool, list[dict[str, Any]], PEData]:
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,
@@ -440,12 +439,15 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     except ObjectDoesNotExist:
         referrer = None
 
-    excluded_programs = []
+    # By name, not id: a program moved to federal gets a new row under the same name, and a
+    # referrer that removed the old state row means to remove its replacement too.
+    excluded_names = []
     if referrer is not None:
-        excluded_programs = [p.id for p in referrer.remove_programs.all()]
+        excluded_names = [p.name_abbreviated for p in referrer.remove_programs.all()]
 
     all_programs = (
-        Program.objects.filter(active=True, category__isnull=False, white_label=screen.white_label)
+        Program.objects.filter(visible_to(screen.white_label), active=True, category__isnull=False)
+        .select_related("white_label")
         .prefetch_related(
             "legal_status_required",
             "year",
@@ -475,8 +477,16 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             "category",
             *translations_prefetch_name("category__", ProgramCategory.objects.translated_fields),
         )
-        .exclude(id__in=excluded_programs)
+        .exclude(name_abbreviated__in=excluded_names)
+        # Explicit so the response order is stable: CALC_ORDER only reorders its own programs and
+        # keeps the rest in query order, which without this is whatever Postgres returns and
+        # shifts with the query plan or an edited row.
+        .order_by("id")
     )
+    # Every name below keys a dict (`program_by_abbr`, `program_eligibility`), so a name active
+    # under both this white label and `federal` would silently drop one row from the PE payload
+    # while still displaying both.
+    all_programs = filter_programs_by_name(all_programs, "eligibility_results")
     data = []
 
     try:
@@ -491,6 +501,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     snapshot = EligibilitySnapshot.objects.create(screen=screen, is_batch=batch, had_error=True)
 
     missing_dependencies = screen.missing_fields()
+    _report_malformed_screen_data(screen, missing_dependencies)
 
     program_by_abbr = {p.name_abbreviated: p for p in all_programs}
 
@@ -505,13 +516,15 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     # Built after `program_by_abbr` on purpose. `force_calculated_codes()` contains no
     # PolicyEngine program, and keeping the two lists separate makes that structural — a
     # row added here can never reach `pe_calculators` and perturb the shared PE payload.
-    upstream_only_programs = list(
+    upstream_only_programs = filter_programs_by_name(
         Program.objects.filter(
-            white_label=screen.white_label,
+            visible_to(screen.white_label),
             name_abbreviated__in=force_calculated_codes(),
         )
         .exclude(name_abbreviated__in=list(program_by_abbr))
-        .select_related("year")
+        .select_related("year", "white_label")
+        .order_by("id"),
+        "eligibility_results upstream",
     )
     upstream_only_ids = {program.id for program in upstream_only_programs}
 
@@ -528,13 +541,15 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     pe_programs = pe_calculators.keys()
 
-    def sort_first(program):
+    def sort_first(program: Program) -> int:
         if program.name_abbreviated not in CALC_ORDER:
             return len(CALC_ORDER)
 
         return CALC_ORDER.index(program.name_abbreviated)
 
-    missing_programs = False
+    # Flagged whether or not a calculator declares the malformed field: one that reads it
+    # without declaring it computed from data we know is bad.
+    missing_programs = bool(missing_dependencies.malformed)
 
     # make certain benifits calculate first so that they can be used in other benefits
     all_programs = sorted(all_programs, key=sort_first)
@@ -583,20 +598,25 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
                 # reports that for itself when its own gate raises.
                 if not skip:
                     missing_programs = True
-                    dropped_programs[program.name_abbreviated] = (
-                        EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
-                        if isinstance(e, UpstreamAbsentError)
-                        else EligibilitySnapshot.DROPPED_MISSING_FIELD
-                    )
+                    if isinstance(e, UnregisteredCalculatorError):
+                        reason = EligibilitySnapshot.DROPPED_NO_CALCULATOR
+                    elif isinstance(e, UpstreamAbsentError):
+                        reason = EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
+                    else:
+                        reason = EligibilitySnapshot.DROPPED_MISSING_FIELD
+                    dropped_programs[program.name_abbreviated] = reason
                 continue
             except Exception as e:
-                # Only reachable for a force-calculated upstream: this row was not being
-                # calculated at all before, so adding it must not be able to make the
-                # response worse than it already was. Leaving the key absent lets the
-                # dependent's gate raise and drop it exactly as it did before.
+                # A bug, or screen data the calculator could not handle. Drop just this
+                # program, loudly, rather than 500 the response and lose every other one.
                 if not skip:
-                    raise
+                    missing_programs = True
+                    dropped_programs[program.name_abbreviated] = EligibilitySnapshot.DROPPED_CALCULATOR_ERROR
+                    _report_program_failure(screen, program, e)
+                    continue
 
+                # A force-calculated upstream is never displayed. Leaving its key absent lets
+                # the dependent's gate raise and drop it exactly as before it was calculated.
                 capture_exception(e, level="error")
                 capture_message(
                     f"Force-calculated upstream {program.name_abbreviated} raised; programs "
@@ -643,14 +663,23 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         # upstream whose warnings will never be rendered
         if not skip and eligibility.eligible:
             for warning in program.warning_messages.all():
-                if warning.calculator not in warning_calculators:
-                    raise Exception(f"{warning.calculator} is not a valid calculator name")
+                # A broken warning costs only itself: the program's result is still right,
+                # so it is skipped and reported at warning level rather than 500ing the
+                # response or marking the results incomplete.
+                calculator = warning_calculators.get(warning.calculator)
+                if calculator is None:
+                    _report_warning_failure(
+                        screen, program, warning, f"'{warning.calculator}' is not a valid calculator name"
+                    )
+                    continue
 
-                warning_calculator = warning_calculators[warning.calculator](
-                    screen, warning, eligibility, missing_dependencies
-                )
+                try:
+                    shown = calculator(screen, warning, eligibility, missing_dependencies, program=program).calc()
+                except Exception as e:
+                    _report_warning_failure(screen, program, warning, "its calculator raised", error=e)
+                    continue
 
-                if warning_calculator.calc():
+                if shown:
                     warnings.append(WarningMessageSerializer(warning).data)
 
         if not skip and program.active:
@@ -770,6 +799,67 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         eligible_programs.append(clean_program)
 
     return eligible_programs, missing_programs, categories, pe_data
+
+
+def _report_malformed_screen_data(screen: Screen, missing_dependencies: Dependencies) -> None:
+    """Report fields holding a value we can't compute with, as one event per screen.
+
+    Unlike an unanswered question this is corruption or serializer drift. The message is
+    static and the fingerprint is the set of fields, so Sentry opens one issue per kind of
+    bad data rather than one per screen.
+    """
+    malformed = missing_dependencies.malformed
+    if not malformed:
+        return
+
+    fields = sorted({m.field for m in malformed})
+    capture_message(
+        "Malformed screen data treated as missing; programs declaring these fields were skipped "
+        "and the results are flagged incomplete.",
+        level="error",
+        contexts={
+            "screen": {"id": screen.id, "white_label": screen.white_label.code},
+            "malformed_data": {"fields": fields, "values": [m.describe() for m in malformed]},
+        },
+        fingerprint=["malformed-screen-data", *fields],
+    )
+
+
+def _report_program_failure(screen: Screen, program: Program, error: Exception) -> None:
+    """Report a displayed program whose calculator raised. The message is fingerprinted on
+    the program, one issue per broken calculator; the exception groups on its own stack so
+    two bugs in one program stay apart."""
+    context = {
+        "program": {"name_abbreviated": program.name_abbreviated, "id": program.id},
+        "screen": {"id": screen.id, "white_label": screen.white_label.code},
+    }
+    capture_exception(error, level="error", contexts=context)
+    capture_message(
+        "A program's calculator raised; the program was dropped for this screen.",
+        level="error",
+        contexts=context,
+        fingerprint=["program-eligibility-failure", program.name_abbreviated],
+    )
+
+
+def _report_warning_failure(
+    screen: Screen, program: Program, warning: WarningMessage, reason: str, error: Exception | None = None
+) -> None:
+    """Report a warning message skipped because it couldn't be evaluated. Fingerprinted on
+    the warning's calculator, so one broken calculator is one issue across programs."""
+    context = {
+        "program": {"name_abbreviated": program.name_abbreviated, "id": program.id},
+        "warning": {"id": warning.id, "external_name": warning.external_name, "calculator": warning.calculator},
+        "screen": {"id": screen.id, "white_label": screen.white_label.code},
+    }
+    if error is not None:
+        capture_exception(error, level="warning", contexts=context)
+    capture_message(
+        f"Skipped a warning message on {program.name_abbreviated}: {reason}.",
+        level="warning",
+        contexts=context,
+        fingerprint=["warning-message-failure", warning.calculator],
+    )
 
 
 class GetProgramTranslation:
@@ -897,12 +987,15 @@ class HasBenefitsProgramsView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Program.objects.none()  # Required for DjangoModelPermissions
 
-    def get(self, request, white_label):
-        programs = Program.objects.filter(
-            active=True,
-            show_in_has_benefits_step=True,
-            white_label__code=white_label,
-        ).select_related("name", "website_description", "category__name")
+    def get(self, request: Request, white_label: str) -> Response:
+        programs = filter_programs_by_name(
+            Program.objects.filter(
+                visible_to_code(white_label),
+                active=True,
+                show_in_has_benefits_step=True,
+            ).select_related("name", "website_description", "category__name", "white_label"),
+            "has-benefits step",
+        )
 
         serializer = HasBenefitsProgramSerializer(programs, many=True)
         return Response(serializer.data)
@@ -914,30 +1007,44 @@ class ReferralSourcesView(views.APIView):
     Response shape:
         {
             "generic": {"friend": "Friend / Family", ...},
-            "partners": {"bia": "Benefits in Action", ...}
+            "partners": {"bia": "Benefits in Action", ...},
+            "hidden": {"211chicago": "211 Metro Chicago", ...}
         }
 
-    Both groups are sorted alphabetically by display name.
+    generic and partners are the dropdown options. hidden holds referrers with
+    show_in_dropdown=False: not offered in the dropdown, but still known, so a
+    ?referrer= link to one skips the referral step like any other referrer.
+
+    All groups are sorted alphabetically by display name.
     """
 
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Referrer.objects.none()  # Required for DjangoModelPermissions
 
     def get(self, request, white_label):
-        referrers = Referrer.objects.filter(
-            white_label__code=white_label,
-            show_in_dropdown=True,
-        ).order_by("name")
+        referrers = Referrer.objects.filter(white_label__code=white_label).order_by("name")
 
         generic = {}
         partners = {}
+        hidden = {}
         for ref in referrers:
-            if ref.is_partner:
+            if not ref.show_in_dropdown:
+                hidden[ref.referrer_code] = ref.name
+            elif ref.is_partner:
                 partners[ref.referrer_code] = ref.name
             else:
                 generic[ref.referrer_code] = ref.name
 
-        return Response({"generic": generic, "partners": partners})
+        return Response({"generic": generic, "partners": partners, "hidden": hidden})
+
+
+def _str_param(params: Any, key: str) -> str:
+    """A request value as a stripped string; anything that isn't a string reads as missing.
+
+    `params` is whatever the body parsed to, so a JSON list or string reads as all missing.
+    """
+    value = params.get(key) if isinstance(params, Mapping) else None
+    return value.strip() if isinstance(value, str) else ""
 
 
 class RemImpactView(views.APIView):
@@ -945,16 +1052,25 @@ class RemImpactView(views.APIView):
     Proxies a request to the Rewiring America REM /api/v1/rem/address endpoint
     and returns only the total cost delta (bill impact) and total emissions delta
     that the frontend needs to render the Calculate Impact results view.
+
+    POST takes the address in the JSON body so it stays out of request URLs, which
+    Heroku's router logs and Sentry captures. GET is kept until every frontend sends POST.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
 
     def get(self, request, **_kwargs) -> Response:
-        upgrade = request.query_params.get("upgrade")
-        address = request.query_params.get("address")
-        heating_fuel = request.query_params.get("heating_fuel")
-        water_heater_fuel = request.query_params.get("water_heater_fuel") or None
+        return self._impact(request.query_params)
+
+    def post(self, request, **_kwargs) -> Response:
+        return self._impact(request.data)
+
+    def _impact(self, params: Any) -> Response:
+        upgrade = _str_param(params, "upgrade")
+        address = _str_param(params, "address")
+        heating_fuel = _str_param(params, "heating_fuel")
+        water_heater_fuel = _str_param(params, "water_heater_fuel") or None
 
         if not all([upgrade, address, heating_fuel]):
             return Response(
@@ -992,14 +1108,15 @@ class RemImpactView(views.APIView):
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except requests.RequestException as e:
+        except requests.RequestException:
+            # No str(e): connection errors embed the upstream URL, address included.
             return Response(
-                {"error": "Rewiring America request failed.", "detail": str(e)},
+                {"error": "Rewiring America request failed."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except ValueError as e:
+        except ValueError:
             return Response(
-                {"error": "Rewiring America returned an invalid response.", "detail": str(e)},
+                {"error": "Rewiring America returned an invalid response."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -1012,13 +1129,21 @@ class PlacesAutocompleteView(views.APIView):
     Proxies address autocomplete requests to the Google Places API,
     keeping the API key server-side. Returns US street address predictions
     restricted to street-level addresses.
+
+    POST takes the typed text in the JSON body for the same reason as RemImpactView.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PlacesRateThrottle]
 
     def get(self, request, **_kwargs) -> Response:
-        input_text = request.query_params.get("input", "").strip()
+        return self._autocomplete(request.query_params)
+
+    def post(self, request, **_kwargs) -> Response:
+        return self._autocomplete(request.data)
+
+    def _autocomplete(self, params: Any) -> Response:
+        input_text = _str_param(params, "input")
 
         if not input_text:
             return Response([], status=status.HTTP_200_OK)
@@ -1032,9 +1157,10 @@ class PlacesAutocompleteView(views.APIView):
                 {"error": f"Google Places API error: {http_status}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except requests.RequestException as e:
+        except requests.RequestException:
+            # No str(e): connection errors embed the upstream URL, API key included.
             return Response(
-                {"error": "Google Places request failed.", "detail": str(e)},
+                {"error": "Google Places request failed."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 

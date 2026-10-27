@@ -92,13 +92,21 @@ class TestClassAttributes(TestCase):
         self.assertEqual(KsSafesr.excluded_types, ("sSDisability", "childSupport", "gifts", "veteran"))
 
     def test_dependencies(self):
-        # expense_type/expense_amount are the tokens Expense.missing_fields actually
+        # The expense_* entries are the tokens Expense.missing_fields actually
         # emits; a bare "expenses" is never emitted and so never gates anything.
         # relationship and household_size are deliberately absent: the minor guard
         # is keyed to birth year and no rule reads household size.
         self.assertEqual(
             KsSafesr.dependencies,
-            ("age", "income_type", "income_amount", "income_frequency", "expense_type", "expense_amount"),
+            (
+                "age",
+                "income_type",
+                "income_amount",
+                "income_frequency",
+                "expense_type",
+                "expense_amount",
+                "expense_frequency",
+            ),
         )
 
     def test_declared_dependencies_are_tokens_the_screener_emits(self):
@@ -123,6 +131,7 @@ class TestClassAttributes(TestCase):
             "income_frequency",
             "expense_type",
             "expense_amount",
+            "expense_frequency",
         }
         self.assertEqual(set(KsSafesr.dependencies) - emitted, set())
 
@@ -355,7 +364,7 @@ class TestAgeGate(SafesrTestCase):
     def test_claim_year_falls_back_when_no_ceiling_is_published_for_the_configured_year(self):
         # The fallback is shared so the age gate and the ceiling can never
         # describe different years.
-        self.set_claim_year(2099)
+        self.set_claim_year(2026)
         self.assertEqual(self.make_calculator(self.household())._claim_year(), max(KsSafesr.income_limit_by_year))
 
 

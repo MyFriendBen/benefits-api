@@ -104,12 +104,21 @@ class Vintage:
 
 #: The tax credits are recorded as production has them, not as a decision. `year` is the tax
 #: year, but the same federal credits sit on 2024 in co/il/ma, 2025 in nc/tx/wa and the CO
-#: tax calculator, and 2026 in ks/mo -- a spread no single rule produces. Which tax year the
-#: screener should model is a product decision nobody has made yet, so these are UNVERIFIED
-#: and the audit lists them rather than reading them as settled.
+#: tax calculator, and 2026 in ks/mo -- a spread no single rule produces. The rule is now
+#: decided -- the prior tax year, see `_PRIOR_TAX_YEAR` -- but each credit moves only once its
+#: spec and tests are verified at that year, so until then these stay UNVERIFIED and the audit
+#: lists them rather than reading them as settled.
 _TAX_YEAR_UNSETTLED = (
-    "tax year, not calendar year; recorded as production has it -- which tax year the "
-    "screener should model is an open product decision"
+    "tax year, not calendar year; recorded as production has it until the credit is "
+    "verified against the prior-tax-year rule"
+)
+
+#: The tax year a household is filing: the calendar year just ended, rolling over on January 1
+#: rather than when filing season opens. Nothing rolls it forward automatically, so an entry
+#: on this rule goes stale every January.
+_PRIOR_TAX_YEAR = (
+    "prior tax year: the calendar year just ended, which is what a household screening now "
+    "files; rolls over on January 1"
 )
 
 
@@ -137,6 +146,13 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="validated against a real Colorado Works award to the dollar",
         source="partner case review, 2026-09",
+    ),
+    ("federal", "federal_ctc"): Vintage(
+        edition="2025",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule=_PRIOR_TAX_YEAR,
+        source="program-ops programs/white_labels/federal/ctc/federal_ctc_spec.md, section 7 (2025 parameters)",
     ),
     ("il", "il_aca"): Vintage(
         edition="2026",
@@ -208,6 +224,13 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="DOE effective-date lag: the 200% column in force is the prior year's guideline",
         source="DOE Weatherization Program Notice 25-3",
     ),
+    ("nj", "nj_cover_all_kids"): Vintage(
+        edition="2026",
+        basis=Basis.TABLE_EDITION,
+        status=Status.CONFIRMED,
+        rule="NJ FamilyCare's published $9,763/month family-of-four limit is 355% of the 2026 guideline",
+        source="white_labels/nj/cover_all_kids/spec.md",
+    ),
     ("nc", "nc_aca"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
@@ -275,7 +298,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
     ),
     ("il", "ssi"): Vintage(
         edition="2026",
@@ -283,7 +306,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
     ),
     ("ma", "ssi"): Vintage(
         edition="2026",
@@ -291,7 +314,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
     ),
     ("tx", "tx_ssi"): Vintage(
         edition="2026",
@@ -299,7 +322,16 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule="current year; the federal benefit rate is adjusted by COLA each January and "
         "SSI is federally administered, so there is no state adoption step to lag behind",
-        source="42 U.S.C. 1382(b); ssi/specs/wa.md, which prices the 2026 FBR at " "$994 individual / $1,491 couple",
+        source="2026 SSI Annual Report section III.C, FBR $994 individual / $1,491 couple",
+    ),
+    ("federal", "federal_ssi"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="current year; the federal benefit rate is adjusted by COLA each January and "
+        "SSI is federally administered, so there is no state adoption step to lag behind",
+        source="program-ops federal_ssi_spec.md section 7, which prices the 2026 FBR at "
+        "$994 individual / $1,491 couple",
     ),
     ("il", "il_msp"): Vintage(
         edition="2026",
@@ -429,13 +461,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("co", "ctc"): Vintage(
-        edition="2024",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("co", "dptr"): Vintage(
         edition="2024",
         basis=Basis.TABLE_EDITION,
@@ -492,13 +517,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("co_tax_calculator", "ctc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("co_tax_calculator", "eitc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
@@ -508,13 +526,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
     ),
     ("co_tax_calculator", "fatc"): Vintage(
         edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("il", "ctc"): Vintage(
-        edition="2024",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
         rule=_TAX_YEAR_UNSETTLED,
@@ -541,22 +552,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("ks", "ks_ctc"): Vintage(
-        edition="2026",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("ks", "ks_eitc"): Vintage(
         edition="2026",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("ma", "ctc"): Vintage(
-        edition="2024",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
         rule=_TAX_YEAR_UNSETTLED,
@@ -583,13 +580,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("mo", "mo_ctc"): Vintage(
-        edition="2026",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("mo", "mo_eitc"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
@@ -597,19 +587,20 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("mo", "mo_wftc"): Vintage(
-        edition="2026",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("nc", "ctc"): Vintage(
+    ("mo", "mo_pts"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
+        status=Status.CONFIRMED,
+        rule=_PRIOR_TAX_YEAR,
+        source="RSMo 135.030 (claim years through 2025); 2025 Form MO-PTC and Property Tax Credit Chart; "
+        "programs/programs/white_labels/mo/pts/spec.md",
+    ),
+    ("mo", "mo_wftc"): Vintage(
+        edition="2025",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule=_PRIOR_TAX_YEAR,
+        source="Form MO-WFTC (2025); programs/programs/white_labels/mo/wftc/spec.md, validated at TY2025",
     ),
     ("nc", "eitc"): Vintage(
         edition="2025",
@@ -618,21 +609,7 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("tx", "tx_ctc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("tx", "tx_eitc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("wa", "wa_ctc"): Vintage(
         edition="2025",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,

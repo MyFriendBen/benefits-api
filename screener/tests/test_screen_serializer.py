@@ -553,3 +553,43 @@ class LocationValidationTests(TestCase):
         serializer = ScreenSerializer(data=self._payload(zipcode="67202", county="Sedgwick"), validate_location=False)
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+
+class HouseholdSizeRangeTests(TestCase):
+    """The API accepts the household sizes every client offers, 1 through 8, and no others.
+
+    The screener, the CO tax-credit app and the family-affordability app all cap at 8, and
+    HUD's income limit tables stop there too.
+    """
+
+    def setUp(self) -> None:
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def serializer(self, household_size: int | None) -> ScreenSerializer:
+        return ScreenSerializer(
+            data={
+                "white_label": self.white_label.code,
+                "household_members": [],
+                "expenses": [],
+                "current_benefits": [],
+                "household_size": household_size,
+            }
+        )
+
+    def test_one_through_eight_are_accepted(self) -> None:
+        for size in (1, Screen.MAX_HOUSEHOLD_SIZE):
+            with self.subTest(size=size):
+                serializer = self.serializer(size)
+                self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_unanswered_is_accepted(self) -> None:
+        """The screener sends null until the household-size step is answered."""
+        serializer = self.serializer(None)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_outside_one_through_eight_is_rejected(self) -> None:
+        for size in (0, -1, Screen.MAX_HOUSEHOLD_SIZE + 1):
+            with self.subTest(size=size):
+                serializer = self.serializer(size)
+                self.assertFalse(serializer.is_valid())
+                self.assertIn("household_size", serializer.errors)

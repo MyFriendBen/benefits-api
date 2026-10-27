@@ -17,14 +17,13 @@ Three things can silently break it:
 from django.test import TestCase
 
 from programs.programs.cross_white_label.snap.base import SNAP_BASE_INPUTS
-from programs.framework.pe_dependencies import member, receipt_contract, spm
+from programs.framework.pe_dependencies import member, receipt_contract, spm, ssi_inputs
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.lifeline.base import Lifeline
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.cross_white_label.tanf.ks import KsTanf
 from programs.programs.cross_white_label.wic.base import Wic
-from programs.programs.cross_white_label.ssi.base import Ssi
 from programs.programs.cross_white_label.msp.base import Msp
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
@@ -109,8 +108,9 @@ class TestProgramsReadWouldBeOutputs(TestCase):
     A program the contract gates must report what the household *would* get, not the
     receipt-gated field its take-up flag zeroes out.
 
-    That means `*_if_takes_up` for SNAP, TANF and SSI. WIC is the exception: we send no WIC
-    take-up flag, so its plain output is already the would-be value.
+    That means `*_if_takes_up` for SNAP and TANF. SSI is computed in our own code and reads
+    no PolicyEngine output. WIC is the exception: we send no WIC take-up flag, so its plain
+    output is already the would-be value.
     """
 
     def test_snap(self):
@@ -120,10 +120,6 @@ class TestProgramsReadWouldBeOutputs(TestCase):
     def test_tanf(self):
         self.assertEqual(Tanf.pe_name, "tanf_if_takes_up")
         self.assertEqual(Tanf.pe_outputs, [spm.TanfIfTakesUp])
-
-    def test_ssi(self):
-        self.assertEqual(Ssi.pe_name, "ssi_if_takes_up")
-        self.assertEqual(Ssi.pe_outputs, [member.SsiIfTakesUp])
 
     def test_wic_reads_the_ungated_output(self):
         """The exception: `wic` is already the would-be value, since `takes_up_wic_if_eligible`
@@ -169,8 +165,9 @@ class TestAdoptingCalculators(TestCase):
     def test_lifeline(self):
         self._assert_adopts(Lifeline)
 
-    def test_ssi_and_tanf_themselves(self):
-        self._assert_adopts(Ssi)
+    def test_ssi_inputs_and_tanf_itself(self):
+        """`ssi_inputs` is the SSI bundle the MA supplement and EAEDC compose into their requests."""
+        self._assert_adopts("ssi_inputs", ssi_inputs)
         self._assert_adopts(Tanf)
 
     def test_state_programs_that_read_ssi_or_tanf(self):

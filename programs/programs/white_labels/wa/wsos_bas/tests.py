@@ -13,9 +13,7 @@ class TestWaWsosBas(CustomCalculatorTestCase):
     value contract.
 
     Maps to spec.md scenarios but calls the calculator directly. The full
-    end-to-end browser flow is exercised separately via Playwright; the
-    persisted validation suite (`wa_wsos_bas.json`) covers Scenarios 1, 2,
-    and 3 against the live screener layer.
+    end-to-end browser flow is exercised separately via Playwright.
     """
 
     calculator_class = WaWsosBas

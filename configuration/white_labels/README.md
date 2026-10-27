@@ -25,7 +25,6 @@ This directory contains configuration files for MyFriendBen white labels (state/
 4. **Fill in required fields** (marked with `TODO` comments and `your_*_key` placeholders):
    - `state["name"]` - State/region name
    - `counties_by_zipcode` - Zip code to county mappings (REQUIRED)
-   - `category_benefits` - Benefits available in your state
    - Other sections as needed
 
 5. **Register your white label** in `__init__.py`:
@@ -177,39 +176,23 @@ counties_by_zipcode = {
 
 This is much faster than manually entering thousands of zip codes!
 
-### 3. Category Benefits (IMPORTANT)
+### 3. Current Benefits ("Do you already have any benefits?" step)
 
-Defines benefits shown in the "Additional Resources" step ("Do you already have any benefits?").
-
-**CRITICAL**: The dictionary key determines the field name throughout the system.
-
-```python
-category_benefits = {
-    "food": {  # Category
-        "benefits": {
-            "snap": {  # ← This key is critical!
-                "name": {"_default_message": "SNAP"},
-                "description": {"_default_message": "..."}
-            }
-        }
-    }
-}
-```
+The checkboxes on the has-benefits step are not configured in these files. They come from the
+database: every `Program` with `show_in_has_benefits_step=True` for the white label is served by
+`HasBenefitsProgramsView` (`screener/views.py`), using the program's own name and description
+translations. Toggle the flag in the Django admin or in the program's import config JSON.
 
 **Data Flow:**
-1. Config key: `"snap"` →
-2. Frontend: `formData.benefits.has("snap")` (a `Set<string>`) →
+1. `HasBenefitsProgramsView` returns programs with `show_in_has_benefits_step=True` →
+2. Frontend: `formData.benefits.has("snap")` (a `Set<string>` of `name_abbreviated`) →
 3. API: `current_benefits: ["snap"]` written to `screener_current_benefits` join table →
 4. Backend: `has_benefit("snap")` queries join table →
 5. Results: `"already_has": True` →
 6. Frontend filters program from results
 
-**To add a new benefit:**
-1. Add key to `category_benefits` (e.g., `"my_benefit"`)
-2. Register a `Program` whose `name_abbreviated` matches that key. To group white-label variants of the same real-world benefit (`"my_benefit"`, `"co_my_benefit"`, etc.), give them a shared `Program.base_program` so `has_base_benefit()` covers them all.
-3. The frontend sends the key as part of `current_benefits`
-
-See [_template.py](./template.py) for detailed documentation.
+To group white-label variants of the same real-world benefit (`"snap"`, `"co_snap"`, etc.), give
+them a shared `Program.base_program` so `has_base_benefit()` covers them all.
 
 ### 4. Referrer Data (Branding & Flow)
 
@@ -225,7 +208,7 @@ referrer_data = {
             "householdData",
             "hasExpenses",
             "householdAssets",
-            "hasBenefits",  # Shows category_benefits
+            "hasBenefits",  # Programs with show_in_has_benefits_step=True
             "acuteHHConditions",  # Additional Resources step - shows acute_condition_options
             "referralSource",
             "signUpInfo",
@@ -389,7 +372,7 @@ Current benefit enrollment is tracked via `Screen.current_benefits` (the `Curren
 ### "Already has" filtering not working?
 
 Check the complete chain:
-1. ✓ Benefit key in `category_benefits` config
+1. ✓ The `Program` has `show_in_has_benefits_step=True` so its checkbox appears on the step
 2. ✓ Frontend sends key via `current_benefits` in the API payload
 3. ✓ A `Program` exists whose `name_abbreviated` (or shared `base_program`) matches the benefit key
 4. ✓ Frontend filtering using `already_has` flag
@@ -417,25 +400,12 @@ class SimpleConfigurationData(ConfigurationData):
     counties_by_zipcode = {
         "12345": {"County": "County"}
     }
-
-    category_benefits = {
-        "assistance": {
-            "benefits": {
-                "snap": {
-                    "name": {"_label": "...", "_default_message": "SNAP"},
-                    "description": {"_label": "...", "_default_message": "..."}
-                }
-            },
-            "category_name": {"_label": "...", "_default_message": "Assistance"}
-        }
-    }
 ```
 
 ### Complex White Label (Full Customization)
 
 See `co.py` for a comprehensive example with:
 - Custom acute condition options
-- Extensive category benefits
 - State-specific income types
 - Custom health insurance options
 - Multiple referral options

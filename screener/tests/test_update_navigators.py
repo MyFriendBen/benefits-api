@@ -13,12 +13,12 @@ from django.test import TestCase
 
 from programs.models import County, Navigator, Program, ProgramNavigator, Referrer
 from screener.models import WhiteLabel
-from screener.views import (
+from screener.navigators import (
     filter_by_county,
     filter_by_required_programs_eligibility,
     referrer_prioritization,
-    update_navigators,
 )
+from screener.views import update_navigators
 
 
 class _Eligible:

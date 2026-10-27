@@ -322,6 +322,10 @@ class CareExpensesDependency(Member):
     """
 
     field = "care_expenses"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         if not (self.member.disabled or self.member.long_term_disability or self.member.visually_impaired):
@@ -370,6 +374,10 @@ class MedicalExpenseDependency(Member):
     """
 
     field = "other_medical_expenses"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         if not self.member.is_head():
@@ -388,6 +396,10 @@ class PropertyTaxExpenseDependency(Member):
     """
 
     field = "real_estate_taxes"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         # Only assign to head and spouse (tax filers)
@@ -414,6 +426,10 @@ class HeatingExpensePersonDependency(Member):
     """
 
     field = "heating_expense_person"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         if not self.member.is_head():
@@ -526,7 +542,7 @@ class CommoditySupplementalFoodProgram(Member):
 
 class SnapChildSupportDependency(Member):
     field = "child_support_expense"
-    dependencies = ("age", "household_size")
+    dependencies = ("age", "household_size", "expense_amount", "expense_frequency")
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["childSupport"]) / self.screen.household_size
@@ -830,8 +846,8 @@ class SocialSecurityIncomeDependency(IncomeDependency):
     Social Security benefits (not including SSI).
 
     Note: SSI (Supplemental Security Income) is a separate needs-based program,
-    not funded by Social Security payroll taxes. It is handled separately via
-    SsiReportedDependency and the Ssi output dependency.
+    not funded by Social Security payroll taxes. Reported SSI travels separately as the
+    `Ssi` income dependency.
     """
 
     field = "social_security"
@@ -938,6 +954,10 @@ class RentDependency(Member):
     """
 
     field = "rent"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         # Only assign to head and spouse (tax filers)

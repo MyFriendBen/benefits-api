@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 
 
@@ -13,8 +13,9 @@ class TrumpAccount(ProgramCalculator):
 
     Pilot window is compared using the member's birth_year_month (month + year precision).
 
-    Pregnant members are included: if the estimated due date (today + 280 days) falls within
-    the pilot window, they receive the $1,000 contribution.
+    A child who has not been born is not eligible, however near the due date: 26 U.S.C.
+    §6434(e) requires the child's Social Security number to be included with the election,
+    and an unborn child has none.
 
     No income limit applies. Citizenship is enforced via legal_status_required config.
 
@@ -24,24 +25,19 @@ class TrumpAccount(ProgramCalculator):
     - Program launch date (accounts available July 4, 2026 or later)
     """
 
-    program_code = "trump_account"
+    program_code = "federal_trump_account"
 
     pilot_contribution = 1_000
     pilot_start = date(2025, 1, 1)
     pilot_end = date(2028, 12, 31)
     max_age = 17  # must be under 18
-    gestation_days = 280  # 40 weeks
-    dependencies = ["age", "pregnant"]
+    dependencies = ["age"]
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
-        if member.pregnant:
-            estimated_due_date = self.screen.get_reference_date() + timedelta(days=self.gestation_days)
-            e.condition(self.pilot_start <= estimated_due_date <= self.pilot_end)
-        else:
-            birth_year_month = member.birth_year_month
-            in_pilot_window = birth_year_month is not None and self.pilot_start <= birth_year_month <= self.pilot_end
-            e.condition(member.calc_age() <= self.max_age and in_pilot_window)
+        birth_year_month = member.birth_year_month
+        in_pilot_window = birth_year_month is not None and self.pilot_start <= birth_year_month <= self.pilot_end
+        e.condition(member.calc_age() <= self.max_age and in_pilot_window)
 
     def value(self, e: Eligibility):
         # Eligibility is already gated on the pilot window in member_eligible,

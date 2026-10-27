@@ -12,6 +12,7 @@ from django.test import TestCase, TransactionTestCase
 
 from programs.models import (
     County,
+    FederalPoveryLimit,
     LegalStatus,
     Navigator,
     Program,
@@ -21,6 +22,7 @@ from programs.models import (
 )
 from screener.models import WhiteLabel
 from configuration.models import Configuration
+from integrations.clients.google_translate import Translate as RealTranslate
 from translations.models import Translation
 
 
@@ -93,6 +95,27 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             # Verify success message says "created" (not "recreated")
             self.assertIn("Successfully created program: test_program", output)
             self.assertNotIn("Successfully recreated program", output)
+        finally:
+            Path(config_file).unlink()
+
+    def test_dynamic_year_row_is_found_by_year_only(self):
+        """Dynamic FPL rows have year != period (MFB-564), e.g.
+        year="THIS_YEAR_CALENDAR", period="2026". Matching on year AND period
+        only ever worked for legacy rows where the two happen to be equal, and
+        always missed dynamic rows."""
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="THIS_YEAR_CALENDAR", defaults={"period": "2026"})
+        self.assertNotEqual(fpl.period, fpl.year)
+        config = copy.deepcopy(self.base_config)
+        config["program"]["year"] = "THIS_YEAR_CALENDAR"
+        config_file = self._create_temp_config(config)
+        out = StringIO()
+
+        try:
+            call_command("import_program_config", config_file, stdout=out)
+            program = Program.objects.get(name_abbreviated="test_program")
+            self.assertEqual(program.year_id, fpl.id)
+            self.assertEqual(program.year_type, "calendar_year")
+            self.assertNotIn("Warning: Year", out.getvalue())
         finally:
             Path(config_file).unlink()
 
@@ -364,6 +387,28 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             call_command("import_program_config", config_file, stdout=out)
             self.assertIn("skipping navigator county validation", out.getvalue())
             self.assertTrue(Navigator.objects.filter(external_name="test_nav").exists())
+        finally:
+            Path(config_file).unlink()
+
+    def test_navigator_email_is_copied_not_translated(self):
+        """An email is an address, not text: every language gets the English value (MFB-2292)."""
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", [])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            # setUp mocks the whole Translate class, which leaves `languages` empty and
+            # turns the no_auto copy into a no-op.
+            with patch(
+                "programs.management.commands.import_program_config.Translate.languages", RealTranslate.languages
+            ):
+                call_command("import_program_config", config_file, stdout=StringIO())
+
+            email = Navigator.objects.get(external_name="test_nav").email
+            self.assertTrue(email.no_auto)
+            texts = {row.language_code: row.text for row in email.translations.all()}
+            self.assertGreater(len(texts), 1)
+            self.assertEqual(set(texts.values()), {"help@example.org"}, texts)
         finally:
             Path(config_file).unlink()
 

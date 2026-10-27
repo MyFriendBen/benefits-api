@@ -32,8 +32,8 @@ from screener.models import Expense
 from programs.programs.white_labels.mo.pts.calculator import MoPts
 from programs.framework.pe_dependencies import member
 
-PE_VERSION = "1.794.2"
-CLAIM_YEAR = 2026
+PE_VERSION = "2.9.0"
+CLAIM_YEAR = 2025
 
 
 class MoPtsScenarioTestCase(PeIntegrationTestCase):
@@ -43,7 +43,7 @@ class MoPtsScenarioTestCase(PeIntegrationTestCase):
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0
-    tax_year = "2026"
+    tax_year = "2025"
 
     def build(self, household_size, housing_situation):
         # make_screen creates the white label; make_program looks it up, so it
@@ -98,72 +98,76 @@ class MoPtsScenarioTestCase(PeIntegrationTestCase):
 
 
 class TestScenario01GoldenPathSeniorRenter(MoPtsScenarioTestCase):
-    """Baseline age-65 pathway, renter homestead → eligible, $1,033."""
+    """Baseline age-65 pathway, renter homestead → eligible, $728 (rent equivalent capped at $750)."""
 
     screen_id = 8201
 
     def test_eligible_at_the_top_renter_band(self):
         screen = self.build(1, "renting")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1954, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1953, 1)
         add_income(hoh, 14_400, "sSRetirement", "yearly")
         self.add_housing_expense(hoh, "rent", 6_000)
-        self.assert_result(screen, True, 1_033)
+        self.assert_result(screen, True, 728)
 
 
 class TestScenario02SingleRenterAtTheLimit(MoPtsScenarioTestCase):
-    """Single renter exactly at the $38,200 limit → eligible, $280."""
+    """Single renter at $27,200, the last income band with a renter credit → eligible, $11."""
 
     screen_id = 8202
 
     def test_eligible_at_the_income_boundary(self):
         screen = self.build(1, "renting")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1958, 1)
-        add_income(hoh, 38_200, "pension", "yearly")
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1957, 1)
+        add_income(hoh, 27_200, "pension", "yearly")
         self.add_housing_expense(hoh, "rent", 9_000)
-        self.assert_result(screen, True, 280)
+        self.assert_result(screen, True, 11)
 
 
 class TestScenario03SingleHomeownerAtTheLimit(MoPtsScenarioTestCase):
-    """Single homeowner exactly at the $42,200 limit → eligible, $695."""
+    """Single homeowner exactly at the $30,000 limit → eligible, $95."""
 
     screen_id = 8203
 
     def test_eligible_at_the_owner_income_boundary(self):
         screen = self.build(1, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1958, 1)
-        add_income(hoh, 42_200, "pension", "yearly")
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1957, 1)
+        add_income(hoh, 30_000, "pension", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_800)
-        self.assert_result(screen, True, 695)
+        self.assert_result(screen, True, 95)
 
 
 class TestScenario04SingleRenterOverTheLimit(MoPtsScenarioTestCase):
-    """One dollar over the $38,200 limit → not eligible."""
+    """One dollar over $27,200 → not eligible.
+
+    The statute's renter limit is $27,500, but the phaseout leaves no renter credit above
+    $27,200, which is the limit DOR's form states.
+    """
 
     screen_id = 8204
 
     def test_one_dollar_over_disqualifies(self):
         screen = self.build(1, "renting")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1954, 1)
-        add_income(hoh, 38_201, "pension", "yearly")
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1953, 1)
+        add_income(hoh, 27_201, "pension", "yearly")
         self.add_housing_expense(hoh, "rent", 6_000)
         self.assert_result(screen, False, 0)
 
 
 class TestScenario05AtTheMinimumBase(MoPtsScenarioTestCase):
-    """Age exactly 65, income exactly at the $14,300 base → no phaseout, eligible, $1,500."""
+    """Age exactly 65, income exactly at the $14,300 base → no phaseout, eligible, $1,000."""
 
     screen_id = 8205
 
     def test_no_phaseout_at_or_below_the_base(self):
         screen = self.build(1, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1961, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1960, 1)
         add_income(hoh, 14_300, "pension", "yearly")
-        self.add_housing_expense(hoh, "propertyTax", 1_500)
-        self.assert_result(screen, True, 1_500)
+        self.add_housing_expense(hoh, "propertyTax", 1_000)
+        self.assert_result(screen, True, 1_000)
 
 
 class TestScenario06TurnsSixtyFiveLaterInTheYear(MoPtsScenarioTestCase):
-    """Born September 1961 — age is measured on Dec 31, not the screening date.
+    """Born September 1960 — age is measured on Dec 31, not the screening date.
 
     The case that requires ``AgeAtEndOfClaimYearDependency``: the screening-date age reads 64
     for most of the year and fails the age-65 pathway.
@@ -173,10 +177,10 @@ class TestScenario06TurnsSixtyFiveLaterInTheYear(MoPtsScenarioTestCase):
 
     def test_end_of_year_age_qualifies(self):
         screen = self.build(1, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1961, 9)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1960, 9)
         add_income(hoh, 12_000, "pension", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_200)
-        self.assert_result(screen, True, 1_200)
+        self.assert_result(screen, True, 1_100)
 
 
 class TestScenario07NoHomestead(MoPtsScenarioTestCase):
@@ -186,39 +190,42 @@ class TestScenario07NoHomestead(MoPtsScenarioTestCase):
 
     def test_no_homestead_disqualifies(self):
         screen = self.build(1, "otherWithoutSubsidy")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1954, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1953, 1)
         add_income(hoh, 10_800, "pension", "yearly")
         self.assert_result(screen, False, 0)
 
 
 class TestScenario08AdultChildIncomeExcluded(MoPtsScenarioTestCase):
-    """An adult child's income is outside the assistance unit → eligible, $1,550 (owner cap)."""
+    """An adult child's income is outside the assistance unit → eligible, $1,059.
+
+    Counting the child's $3,000 would put net household income in a later band and pay less.
+    """
 
     screen_id = 8208
 
     def test_adult_child_income_is_excluded(self):
         screen = self.build(3, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1956, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1955, 1)
         add_income(hoh, 10_800, "sSRetirement", "yearly")
-        spouse = self.add_person(screen, 2, "spouse", 1958, 1)
+        spouse = self.add_person(screen, 2, "spouse", 1957, 1)
         add_income(spouse, 8_400, "sSRetirement", "yearly")
-        child = self.add_person(screen, 3, "child", 1987, 1)
+        child = self.add_person(screen, 3, "child", 1986, 1)
         add_income(child, 3_000, "wages", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 2_200)
-        self.assert_result(screen, True, 1_550)
+        self.assert_result(screen, True, 1_059)
 
 
 class TestScenario09MarriedHomeownersOverTheLimit(MoPtsScenarioTestCase):
-    """Married full-year homeowners over the $48,000 limit → not eligible."""
+    """Married full-year homeowners $1 over the $30,000 limit after the $4,000 deduction → not eligible."""
 
     screen_id = 8209
 
     def test_over_the_married_owner_limit(self):
         screen = self.build(2, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1955, 1)
-        add_income(hoh, 22_800, "sSRetirement", "yearly")
-        add_income(hoh, 18_000, "pension", "yearly")
-        spouse = self.add_person(screen, 2, "spouse", 1957, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1954, 1)
+        add_income(hoh, 18_000, "sSRetirement", "yearly")
+        add_income(hoh, 2_801, "pension", "yearly")
+        spouse = self.add_person(screen, 2, "spouse", 1956, 1)
         add_income(spouse, 9_600, "sSRetirement", "yearly")
         add_income(spouse, 3_600, "pension", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 2_500)
@@ -226,16 +233,16 @@ class TestScenario09MarriedHomeownersOverTheLimit(MoPtsScenarioTestCase):
 
 
 class TestScenario10ClaimantDisabilityPathway(MoPtsScenarioTestCase):
-    """Under 65 and disabled → eligible, $960."""
+    """Under 65 and disabled → eligible, $720."""
 
     screen_id = 8210
 
     def test_disability_pathway_qualifies(self):
         screen = self.build(1, "renting")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1970, 1, disabled=True)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1969, 1, disabled=True)
         add_income(hoh, 10_800, "sSDisability", "yearly")
-        self.add_housing_expense(hoh, "rent", 4_800)
-        self.assert_result(screen, True, 960)
+        self.add_housing_expense(hoh, "rent", 3_600)
+        self.assert_result(screen, True, 720)
 
 
 class TestScenario11NoQualifyingPathway(MoPtsScenarioTestCase):
@@ -245,14 +252,14 @@ class TestScenario11NoQualifyingPathway(MoPtsScenarioTestCase):
 
     def test_no_pathway_disqualifies(self):
         screen = self.build(1, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1962, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1961, 1)
         add_income(hoh, 12_000, "pension", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_400)
         self.assert_result(screen, False, 0)
 
 
 class TestScenario12ClaimantSurvivorPathway(MoPtsScenarioTestCase):
-    """Age 60 on survivor benefits → eligible, $1,055 (renter cap).
+    """Age 60 on survivor benefits → eligible, $750 (renter cap).
 
     The case that requires ``SocialSecuritySurvivorsIncomeDependency``: the survivor test
     reads ``social_security_survivors``, which stays at zero if only the total is sent.
@@ -262,10 +269,10 @@ class TestScenario12ClaimantSurvivorPathway(MoPtsScenarioTestCase):
 
     def test_survivor_pathway_qualifies(self):
         screen = self.build(1, "renting")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1966, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1965, 1)
         add_income(hoh, 13_200, "sSSurvivor", "yearly")
         self.add_housing_expense(hoh, "rent", 5_400)
-        self.assert_result(screen, True, 1_055)
+        self.assert_result(screen, True, 750)
 
 
 class TestScenario13ClaimantVeteranBenefitsExcluded(MoPtsScenarioTestCase):
@@ -279,41 +286,41 @@ class TestScenario13ClaimantVeteranBenefitsExcluded(MoPtsScenarioTestCase):
 
     def test_veterans_benefits_are_excluded(self):
         screen = self.build(1, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1975, 1, disabled=True)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1974, 1, disabled=True)
         add_income(hoh, 46_800, "veteran", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_100)
         self.assert_result(screen, True, 1_100)
 
 
 class TestScenario14MarriedRenterAtTheLimit(MoPtsScenarioTestCase):
-    """Married renters at the $41,000 limit → eligible, $227."""
+    """Married renters at $27,200 after the $2,000 deduction → eligible, $11."""
 
     screen_id = 8214
 
     def test_eligible_at_the_married_renter_boundary(self):
         screen = self.build(2, "renting")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1958, 1)
-        add_income(hoh, 16_800, "sSRetirement", "yearly")
-        spouse = self.add_person(screen, 2, "spouse", 1960, 1)
-        add_income(spouse, 14_400, "sSRetirement", "yearly")
-        add_income(spouse, 12_600, "pension", "yearly")
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1957, 1)
+        add_income(hoh, 12_000, "sSRetirement", "yearly")
+        spouse = self.add_person(screen, 2, "spouse", 1959, 1)
+        add_income(spouse, 10_000, "sSRetirement", "yearly")
+        add_income(spouse, 7_200, "pension", "yearly")
         self.add_housing_expense(hoh, "rent", 7_200)
-        self.assert_result(screen, True, 227)
+        self.assert_result(screen, True, 11)
 
 
 class TestScenario15SpouseOnlyAgePathway(MoPtsScenarioTestCase):
-    """The spouse satisfies the age pathway → eligible, $1,474."""
+    """The spouse satisfies the age pathway → eligible, $913."""
 
     screen_id = 8215
 
     def test_spouse_age_qualifies_the_household(self):
         screen = self.build(2, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1970, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1969, 1)
         add_income(hoh, 9_600, "pension", "yearly")
-        spouse = self.add_person(screen, 2, "spouse", 1958, 1)
+        spouse = self.add_person(screen, 2, "spouse", 1957, 1)
         add_income(spouse, 13_200, "sSRetirement", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_700)
-        self.assert_result(screen, True, 1_474)
+        self.assert_result(screen, True, 913)
 
 
 class TestScenario16SpouseSurvivorDoesNotQualifyClaimant(MoPtsScenarioTestCase):
@@ -326,30 +333,30 @@ class TestScenario16SpouseSurvivorDoesNotQualifyClaimant(MoPtsScenarioTestCase):
 
     def test_survivor_pathway_does_not_pass_through_the_spouse(self):
         screen = self.build(2, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1978, 1)
-        spouse = self.add_person(screen, 2, "spouse", 1966, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1977, 1)
+        spouse = self.add_person(screen, 2, "spouse", 1965, 1)
         add_income(spouse, 12_000, "sSSurvivor", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_500)
         self.assert_result(screen, False, 0)
 
 
 class TestScenario17MinorChildIncomeIncluded(MoPtsScenarioTestCase):
-    """A minor child's SSI counts in PTC income → eligible, $1,069.
+    """A minor child's SSI counts in PTC income → eligible, $883.
 
     The case that requires the ``ssi`` input: reported SSI reaches
-    ``mo_ptc_gross_income`` only as ``ssi``, and the credit is $1,178 without it.
+    ``mo_ptc_gross_income`` only as ``ssi``, and the credit is $1,078 without it.
     """
 
     screen_id = 8217
 
     def test_minor_child_ssi_is_counted(self):
         screen = self.build(2, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1958, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1957, 1)
         add_income(hoh, 14_400, "sSRetirement", "yearly")
-        child = self.add_person(screen, 2, "child", 2015, 1)
+        child = self.add_person(screen, 2, "child", 2014, 1)
         add_income(child, 4_800, "sSI", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_200)
-        self.assert_result(screen, True, 1_069)
+        self.assert_result(screen, True, 883)
 
 
 class TestScenario18ZeroQualifyingPayment(MoPtsScenarioTestCase):
@@ -359,7 +366,7 @@ class TestScenario18ZeroQualifyingPayment(MoPtsScenarioTestCase):
 
     def test_zero_payment_disqualifies(self):
         screen = self.build(1, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1954, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1953, 1)
         add_income(hoh, 10_800, "pension", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 0)
         self.assert_result(screen, False, 0)
@@ -378,55 +385,55 @@ class TestScenario19ZeroFloorIsNotSurfaced(MoPtsScenarioTestCase):
 
     def test_zero_credit_reports_ineligible(self):
         screen = self.build(1, "renting")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1954, 1)
-        add_income(hoh, 37_900, "pension", "yearly")
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1953, 1)
+        add_income(hoh, 25_000, "pension", "yearly")
         self.add_housing_expense(hoh, "rent", 600)
         self.assert_result(screen, False, 0)
 
 
 class TestScenario20SpouseDisabilityPathway(MoPtsScenarioTestCase):
-    """The spouse satisfies the disability pathway → eligible, $1,474."""
+    """The spouse satisfies the disability pathway → eligible, $913."""
 
     screen_id = 8220
 
     def test_spouse_disability_qualifies_the_household(self):
         screen = self.build(2, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1970, 1)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1969, 1)
         add_income(hoh, 9_600, "pension", "yearly")
-        spouse = self.add_person(screen, 2, "spouse", 1970, 1, disabled=True)
+        spouse = self.add_person(screen, 2, "spouse", 1969, 1, disabled=True)
         add_income(spouse, 13_200, "sSDisability", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_700)
-        self.assert_result(screen, True, 1_474)
+        self.assert_result(screen, True, 913)
 
 
 class TestScenario21MarriedHomeownersAtTheLimit(MoPtsScenarioTestCase):
-    """Married full-year homeowners exactly at the $48,000 limit → eligible, $578."""
+    """Married full-year homeowners exactly at the $30,000 limit after the $4,000 deduction → eligible, $95."""
 
     screen_id = 8221
 
     def test_eligible_at_the_married_owner_boundary(self):
         screen = self.build(2, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1958, 1)
-        add_income(hoh, 31_200, "sSRetirement", "yearly")
-        spouse = self.add_person(screen, 2, "spouse", 1960, 1)
-        add_income(spouse, 22_600, "sSRetirement", "yearly")
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1957, 1)
+        add_income(hoh, 20_000, "sSRetirement", "yearly")
+        spouse = self.add_person(screen, 2, "spouse", 1959, 1)
+        add_income(spouse, 14_000, "sSRetirement", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_700)
-        self.assert_result(screen, True, 578)
+        self.assert_result(screen, True, 95)
 
 
 class TestScenario22SpouseVeteranBenefitsExcluded(MoPtsScenarioTestCase):
     """The spouse's VA compensation is excluded → eligible, $1,100.
 
-    The veteran exclusion applies on the spouse side too. This is the household that
-    returns $272 — eligible, but wrong by $828 — with only one of the two veteran inputs.
+    The veteran exclusion applies on the spouse side too. With only one of the two veteran
+    inputs the $46,800 counts as income and the household is over the limit.
     """
 
     screen_id = 8222
 
     def test_spouse_veterans_benefits_are_excluded(self):
         screen = self.build(2, "homeowner")
-        hoh = self.add_person(screen, 1, "headOfHousehold", 1970, 1)
-        spouse = self.add_person(screen, 2, "spouse", 1975, 1, disabled=True)
+        hoh = self.add_person(screen, 1, "headOfHousehold", 1969, 1)
+        spouse = self.add_person(screen, 2, "spouse", 1974, 1, disabled=True)
         add_income(spouse, 46_800, "veteran", "yearly")
         self.add_housing_expense(hoh, "propertyTax", 1_100)
         self.assert_result(screen, True, 1_100)
