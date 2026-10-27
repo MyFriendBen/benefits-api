@@ -45,7 +45,7 @@ def state_of(calculator: type):
     the white label is one — ``cesn`` is a Colorado sub-brand with no PolicyEngine programs
     of its own. ``white_labels/federal/`` belongs to no state. Under ``cross_white_label``,
     ``base.py`` holds the federal class and every other module is named for its state —
-    ``snap/tx.py``, ``eitc/co_coeitc.py``, ``eitc/ks_federal.py``.
+    ``snap/tx.py``, ``cdcc/ks.py``.
     """
     parts = calculator.__module__.split(".")
 

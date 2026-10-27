@@ -62,7 +62,7 @@ subclasses the PE base being in the same request:
 Those three are custom calculators with no `pe_inputs` at all, so in `co`, `nc` and `wa` the tile is
 collected, stored and sent to no one. Verified against live payloads: a WA screen with the tile ticked
 on both a 22-year-old and a 4-year-old yields `was_in_foster_care=ABSENT` for both people, while
-`wa_head_start`, `wa_nslp`, `wa_apple_health_medicaid` and `wa_eitc` all appear in the results.
+`wa_head_start`, `wa_nslp`, `wa_apple_health_medicaid` and the federal EITC (then `wa_eitc`) all appear in the results.
 
 Consequences, all of which need their own tickets:
 

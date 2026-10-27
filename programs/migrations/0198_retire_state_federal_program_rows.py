@@ -1,5 +1,6 @@
 from django.apps.registry import Apps
 from django.db import migrations
+from django.db.models import Min
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 # Federal EITC and SSDI are one `federal_eitc` / `federal_ssdi` row each on the `federal` white
@@ -128,18 +129,10 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
         collapsed = state_rows.filter(screen_id__in=screens_already_federal).delete()[0]
 
         # One row per screen: a screen could hold two state rows, and both cannot become the
-        # same federal row.
-        moved = 0
-        seen: set[int] = set()
-        for row in state_rows.order_by("screen_id", "id"):
-            if row.screen_id in seen:
-                row.delete()
-                collapsed += 1
-                continue
-            seen.add(row.screen_id)
-            row.program = federal
-            row.save(update_fields=["program"])
-            moved += 1
+        # same federal row. Keep each screen's first and move the survivors in one UPDATE.
+        first_per_screen = state_rows.values("screen_id").annotate(first_id=Min("id")).values("first_id")
+        collapsed += state_rows.exclude(id__in=first_per_screen).delete()[0]
+        moved = state_rows.update(program=federal)
 
         print(f"  moved {moved} current-benefit rows onto {federal_name}; {collapsed} duplicates removed")
 
