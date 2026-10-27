@@ -15,11 +15,13 @@ from programs.models import (
     _FPL_DEFAULTS,
     FederalPoveryLimit,
     FederalPovertyLimitValue,
+    Navigator,
     Program,
     Referrer,
     _get_fpl_data,
 )
 from screener.models import Screen, WhiteLabel
+from translations.models import Translation
 
 
 class ProgramNameAbbreviatedNormalizationTests(TestCase):
@@ -335,6 +337,62 @@ class SwitchKsMo211ReferrersMigrationTests(TestCase):
         self.migration.switch_referrers(global_apps, self.schema_editor)
 
         self.assertFalse(Referrer.objects.exists())
+
+
+class NavigatorEmailNoAutoMigrationTests(TestCase):
+    """Covers migration 0197's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0197_navigator_email_no_auto")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+
+    def _navigator_email(self, texts: dict[str, str]) -> Translation:
+        """A navigator email as it was before the fix: auto-translatable, with these rows."""
+        email = Navigator.objects.new_navigator("co", f"nav_{Navigator.objects.count()}").email
+        Translation.objects.filter(pk=email.pk).update(no_auto=False)
+        for lang, text in texts.items():
+            email.set_current_language(lang)
+            email.text = text
+            email.save()
+        return Translation.objects.get(pk=email.pk)
+
+    def _texts(self, translation: Translation) -> dict[str, str]:
+        return {row.language_code: row.text for row in translation.translations.all()}
+
+    def test_copies_english_over_machine_translations(self) -> None:
+        email = self._navigator_email(
+            {"en-us": "information@example.org", "es": "información@example.org", "ne": "information@example.org मा"}
+        )
+
+        self.migration.forwards(global_apps, self.schema_editor)
+
+        email.refresh_from_db()
+        self.assertTrue(email.no_auto)
+        self.assertEqual(set(self._texts(email).values()), {"information@example.org"})
+        self.assertFalse(email.translations.filter(edited=True).exclude(language_code="en-us").exists())
+
+    def test_blank_english_is_only_marked_no_auto(self) -> None:
+        """A placeholder English row has no address to copy, so the others are left alone."""
+        email = self._navigator_email({"es": "algo@example.org"})
+
+        self.migration.forwards(global_apps, self.schema_editor)
+
+        email.refresh_from_db()
+        self.assertTrue(email.no_auto)
+        self.assertEqual(self._texts(email)["es"], "algo@example.org")
+
+    def test_leaves_other_translations_alone(self) -> None:
+        other = Translation.objects.add_translation("unrelated.label", "Hello")
+        other.set_current_language("es")
+        other.text = "Hola"
+        other.save()
+
+        self.migration.forwards(global_apps, self.schema_editor)
+
+        other.refresh_from_db()
+        self.assertFalse(other.no_auto)
+        self.assertEqual(self._texts(other)["es"], "Hola")
 
 
 class ProgramYearTypeSaveTests(TestCase):

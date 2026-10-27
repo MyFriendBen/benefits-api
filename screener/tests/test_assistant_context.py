@@ -1558,6 +1558,18 @@ class NavigatorsTests(TestCase):
 
         self.assertEqual(self.navigators()[0]["name"], "Help Center")
 
+    def test_email_ignores_the_screen_language(self):
+        """Machine translation rewrote most non-English email rows into lookalikes that
+        still pass the shape check (MFB-2292), so the address always comes from English."""
+        navigator = seed_navigator(self.programs["snap"], "help", name="Help", email="information@example.org")
+        navigator.email.set_current_language("es")
+        navigator.email.text = "información@example.org"
+        navigator.email.save()
+        self.screen.request_language_code = "es"
+        self.screen.save()
+
+        self.assertEqual(self.navigators()[0]["email"], "information@example.org")
+
 
 class AdditionalResourcesTests(TestCase):
     """The Additional Resources tab, as Benji receives it.

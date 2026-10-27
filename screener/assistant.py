@@ -539,7 +539,7 @@ def _program_navigators(
         phone = _card_phone(navigator.phone_number, label)
         if phone:
             entry["phone_number"] = phone
-        email = _card_email(navigator.email, label, language_code)
+        email = _card_email(navigator.email, label)
         if email:
             entry["email"] = email
         link = _card_link(navigator.assistance_link, label, language_code)
@@ -952,8 +952,13 @@ def _card_phone(number: Optional[phonenumbers.PhoneNumber], label: str) -> str:
         return ""
 
 
-def _card_email(translation: Optional[Translation], label: str, language_code: str) -> str:
+def _card_email(translation: Optional[Translation], label: str) -> str:
     """A navigator's email as the card shows it, or "" if there isn't a usable one.
+
+    Always the default-language row, whatever the screen's language: an address is not
+    text to translate, and machine translation rewrote most of the other rows into
+    lookalikes (`información@…`, `coordinador@…`) that reach the wrong inbox (MFB-2292).
+    The card's `mailto:` href already reads the default-language text.
 
     The card renders the stored text as the link label and prefixes `mailto:` itself.
     One production row stores the prefix in the text, which the card turns into a
@@ -970,7 +975,7 @@ def _card_email(translation: Optional[Translation], label: str, language_code: s
     like `_card_link`: through `_translated`'s default cap an over-long address would be
     clipped mid-domain, and a clipped address can still look address-shaped.
     """
-    email = _translated(translation, language_code, max_len=None)
+    email = _translated(translation, settings.LANGUAGE_CODE, max_len=None)
     if not email:
         return ""
     if email.lower().startswith("mailto:"):

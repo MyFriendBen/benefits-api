@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("translations", "0006_move_zh_data"),
-        ("programs", "0196_move_state_ssi_current_benefits"),
+        ("programs", "0197_navigator_email_no_auto"),
     ]
 
     operations = [
