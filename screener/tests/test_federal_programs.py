@@ -286,24 +286,26 @@ class TestCurrentBenefits(FederalProgramsTestCase):
     def test_ssi_income_derives_the_prefixed_federal_ssi_row_by_base_program(self) -> None:
         """The federal row is `federal_ssi`, not `ssi`, so the derivation has to match on
         `base_program`: it writes the prefixed row, which `has_base_benefit("ssi")` then reads
-        for every calculator that gates on SSI receipt."""
+        for every calculator that gates on SSI receipt. The state row it replaced is off and
+        is not written."""
         self.program(self.federal, "federal_ssi", base_program="ssi")
         self.program(self.co, "ssi", active=False, base_program="ssi")
         screen = self.ssi_screen(self.co)
 
-        self.assertEqual(_derived_current_benefit_names(screen), {"federal_ssi", "ssi"})
+        self.assertEqual(_derived_current_benefit_names(screen), {"federal_ssi"})
 
         _write_current_benefits(screen, [])
         self.assertTrue(screen.has_benefit("federal_ssi"))
         self.assertTrue(screen.has_base_benefit("ssi"))
 
-    def test_ssi_income_ignores_a_federal_ssi_program_not_launched_yet(self) -> None:
+    def test_ssi_income_ignores_inactive_ssi_programs(self) -> None:
+        """Neither a federal row not launched yet nor a state row that is switched off."""
         self.program(self.federal, "ssi", active=False, base_program="ssi")
         self.program(self.co, "co_ssi", active=False, base_program="ssi")
+        self.program(self.wa, "wa_ssi", base_program="ssi")
 
-        # The inactive state row is still derived, as before federal programs existed.
-        self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.co)), {"co_ssi"})
-        self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.wa)), set())
+        self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.co)), set())
+        self.assertEqual(_derived_current_benefit_names(self.ssi_screen(self.wa)), {"wa_ssi"})
 
 
 class TestScreenerOptions(FederalProgramsTestCase):
