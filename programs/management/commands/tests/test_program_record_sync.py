@@ -241,6 +241,93 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertEqual(self.english(program.name), "Name from the admin")
         self.assertIn("Admin edits (kept", output)
 
+    def test_without_a_baseline_a_flag_switched_off_in_the_admin_is_kept(self) -> None:
+        """False is a choice, not an empty field: the first run under this importer leaves it."""
+        self.import_record()
+        ProgramConfigImport.objects.update(applied_record=None)
+        Program.objects.filter(pk=self.program().pk).update(show_on_current_benefits=False)
+
+        output = self.run_import()
+
+        self.assertFalse(self.program().show_on_current_benefits)
+        self.assertIn("Admin edits (kept", output)
+        self.assertIn("program.show_on_current_benefits", output)
+
+    def test_without_a_baseline_a_link_removed_in_the_admin_is_kept(self) -> None:
+        self.import_record()
+        ProgramConfigImport.objects.update(applied_record=None)
+        self.program().documents.clear()
+
+        output = self.run_import()
+
+        self.assertFalse(self.program().documents.exists())
+        self.assertIn(f"document '{PROGRAM}_id': unlinked in the admin", output)
+
+    def test_a_new_program_keeps_an_admin_edit_to_a_shared_row_it_lists(self) -> None:
+        """Creating a program doesn't make its record newer than an admin edit to a row others show."""
+        self.import_record()
+        self.admin_edit(Navigator.objects.get(external_name=f"{PROGRAM}_nav_a").description, "Admin fixed text")
+        # The new record takes the navigator over; the existing one now only references it.
+        owned = self.record["navigators"][0]
+        self.record["navigators"][0] = {"external_name": owned["external_name"]}
+        self.write(self.record)
+        other = make_record(OTHER)
+        other["documents"] = []
+        other["warning_message"] = {"external_name": f"{OTHER}_waitlist", "calculator": "_show", "message": "Wait"}
+        other["navigators"] = [dict(owned, description="Older text")]
+        self.write(other, OTHER)
+
+        output = self.run_import()
+
+        navigator = Navigator.objects.get(external_name=f"{PROGRAM}_nav_a")
+        self.assertEqual(self.english(navigator.description), "Admin fixed text")
+        self.assertIn(f"navigator:{PROGRAM}_nav_a.description: database", output)
+        self.assertTrue(
+            ProgramNavigator.objects.filter(program=self.program(OTHER), navigator=navigator).exists(),
+            "the new program still links it",
+        )
+
+    def test_one_admin_edit_can_be_reverted_and_the_others_kept(self) -> None:
+        self.import_record()
+        program = self.program()
+        self.admin_edit(program.description, "Edited in the admin.")
+        self.admin_edit(program.name, "Name from the admin")
+        record_file = f"{PROGRAM}_program_record.json"
+
+        preview = self.run_import("--dry-run")
+        self.assertIn(f"revert with --revert-admin-edit {record_file}:program.description", preview)
+
+        output = self.run_import("--revert-admin-edit", f"{record_file}:program.description")
+
+        program = self.program()
+        self.assertEqual(self.english(program.description), "Help buying food.")
+        self.assertEqual(self.english(program.name), "Name from the admin")
+        self.assertIn("Admin edits (reverted to the record)", output)
+        self.assertRegex(output, r"Admin edits kept:\s+1")
+
+    def test_reverting_an_admin_edit_that_isnt_there_fails_the_record(self) -> None:
+        self.import_record()
+
+        output = self.run_import("--revert-admin-edit", f"{PROGRAM}_program_record.json:program.name")
+
+        self.assertIn("names no admin edit in this record: program.name", output)
+
+    def test_reverting_an_admin_edit_in_a_record_not_in_the_run_fails(self) -> None:
+        self.write(self.record)
+
+        with self.assertRaisesMessage(CommandError, "a record this run doesn't import: missing.json"):
+            self.run_import("--revert-admin-edit", "missing.json:program.name")
+
+    def test_a_navigator_email_is_copied_not_translated(self) -> None:
+        """An email is an address, not text: every language gets the English value (MFB-2292)."""
+        self.import_record()
+
+        email = Navigator.objects.get(external_name=f"{PROGRAM}_nav_a").email
+        self.assertTrue(email.no_auto)
+        # setUp's mock translates into es and vi only.
+        texts = {row.language_code: row.text for row in email.translations.filter(language_code__in=["es", "vi"])}
+        self.assertEqual(texts, {"es": "a@example.org", "vi": "a@example.org"})
+
     # ------------------------------------------------------------------ active
 
     def test_a_record_without_active_never_switches_a_program(self) -> None:

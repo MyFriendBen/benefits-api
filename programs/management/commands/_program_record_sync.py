@@ -231,9 +231,16 @@ class RecordPlan:
     def by_label(self, label: str) -> list[Change]:
         return [change for change in self.changes if change.label == label]
 
-    def to_apply(self, revert_admin_edits: bool) -> list[Change]:
-        labels = {RECORD_CHANGE, ADMIN_EDIT} if revert_admin_edits else {RECORD_CHANGE}
-        return [change for change in self.changes if change.label in labels]
+    def reverts(self, change: Change, revert_admin_edits: bool, revert_keys: frozenset[str] = frozenset()) -> bool:
+        """Whether this run sets an admin edit back to the record: all of them, or the keys named."""
+        return change.label == ADMIN_EDIT and (revert_admin_edits or change.key in revert_keys)
+
+    def to_apply(self, revert_admin_edits: bool, revert_keys: frozenset[str] = frozenset()) -> list[Change]:
+        return [
+            change
+            for change in self.changes
+            if change.label == RECORD_CHANGE or self.reverts(change, revert_admin_edits, revert_keys)
+        ]
 
     def next_baseline(self) -> dict[str, Any]:
         """
@@ -253,7 +260,8 @@ class RecordPlan:
 
 
 def _is_empty(value: Any) -> bool:
-    return value in (None, "", [], False, BLANK_TRANSLATION_PLACEHOLDER)
+    # False is a choice, not a gap: a flag switched off or a link removed in the admin is kept.
+    return value is not False and value in (None, "", [], BLANK_TRANSLATION_PLACEHOLDER)
 
 
 def _label(
@@ -264,18 +272,16 @@ def _label(
         return None
     if fresh or new_row:
         return RECORD_CHANGE
-    if baseline is None:
-        # Never applied under this importer: nothing says which side moved. An empty database
-        # value has nothing worth protecting, so the record fills it; anything else is treated
-        # as an admin edit and kept until someone decides.
-        return RECORD_CHANGE if _is_empty(database) else ADMIN_EDIT
-    if key.startswith("link:"):
+    if key.startswith("link:") and baseline is not None:
         previous = baseline.get(key, False)
-    elif key in baseline:
+    elif baseline is not None and key in baseline:
         previous = baseline[key]
     else:
-        # A field or entry the record didn't manage last time: the record is what added it.
-        return RECORD_CHANGE
+        # Never applied under this importer, or a field or shared row the record didn't manage
+        # last time: nothing says which side moved. An empty database value has nothing worth
+        # protecting, so the record fills it; anything else is treated as an admin edit and kept
+        # until someone decides.
+        return RECORD_CHANGE if _is_empty(database) else ADMIN_EDIT
     if database == previous:
         return RECORD_CHANGE
     if record == previous:
@@ -539,7 +545,9 @@ class RecordSync:
                     )
                 )
             elif not is_reference(entry):
-                self._plan_row(plan, spec, entry, row, baseline, fresh)
+                # An existing row is shared: creating this program doesn't make the record newer
+                # than an admin edit to it, so it's labelled like any update, never as fresh.
+                self._plan_row(plan, spec, entry, row, baseline, fresh=False)
                 others = self._other_programs(row, spec, program)
                 if others and any(change.key.startswith(f"{spec.kind}:{name}.") for change in plan.changes):
                     plan.notes.append(
@@ -695,10 +703,12 @@ class RecordSync:
 
     # ------------------------------------------------------------------ writes
 
-    def apply(self, plan: RecordPlan, revert_admin_edits: bool = False) -> None:
+    def apply(
+        self, plan: RecordPlan, revert_admin_edits: bool = False, revert_keys: frozenset[str] = frozenset()
+    ) -> None:
         """Apply the plan's record changes, and its admin edits if asked, in one transaction."""
         with transaction.atomic():
-            for change in sorted(plan.to_apply(revert_admin_edits), key=lambda change: change.phase):
+            for change in sorted(plan.to_apply(revert_admin_edits, revert_keys), key=lambda change: change.phase):
                 change.write(change.record)
             self.translations.flush()
 
@@ -869,9 +879,25 @@ def _describe(change: Change) -> str:
     return f"{change.key}: database {_short(change.database)} | record {_short(change.record)}"
 
 
-def print_plan(plan: RecordPlan, stdout: OutputWrapper, revert_admin_edits: bool, dry_run: bool = False) -> None:
+REVERT_HINT = "revert with --revert-admin-edit"
+
+
+def print_plan(
+    plan: RecordPlan,
+    stdout: OutputWrapper,
+    revert_admin_edits: bool,
+    dry_run: bool = False,
+    record_file: str = "",
+    revert_keys: frozenset[str] = frozenset(),
+) -> None:
+    """
+    Print the plan. Every kept admin edit names the `--revert-admin-edit <file>:<key>` that
+    applies the record over it alone, which is how program-ops' import script asks one at a time.
+    """
     record_changes = plan.by_label(RECORD_CHANGE)
     admin_edits = plan.by_label(ADMIN_EDIT)
+    reverted = [change for change in admin_edits if plan.reverts(change, revert_admin_edits, revert_keys)]
+    kept = [change for change in admin_edits if not plan.reverts(change, revert_admin_edits, revert_keys)]
     conflicts = plan.by_label(CONFLICT)
     if not plan.changes:
         stdout.write("  ✓ Matches the record.")
@@ -879,14 +905,8 @@ def print_plan(plan: RecordPlan, stdout: OutputWrapper, revert_admin_edits: bool
 
     sections = [
         (record_changes, "Record changes (to apply)" if dry_run else "Record changes (applied)"),
-        (
-            admin_edits,
-            (
-                "Admin edits (reverted to the record)"
-                if revert_admin_edits
-                else "Admin edits (kept; reverting needs --revert-admin-edits)"
-            ),
-        ),
+        (reverted, "Admin edits (reverted to the record)"),
+        (kept, "Admin edits (kept)"),
         (conflicts, "Conflicts: changed in both the record and the admin (skipped)"),
     ]
     for changes, title in sections:
@@ -895,6 +915,8 @@ def print_plan(plan: RecordPlan, stdout: OutputWrapper, revert_admin_edits: bool
         stdout.write(f"  {title}:")
         for change in changes:
             stdout.write(f"    • {_describe(change)}")
+            if record_file and change.label == ADMIN_EDIT and not plan.reverts(change, revert_admin_edits, revert_keys):
+                stdout.write(f"      {REVERT_HINT} {record_file}:{change.key}")
     if plan.notes:
         stdout.write("  Notes:")
         for note in plan.notes:

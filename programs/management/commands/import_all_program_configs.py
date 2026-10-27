@@ -115,6 +115,14 @@ class Command(BaseCommand):
             help="Apply the record over fields that were edited in the admin. Without it they are reported and kept.",
         )
         parser.add_argument(
+            "--revert-admin-edit",
+            action="append",
+            default=[],
+            dest="revert_admin_edit",
+            metavar="FILE:KEY",
+            help="Apply the record over one admin edit, as the plan names it. Repeatable.",
+        )
+        parser.add_argument(
             "--skip-translation",
             action="store_true",
             help="Copy English to every language instead of machine-translating it.",
@@ -144,6 +152,7 @@ class Command(BaseCommand):
     def _run(self, program_ops_dir: Path, options: dict[str, Any]) -> None:
         self.dry_run = bool(options.get("dry_run"))
         self.revert_admin_edits = bool(options.get("revert_admin_edits"))
+        self.revert_keys = self._revert_keys(options.get("revert_admin_edit") or [])
         self.skip_translation = bool(options.get("skip_translation")) or self.dry_run
 
         record_files = sorted(program_ops_dir.glob(self.PROGRAM_OPS_RECORD_GLOB))
@@ -157,6 +166,12 @@ class Command(BaseCommand):
             record_files = [f for f in record_files if f.name == single_file]
             if not record_files:
                 raise CommandError(f"No record named {single_file}.")
+
+        unknown = set(self.revert_keys) - {record_file.name for record_file in record_files}
+        if unknown:
+            raise CommandError(
+                f"--revert-admin-edit names a record this run doesn't import: {', '.join(sorted(unknown))}"
+            )
 
         if options.get("list_status"):
             return self._show_status(record_files)
@@ -334,13 +349,26 @@ class Command(BaseCommand):
         assert program is not None
         label = f"{program.white_label.code}/{program.name_abbreviated}" + (", new" if item.fresh else "")
         self.stdout.write(f"\n{item.path.name} ({label})")
+        revert_keys = self.revert_keys.get(item.path.name, frozenset())
         try:
             # One savepoint per record: a failure undoes that record alone.
             with transaction.atomic():
                 sync = RecordSync(item.record, self.stdout, skip_translation=self.skip_translation)
                 plan = sync.plan(program, None if item.fresh else baseline, fresh=item.fresh)
-                print_plan(plan, self.stdout, self.revert_admin_edits, dry_run=self.dry_run)
-                sync.apply(plan, revert_admin_edits=self.revert_admin_edits)
+                unmatched = revert_keys - {change.key for change in plan.by_label(ADMIN_EDIT)}
+                if unmatched:
+                    raise CommandError(
+                        f"--revert-admin-edit names no admin edit in this record: {', '.join(sorted(unmatched))}"
+                    )
+                print_plan(
+                    plan,
+                    self.stdout,
+                    self.revert_admin_edits,
+                    dry_run=self.dry_run,
+                    record_file=item.path.name,
+                    revert_keys=revert_keys,
+                )
+                sync.apply(plan, revert_admin_edits=self.revert_admin_edits, revert_keys=revert_keys)
                 self._record_import(item.path, program, plan.next_baseline())
         except Exception as e:
             if item.fresh:
@@ -352,13 +380,25 @@ class Command(BaseCommand):
 
         if item.fresh:
             results.created += 1
-        elif plan.to_apply(self.revert_admin_edits):
+        elif plan.to_apply(self.revert_admin_edits, revert_keys):
             results.updated += 1
         elif not plan.changes:
             results.current += 1
-        if not self.revert_admin_edits:
-            results.admin_edits_kept += len(plan.by_label(ADMIN_EDIT))
+        results.admin_edits_kept += sum(
+            not plan.reverts(change, self.revert_admin_edits, revert_keys) for change in plan.by_label(ADMIN_EDIT)
+        )
         results.conflicts += len(plan.by_label(CONFLICT))
+
+    @staticmethod
+    def _revert_keys(values: list[str]) -> dict[str, frozenset[str]]:
+        """Group `--revert-admin-edit FILE:KEY` values by record file."""
+        keys: dict[str, set[str]] = {}
+        for value in values:
+            record_file, separator, key = value.partition(":")
+            if not separator or not key:
+                raise CommandError(f"--revert-admin-edit takes FILE:KEY, as the plan prints it; got {value!r}.")
+            keys.setdefault(record_file, set()).add(key)
+        return {record_file: frozenset(names) for record_file, names in keys.items()}
 
     def _record_import(self, record_file: Path, program: Program, applied_record: dict[str, Any]) -> None:
         """Store what was applied: the baseline the next run labels differences against."""
