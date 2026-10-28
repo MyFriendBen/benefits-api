@@ -139,7 +139,7 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0197_navigator_email_no_auto"),
+        ("programs", "0199_rename_programconfigimport_programrecordimport"),
         ("screener", "0169_screen_household_size_range"),
     ]
 
