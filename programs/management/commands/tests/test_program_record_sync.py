@@ -132,8 +132,16 @@ class RecordSyncBase(TestCase):
         return path
 
     def run_import(self, *args: str) -> str:
+        """Run the import and return its output. A run with failed records exits with an error after
+        printing everything; that's expected here, and `self.records_failed` says whether it did."""
         out = io.StringIO()
-        call_command("import_program_records", *args, stdout=out, stderr=io.StringIO())
+        self.records_failed = False
+        try:
+            call_command("import_program_records", *args, stdout=out, stderr=io.StringIO())
+        except CommandError as e:
+            if "record(s) failed" not in str(e):
+                raise
+            self.records_failed = True
         return out.getvalue()
 
     def import_record(self) -> str:
@@ -304,6 +312,59 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertEqual(self.english(program.name), "Name from the admin")
         self.assertIn("Admin edits (reverted to the record)", output)
         self.assertRegex(output, r"Admin edits kept:\s+1")
+
+    def test_a_revert_hint_for_a_name_with_spaces_is_quoted_and_works(self) -> None:
+        self.record["documents"] = [{"external_name": "photo id", "text": "A photo ID"}]
+        self.import_record()
+        self.admin_edit(Document.objects.get(external_name="photo id").text, "Edited in the admin.")
+        argument = f"{PROGRAM}_program_record.json:document:photo id.text"
+
+        preview = self.run_import("--dry-run")
+        self.assertIn(f"revert with --revert-admin-edit '{argument}'", preview)
+
+        self.run_import("--revert-admin-edit", argument)
+        self.assertEqual(self.english(Document.objects.get(external_name="photo id").text), "A photo ID")
+
+    def test_a_phone_number_in_another_format_is_not_an_admin_edit_next_run(self) -> None:
+        self.record["navigators"][0]["phone_number"] = "+1 303-555-0100"
+        self.import_record()
+
+        output = self.run_import()
+
+        self.assertRegex(output, r"Admin edits kept:\s+0")
+        self.assertRegex(output, r"Current:\s+1")
+
+    def test_an_explicit_null_base_program_is_accepted(self) -> None:
+        self.record["program"]["base_program"] = None
+
+        self.import_record()
+
+        self.assertFalse(self.records_failed)
+        self.assertIsNone(self.program().base_program)
+
+    def test_a_category_scoped_to_another_white_label_fails(self) -> None:
+        texas = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+        ProgramCategory.objects.new_program_category(texas.code, "tx_only", "tx_only")
+        self.record["program_category"] = {"external_name": "tx_only"}
+
+        output = self.import_record()
+
+        self.assertIn("belongs to the 'tx' white label", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
+    def test_an_unnamed_row_linked_in_the_admin_is_left_alone(self) -> None:
+        self.import_record()
+        unnamed = Document.objects.new_document(white_label="co", external_name="unnamed_tmp")
+        unnamed.external_name = None
+        unnamed.save()
+        self.program().documents.add(unnamed)
+        Document.objects.new_document(white_label="co", external_name="admin_doc")
+        self.program().documents.add(Document.objects.get(external_name="admin_doc"))
+
+        self.run_import()
+
+        self.assertFalse(self.records_failed)
+        self.assertIn(unnamed, self.program().documents.all())
 
     def test_reverting_an_admin_edit_that_isnt_there_fails_the_record(self) -> None:
         self.import_record()
@@ -637,6 +698,84 @@ class RunTestCase(RecordSyncBase):
 
         self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
 
+    def test_a_run_with_a_failed_record_exits_with_an_error(self) -> None:
+        self.record["program"]["year"] = "1999"
+        self.write(self.record)
+        self.write(make_record(OTHER), program=OTHER)
+
+        with self.assertRaisesMessage(CommandError, "1 record(s) failed."):
+            call_command("import_program_records", stdout=io.StringIO(), stderr=io.StringIO())
+
+        self.assertTrue(Program.objects.filter(name_abbreviated=OTHER).exists(), "the other record still imports")
+
+    def test_a_malformed_section_fails_its_record_not_the_run(self) -> None:
+        self.record["documents"] = None
+        self.write(self.record)
+        self.write(make_record(OTHER), program=OTHER)
+
+        output = self.run_import()
+
+        self.assertIn("'documents' must be a list", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=OTHER).exists())
+
+    def test_a_record_without_a_white_label_code_fails_alone(self) -> None:
+        self.record["white_label"] = {}
+        self.write(self.record)
+        self.write(make_record(OTHER), program=OTHER)
+
+        output = self.run_import()
+
+        self.assertIn("white_label has no 'code'", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=OTHER).exists())
+
+    def test_a_record_with_a_non_string_program_key_fails_alone(self) -> None:
+        self.record["program"]["name_abbreviated"] = ["not", "a", "key"]
+        self.write(self.record)
+        self.write(make_record(OTHER), program=OTHER)
+
+        output = self.run_import()
+
+        self.assertIn("program has no 'name_abbreviated'", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=OTHER).exists())
+
+    def test_a_link_to_a_new_program_that_failed_comes_back_once_it_imports(self) -> None:
+        # OTHER's record sorts first, so it links PROGRAM before PROGRAM fails and is removed.
+        other = make_record(OTHER)
+        other["program"]["required_programs"] = [PROGRAM]
+        self.write(other, program=OTHER)
+        self.record["program"]["year"] = "1999"
+        self.write(self.record)
+
+        self.run_import()
+        self.assertTrue(self.records_failed)
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
+        self.record["program"]["year"] = "2025"
+        self.write(self.record)
+        self.run_import()
+
+        self.assertFalse(self.records_failed)
+        required = self.program(OTHER).required_programs.values_list("name_abbreviated", flat=True)
+        self.assertEqual(list(required), [PROGRAM])
+
+    def test_a_record_file_that_now_names_another_program_ignores_the_old_baseline(self) -> None:
+        self.import_record()
+        self.write(make_record(OTHER), program=OTHER)
+        self.run_import()
+        self.admin_edit(self.program(OTHER).description, "Edited in the admin.")
+        # The first record's file now describes OTHER.
+        moved = make_record(OTHER)
+        moved["documents"] = [{"external_name": f"{OTHER}_id"}]
+        moved["navigators"] = [{"external_name": f"{OTHER}_nav_a"}, {"external_name": f"{OTHER}_nav_b"}]
+        moved["warning_message"] = {"external_name": f"{OTHER}_waitlist"}
+        (self.program_ops_dir / "programs" / "white_labels" / "co" / OTHER / f"{OTHER}_program_record.json").unlink()
+        self.write(moved)
+
+        output = self.run_import()
+
+        self.assertIn(f"was last applied to co/{PROGRAM}", output)
+        self.assertEqual(self.english(self.program(OTHER).description), "Edited in the admin.")
+
     def test_two_records_for_one_program_fail_the_run(self) -> None:
         self.write(self.record)
         directory = self.program_ops_dir / "programs" / "white_labels" / "co" / "other"
@@ -658,6 +797,16 @@ class RunTestCase(RecordSyncBase):
         self.run_import("--program-ops-dir", str(elsewhere))
 
         self.assertTrue(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
+    def test_each_import_updates_the_applied_time(self) -> None:
+        self.import_record()
+        row = ProgramRecordImport.objects.get(filename=f"{PROGRAM}_program_record.json")
+        ProgramRecordImport.objects.filter(pk=row.pk).update(imported_at=row.imported_at.replace(year=2020))
+
+        self.run_import()
+
+        row.refresh_from_db()
+        self.assertGreater(row.imported_at.year, 2020)
 
     def test_list_shows_when_each_record_was_applied(self) -> None:
         self.import_record()

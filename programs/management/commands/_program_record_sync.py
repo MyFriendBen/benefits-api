@@ -17,6 +17,7 @@ field is a full entry: the record owns that row's content, and two records ownin
 error. A row the record stops listing is unlinked from this program, never deleted.
 """
 
+import shlex
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
@@ -114,17 +115,34 @@ WARNING = EntitySpec(
 SECTIONS = (("documents", DOCUMENT), ("navigators", NAVIGATOR), ("warning_messages", WARNING))
 
 
-def warning_entries(record: dict[str, Any]) -> list[dict[str, Any]]:
+def warning_entries(record: dict[str, Any]) -> Any:
     """Return a record's warning messages, whichever of the two shapes it uses."""
     if "warning_message" in record:
         return [record["warning_message"]]
-    return list(record.get("warning_messages", []))
+    return record.get("warning_messages", [])
 
 
-def section_entries(record: dict[str, Any], section: str) -> list[dict[str, Any]]:
+def section_entries(record: dict[str, Any], section: str) -> Any:
+    """
+    A section's entries as the record has them. Not coerced: `validate_record` rejects anything
+    but a list, and callers that run before validation check the type themselves.
+    """
     if section == "warning_messages":
         return warning_entries(record)
-    return list(record.get(section, []))
+    return record.get(section, [])
+
+
+def _stored_phone_number(value: Any) -> Any:
+    """
+    A phone number in the form the database stores it (E.164 where it parses).
+
+    Compared raw, `+1 303-555-0100` in a record never equals the `+13035550100` the field saves,
+    so every run after the first would report an admin edit nobody made.
+    """
+    if not value:
+        return value
+    stored = Navigator._meta.get_field("phone_number").get_prep_value(value)
+    return None if stored is None else str(stored)
 
 
 def is_reference(entry: dict[str, Any]) -> bool:
@@ -152,6 +170,8 @@ def validate_record(record: Any) -> list[str]:
         problems.append("use 'warning_message' or 'warning_messages', not both")
 
     problems += [f"unknown white_label key '{key}'" for key in sorted(set(record["white_label"]) - {"code"})]
+    if not isinstance(record["white_label"].get("code"), str) or not record["white_label"]["code"]:
+        problems.append("white_label has no 'code'")
     problems += [
         f"unknown program_category key '{key}'" for key in sorted(set(record["program_category"]) - CATEGORY_KEYS)
     ]
@@ -164,9 +184,9 @@ def validate_record(record: Any) -> list[str]:
             "program.active isn't a record field: a program is switched on or off in the admin, per environment"
         )
     problems += [f"unknown program key '{key}'" for key in sorted(set(program) - PROGRAM_KEYS - {"active"})]
-    if "name_abbreviated" not in program:
+    if not isinstance(program.get("name_abbreviated"), str) or not program["name_abbreviated"]:
         problems.append("program has no 'name_abbreviated'")
-    if "base_program" in program and program["base_program"] not in BaseProgram.values:
+    if program.get("base_program") is not None and program["base_program"] not in BaseProgram.values:
         problems.append(f"program.base_program '{program['base_program']}' is not a BaseProgram value")
 
     for section, spec in SECTIONS:
@@ -201,12 +221,17 @@ def validate_record(record: Any) -> list[str]:
 
 def owned_rows(record: dict[str, Any]) -> list[tuple[str, str]]:
     """Return (kind, external_name) for every shared row a record owns through a full entry."""
-    return [
-        (spec.kind, entry["external_name"])
-        for section, spec in SECTIONS
-        for entry in section_entries(record, section)
-        if isinstance(entry, dict) and entry.get("external_name") and not is_reference(entry)
-    ]
+    rows = []
+    for section, spec in SECTIONS:
+        entries = section_entries(record, section)
+        if not isinstance(entries, list):
+            continue  # reported when the record itself is validated
+        rows += [
+            (spec.kind, entry["external_name"])
+            for entry in entries
+            if isinstance(entry, dict) and isinstance(entry.get("external_name"), str) and not is_reference(entry)
+        ]
+    return rows
 
 
 @dataclass
@@ -338,6 +363,7 @@ class TranslationWriter:
 
         for translation, text in self.pending:
             edited = set(_edited_languages(translation))
+            untranslated = []
             for lang in Translate.languages:
                 if lang in edited:
                     continue
@@ -346,8 +372,16 @@ class TranslationWriter:
                 else:
                     value = translated.get(text, {}).get(lang)
                 if value is None:
+                    untranslated.append(lang)
                     continue
                 Translation.objects.edit_translation_by_id(translation.id, lang, value, manual=False)
+            if untranslated:
+                # The English changed but these languages kept the old text, and a later run won't
+                # see a difference to report, so say so now.
+                self.stdout.write(
+                    f"  Not re-translated, old text kept: {translation.label} ({', '.join(untranslated)}). "
+                    f"Translate these by hand in the admin."
+                )
         self.pending = []
 
 
@@ -617,10 +651,13 @@ class RecordSync:
         for field_name in spec.scalars:
             default = "_show" if field_name == "calculator" else None
             current = None if new_row else getattr(row, field_name)
+            value = entry.get(field_name, default)
+            if field_name == "phone_number":
+                value = _stored_phone_number(value)
             self._add(
                 plan,
                 f"{spec.kind}:{name}.{field_name}",
-                entry.get(field_name, default),
+                value,
                 None if current is None else str(current),
                 lambda value, spec=spec, name=name, field_name=field_name: self._set_row_field(
                     spec, name, field_name, value
@@ -671,13 +708,15 @@ class RecordSync:
     # ------------------------------------------------------------------ database reads
 
     def _linked_names(self, program: Program, spec: EntitySpec) -> list[str]:
+        """Names of the rows linked to the program. A row with no external_name can't be named in a
+        record, so it is left out: it stays linked, and the record neither manages nor reports it."""
         if spec is DOCUMENT:
-            return list(program.documents.values_list("external_name", flat=True))
-        if spec is NAVIGATOR:
-            return list(
-                ProgramNavigator.objects.filter(program=program).values_list("navigator__external_name", flat=True)
-            )
-        return list(program.warning_messages.values_list("external_name", flat=True))
+            names = program.documents.values_list("external_name", flat=True)
+        elif spec is NAVIGATOR:
+            names = ProgramNavigator.objects.filter(program=program).values_list("navigator__external_name", flat=True)
+        else:
+            names = program.warning_messages.values_list("external_name", flat=True)
+        return [name for name in names if name]
 
     def _other_programs(self, row: Any, spec: EntitySpec, program: Program) -> list[str]:
         if spec is DOCUMENT:
@@ -751,6 +790,11 @@ class RecordSync:
                     f"program_category '{value}' doesn't exist. A new category is shared by every white label, "
                     f"so a developer adds it."
                 ) from None
+            if category.white_label_id not in (None, self.white_label.id):
+                raise CommandError(
+                    f"program_category '{value}' belongs to the '{category.white_label.code}' white label, not "
+                    f"'{self.white_label.code}'"
+                )
         program = self._program()
         program.category = category
         program.save(update_fields=["category"])
@@ -916,7 +960,8 @@ def print_plan(
         for change in changes:
             stdout.write(f"    • {_describe(change)}")
             if record_file and change.label == ADMIN_EDIT and not plan.reverts(change, revert_admin_edits, revert_keys):
-                stdout.write(f"      {REVERT_HINT} {record_file}:{change.key}")
+                # Quoted for a shell: a key carries the row's external_name, which may have spaces.
+                stdout.write(f"      {REVERT_HINT} {shlex.quote(f'{record_file}:{change.key}')}")
     if plan.notes:
         stdout.write("  Notes:")
         for note in plan.notes:
@@ -1014,6 +1059,8 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
             ]
         else:
             rows = list(program.documents.all() if spec is DOCUMENT else program.warning_messages.all())
+        rows = [row for row in rows if row.external_name]  # a record can't name an unnamed row
+        if spec is not NAVIGATOR:
             order = _ordered_like([row.external_name for row in rows], list(previous_entries))
             rows.sort(key=lambda row: order.index(row.external_name))
 

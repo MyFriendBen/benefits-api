@@ -11,6 +11,7 @@ from typing import Any, Optional
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from programs.framework.gates import all_calculator_classes
 from programs.management.commands._program_record_sync import (
@@ -191,6 +192,11 @@ class Command(BaseCommand):
         else:
             self._sync(record_files, results)
         self._display_summary(results)
+        if results.failures:
+            # After the summary, so every failure is printed first; the other records stay
+            # applied (each has its own savepoint). The exit status tells a script the run
+            # wasn't clean.
+            raise CommandError(f"{len(results.failures)} record(s) failed.")
 
     # ------------------------------------------------------------------ discovery
 
@@ -238,9 +244,11 @@ class Command(BaseCommand):
         """Return (white label, program key) for a record, or None if it can't be read."""
         record = self._read(record_file)
         try:
-            return (record["white_label"]["code"], record["program"]["name_abbreviated"])
+            key = (record["white_label"]["code"], record["program"]["name_abbreviated"])
         except (KeyError, TypeError):
             return None
+        # Anything but two strings is reported when the record is validated.
+        return key if all(isinstance(part, str) for part in key) else None
 
     def _read(self, record_file: Path) -> Any:
         """A record's JSON, or None if it can't be opened or parsed (reported when it's processed)."""
@@ -310,7 +318,10 @@ class Command(BaseCommand):
                     waiting.append(item.path.name)
                     continue
                 try:
-                    item.program = RecordSync(item.record, self.stdout).create_program()
+                    # Its own savepoint: a failed create leaves no orphaned translations, and a
+                    # database error doesn't poison the dry run's outer transaction.
+                    with transaction.atomic():
+                        item.program = RecordSync(item.record, self.stdout).create_program()
                 except Exception as e:
                     self._failed(results, item.path, f"couldn't create the program: {e}")
                     continue
@@ -321,13 +332,31 @@ class Command(BaseCommand):
             results.waiting = len(waiting)
             self.stdout.write(f"\nWaiting for a calculator, not created: {', '.join(waiting)}")
 
-        baselines = dict(
-            ProgramRecordImport.objects.filter(filename__in=[item.path.name for item in to_sync]).values_list(
-                "filename", "applied_record"
-            )
-        )
+        rows = {
+            row.filename: row
+            for row in ProgramRecordImport.objects.filter(filename__in=[item.path.name for item in to_sync])
+        }
+        self._synced: list[tuple[LoadedRecord, dict[str, Any]]] = []
         for item in to_sync:
-            self._sync_one(item, baselines.get(item.path.name), results)
+            self._sync_one(item, self._baseline_for(item, rows.get(item.path.name)), results)
+
+    def _baseline_for(self, item: LoadedRecord, row: Optional[ProgramRecordImport]) -> Optional[dict[str, Any]]:
+        """
+        The record's last-applied values, if they were applied to this same program.
+
+        A record file that now names a different program can't use the old program's baseline:
+        it would label that program's admin edits as record changes and overwrite them.
+        """
+        if row is None:
+            return None
+        assert item.program is not None
+        if (row.white_label_code, row.program_name) != (item.program.white_label.code, item.program.name_abbreviated):
+            self.stdout.write(
+                f"\n{item.path.name} was last applied to {row.white_label_code}/{row.program_name}; comparing "
+                f"without a baseline."
+            )
+            return None
+        return row.applied_record
 
     def _load(self, record_files: list[Path], results: ImportResults) -> list[LoadedRecord]:
         loaded = []
@@ -374,9 +403,12 @@ class Command(BaseCommand):
             if item.fresh:
                 # Don't leave a half-built program behind: the next run would see an existing
                 # program with no baseline and report the record's own fields as admin edits.
+                key = (program.white_label.code, program.name_abbreviated)
                 program.delete()
+                self._forget_links_to(*key)
             self._failed(results, item.path, str(e))
             return
+        self._synced.append((item, plan.next_baseline()))
 
         if item.fresh:
             results.created += 1
@@ -388,6 +420,29 @@ class Command(BaseCommand):
             not plan.reverts(change, self.revert_admin_edits, revert_keys) for change in plan.by_label(ADMIN_EDIT)
         )
         results.conflicts += len(plan.by_label(CONFLICT))
+
+    def _forget_links_to(self, white_label_code: str, program_key: str) -> None:
+        """
+        Drop a removed program from the baselines of records this run already applied.
+
+        Deleting the program also deleted those records' links to it, while their stored baselines
+        still list it. Left alone, the next run would see the missing link as an admin edit and
+        keep it missing. With the program dropped from the baseline, the link is a record change
+        and comes back once the program imports.
+        """
+        for item, baseline in self._synced:
+            # Program keys resolve in the record's own white label, or in federal.
+            if white_label_code not in (item.record["white_label"]["code"], "federal"):
+                continue
+            changed = False
+            for key, value in baseline.items():
+                if key.endswith(("required_programs", "excludes_programs", "eligibility_programs")) and (
+                    isinstance(value, list) and program_key in value
+                ):
+                    baseline[key] = [name for name in value if name != program_key]
+                    changed = True
+            if changed:
+                ProgramRecordImport.objects.filter(filename=item.path.name).update(applied_record=baseline)
 
     @staticmethod
     def _revert_keys(values: list[str]) -> dict[str, frozenset[str]]:
@@ -409,6 +464,8 @@ class Command(BaseCommand):
                 "white_label_code": program.white_label.code,
                 "content_hash": record_content_hash(record_file),
                 "applied_record": applied_record,
+                # auto_now_add only stamps the first import; --list shows the last one.
+                "imported_at": timezone.now(),
             },
         )
 
