@@ -103,8 +103,8 @@ class Vintage:
 
 
 #: The tax credits are recorded as production has them, not as a decision. `year` is the tax
-#: year, but the credits sit on 2024 in co/il/ma, 2025 in nc/tx/wa and the CO tax calculator,
-#: and 2026 in ks/mo -- a spread no single rule produces. The rule is now
+#: year, but the credits sit on 2024 in co/il/ma, 2025 in the CO tax calculator, and 2026
+#: in ks/wa -- a spread no single rule produces. The rule is now
 #: decided -- the prior tax year, see `_PRIOR_TAX_YEAR` -- but each credit moves only once its
 #: spec and tests are verified at that year, so until then these stay UNVERIFIED and the audit
 #: lists them rather than reading them as settled.
