@@ -342,6 +342,26 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertIn("program.value_format 'weekly' isn't one of", output)
         self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
 
+    def test_a_value_format_that_is_not_a_string_fails_its_record_not_the_run(self) -> None:
+        self.record["program"]["value_format"] = ["lump_sum"]
+        self.write(self.record)
+        self.write(make_record(OTHER), program=OTHER)
+
+        output = self.run_import()
+
+        self.assertIn("program.value_format", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=OTHER).exists())
+
+    def test_an_entry_name_that_is_not_a_string_fails_its_record_not_the_run(self) -> None:
+        self.record["documents"] = [{"external_name": ["id"], "text": "A photo ID"}]
+        self.write(self.record)
+        self.write(make_record(OTHER), program=OTHER)
+
+        output = self.run_import()
+
+        self.assertIn("documents[0] has no 'external_name'", output)
+        self.assertTrue(Program.objects.filter(name_abbreviated=OTHER).exists())
+
     def test_an_explicit_null_base_program_is_accepted(self) -> None:
         self.record["program"]["base_program"] = None
 

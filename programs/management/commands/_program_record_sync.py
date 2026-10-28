@@ -189,7 +189,9 @@ def validate_record(record: Any) -> list[str]:
     if program.get("base_program") is not None and program["base_program"] not in BaseProgram.values:
         problems.append(f"program.base_program '{program['base_program']}' is not a BaseProgram value")
     value_formats = {value for value, _ in Program.VALUE_FORMAT_CHOICES}
-    if program.get("value_format") not in value_formats:
+    value_format = program.get("value_format")
+    # Type first: a list or object isn't hashable, and the set lookup would raise.
+    if not (value_format is None or isinstance(value_format, str)) or value_format not in value_formats:
         # The setter saves without model validation, so an unknown format would be stored as is.
         problems.append(
             f"program.value_format '{program['value_format']}' isn't one of "
@@ -204,7 +206,11 @@ def validate_record(record: Any) -> list[str]:
         seen: set[str] = set()
         for i, entry in enumerate(entries):
             where = f"{section}[{i}]"
-            if not isinstance(entry, dict) or not entry.get("external_name"):
+            if (
+                not isinstance(entry, dict)
+                or not isinstance(entry.get("external_name"), str)
+                or not entry["external_name"]
+            ):
                 problems.append(f"{where} has no 'external_name'")
                 continue
             name = entry["external_name"]
