@@ -1053,20 +1053,15 @@ class RemImpactView(views.APIView):
     and returns only the total cost delta (bill impact) and total emissions delta
     that the frontend needs to render the Calculate Impact results view.
 
-    POST takes the address in the JSON body so it stays out of request URLs, which
-    Heroku's router logs and Sentry captures. GET is kept until every frontend sends POST.
+    POST only: the address travels in the JSON body so it stays out of request URLs,
+    which Heroku's router logs and Sentry capture.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
 
-    def get(self, request, **_kwargs) -> Response:
-        return self._impact(request.query_params)
-
-    def post(self, request, **_kwargs) -> Response:
-        return self._impact(request.data)
-
-    def _impact(self, params: Any) -> Response:
+    def post(self, request: Request, **_kwargs: Any) -> Response:
+        params = request.data
         upgrade = _str_param(params, "upgrade")
         address = _str_param(params, "address")
         heating_fuel = _str_param(params, "heating_fuel")
@@ -1130,20 +1125,14 @@ class PlacesAutocompleteView(views.APIView):
     keeping the API key server-side. Returns US street address predictions
     restricted to street-level addresses.
 
-    POST takes the typed text in the JSON body for the same reason as RemImpactView.
+    POST only, with the typed text in the JSON body, for the same reason as RemImpactView.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PlacesRateThrottle]
 
-    def get(self, request, **_kwargs) -> Response:
-        return self._autocomplete(request.query_params)
-
-    def post(self, request, **_kwargs) -> Response:
-        return self._autocomplete(request.data)
-
-    def _autocomplete(self, params: Any) -> Response:
-        input_text = _str_param(params, "input")
+    def post(self, request: Request, **_kwargs: Any) -> Response:
+        input_text = _str_param(request.data, "input")
 
         if not input_text:
             return Response([], status=status.HTTP_200_OK)
