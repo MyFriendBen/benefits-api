@@ -146,7 +146,7 @@ class TestPlacesAutocompleteView(APITestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    # ── GET is gone: an address in the query string would land in the router logs ─
+    # ── GET is gone: clients must send the address in the body, not the URL ──
 
     @patch("screener.views.GooglePlacesClient.autocomplete_address")
     def test_get_is_not_allowed(self, mock_autocomplete: Mock) -> None:

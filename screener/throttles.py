@@ -32,7 +32,17 @@ PHONE_KEY_SALT = "screener.throttles.message_phone"
 
 
 class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
-    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
+    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored.
+
+    A method the view has no handler for doesn't count: DRF throttles before it picks
+    the handler, so a stale client's 405s would otherwise use up the IP's allowance.
+    """
+
+    def allow_request(self, request: Request, view: APIView) -> bool:
+        method = request.method.lower()
+        if method not in view.http_method_names or not hasattr(view, method):
+            return True
+        return super().allow_request(request, view)
 
     def get_cache_key(self, request: Request, view: APIView) -> Optional[str]:
         ident = self.get_ident(request)
