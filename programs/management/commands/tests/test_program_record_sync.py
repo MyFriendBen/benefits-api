@@ -23,7 +23,7 @@ from programs.models import (
     Navigator,
     Program,
     ProgramCategory,
-    ProgramConfigImport,
+    ProgramRecordImport,
     ProgramNavigator,
 )
 from screener.models import WhiteLabel
@@ -101,14 +101,14 @@ class RecordSyncBase(TestCase):
         self.program_ops_dir = root / "program-ops"
         self.program_ops_dir.mkdir()
 
-        from programs.management.commands.import_all_program_configs import Command
+        from programs.management.commands.import_program_records import Command
 
         patcher = patch.object(Command, "PROGRAM_OPS_DIR", self.program_ops_dir)
         patcher.start()
         self.addCleanup(patcher.stop)
 
         calculators = patch(
-            "programs.management.commands.import_all_program_configs.all_calculator_classes",
+            "programs.management.commands.import_program_records.all_calculator_classes",
             return_value={PROGRAM: MagicMock(), OTHER: MagicMock()},
         )
         calculators.start()
@@ -133,7 +133,7 @@ class RecordSyncBase(TestCase):
 
     def run_import(self, *args: str) -> str:
         out = io.StringIO()
-        call_command("import_all_program_configs", *args, stdout=out, stderr=io.StringIO())
+        call_command("import_program_records", *args, stdout=out, stderr=io.StringIO())
         return out.getvalue()
 
     def import_record(self) -> str:
@@ -167,7 +167,7 @@ class RecordSyncTestCase(RecordSyncBase):
             ),
             [f"{PROGRAM}_nav_a", f"{PROGRAM}_nav_b"],
         )
-        baseline = ProgramConfigImport.objects.get(filename=f"{PROGRAM}_program_record.json").applied_record
+        baseline = ProgramRecordImport.objects.get(filename=f"{PROGRAM}_program_record.json").applied_record
         self.assertEqual(baseline["program.description"], "Help buying food.")
         self.assertTrue(baseline[f"link:document:{PROGRAM}_id"])
 
@@ -229,7 +229,7 @@ class RecordSyncTestCase(RecordSyncBase):
     def test_without_a_baseline_an_empty_field_is_filled_and_a_set_one_is_kept(self) -> None:
         """A program imported before baselines existed: nothing says which side moved."""
         self.import_record()
-        ProgramConfigImport.objects.update(applied_record=None)
+        ProgramRecordImport.objects.update(applied_record=None)
         self.admin_edit(self.program().name, "Name from the admin")
         self.record["program"]["estimated_decision_time"] = "21 days"
         self.write(self.record)
@@ -244,7 +244,7 @@ class RecordSyncTestCase(RecordSyncBase):
     def test_without_a_baseline_a_flag_switched_off_in_the_admin_is_kept(self) -> None:
         """False is a choice, not an empty field: the first run under this importer leaves it."""
         self.import_record()
-        ProgramConfigImport.objects.update(applied_record=None)
+        ProgramRecordImport.objects.update(applied_record=None)
         Program.objects.filter(pk=self.program().pk).update(show_on_current_benefits=False)
 
         output = self.run_import()
@@ -255,7 +255,7 @@ class RecordSyncTestCase(RecordSyncBase):
 
     def test_without_a_baseline_a_link_removed_in_the_admin_is_kept(self) -> None:
         self.import_record()
-        ProgramConfigImport.objects.update(applied_record=None)
+        ProgramRecordImport.objects.update(applied_record=None)
         self.program().documents.clear()
 
         output = self.run_import()
@@ -578,7 +578,7 @@ class RunTestCase(RecordSyncBase):
         self.assertRegex(output, r"To create:\s+1")
         self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
         self.assertFalse(Navigator.objects.filter(external_name=f"{PROGRAM}_nav_a").exists())
-        self.assertFalse(ProgramConfigImport.objects.exists())
+        self.assertFalse(ProgramRecordImport.objects.exists())
 
     def test_a_new_program_without_its_calculator_waits(self) -> None:
         self.write(make_record("co_unbuilt"), program="co_unbuilt")
@@ -606,7 +606,7 @@ class RunTestCase(RecordSyncBase):
         self.record["program"]["description"] = "Retired."
         self.write(self.record)
 
-        with patch("programs.management.commands.import_all_program_configs.all_calculator_classes", return_value={}):
+        with patch("programs.management.commands.import_program_records.all_calculator_classes", return_value={}):
             self.run_import()
 
         self.assertEqual(self.english(self.program().description), "Retired.")
@@ -678,8 +678,8 @@ class RunTestCase(RecordSyncBase):
         self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
 
 
-class ProgramConfigImportModelTest(TestCase):
+class ProgramRecordImportModelTest(TestCase):
     def test_str_names_the_file_and_program(self) -> None:
-        row = ProgramConfigImport.objects.create(filename="co_snap_program_record.json", program_name="co_snap")
+        row = ProgramRecordImport.objects.create(filename="co_snap_program_record.json", program_name="co_snap")
 
         self.assertIn("co_snap_program_record.json (co_snap)", str(row))

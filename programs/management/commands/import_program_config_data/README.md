@@ -1,7 +1,7 @@
-# Old program configs — no longer imported
+# Legacy program configs — no longer imported
 
 Program records live in [program-ops](https://github.com/MyFriendBen/program-ops), as
-`programs/**/*_program_record.json`. `import_all_program_configs` reads only those: it creates a
+`programs/**/*_program_record.json`. `import_program_records` reads only those: it creates a
 program the first time and keeps it matching its record after that. Run it through program-ops'
 `scripts/import_programs.py`, which does a dry run first and works for local, staging and prod.
 

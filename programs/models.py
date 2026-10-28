@@ -2104,13 +2104,12 @@ class TranslationOverride(models.Model):
         return f"{white_label_name}{name}"
 
 
-class ProgramConfigImport(models.Model):
+class ProgramRecordImport(models.Model):
     """
-    Tracks which program configuration JSON files have been imported.
+    One row per program-ops program record, written by `import_program_records`.
 
-    Similar to Django's migrations table, this model keeps track of which
-    program config files have been successfully imported to avoid re-importing
-    the same configuration.
+    `applied_record` holds what the record set when it was last applied, which is how the
+    next import tells a record change from an admin edit.
     """
 
     filename = models.CharField(

@@ -21,17 +21,17 @@ from programs.management.commands._program_record_sync import (
     print_plan,
     validate_record,
 )
-from programs.models import Program, ProgramConfigImport
+from programs.models import Program, ProgramRecordImport
 
 
-def config_content_hash(config_file: Path) -> str:
+def record_content_hash(record_file: Path) -> str:
     """
     Return the SHA-256 of a record file's raw bytes.
 
     Stored with the tracking row as a record of exactly what was applied. Migration 0166
     duplicates this to backfill existing rows.
     """
-    return hashlib.sha256(config_file.read_bytes()).hexdigest()
+    return hashlib.sha256(record_file.read_bytes()).hexdigest()
 
 
 class DryRunRollback(Exception):
@@ -81,11 +81,11 @@ class Command(BaseCommand):
     calling the translation API.
 
     Usage:
-      python manage.py import_all_program_configs --dry-run
-      python manage.py import_all_program_configs
-      python manage.py import_all_program_configs --list
-      python manage.py import_all_program_configs --file co_nf_program_record.json
-      python manage.py import_all_program_configs --program-ops-stdin < bundle.json
+      python manage.py import_program_records --dry-run
+      python manage.py import_program_records
+      python manage.py import_program_records --list
+      python manage.py import_program_records --file co_nf_program_record.json
+      python manage.py import_program_records --program-ops-stdin < bundle.json
     """
 
     # A program-ops checkout next to this repo.
@@ -322,7 +322,7 @@ class Command(BaseCommand):
             self.stdout.write(f"\nWaiting for a calculator, not created: {', '.join(waiting)}")
 
         baselines = dict(
-            ProgramConfigImport.objects.filter(filename__in=[item.path.name for item in to_sync]).values_list(
+            ProgramRecordImport.objects.filter(filename__in=[item.path.name for item in to_sync]).values_list(
                 "filename", "applied_record"
             )
         )
@@ -402,12 +402,12 @@ class Command(BaseCommand):
 
     def _record_import(self, record_file: Path, program: Program, applied_record: dict[str, Any]) -> None:
         """Store what was applied: the baseline the next run labels differences against."""
-        ProgramConfigImport.objects.update_or_create(
+        ProgramRecordImport.objects.update_or_create(
             filename=record_file.name,
             defaults={
                 "program_name": program.name_abbreviated,
                 "white_label_code": program.white_label.code,
-                "content_hash": config_content_hash(record_file),
+                "content_hash": record_content_hash(record_file),
                 "applied_record": applied_record,
             },
         )
@@ -447,7 +447,7 @@ class Command(BaseCommand):
 
     def _show_status(self, record_files: list[Path]) -> None:
         applied = {
-            row.filename: row for row in ProgramConfigImport.objects.filter(filename__in=[f.name for f in record_files])
+            row.filename: row for row in ProgramRecordImport.objects.filter(filename__in=[f.name for f in record_files])
         }
         self.stdout.write(f"\n{len(record_files)} record(s)\n")
         for record_file in record_files:
@@ -456,5 +456,5 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"  ○ {record_file.name}: never applied"))
             else:
                 stamp = row.imported_at.strftime("%Y-%m-%d %H:%M")
-                changed = " (file changed since)" if row.content_hash != config_content_hash(record_file) else ""
+                changed = " (file changed since)" if row.content_hash != record_content_hash(record_file) else ""
                 self.stdout.write(self.style.SUCCESS(f"  ✓ {record_file.name}: applied {stamp}{changed}"))

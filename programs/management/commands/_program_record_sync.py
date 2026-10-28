@@ -4,7 +4,7 @@ Compare a program-ops record with the database and apply the difference.
 A program-ops record is the source of truth for the program it describes, so a program that
 already exists is updated to match it rather than skipped. Every field the record manages is
 read from the database and compared three ways, against the record and against what the record
-set when it was last applied (`ProgramConfigImport.applied_record`):
+set when it was last applied (`ProgramRecordImport.applied_record`):
 
 - **record change**: the record moved and the database didn't. Applied.
 - **admin edit**: the database moved and the record didn't. Reported, and applied only when the
