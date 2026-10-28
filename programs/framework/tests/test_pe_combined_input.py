@@ -2,7 +2,7 @@
 
 One request carries every calculator a screen needs, so the payload builder has to
 merge their inputs rather than emit one household per program. These assert the
-merge for pairs that reach different entity levels — SNAP is SPM-scoped, SSI
+merge for pairs that reach different entity levels — SNAP is SPM-scoped, WIC, SSI
 and CHIP are per-member, EITC and ACA are tax-unit — since that is where a naive
 merge drops a field.
 """
@@ -14,11 +14,28 @@ from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.cross_white_label.medicaid.chip.base import Chip
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.white_labels.ma.ssp.calculator import MaStateSupplementProgram
+from programs.programs.cross_white_label.wic.base import Wic
 from programs.programs.testing_fixtures.pe_input_test_base import PeInputTestCase
 
 
 class TestCombinedCalculatorsPeInput(PeInputTestCase):
     """Tests for pe_input with multiple calculators combined."""
+
+    def test_snap_and_wic_combined(self):
+        """Test that pe_input handles both Snap and Wic together."""
+        result = pe_input(self.screen, [Snap, Wic])
+        household = result["household"]
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        head_id = str(self.head.id)
+
+        # Wic fields
+        self.assertIn("wic", people[head_id])
+        self.assertIn("employment_income", people[head_id])
+
+        # Snap fields
+        self.assertIn("snap_assets", spm_unit)
+        self.assertIn("snap_if_takes_up", spm_unit)
 
     def test_eitc_and_snap_combined(self):
         """Test that pe_input handles both Eitc and Snap together."""

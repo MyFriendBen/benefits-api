@@ -70,6 +70,11 @@ class TestRegistration(FederalWicTestCase):
     def test_value_is_the_monthly_average_times_twelve(self):
         self.assertEqual(FederalWic.member_amount, ANNUAL_VALUE)
 
+    def test_pregnancy_is_not_a_dependency(self):
+        """The Get Ahead apps never send `pregnant`; a missing answer reads as not pregnant
+        rather than dropping the program."""
+        self.assertNotIn("pregnant", FederalWic.dependencies)
+
     def test_insurance_is_not_a_dependency(self):
         """Medicaid is one way in among several; a screen with no insurance answer loses that
         route, not the program."""
@@ -187,6 +192,13 @@ class TestEdges(FederalWicTestCase):
         screen = self.household(("headOfHousehold", 30, {"pregnant": None}), wages=10_000)
 
         self.assert_ineligible(self.calculate(screen))
+
+    def test_a_child_with_no_pregnancy_answers_in_the_household(self):
+        """What every Get Ahead screen looks like: they never send `pregnant`, so the endpoint
+        reports it missing, and the program still calculates."""
+        screen = self.household(("headOfHousehold", 30, {"pregnant": None}), ("child", 3), wages=10_000)
+
+        self.assert_eligible(self.calculate(screen, missing=("pregnant",)))
 
     def test_household_size_is_what_the_screen_says(self):
         """The limit reads `household_size`, not the members entered."""

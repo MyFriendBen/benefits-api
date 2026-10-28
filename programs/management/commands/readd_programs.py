@@ -18,6 +18,7 @@ class Command(BaseCommand):
         {"abbr": "medicare_savings", "external": "medicare_savings"},
         {"abbr": "trua", "external": "trua"},
         {"abbr": "rhc", "external": "rhc"},
+        {"abbr": "wic", "external": "wic"},
         {"abbr": "omnisalud", "external": "omnisalud"},
         {"abbr": "dpp", "external": "dpp"},
         {"abbr": "lwcr", "external": "lwcr"},

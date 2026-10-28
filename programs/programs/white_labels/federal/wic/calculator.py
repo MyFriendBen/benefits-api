@@ -38,7 +38,9 @@ class FederalWic(ProgramCalculator):
     max_child_age = 5
     member_amount = int((MONTHLY_VALUE * 12).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
-    dependencies = ["age", "pregnant", "household_size", "income_amount", "income_frequency"]
+    # Not `pregnant`: the Get Ahead apps never send it, and a missing answer already reads as
+    # not pregnant (`is True`), so requiring it would drop WIC from every one of their screens.
+    dependencies = ["age", "household_size", "income_amount", "income_frequency"]
 
     def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
