@@ -2,7 +2,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from functools import cached_property
 
 from programs.framework.base import Eligibility
-from programs.programs.white_labels.federal.eitc.calculator import FederalEitc, eic_table
+from programs.programs.white_labels.federal.eitc.calculator import FederalEitc
 
 
 class NjEitc(FederalEitc):
@@ -42,31 +42,31 @@ class NjEitc(FederalEitc):
             e.condition(True)
             return
 
-        params = self._params
-        column = self._column
-
         e.condition(self._head_is_old_enough())
         e.condition(self._qualifying_child_count == 0)
-        e.condition(self._investment_income <= params.investment_income_limit)
-        e.condition(0 < self._earned_income < column.limit)
-        e.condition(self._agi < column.limit)
-        # Worksheet A's $0 lookup ends the claim here as it does for the federal credit.
-        e.condition(eic_table(self._earned_income, column) > 0)
+        self._income_eligible(e)
+        # With no qualifying child the column is the childless one, so this is the federal credit
+        # the household would get if its age were in the band.
+        e.condition(self._federal_credit() > 0)
 
     def household_value(self) -> int:
         if not self._on_federal_route:
             return self.age_expansion_amount
 
-        credit = (self.nj_rate * super().household_value()).quantize(Decimal(1), rounding=ROUND_HALF_UP)
+        credit = (self.nj_rate * self._federal_credit()).quantize(Decimal(1), rounding=ROUND_HALF_UP)
         return max(int(credit), 1)
 
     @cached_property
     def _on_federal_route(self) -> bool:
-        """Whether the household qualifies for the federal credit, age rules included."""
+        """
+        Whether the household qualifies for the federal credit, age rules included. Unlike
+        ``FederalEitc``, which stays eligible at a value of $0 when only the AGI lookup is $0, NJ
+        needs a credit above $0, and a $0 here would otherwise be floored up to $1.
+        """
         federal = Eligibility()
         super().household_eligible(federal)
 
-        return federal.eligible
+        return federal.eligible and self._federal_credit() > 0
 
     def _head_is_old_enough(self) -> bool:
         heads = [m for m in self.screen.household_members.all() if m.relationship == "headOfHousehold"]
