@@ -333,6 +333,14 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         source="program-ops federal_ssi_spec.md section 7, which prices the 2026 FBR at "
         "$994 individual / $1,491 couple",
     ),
+    ("federal", "federal_wic"): Vintage(
+        edition="2026",
+        basis=Basis.TABLE_EDITION,
+        status=Status.CONFIRMED,
+        rule="WIC's 185% limits are the reduced-price meal guidelines, set from the current HHS "
+        "guideline each July 1; the 2026 guideline runs July 2026 to June 2027",
+        source="program-ops federal_wic_spec.md section 4 income_limit, 91 FR 23050",
+    ),
     ("il", "il_msp"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
