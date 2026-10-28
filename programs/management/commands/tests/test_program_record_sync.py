@@ -334,6 +334,14 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertRegex(output, r"Admin edits kept:\s+0")
         self.assertRegex(output, r"Current:\s+1")
 
+    def test_an_unknown_value_format_fails_its_record(self) -> None:
+        self.record["program"]["value_format"] = "weekly"
+
+        output = self.import_record()
+
+        self.assertIn("program.value_format 'weekly' isn't one of", output)
+        self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
+
     def test_an_explicit_null_base_program_is_accepted(self) -> None:
         self.record["program"]["base_program"] = None
 

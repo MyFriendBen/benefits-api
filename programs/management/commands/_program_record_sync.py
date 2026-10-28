@@ -188,6 +188,13 @@ def validate_record(record: Any) -> list[str]:
         problems.append("program has no 'name_abbreviated'")
     if program.get("base_program") is not None and program["base_program"] not in BaseProgram.values:
         problems.append(f"program.base_program '{program['base_program']}' is not a BaseProgram value")
+    value_formats = {value for value, _ in Program.VALUE_FORMAT_CHOICES}
+    if program.get("value_format") not in value_formats:
+        # The setter saves without model validation, so an unknown format would be stored as is.
+        problems.append(
+            f"program.value_format '{program['value_format']}' isn't one of "
+            f"{', '.join(str(value) for value in sorted(value_formats, key=str))}"
+        )
 
     for section, spec in SECTIONS:
         entries = section_entries(record, section)
