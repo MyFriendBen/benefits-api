@@ -11,8 +11,8 @@ JOINT = "joint"
 HEAD_OF_HOUSEHOLD = "head_of_household"
 SINGLE = "single"
 
-# Income types that are never taxed.
-NEVER_TAXED_INCOME_TYPES = [
+# Income types that are never taxed. Tuples, since several credits share them.
+NEVER_TAXED_INCOME_TYPES = (
     "sSI",
     "cashAssistance",
     "cashAssistanceOther",
@@ -20,10 +20,10 @@ NEVER_TAXED_INCOME_TYPES = [
     "gifts",
     "workersComp",
     "veteran",
-]
+)
 # Social Security, treated as untaxed because the screener can't tell the taxable part. Where
 # that misses, adjusted gross income reads low.
-SOCIAL_SECURITY_INCOME_TYPES = ["sSDisability", "sSSurvivor", "sSRetirement", "sSDependent"]
+SOCIAL_SECURITY_INCOME_TYPES = ("sSDisability", "sSSurvivor", "sSRetirement", "sSDependent")
 # Every type left out of the screener's stand-in for adjusted gross income.
 UNTAXED_INCOME_TYPES = NEVER_TAXED_INCOME_TYPES + SOCIAL_SECURITY_INCOME_TYPES
 

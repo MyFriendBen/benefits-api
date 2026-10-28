@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from functools import cached_property
-from typing import Optional
+from collections.abc import Collection
 
 from sentry_sdk import capture_message
 
@@ -211,8 +211,8 @@ class FederalEitc(ProgramCalculator):
 
         return filers
 
-    def _filer_income(self, types: list[str], exclude: Optional[list[str]] = None) -> float:
-        return sum(filer.calc_gross_income("yearly", types, exclude or []) for filer in self._filers)
+    def _filer_income(self, types: Collection[str], exclude: Collection[str] = ()) -> float:
+        return sum(filer.calc_gross_income("yearly", types, exclude) for filer in self._filers)
 
     @cached_property
     def _earned_income(self) -> float:

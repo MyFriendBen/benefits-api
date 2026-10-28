@@ -206,7 +206,7 @@ class FederalCdcc(ProgramCalculator):
     def _qualifying_count(self) -> int:
         return sum(1 for member in self.screen.household_members.all() if self._is_qualifying_individual(member))
 
-    @property
+    @cached_property
     def _has_two_or_more_qualifying(self) -> bool:
         return self._qualifying_count >= 2
 

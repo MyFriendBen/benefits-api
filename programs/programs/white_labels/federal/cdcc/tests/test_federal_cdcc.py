@@ -427,3 +427,11 @@ class TestScenarios(FederalCdccTestCase):
         self.care(head, 300)
 
         self.assert_eligible(self.calculate(screen), 680)
+
+    def test_scenario_39_visually_impaired_head_of_household(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 33_000}, visually_impaired=True)
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 680)

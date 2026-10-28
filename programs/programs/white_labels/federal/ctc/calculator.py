@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
 from math import ceil
+from collections.abc import Collection
 from typing import Optional
 
 from sentry_sdk import capture_message
@@ -159,9 +160,9 @@ class FederalCtc(ProgramCalculator):
             return HEAD_OF_HOUSEHOLD
         return SINGLE
 
-    def _filer_income(self, types: list[str], exclude: Optional[list[str]] = None) -> Decimal:
+    def _filer_income(self, types: Collection[str], exclude: Collection[str] = ()) -> Decimal:
         return sum(
-            (Decimal(str(filer.calc_gross_income("yearly", types, exclude or []))) for filer in self._filers),
+            (Decimal(str(filer.calc_gross_income("yearly", types, exclude))) for filer in self._filers),
             Decimal(0),
         )
 
