@@ -1060,10 +1060,8 @@ class RemImpactView(views.APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
 
-    def post(self, request, **_kwargs) -> Response:
-        return self._impact(request.data)
-
-    def _impact(self, params: Any) -> Response:
+    def post(self, request: Request, **_kwargs: Any) -> Response:
+        params = request.data
         upgrade = _str_param(params, "upgrade")
         address = _str_param(params, "address")
         heating_fuel = _str_param(params, "heating_fuel")
@@ -1133,11 +1131,8 @@ class PlacesAutocompleteView(views.APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PlacesRateThrottle]
 
-    def post(self, request, **_kwargs) -> Response:
-        return self._autocomplete(request.data)
-
-    def _autocomplete(self, params: Any) -> Response:
-        input_text = _str_param(params, "input")
+    def post(self, request: Request, **_kwargs: Any) -> Response:
+        input_text = _str_param(request.data, "input")
 
         if not input_text:
             return Response([], status=status.HTTP_200_OK)

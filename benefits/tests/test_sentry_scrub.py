@@ -23,6 +23,8 @@ from integrations.clients.rewiring_america import RewiringAmericaClient
 
 FAKE_ADDRESS = "742 Invented Lane, Nowhere, CO 80000"
 FAKE_KEY = "fake-places-key-for-tests"
+# A stray query string on a POST still reaches Sentry's WSGI middleware, so the scrubber must drop it.
+ADDRESS_QUERY = f"address={FAKE_ADDRESS.replace(' ', '+')}"
 
 
 PLACES_URL = "https://api.example/api/places/autocomplete/"
@@ -33,7 +35,7 @@ def _event(url: str) -> dict[str, Any]:
     return {
         "request": {
             "url": url,
-            "query_string": f"address={FAKE_ADDRESS.replace(' ', '+')}",
+            "query_string": ADDRESS_QUERY,
             "data": {"address": FAKE_ADDRESS},
         },
         "exception": {"values": [{"stacktrace": {"frames": [{"function": "f", "vars": {"address": FAKE_ADDRESS}}]}}]},
@@ -151,12 +153,12 @@ class AddressEndpointEventTest(TestCase):
             target.start()
             self.addCleanup(target.stop)
 
-    def _wsgi(self, method: str, path: str, body: dict[str, str] | None = None) -> str:
+    def _wsgi(self, method: str, path: str, body: dict[str, str] | None = None, query: str = "") -> str:
         raw = json.dumps(body).encode() if body is not None else b""
         environ: dict[str, Any] = {
             "REQUEST_METHOD": method,
             "PATH_INFO": path,
-            "QUERY_STRING": "",
+            "QUERY_STRING": query,
             "CONTENT_TYPE": "application/json",
             "CONTENT_LENGTH": str(len(raw)),
             "wsgi.input": BytesIO(raw),
@@ -174,7 +176,7 @@ class AddressEndpointEventTest(TestCase):
 
     def test_places_post(self) -> None:
         with _recording_sentry() as events:
-            status = self._wsgi("POST", "/api/places/autocomplete/", body={"input": FAKE_ADDRESS})
+            status = self._wsgi("POST", "/api/places/autocomplete/", body={"input": FAKE_ADDRESS}, query=ADDRESS_QUERY)
         self.assertTrue(status.startswith("500"), status)
         self._assert_clean(events)
 
@@ -182,6 +184,6 @@ class AddressEndpointEventTest(TestCase):
     def test_rem_impact_post(self, _serializer: Any) -> None:
         body = {"upgrade": "hvac__heat_pump", "address": FAKE_ADDRESS, "heating_fuel": "natural_gas"}
         with _recording_sentry() as events:
-            status = self._wsgi("POST", "/api/screener-options/cesn/rem-impact/", body=body)
+            status = self._wsgi("POST", "/api/screener-options/cesn/rem-impact/", body=body, query=ADDRESS_QUERY)
         self.assertTrue(status.startswith("500"), status)
         self._assert_clean(events)

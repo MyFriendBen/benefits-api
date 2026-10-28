@@ -285,7 +285,7 @@ class TestRemImpactView(APITestCase):
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
     def test_get_is_not_allowed(self, mock_fetch: Mock) -> None:
-        """GET is gone: an address in the query string would land in the router logs."""
+        """GET is gone: clients must send the address in the body, not the URL."""
         response = self.client.get(self.URL, self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         mock_fetch.assert_not_called()
