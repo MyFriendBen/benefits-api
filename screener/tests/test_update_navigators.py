@@ -1,7 +1,8 @@
 """
 Tests for navigator filtering logic in update_navigators() (MFB-666).
 
-Covers the three filtering steps:
+Covers the filtering steps:
+  0. filter_by_white_label     - tested by TestNavigatorWhiteLabelFilter
   1. filter_by_county          - tested by TestNavigatorCountyFilter
   2. filter_by_required_programs_eligibility - tested by TestNavigatorEligibilityProgramsFilter
   3. referrer_prioritization   - tested by TestNavigatorReferrerPrioritization
@@ -15,6 +16,7 @@ from programs.models import County, Navigator, Program, ProgramNavigator, Referr
 from screener.models import WhiteLabel
 from screener.navigators import (
     filter_by_county,
+    filter_by_white_label,
     filter_by_required_programs_eligibility,
     referrer_prioritization,
 )
@@ -27,6 +29,53 @@ class _Eligible:
 
 class _Ineligible:
     eligible = False
+
+
+class TestNavigatorWhiteLabelFilter(TestCase):
+    """A federal program shows `federal` navigators and the screen's white label's; other
+    programs are not filtered by white label."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        cls.co = WhiteLabel.objects.create(name="CO Test", code="co_test", state_code="CO")
+        cls.ks = WhiteLabel.objects.create(name="KS Test", code="ks_test", state_code="KS")
+        cls.federal_program = Program.objects.new_program(white_label="federal", name_abbreviated="federal_test")
+        cls.co_program = Program.objects.new_program(white_label="co_test", name_abbreviated="co_test_program")
+        cls.federal_nav = Navigator.objects.new_navigator("federal", "federal_nav_test")
+        cls.co_nav = Navigator.objects.new_navigator("co_test", "co_nav_test")
+        cls.ks_nav = Navigator.objects.new_navigator("ks_test", "ks_nav_test")
+
+    def test_federal_program_keeps_federal_and_screen_white_label_navigators(self):
+        result = filter_by_white_label([self.federal_nav, self.co_nav, self.ks_nav], self.federal_program, self.co)
+        self.assertEqual(result, [self.federal_nav, self.co_nav])
+
+    def test_federal_program_drops_another_states_navigator(self):
+        result = filter_by_white_label([self.co_nav], self.federal_program, self.ks)
+        self.assertEqual(result, [])
+
+    def test_state_program_keeps_navigator_owned_by_another_white_label(self):
+        """Navigators are shared by external_name, so a state program can use one another
+        white label imported first."""
+        result = filter_by_white_label([self.co_nav, self.ks_nav], self.co_program, self.co)
+        self.assertEqual(result, [self.co_nav, self.ks_nav])
+
+    def test_county_match_in_another_state_does_not_leak(self):
+        """The reason county scoping can't do this: the same county name exists in two
+        states, and the county filter matches on the name alone."""
+        ProgramNavigator.objects.create(program=self.federal_program, navigator=self.co_nav)
+        self.co_nav.counties.set([County.objects.create(name="Jackson County", white_label=self.co)])
+        data = [{"navigators": []}]
+        update_navigators(
+            eligible_program_data=[(self.federal_program, 0)],
+            program_eligibility={},
+            data=data,
+            screen_white_label=self.ks,
+            screen_county="Jackson County",
+            referrer=None,
+        )
+        self.assertEqual(data[0]["navigators"], [])
+        self.assertEqual(filter_by_county([self.co_nav], "Jackson County"), [self.co_nav])
 
 
 class TestNavigatorCountyFilter(TestCase):
@@ -242,6 +291,7 @@ class TestUpdateNavigators(TestCase):
             eligible_program_data=[(self.program, 0)],
             program_eligibility=program_eligibility or {},
             data=data,
+            screen_white_label=self.white_label,
             screen_county=screen_county,
             referrer=referrer,
         )
@@ -282,6 +332,7 @@ class TestUpdateNavigators(TestCase):
             eligible_program_data=[(self.program, 0)],
             program_eligibility={},
             data=data,
+            screen_white_label=self.white_label,
             screen_county=None,
             referrer=None,
         )

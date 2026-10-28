@@ -442,7 +442,7 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
 
 
 def _navigators_prefetch() -> Prefetch:
-    """Prefetch each program's navigators with everything the three filters and the
+    """Prefetch each program's navigators with everything the four filters and the
     serializer read, so `_program_navigators` adds no queries per program.
 
     Goes through the ORDERED through table (`program_navigators`), which is what the
@@ -510,7 +510,9 @@ def _program_navigators(
     describes this list as complete, and a blank entry in a complete list is worse than
     a shorter one.
     """
-    navigators = navigators_for_program(program, program_eligibility, screen.county, primary_navigators)
+    navigators = navigators_for_program(
+        program, program_eligibility, screen.white_label, screen.county, primary_navigators
+    )
     if not navigators:
         return []
 
