@@ -3,12 +3,15 @@ from django.db import migrations
 from django.db.models import Min
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
-# Federal EITC and SSDI are one `federal_eitc` / `federal_ssdi` row each on the `federal` white
-# label, which every white label sees. These are the per-state rows they replace, switched off
-# by 0193 and 0194. A household that said it already receives the benefit holds a
-# CurrentBenefit row on its state's row; `already_has` on the results page is an exact-name
-# match, so those rows are moved onto the federal row. The state rows are switched off, never
-# deleted: CurrentBenefit.program cascades.
+# Federal EITC, SSDI, CTC and SSI are one `federal_*` row each on the `federal` white label,
+# which every white label sees. These are the per-state rows they replace, switched off by
+# 0193 and 0194 (EITC, SSDI) and before 0195 and 0196 (CTC, SSI). A household that said it
+# already receives the benefit holds a CurrentBenefit row on its state's row; `already_has` on
+# the results page is an exact-name match, so those rows are moved onto the federal row. CTC
+# and SSI already moved in 0195 and 0196, but rows kept reaching their state rows afterwards
+# (pages loaded before the release, and the SSI-income rule writing onto every SSI row), so
+# they are swept again here. The state rows are switched off, never deleted:
+# CurrentBenefit.program cascades.
 MOVES = {
     ("federal", "federal_eitc"): (
         ("co", "eitc"),
@@ -32,30 +35,29 @@ MOVES = {
         ("tx", "tx_ssdi"),
         ("wa", "wa_ssdi"),
     ),
+    ("federal", "federal_ctc"): (
+        ("co", "ctc"),
+        ("co_tax_calculator", "ctc"),
+        ("il", "ctc"),
+        ("ma", "ctc"),
+        ("nc", "ctc"),
+        ("ks", "ks_ctc"),
+        ("mo", "mo_ctc"),
+        ("tx", "tx_ctc"),
+        ("wa", "wa_ctc"),
+    ),
+    ("federal", "federal_ssi"): (
+        ("co", "ssi"),
+        ("il", "ssi"),
+        ("ma", "ssi"),
+        ("nc", "ssi"),
+        ("cesn", "cesn_ssi"),
+        ("ks", "ks_ssi"),
+        ("mo", "mo_ssi"),
+        ("tx", "tx_ssi"),
+        ("wa", "wa_ssi"),
+    ),
 }
-
-# The state copies of the federal CTC and SSI, retired the same way; their current benefits
-# already moved in 0195 and 0196.
-OTHER_STATE_ROWS = (
-    ("co", "ctc"),
-    ("co_tax_calculator", "ctc"),
-    ("il", "ctc"),
-    ("ma", "ctc"),
-    ("nc", "ctc"),
-    ("ks", "ks_ctc"),
-    ("mo", "mo_ctc"),
-    ("tx", "tx_ctc"),
-    ("wa", "wa_ctc"),
-    ("co", "ssi"),
-    ("il", "ssi"),
-    ("ma", "ssi"),
-    ("nc", "ssi"),
-    ("cesn", "cesn_ssi"),
-    ("ks", "ks_ssi"),
-    ("mo", "mo_ssi"),
-    ("tx", "tx_ssi"),
-    ("wa", "wa_ssi"),
-)
 
 
 def hide_from_has_benefits_step(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
@@ -67,7 +69,7 @@ def hide_from_has_benefits_step(apps: Apps, schema_editor: BaseDatabaseSchemaEdi
     """
     Program = apps.get_model("programs", "Program")
 
-    pairs = [pair for state_rows in MOVES.values() for pair in state_rows] + list(OTHER_STATE_ROWS)
+    pairs = [pair for state_rows in MOVES.values() for pair in state_rows]
     hidden = 0
     for white_label_code, name_abbreviated in pairs:
         hidden += Program.objects.filter(
@@ -80,12 +82,12 @@ def hide_from_has_benefits_step(apps: Apps, schema_editor: BaseDatabaseSchemaEdi
 
 
 def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
-    """Move every CurrentBenefit row on a state EITC or SSDI row onto its federal row.
+    """Move every CurrentBenefit row on a retired state row onto its federal row.
 
     Fails closed: when rows are waiting on a program's state rows and its federal row has not
     been imported, there is nothing to move them onto, so the migration raises rather than
-    leaving them stranded on rows that are switched off. Both programs are checked before
-    anything moves, so a failure leaves neither half-done. A database with no state rows
+    leaving them stranded on rows that are switched off. Every program is checked before
+    anything moves, so a failure leaves none half-done. A database with no state rows
     either (fresh or test) has nothing to do and says so. A screen that already holds the
     federal row keeps that one and loses the state row, since (screen, program) is unique.
     Re-running finds no state rows and does nothing.
