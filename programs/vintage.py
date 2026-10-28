@@ -103,8 +103,8 @@ class Vintage:
 
 
 #: The tax credits are recorded as production has them, not as a decision. `year` is the tax
-#: year, but the same federal credits sit on 2024 in co/il/ma, 2025 in nc/tx/wa and the CO
-#: tax calculator, and 2026 in ks/mo -- a spread no single rule produces. The rule is now
+#: year, but the credits sit on 2024 in co/il/ma, 2025 in the CO tax calculator, and 2026
+#: in ks/wa -- a spread no single rule produces. The rule is now
 #: decided -- the prior tax year, see `_PRIOR_TAX_YEAR` -- but each credit moves only once its
 #: spec and tests are verified at that year, so until then these stay UNVERIFIED and the audit
 #: lists them rather than reading them as settled.
@@ -490,13 +490,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="the AMI table carries no 2026 edition; rolling forward raises KeyError at calculation time",
         source="integrations/services/income_limits.py",
     ),
-    ("co", "eitc"): Vintage(
-        edition="2024",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("co", "fatc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
@@ -525,22 +518,8 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("co_tax_calculator", "eitc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("co_tax_calculator", "fatc"): Vintage(
         edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("il", "eitc"): Vintage(
-        edition="2024",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
         rule=_TAX_YEAR_UNSETTLED,
@@ -567,13 +546,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule=_TAX_YEAR_UNSETTLED,
         source="",
     ),
-    ("ma", "eitc"): Vintage(
-        edition="2024",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
     ("ma", "ma_cfc"): Vintage(
         edition="2024",
         basis=Basis.COVERAGE_YEAR,
@@ -583,13 +555,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
     ),
     ("ma", "ma_maeitc"): Vintage(
         edition="2024",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("mo", "mo_eitc"): Vintage(
-        edition="2026",
         basis=Basis.COVERAGE_YEAR,
         status=Status.UNVERIFIED,
         rule=_TAX_YEAR_UNSETTLED,
@@ -609,27 +574,6 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         status=Status.CONFIRMED,
         rule=_PRIOR_TAX_YEAR,
         source="Form MO-WFTC (2025); programs/programs/white_labels/mo/wftc/spec.md, validated at TY2025",
-    ),
-    ("nc", "eitc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("tx", "tx_eitc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
-    ),
-    ("wa", "wa_eitc"): Vintage(
-        edition="2025",
-        basis=Basis.COVERAGE_YEAR,
-        status=Status.UNVERIFIED,
-        rule=_TAX_YEAR_UNSETTLED,
-        source="",
     ),
     ("wa", "wa_wftc"): Vintage(
         edition="2026",
