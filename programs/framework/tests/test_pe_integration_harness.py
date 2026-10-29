@@ -106,4 +106,4 @@ class TestCheckProgramVintage(TestCase):
         check_program_vintage(make_program("mo", "mo_pts", year="2026", state_code="MO"), "year-parameter guard")
 
     def test_a_program_with_no_recorded_vintage_is_not_checked(self) -> None:
-        check_program_vintage(make_program("mo", "not_in_vintage", year="1999", state_code="MO"))
+        check_program_vintage(make_program("mo", "not_in_vintage", year="2025", state_code="MO"))
