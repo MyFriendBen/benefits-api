@@ -28,6 +28,7 @@ from django.db import transaction
 from configuration.models import Configuration
 
 from integrations.clients.google_translate import Translate, TranslationIntegrityError, is_auto_translatable
+from programs.federal import FEDERAL_WHITE_LABEL
 from programs.models import (
     BaseProgram,
     County,
@@ -602,6 +603,8 @@ class RecordSync:
                     )
             if new_row:
                 self._plan_row(plan, spec, entry, None, baseline, fresh)
+            elif spec is NAVIGATOR:
+                self._plan_federal_navigator_owner(plan, entry, row)
 
             self._add(
                 plan,
@@ -632,6 +635,38 @@ class RecordSync:
                     plan.notes.append(
                         f"{spec.kind} '{name}' is linked to no other program, so unlinking it leaves it unused."
                     )
+
+    def _plan_federal_navigator_owner(self, plan: RecordPlan, entry: dict[str, Any], row: Navigator) -> None:
+        """A federal record's navigators must belong to `federal`.
+
+        On a federal program a state's navigator is shown only to that state's screens
+        (`screener.navigators.filter_by_white_label`), and a navigator belongs to whichever white
+        label created it first. A navigator this record owns is moved to `federal`; that leaves
+        the state programs still linking it unchanged, since they don't filter by white label. One
+        it only references is refused, since moving it would override the record that owns it.
+        """
+        if self.white_label.code != FEDERAL_WHITE_LABEL or row.white_label_id == self.white_label.id:
+            return
+        name = entry["external_name"]
+        owner = row.white_label.code
+        if is_reference(entry):
+            raise CommandError(
+                f"navigator '{name}' belongs to the '{owner}' white label, so on this federal program only "
+                f"'{owner}' screens would see it. Own it in this record (give its fields) to move it to "
+                f"'{FEDERAL_WHITE_LABEL}', or link it from the state program instead."
+            )
+        plan.changes.append(
+            Change(
+                key=f"navigator:{name}.white_label",
+                label=RECORD_CHANGE,
+                record=FEDERAL_WHITE_LABEL,
+                database=owner,
+                write=lambda _value, name=name: Navigator.objects.filter(external_name=name).update(
+                    white_label=self.white_label
+                ),
+                phase=0,
+            )
+        )
 
     def _plan_row(
         self,

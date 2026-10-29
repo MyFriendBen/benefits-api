@@ -460,6 +460,7 @@ def eligibility_results(
             *translations_prefetch_name("", Program.objects.translated_fields),
             "program_navigators",
             "program_navigators__navigator",
+            "program_navigators__navigator__white_label",
             "program_navigators__navigator__counties",
             "program_navigators__navigator__languages",
             "program_navigators__navigator__eligibility_programs",

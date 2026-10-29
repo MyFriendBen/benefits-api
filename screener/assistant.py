@@ -458,7 +458,7 @@ def _navigators_prefetch() -> Prefetch:
     return Prefetch(
         "program_navigators",
         queryset=(
-            ProgramNavigator.objects.select_related("navigator")
+            ProgramNavigator.objects.select_related("navigator__white_label")
             .prefetch_related(
                 "navigator__counties",
                 "navigator__languages",

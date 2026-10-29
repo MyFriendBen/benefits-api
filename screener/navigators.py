@@ -18,15 +18,17 @@ four filters would drift, and the drift would surface only mid-conversation.
 Four stages, applied per program in this order:
 
 0. `filter_by_white_label` — on a federal program, a navigator applies only when its white
-   label is `federal` or the screen's. A federal program (`programs.federal`) is one row
-   every white label sees, so it carries every state's navigators for that program, and
-   each state should see only its own. County scoping can't do this: `filter_by_county`
-   matches on the county name alone, and names repeat across states (77 are shared among
-   the WIC states, e.g. Jackson County in CO, KS, MO and NC), so a CO navigator listing
-   every CO county would still show in Jackson County, MO. Programs on any other white
-   label are not filtered: navigators are global by `external_name`, so a state program
-   may use one another white label imported first (`lifeline_support_center` is on `wa`
-   and serves MO and KS). A national navigator on a federal program belongs on `federal`.
+   label is `federal` or in the screen's state (any white label with the same `state_code`,
+   so a `cesn` screen sees `co`'s; a white label with no state matches only itself). A federal
+   program (`programs.federal`) is one row every white label sees, so it carries every
+   state's navigators for that program, and each state should see only its own. County
+   scoping can't do this: `filter_by_county` matches on the county name alone, and names
+   repeat across states (77 are shared among the WIC states, e.g. Jackson County in CO, KS,
+   MO and NC), so a CO navigator listing every CO county would still show in Jackson County,
+   MO. Programs on any other white label are not filtered: navigators are global by
+   `external_name`, so a state program may use one another white label imported first
+   (`lifeline_support_center` is on `wa` and serves MO and KS). A national navigator on a
+   federal program belongs on `federal`.
 1. `filter_by_county`   — a navigator with counties set applies only in those counties.
    Substring match on the county name, so the screen's "Denver County" matches a County
    row of either "Denver" or "Denver County" (MFB-1602 fixed the data, not this check).
@@ -44,11 +46,20 @@ from screener.models import WhiteLabel
 
 
 def filter_by_white_label(navigators: list, program: Program, screen_white_label: WhiteLabel) -> list:
-    """On a federal program, the navigators owned by `federal` or the screen's white label."""
+    """On a federal program, the navigators owned by `federal` or a white label in the screen's state.
+
+    Reads each navigator's `white_label`, so callers must select it.
+    """
     if not is_federal(program):
         return navigators
-    allowed = {program.white_label_id, screen_white_label.id}
-    return [nav for nav in navigators if nav.white_label_id in allowed]
+    return [nav for nav in navigators if _serves_screen(nav.white_label, program, screen_white_label)]
+
+
+def _serves_screen(navigator_white_label: WhiteLabel, program: Program, screen_white_label: WhiteLabel) -> bool:
+    if navigator_white_label.id in (program.white_label_id, screen_white_label.id):
+        return True
+    state = screen_white_label.state_code
+    return bool(state) and navigator_white_label.state_code == state
 
 
 def filter_by_county(navigators: list, county: Optional[str]) -> list:
@@ -94,7 +105,7 @@ def navigators_for_program(
 
     Reads `program.program_navigators` — the ordered through table the admin's
     drag-to-reorder writes — so callers must prefetch `program_navigators__navigator`
-    and the navigator's `counties` and `eligibility_programs`, and select
+    and the navigator's `white_label`, `counties` and `eligibility_programs`, and select
     `program.white_label`, or this is an N+1 per program per filter.
     `primary_navigators` is the referrer's list, already loaded, or empty when the screen
     has no referrer.
