@@ -4,9 +4,8 @@ Every age in the spec is the member's age at the end of the 2025 tax year, so me
 built from a birth month and the clock is pinned: an age derived from today would put a
 boundary member on the wrong side of it as the calendar moves.
 
-Values are whole dollars. Spec scenarios 1, 2, 6, 7, 9, 13, 15, 16 and 20 state 40% of a federal
-credit to the cent; the calculator rounds it to the dollar and floors it at $1, so those tests
-assert the rounded figure.
+Values are whole dollars. The spec states 40% of a federal credit to the cent; the calculator
+rounds it to the dollar and floors it at $1, so the tests assert the rounded figure.
 
 §4's `valid_social_security_number` has no scenario: it is `Enforced by: program-record`
 (`legal_status_required`), which the calculator never reads. The months-of-residency axis has
@@ -302,9 +301,9 @@ class TestAgiLookupBand(NjEitcTestCase):
 
     A childless single filer's table pays $2 at $19,099 and $0 from $19,100, with the limit at
     $19,104. The credit is the smaller of the earned-income and AGI lookups, so wages of $10,000
-    with a pension putting AGI in that band get nothing. `FederalEitc` stays eligible at $0 there
-    (its scenario 40); NJ has to turn the household away, or the $1 floor and the flat $260 would
-    pay it.
+    with a pension putting AGI in that band get nothing. `FederalEitc` stays eligible at $0 there,
+    as its own spec requires; NJ has to turn the household away, or the $1 floor and the flat $260
+    would pay it.
     """
 
     def household(self, age: int, pension: int) -> Eligibility:
