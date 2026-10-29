@@ -694,12 +694,16 @@ class HouseholdMember(models.Model):
         """
         Age on December 31 of ``year``, for rules judged over a tax or claim year
         rather than on the screening date. Falls back to ``calc_age()`` when the birth
-        year or the year is unknown.
+        year or the year is unknown, and is None for someone born after ``year``, who had
+        no age that year.
         """
         if self.birth_year is None or year is None:
             return self.calc_age()
 
-        return max(year - self.birth_year, 0)
+        if self.birth_year > year:
+            return None
+
+        return year - self.birth_year
 
     @staticmethod
     def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:

@@ -180,7 +180,8 @@ class FederalCtc(ProgramCalculator):
         children: list[HouseholdMember] = []
         others: list[HouseholdMember] = []
         for member in self.screen.household_members.all():
-            if member in self._filers:
+            # A child born after the tax year wasn't alive in it, so is neither kind of dependent.
+            if member in self._filers or self._born_after_tax_year(member):
                 continue
             if self._is_qualifying_child(member):
                 (children if self._is_ctc_child(member) else others).append(member)
@@ -236,6 +237,9 @@ class FederalCtc(ProgramCalculator):
             return False
 
         return self._countable_income(member) < self._params.qualifying_relative_income_limit
+
+    def _born_after_tax_year(self, member: HouseholdMember) -> bool:
+        return member.birth_year is not None and member.birth_year > self.tax_year
 
     def _age_at_year_end(self, member: HouseholdMember) -> Optional[int]:
         """Age at the tax year's end; a member with an age but no birth month is taken at the age

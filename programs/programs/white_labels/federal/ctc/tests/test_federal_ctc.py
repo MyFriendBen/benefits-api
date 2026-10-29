@@ -413,6 +413,32 @@ class TestScenarios(FederalCtcTestCase):
         self.assert_eligible(self.calculate(screen), 0)
 
 
+class TestBirthAfterTheTaxYear(FederalCtcTestCase):
+    """A child born after the tax year wasn't alive in it, so isn't claimed for it."""
+
+    def test_a_child_born_after_the_tax_year_is_not_a_dependent(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 30, income={"wages": 20_000})
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR + 1, 1, 1))
+
+        self.assert_ineligible(self.calculate(screen))
+
+    def test_a_child_born_in_december_of_the_tax_year_is_counted(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 30, income={"wages": 20_000})
+        self.member(screen, "child", 0, month=12)
+
+        self.assert_eligible(self.calculate(screen), 1_700)
+
+    def test_a_newborn_does_not_stop_an_older_child_counting(self):
+        screen = self.make_screen(household_size=3)
+        self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
+        self.member(screen, "child", 4)
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR + 1, 1, 1))
+
+        self.assert_eligible(self.calculate(screen), 2_200)
+
+
 class TestAgeOnlyHouseholds(FederalCtcTestCase):
     """The Colorado tax-credit apps send `age` with no birth month, and no disability or
     student answers."""

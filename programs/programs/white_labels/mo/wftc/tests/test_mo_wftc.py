@@ -28,22 +28,22 @@ from programs.programs.testing_fixtures.pe_integration import (
     make_screen,
     screener_value,
 )
+from programs.framework.base import Eligibility
 from screener.models import Expense, HouseholdMember, Screen
 from programs.programs.white_labels.mo.wftc.calculator import MoWftc
 from programs.framework.pe_dependencies import member
 
-PE_VERSION = "2.9.0"
 BIRTH_MONTH = 6
 
 
 class MoWftcScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is Cole County, ZIP 65101."""
 
-    pe_version = PE_VERSION
-
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0
     tax_year = "2025"
+    # Set by the year-parameter guards, which deliberately run a year other than the configured one.
+    off_vintage: str = ""
 
     def setUp(self):
         super().setUp()
@@ -79,8 +79,8 @@ class MoWftcScenarioTestCase(PeIntegrationTestCase):
             **kwargs,
         )
 
-    def run_wftc(self, screen):
-        return calc_pe_program(screen, MoWftc, self.program)
+    def run_wftc(self, screen: Screen) -> Eligibility:
+        return calc_pe_program(screen, MoWftc, self.program, off_vintage=self.off_vintage)
 
     def add_property_tax(self, member, amount):
         """Annual real estate taxes paid, feeding PolicyEngine's ``real_estate_taxes``."""
@@ -132,6 +132,7 @@ class TestScenario02TaxYear2023Rate(MoWftcScenarioTestCase):
 
     screen_id = 9102
     tax_year = "2023"
+    off_vintage = "year-parameter guard"
 
     def test_uses_ten_percent_rate(self):
         screen = self.build(2)
@@ -223,6 +224,7 @@ class TestScenario09InvestmentAtThreshold2023(MoWftcScenarioTestCase):
 
     screen_id = 9109
     tax_year = "2023"
+    off_vintage = "year-parameter guard"
 
     def test_exactly_at_2023_threshold_stays_eligible(self):
         screen = self.build(2)
@@ -237,6 +239,7 @@ class TestScenario10InvestmentAtThreshold2024(MoWftcScenarioTestCase):
 
     screen_id = 9110
     tax_year = "2024"
+    off_vintage = "year-parameter guard"
 
     def test_exactly_at_2024_threshold_stays_eligible(self):
         screen = self.build(2)
@@ -251,6 +254,7 @@ class TestScenario11InvestmentOneOverThreshold2024(MoWftcScenarioTestCase):
 
     screen_id = 9111
     tax_year = "2024"
+    off_vintage = "year-parameter guard"
 
     def test_one_dollar_over_2024_threshold_disqualifies(self):
         screen = self.build(2)
@@ -358,6 +362,7 @@ class TestScenario17RenterPropertyTaxCreditAbsorbsLiability(MoWftcScenarioTestCa
 
     screen_id = 9117
     tax_year = "2026"
+    off_vintage = "year-parameter guard"
 
     def test_rent_based_ptc_absorbs_liability(self):
         screen = self.build(2)

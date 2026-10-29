@@ -32,6 +32,10 @@ from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
 PE_VERSION = "1.821.2"
+PE_VERSION_REASON = (
+    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
+    "re-recorded at PE_TEST_VERSION."
+)
 YEAR = "2026"
 
 # See the Head Start suite: above the Head Start/EHS income test, below MO SNAP's ceiling.
@@ -45,6 +49,7 @@ class MoEarlyHeadStartReceiptTestCase(PeIntegrationTestCase):
     """Shared household builder — the same one the Head Start suite uses."""
 
     pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0
