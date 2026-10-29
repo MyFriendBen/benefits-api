@@ -178,6 +178,15 @@ class TestSpecScenarios(TestCase):
         self.assertTrue(eligible)
         self.assertEqual(value, 532)  # income 12000 -> 76%; 700*.76
 
+    def test_child_born_after_the_claim_year_is_treated_as_a_minor(self):
+        # age_at_end_of_year has no age for a child born after the claim year; their income
+        # is still excluded, as a minor's would be.
+        p1 = make_member(birth_year=1958, age=68, income={"pension": 12_000})
+        child = make_member(birth_year=2026, age=0, relationship="child", income={"wages": 30_000})
+        eligible, value = run(make_calculator([p1, child], property_tax=700))
+        self.assertTrue(eligible)
+        self.assertEqual(value, 532)
+
     def test_s14_no_categorical_path_ineligible(self):
         m = make_member(birth_year=1976, age=50, income={"wages": 21_600})
         eligible, _ = run(make_calculator([m], mortgage=800 * 12))
