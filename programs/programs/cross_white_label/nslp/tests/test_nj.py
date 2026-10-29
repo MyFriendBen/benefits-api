@@ -197,6 +197,18 @@ class TestAge(NjNslpTestCase):
 
         self.assert_ineligible(self.calculate(screen))
 
+    def test_scenario_24_two_year_old_under_the_federal_limit(self):
+        screen = self.household(2, 35, head_wages=30_000)
+        self.add_member(screen, "child", 2)
+
+        self.assert_ineligible(self.calculate(screen))
+
+    def test_scenario_25_three_year_old_under_the_federal_limit(self):
+        screen = self.household(2, 35, head_wages=30_000)
+        self.add_member(screen, "child", 3)
+
+        self.assert_eligible(self.calculate(screen), STUDENT_VALUE)
+
     def test_scenario_21_twenty_year_old_at_the_federal_free_limit(self):
         screen = self.household(2, 50, head_wages=28_132)
         self.add_member(screen, "child", 20)

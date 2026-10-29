@@ -26,7 +26,7 @@ class NationalSchoolLunchProgram(ProgramCalculator, abstract=True):
     in our own code: free or reduced-price lunch for each school child. It sits beside the
     PolicyEngine ``SchoolLunch`` in ``base.py``, which the states not yet moved still use.
 
-    A child under 21 is eligible when one of these holds:
+    A child 3 to 20 is eligible when one of these holds:
 
     - household income is at or below 185% of the poverty line (free at or below 130%)
     - the household receives SNAP, TANF or Head Start, which makes every child free
@@ -39,8 +39,9 @@ class NationalSchoolLunchProgram(ProgramCalculator, abstract=True):
 
     Approximations, all from the spec's data gaps:
 
-    - school enrollment and grade are not collected, so every member under 21 counts, with no
-      lower age or relationship test
+    - school enrollment and grade are not collected, so age stands in for them: 3, the youngest
+      child in a school's pre-K class, to 20. No source sets a minimum age, and there is no
+      relationship test
     - Head Start is recorded for the household, so every child in it is free
     - any child listed as a foster child is free, whether or not the placement is formal
     - SNAP counts whatever its amount, which is not collected
@@ -61,6 +62,7 @@ class NationalSchoolLunchProgram(ProgramCalculator, abstract=True):
 
     school_days: ClassVar[int]
 
+    min_age = 3
     max_age = 20
 
     # 91 FR 17932: 130% and 185% of the poverty guideline, rounded up to the next whole dollar.
@@ -86,7 +88,7 @@ class NationalSchoolLunchProgram(ProgramCalculator, abstract=True):
 
     def member_eligible(self, e: MemberEligibility) -> None:
         age = e.member.calc_age()
-        e.condition(age is not None and age <= self.max_age)
+        e.condition(age is not None and self.min_age <= age <= self.max_age)
 
     def household_eligible(self, e: Eligibility) -> None:
         income = int(self.screen.calc_gross_income("yearly", ["all"]))

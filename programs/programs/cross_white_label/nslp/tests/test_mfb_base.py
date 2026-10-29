@@ -57,6 +57,7 @@ class TestDeclarations(NslpBaseTestCase):
         self.assertFalse(hasattr(NationalSchoolLunchProgram, "program_code"))
 
     def test_constants(self):
+        self.assertEqual(NationalSchoolLunchProgram.min_age, 3)
         self.assertEqual(NationalSchoolLunchProgram.max_age, 20)
         self.assertEqual(NationalSchoolLunchProgram.free_percent, 130)
         self.assertEqual(NationalSchoolLunchProgram.reduced_price_percent, 185)
@@ -89,11 +90,20 @@ class TestSchoolChild(NslpBaseTestCase):
         self.assertFalse(eligibility.eligible)
         self.assertEqual(eligibility.value, 0)
 
-    def test_no_lower_age_bound(self):
+    def test_three_year_old_is_a_school_child(self):
         screen = self.household()
-        self.add_member(screen, "child", 0)
+        self.add_member(screen, "child", 3)
 
         self.assertEqual(self.member_values(self.calculate(screen)), [0, FREE_VALUE])
+
+    def test_two_year_old_is_not(self):
+        screen = self.household()
+        self.add_member(screen, "child", 2)
+
+        eligibility = self.calculate(screen)
+
+        self.assertFalse(eligibility.eligible)
+        self.assertEqual(eligibility.value, 0)
 
     def test_no_relationship_test(self):
         screen = self.make_screen(household_size=1)
