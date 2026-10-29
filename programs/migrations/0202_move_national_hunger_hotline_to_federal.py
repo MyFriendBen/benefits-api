@@ -26,7 +26,7 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0199_rename_programconfigimport_programrecordimport"),
+        ("programs", "0201_move_state_wic_current_benefits"),
     ]
 
     operations = [
