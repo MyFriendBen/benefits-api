@@ -12,11 +12,14 @@ rounds it to the dollar and floors it at $1, so the tests assert the rounded fig
 no test either, because the screener holds no months of residency.
 """
 
+from dataclasses import replace
 from datetime import date
 from typing import Optional
+from unittest.mock import patch
 
 from programs.framework.base import Eligibility
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from programs.programs.white_labels.federal.eitc.calculator import EITC_YEARS
 from programs.programs.white_labels.nj.eitc.calculator import NjEitc
 from screener.models import HouseholdMember, Screen
 
@@ -81,7 +84,6 @@ class TestRegistration(NjEitcTestCase):
         self.assertEqual(FederalEitc.program_code, "federal_eitc")
 
     def test_class_constants(self):
-        self.assertEqual(NjEitc.age_expansion_amount, 260)
         self.assertEqual(NjEitc.age_expansion_min_age, 18)
         self.assertEqual(str(NjEitc.nj_rate), "0.40")
 
@@ -336,3 +338,42 @@ class TestOneDollarFloor(NjEitcTestCase):
         e = self.head_with_wages(30, 26_205, ("spouse", 30, 0))
 
         self.assert_eligible(e, 1)
+
+
+class TestAgeExpansionAmountFollowsTheTable(NjEitcTestCase):
+    """The flat amount is NJ's share of the federal childless maximum, so it can't drift from the
+    federal credit when a tax year's parameters change."""
+
+    def eighteen_year_old(self) -> Screen:
+        screen = self.make_screen(household_size=1)
+        self.member(screen, "headOfHousehold", 18, income={"wages": 9_000})
+
+        return screen
+
+    def test_the_2025_amount_is_40_percent_of_the_649_maximum(self):
+        self.assertEqual(self.make_calculator(self.eighteen_year_old())._age_expansion_amount, 260)
+
+    def test_a_different_childless_maximum_changes_the_amount(self):
+        year = EITC_YEARS[TAX_YEAR]
+        childless = year.columns[(0, False)]
+        changed = replace(year, columns={**year.columns, (0, False): replace(childless, max_credit=700)})
+
+        with patch.dict(EITC_YEARS, {TAX_YEAR: changed}):
+            e = self.calculate(self.eighteen_year_old())
+
+        self.assert_eligible(e, 280)
+
+    def test_a_tax_year_with_no_parameters_uses_the_latest_and_reports_it(self):
+        """Inherited from FederalEitc: a rollover the table wasn't updated for must not raise."""
+        screen = self.eighteen_year_old()
+        calculator = self.make_calculator(screen)
+
+        self.program.year.period = "2026"
+        try:
+            with patch("programs.programs.white_labels.federal.eitc.calculator.capture_message") as report:
+                e = calculator.calc()
+        finally:
+            self.program.year.period = self.fpl_year
+
+        self.assert_eligible(e, 260)
+        report.assert_called_once()

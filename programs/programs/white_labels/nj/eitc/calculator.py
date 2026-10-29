@@ -15,15 +15,16 @@ class NjEitc(FederalEitc):
     - Federal credit: a household that qualifies for the federal EITC gets 40% of it. The
       federal credit is worked out by ``FederalEitc``, so both programs read the same EIC
       Table and the same household rules.
-    - Age expansion: a household the federal credit turns away only on age gets a flat $260
-      (40% of the $649 federal maximum with no children). The head must be 18 or older at the
-      end of the tax year and the household must have no qualifying child. Every other federal
-      rule applies, including the income limits, but there is no maximum age and no minimum
-      of 25.
+    - Age expansion: a household the federal credit turns away only on age gets a flat 40% of
+      the federal maximum credit with no children ($260 for 2025, from the $649 maximum),
+      read from the tax year's table so it moves with the federal credit. The head must be 18
+      or older at the end of the tax year and the household must have no qualifying child.
+      Every other federal rule applies, including the income limits, but there is no maximum
+      age and no minimum of 25.
 
-    Values are whole dollars, so 40% of a federal credit is rounded to the dollar. It is
-    floored at $1 because a value of $0 reads as not eligible, and a household that
-    qualifies for a few dollars of federal credit does qualify.
+    Values are whole dollars, so 40% of a federal credit is rounded to the dollar. On the
+    federal route it is floored at $1 because a value of $0 reads as not eligible, and a
+    household that qualifies for a few dollars of federal credit does qualify.
 
     Data gaps in the spec: Social Security numbers, whether another taxpayer can claim the
     filer as a dependent, and civil union partners entered as domestic partners, whom the
@@ -34,7 +35,6 @@ class NjEitc(FederalEitc):
     program_code = "nj_eitc"
 
     nj_rate = Decimal("0.40")
-    age_expansion_amount = 260
     age_expansion_min_age = 18
 
     def household_eligible(self, e: Eligibility) -> None:
@@ -51,10 +51,17 @@ class NjEitc(FederalEitc):
 
     def household_value(self) -> int:
         if not self._on_federal_route:
-            return self.age_expansion_amount
+            return self._age_expansion_amount
 
-        credit = (self.nj_rate * self._federal_credit()).quantize(Decimal(1), rounding=ROUND_HALF_UP)
-        return max(int(credit), 1)
+        return max(self._nj_share(self._federal_credit()), 1)
+
+    @property
+    def _age_expansion_amount(self) -> int:
+        """NJ's share of the federal maximum credit for a filer with no qualifying child."""
+        return self._nj_share(self._params.columns[(0, False)].max_credit)
+
+    def _nj_share(self, federal_amount: int) -> int:
+        return int((self.nj_rate * federal_amount).quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
     @cached_property
     def _on_federal_route(self) -> bool:
