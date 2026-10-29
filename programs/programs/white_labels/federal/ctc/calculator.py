@@ -12,10 +12,10 @@ from programs.programs.white_labels.federal.tax import (
     HEAD_OF_HOUSEHOLD,
     JOINT,
     SINGLE,
+    FEDERAL_TAX_YEARS,
     UNTAXED_INCOME_TYPES,
-    Bracket,
-    brackets,
-    income_tax,
+    FederalTaxYear,
+    tax_owed,
 )
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 
@@ -33,11 +33,8 @@ class CtcYear:
     earned_income_floor: int
     # Spec section 4 `odc_dependent`.
     qualifying_relative_income_limit: int
-    standard_deduction: dict[str, int]
-    # Spec section 7, standard deduction additions.
-    extra_deduction: dict[str, int]
-    senior_age: int
-    tax_brackets: dict[str, tuple[Bracket, ...]]
+    # Spec section 7, tax: the standard deduction, its additions and the brackets.
+    tax: FederalTaxYear
 
 
 # Each tax year's figures, as spec section 7 states them.
@@ -51,14 +48,7 @@ CTC_YEARS: dict[int, CtcYear] = {
         refundable_rate=Decimal("0.15"),
         earned_income_floor=2_500,
         qualifying_relative_income_limit=5_200,
-        standard_deduction={JOINT: 31_500, HEAD_OF_HOUSEHOLD: 23_625, SINGLE: 15_750},
-        extra_deduction={JOINT: 1_600, HEAD_OF_HOUSEHOLD: 2_000, SINGLE: 2_000},
-        senior_age=65,
-        tax_brackets={
-            JOINT: brackets(23_850, 96_950, 206_700, 394_600, 501_050, 751_600),
-            HEAD_OF_HOUSEHOLD: brackets(17_000, 64_850, 103_350, 197_300, 250_500, 626_350),
-            SINGLE: brackets(11_925, 48_475, 103_350, 197_300, 250_525, 626_350),
-        },
+        tax=FEDERAL_TAX_YEARS[2025],
     ),
 }
 
@@ -122,7 +112,7 @@ class FederalCtc(ProgramCalculator):
     @cached_property
     def _params(self) -> CtcYear:
         """The tax year's figures; a year with none is priced with the latest and reported to
-        Sentry rather than raising, since an exception here fails every white label's results page."""
+        Sentry rather than raising, since an exception drops the credit from every white label's results."""
         tax_year = self.tax_year
         if tax_year in CTC_YEARS:
             return CTC_YEARS[tax_year]
@@ -179,13 +169,10 @@ class FederalCtc(ProgramCalculator):
     @cached_property
     def _income_tax(self) -> Decimal:
         """Spec section 7, tax."""
-        params = self._params
-        status = self._filing_status
-        extra_boxes = sum(int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers)
-        deduction = params.standard_deduction[status] + params.extra_deduction[status] * extra_boxes
-        taxable_income = max(self._modified_agi - deduction, Decimal(0))
-
-        return income_tax(taxable_income, params.tax_brackets[status])
+        age_or_blind_count = sum(
+            int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers
+        )
+        return tax_owed(self._modified_agi, self._filing_status, age_or_blind_count, self._params.tax)
 
     @cached_property
     def _dependents(self) -> tuple[list[HouseholdMember], list[HouseholdMember]]:
@@ -261,7 +248,7 @@ class FederalCtc(ProgramCalculator):
     def _is_senior(self, filer: HouseholdMember) -> bool:
         """Spec section 7, standard deduction addition for age."""
         age = self._age_at_year_end(filer)
-        return age is not None and age >= self._params.senior_age
+        return age is not None and age >= self._params.tax.senior_age
 
     @staticmethod
     def _is_permanently_disabled(member: HouseholdMember) -> bool:

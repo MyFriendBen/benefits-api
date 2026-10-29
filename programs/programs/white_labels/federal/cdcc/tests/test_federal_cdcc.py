@@ -4,9 +4,6 @@ them.
 Ages are the member's age today, so members are built from an age and the clock is left
 alone: `add_member` derives the birth month against the same reference date the calculator
 reads.
-
-Section 4's `citizen_or_resident_alien` has no scenario: it is enforced by the program record
-(`legal_status_required`), which the calculator never reads.
 """
 
 from typing import Optional
@@ -62,8 +59,8 @@ class TestRegistration(FederalCdccTestCase):
         self.assertEqual(FederalCdcc.program_code, "federal_cdcc")
 
     def test_a_tax_year_with_no_parameters_uses_the_latest_and_reports_it(self):
-        """A rollover the parameters weren't updated for must not raise: an exception from
-        a displayed program fails the whole results page, in every white label."""
+        """A rollover the parameters weren't updated for must not raise: an exception would
+        drop the credit from every white label's results."""
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
         self.member(screen, "child", 5)
@@ -418,7 +415,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 585)
+        self.assert_eligible(self.calculate(screen), 588)
 
     def test_scenario_38_head_of_household_age_66(self):
         screen = self.make_screen(household_size=2)
@@ -426,7 +423,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "grandChild", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 680)
+        self.assert_eligible(self.calculate(screen), 683)
 
     def test_scenario_39_visually_impaired_head_of_household(self):
         screen = self.make_screen(household_size=2)
@@ -434,4 +431,12 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 680)
+        self.assert_eligible(self.calculate(screen), 683)
+
+    def test_scenario_40_taxable_income_of_1(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 24_151})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_ineligible(self.calculate(screen))

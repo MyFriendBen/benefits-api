@@ -179,8 +179,7 @@ class FederalEitc(ProgramCalculator):
         """
         The tax year's parameters. A year with none yet (a rollover the table wasn't updated
         for) is priced with the latest year we have and reported, rather than raising: an
-        exception from a displayed program fails the whole results page, and this program
-        shows in every white label.
+        exception drops the credit from the results of every white label.
         """
         tax_year = self.tax_year
         if tax_year in EITC_YEARS:

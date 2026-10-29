@@ -1,9 +1,10 @@
 """
 Federal income tax pieces the federal tax credits share: the income the screener records that
-is left out of adjusted gross income, and the tax on taxable income. Each credit's spec states
-the figures it uses; the year tables stay with each credit.
+is left out of adjusted gross income, each tax year's deduction and bracket figures, and the tax
+owed on taxable income. Each credit's spec states the figures it uses.
 """
 
+from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
@@ -79,3 +80,44 @@ def income_tax(taxable_income: Decimal, schedule: tuple[Bracket, ...]) -> Decima
         return bracket_tax(Decimal(low + high) / 2, schedule).quantize(Decimal(1), rounding=ROUND_HALF_UP)
 
     return bracket_tax(taxable_income, schedule)
+
+
+@dataclass(frozen=True)
+class FederalTaxYear:
+    """One tax year's figures for the tax owed, keyed by filing status."""
+
+    standard_deduction: dict[str, int]
+    # The addition for each filer 65 or older, and for each who is blind.
+    extra_deduction: dict[str, int]
+    senior_age: int
+    tax_brackets: dict[str, tuple[Bracket, ...]]
+
+
+FEDERAL_TAX_YEARS: dict[int, FederalTaxYear] = {
+    2025: FederalTaxYear(
+        standard_deduction={JOINT: 31_500, HEAD_OF_HOUSEHOLD: 23_625, SINGLE: 15_750},
+        extra_deduction={JOINT: 1_600, HEAD_OF_HOUSEHOLD: 2_000, SINGLE: 2_000},
+        senior_age=65,
+        tax_brackets={
+            JOINT: brackets(23_850, 96_950, 206_700, 394_600, 501_050, 751_600),
+            HEAD_OF_HOUSEHOLD: brackets(17_000, 64_850, 103_350, 197_300, 250_500, 626_350),
+            SINGLE: brackets(11_925, 48_475, 103_350, 197_300, 250_525, 626_350),
+        },
+    ),
+    2026: FederalTaxYear(
+        standard_deduction={JOINT: 32_200, HEAD_OF_HOUSEHOLD: 24_150, SINGLE: 16_100},
+        extra_deduction={JOINT: 1_650, HEAD_OF_HOUSEHOLD: 2_050, SINGLE: 2_050},
+        senior_age=65,
+        tax_brackets={
+            JOINT: brackets(24_800, 100_800, 211_400, 403_550, 512_450, 768_700),
+            HEAD_OF_HOUSEHOLD: brackets(17_700, 67_450, 105_700, 201_750, 256_200, 640_600),
+            SINGLE: brackets(12_400, 50_400, 105_700, 201_775, 256_225, 640_600),
+        },
+    ),
+}
+
+
+def tax_owed(agi: Decimal, status: str, age_or_blind_count: int, year: FederalTaxYear) -> Decimal:
+    """Income tax before credits on ``agi`` less the standard deduction and its additions."""
+    deduction = year.standard_deduction[status] + year.extra_deduction[status] * age_or_blind_count
+    return income_tax(max(agi - deduction, Decimal(0)), year.tax_brackets[status])

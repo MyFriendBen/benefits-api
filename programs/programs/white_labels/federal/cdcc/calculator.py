@@ -13,12 +13,12 @@ from sentry_sdk import capture_message
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.white_labels.federal.tax import (
+    FEDERAL_TAX_YEARS,
     HEAD_OF_HOUSEHOLD,
     JOINT,
     UNTAXED_INCOME_TYPES,
-    Bracket,
-    bracket_tax,
-    brackets,
+    FederalTaxYear,
+    tax_owed,
 )
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 
@@ -43,11 +43,8 @@ class CdccYear:
     expense_limit: tuple[int, int]
     # Monthly earned income a student or disabled spouse is deemed to have, same indexing.
     deemed_spouse_monthly_income: tuple[int, int]
-    # Spec section 7 `tax_2026` and its terms, keyed by filing status.
-    standard_deduction: dict[str, int]
-    extra_deduction: dict[str, int]
-    senior_age: int
-    tax_brackets: dict[str, tuple[Bracket, ...]]
+    # Spec section 7 `tax_2026` and its terms.
+    tax: FederalTaxYear
 
 
 # Percentage schedule, dollar limits and tax, spec section 7; deemed spouse income, spec section 4 `earned_income`.
@@ -62,13 +59,7 @@ CDCC_YEARS: dict[int, CdccYear] = {
         second_step=(2_000, 4_000),
         expense_limit=(3_000, 6_000),
         deemed_spouse_monthly_income=(250, 500),
-        standard_deduction={JOINT: 32_200, HEAD_OF_HOUSEHOLD: 24_150},
-        extra_deduction={JOINT: 1_650, HEAD_OF_HOUSEHOLD: 2_050},
-        senior_age=65,
-        tax_brackets={
-            JOINT: brackets(24_800, 100_800, 211_400, 403_550, 512_450, 768_700),
-            HEAD_OF_HOUSEHOLD: brackets(17_700, 67_450, 105_700, 201_750, 256_200, 640_600),
-        },
+        tax=FEDERAL_TAX_YEARS[2026],
     ),
 }
 
@@ -118,6 +109,7 @@ class FederalCdcc(ProgramCalculator):
         "income_type",
         "expense_type",
         "expense_amount",
+        "expense_frequency",
     ]
 
     def member_eligible(self, e: MemberEligibility) -> None:
@@ -152,8 +144,8 @@ class FederalCdcc(ProgramCalculator):
     def _params(self) -> CdccYear:
         """
         The tax year's parameters. A year with none yet is priced with the latest year and
-        reported to Sentry rather than raising: an exception from a program shown in every
-        white label fails the whole results page.
+        reported to Sentry rather than raising: an exception would drop the credit from every
+        white label's results.
         """
         tax_year = self.tax_year
         if tax_year in CDCC_YEARS:
@@ -186,17 +178,15 @@ class FederalCdcc(ProgramCalculator):
     @cached_property
     def _income_tax(self) -> Decimal:
         """Spec section 7 `tax_2026`."""
-        params = self._params
         status = JOINT if self._is_joint else HEAD_OF_HOUSEHOLD
-        extra_boxes = sum(int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers)
-        deduction = params.standard_deduction[status] + params.extra_deduction[status] * extra_boxes
-        taxable_income = max(Decimal(str(self._agi)) - deduction, Decimal(0))
-
-        return bracket_tax(taxable_income, params.tax_brackets[status])
+        age_or_blind_count = sum(
+            int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers
+        )
+        return tax_owed(Decimal(str(self._agi)), status, age_or_blind_count, self._params.tax)
 
     def _is_senior(self, filer: HouseholdMember) -> bool:
         age = filer.calc_age()
-        return age is not None and age >= self._params.senior_age
+        return age is not None and age >= self._params.tax.senior_age
 
     @cached_property
     def _care_expenses(self) -> float:

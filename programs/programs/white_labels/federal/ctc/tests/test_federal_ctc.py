@@ -95,7 +95,7 @@ class TestRegistration(FederalCtcTestCase):
 class TestIncomeTax(FederalCtcTestCase):
     """`income_tax` against published rows of the 2025 Tax Table and the Tax Computation Worksheet."""
 
-    brackets = CTC_YEARS[TAX_YEAR].tax_brackets
+    brackets = CTC_YEARS[TAX_YEAR].tax.tax_brackets
 
     def test_tax_table_rows_are_priced_at_the_midpoint(self):
         # (taxable income, single, joint, head of household) from the published table.
