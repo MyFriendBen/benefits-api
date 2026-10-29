@@ -2,6 +2,7 @@ from typing import ClassVar
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.income import fpl_income_limit
 
 
 class TxFpp(ProgramCalculator):
@@ -110,7 +111,7 @@ class TxFpp(ProgramCalculator):
             return
 
         countable_income = self._countable_income()
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        income_limit = fpl_income_limit(self.program.year, self.screen.household_size, self.fpl_percent)
         e.condition(countable_income <= income_limit, messages.income(countable_income, income_limit))
 
     def _countable_income(self) -> int:

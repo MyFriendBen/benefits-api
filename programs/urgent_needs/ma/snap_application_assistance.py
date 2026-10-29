@@ -1,4 +1,5 @@
 from ..base import UrgentNeedFunction
+from programs.programs.shared.program_results import eligible_in_results
 
 
 class SNAPApplicationAssistance(UrgentNeedFunction):
@@ -23,10 +24,4 @@ class SNAPApplicationAssistance(UrgentNeedFunction):
             return False
 
         # Condition 3: SNAP Eligible
-        for program in self.data or []:
-            if not isinstance(program, dict):
-                continue
-            if program.get("name_abbreviated") == "ma_snap":
-                return program.get("eligible")
-
-        return False
+        return eligible_in_results(self.data, "ma_snap")
