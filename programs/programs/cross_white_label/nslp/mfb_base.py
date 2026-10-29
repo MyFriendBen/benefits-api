@@ -39,9 +39,9 @@ class NationalSchoolLunchProgram(ProgramCalculator, abstract=True):
 
     Approximations, all from the spec's data gaps:
 
-    - school enrollment and grade are not collected, so age stands in for them: 3, the youngest
-      child in a school's pre-K class, to 20. No source sets a minimum age, and there is no
-      relationship test
+    - school enrollment and grade are not collected, so age stands in for them: 3 to 20. No
+      source sets a minimum age, and a school may serve a preschooler lunch from age 1, so the
+      floor of 3 is ours. There is no relationship test
     - Head Start is recorded for the household, so every child in it is free
     - any child listed as a foster child is free, whether or not the placement is formal
     - SNAP counts whatever its amount, which is not collected
