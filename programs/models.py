@@ -6,6 +6,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
+from programs.federal import may_link_navigator
 from programs.util import Dependencies, UnregisteredCalculatorError
 from sentry_sdk import capture_message
 from typing import Optional, TypedDict, Union
@@ -1607,8 +1608,8 @@ class NavigatorDataController(ModelDataController["Navigator"]):
                 order_value = item.get("order") if isinstance(item, dict) else None
             if not external_name:
                 continue
-            program_instance = Program.objects.get(external_name=external_name)
-            if program_instance.white_label_id != navigator.white_label_id:
+            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
+            if not may_link_navigator(program_instance, navigator.white_label.code):
                 raise self.DeferCreation()
             programs.append(program_instance)
             if order_value is not None:
@@ -1639,8 +1640,8 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             external_name = item if isinstance(item, str) else (item.get("external_name") or item.get("name"))
             if not external_name:
                 continue
-            program_instance = Program.objects.get(external_name=external_name)
-            if program_instance.white_label_id != navigator.white_label_id:
+            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
+            if not may_link_navigator(program_instance, navigator.white_label.code):
                 raise self.DeferCreation()
             eligibility_programs.append(program_instance)
         navigator.eligibility_programs.set(eligibility_programs)
