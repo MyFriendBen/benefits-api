@@ -1,5 +1,6 @@
 """MA CCFA (configured as ``ma_ccdf``)."""
 
+from programs.framework.base import MEMBER
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 from screener.models import HouseholdMember
 import programs.framework.pe_dependencies as dependency
@@ -31,6 +32,9 @@ class MaCcdf(PolicyEngineSpmCalulator):
     """
 
     program_code = "ma_ccdf"
+    # PolicyEngine gates the SPM unit, but every dollar is a child's: the per-child boolean
+    # picks who is paid, so the children, not the household, are the eligible party.
+    payment_unit = MEMBER
 
     pe_name = "ma_ccfa_eligible"
     pe_inputs = [
