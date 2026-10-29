@@ -1,5 +1,6 @@
 import hashlib
 import requests
+from collections.abc import Mapping
 from typing import Any, Optional
 from uuid import UUID
 from django.http import HttpResponse
@@ -43,7 +44,7 @@ from screener.serializers import (
 )
 from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
-from programs.util import DependencyError, Dependencies, UpstreamAbsentError
+from programs.util import DependencyError, Dependencies, UnregisteredCalculatorError, UpstreamAbsentError
 from programs.framework.gates import force_calculated_codes
 from programs.federal import filter_programs_by_name, visible_program, visible_to, visible_to_code
 from programs.models import (
@@ -330,6 +331,11 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         urgent_needs = urgent_need_results(screen, eligibility)
         external_api_failures = get_external_api_failures()
 
+    # A failed integration means some answer came from a fallback: HUD-backed programs
+    # degrade to "not eligible (income limit unknown)" rather than dropping out, so nothing
+    # in the eligibility loop would otherwise flag them.
+    missing_programs = missing_programs or bool(external_api_failures)
+
     results = {
         "programs": eligibility,
         "urgent_needs": urgent_needs,
@@ -495,6 +501,7 @@ def eligibility_results(
     snapshot = EligibilitySnapshot.objects.create(screen=screen, is_batch=batch, had_error=True)
 
     missing_dependencies = screen.missing_fields()
+    _report_malformed_screen_data(screen, missing_dependencies)
 
     program_by_abbr = {p.name_abbreviated: p for p in all_programs}
 
@@ -540,7 +547,9 @@ def eligibility_results(
 
         return CALC_ORDER.index(program.name_abbreviated)
 
-    missing_programs = False
+    # Flagged whether or not a calculator declares the malformed field: one that reads it
+    # without declaring it computed from data we know is bad.
+    missing_programs = bool(missing_dependencies.malformed)
 
     # make certain benifits calculate first so that they can be used in other benefits
     all_programs = sorted(all_programs, key=sort_first)
@@ -589,20 +598,25 @@ def eligibility_results(
                 # reports that for itself when its own gate raises.
                 if not skip:
                     missing_programs = True
-                    dropped_programs[program.name_abbreviated] = (
-                        EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
-                        if isinstance(e, UpstreamAbsentError)
-                        else EligibilitySnapshot.DROPPED_MISSING_FIELD
-                    )
+                    if isinstance(e, UnregisteredCalculatorError):
+                        reason = EligibilitySnapshot.DROPPED_NO_CALCULATOR
+                    elif isinstance(e, UpstreamAbsentError):
+                        reason = EligibilitySnapshot.DROPPED_UPSTREAM_ABSENT
+                    else:
+                        reason = EligibilitySnapshot.DROPPED_MISSING_FIELD
+                    dropped_programs[program.name_abbreviated] = reason
                 continue
             except Exception as e:
-                # Only reachable for a force-calculated upstream: this row was not being
-                # calculated at all before, so adding it must not be able to make the
-                # response worse than it already was. Leaving the key absent lets the
-                # dependent's gate raise and drop it exactly as it did before.
+                # A bug, or screen data the calculator could not handle. Drop just this
+                # program, loudly, rather than 500 the response and lose every other one.
                 if not skip:
-                    raise
+                    missing_programs = True
+                    dropped_programs[program.name_abbreviated] = EligibilitySnapshot.DROPPED_CALCULATOR_ERROR
+                    _report_program_failure(screen, program, e)
+                    continue
 
+                # A force-calculated upstream is never displayed. Leaving its key absent lets
+                # the dependent's gate raise and drop it exactly as before it was calculated.
                 capture_exception(e, level="error")
                 capture_message(
                     f"Force-calculated upstream {program.name_abbreviated} raised; programs "
@@ -649,14 +663,23 @@ def eligibility_results(
         # upstream whose warnings will never be rendered
         if not skip and eligibility.eligible:
             for warning in program.warning_messages.all():
-                if warning.calculator not in warning_calculators:
-                    raise Exception(f"{warning.calculator} is not a valid calculator name")
+                # A broken warning costs only itself: the program's result is still right,
+                # so it is skipped and reported at warning level rather than 500ing the
+                # response or marking the results incomplete.
+                calculator = warning_calculators.get(warning.calculator)
+                if calculator is None:
+                    _report_warning_failure(
+                        screen, program, warning, f"'{warning.calculator}' is not a valid calculator name"
+                    )
+                    continue
 
-                warning_calculator = warning_calculators[warning.calculator](
-                    screen, warning, eligibility, missing_dependencies
-                )
+                try:
+                    shown = calculator(screen, warning, eligibility, missing_dependencies, program=program).calc()
+                except Exception as e:
+                    _report_warning_failure(screen, program, warning, "its calculator raised", error=e)
+                    continue
 
-                if warning_calculator.calc():
+                if shown:
                     warnings.append(WarningMessageSerializer(warning).data)
 
         if not skip and program.active:
@@ -776,6 +799,67 @@ def eligibility_results(
         eligible_programs.append(clean_program)
 
     return eligible_programs, missing_programs, categories, pe_data
+
+
+def _report_malformed_screen_data(screen: Screen, missing_dependencies: Dependencies) -> None:
+    """Report fields holding a value we can't compute with, as one event per screen.
+
+    Unlike an unanswered question this is corruption or serializer drift. The message is
+    static and the fingerprint is the set of fields, so Sentry opens one issue per kind of
+    bad data rather than one per screen.
+    """
+    malformed = missing_dependencies.malformed
+    if not malformed:
+        return
+
+    fields = sorted({m.field for m in malformed})
+    capture_message(
+        "Malformed screen data treated as missing; programs declaring these fields were skipped "
+        "and the results are flagged incomplete.",
+        level="error",
+        contexts={
+            "screen": {"id": screen.id, "white_label": screen.white_label.code},
+            "malformed_data": {"fields": fields, "values": [m.describe() for m in malformed]},
+        },
+        fingerprint=["malformed-screen-data", *fields],
+    )
+
+
+def _report_program_failure(screen: Screen, program: Program, error: Exception) -> None:
+    """Report a displayed program whose calculator raised. The message is fingerprinted on
+    the program, one issue per broken calculator; the exception groups on its own stack so
+    two bugs in one program stay apart."""
+    context = {
+        "program": {"name_abbreviated": program.name_abbreviated, "id": program.id},
+        "screen": {"id": screen.id, "white_label": screen.white_label.code},
+    }
+    capture_exception(error, level="error", contexts=context)
+    capture_message(
+        "A program's calculator raised; the program was dropped for this screen.",
+        level="error",
+        contexts=context,
+        fingerprint=["program-eligibility-failure", program.name_abbreviated],
+    )
+
+
+def _report_warning_failure(
+    screen: Screen, program: Program, warning: WarningMessage, reason: str, error: Exception | None = None
+) -> None:
+    """Report a warning message skipped because it couldn't be evaluated. Fingerprinted on
+    the warning's calculator, so one broken calculator is one issue across programs."""
+    context = {
+        "program": {"name_abbreviated": program.name_abbreviated, "id": program.id},
+        "warning": {"id": warning.id, "external_name": warning.external_name, "calculator": warning.calculator},
+        "screen": {"id": screen.id, "white_label": screen.white_label.code},
+    }
+    if error is not None:
+        capture_exception(error, level="warning", contexts=context)
+    capture_message(
+        f"Skipped a warning message on {program.name_abbreviated}: {reason}.",
+        level="warning",
+        contexts=context,
+        fingerprint=["warning-message-failure", warning.calculator],
+    )
 
 
 class GetProgramTranslation:
@@ -954,21 +1038,39 @@ class ReferralSourcesView(views.APIView):
         return Response({"generic": generic, "partners": partners, "hidden": hidden})
 
 
+def _str_param(params: Any, key: str) -> str:
+    """A request value as a stripped string; anything that isn't a string reads as missing.
+
+    `params` is whatever the body parsed to, so a JSON list or string reads as all missing.
+    """
+    value = params.get(key) if isinstance(params, Mapping) else None
+    return value.strip() if isinstance(value, str) else ""
+
+
 class RemImpactView(views.APIView):
     """
     Proxies a request to the Rewiring America REM /api/v1/rem/address endpoint
     and returns only the total cost delta (bill impact) and total emissions delta
     that the frontend needs to render the Calculate Impact results view.
+
+    POST takes the address in the JSON body so it stays out of request URLs, which
+    Heroku's router logs and Sentry captures. GET is kept until every frontend sends POST.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
 
     def get(self, request, **_kwargs) -> Response:
-        upgrade = request.query_params.get("upgrade")
-        address = request.query_params.get("address")
-        heating_fuel = request.query_params.get("heating_fuel")
-        water_heater_fuel = request.query_params.get("water_heater_fuel") or None
+        return self._impact(request.query_params)
+
+    def post(self, request, **_kwargs) -> Response:
+        return self._impact(request.data)
+
+    def _impact(self, params: Any) -> Response:
+        upgrade = _str_param(params, "upgrade")
+        address = _str_param(params, "address")
+        heating_fuel = _str_param(params, "heating_fuel")
+        water_heater_fuel = _str_param(params, "water_heater_fuel") or None
 
         if not all([upgrade, address, heating_fuel]):
             return Response(
@@ -1006,14 +1108,15 @@ class RemImpactView(views.APIView):
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except requests.RequestException as e:
+        except requests.RequestException:
+            # No str(e): connection errors embed the upstream URL, address included.
             return Response(
-                {"error": "Rewiring America request failed.", "detail": str(e)},
+                {"error": "Rewiring America request failed."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except ValueError as e:
+        except ValueError:
             return Response(
-                {"error": "Rewiring America returned an invalid response.", "detail": str(e)},
+                {"error": "Rewiring America returned an invalid response."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -1026,13 +1129,21 @@ class PlacesAutocompleteView(views.APIView):
     Proxies address autocomplete requests to the Google Places API,
     keeping the API key server-side. Returns US street address predictions
     restricted to street-level addresses.
+
+    POST takes the typed text in the JSON body for the same reason as RemImpactView.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PlacesRateThrottle]
 
     def get(self, request, **_kwargs) -> Response:
-        input_text = request.query_params.get("input", "").strip()
+        return self._autocomplete(request.query_params)
+
+    def post(self, request, **_kwargs) -> Response:
+        return self._autocomplete(request.data)
+
+    def _autocomplete(self, params: Any) -> Response:
+        input_text = _str_param(params, "input")
 
         if not input_text:
             return Response([], status=status.HTTP_200_OK)
@@ -1046,9 +1157,10 @@ class PlacesAutocompleteView(views.APIView):
                 {"error": f"Google Places API error: {http_status}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
-        except requests.RequestException as e:
+        except requests.RequestException:
+            # No str(e): connection errors embed the upstream URL, API key included.
             return Response(
-                {"error": "Google Places request failed.", "detail": str(e)},
+                {"error": "Google Places request failed."},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 

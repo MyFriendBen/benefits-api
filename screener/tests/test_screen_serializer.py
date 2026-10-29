@@ -73,7 +73,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_injects_ssi_from_income_without_tile(self):
         """sSI income implies SSI even when the user didn't tick the SSI tile."""
-        seed_program(self.white_label, "ssi", base_program="ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -88,7 +88,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_income_wins_over_explicit_deselect(self):
         """An explicit deselect can't remove SSI when sSI income is present (OR semantics)."""
-        seed_program(self.white_label, "ssi", base_program="ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -103,7 +103,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_no_ssi_without_income_or_tile(self):
         """No SSI tile and no sSI income → SSI is not written."""
-        seed_program(self.white_label, "ssi", base_program="ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
 
         _write_current_benefits(self.screen, ["snap"])
 
@@ -117,9 +117,9 @@ class WriteCurrentBenefitsTests(TestCase):
         list and rely on the resolve below to drop it — that list also omitted
         `ks_ssi` and `mo_ssi`, which is the bug this now avoids.
         """
-        seed_program(self.white_label, "ssi", base_program="ssi")  # this WL only offers "ssi"
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)  # this WL only offers "ssi"
         other_wl = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
-        seed_program(other_wl, "wa_ssi", base_program="ssi")
+        seed_program(other_wl, "wa_ssi", base_program="ssi", active=True)
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -553,3 +553,43 @@ class LocationValidationTests(TestCase):
         serializer = ScreenSerializer(data=self._payload(zipcode="67202", county="Sedgwick"), validate_location=False)
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+
+class HouseholdSizeRangeTests(TestCase):
+    """The API accepts the household sizes every client offers, 1 through 8, and no others.
+
+    The screener, the CO tax-credit app and the family-affordability app all cap at 8, and
+    HUD's income limit tables stop there too.
+    """
+
+    def setUp(self) -> None:
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def serializer(self, household_size: int | None) -> ScreenSerializer:
+        return ScreenSerializer(
+            data={
+                "white_label": self.white_label.code,
+                "household_members": [],
+                "expenses": [],
+                "current_benefits": [],
+                "household_size": household_size,
+            }
+        )
+
+    def test_one_through_eight_are_accepted(self) -> None:
+        for size in (1, Screen.MAX_HOUSEHOLD_SIZE):
+            with self.subTest(size=size):
+                serializer = self.serializer(size)
+                self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_unanswered_is_accepted(self) -> None:
+        """The screener sends null until the household-size step is answered."""
+        serializer = self.serializer(None)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_outside_one_through_eight_is_rejected(self) -> None:
+        for size in (0, -1, Screen.MAX_HOUSEHOLD_SIZE + 1):
+            with self.subTest(size=size):
+                serializer = self.serializer(size)
+                self.assertFalse(serializer.is_valid())
+                self.assertIn("household_size", serializer.errors)

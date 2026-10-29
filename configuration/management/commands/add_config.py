@@ -212,13 +212,6 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.counties_by_zipcode, "active": True},
             )
 
-            # Save category_benefits to database
-            Configuration.objects.update_or_create(
-                name="category_benefits",
-                white_label=white_label,
-                defaults={"data": WhiteLabelData.category_benefits, "active": True},
-            )
-
             # Save consent_to_contact to database
             Configuration.objects.update_or_create(
                 name="consent_to_contact",

@@ -5,6 +5,10 @@ from .receipt import TANF_INCOME_TYPE, screen_reports_snap, screen_reports_tanf
 
 class ChildCareDependency(SpmUnit):
     field = "childcare_expenses"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["childCare"])
@@ -36,6 +40,10 @@ class SnapUnearnedIncomeDependency(SpmUnit):
 
 class HousingCostDependency(SpmUnit):
     field = "housing_cost"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["rent", "mortgage", "subsidizedRent"]))
@@ -115,6 +123,10 @@ class HasPhoneExpenseDependency(SpmUnit):
 
 class UtilityExpenseDependency(SpmUnit):
     field = "utility_expense"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["otherUtilities", "heating", "cooling"]))
@@ -122,6 +134,10 @@ class UtilityExpenseDependency(SpmUnit):
 
 class HeatingCoolingExpenseDependency(SpmUnit):
     field = "heating_cooling_expense"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["heating", "cooling"])
@@ -129,6 +145,10 @@ class HeatingCoolingExpenseDependency(SpmUnit):
 
 class PhoneExpenseDependency(SpmUnit):
     field = "phone_expense"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["telephone"])
@@ -141,6 +161,10 @@ class PhoneCostDependency(SpmUnit):
     # as PhoneExpenseDependency, just mapped to the field PE's Lifeline branch expects.
     # Without it PE treats phone_cost as $0 and the KS supplement always computes to $0.
     field = "phone_cost"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["telephone"])
@@ -148,6 +172,10 @@ class PhoneCostDependency(SpmUnit):
 
 class ElectricityExpenseDependency(SpmUnit):
     field = "electricity_expense"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["otherUtilities"])
@@ -155,6 +183,10 @@ class ElectricityExpenseDependency(SpmUnit):
 
 class WaterExpenseDependency(SpmUnit):
     field = "water_expense"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["otherUtilities"])
@@ -162,6 +194,10 @@ class WaterExpenseDependency(SpmUnit):
 
 class HoaFeesExpenseDependency(SpmUnit):
     field = "homeowners_association_fees"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["hoa"])
@@ -169,6 +205,10 @@ class HoaFeesExpenseDependency(SpmUnit):
 
 class HomeownersInsuranceExpenseDependency(SpmUnit):
     field = "homeowners_insurance"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["homeownersInsurance"])
@@ -407,6 +447,10 @@ class MoTanf(SpmUnit):
 
 class PreSubsidyChildcareExpensesDependency(SpmUnit):
     field = "spm_unit_pre_subsidy_childcare_expenses"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["childCare", "dependentCare"])
@@ -452,6 +496,10 @@ class BroadbandCostDependency(SpmUnit):
     # prior hardcoded behavior for the no-data case (strict improvement: no regression when
     # the field is blank, real data used when it's present).
     field = "broadband_cost"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
     NO_DATA_FALLBACK = 500
 
     def value(self):
@@ -666,6 +714,10 @@ class MaLiheapHeatExpenseIncludedInRent(SpmUnit):
 
 class MortgageDependency(SpmUnit):
     field = "mortgage_payments"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["mortgage"]))
@@ -684,6 +736,10 @@ class TxCeapEnergyExpenseDependency(SpmUnit):
     """
 
     field = "electricity_expense"
+    dependencies = (
+        "expense_amount",
+        "expense_frequency",
+    )
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["heating", "cooling", "otherUtilities"])

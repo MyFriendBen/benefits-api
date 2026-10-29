@@ -126,7 +126,11 @@ class TestMoTaxCreditsMigrationMovesToPriorTaxYear(TestCase):
 
     def test_forwards_leaves_a_later_year_alone(self):
         # Rolled forward to 2026's successor by hand before this ran: reported, not pulled back.
-        fpl_2027 = FederalPoveryLimit.objects.create(year="2027", period="2027")
+        # period="2026" because 2027 FPL data is not yet in _FPL_DEFAULTS; the year key is what matters.
+        # bulk_create bypasses FederalPoveryLimit.save()'s validation that
+        # `period` has real FPL data (MFB-564 #5): 2027 isn't in _FPL_DEFAULTS yet, same
+        # reason test_bbce_fpg_vintage.py uses it.
+        [fpl_2027] = FederalPoveryLimit.objects.bulk_create([FederalPoveryLimit(year="2027", period="2027")])
         wftc = self._program(fpl_2027)
 
         self.migration.forwards(django_apps, None)

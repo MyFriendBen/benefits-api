@@ -66,6 +66,7 @@ class TxFpp(ProgramCalculator):
         # (DependencyError) instead of crashing calc_expenses() and 500-ing the whole request.
         "expense_type",
         "expense_amount",
+        "expense_frequency",
         "household_size",
     ]
 
@@ -85,9 +86,10 @@ class TxFpp(ProgramCalculator):
         # §4140 adjunctive income eligibility: enrollment in SNAP, WIC, or CHIP
         # (applicant or their child) bypasses the 250% FPL income test.
         #
-        # SNAP/WIC enrollment lives in the CurrentBenefit join table under their
-        # TX-scoped names (tx_snap, tx_wic — the "already have this" tiles flagged
-        # in migration 0142), read via has_benefit(). CHIP is NOT a current-benefits
+        # SNAP/WIC enrollment lives in the CurrentBenefit join table. SNAP is read under
+        # its TX-scoped name (tx_snap, the "already have this" tile flagged in migration
+        # 0142); WIC is one federal program now, so it is read by its base program group
+        # rather than any one name. CHIP is NOT a current-benefits
         # tile: tx_chip is a PolicyEngine eligibility program, never written to the
         # join table, so has_benefit("tx_chip") is always False. CHIP enrollment is
         # captured as a per-member insurance question, so it is read from member
@@ -99,7 +101,7 @@ class TxFpp(ProgramCalculator):
         # contract, so they are never populated and are permanently False.
         presumptive_eligibility = (
             self.screen.has_benefit("tx_snap")
-            or self.screen.has_benefit("tx_wic")
+            or self.screen.has_base_benefit("wic")
             or self.screen.has_insurance_types(("chp",))
         )
 

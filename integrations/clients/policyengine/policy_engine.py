@@ -125,6 +125,17 @@ def calc_pe_eligibility(
             level="error",
         )
         return finish({}, [])
+    except Exception as e:
+        # A dependency read screen data it could not handle (an expense row whose frequency
+        # `Expense.yearly()` can't convert, read by a dependency that doesn't declare
+        # `expense_frequency`), or any other bug in assembly. Same trade as above: this
+        # screen loses its PolicyEngine programs rather than the whole response.
+        capture_exception(e, level="error")
+        capture_message(
+            "PolicyEngine: payload assembly failed; PolicyEngine programs are unavailable for this screen.",
+            level="error",
+        )
+        return finish({}, [])
 
     _report_conflicts(plan, program_names)
     for index in plan.dropped_program_indexes:

@@ -49,6 +49,7 @@ from programs.models import (
 from programs.translation_overrides import warning_calculators as translation_override_calculators
 from programs.util import Dependencies
 from programs.warnings import warning_calculators
+from programs.warnings.base import fill_warning_placeholders
 from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
@@ -400,12 +401,13 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
     if not name_abbreviations:
         return {}
 
+    # `year` is read by the `_prior_tax_year` warning gate on each program it's attached to.
     programs = (
         Program.objects.filter(
             visible_to(screen.white_label),
             name_abbreviated__in=name_abbreviations,
         )
-        .select_related("apply_button_link", "estimated_value", "white_label")
+        .select_related("apply_button_link", "estimated_value", "white_label", "year")
         .prefetch_related(
             "apply_button_link__translations",
             "estimated_value__translations",
@@ -537,7 +539,7 @@ def _program_navigators(
         phone = _card_phone(navigator.phone_number, label)
         if phone:
             entry["phone_number"] = phone
-        email = _card_email(navigator.email, label, language_code)
+        email = _card_email(navigator.email, label)
         if email:
             entry["email"] = email
         link = _card_link(navigator.assistance_link, label, language_code)
@@ -671,8 +673,9 @@ def _warning_messages(
     and does NOT persist the result, so there is nothing on the snapshot to read.
 
     Rather than add a snapshot column, we re-run the gates here. That's cheap because
-    six of the seven registered calculators need only `screen` — county, member data,
-    `energy_calculator`, `num_adults`. `screen.missing_fields()` is pure screen data (no
+    nearly every registered calculator needs only `screen` — county, member data,
+    `energy_calculator`, `num_adults` — or the program itself (`_prior_tax_year` reads
+    its configured year). `screen.missing_fields()` is pure screen data (no
     PolicyEngine), and `Eligibility()` takes no constructor args, so the only input we
     cannot reproduce is `eligible_members`, which no snapshot stores. Calculators that
     read it declare `needs_full_eligibility` and are skipped loudly below.
@@ -731,11 +734,11 @@ def _warning_messages(
         if warning.legal_statuses.all():
             continue
 
-        if not calculator(screen, warning, eligibility, missing_dependencies).calc():
+        if not calculator(screen, warning, eligibility, missing_dependencies, program=program).calc():
             continue
 
         message = _clipped(
-            _translated(warning.message, language_code, max_len=None),
+            fill_warning_placeholders(_translated(warning.message, language_code, max_len=None)),
             f"warning {warning.external_name or warning.id} on {program.name_abbreviated}",
         )
         if message:
@@ -949,8 +952,13 @@ def _card_phone(number: Optional[phonenumbers.PhoneNumber], label: str) -> str:
         return ""
 
 
-def _card_email(translation: Optional[Translation], label: str, language_code: str) -> str:
+def _card_email(translation: Optional[Translation], label: str) -> str:
     """A navigator's email as the card shows it, or "" if there isn't a usable one.
+
+    Always the default-language row, whatever the screen's language: an address is not
+    text to translate, and machine translation rewrote most of the other rows into
+    lookalikes (`información@…`, `coordinador@…`) that reach the wrong inbox (MFB-2292).
+    The card's `mailto:` href already reads the default-language text.
 
     The card renders the stored text as the link label and prefixes `mailto:` itself.
     One production row stores the prefix in the text, which the card turns into a
@@ -967,7 +975,7 @@ def _card_email(translation: Optional[Translation], label: str, language_code: s
     like `_card_link`: through `_translated`'s default cap an over-long address would be
     clipped mid-domain, and a clipped address can still look address-shaped.
     """
-    email = _translated(translation, language_code, max_len=None)
+    email = _translated(translation, settings.LANGUAGE_CODE, max_len=None)
     if not email:
         return ""
     if email.lower().startswith("mailto:"):

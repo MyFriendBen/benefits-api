@@ -20,7 +20,7 @@ from typing import Iterable, Optional
 
 from django.conf import settings
 from parler.models import TranslationDoesNotExist
-from sentry_sdk import capture_message
+from sentry_sdk import capture_exception, capture_message
 
 from programs.models import UrgentNeed
 from programs.urgent_needs import urgent_need_functions
@@ -52,6 +52,19 @@ def _report_missing_calculator(need, function_name: str) -> None:
         f"the resource is hidden from both the results page and the assistant "
         f"until the row is corrected.",
         level="warning",
+    )
+
+
+def _report_failed_calculator(need: UrgentNeed, error: Exception) -> None:
+    """Report a resource calculator that raised. Not deduplicated like the config typo
+    above: each raise can be a different screen's data, and Sentry groups by stack."""
+    context = {"urgent_need": {"id": need.pk}}
+    capture_exception(error, level="error", contexts=context)
+    capture_message(
+        "An urgent need calculator raised; the resource was dropped for this screen.",
+        level="error",
+        contexts=context,
+        fingerprint=["urgent-need-failure", str(need.pk)],
     )
 
 
@@ -188,7 +201,17 @@ def eligible_urgent_needs(
                         _report_missing_calculator(need, f.name)
                 continue
 
-        if all(Calculator(screen, need, missing_dependencies, program_data).calc() for Calculator in calculators):
+        try:
+            qualifies = all(
+                Calculator(screen, need, missing_dependencies, program_data).calc() for Calculator in calculators
+            )
+        except Exception as e:
+            # One broken resource calculator must not cost the household its program
+            # results, which share the response. Drop the resource, loudly.
+            _report_failed_calculator(need, e)
+            continue
+
+        if qualifies:
             eligible.append(need)
 
     # Ordering is part of what is shared, not a detail each consumer picks.

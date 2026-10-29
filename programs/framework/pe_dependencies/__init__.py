@@ -14,6 +14,26 @@ irs_gross_income = [
     member.RetirementDistributionsDependency,
 ]
 
+# What a child tax credit is computed from: each member's age, the tax unit's dependent and
+# spouse structure, and every IRS gross income stream. The state credits (`Coctc`, `Ilctc`)
+# send this plus their state code; the federal credit is an MFB calculator and sends nothing.
+ctc_inputs = [
+    member.AgeDependency,
+    member.TaxUnitDependentDependency,
+    member.TaxUnitSpouseDependency,
+    *irs_gross_income,
+]
+
+# What an EITC is computed from: each member's age, the tax unit's spouse and dependent
+# structure, and every IRS gross income stream. The state EITCs and working-family credits
+# send this plus their state code; the federal credit is an MFB calculator and sends nothing.
+eitc_inputs = [
+    member.AgeDependency,
+    member.TaxUnitSpouseDependency,
+    member.TaxUnitDependentDependency,
+    *irs_gross_income,
+]
+
 # Every variable in PolicyEngine's `gov.usda.wic.income.sources` (7 CFR 246.7(d)(2)(ii)(A))
 # that the screener collects. WIC keeps its own source list and does NOT read
 # `school_meal_countable_income`, so a calculator sending none of these gets PE's
@@ -132,4 +152,27 @@ receipt_contract = [
     spm.TakesUpTanfIfEligibleDependency,
     spm.ReceivesSnapDependency,
     spm.TakesUpSnapIfEligibleDependency,
+]
+
+# The inputs PolicyEngine needs to model SSI for a household, for the programs whose own
+# formula reads PolicyEngine's SSI (Massachusetts' state supplement and EAEDC). SSI itself is
+# computed in our own code (`programs/programs/white_labels/federal/ssi`), so no calculator
+# reads PolicyEngine's `ssi_if_takes_up` output.
+#
+# Two of these are load-bearing rather than boilerplate: `meets_ssi_disability_criteria`,
+# without which a disabled non-aged, non-blind member reads as not SSI-disabled (version
+# gated, so it only reaches models that define it), and `ssi_countable_resources`, the hard
+# resource cutoff, which splits the household's reported assets across its adults.
+ssi_inputs = [
+    member.SsiCountableResourcesDependency,
+    *receipt_contract,
+    member.IsBlindDependency,
+    member.IsDisabledDependency,
+    member.MeetsSsiDisabilityCriteriaDependency,
+    member.SsiEarnedIncomeDependency,
+    member.SsiUnearnedIncomeDependency,
+    member.AgeDependency,
+    member.TaxUnitSpouseDependency,
+    member.TaxUnitHeadDependency,
+    member.TaxUnitDependentDependency,
 ]

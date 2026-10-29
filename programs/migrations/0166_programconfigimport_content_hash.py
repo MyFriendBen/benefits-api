@@ -3,8 +3,8 @@ from pathlib import Path
 
 from django.db import migrations, models
 
-# Kept in sync with `config_content_hash` in
-# programs/management/commands/import_all_program_configs.py.
+# Kept in sync with `record_content_hash` in
+# programs/management/commands/import_program_records.py.
 # Duplicated deliberately: migrations must stay self-contained.
 DATA_DIR = (
     Path(__file__).resolve().parent.parent

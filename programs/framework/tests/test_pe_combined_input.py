@@ -10,10 +10,10 @@ merge drops a field.
 from programs.framework.pe_dependencies.payload import pe_input
 from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT
 from programs.programs.cross_white_label.aca.base import Aca
-from programs.programs.cross_white_label.eitc.base import Eitc
+from programs.programs.white_labels.co.coeitc.calculator import Coeitc
 from programs.programs.cross_white_label.medicaid.chip.base import Chip
 from programs.programs.cross_white_label.snap.base import Snap
-from programs.programs.cross_white_label.ssi.base import Ssi
+from programs.programs.white_labels.ma.ssp.calculator import MaStateSupplementProgram
 from programs.programs.cross_white_label.wic.base import Wic
 from programs.programs.testing_fixtures.pe_input_test_base import PeInputTestCase
 
@@ -38,28 +38,28 @@ class TestCombinedCalculatorsPeInput(PeInputTestCase):
         self.assertIn("snap_if_takes_up", spm_unit)
 
     def test_eitc_and_snap_combined(self):
-        """Test that pe_input handles both Eitc and Snap together."""
-        result = pe_input(self.screen, [Eitc, Snap])
+        """Test that pe_input handles both an EITC (Coeitc) and Snap together."""
+        result = pe_input(self.screen, [Coeitc, Snap])
         household = result["household"]
         spm_unit = household["spm_units"]["spm_unit"]
         tax_units = household["tax_units"]
 
-        # Eitc fields
+        # Coeitc fields
         self.assertIn(MAIN_TAX_UNIT, tax_units)
-        self.assertIn("eitc", tax_units[MAIN_TAX_UNIT])
+        self.assertIn("co_eitc", tax_units[MAIN_TAX_UNIT])
 
         # Snap fields
         self.assertIn("snap_if_takes_up", spm_unit)
 
-    def test_ssi_and_snap_combined(self):
-        """Test that pe_input handles both Ssi and Snap together."""
-        result = pe_input(self.screen, [Ssi, Snap])
+    def test_ssi_inputs_and_snap_combined(self):
+        """Test that pe_input handles a program composing `ssi_inputs` and Snap together."""
+        result = pe_input(self.screen, [MaStateSupplementProgram, Snap])
         household = result["household"]
         spm_unit = household["spm_units"]["spm_unit"]
         people = household["people"]
         head_id = str(self.head.id)
 
-        # Ssi fields
+        # ssi_inputs fields
         self.assertIn("ssi", people[head_id])
         self.assertIn("ssi_countable_resources", people[head_id])
 

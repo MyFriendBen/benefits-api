@@ -1,7 +1,7 @@
 from typing import ClassVar
 
 from ..base import UrgentNeedFunction
-from integrations.clients.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits import HudIncomeClientError, hud_client
 from integrations.clients.hud_income_limits.client import Section8AmiPercent
 
 
@@ -32,7 +32,12 @@ class IlRenterAssistance(UrgentNeedFunction):
         if not self.urgent_need.year:
             raise ValueError("urgent_need.year must be set for IL rent assistance eligibility")
 
-        income_limit = hud_client.get_screen_il_ami(self.screen, self.ami_percent, self.urgent_need.year.period)
+        try:
+            income_limit = hud_client.get_screen_il_ami(self.screen, self.ami_percent, self.urgent_need.year.period)
+        except HudIncomeClientError:
+            # The client has already reported the failure; without a limit there is no
+            # basis to show the resource.
+            return False
         income = self.screen.calc_gross_income("yearly", ["all"])
         below_income_limit = income <= income_limit
 

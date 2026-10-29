@@ -10,6 +10,7 @@ from unittest.mock import patch, Mock
 
 from django.test import TestCase
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APITestCase
 
 from screener.serializers import KG_TO_LBS, RemImpactSerializer, _convert_emissions_to_lbs
@@ -123,7 +124,7 @@ class TestRemImpactSerializer(TestCase):
 
 
 class TestRemImpactView(APITestCase):
-    """Integration tests for GET /api/screener-options/<white_label>/rem-impact/."""
+    """Integration tests for GET /api/screener-options/<white_label>/rem-impact/; POST runs the same cases below."""
 
     URL = "/api/screener-options/cesn/rem-impact/"
 
@@ -151,6 +152,9 @@ class TestRemImpactView(APITestCase):
         "estimate_type": {},
     }
 
+    def _call(self, params: dict[str, str] | None = None) -> Response:
+        return self.client.get(self.URL, params or {})
+
     def setUp(self):
         # Disable the REM rate throttle so individual tests are not throttled.
         patcher = patch("screener.views.RemRateThrottle.allow_request", return_value=True)
@@ -161,18 +165,18 @@ class TestRemImpactView(APITestCase):
 
     def test_returns_400_when_upgrade_missing(self):
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "upgrade"}
-        response = self.client.get(self.URL, params)
+        response = self._call(params)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
 
     def test_returns_400_when_address_missing(self):
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "address"}
-        response = self.client.get(self.URL, params)
+        response = self._call(params)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_returns_400_when_heating_fuel_missing(self):
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "heating_fuel"}
-        response = self.client.get(self.URL, params)
+        response = self._call(params)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     # ── 502: upstream errors ──────────────────────────────────────────────────
@@ -182,7 +186,7 @@ class TestRemImpactView(APITestCase):
         err = requests.HTTPError()
         err.response = Mock(status_code=400, json=lambda: {"msg": "bad"})
         mock_fetch.side_effect = err
-        response = self.client.get(self.URL, self.VALID_PARAMS)
+        response = self._call(self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
         self.assertIn("error", response.data)
         self.assertIn("detail", response.data)
@@ -196,16 +200,25 @@ class TestRemImpactView(APITestCase):
             text="Internal Server Error",
         )
         mock_fetch.side_effect = err
-        response = self.client.get(self.URL, self.VALID_PARAMS)
+        response = self._call(self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
         self.assertEqual(response.data["detail"], "Internal Server Error")
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
     def test_network_failure_returns_502(self, mock_fetch):
         mock_fetch.side_effect = requests.RequestException("connection refused")
-        response = self.client.get(self.URL, self.VALID_PARAMS)
+        response = self._call(self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
         self.assertIn("error", response.data)
+
+    @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
+    def test_network_failure_does_not_echo_upstream_url(self, mock_fetch):
+        mock_fetch.side_effect = requests.ConnectionError(
+            "Max retries exceeded with url: /api/v1/rem/address?address=742+Invented+Lane"
+        )
+        response = self._call(self.VALID_PARAMS)
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+        self.assertNotIn("Invented", str(response.data))
 
     # ── 422: address-level errors ─────────────────────────────────────────────
 
@@ -225,7 +238,7 @@ class TestRemImpactView(APITestCase):
                     json=lambda t=error_type: {"detail": {"type": t, "msg": "some message"}},
                 )
                 mock_fetch.side_effect = err
-                response = self.client.get(self.URL, self.VALID_PARAMS)
+                response = self._call(self.VALID_PARAMS)
                 self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
                 self.assertEqual(response.data["error"], "address_not_supported")
                 self.assertIn("detail", response.data)
@@ -235,7 +248,7 @@ class TestRemImpactView(APITestCase):
         err = requests.HTTPError()
         err.response = Mock(status_code=400, json=lambda: {"detail": {"type": "some_future_type", "msg": "x"}})
         mock_fetch.side_effect = err
-        response = self.client.get(self.URL, self.VALID_PARAMS)
+        response = self._call(self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
 
     # ── 200: happy path ───────────────────────────────────────────────────────
@@ -243,7 +256,7 @@ class TestRemImpactView(APITestCase):
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
     def test_happy_path_returns_bill_and_emissions_delta(self, mock_fetch):
         mock_fetch.return_value = self.MOCK_RAW_RESPONSE
-        response = self.client.get(self.URL, self.VALID_PARAMS)
+        response = self._call(self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("bill_delta", response.data)
         self.assertIn("emissions_delta", response.data)
@@ -252,7 +265,7 @@ class TestRemImpactView(APITestCase):
     def test_water_heater_fuel_is_optional(self, mock_fetch):
         mock_fetch.return_value = self.MOCK_RAW_RESPONSE
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "water_heater_fuel"}
-        response = self.client.get(self.URL, params)
+        response = self._call(params)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # water_heater_fuel absent from params → client receives None
         call_kwargs = mock_fetch.call_args
@@ -266,6 +279,18 @@ class TestRemImpactView(APITestCase):
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
     def test_emissions_converted_to_lbs_in_response(self, mock_fetch):
         mock_fetch.return_value = self.MOCK_RAW_RESPONSE
-        response = self.client.get(self.URL, self.VALID_PARAMS)
+        response = self._call(self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["emissions_delta"]["median"]["unit"], "lbCO2e")
+
+
+class TestRemImpactViewPost(TestRemImpactView):
+    """The same cases over POST, which carries the address in the JSON body instead of the URL."""
+
+    def _call(self, params: dict[str, str] | None = None) -> Response:
+        return self.client.post(self.URL, params or {}, format="json")
+
+    def test_non_object_body_returns_400(self):
+        for body in ([self.VALID_PARAMS], "742 Invented Lane"):
+            response = self.client.post(self.URL, body, format="json")
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, body)
