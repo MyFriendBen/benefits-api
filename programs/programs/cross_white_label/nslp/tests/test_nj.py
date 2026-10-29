@@ -16,6 +16,7 @@ no Program row for some of them yet, so the tests seed a stand-in row with the r
 from decimal import Decimal
 
 from programs.framework.base import Eligibility
+from programs.models import Program
 from programs.programs.cross_white_label.nslp.mfb_base import FREE, REDUCED_PRICE, NationalSchoolLunchProgram
 from programs.programs.cross_white_label.nslp.nj import NJEIE, NjNslp
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
@@ -253,5 +254,18 @@ class TestCategorical(NjNslpTestCase):
         screen = self.household(2, 50, head_wages=35_000)
         self.add_member(screen, "child", 20)
         self.receive(screen, "snap")
+
+        self.assert_eligible(self.calculate(screen), STUDENT_VALUE)
+
+
+class TestWithoutSnapOrTanfPrograms(NjNslpTestCase):
+    """NJ has no SNAP or TANF program yet. The categorical routes read the household's own
+    reported benefits, never those programs' rows or results, so their absence must not stop
+    the calculation."""
+
+    def test_calculates_when_no_snap_or_tanf_program_exists(self):
+        self.assertFalse(Program.objects.filter(base_program__in=["snap", "tanf"]).exists())
+        screen = self.household(2, 35, head_wages=30_000)
+        self.add_member(screen, "child", 10)
 
         self.assert_eligible(self.calculate(screen), STUDENT_VALUE)
