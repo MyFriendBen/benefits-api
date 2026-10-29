@@ -53,6 +53,29 @@ def is_federal(program: "Program") -> bool:
     return program.white_label.code == FEDERAL_WHITE_LABEL
 
 
+def navigators_linkable_to(program: "Program") -> Q:
+    """Navigators that may be linked to `program`: its own white label's and the federal ones.
+
+    A federal program takes any white label's navigators, because
+    `screener.navigators.filter_by_white_label` shows each state's only to that state's screens.
+    A state program takes federal ones (a national hotline) as well as its own. Keep
+    `may_link_navigator` in step with this.
+    """
+    if is_federal(program):
+        # Not an empty Q(): OR-ing an empty Q with another condition drops it.
+        return Q(pk__isnull=False)
+    return Q(white_label_id=program.white_label_id) | Q(white_label__code=FEDERAL_WHITE_LABEL)
+
+
+def may_link_navigator(program: "Program", navigator_white_label_code: str) -> bool:
+    """`navigators_linkable_to` for one navigator, by its white label code."""
+    return (
+        is_federal(program)
+        or navigator_white_label_code == FEDERAL_WHITE_LABEL
+        or navigator_white_label_code == program.white_label.code
+    )
+
+
 def preferred_program(kept: Optional["Program"], candidate: "Program", where: str) -> "Program":
     """Of two programs with the same name, the one a screen should see.
 

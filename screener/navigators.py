@@ -15,7 +15,7 @@ guardrails cannot catch; a navigator Benji offers that the page filtered out for
 county hands someone a number that is not for them. A second implementation of these
 four filters would drift, and the drift would surface only mid-conversation.
 
-Four stages, applied per program in this order (MFB-666):
+Four stages, applied per program in this order:
 
 0. `filter_by_white_label` — on a federal program, a navigator applies only when its white
    label is `federal` or the screen's. A federal program (`programs.federal`) is one row

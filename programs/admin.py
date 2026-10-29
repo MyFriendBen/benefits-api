@@ -13,7 +13,7 @@ from django.utils.html import format_html
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
-from .federal import is_federal
+from .federal import FEDERAL_WHITE_LABEL, is_federal, navigators_linkable_to
 from .models import (
     LegalStatus,
     Program,
@@ -90,13 +90,23 @@ class ProgramNavigatorInline(TabularInline):
         return formset
 
     def formfield_for_foreignkey(self, db_field: ModelField, request: HttpRequest, **kwargs) -> FormField | None:
-        """Filter navigators by the program's white label"""
+        """Navigators this program may link (`navigators_linkable_to`), within the admin's white labels.
+
+        Navigators already linked stay valid, so links made before these rules (a state program
+        using another state's navigator) don't block saving the page.
+        """
         if db_field.name == "navigator":
             obj_id = request.resolver_match.kwargs.get("object_id")
             if obj_id:
                 try:
-                    program = Program.objects.get(pk=obj_id)
-                    kwargs["queryset"] = Navigator.objects.filter(white_label=program.white_label)
+                    program = Program.objects.select_related("white_label").get(pk=obj_id)
+                    allowed = navigators_linkable_to(program)
+                    if not request.user.is_superuser:
+                        allowed &= Q(white_label__in=request.user.white_labels.all()) | Q(
+                            white_label__code=FEDERAL_WHITE_LABEL
+                        )
+                    linked = Q(pk__in=program.program_navigators.values("navigator"))
+                    kwargs["queryset"] = Navigator.objects.filter(allowed | linked)
                 except Program.DoesNotExist:
                     pass
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
@@ -295,6 +305,23 @@ class NavigatorAdmin(SecureAdmin):
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
+
+    def get_search_results(
+        self, request: HttpRequest, queryset: QuerySet[Navigator], search_term: str
+    ) -> tuple[QuerySet[Navigator], bool]:
+        """Offer federal navigators in the program page's navigator autocomplete.
+
+        `get_queryset` limits a white label admin to their own white labels' navigators, but any
+        program may link a federal one. The inline's form field still checks the program's rules on
+        save; this only widens what the search offers.
+        """
+        if (
+            request.GET.get("model_name") == ProgramNavigator._meta.model_name
+            and request.GET.get("field_name") == "navigator"
+            and not request.user.is_superuser
+        ):
+            queryset = queryset | Navigator.objects.filter(white_label__code=FEDERAL_WHITE_LABEL)
+        return super().get_search_results(request, queryset, search_term)
 
     def get_str(self, obj: Navigator) -> str:
         return str(obj) if str(obj).strip() else "unnamed"
