@@ -3,13 +3,11 @@
 from django.test import TestCase
 import programs.framework.pe_dependencies as dependency
 from integrations.clients.policyengine.registry import all_calculators
-from programs.programs.cross_white_label.eitc.base import Eitc
-from programs.programs.cross_white_label.eitc.mo import MoEitc
 from programs.programs.white_labels.mo.wftc.calculator import MoWftc
 
 
 class TestMoWftcWiring(TestCase):
-    """mo_wftc registration and the inputs MoWftc adds to the federal Eitc set."""
+    """mo_wftc registration and the inputs MoWftc adds to `eitc_inputs`."""
 
     def test_registered_under_config_name_abbreviated(self):
         """The ``program_code`` must equal the program's ``name_abbreviated`` in
@@ -28,7 +26,7 @@ class TestMoWftcWiring(TestCase):
         self.assertIn(dependency.household.MoStateCodeDependency, MoWftc.pe_inputs)
 
     def test_sends_real_estate_taxes(self):
-        """Not in the federal Eitc set. Without it the liability cap is never
+        """Not in `eitc_inputs`. Without it the liability cap is never
         reduced: scenario 14 pays $23 and scenario 16 $32, not $0 and $11."""
         self.assertIn(dependency.member.PropertyTaxExpenseDependency, MoWftc.pe_inputs)
 
@@ -49,13 +47,13 @@ class TestMoWftcWiring(TestCase):
 
     def test_preserves_every_other_federal_eitc_input(self):
         """MO swaps the age basis and adds inputs; it never drops anything else."""
-        for federal_input in Eitc.pe_inputs:
+        for federal_input in dependency.eitc_inputs:
             if federal_input is dependency.member.AgeDependency:
                 continue
             self.assertIn(federal_input, MoWftc.pe_inputs)
 
     def test_adds_exactly_the_five_extra_inputs(self):
-        added = [dep for dep in MoWftc.pe_inputs if dep not in Eitc.pe_inputs]
+        added = [dep for dep in MoWftc.pe_inputs if dep not in dependency.eitc_inputs]
         self.assertCountEqual(
             added,
             [
