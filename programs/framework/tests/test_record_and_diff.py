@@ -1,12 +1,14 @@
 """Tests for the pure parts of record_and_diff: the scenario diff and the override rewrite."""
 
 import ast
+import importlib.util
 import json
 import subprocess
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
+from unittest import skipUnless
 from unittest.mock import patch
 
 from django.core.management.base import CommandError
@@ -219,6 +221,8 @@ class TestAdopt(SimpleTestCase):
 
 
 class TestFormatRewrite(SimpleTestCase):
+    # black is in requirements-dev.txt, which CI's test step doesn't install.
+    @skipUnless(importlib.util.find_spec("black"), "black isn't installed")
     def test_formats_with_the_repo_config(self) -> None:
         self.assertEqual(format_rewrite(REPO_ROOT / "x.py", "x = ( 1 )\n"), "x = 1\n")
 
