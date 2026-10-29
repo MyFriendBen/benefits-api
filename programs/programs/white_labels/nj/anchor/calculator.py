@@ -1,5 +1,6 @@
 from programs.framework.base import ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
+from programs.programs.white_labels.nj.income_tax import EXCLUDED_INCOME_TYPES, filers
 from screener.models import HouseholdMember
 
 
@@ -43,20 +44,7 @@ class NjAnchor(ProgramCalculator):
     senior_supplement = 250
     supplement_age = 65
 
-    excluded_income_types = [
-        "sSRetirement",
-        "sSDisability",
-        "sSSurvivor",
-        "sSDependent",
-        "sSI",
-        "unemployment",
-        "workersComp",
-        "gifts",
-        "childSupport",
-        "cashAssistance",
-        "cashAssistanceOther",
-        "veteran",
-    ]
+    excluded_income_types = list(EXCLUDED_INCOME_TYPES)
 
     dependencies = [
         "age",
@@ -106,7 +94,7 @@ class NjAnchor(ProgramCalculator):
 
     def _claimants(self) -> list[HouseholdMember]:
         """The head and a member entered as a spouse. A domestic partner files separately."""
-        return [m for m in self.screen.household_members.all() if m.is_head() or m.relationship == "spouse"]
+        return filers(self.screen)
 
     def _claimant_income(self) -> float:
         return sum(
