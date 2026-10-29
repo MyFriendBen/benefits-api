@@ -1224,11 +1224,12 @@ class TestStaleStoredAge(TestCase):
         self.assertEqual(member.age_at_end_of_year(2026), 18)
         self.assertEqual(member.age_at_end_of_year(2025), 17)
 
-    def test_age_at_end_of_year_is_never_negative(self):
+    def test_age_at_end_of_year_is_none_before_birth(self):
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=0, birth_year_month=date(2026, 2, 1)
         )
-        self.assertEqual(member.age_at_end_of_year(2025), 0)
+        self.assertIsNone(member.age_at_end_of_year(2025))
+        self.assertEqual(member.age_at_end_of_year(2026), 0)
 
     def test_age_at_end_of_year_falls_back_to_calc_age(self):
         member = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=12)
