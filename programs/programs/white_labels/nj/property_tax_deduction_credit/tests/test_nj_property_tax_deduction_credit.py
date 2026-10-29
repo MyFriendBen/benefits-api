@@ -66,6 +66,16 @@ class TestRegistration(NjPtdTestCase):
             self.calculate(screen, missing=screen.missing_fields())
 
 
+class TestBirthAfterTheTaxYear(NjPtdTestCase):
+    def test_a_member_born_after_the_tax_year_is_not_a_senior(self):
+        screen, _ = self.household(("headOfHousehold", 40, {}))
+        newborn = self.add_member(screen, "child", None, birth_year_month=date(2026, 1, 1))
+        calculator = self.make_calculator(screen)
+
+        self.assertEqual(calculator._age_at_year_end(newborn), 0)
+        self.assertFalse(calculator._is_senior(newborn))
+
+
 class TestSpecScenarios(NjPtdTestCase):
     def test_1_renting_couple_with_one_child_on_moderate_wages(self):
         screen, (head, _, _) = self.household(
