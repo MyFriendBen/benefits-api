@@ -333,7 +333,7 @@ class TestScreen(TestCase):
         program in production carries it, and a row without it is the config gap
         `_derived_current_benefit_names` reports to Sentry.
         """
-        seed_program(self.white_label, "ssi", base_program="ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
@@ -378,7 +378,7 @@ class TestScreen(TestCase):
                 Program.objects.filter(white_label=self.white_label).delete()
                 CurrentBenefit.objects.filter(screen=self.screen).delete()
                 self.screen.invalidate_current_benefits_cache()
-                seed_program(self.white_label, name, base_program="ssi")
+                seed_program(self.white_label, name, base_program="ssi", active=True)
 
                 _write_current_benefits(self.screen, [])
                 self.screen.invalidate_current_benefits_cache()
@@ -399,7 +399,7 @@ class TestScreen(TestCase):
                 Program.objects.filter(white_label=self.white_label).delete()
                 CurrentBenefit.objects.filter(screen=self.screen).delete()
                 self.screen.invalidate_current_benefits_cache()
-                seed_program(self.white_label, name, base_program="ssi")
+                seed_program(self.white_label, name, base_program="ssi", active=True)
 
                 _write_current_benefits(self.screen, [])
                 self.screen.invalidate_current_benefits_cache()
@@ -408,7 +408,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_ssi_not_derived_without_reported_ssi_income(self):
         """The derive is driven by the income stream, not by the program existing."""
-        seed_program(self.white_label, "mo_ssi", base_program="ssi")
+        seed_program(self.white_label, "mo_ssi", base_program="ssi", active=True)
         _write_current_benefits(self.screen, [])
         self.screen.invalidate_current_benefits_cache()
 
@@ -422,8 +422,8 @@ class TestScreen(TestCase):
         to drop those; the derive is now scoped itself, so assert it directly.
         """
         other_wl = WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
-        seed_program(self.white_label, "mo_ssi", base_program="ssi")
-        seed_program(other_wl, "wa_ssi", base_program="ssi")
+        seed_program(self.white_label, "mo_ssi", base_program="ssi", active=True)
+        seed_program(other_wl, "wa_ssi", base_program="ssi", active=True)
 
         self._report_ssi_income()
         self.assertEqual(_derived_current_benefit_names(self.screen), {"mo_ssi"})
