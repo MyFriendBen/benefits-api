@@ -4,9 +4,9 @@ Every age in the spec is the member's age at the end of the 2025 tax year, so me
 built from a birth month and the clock is pinned: an age derived from today would put a
 boundary member on the wrong side of it as the calendar moves.
 
-Values are whole dollars. Spec scenarios 2, 6, 13, 15 and 16 state 40% of a federal credit to
-the cent; the calculator rounds it to the dollar and floors it at $1, so those tests assert
-the rounded figure.
+Values are whole dollars. Spec scenarios 1, 2, 6, 7, 9, 13, 15, 16 and 20 state 40% of a federal
+credit to the cent; the calculator rounds it to the dollar and floors it at $1, so those tests
+assert the rounded figure.
 
 §4's `valid_social_security_number` has no scenario: it is `Enforced by: program-record`
 (`legal_status_required`), which the calculator never reads. The months-of-residency axis has
