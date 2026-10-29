@@ -90,12 +90,14 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0199_rename_programconfigimport_programrecordimport"),
+        ("programs", "0200_retire_state_federal_program_rows"),
         ("screener", "0169_screen_household_size_range"),
     ]
 
     operations = [
-        # No reverse: some state rows were off before this ran, so which to switch back on
-        # isn't recorded. Roll back in the admin: state rows on, `federal_wic` off.
-        migrations.RunPython(forwards, migrations.RunPython.noop),
+        # Irreversible: unapplying it can't put moved households back on their state rows or
+        # restore the duplicate rows it removed, so `migrate` refuses rather than appearing to
+        # roll back. To stop serving federal WIC, switch the state rows on and `federal_wic` off
+        # in the admin; the moved households then show WIC as new until moved back by hand.
+        migrations.RunPython(forwards),
     ]
