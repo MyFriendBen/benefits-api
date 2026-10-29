@@ -194,6 +194,28 @@ class EligibilityPaymentUnitTests(TestCase):
         self.assertEqual(e.eligible_members, [eligible, ineligible])
 
 
+class PaymentUnitDeclarationTests(TestCase):
+    """A calculator that prices members cannot say it pays the household.
+
+    `payment_unit` only tells the results API who the eligible party is; PolicyEngine
+    calculators still set member values from `member_value` regardless. A household
+    declaration on a class that prices members would hide paid members behind a
+    "Household" chip, which is how `MaCcdf` could silently drift under the SPM base.
+    """
+
+    def test_household_calculators_do_not_price_members(self):
+        from integrations.clients.policyengine.registry import all_calculators
+        from programs.programs import calculators
+
+        offenders = [
+            calculator.__name__
+            for calculator in {**calculators, **all_calculators}.values()
+            if calculator.payment_unit == HOUSEHOLD and calculator.member_value is not ProgramCalculator.member_value
+        ]
+
+        self.assertEqual(offenders, [])
+
+
 class ProgramCalculatorTestCase(TestCase):
     """A three-person household for the orchestration tests below."""
 

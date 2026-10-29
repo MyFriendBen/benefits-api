@@ -1,6 +1,6 @@
 from screener.models import Screen, HouseholdMember
 from programs.util import Dependencies, DependencyError, UpstreamAbsentError
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from programs.models import Program
@@ -24,10 +24,11 @@ class MemberEligibility:
 MEMBER = "member"
 #: The benefit is one amount for the household, whatever the member verdicts say.
 HOUSEHOLD = "household"
+PaymentUnit = Literal["member", "household"]
 
 
 class Eligibility:
-    def __init__(self, payment_unit: str = MEMBER):
+    def __init__(self, payment_unit: PaymentUnit = MEMBER):
         self.eligible: bool = True
         self.pass_messages = []
         self.fail_messages = []
@@ -121,7 +122,7 @@ class ProgramCalculator:
     #: household: `member_eligible` still runs and still gates the household on at least one
     #: member passing, but no member is paid, and the results API carries the unit so the
     #: frontend shows the household as the eligible party.
-    payment_unit: str = MEMBER
+    payment_unit: PaymentUnit = MEMBER
 
     #: Upstream program codes this calculator reads through `program_eligible` or
     #: `member_program_eligible`. Those raise when the upstream was not calculated, so

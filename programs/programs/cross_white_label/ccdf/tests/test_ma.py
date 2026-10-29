@@ -15,6 +15,7 @@ diagnosed special need (``TestDisabledChildAgeThreshold``), which is the only wa
 reach the top of the age table.
 """
 
+from programs.framework.base import MEMBER
 from programs.programs.cross_white_label.ccdf.ma import MaCcdf
 from programs.programs.testing_fixtures.pe_integration import (
     PeIntegrationTestCase,
@@ -108,7 +109,8 @@ class TestValueByAge(MaCcfaTestCase):
         self.assertEqual(screener_value(result), 12_632)
 
     def test_two_children_are_paid_separately(self):
-        """The unit boolean gates; the per-child boolean picks who is paid."""
+        """The unit boolean gates; the per-child boolean picks who is paid. So the children,
+        not the household, are the eligible party, whatever the SPM base says."""
         screen = self.build(3)
         self.add_parent(screen)
         self.add_child(screen, 1, offset=2)
@@ -116,6 +118,9 @@ class TestValueByAge(MaCcfaTestCase):
         result = self.run_ccfa(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(screener_value(result), 23_191 + 12_632)
+        self.assertEqual(result.payment_unit, MEMBER)
+        self.assertEqual(result.household_value, 0)
+        self.assertEqual([m.value for m in result.eligible_members], [0, 23_191, 12_632])
 
 
 class TestIncomeLimit(MaCcfaTestCase):
