@@ -256,13 +256,13 @@ class TestAgeExpansionRoute(NjEitcTestCase):
         head = self.add_member(screen, "headOfHousehold", age=None, birth_year_month=None, stored_age=True)
         head.age = 30
         head.save(update_fields=["age"])
-        self.add_income(head, 9_000, "wages", "yearly")
+        self.add_income(head, 15_000, "wages", "yearly")
 
-        # 30 is in the federal band: the federal route takes it, at 40% of the $312 credit's row.
+        # 30 is in the federal band, so the federal route pays 40% of the $312 credit. The age
+        # route would pay the flat $260, so the value shows which route took the household.
         e = self.calculate(screen)
 
-        self.assertTrue(e.eligible)
-        self.assertGreater(e.value, 0)
+        self.assert_eligible(e, 125)
 
     def test_a_head_with_no_age_is_not_eligible_for_the_flat_amount(self):
         screen = self.make_screen(household_size=1)
