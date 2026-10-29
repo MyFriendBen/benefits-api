@@ -33,7 +33,7 @@ import programs.framework.pe_dependencies as dependency
 from programs.programs.testing_fixtures.households import make_program
 from programs.programs.testing_fixtures.pe_input_test_base import PeInputTestCase
 from programs.programs.cross_white_label.aca.base import Aca
-from programs.programs.cross_white_label.eitc.base import Eitc
+from programs.programs.white_labels.co.coeitc.calculator import Coeitc
 
 
 @override_settings(CACHES=LOCAL_CACHE)
@@ -54,7 +54,7 @@ class TestPeInputCarriesHouseholdValues(PeInputTestCase):
 
     def test_values_land_in_their_slots(self):
         program = make_program(self.white_label.code, "test_program", "2025")
-        calculators = [cls(self.screen, program, Dependencies()) for cls in (Snap, Eitc, Aca)]
+        calculators = [cls(self.screen, program, Dependencies()) for cls in (Snap, Coeitc, Aca)]
 
         household = pe_input(self.screen, calculators)["household"]
         people = household["people"]
