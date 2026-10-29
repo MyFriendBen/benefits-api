@@ -440,3 +440,11 @@ class TestScenarios(FederalCdccTestCase):
         self.care(head, 300)
 
         self.assert_ineligible(self.calculate(screen))
+
+    def test_scenario_41_disabled_head_of_household_as_the_qualifying_individual(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 40, long_term_disability=True)
+        self.member(screen, "spouse", 38, income={"wages": 50_000})
+        self.care(head, 250, "dependentCare")
+
+        self.assert_eligible(self.calculate(screen), 1_050)

@@ -64,17 +64,17 @@ CDCC_YEARS: dict[int, CdccYear] = {
 }
 
 
-def applicable_percentage(agi: float, is_joint: bool, params: CdccYear) -> int:
+def applicable_percentage(agi: Decimal, is_joint: bool, params: CdccYear) -> int:
     """The applicable percentage for ``agi``, in whole points (spec section 7 table)."""
     if agi <= params.top_rate_limit:
         return params.top_rate
 
     middle_rate_limit = params.middle_rate_limit[is_joint]
     if agi <= middle_rate_limit:
-        over = ceil(Decimal(str(agi - params.top_rate_limit)) / params.first_step)
+        over = ceil((agi - params.top_rate_limit) / params.first_step)
         return max(params.top_rate - over, params.middle_rate)
 
-    over = ceil(Decimal(str(agi - middle_rate_limit)) / params.second_step[is_joint])
+    over = ceil((agi - middle_rate_limit) / params.second_step[is_joint])
     return max(params.middle_rate - over, params.floor_rate)
 
 
@@ -84,12 +84,12 @@ class FederalCdcc(ProgramCalculator):
 
     Screener mapping: filers are the head and, on a joint return, the ``spouse`` member; a
     qualifying individual is a ``DEPENDENT_ELIGIBLE_RELATIONSHIPS`` member under the age limit
-    today or with any disability flag, or a ``spouse`` with one; care expenses are the
+    today or with any disability flag, or, on a joint return, a filer with one; care expenses are the
     ``childCare`` and ``dependentCare`` types; earned income is the ``earned`` income group.
     Deviations: filers' income less the untaxed types stands in for AGI; a disability flag
     for incapable of self-care; deemed income runs all twelve months, for one filer; tax owed
-    is the rate tables applied after the standard deduction, filing jointly with a ``spouse``
-    member and as head of household otherwise; ages are today's.
+    is the Tax Table below $100,000 and the brackets above, after the standard deduction,
+    filing jointly with a ``spouse`` member and as head of household otherwise; ages are today's.
     Residency, custody, provider, schooling and employer-benefit rules are not evaluated.
     Missing disability or student answers read as no, so age-only screens still see the credit.
     """
@@ -172,8 +172,14 @@ class FederalCdcc(ProgramCalculator):
         return filers
 
     @cached_property
-    def _agi(self) -> float:
-        return sum(filer.calc_gross_income("yearly", ["all"], self.tax_exempt_income_types) for filer in self._filers)
+    def _agi(self) -> Decimal:
+        return sum(
+            (
+                Decimal(str(filer.calc_gross_income("yearly", ["all"], self.tax_exempt_income_types)))
+                for filer in self._filers
+            ),
+            Decimal(0),
+        )
 
     @cached_property
     def _income_tax(self) -> Decimal:
@@ -182,7 +188,7 @@ class FederalCdcc(ProgramCalculator):
         age_or_blind_count = sum(
             int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers
         )
-        return tax_owed(Decimal(str(self._agi)), status, age_or_blind_count, self._params.tax)
+        return tax_owed(self._agi, status, age_or_blind_count, self._params.tax)
 
     def _is_senior(self, filer: HouseholdMember) -> bool:
         age = filer.calc_age()
@@ -201,8 +207,9 @@ class FederalCdcc(ProgramCalculator):
         return self._qualifying_count >= 2
 
     def _is_qualifying_individual(self, member: HouseholdMember) -> bool:
-        """Spec section 4 `qualifying_individual`."""
-        if member.relationship == "spouse":
+        """Spec section 4 `qualifying_individual`. On a joint return either filer is the
+        other's spouse, whichever the screener recorded as head."""
+        if member.relationship == "spouse" or (member.relationship == "headOfHousehold" and self._is_joint):
             return bool(member.has_disability())
 
         if member.relationship not in DEPENDENT_ELIGIBLE_RELATIONSHIPS:
