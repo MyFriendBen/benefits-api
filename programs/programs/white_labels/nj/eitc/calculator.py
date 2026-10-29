@@ -25,7 +25,7 @@ class NjEitc(FederalEitc):
     floored at $1 because a value of $0 reads as not eligible, and a household that
     qualifies for a few dollars of federal credit does qualify.
 
-    Data gaps (spec §5): Social Security numbers, whether another taxpayer can claim the
+    Data gaps in the spec: Social Security numbers, whether another taxpayer can claim the
     filer as a dependent, and civil union partners entered as domestic partners, whom the
     federal rules count as unmarried. The credit is not prorated for part-year residency and
     is shown before any refund offset for debts.

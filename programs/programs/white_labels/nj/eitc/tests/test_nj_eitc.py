@@ -1,4 +1,4 @@
-"""NJ EITC scenarios, one per spec §8, plus the branches the scenarios leave open.
+"""NJ EITC tests: every scenario the spec lists, plus the branches those scenarios leave open.
 
 Every age in the spec is the member's age at the end of the 2025 tax year, so members are
 built from a birth month and the clock is pinned: an age derived from today would put a
@@ -7,9 +7,9 @@ boundary member on the wrong side of it as the calendar moves.
 Values are whole dollars. The spec states 40% of a federal credit to the cent; the calculator
 rounds it to the dollar and floors it at $1, so the tests assert the rounded figure.
 
-§4's `valid_social_security_number` has no scenario: it is `Enforced by: program-record`
-(`legal_status_required`), which the calculator never reads. The months-of-residency axis has
-none either, because the screener holds no months of residency.
+`valid_social_security_number` has no test: it is `Enforced by: program-record`
+(`legal_status_required`), which the calculator never reads. Months of residency have
+no test either, because the screener holds no months of residency.
 """
 
 from datetime import date
@@ -87,58 +87,58 @@ class TestRegistration(NjEitcTestCase):
 
 
 class TestFederalCreditRoute(NjEitcTestCase):
-    def test_scenario_1_single_parent_with_one_young_child(self):
+    def test_single_parent_with_one_young_child(self):
         e = self.head_with_wages(30, 20_000, ("child", 8, 0))
 
         self.assert_eligible(e, 1_731)  # 40% x $4,328 = $1,731.20
 
-    def test_scenario_2_single_parent_one_child_in_phase_out(self):
+    def test_single_parent_one_child_in_phase_out(self):
         e = self.head_with_wages(33, 28_000, ("child", 4, 0))
 
         self.assert_eligible(e, 1_432)  # 40% x $3,581 = $1,432.40
 
-    def test_scenario_6_childless_25_year_old_gets_40_percent_not_the_flat_amount(self):
+    def test_childless_25_year_old_gets_40_percent_not_the_flat_amount(self):
         e = self.head_with_wages(25, 15_000)
 
         self.assert_eligible(e, 125)  # 40% x $312 = $124.80
 
-    def test_scenario_7_childless_64_year_old_is_the_last_age_on_the_federal_route(self):
+    def test_childless_64_year_old_is_the_last_age_on_the_federal_route(self):
         e = self.head_with_wages(64, 15_000)
 
         self.assert_eligible(e, 125)
 
-    def test_scenario_9_parent_aged_22_takes_the_federal_credit_not_the_flat_amount(self):
+    def test_parent_aged_22_takes_the_federal_credit_not_the_flat_amount(self):
         e = self.head_with_wages(22, 20_000, ("child", 3, 0))
 
         self.assert_eligible(e, 1_731)
 
-    def test_scenario_11_childless_30_year_old_at_the_earned_income_limit(self):
+    def test_childless_30_year_old_at_the_earned_income_limit(self):
         e = self.head_with_wages(30, 19_104)
 
         self.assert_ineligible(e)
 
-    def test_scenario_13_last_table_row_that_pays_a_credit_floors_at_one_dollar(self):
+    def test_last_table_row_that_pays_a_credit_floors_at_one_dollar(self):
         """40% of the $2 federal credit is $0.80, which would round to $0 and read as ineligible."""
         e = self.head_with_wages(30, 19_099)
 
         self.assert_eligible(e, 1)
 
-    def test_scenario_15_married_only_the_spouse_in_the_federal_age_band(self):
+    def test_married_only_the_spouse_in_the_federal_age_band(self):
         e = self.head_with_wages(22, 20_000, ("spouse", 30, 0))
 
         self.assert_eligible(e, 189)  # 40% x $473 = $189.20
 
-    def test_scenario_16_married_couple_in_the_last_joint_row_that_pays_a_credit(self):
+    def test_married_couple_in_the_last_joint_row_that_pays_a_credit(self):
         e = self.head_with_wages(30, 26_199, ("spouse", 30, 0))
 
         self.assert_eligible(e, 1)  # 40% x $3 = $1.20
 
-    def test_scenario_17_married_couple_at_the_joint_earned_income_limit(self):
+    def test_married_couple_at_the_joint_earned_income_limit(self):
         e = self.head_with_wages(30, 26_214, ("spouse", 30, 0))
 
         self.assert_ineligible(e)
 
-    def test_scenario_20_domestic_partner_income_is_not_added(self):
+    def test_domestic_partner_income_is_not_added(self):
         """A domestic partner counts as unmarried, so the credit is the head's alone."""
         e = self.head_with_wages(30, 15_000, ("domesticPartner", 30, 15_000))
 
@@ -151,22 +151,22 @@ class TestFederalCreditRoute(NjEitcTestCase):
 
 
 class TestAgeExpansionRoute(NjEitcTestCase):
-    def test_scenario_3_childless_18_year_old(self):
+    def test_childless_18_year_old(self):
         e = self.head_with_wages(18, 9_000)
 
         self.assert_eligible(e, 260)
 
-    def test_scenario_4_childless_17_year_old(self):
+    def test_childless_17_year_old(self):
         e = self.head_with_wages(17, 9_000)
 
         self.assert_ineligible(e)
 
-    def test_scenario_5_childless_24_year_old_the_federal_credit_turns_away(self):
+    def test_childless_24_year_old_the_federal_credit_turns_away(self):
         e = self.head_with_wages(24, 15_000)
 
         self.assert_eligible(e, 260)
 
-    def test_scenario_8_childless_65_year_old_has_no_maximum_age(self):
+    def test_childless_65_year_old_has_no_maximum_age(self):
         e = self.head_with_wages(65, 15_000)
 
         self.assert_eligible(e, 260)
@@ -176,27 +176,27 @@ class TestAgeExpansionRoute(NjEitcTestCase):
 
         self.assert_eligible(e, 260)
 
-    def test_scenario_10_childless_24_year_old_at_the_earned_income_limit(self):
+    def test_childless_24_year_old_at_the_earned_income_limit(self):
         e = self.head_with_wages(24, 19_104)
 
         self.assert_ineligible(e)
 
-    def test_scenario_12_last_table_row_that_pays_a_credit_still_gets_the_flat_amount(self):
+    def test_last_table_row_that_pays_a_credit_still_gets_the_flat_amount(self):
         e = self.head_with_wages(24, 19_099)
 
         self.assert_eligible(e, 260)
 
-    def test_scenario_14_married_couple_both_under_25(self):
+    def test_married_couple_both_under_25(self):
         e = self.head_with_wages(22, 20_000, ("spouse", 23, 0))
 
         self.assert_eligible(e, 260)
 
-    def test_scenario_18_married_couple_under_25_in_the_last_joint_row(self):
+    def test_married_couple_under_25_in_the_last_joint_row(self):
         e = self.head_with_wages(22, 26_199, ("spouse", 23, 0))
 
         self.assert_eligible(e, 260)
 
-    def test_scenario_19_married_couple_under_25_at_the_joint_earned_income_limit(self):
+    def test_married_couple_under_25_at_the_joint_earned_income_limit(self):
         e = self.head_with_wages(22, 26_214, ("spouse", 23, 0))
 
         self.assert_ineligible(e)
