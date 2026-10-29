@@ -247,7 +247,7 @@ class TestChildren(NjCtcTestCase):
         self.add_income(relative, 5_199, "investment", "yearly")
         self.assertValue(screen, 1_000)
 
-    def test_child_born_after_the_tax_year_is_not_counted(self):
+    def test_22_child_born_after_the_tax_year(self):
         screen, _, _ = self.parent_and_child(24_000, child_age=7)
         self.add_member(screen, "child", None, birth_year_month=date(2026, 1, 1))
         self.assertIneligible(screen)
