@@ -99,7 +99,10 @@ NAVIGATOR = EntitySpec(
     kind="navigator",
     model=Navigator,
     translated=("name", "email", "description", "assistance_link"),
-    required=("name", "email", "description", "assistance_link"),
+    # Many organisations publish no email or no website, so a full entry may leave those out and
+    # they are stored as "". A name and description are what a household reads; without them the
+    # entry is more likely a reference with a stray field than a navigator, so they stay required.
+    required=("name", "description"),
     lists=("counties", "languages", "eligibility_programs"),
     scalars=("phone_number",),
 )

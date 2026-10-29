@@ -580,6 +580,25 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertRegex(output, r"Failed:\s+1")
         self.assertFalse(Program.objects.filter(name_abbreviated=PROGRAM).exists())
 
+    def test_a_navigator_without_email_or_assistance_link_imports_with_empty_values(self) -> None:
+        del self.record["navigators"][0]["email"]
+        del self.record["navigators"][0]["assistance_link"]
+
+        self.import_record()
+
+        self.assertFalse(self.records_failed)
+        navigator = Navigator.objects.get(external_name=f"{PROGRAM}_nav_a")
+        self.assertEqual(self.english(navigator.email), "")
+        self.assertEqual(self.english(navigator.assistance_link), "")
+        self.assertRegex(self.run_import(), r"Current:\s+1", "a second run finds nothing to change")
+
+    def test_a_navigator_without_a_description_is_still_a_partial_entry(self) -> None:
+        del self.record["navigators"][0]["description"]
+
+        output = self.import_record()
+
+        self.assertIn("partial entry, missing description", output)
+
     def test_an_unknown_key_fails_its_record(self) -> None:
         self.record["program"]["has_calculcator"] = True
 
