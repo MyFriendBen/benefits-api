@@ -54,6 +54,20 @@ class TestNavigatorWhiteLabelFilter(TestCase):
         result = filter_by_white_label([self.co_nav], self.federal_program, self.ks)
         self.assertEqual(result, [])
 
+    def test_federal_program_keeps_navigator_from_another_white_label_in_the_screens_state(self):
+        """A `cesn` screen in CO sees navigators owned by `co`, and the reverse."""
+        cesn = WhiteLabel.objects.create(name="CESN Test", code="cesn_test", state_code="CO")
+        result = filter_by_white_label([self.federal_nav, self.co_nav, self.ks_nav], self.federal_program, cesn)
+        self.assertEqual(result, [self.federal_nav, self.co_nav])
+
+    def test_federal_program_on_a_white_label_with_no_state_keeps_only_federal_and_its_own(self):
+        no_state = WhiteLabel.objects.create(name="No State Test", code="no_state_test")
+        own = Navigator.objects.new_navigator("no_state_test", "no_state_nav_test")
+        WhiteLabel.objects.create(name="Other No State", code="other_no_state_test")
+        other = Navigator.objects.new_navigator("other_no_state_test", "other_no_state_nav_test")
+        result = filter_by_white_label([self.federal_nav, self.co_nav, own, other], self.federal_program, no_state)
+        self.assertEqual(result, [self.federal_nav, own])
+
     def test_state_program_keeps_navigator_owned_by_another_white_label(self):
         """Navigators are shared by external_name, so a state program can use one another
         white label imported first."""
