@@ -3,12 +3,18 @@ from django.db import migrations
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 # Navigators are shared by `external_name`, so a navigator belongs to whichever white label
-# imported it first. USDA's National Hunger Hotline is national, but MO's SNAP and NSLP
-# configs created it, so it sits on `mo`. Federal WIC links the same row, and on a federal
-# program only `federal` navigators and the screen's own white label's are shown, so on
-# `mo` it would reach MO households only. Moving it to `federal` changes nothing for MO's
-# programs: navigators on a state program are not filtered by white label.
-NAVIGATOR = "usda_national_hunger_hotline"
+# imported it first. On a federal program only `federal` navigators and those of the screen's
+# state are shown, so a national navigator owned by one state would reach that state only.
+# Moving these to `federal` changes nothing for the state programs that also link them:
+# navigators on a state program are not filtered by white label.
+#
+# - `usda_national_hunger_hotline`: MO's SNAP and NSLP configs created it, so it sits on `mo`,
+#   and federal WIC links it.
+# - `trump_account_call_center`: on `mo` in production and linked to the active
+#   `federal_trump_account`. The import would move it, since that program's record owns it,
+#   but imports run by hand after a deploy; moving it here leaves no gap where only MO
+#   households see it.
+NAVIGATORS = ("usda_national_hunger_hotline", "trump_account_call_center")
 
 
 def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
@@ -20,8 +26,9 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
         print("  no federal white label in this environment; nothing to move")
         return
 
-    moved = Navigator.objects.filter(external_name=NAVIGATOR).exclude(white_label=federal).update(white_label=federal)
-    print(f"  moved {moved} navigator rows named {NAVIGATOR} to the federal white label")
+    for name in NAVIGATORS:
+        moved = Navigator.objects.filter(external_name=name).exclude(white_label=federal).update(white_label=federal)
+        print(f"  moved {moved} navigator rows named {name} to the federal white label")
 
 
 class Migration(migrations.Migration):
@@ -30,6 +37,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # No reverse: the white label it came from differs by environment.
+        # No reverse: the white label each came from differs by environment.
         migrations.RunPython(forwards, migrations.RunPython.noop),
     ]
