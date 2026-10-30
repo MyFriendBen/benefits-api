@@ -730,6 +730,7 @@ def eligibility_results(
                     "legal_status_required": legal_status,
                     "estimated_value_override": program_translations.get_translation("estimated_value"),
                     "eligible": eligibility.eligible,
+                    "payment_unit": eligibility.payment_unit,
                     "members": member_data,
                     "failed_tests": eligibility.fail_messages,
                     "passed_tests": eligibility.pass_messages,

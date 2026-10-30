@@ -14,7 +14,7 @@ from decimal import Decimal
 from typing import Optional
 from unittest.mock import patch
 
-from programs.framework.base import Eligibility
+from programs.framework.base import HOUSEHOLD, Eligibility
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.federal.ctc.calculator import (
     CTC_YEARS,
@@ -70,6 +70,20 @@ class TestRegistration(FederalCtcTestCase):
         """The registry resolves a calculator by matching `program_code` to
         `Program.name_abbreviated`, so the federal row's prefixed name has to be here."""
         self.assertEqual(FederalCtc.program_code, "federal_ctc")
+
+    def test_the_credit_is_paid_to_the_household(self):
+        """The dependents size the credit and gate it, but the filers claim it, so the
+        results show the household as eligible rather than the children."""
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 41, income={"wages": 40_000})
+        self.member(screen, "child", 8)
+
+        e = self.calculate(screen)
+
+        self.assert_eligible(e, 2_200)
+        self.assertEqual(e.payment_unit, HOUSEHOLD)
+        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
 
     def test_dependencies_are_what_the_tax_credit_apps_send(self):
         """The Colorado tax-credit apps send age, relationship and income only; requiring a

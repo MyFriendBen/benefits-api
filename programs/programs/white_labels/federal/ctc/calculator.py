@@ -6,7 +6,7 @@ from typing import Optional
 
 from sentry_sdk import capture_message
 
-from programs.framework.base import MemberEligibility, ProgramCalculator
+from programs.framework.base import HOUSEHOLD, MemberEligibility, ProgramCalculator
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
 
 JOINT = "joint"
@@ -132,6 +132,8 @@ class FederalCtc(ProgramCalculator):
     """
 
     program_code = "federal_ctc"
+    # Spec section 7: one credit on the filers' return, however many dependents size it.
+    payment_unit = HOUSEHOLD
 
     child_relationships = ("child", "stepChild", "fosterChild", "grandChild", "sisterOrBrother", "stepSisterOrBrother")
     dependent_relationships = DEPENDENT_ELIGIBLE_RELATIONSHIPS
