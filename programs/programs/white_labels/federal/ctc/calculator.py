@@ -1,8 +1,8 @@
+from collections.abc import Collection
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
 from math import ceil
-from collections.abc import Collection
 from typing import Optional
 
 from sentry_sdk import capture_message

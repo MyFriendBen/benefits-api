@@ -105,13 +105,12 @@ FEDERAL_TAX_YEARS: dict[int, FederalTaxYear] = {
         },
     ),
     2026: FederalTaxYear(
-        standard_deduction={JOINT: 32_200, HEAD_OF_HOUSEHOLD: 24_150, SINGLE: 16_100},
-        extra_deduction={JOINT: 1_650, HEAD_OF_HOUSEHOLD: 2_050, SINGLE: 2_050},
+        standard_deduction={JOINT: 32_200, HEAD_OF_HOUSEHOLD: 24_150},
+        extra_deduction={JOINT: 1_650, HEAD_OF_HOUSEHOLD: 2_050},
         senior_age=65,
         tax_brackets={
             JOINT: brackets(24_800, 100_800, 211_400, 403_550, 512_450, 768_700),
             HEAD_OF_HOUSEHOLD: brackets(17_700, 67_450, 105_700, 201_750, 256_200, 640_600),
-            SINGLE: brackets(12_400, 50_400, 105_700, 201_775, 256_225, 640_600),
         },
     ),
 }

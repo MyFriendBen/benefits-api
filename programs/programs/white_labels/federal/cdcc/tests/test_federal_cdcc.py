@@ -52,6 +52,24 @@ class FederalCdccTestCase(CustomCalculatorTestCase):
         self.assertFalse(e.eligible)
         self.assertEqual(e.value, 0)
 
+    def assert_fails(self, screen: Screen, rule: str) -> None:
+        """Ineligible, and for the one spec section 4 rule the scenario names. Each rule is read
+        back from the calculator, so a scenario can't pass by failing a different rule."""
+        calculator = self.make_calculator(screen)
+        e = calculator.calc()
+        self.assert_ineligible(e)
+
+        failing = set()
+        if not any(member.eligible for member in e.eligible_members):
+            failing.add("qualifying_individual")
+        if calculator._care_expenses <= 0:
+            failing.add("work_related_care_expenses")
+        if not all(calculator._earned_income(filer) > 0 for filer in calculator._filers):
+            failing.add("earned_income")
+        if calculator._income_tax <= 0:
+            failing.add("tax_liability")
+        self.assertEqual(failing, {rule})
+
 
 class TestRegistration(FederalCdccTestCase):
     def test_program_code_is_the_prefixed_federal_name(self):
@@ -131,7 +149,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 13)
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "qualifying_individual")
 
     def test_scenario_04_disabled_child_age_15(self):
         screen = self.make_screen(household_size=2)
@@ -155,7 +173,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "spouse", 38, income={"wages": 12_000})
         self.care(head, 250, "dependentCare")
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "qualifying_individual")
 
     def test_scenario_07_unrelated_member_age_5(self):
         screen = self.make_screen(household_size=2)
@@ -163,7 +181,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "roommate", 5)
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "qualifying_individual")
 
     def test_scenario_08_adult_parent_with_a_visual_impairment(self):
         screen = self.make_screen(household_size=2)
@@ -178,7 +196,7 @@ class TestScenarios(FederalCdccTestCase):
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
         self.member(screen, "child", 5)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "work_related_care_expenses")
 
     def test_scenario_10_rent_but_no_care_expense(self):
         screen = self.make_screen(household_size=2)
@@ -186,7 +204,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.add_expense(head, 800, "rent", "monthly")
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "work_related_care_expenses")
 
     def test_scenario_11_pension_income_only(self):
         screen = self.make_screen(household_size=2)
@@ -194,7 +212,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "earned_income")
 
     def test_scenario_12_self_employment_income(self):
         screen = self.make_screen(household_size=2)
@@ -237,7 +255,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "tax_liability")
 
     def test_scenario_17_income_at_37_001(self):
         screen = self.make_screen(household_size=2)
@@ -312,7 +330,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "earned_income")
 
     def test_scenario_26_disabled_spouse_with_no_earnings(self):
         screen = self.make_screen(household_size=2)
@@ -366,7 +384,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "earned_income")
 
     def test_scenario_32_tax_owed_below_the_credit(self):
         screen = self.make_screen(household_size=2)
@@ -398,7 +416,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "tax_liability")
 
     def test_scenario_36_disabled_head_of_household_as_the_qualifying_individual(self):
         screen = self.make_screen(household_size=2)
@@ -414,7 +432,7 @@ class TestScenarios(FederalCdccTestCase):
         self.add_member(screen, "child", age=None, birth_year_month=date(2026, 1, 1))
         self.care(head, 300)
 
-        self.assert_ineligible(self.calculate(screen))
+        self.assert_fails(screen, "qualifying_individual")
 
     def test_scenario_38_child_born_in_december_of_the_tax_year(self):
         screen = self.make_screen(household_size=2)

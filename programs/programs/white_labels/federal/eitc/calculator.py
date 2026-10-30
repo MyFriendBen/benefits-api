@@ -1,7 +1,7 @@
+from collections.abc import Collection
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from functools import cached_property
-from collections.abc import Collection
 
 from sentry_sdk import capture_message
 
