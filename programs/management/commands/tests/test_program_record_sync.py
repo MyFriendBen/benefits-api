@@ -15,7 +15,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
-from programs.management.commands._program_record_sync import unconfirmed
+from programs.management.commands._program_record_sync import is_unconfirmed, unconfirmed
 from programs.management.commands.export_program_record import BEGIN_MARKER, END_MARKER
 from programs.models import (
     Document,
@@ -328,6 +328,35 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertIs(baseline[f"link:navigator:{PROGRAM}_nav_a"], True)
         self.assertEqual(baseline[f"navigator:{PROGRAM}_nav_a.description"], "Helps with applications")
         self.assertIn("✓ Matches the record.", self.run_import())
+
+    def test_reverting_one_of_two_missing_links_keeps_the_order_unconfirmed(self) -> None:
+        """The order can't match the record until every missing link is applied, so it isn't stored as applied."""
+        self.record["navigators"].append(
+            {
+                "external_name": f"{PROGRAM}_nav_c",
+                "name": "Agency C",
+                "email": "c@example.org",
+                "description": "Helps by phone",
+                "assistance_link": "https://example.org/c",
+            }
+        )
+        self.import_record()
+        ProgramRecordImport.objects.update(applied_record=None)
+        ProgramNavigator.objects.filter(
+            program=self.program(), navigator__external_name__in=[f"{PROGRAM}_nav_a", f"{PROGRAM}_nav_b"]
+        ).delete()
+        self.run_import()
+        record_file = f"{PROGRAM}_program_record.json"
+
+        self.run_import("--revert-admin-edit", f"{record_file}:link:navigator:{PROGRAM}_nav_a")
+
+        baseline = self.baseline()
+        self.assertIs(baseline[f"link:navigator:{PROGRAM}_nav_a"], True)
+        self.assertEqual(baseline[f"link:navigator:{PROGRAM}_nav_b"], unconfirmed(False))
+        self.assertTrue(is_unconfirmed(baseline["navigators.order"]))
+        output = self.run_import()
+        self.assertNotIn("Admin edits (kept)", output)
+        self.assertIn("navigators.order", output.split("Not applied yet")[1])
 
     def test_an_unconfirmed_field_the_admin_brings_into_line_is_stored_as_the_record(self) -> None:
         _, navigator = self.import_without_a_baseline_and_an_unlinked_navigator()

@@ -298,22 +298,24 @@ class RecordPlan:
         """
         Whether this run sets an admin edit back to the record: all of them, or the keys named.
 
-        Reverting a navigator link also applies an unconfirmed `navigators.order`: the order only
-        differs because the link was never applied, and nothing says an admin chose it. Left out,
-        it would be reported again on every run.
+        Reverting every missing navigator link also applies an unconfirmed `navigators.order`: the
+        order only differs because the links were never applied, and nothing says an admin chose
+        it. Left out, it would be reported again on every run. After a partial revert the order
+        can't match the record yet, so it stays unconfirmed; stored as applied, the next run would
+        call the gap an admin edit.
         """
         if change.label != ADMIN_EDIT:
             return False
         if revert_admin_edits or change.key in revert_keys:
             return True
-        return (
-            change.key == "navigators.order"
-            and change.unconfirmed
-            and any(
-                other.key.startswith("link:navigator:") and other.key in revert_keys
-                for other in self.by_label(ADMIN_EDIT)
-            )
-        )
+        if change.key != "navigators.order" or not change.unconfirmed:
+            return False
+        missing_links = [
+            other.key
+            for other in self.by_label(ADMIN_EDIT)
+            if other.key.startswith("link:navigator:") and other.record is True
+        ]
+        return bool(missing_links) and all(key in revert_keys for key in missing_links)
 
     def kept(
         self, revert_admin_edits: bool, revert_keys: frozenset[str] = frozenset()
@@ -787,14 +789,19 @@ class RecordSync:
         wanted = [entry["external_name"] for entry in self.record.get("navigators", [])]
         if not wanted:
             return
-        current = [
+        current = self._navigator_order(plan.program, wanted)
+        self._add(plan, "navigators.order", wanted, current, self._set_navigator_order, 4, baseline, fresh)
+
+    @staticmethod
+    def _navigator_order(program: Program, wanted: list[str]) -> list[str]:
+        """The record's navigators linked to the program, in the program's order."""
+        return [
             name
-            for name in ProgramNavigator.objects.filter(program=plan.program)
+            for name in ProgramNavigator.objects.filter(program=program)
             .order_by("order", "id")
             .values_list("navigator__external_name", flat=True)
             if name in wanted
         ]
-        self._add(plan, "navigators.order", wanted, current, self._set_navigator_order, 4, baseline, fresh)
 
     def _note_kept_translations(self, plan: RecordPlan, change: Optional[Change], translation: Translation) -> None:
         if change is None or change.label != RECORD_CHANGE:
@@ -851,6 +858,26 @@ class RecordSync:
             for change in sorted(plan.to_apply(revert_admin_edits, revert_keys), key=lambda change: change.phase):
                 change.write(change.record)
             self.translations.flush()
+        self._refresh_kept_navigator_order(plan, revert_admin_edits, revert_keys)
+
+    def _refresh_kept_navigator_order(
+        self, plan: RecordPlan, revert_admin_edits: bool, revert_keys: frozenset[str]
+    ) -> None:
+        """
+        Store the order a kept, unconfirmed `navigators.order` has after this run's links.
+
+        A navigator linked here is added at the end, so the order no longer matches the value
+        kept earlier. Stored unchanged, the next run would read the import's own write as an admin
+        edit.
+        """
+        _, not_applied = plan.kept(revert_admin_edits, revert_keys)
+        order = next((change for change in not_applied if change.key == "navigators.order"), None)
+        if order is None or not any(
+            change.key.startswith("link:navigator:") for change in plan.to_apply(revert_admin_edits, revert_keys)
+        ):
+            return
+        order.database = self._navigator_order(plan.program, order.record)
+        order.marker = None
 
     def _program_setter(self, name: str) -> Callable[[Any], None]:
         def write(value: Any) -> None:
