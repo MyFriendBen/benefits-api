@@ -645,14 +645,12 @@ class HouseholdMember(models.Model):
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
         age = self.calc_age()
 
-        # Path 1: Qualifying Child
-        is_qualifying_child = (
-            has_eligible_relationship
-            and ((age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability())
-            and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
+        # Path 1: Qualifying Child (income test removed per IRS rules)
+        is_qualifying_child = has_eligible_relationship and (
+            (age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability()
         )
 
-        # Path 2: Qualifying Relative
+        # Path 2: Qualifying Relative (unchanged)
         threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
         is_qualifying_relative = has_eligible_relationship and self.calc_gross_income("yearly", ["all"]) < threshold
 
