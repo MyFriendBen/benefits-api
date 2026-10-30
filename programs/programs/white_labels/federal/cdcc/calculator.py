@@ -18,6 +18,7 @@ from programs.programs.white_labels.federal.tax import (
     JOINT,
     UNTAXED_INCOME_TYPES,
     FederalTaxYear,
+    age_or_blind_count,
     tax_owed,
 )
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
@@ -146,7 +147,7 @@ class FederalCdcc(ProgramCalculator):
         lowest_earned_income = min(self._earned_income(filer) for filer in self._filers)
 
         base = min(self._care_expenses, expense_limit, lowest_earned_income)
-        credit = min(Decimal(percentage) * Decimal(str(base)) / 100, self._income_tax)
+        credit = min(Decimal(percentage) * base / 100, self._income_tax)
 
         return int(credit.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
@@ -198,26 +199,12 @@ class FederalCdcc(ProgramCalculator):
     def _income_tax(self) -> Decimal:
         """Spec section 7, the tax owed for the tax year."""
         status = JOINT if self._is_joint else HEAD_OF_HOUSEHOLD
-        age_or_blind_count = sum(
-            int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers
-        )
-        return tax_owed(self._agi, status, age_or_blind_count, self._params.tax)
-
-    def _age_at_year_end(self, member: HouseholdMember) -> Optional[int]:
-        """Age at the tax year's end; a member with an age but no birth month is taken at the age
-        reported, which reads a year high for anyone with a birthday since year end."""
-        if member.birth_year_month is not None:
-            return member.age_at_end_of_year(self.tax_year)
-
-        return member.calc_age()
-
-    def _is_senior(self, filer: HouseholdMember) -> bool:
-        age = self._age_at_year_end(filer)
-        return age is not None and age >= self._params.tax.senior_age
+        additions = age_or_blind_count(self._filers, self.tax_year, self._params.tax)
+        return tax_owed(self._agi, status, additions, self._params.tax)
 
     @cached_property
-    def _care_expenses(self) -> float:
-        return self.screen.calc_expenses("yearly", list(self.care_expense_types))
+    def _care_expenses(self) -> Decimal:
+        return Decimal(str(self.screen.calc_expenses("yearly", list(self.care_expense_types))))
 
     @cached_property
     def _qualifying_count(self) -> int:
@@ -231,7 +218,7 @@ class FederalCdcc(ProgramCalculator):
         """Spec section 4 `qualifying_individual`. On a joint return either filer is the
         other's spouse, whichever the screener recorded as head."""
         # Born after the tax year: not part of that year's household.
-        if member.birth_year_month is not None and member.birth_year_month.year > self.tax_year:
+        if member.birth_year is not None and member.birth_year > self.tax_year:
             return False
 
         if member.relationship == "spouse" or (member.relationship == "headOfHousehold" and self._is_joint):
@@ -243,7 +230,7 @@ class FederalCdcc(ProgramCalculator):
         if member.has_disability():
             return True
 
-        age = self._age_at_year_end(member)
+        age = member.age_at_end_of_year(self.tax_year)
         return age is not None and age < self.qualifying_child_age_limit
 
     @cached_property
@@ -261,12 +248,12 @@ class FederalCdcc(ProgramCalculator):
 
         return min(candidates, key=lambda filer: filer.calc_gross_income("yearly", ["earned"]))
 
-    def _earned_income(self, filer: HouseholdMember) -> float:
+    def _earned_income(self, filer: HouseholdMember) -> Decimal:
         """Spec section 4 `earned_income`; the deemed amount is a floor, not an addition."""
-        earned = filer.calc_gross_income("yearly", ["earned"])
+        earned = Decimal(str(filer.calc_gross_income("yearly", ["earned"])))
 
         if filer == self._deemed_filer:
             deemed = self._params.deemed_spouse_monthly_income[self._has_two_or_more_qualifying] * 12
-            return max(earned, float(deemed))
+            return max(earned, Decimal(deemed))
 
         return earned

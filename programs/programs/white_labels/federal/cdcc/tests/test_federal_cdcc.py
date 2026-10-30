@@ -1,9 +1,10 @@
 """Federal CDCC scenarios, one per spec section 8 scenario, plus the code-level structure around
 them.
 
-Ages are the member's age today, so members are built from an age and the clock is left
-alone: `add_member` derives the birth month against the same reference date the calculator
-reads.
+The screening date is pinned to March of the year after the tax year, the season returns for
+that year are filed. Ages are dated at the end of the tax year, so a member built from an age
+gets a birth month derived from the pinned date, and a scenario that turns on a birthday
+gives the birth month itself. Both are relative to `TAX_YEAR`, so they move with it.
 """
 
 from datetime import date
@@ -23,7 +24,8 @@ class FederalCdccTestCase(CustomCalculatorTestCase):
     white_label_code = "federal"
     state_code = ""
     fpl_year = str(TAX_YEAR)
-    # The calculator reads age only through `calc_age()`.
+    reference_date = date(TAX_YEAR + 1, 3, 15)
+    # The calculator reads age only through `age_at_end_of_year()` and `calc_age()`.
     stores_age = False
 
     def member(

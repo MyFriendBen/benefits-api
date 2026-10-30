@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
 from math import ceil
-from typing import Optional
 
 from sentry_sdk import capture_message
 
@@ -15,6 +14,7 @@ from programs.programs.white_labels.federal.tax import (
     FEDERAL_TAX_YEARS,
     UNTAXED_INCOME_TYPES,
     FederalTaxYear,
+    age_or_blind_count,
     tax_owed,
 )
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
@@ -169,10 +169,8 @@ class FederalCtc(ProgramCalculator):
     @cached_property
     def _income_tax(self) -> Decimal:
         """Spec section 7, tax."""
-        age_or_blind_count = sum(
-            int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers
-        )
-        return tax_owed(self._modified_agi, self._filing_status, age_or_blind_count, self._params.tax)
+        additions = age_or_blind_count(self._filers, self.tax_year, self._params.tax)
+        return tax_owed(self._modified_agi, self._filing_status, additions, self._params.tax)
 
     @cached_property
     def _dependents(self) -> tuple[list[HouseholdMember], list[HouseholdMember]]:
@@ -204,7 +202,7 @@ class FederalCtc(ProgramCalculator):
         if member.relationship not in self.child_relationships:
             return False
 
-        age = self._age_at_year_end(member)
+        age = member.age_at_end_of_year(self.tax_year)
         if age is None:
             return False
 
@@ -228,7 +226,7 @@ class FederalCtc(ProgramCalculator):
 
     def _is_ctc_child(self, member: HouseholdMember) -> bool:
         """Spec section 4 `child_age`."""
-        age = self._age_at_year_end(member)
+        age = member.age_at_end_of_year(self.tax_year)
         return age is not None and age < self.ctc_child_age_limit
 
     def _is_qualifying_relative(self, member: HouseholdMember) -> bool:
@@ -240,19 +238,6 @@ class FederalCtc(ProgramCalculator):
 
     def _born_after_tax_year(self, member: HouseholdMember) -> bool:
         return member.birth_year is not None and member.birth_year > self.tax_year
-
-    def _age_at_year_end(self, member: HouseholdMember) -> Optional[int]:
-        """Age at the tax year's end; a member with an age but no birth month is taken at the age
-        reported, which reads a year high for anyone with a birthday since year end."""
-        if member.birth_year_month is not None:
-            return member.age_at_end_of_year(self.tax_year)
-
-        return member.calc_age()
-
-    def _is_senior(self, filer: HouseholdMember) -> bool:
-        """Spec section 7, standard deduction addition for age."""
-        age = self._age_at_year_end(filer)
-        return age is not None and age >= self._params.tax.senior_age
 
     @staticmethod
     def _is_permanently_disabled(member: HouseholdMember) -> bool:
