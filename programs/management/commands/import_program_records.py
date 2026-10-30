@@ -399,7 +399,8 @@ class Command(BaseCommand):
                     revert_keys=revert_keys,
                 )
                 sync.apply(plan, revert_admin_edits=self.revert_admin_edits, revert_keys=revert_keys)
-                self._record_import(item.path, program, plan.next_baseline(self.revert_admin_edits, revert_keys))
+                baseline = plan.next_baseline(self.revert_admin_edits, revert_keys)
+                self._record_import(item.path, program, baseline)
         except Exception as e:
             if item.fresh:
                 # Don't leave a half-built program behind: the next run would see an existing
@@ -409,7 +410,7 @@ class Command(BaseCommand):
                 self._forget_links_to(*key)
             self._failed(results, item.path, str(e))
             return
-        self._synced.append((item, plan.next_baseline(self.revert_admin_edits, revert_keys)))
+        self._synced.append((item, baseline))
 
         if item.fresh:
             results.created += 1
@@ -417,13 +418,9 @@ class Command(BaseCommand):
             results.updated += 1
         elif not plan.changes:
             results.current += 1
-        kept = [
-            change
-            for change in plan.by_label(ADMIN_EDIT)
-            if not plan.reverts(change, self.revert_admin_edits, revert_keys)
-        ]
-        results.admin_edits_kept += sum(not change.unconfirmed for change in kept)
-        results.unconfirmed_kept += sum(change.unconfirmed for change in kept)
+        edited, not_applied = plan.kept(self.revert_admin_edits, revert_keys)
+        results.admin_edits_kept += len(edited)
+        results.unconfirmed_kept += len(not_applied)
         results.conflicts += len(plan.by_label(CONFLICT))
 
     def _forget_links_to(self, white_label_code: str, program_key: str) -> None:
