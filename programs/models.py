@@ -1062,26 +1062,31 @@ class UrgentNeedTypeDataController(ModelDataController["UrgentNeedType"]):
     DataType = TypedDict(
         "DataType",
         {
-            "white_label": str,
+            "white_label": str | None,
             "icon": str | None,
         },
     )
 
     def to_model_data(self) -> DataType:
         return {
-            "white_label": self.instance.white_label.code,
+            # None for a shared type, which has no white label
+            "white_label": self.instance.white_label.code if self.instance.white_label else None,
             "icon": self.instance.icon.name if self.instance.icon else None,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         from screener.models import WhiteLabel
         from programs.models import CategoryIconName
 
-        try:
-            white_label = WhiteLabel.objects.get(code=data["white_label"])
-        except WhiteLabel.DoesNotExist:
-            white_label = WhiteLabel.objects.create(code=data["white_label"], name=data["white_label"])
-        self.instance.white_label = white_label
+        if data["white_label"] is None:
+            # Shared type, usable by every white label
+            self.instance.white_label = None
+        else:
+            try:
+                white_label = WhiteLabel.objects.get(code=data["white_label"])
+            except WhiteLabel.DoesNotExist:
+                white_label = WhiteLabel.objects.create(code=data["white_label"], name=data["white_label"])
+            self.instance.white_label = white_label
 
         if data["icon"]:
             icon = CategoryIconName.objects.filter(name=data["icon"]).first()
@@ -1101,7 +1106,13 @@ class UrgentNeedTypeDataController(ModelDataController["UrgentNeedType"]):
 class UrgentNeedTypeManager(models.Manager):
     translated_fields = ("name",)
 
-    def new_urgent_need_type(self, white_label: str, external_name: str, icon: str):
+    def new_urgent_need_type(
+        self, white_label: Optional[str], external_name: str, icon: Optional[str]
+    ) -> "UrgentNeedType":
+        """
+        Create an urgent need type. A falsy white_label creates a shared type,
+        usable by urgent needs in every white label.
+        """
         translations = {}
         for field in self.translated_fields:
             translations[field] = Translation.objects.add_translation(
@@ -1109,7 +1120,7 @@ class UrgentNeedTypeManager(models.Manager):
             )
 
         # set white label
-        white_label = WhiteLabel.objects.get(code=white_label)
+        white_label = WhiteLabel.objects.get(code=white_label) if white_label else None
 
         # set icon
         icon_instance = None
@@ -1130,11 +1141,12 @@ class UrgentNeedTypeManager(models.Manager):
 
 
 class UrgentNeedType(models.Model):
+    # Null means the type is shared: urgent needs in any white label can use it.
     white_label = models.ForeignKey(
         WhiteLabel,
         related_name="urgent_need_types",
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
     )
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
