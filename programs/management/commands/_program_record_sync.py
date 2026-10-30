@@ -11,6 +11,14 @@ set when it was last applied (`ProgramRecordImport.applied_record`):
   caller asks to revert admin edits.
 - **conflict**: both moved. Skipped and reported until someone makes them agree.
 
+With no baseline for a field (a program imported before baselines existed, or a shared row the
+record didn't manage before), nothing says which side moved. An empty database value is filled
+from the record; any other difference is kept and reported as **not applied yet**, labelled like
+an admin edit so the same `--revert-admin-edit` applies the record over it. Its baseline stores an
+unconfirmed marker holding the database value it kept, never the record's value, so the baseline
+only ever holds what was applied. While the database still holds that value it stays not applied
+yet; once someone changes it, it's an admin edit. Either way it's kept until someone reverts it.
+
 Navigators, documents and warning messages are shared rows. An entry naming only an
 `external_name` is a reference: it links the row and never edits it. An entry with any other
 field is a full entry: the record owns that row's content, and two records owning one row is an
@@ -47,6 +55,19 @@ from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 RECORD_CHANGE = "record change"
 ADMIN_EDIT = "admin edit"
 CONFLICT = "conflict"
+
+
+def unconfirmed(database: Any) -> dict[str, Any]:
+    """
+    The baseline entry for a difference kept without a baseline: the database value it kept.
+    JSON-safe, and unlike any field value, which is a string, number, boolean, list or None.
+    """
+    return {"unconfirmed": True, "database": database}
+
+
+def is_unconfirmed(value: Any) -> bool:
+    return isinstance(value, dict) and value.get("unconfirmed") is True
+
 
 TOP_LEVEL_KEYS = frozenset(
     {"white_label", "program_category", "program", "documents", "navigators", "warning_message", "warning_messages"}
@@ -255,6 +276,10 @@ class Change:
     database: Any
     write: Callable[[Any], None]
     phase: int
+    # Kept without a baseline: nothing says the admin changed it, only that no import applied it.
+    unconfirmed: bool = False
+    # The unconfirmed marker this field's baseline held, if any; kept as is until the field is applied.
+    marker: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -270,8 +295,36 @@ class RecordPlan:
         return [change for change in self.changes if change.label == label]
 
     def reverts(self, change: Change, revert_admin_edits: bool, revert_keys: frozenset[str] = frozenset()) -> bool:
-        """Whether this run sets an admin edit back to the record: all of them, or the keys named."""
-        return change.label == ADMIN_EDIT and (revert_admin_edits or change.key in revert_keys)
+        """
+        Whether this run sets an admin edit back to the record: all of them, or the keys named.
+
+        Reverting every missing navigator link also applies an unconfirmed `navigators.order`: the
+        order only differs because the links were never applied, and nothing says an admin chose
+        it. Left out, it would be reported again on every run. After a partial revert the order
+        can't match the record yet, so it stays unconfirmed; stored as applied, the next run would
+        call the gap an admin edit.
+        """
+        if change.label != ADMIN_EDIT:
+            return False
+        if revert_admin_edits or change.key in revert_keys:
+            return True
+        if change.key != "navigators.order" or not change.unconfirmed:
+            return False
+        missing_links = [
+            other.key
+            for other in self.by_label(ADMIN_EDIT)
+            if other.key.startswith("link:navigator:") and other.record is True
+        ]
+        return bool(missing_links) and all(key in revert_keys for key in missing_links)
+
+    def kept(
+        self, revert_admin_edits: bool, revert_keys: frozenset[str] = frozenset()
+    ) -> tuple[list[Change], list[Change]]:
+        """The admin edits this run keeps: (edited in the admin, not applied yet)."""
+        kept = [
+            change for change in self.by_label(ADMIN_EDIT) if not self.reverts(change, revert_admin_edits, revert_keys)
+        ]
+        return [change for change in kept if not change.unconfirmed], [change for change in kept if change.unconfirmed]
 
     def to_apply(self, revert_admin_edits: bool, revert_keys: frozenset[str] = frozenset()) -> list[Change]:
         return [
@@ -280,12 +333,16 @@ class RecordPlan:
             if change.label == RECORD_CHANGE or self.reverts(change, revert_admin_edits, revert_keys)
         ]
 
-    def next_baseline(self) -> dict[str, Any]:
+    def next_baseline(self, revert_admin_edits: bool, revert_keys: frozenset[str] = frozenset()) -> dict[str, Any]:
         """
-        The baseline to store once this plan is applied.
+        The baseline to store once this plan is applied: what the record set, for every field this
+        run applied or found already matching.
 
         A conflict keeps the old baseline, so it stays a conflict until the two sides agree
-        instead of quietly turning into an admin edit on the next run.
+        instead of quietly turning into an admin edit on the next run. A difference kept without
+        a baseline stores an unconfirmed marker with the database value it kept, and a field that
+        already had one keeps it: storing the record's value would claim it was applied, and every
+        later run would then report the gap as an admin edit nobody made.
         """
         baseline = dict(self.record_values)
         previous = self.previous_baseline or {}
@@ -294,6 +351,12 @@ class RecordPlan:
                 baseline[change.key] = previous[change.key]
             else:
                 baseline.pop(change.key, None)
+        edited, not_applied = self.kept(revert_admin_edits, revert_keys)
+        for change in edited + not_applied:
+            if change.marker is not None:
+                baseline[change.key] = change.marker
+            elif change.unconfirmed:
+                baseline[change.key] = unconfirmed(change.database)
         return {key: value for key, value in baseline.items() if value is not False or not key.startswith("link:")}
 
 
@@ -302,29 +365,45 @@ def _is_empty(value: Any) -> bool:
     return value is not False and value in (None, "", [], BLANK_TRANSLATION_PLACEHOLDER)
 
 
+_NO_BASELINE = object()
+
+
+@dataclass
+class Label:
+    label: str
+    # Kept without a baseline, and the database still holds what was kept.
+    unconfirmed: bool = False
+    # The field's unconfirmed baseline entry, carried forward until the field is applied.
+    marker: Optional[dict[str, Any]] = None
+
+
 def _label(
     key: str, record: Any, database: Any, baseline: Optional[dict[str, Any]], fresh: bool, new_row: bool
-) -> Optional[str]:
+) -> Optional[Label]:
     """Return how a difference came about, or None when the record and database agree."""
     if record == database:
         return None
     if fresh or new_row:
-        return RECORD_CHANGE
-    if key.startswith("link:") and baseline is not None:
-        previous = baseline.get(key, False)
-    elif baseline is not None and key in baseline:
-        previous = baseline[key]
+        return Label(RECORD_CHANGE)
+    if baseline is None:
+        previous = _NO_BASELINE
     else:
+        # A link the baseline doesn't list wasn't linked: false links aren't stored.
+        previous = baseline.get(key, False) if key.startswith("link:") else baseline.get(key, _NO_BASELINE)
+    if previous is _NO_BASELINE:
         # Never applied under this importer, or a field or shared row the record didn't manage
         # last time: nothing says which side moved. An empty database value has nothing worth
-        # protecting, so the record fills it; anything else is treated as an admin edit and kept
-        # until someone decides.
-        return RECORD_CHANGE if _is_empty(database) else ADMIN_EDIT
+        # protecting, so the record fills it; anything else is kept until someone decides.
+        return Label(RECORD_CHANGE) if _is_empty(database) else Label(ADMIN_EDIT, unconfirmed=True)
+    if is_unconfirmed(previous):
+        # Kept on an earlier run and never applied. Still the value kept then: not applied yet.
+        # Anything else, emptied included, is someone's later edit. Kept either way.
+        return Label(ADMIN_EDIT, unconfirmed=database == previous["database"], marker=previous)
     if database == previous:
-        return RECORD_CHANGE
+        return Label(RECORD_CHANGE)
     if record == previous:
-        return ADMIN_EDIT
-    return CONFLICT
+        return Label(ADMIN_EDIT)
+    return Label(CONFLICT)
 
 
 def _english(translation: Translation) -> str:
@@ -469,7 +548,16 @@ class RecordSync:
         label = _label(key, record_value, database_value, baseline, fresh, new_row)
         if label is None:
             return None
-        change = Change(key=key, label=label, record=record_value, database=database_value, write=write, phase=phase)
+        change = Change(
+            key=key,
+            label=label.label,
+            record=record_value,
+            database=database_value,
+            write=write,
+            phase=phase,
+            unconfirmed=label.unconfirmed,
+            marker=label.marker,
+        )
         plan.changes.append(change)
         return change
 
@@ -568,7 +656,9 @@ class RecordSync:
         listed = {entry["external_name"] for entry in entries}
         linked = set(self._linked_names(program, spec))
         previously_linked = {
-            key.split(":", 2)[2] for key in (baseline or {}) if key.startswith(f"link:{spec.kind}:") and baseline[key]
+            key.split(":", 2)[2]
+            for key in (baseline or {})
+            if key.startswith(f"link:{spec.kind}:") and baseline[key] is True
         }
 
         for entry in entries:
@@ -699,14 +789,19 @@ class RecordSync:
         wanted = [entry["external_name"] for entry in self.record.get("navigators", [])]
         if not wanted:
             return
-        current = [
+        current = self._navigator_order(plan.program, wanted)
+        self._add(plan, "navigators.order", wanted, current, self._set_navigator_order, 4, baseline, fresh)
+
+    @staticmethod
+    def _navigator_order(program: Program, wanted: list[str]) -> list[str]:
+        """The record's navigators linked to the program, in the program's order."""
+        return [
             name
-            for name in ProgramNavigator.objects.filter(program=plan.program)
+            for name in ProgramNavigator.objects.filter(program=program)
             .order_by("order", "id")
             .values_list("navigator__external_name", flat=True)
             if name in wanted
         ]
-        self._add(plan, "navigators.order", wanted, current, self._set_navigator_order, 4, baseline, fresh)
 
     def _note_kept_translations(self, plan: RecordPlan, change: Optional[Change], translation: Translation) -> None:
         if change is None or change.label != RECORD_CHANGE:
@@ -763,6 +858,26 @@ class RecordSync:
             for change in sorted(plan.to_apply(revert_admin_edits, revert_keys), key=lambda change: change.phase):
                 change.write(change.record)
             self.translations.flush()
+        self._refresh_kept_navigator_order(plan, revert_admin_edits, revert_keys)
+
+    def _refresh_kept_navigator_order(
+        self, plan: RecordPlan, revert_admin_edits: bool, revert_keys: frozenset[str]
+    ) -> None:
+        """
+        Store the order a kept, unconfirmed `navigators.order` has after this run's links.
+
+        A navigator linked here is added at the end, so the order no longer matches the value
+        kept earlier. Stored unchanged, the next run would read the import's own write as an admin
+        edit.
+        """
+        _, not_applied = plan.kept(revert_admin_edits, revert_keys)
+        order = next((change for change in not_applied if change.key == "navigators.order"), None)
+        if order is None or not any(
+            change.key.startswith("link:navigator:") for change in plan.to_apply(revert_admin_edits, revert_keys)
+        ):
+            return
+        order.database = self._navigator_order(plan.program, order.record)
+        order.marker = None
 
     def _program_setter(self, name: str) -> Callable[[Any], None]:
         def write(value: Any) -> None:
@@ -925,6 +1040,9 @@ def _short(value: Any, limit: int = 70) -> str:
 def _describe(change: Change) -> str:
     if change.key.startswith("link:"):
         _, kind, name = change.key.split(":", 2)
+        if change.label == ADMIN_EDIT and change.unconfirmed:
+            state = "linked, not in the record" if change.database else "in the record, not linked"
+            return f"{kind} '{name}': {state}"
         if change.label == ADMIN_EDIT:
             state = "linked in the admin, not in the record" if change.database else "unlinked in the admin"
             return f"{kind} '{name}': {state}"
@@ -954,7 +1072,7 @@ def print_plan(
     record_changes = plan.by_label(RECORD_CHANGE)
     admin_edits = plan.by_label(ADMIN_EDIT)
     reverted = [change for change in admin_edits if plan.reverts(change, revert_admin_edits, revert_keys)]
-    kept = [change for change in admin_edits if not plan.reverts(change, revert_admin_edits, revert_keys)]
+    kept, not_applied = plan.kept(revert_admin_edits, revert_keys)
     conflicts = plan.by_label(CONFLICT)
     if not plan.changes:
         stdout.write("  ✓ Matches the record.")
@@ -964,6 +1082,7 @@ def print_plan(
         (record_changes, "Record changes (to apply)" if dry_run else "Record changes (applied)"),
         (reverted, "Admin edits (reverted to the record)"),
         (kept, "Admin edits (kept)"),
+        (not_applied, "Not applied yet: no import has recorded which side changed (kept)"),
         (conflicts, "Conflicts: changed in both the record and the admin (skipped)"),
     ]
     for changes, title in sections:

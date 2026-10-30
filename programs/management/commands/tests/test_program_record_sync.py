@@ -15,6 +15,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
+from programs.management.commands._program_record_sync import is_unconfirmed, unconfirmed
 from programs.management.commands.export_program_record import BEGIN_MARKER, END_MARKER
 from programs.models import (
     Document,
@@ -247,7 +248,8 @@ class RecordSyncTestCase(RecordSyncBase):
         program = self.program()
         self.assertEqual(self.english(program.estimated_decision_time), "21 days")
         self.assertEqual(self.english(program.name), "Name from the admin")
-        self.assertIn("Admin edits (kept", output)
+        self.assertIn("Not applied yet: no import has recorded which side changed (kept)", output)
+        self.assertNotIn("Admin edits (kept", output)
 
     def test_without_a_baseline_a_flag_switched_off_in_the_admin_is_kept(self) -> None:
         """False is a choice, not an empty field: the first run under this importer leaves it."""
@@ -258,7 +260,7 @@ class RecordSyncTestCase(RecordSyncBase):
         output = self.run_import()
 
         self.assertFalse(self.program().show_on_current_benefits)
-        self.assertIn("Admin edits (kept", output)
+        self.assertIn("Not applied yet: no import has recorded which side changed (kept)", output)
         self.assertIn("program.show_on_current_benefits", output)
 
     def test_without_a_baseline_a_link_removed_in_the_admin_is_kept(self) -> None:
@@ -269,7 +271,147 @@ class RecordSyncTestCase(RecordSyncBase):
         output = self.run_import()
 
         self.assertFalse(self.program().documents.exists())
-        self.assertIn(f"document '{PROGRAM}_id': unlinked in the admin", output)
+        self.assertIn(f"document '{PROGRAM}_id': in the record, not linked", output)
+
+    # ------------------------------------------------------------------ kept without a baseline
+
+    def import_without_a_baseline_and_an_unlinked_navigator(self) -> tuple[str, Navigator]:
+        """A program the old importer made: no baseline, a navigator unlinked with older text."""
+        self.import_record()
+        ProgramRecordImport.objects.update(applied_record=None)
+        navigator = Navigator.objects.get(external_name=f"{PROGRAM}_nav_a")
+        ProgramNavigator.objects.filter(program=self.program(), navigator=navigator).delete()
+        self.admin_edit(navigator.description, "Older text")
+        return self.run_import(), navigator
+
+    def baseline(self) -> dict[str, Any]:
+        return ProgramRecordImport.objects.get(filename=f"{PROGRAM}_program_record.json").applied_record
+
+    def test_a_kept_difference_without_a_baseline_is_stored_as_unconfirmed(self) -> None:
+        """The baseline holds only what was applied, never the record's value for a kept field."""
+        _, navigator = self.import_without_a_baseline_and_an_unlinked_navigator()
+
+        baseline = self.baseline()
+        self.assertEqual(baseline[f"link:navigator:{PROGRAM}_nav_a"], unconfirmed(False))
+        self.assertEqual(baseline[f"navigator:{PROGRAM}_nav_a.description"], unconfirmed("Older text"))
+        self.assertEqual(baseline["program.description"], "Help buying food.")
+        self.assertFalse(ProgramNavigator.objects.filter(program=self.program(), navigator=navigator).exists())
+
+    def test_an_unconfirmed_difference_is_neither_applied_nor_called_an_admin_edit_on_later_runs(self) -> None:
+        _, navigator = self.import_without_a_baseline_and_an_unlinked_navigator()
+
+        output = self.run_import()
+
+        self.assertIn("Not applied yet: no import has recorded which side changed (kept)", output)
+        self.assertIn(f"navigator '{PROGRAM}_nav_a': in the record, not linked", output)
+        self.assertNotIn("in the admin", output)
+        self.assertFalse(ProgramNavigator.objects.filter(program=self.program(), navigator=navigator).exists())
+        self.assertEqual(self.english(Navigator.objects.get(pk=navigator.pk).description), "Older text")
+        self.assertEqual(self.baseline()[f"link:navigator:{PROGRAM}_nav_a"], unconfirmed(False))
+
+    def test_reverting_an_unconfirmed_difference_applies_it_and_stores_the_record(self) -> None:
+        """Reverting the link alone also settles the unconfirmed order it was missing from."""
+        _, navigator = self.import_without_a_baseline_and_an_unlinked_navigator()
+        record_file = f"{PROGRAM}_program_record.json"
+
+        output = self.run_import(
+            "--revert-admin-edit",
+            f"{record_file}:link:navigator:{PROGRAM}_nav_a",
+            "--revert-admin-edit",
+            f"{record_file}:navigator:{PROGRAM}_nav_a.description",
+        )
+
+        self.assertIn("navigators.order", output.split("Admin edits (reverted to the record)")[1])
+        self.assertTrue(ProgramNavigator.objects.filter(program=self.program(), navigator=navigator).exists())
+        self.assertEqual(self.english(Navigator.objects.get(pk=navigator.pk).description), "Helps with applications")
+        baseline = self.baseline()
+        self.assertIs(baseline[f"link:navigator:{PROGRAM}_nav_a"], True)
+        self.assertEqual(baseline[f"navigator:{PROGRAM}_nav_a.description"], "Helps with applications")
+        self.assertIn("✓ Matches the record.", self.run_import())
+
+    def test_reverting_one_of_two_missing_links_keeps_the_order_unconfirmed(self) -> None:
+        """The order can't match the record until every missing link is applied, so it isn't stored as applied."""
+        self.record["navigators"].append(
+            {
+                "external_name": f"{PROGRAM}_nav_c",
+                "name": "Agency C",
+                "email": "c@example.org",
+                "description": "Helps by phone",
+                "assistance_link": "https://example.org/c",
+            }
+        )
+        self.import_record()
+        ProgramRecordImport.objects.update(applied_record=None)
+        ProgramNavigator.objects.filter(
+            program=self.program(), navigator__external_name__in=[f"{PROGRAM}_nav_a", f"{PROGRAM}_nav_b"]
+        ).delete()
+        self.run_import()
+        record_file = f"{PROGRAM}_program_record.json"
+
+        self.run_import("--revert-admin-edit", f"{record_file}:link:navigator:{PROGRAM}_nav_a")
+
+        baseline = self.baseline()
+        self.assertIs(baseline[f"link:navigator:{PROGRAM}_nav_a"], True)
+        self.assertEqual(baseline[f"link:navigator:{PROGRAM}_nav_b"], unconfirmed(False))
+        self.assertTrue(is_unconfirmed(baseline["navigators.order"]))
+        output = self.run_import()
+        self.assertNotIn("Admin edits (kept)", output)
+        self.assertIn("navigators.order", output.split("Not applied yet")[1])
+
+    def test_an_unconfirmed_field_the_admin_brings_into_line_is_stored_as_the_record(self) -> None:
+        _, navigator = self.import_without_a_baseline_and_an_unlinked_navigator()
+        self.admin_edit(Navigator.objects.get(pk=navigator.pk).description, "Helps with applications")
+
+        self.run_import()
+
+        self.assertEqual(self.baseline()[f"navigator:{PROGRAM}_nav_a.description"], "Helps with applications")
+
+    def test_an_unconfirmed_field_an_admin_then_empties_is_kept_as_an_admin_edit(self) -> None:
+        """An empty value is filled only when no import has looked at the field before."""
+        self.import_record()
+        ProgramRecordImport.objects.update(applied_record=None)
+        Navigator.objects.filter(external_name=f"{PROGRAM}_nav_a").update(phone_number="+13035550199")
+        self.run_import()
+        Navigator.objects.filter(external_name=f"{PROGRAM}_nav_a").update(phone_number=None)
+
+        for _ in range(2):
+            output = self.run_import()
+
+            self.assertIsNone(Navigator.objects.get(external_name=f"{PROGRAM}_nav_a").phone_number)
+            edited = output.split("Admin edits (kept)")[1]
+            self.assertIn(f"navigator:{PROGRAM}_nav_a.phone_number", edited)
+            self.assertNotIn("Not applied yet: no import", output)
+            self.assertEqual(self.baseline()[f"navigator:{PROGRAM}_nav_a.phone_number"], unconfirmed("+13035550199"))
+
+    def test_an_unconfirmed_link_is_not_previously_linked(self) -> None:
+        """A link kept without being applied isn't one the importer made, so dropping it from the
+        record doesn't unlink an admin's link."""
+        self.import_record()
+        ProgramRecordImport.objects.update(applied_record=None)
+        record = copy.deepcopy(self.record)
+        dropped = record["navigators"].pop()
+        self.write(record)
+        self.run_import()  # the admin's link to the dropped navigator is kept, unconfirmed
+        self.assertEqual(self.baseline()[f"link:navigator:{dropped['external_name']}"], unconfirmed(True))
+
+        self.run_import()
+
+        navigator = Navigator.objects.get(external_name=dropped["external_name"])
+        self.assertTrue(ProgramNavigator.objects.filter(program=self.program(), navigator=navigator).exists())
+
+    def test_a_record_change_to_an_unconfirmed_field_is_still_kept(self) -> None:
+        """Nothing says the database value is stale, so a newer record doesn't overwrite it either."""
+        _, navigator = self.import_without_a_baseline_and_an_unlinked_navigator()
+        self.record["navigators"][0]["description"] = "Newer record text"
+        self.write(self.record)
+
+        output = self.run_import()
+
+        self.assertEqual(self.english(Navigator.objects.get(pk=navigator.pk).description), "Older text")
+        self.assertIn(
+            f"navigator:{PROGRAM}_nav_a.description: database 'Older text' | record 'Newer record text'", output
+        )
+        self.assertNotIn("Conflicts: changed in both", output)
 
     def test_a_new_program_keeps_an_admin_edit_to_a_shared_row_it_lists(self) -> None:
         """Creating a program doesn't make its record newer than an admin edit to a row others show."""
@@ -294,6 +436,8 @@ class RecordSyncTestCase(RecordSyncBase):
             ProgramNavigator.objects.filter(program=self.program(OTHER), navigator=navigator).exists(),
             "the new program still links it",
         )
+        other_baseline = ProgramRecordImport.objects.get(filename=f"{OTHER}_program_record.json").applied_record
+        self.assertEqual(other_baseline[f"navigator:{PROGRAM}_nav_a.description"], unconfirmed("Admin fixed text"))
 
     def test_one_admin_edit_can_be_reverted_and_the_others_kept(self) -> None:
         self.import_record()
