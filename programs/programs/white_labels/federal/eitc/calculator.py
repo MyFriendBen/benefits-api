@@ -148,20 +148,30 @@ class FederalEitc(ProgramCalculator):
     dependencies = ["age", "relationship", "income_amount", "income_frequency", "income_type"]
 
     def household_eligible(self, e: Eligibility) -> None:
-        params = self._params
-        column = self._column
-
-        e.condition(self._investment_income <= params.investment_income_limit)
-        e.condition(0 < self._earned_income < column.limit)
-        e.condition(self._agi < column.limit)
+        self._income_eligible(e)
 
         if self._qualifying_child_count == 0:
             e.condition(any(self._is_childless_filer_age(filer) for filer in self._filers))
 
-        # EIC Worksheet A, line 2: a $0 lookup at earned income ends the claim.
+    def household_value(self) -> int:
+        return self._federal_credit()
+
+    def _income_eligible(self, e: Eligibility) -> None:
+        """
+        The income rules, which don't depend on a filer's age. A subclass whose route waives the
+        age band (NJ's) calls this too, so it can't drift from the federal credit's income rules.
+        """
+        column = self._column
+
+        e.condition(self._investment_income <= self._params.investment_income_limit)
+        e.condition(0 < self._earned_income < column.limit)
+        e.condition(self._agi < column.limit)
+
+        # EIC Worksheet A, line 2: a $0 lookup at earned income ends the claim. A $0 reached only
+        # through the AGI lookup (line 6) stays eligible, at a value of $0.
         e.condition(eic_table(self._earned_income, column) > 0)
 
-    def household_value(self) -> int:
+    def _federal_credit(self) -> int:
         column = self._column
 
         # EIC Worksheet A, lines 5-6: past the phase-out start, the smaller of the two lookups.
