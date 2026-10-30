@@ -435,12 +435,13 @@ class TestScenarios(FederalCdccTestCase):
         self.assert_fails(screen, "qualifying_individual")
 
     def test_scenario_38_child_born_in_december_of_the_tax_year(self):
-        screen = self.make_screen(household_size=2)
+        screen = self.make_screen(household_size=3)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
+        self.member(screen, "child", 5)
         self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR, 12, 1))
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 660)
+        self.assert_eligible(self.calculate(screen), 792)
 
     def test_scenario_39_child_who_turned_13_after_the_tax_year(self):
         screen = self.make_screen(household_size=2)
