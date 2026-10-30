@@ -16,14 +16,8 @@ from unittest.mock import patch
 
 from programs.framework.base import Eligibility
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
-from programs.programs.white_labels.federal.ctc.calculator import (
-    CTC_YEARS,
-    HEAD_OF_HOUSEHOLD,
-    JOINT,
-    SINGLE,
-    FederalCtc,
-    income_tax,
-)
+from programs.programs.white_labels.federal.ctc.calculator import CTC_YEARS, FederalCtc
+from programs.programs.white_labels.federal.tax import HEAD_OF_HOUSEHOLD, JOINT, SINGLE, income_tax
 from screener.models import HouseholdMember, Screen
 
 TAX_YEAR = 2025
@@ -101,7 +95,7 @@ class TestRegistration(FederalCtcTestCase):
 class TestIncomeTax(FederalCtcTestCase):
     """`income_tax` against published rows of the 2025 Tax Table and the Tax Computation Worksheet."""
 
-    brackets = CTC_YEARS[TAX_YEAR].tax_brackets
+    brackets = CTC_YEARS[TAX_YEAR].tax.tax_brackets
 
     def test_tax_table_rows_are_priced_at_the_midpoint(self):
         # (taxable income, single, joint, head of household) from the published table.
