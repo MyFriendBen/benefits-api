@@ -46,6 +46,7 @@ class ImportResults:
     current: int = 0
     waiting: int = 0
     admin_edits_kept: int = 0
+    unconfirmed_kept: int = 0
     conflicts: int = 0
     # (file name, reason) for every record that failed, repeated at the end of the run.
     failures: list[tuple[str, str]] = field(default_factory=list)
@@ -398,7 +399,7 @@ class Command(BaseCommand):
                     revert_keys=revert_keys,
                 )
                 sync.apply(plan, revert_admin_edits=self.revert_admin_edits, revert_keys=revert_keys)
-                self._record_import(item.path, program, plan.next_baseline())
+                self._record_import(item.path, program, plan.next_baseline(self.revert_admin_edits, revert_keys))
         except Exception as e:
             if item.fresh:
                 # Don't leave a half-built program behind: the next run would see an existing
@@ -408,7 +409,7 @@ class Command(BaseCommand):
                 self._forget_links_to(*key)
             self._failed(results, item.path, str(e))
             return
-        self._synced.append((item, plan.next_baseline()))
+        self._synced.append((item, plan.next_baseline(self.revert_admin_edits, revert_keys)))
 
         if item.fresh:
             results.created += 1
@@ -416,9 +417,13 @@ class Command(BaseCommand):
             results.updated += 1
         elif not plan.changes:
             results.current += 1
-        results.admin_edits_kept += sum(
-            not plan.reverts(change, self.revert_admin_edits, revert_keys) for change in plan.by_label(ADMIN_EDIT)
-        )
+        kept = [
+            change
+            for change in plan.by_label(ADMIN_EDIT)
+            if not plan.reverts(change, self.revert_admin_edits, revert_keys)
+        ]
+        results.admin_edits_kept += sum(not change.unconfirmed for change in kept)
+        results.unconfirmed_kept += sum(change.unconfirmed for change in kept)
         results.conflicts += len(plan.by_label(CONFLICT))
 
     def _forget_links_to(self, white_label_code: str, program_key: str) -> None:
@@ -489,6 +494,8 @@ class Command(BaseCommand):
         self.stdout.write(f"  {'Waiting:':<20} {results.waiting}  (no calculator yet)")
         kept = f"  {'Admin edits kept:':<20} {results.admin_edits_kept}"
         self.stdout.write(self.style.WARNING(kept) if results.admin_edits_kept else kept)
+        unconfirmed = f"  {'Not applied yet:':<20} {results.unconfirmed_kept}"
+        self.stdout.write(self.style.WARNING(unconfirmed) if results.unconfirmed_kept else unconfirmed)
         conflicts = f"  {'Conflicts:':<20} {results.conflicts}"
         self.stdout.write(self.style.ERROR(conflicts) if results.conflicts else conflicts)
         self.stdout.write(f"  {'Failed:':<20} {len(results.failures)}")
