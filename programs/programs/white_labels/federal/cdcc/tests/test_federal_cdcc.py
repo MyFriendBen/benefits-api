@@ -6,6 +6,7 @@ alone: `add_member` derives the birth month against the same reference date the 
 reads.
 """
 
+from datetime import date
 from typing import Optional
 from unittest.mock import patch
 
@@ -14,7 +15,7 @@ from programs.programs.testing_fixtures.custom_calculator import CustomCalculato
 from programs.programs.white_labels.federal.cdcc.calculator import FederalCdcc
 from screener.models import HouseholdMember, Screen
 
-TAX_YEAR = 2026
+TAX_YEAR = 2025
 
 
 class FederalCdccTestCase(CustomCalculatorTestCase):
@@ -97,7 +98,7 @@ class TestRegistration(FederalCdccTestCase):
             member.save(update_fields=["age", "birth_year_month"])
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_110)
+        self.assert_eligible(self.calculate(screen), 660)
 
     def test_a_household_with_no_head_is_ineligible(self):
         screen = self.make_screen(household_size=1)
@@ -114,7 +115,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_110)
+        self.assert_eligible(self.calculate(screen), 660)
 
     def test_scenario_02_child_age_12_with_care_costs_below_the_dollar_limit(self):
         screen = self.make_screen(household_size=2)
@@ -122,7 +123,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 12)
         self.care(head, 200)
 
-        self.assert_eligible(self.calculate(screen), 888)
+        self.assert_eligible(self.calculate(screen), 528)
 
     def test_scenario_03_child_age_13_without_a_disability(self):
         screen = self.make_screen(household_size=2)
@@ -138,7 +139,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 15, disabled=True)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_170)
+        self.assert_eligible(self.calculate(screen), 720)
 
     def test_scenario_05_disabled_spouse_as_the_qualifying_individual(self):
         screen = self.make_screen(household_size=2)
@@ -146,11 +147,11 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "spouse", 38, income={"wages": 12_000}, long_term_disability=True)
         self.care(head, 250, "dependentCare")
 
-        self.assert_eligible(self.calculate(screen), 1_050)
+        self.assert_eligible(self.calculate(screen), 600)
 
     def test_scenario_06_spouse_without_a_disability_and_no_child(self):
         screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 40, income={"wages": 30_000})
+        head = self.member(screen, "headOfHousehold", 40, income={"wages": 40_000})
         self.member(screen, "spouse", 38, income={"wages": 12_000})
         self.care(head, 250, "dependentCare")
 
@@ -170,7 +171,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "parent", 70, visually_impaired=True)
         self.care(head, 250, "dependentCare")
 
-        self.assert_eligible(self.calculate(screen), 1_110)
+        self.assert_eligible(self.calculate(screen), 660)
 
     def test_scenario_09_no_care_expenses(self):
         screen = self.make_screen(household_size=2)
@@ -201,7 +202,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_110)
+        self.assert_eligible(self.calculate(screen), 660)
 
     def test_scenario_13_spouse_is_a_full_time_student_with_no_earnings(self):
         screen = self.make_screen(household_size=3)
@@ -210,7 +211,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_050)
+        self.assert_eligible(self.calculate(screen), 600)
 
     def test_scenario_14_spouse_earns_less_than_the_dollar_limit(self):
         screen = self.make_screen(household_size=3)
@@ -219,7 +220,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 700)
+        self.assert_eligible(self.calculate(screen), 400)
 
     def test_scenario_15_two_qualifying_children(self):
         screen = self.make_screen(household_size=3)
@@ -228,11 +229,11 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 7)
         self.care(head, 500)
 
-        self.assert_eligible(self.calculate(screen), 2_100)
+        self.assert_eligible(self.calculate(screen), 1_200)
 
     def test_scenario_16_income_below_the_standard_deduction(self):
         screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 24_000})
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 23_000})
         self.member(screen, "child", 5)
         self.care(head, 300)
 
@@ -244,25 +245,33 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_140)
+        self.assert_eligible(self.calculate(screen), 690)
 
-    def test_scenario_18_income_at_75_000(self):
+    def test_scenario_18_income_at_37_000(self):
         screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 75_000})
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 37_000})
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_050)
+        self.assert_eligible(self.calculate(screen), 720)
 
-    def test_scenario_19_income_at_75_001(self):
+    def test_scenario_19_income_at_43_000(self):
         screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 75_001})
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 43_000})
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_020)
+        self.assert_eligible(self.calculate(screen), 630)
 
-    def test_scenario_20_income_at_110_000(self):
+    def test_scenario_20_income_at_43_001(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 43_001})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 600)
+
+    def test_scenario_21_income_at_110_000(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 110_000})
         self.member(screen, "child", 5)
@@ -270,41 +279,31 @@ class TestScenarios(FederalCdccTestCase):
 
         self.assert_eligible(self.calculate(screen), 600)
 
-    def test_scenario_21_joint_income_at_100_000(self):
-        screen = self.make_screen(household_size=3)
-        head = self.member(screen, "headOfHousehold", 35, income={"wages": 60_000})
-        self.member(screen, "spouse", 34, income={"wages": 40_000})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 1_050)
-
-    def test_scenario_22_joint_income_at_150_001(self):
-        screen = self.make_screen(household_size=3)
-        head = self.member(screen, "headOfHousehold", 38, income={"wages": 90_000})
-        self.member(screen, "spouse", 37, income={"wages": 60_001})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 1_020)
-
-    def test_scenario_23_joint_income_at_206_001(self):
-        screen = self.make_screen(household_size=3)
-        head = self.member(screen, "headOfHousehold", 45, income={"wages": 120_000})
-        self.member(screen, "spouse", 44, income={"wages": 86_001})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 600)
-
-    def test_scenario_24_joint_income_at_40_000(self):
+    def test_scenario_22_joint_income_at_40_000(self):
         screen = self.make_screen(household_size=3)
         head = self.member(screen, "headOfHousehold", 38, income={"wages": 25_000})
         self.member(screen, "spouse", 36, income={"wages": 15_000})
         self.member(screen, "child", 5)
         self.care(head, 100)
 
-        self.assert_eligible(self.calculate(screen), 444)
+        self.assert_eligible(self.calculate(screen), 264)
+
+    def test_scenario_23_joint_income_at_100_000(self):
+        screen = self.make_screen(household_size=3)
+        head = self.member(screen, "headOfHousehold", 35, income={"wages": 60_000})
+        self.member(screen, "spouse", 34, income={"wages": 40_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 600)
+
+    def test_scenario_24_income_at_75_000(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 75_000})
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 600)
 
     def test_scenario_25_spouse_is_a_part_time_student_with_no_earnings(self):
         screen = self.make_screen(household_size=3)
@@ -321,7 +320,7 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "spouse", 38, long_term_disability=True)
         self.care(head, 250, "dependentCare")
 
-        self.assert_eligible(self.calculate(screen), 1_050)
+        self.assert_eligible(self.calculate(screen), 600)
 
     def test_scenario_27_single_filer_whose_low_wages_cap_the_credit(self):
         screen = self.make_screen(household_size=2)
@@ -329,76 +328,36 @@ class TestScenarios(FederalCdccTestCase):
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 900)
+        self.assert_eligible(self.calculate(screen), 525)
 
     def test_scenario_28_three_qualifying_children(self):
         screen = self.make_screen(household_size=4)
         head = self.member(screen, "headOfHousehold", 36, income={"wages": 60_000})
-        for age in (3, 6, 9):
-            self.member(screen, "child", age)
+        self.member(screen, "child", 3)
+        self.member(screen, "child", 6)
+        self.member(screen, "child", 9)
         self.care(head, 800)
 
-        self.assert_eligible(self.calculate(screen), 2_100)
+        self.assert_eligible(self.calculate(screen), 1_200)
 
-    def test_scenario_29_income_at_37_000(self):
-        screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 37_000})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 1_170)
-
-    def test_scenario_30_income_at_43_000(self):
-        screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 43_000})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 1_080)
-
-    def test_scenario_31_income_at_43_001(self):
-        screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 43_001})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 1_050)
-
-    def test_scenario_32_income_at_103_000(self):
-        screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 103_000})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 630)
-
-    def test_scenario_33_joint_income_at_156_000(self):
-        screen = self.make_screen(household_size=3)
-        head = self.member(screen, "headOfHousehold", 38, income={"wages": 96_000})
-        self.member(screen, "spouse", 37, income={"wages": 60_000})
-        self.member(screen, "child", 5)
-        self.care(head, 300)
-
-        self.assert_eligible(self.calculate(screen), 990)
-
-    def test_scenario_34_child_support_left_out_of_income(self):
+    def test_scenario_29_child_support_left_out_of_income(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 38_000, "childSupport": 12_000})
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_140)
+        self.assert_eligible(self.calculate(screen), 690)
 
-    def test_scenario_35_head_of_household_is_a_full_time_student_with_no_earnings(self):
+    def test_scenario_30_head_of_household_is_a_full_time_student_with_no_earnings(self):
         screen = self.make_screen(household_size=3)
         head = self.member(screen, "headOfHousehold", 30, student=True, student_full_time=True)
         self.member(screen, "spouse", 32, income={"wages": 50_000})
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 1_050)
+        self.assert_eligible(self.calculate(screen), 600)
 
-    def test_scenario_36_both_spouses_are_full_time_students_with_no_earnings(self):
+    def test_scenario_31_both_spouses_are_full_time_students_with_no_earnings(self):
         screen = self.make_screen(household_size=3)
         head = self.member(
             screen, "headOfHousehold", 30, income={"pension": 50_000}, student=True, student_full_time=True
@@ -409,42 +368,58 @@ class TestScenarios(FederalCdccTestCase):
 
         self.assert_ineligible(self.calculate(screen))
 
-    def test_scenario_37_tax_owed_below_the_credit(self):
+    def test_scenario_32_tax_owed_below_the_credit(self):
         screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 30_000})
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 29_985})
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 588)
+        self.assert_eligible(self.calculate(screen), 638)
 
-    def test_scenario_38_head_of_household_age_66(self):
+    def test_scenario_33_head_of_household_age_66(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 66, income={"wages": 33_000})
         self.member(screen, "grandChild", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 683)
+        self.assert_eligible(self.calculate(screen), 738)
 
-    def test_scenario_39_visually_impaired_head_of_household(self):
+    def test_scenario_34_visually_impaired_head_of_household(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 33_000}, visually_impaired=True)
         self.member(screen, "child", 5)
         self.care(head, 300)
 
-        self.assert_eligible(self.calculate(screen), 683)
+        self.assert_eligible(self.calculate(screen), 738)
 
-    def test_scenario_40_taxable_income_of_1(self):
+    def test_scenario_35_taxable_income_of_1(self):
         screen = self.make_screen(household_size=2)
-        head = self.member(screen, "headOfHousehold", 30, income={"wages": 24_151})
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 23_626})
         self.member(screen, "child", 5)
         self.care(head, 300)
 
         self.assert_ineligible(self.calculate(screen))
 
-    def test_scenario_41_disabled_head_of_household_as_the_qualifying_individual(self):
+    def test_scenario_36_disabled_head_of_household_as_the_qualifying_individual(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 40, long_term_disability=True)
         self.member(screen, "spouse", 38, income={"wages": 50_000})
         self.care(head, 250, "dependentCare")
 
-        self.assert_eligible(self.calculate(screen), 1_050)
+        self.assert_eligible(self.calculate(screen), 600)
+
+    def test_scenario_37_child_born_after_the_tax_year(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
+        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 1, 1))
+        self.care(head, 300)
+
+        self.assert_ineligible(self.calculate(screen))
+
+    def test_scenario_38_child_born_in_december_of_the_tax_year(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
+        self.add_member(screen, "child", age=None, birth_year_month=date(2025, 12, 1))
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 660)

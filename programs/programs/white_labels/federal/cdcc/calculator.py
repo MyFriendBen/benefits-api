@@ -43,12 +43,25 @@ class CdccYear:
     expense_limit: tuple[int, int]
     # Monthly earned income a student or disabled spouse is deemed to have, same indexing.
     deemed_spouse_monthly_income: tuple[int, int]
-    # Spec section 7 `tax_2026` and its terms.
+    # Spec section 7, the tax owed and its terms.
     tax: FederalTaxYear
 
 
 # Percentage schedule, dollar limits and tax, spec section 7; deemed spouse income, spec section 4 `earned_income`.
 CDCC_YEARS: dict[int, CdccYear] = {
+    # One reduction only: 35% down to 20% above $43,000, for every filer.
+    2025: CdccYear(
+        top_rate=35,
+        middle_rate=20,
+        floor_rate=20,
+        top_rate_limit=15_000,
+        first_step=2_000,
+        middle_rate_limit=(43_000, 43_000),
+        second_step=(2_000, 2_000),
+        expense_limit=(3_000, 6_000),
+        deemed_spouse_monthly_income=(250, 500),
+        tax=FEDERAL_TAX_YEARS[2025],
+    ),
     2026: CdccYear(
         top_rate=50,
         middle_rate=35,
@@ -209,6 +222,10 @@ class FederalCdcc(ProgramCalculator):
     def _is_qualifying_individual(self, member: HouseholdMember) -> bool:
         """Spec section 4 `qualifying_individual`. On a joint return either filer is the
         other's spouse, whichever the screener recorded as head."""
+        # Born after the tax year: not part of that year's household.
+        if member.birth_year_month is not None and member.birth_year_month.year > self.tax_year:
+            return False
+
         if member.relationship == "spouse" or (member.relationship == "headOfHousehold" and self._is_joint):
             return bool(member.has_disability())
 
