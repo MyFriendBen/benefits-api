@@ -1377,6 +1377,29 @@ class NavigatorsTests(TestCase):
 
         self.assertEqual([n["external_name"] for n in self.navigators()], ["statewide"])
 
+    def test_federal_program_navigators_are_those_of_the_screens_state(self):
+        """On a federal program, each state sees its own navigators and the federal ones, as
+        the page does: another white label in the same state counts, another state doesn't."""
+        federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        WhiteLabel.objects.create(name="Test State Energy", code="test_energy", state_code="TS")
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        seed_program(federal, "federal_snap_test")
+        self.add_snapshot_row("federal_snap_test")
+        program = Program.objects.get(name_abbreviated="federal_snap_test")
+        for code, external_name in (
+            ("federal", "national"),
+            ("test", "own"),
+            ("test_energy", "same_state"),
+            ("other", "other_state"),
+        ):
+            navigator = seed_navigator(program, external_name, name=external_name)
+            navigator.white_label = WhiteLabel.objects.get(code=code)
+            navigator.save()
+
+        self.assertEqual(
+            sorted(n["external_name"] for n in self.navigators("federal_snap_test")), ["national", "own", "same_state"]
+        )
+
     def test_county_restricted_navigator_is_excluded_when_the_screen_has_no_county(self):
         self.screen.county = None
         self.screen.save()

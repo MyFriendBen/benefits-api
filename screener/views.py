@@ -15,6 +15,7 @@ from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
 from screener.models import (
     Screen,
+    WhiteLabel,
     HouseholdMember,
     IncomeStream,
     Expense,
@@ -363,18 +364,21 @@ def update_navigators(
     eligible_program_data: list,
     program_eligibility: dict,
     data: list,
+    screen_white_label: WhiteLabel,
     screen_county: Optional[str],
     referrer,
 ) -> None:
     """Attach each eligible program's navigators to its results entry, in place.
 
     The selection itself lives in `screener.navigators` so Benji's context builder can
-    run the same three filters against the same inputs — see that module for why the
+    run the same four filters against the same inputs — see that module for why the
     two consumers must not drift.
     """
     primary_navs = list(referrer.primary_navigators.all()) if referrer is not None else []
     for program, idx in eligible_program_data:
-        navigators = navigators_for_program(program, program_eligibility, screen_county, primary_navs)
+        navigators = navigators_for_program(
+            program, program_eligibility, screen_white_label, screen_county, primary_navs
+        )
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
@@ -456,6 +460,7 @@ def eligibility_results(
             *translations_prefetch_name("", Program.objects.translated_fields),
             "program_navigators",
             "program_navigators__navigator",
+            "program_navigators__navigator__white_label",
             "program_navigators__navigator__counties",
             "program_navigators__navigator__languages",
             "program_navigators__navigator__eligibility_programs",
@@ -752,7 +757,7 @@ def eligibility_results(
         code: eligibility for code, eligibility in program_eligibility.items() if code not in withheld_programs
     }
 
-    update_navigators(eligible_program_data, displayed_eligibility, data, screen.county, referrer)
+    update_navigators(eligible_program_data, displayed_eligibility, data, screen.white_label, screen.county, referrer)
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]

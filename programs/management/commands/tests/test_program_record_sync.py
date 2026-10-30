@@ -645,6 +645,67 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertEqual(self.english(program.estimated_decision_time), "")
 
 
+FEDERAL_PROGRAM = "federal_test_program"
+
+
+class FederalNavigatorOwnerTestCase(RecordSyncBase):
+    """A federal record's navigators must belong to `federal`: owned ones are moved, references refused."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        calculators = patch(
+            "programs.management.commands.import_program_records.all_calculator_classes",
+            return_value={PROGRAM: MagicMock(), OTHER: MagicMock(), FEDERAL_PROGRAM: MagicMock()},
+        )
+        calculators.start()
+        self.addCleanup(calculators.stop)
+        self.federal_record = make_record(FEDERAL_PROGRAM)
+        self.federal_record["white_label"] = {"code": "federal"}
+        self.state_nav = Navigator.objects.new_navigator(white_label="co", name="shared_hotline")
+        self.state_nav.external_name = "shared_hotline"
+        self.state_nav.save()
+
+    def federal_program(self) -> Program:
+        return Program.objects.get(white_label__code="federal", name_abbreviated=FEDERAL_PROGRAM)
+
+    def test_a_state_navigator_the_federal_record_owns_moves_to_federal(self) -> None:
+        self.federal_record["navigators"][0]["external_name"] = "shared_hotline"
+        self.write(self.federal_record, program=FEDERAL_PROGRAM)
+
+        output = self.run_import()
+
+        self.assertFalse(self.records_failed)
+        self.state_nav.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "federal")
+        self.assertTrue(
+            ProgramNavigator.objects.filter(program=self.federal_program(), navigator=self.state_nav).exists()
+        )
+        self.assertIn("navigator:shared_hotline.white_label", output)
+
+    def test_a_state_navigator_the_federal_record_only_references_is_refused(self) -> None:
+        self.federal_record["navigators"].append({"external_name": "shared_hotline"})
+        self.write(self.federal_record, program=FEDERAL_PROGRAM)
+
+        output = self.run_import()
+
+        self.assertTrue(self.records_failed)
+        self.assertIn("navigator 'shared_hotline' belongs to the 'co' white label", output)
+        self.state_nav.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "co")
+
+    def test_a_state_record_owning_another_white_labels_navigator_leaves_it_there(self) -> None:
+        WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
+        wa_nav = Navigator.objects.new_navigator(white_label="wa", name=f"{PROGRAM}_nav_a")
+        wa_nav.external_name = f"{PROGRAM}_nav_a"
+        wa_nav.save()
+
+        self.import_record()
+
+        self.assertFalse(self.records_failed)
+        wa_nav.refresh_from_db()
+        self.assertEqual(wa_nav.white_label.code, "wa")
+
+
 class RunTestCase(RecordSyncBase):
     """What a run reads, what it waits for, and how it fails."""
 
