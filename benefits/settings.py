@@ -336,6 +336,9 @@ django_heroku.settings(locals())
 # Cache Configuration
 # Uses Redis in production (REDIS_URL is set automatically by the Heroku Redis add-on).
 # Falls back to in-memory cache for local development when REDIS_URL is not set.
+# If you want `manage.py runserver` to auto-start a local Redis that mirrors
+# Heroku's config (see screener/management/commands/runserver.py), set
+# REDIS_URL to a loopback address (e.g. redis://127.0.0.1:6379/0) in your .env.
 REDIS_URL = config("REDIS_URL", default=None)
 
 if REDIS_URL:
