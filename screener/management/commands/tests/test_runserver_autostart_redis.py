@@ -33,6 +33,42 @@ def test_no_redis_url(monkeypatch, capsys):
     cmd._maybe_start_redis({})
 
 
+def test_tls_scheme_prevents_start(monkeypatch, capsys):
+    Command = _import_command()
+    settings = DummySettings(redis_url="rediss://localhost:6379", debug=True)
+    monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
+
+    def fail_create_connection(addr, timeout=1):
+        raise AssertionError("should bail out before checking the port at all")
+
+    monkeypatch.setattr("socket.create_connection", fail_create_connection)
+
+    cmd = Command()
+    cmd._maybe_start_redis({})
+
+    captured = capsys.readouterr()
+    assert "rediss" in captured.out
+    assert "skipping auto-start" in captured.out
+
+
+def test_credentials_in_url_prevent_start(monkeypatch, capsys):
+    Command = _import_command()
+    settings = DummySettings(redis_url="redis://user:pass@localhost:6379", debug=True)
+    monkeypatch.setattr("screener.management.commands.runserver.settings", settings)
+
+    def fail_create_connection(addr, timeout=1):
+        raise AssertionError("should bail out before checking the port at all")
+
+    monkeypatch.setattr("socket.create_connection", fail_create_connection)
+
+    cmd = Command()
+    cmd._maybe_start_redis({})
+
+    captured = capsys.readouterr()
+    assert "credentials" in captured.out
+    assert "skipping auto-start" in captured.out
+
+
 def test_debug_false_prevents_start(monkeypatch):
     Command = _import_command()
     settings = DummySettings(redis_url="redis://localhost:6379", debug=False)

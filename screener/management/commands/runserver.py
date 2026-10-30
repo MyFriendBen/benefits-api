@@ -76,6 +76,26 @@ class Command(StaticFilesRunserver):
         if host not in ("127.0.0.1", "localhost", "::1"):
             return
 
+        # The server this command spawns is a plain, unauthenticated
+        # redis-server. A rediss:// scheme means the app's cache client will
+        # attempt a TLS handshake our plaintext server can't answer, and
+        # embedded credentials mean it will send AUTH/HELLO with a
+        # username/password our server never configured -- both would make
+        # every cache call fail even though "a redis-server is running".
+        if parsed.scheme == "rediss":
+            self.stdout.write(
+                "REDIS_URL uses TLS (rediss://); skipping auto-start since the local "
+                "redis-server this command spawns doesn't speak TLS."
+            )
+            return
+
+        if parsed.username or parsed.password:
+            self.stdout.write(
+                "REDIS_URL includes credentials; skipping auto-start since the local "
+                "redis-server this command spawns has no auth configured."
+            )
+            return
+
         # If anything is already listening on the configured port, leave it alone
         try:
             with socket.create_connection((host, port), timeout=1):
