@@ -102,7 +102,7 @@ class FederalCdcc(ProgramCalculator):
     Deviations: filers' income less the untaxed types stands in for AGI; a disability flag
     for incapable of self-care; deemed income runs all twelve months, for one filer; tax owed
     is the Tax Table below $100,000 and the brackets above, after the standard deduction,
-    filing jointly with a ``spouse`` member and as head of household otherwise; ages are today's.
+    filing jointly with a ``spouse`` member and as head of household otherwise; ages are at the end of the tax year.
     Residency, custody, provider, schooling and employer-benefit rules are not evaluated.
     Missing disability or student answers read as no, so age-only screens still see the credit.
     """
@@ -196,15 +196,23 @@ class FederalCdcc(ProgramCalculator):
 
     @cached_property
     def _income_tax(self) -> Decimal:
-        """Spec section 7 `tax_2026`."""
+        """Spec section 7, the tax owed for the tax year."""
         status = JOINT if self._is_joint else HEAD_OF_HOUSEHOLD
         age_or_blind_count = sum(
             int(self._is_senior(filer)) + int(bool(filer.visually_impaired)) for filer in self._filers
         )
         return tax_owed(self._agi, status, age_or_blind_count, self._params.tax)
 
+    def _age_at_year_end(self, member: HouseholdMember) -> Optional[int]:
+        """Age at the tax year's end; a member with an age but no birth month is taken at the age
+        reported, which reads a year high for anyone with a birthday since year end."""
+        if member.birth_year_month is not None:
+            return member.age_at_end_of_year(self.tax_year)
+
+        return member.calc_age()
+
     def _is_senior(self, filer: HouseholdMember) -> bool:
-        age = filer.calc_age()
+        age = self._age_at_year_end(filer)
         return age is not None and age >= self._params.tax.senior_age
 
     @cached_property
@@ -235,7 +243,7 @@ class FederalCdcc(ProgramCalculator):
         if member.has_disability():
             return True
 
-        age = member.calc_age()
+        age = self._age_at_year_end(member)
         return age is not None and age < self.qualifying_child_age_limit
 
     @cached_property

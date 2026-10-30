@@ -138,7 +138,7 @@ class TestScenarios(FederalCdccTestCase):
     def test_scenario_02_child_age_12_with_care_costs_below_the_dollar_limit(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
-        self.member(screen, "child", 12)
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR - 12, 12, 1))
         self.care(head, 200)
 
         self.assert_eligible(self.calculate(screen), 528)
@@ -146,7 +146,7 @@ class TestScenarios(FederalCdccTestCase):
     def test_scenario_03_child_age_13_without_a_disability(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
-        self.member(screen, "child", 13)
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR - 13, 12, 1))
         self.care(head, 300)
 
         self.assert_fails(screen, "qualifying_individual")
@@ -429,7 +429,7 @@ class TestScenarios(FederalCdccTestCase):
     def test_scenario_37_child_born_after_the_tax_year(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
-        self.add_member(screen, "child", age=None, birth_year_month=date(2026, 1, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR + 1, 1, 1))
         self.care(head, 300)
 
         self.assert_fails(screen, "qualifying_individual")
@@ -437,7 +437,25 @@ class TestScenarios(FederalCdccTestCase):
     def test_scenario_38_child_born_in_december_of_the_tax_year(self):
         screen = self.make_screen(household_size=2)
         head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
-        self.add_member(screen, "child", age=None, birth_year_month=date(2025, 12, 1))
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR, 12, 1))
         self.care(head, 300)
 
         self.assert_eligible(self.calculate(screen), 660)
+
+    def test_scenario_39_child_who_turned_13_after_the_tax_year(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR - 12, 1, 1))
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 660)
+
+    def test_scenario_40_filer_who_turned_65_after_the_tax_year(self):
+        screen = self.make_screen(household_size=2)
+        head = self.member(
+            screen, "headOfHousehold", None, income={"wages": 33_000}, birth_year_month=date(TAX_YEAR - 64, 1, 1)
+        )
+        self.member(screen, "child", 5)
+        self.care(head, 300)
+
+        self.assert_eligible(self.calculate(screen), 780)
