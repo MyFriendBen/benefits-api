@@ -339,9 +339,9 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     losing the bearer token a test had just written and authenticating against live
     PolicyEngine ("client id or secret not configured" in CI).
 
-    Workers map to databases 1..15, leaving database 0 to non-xdist runs and to
-    ``benefits/tests/test_redis_backend.py``, which pins REDIS_URL directly and flushes
-    whatever it points at. More workers than databases wrap around and share, so
+    Workers map to the databases above the one REDIS_URL names, leaving that one to non-xdist
+    runs and to ``benefits/tests/test_redis_backend.py``, which pins REDIS_URL directly. More
+    workers than databases wrap around and share, so
     ``pytest_configure`` caps the worker count instead of letting that happen.
 
     Rewriting ``settings.CACHES`` is not enough on its own: the connection handler caches
@@ -360,9 +360,9 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     location = settings.CACHES["default"]["LOCATION"]
 
     # Offset from the database REDIS_URL already names, not from 0. That database is the
-    # one a serial run uses and the one benefits/tests/test_redis_backend.py pins and
-    # FLUSHDBs, so a worker landing on it recreates the cross-process flush this function
-    # exists to prevent -- and the repo's own .env points at /1, not /0.
+    # one a serial run uses and the one benefits/tests/test_redis_backend.py pins, so a
+    # worker landing on it recreates the cross-process flush this function exists to
+    # prevent -- and the repo's own .env points at /1, not /0.
     index = int(worker_id.removeprefix("gw"))
     db = _redis_database(location) + 1 + index
     settings.CACHES["default"]["LOCATION"] = redis_url_for_database(location, db)
