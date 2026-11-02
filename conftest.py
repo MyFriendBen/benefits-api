@@ -50,8 +50,8 @@ HUD_TEST_PATH_FRAGMENT = "hud_income_limits"
 
 # Hosts VCR passes straight through, never recording. PolicyEngine's OAuth exchange lives
 # here: its response body is a real bearer token, so it must not be written to a cassette.
-# Recording fetches a token live; replay pre-seeds a placeholder instead (see
-# programs/programs/testing_fixtures/pe_integration.py).
+# Recording fetches a token live; replay patches the fetch instead (see
+# programs/programs/testing_fixtures/pe_integration.py::stub_pe_token_for_replay).
 VCR_IGNORE_HOSTS = ["policyengine.uk.auth0.com"]
 
 # Recording PolicyEngine cassettes is an explicit opt-in rather than a VCR_MODE, so the
@@ -333,7 +333,7 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     ``clear_cache`` flushes the cache before every test, and on django_redis ``clear()``
     issues FLUSHDB -- the whole database, not just this run's prefix. Workers sharing a
     database therefore delete each other's entries mid-test: the symptom is a worker
-    losing the bearer token ``seed_pe_token`` just wrote and authenticating against live
+    losing the bearer token a test had just written and authenticating against live
     PolicyEngine ("client id or secret not configured" in CI).
 
     Workers map to databases 1..15, leaving database 0 to non-xdist runs and to

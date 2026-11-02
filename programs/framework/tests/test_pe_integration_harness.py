@@ -1,7 +1,7 @@
 """Harness test for the PolicyEngine integration-test helpers.
 
 This validates the record/replay machinery itself — explicit primary keys, the pinned
-version, the pre-seeded token, and the body matcher in conftest — using one household as its
+version, the replay token stub, and the body matcher in conftest — using one household as its
 subject. A program's own PolicyEngine tests live next to the program
 (``programs/programs/{state}/{program}/tests/``), not here.
 
@@ -13,11 +13,19 @@ body and so breaks this test with a body mismatch — that is a signal about the
 change, not about the harness. Re-record after reviewing the new body.
 """
 
-import pytest
-from django.test import SimpleTestCase, TestCase
+import unittest
+from unittest import mock
 
+import pytest
+from django.core.cache import cache
+from django.test import SimpleTestCase, TestCase, override_settings
+
+from benefits.tests.cache_override import LOCAL_CACHE
+from integrations.clients.policyengine import engines
+from integrations.clients.policyengine.engines import _PE_TOKEN_CACHE_KEY
 from programs.programs.testing_fixtures.pe_integration import (
     PE_TEST_VERSION,
+    TEST_PE_TOKEN,
     PeIntegrationTestCase,
     check_pe_version_pin,
     check_program_vintage,
@@ -27,6 +35,7 @@ from programs.programs.testing_fixtures.pe_integration import (
     make_program,
     make_screen,
     screener_value,
+    stub_pe_token_for_replay,
 )
 from programs.programs.cross_white_label.head_start.tx import TxHeadStart
 
@@ -107,3 +116,61 @@ class TestCheckProgramVintage(TestCase):
 
     def test_a_program_with_no_recorded_vintage_is_not_checked(self) -> None:
         check_program_vintage(make_program("mo", "not_in_vintage", year="2025", state_code="MO"))
+
+
+# A per-process cache, as in test_token_cache_survives_test_flush.py: the token key is the one a
+# developer's real token lives under, and clear_cache carries it across tests, so a token written
+# to the ambient Redis here would replace theirs and could later be sent live by a recording run.
+@override_settings(CACHES=LOCAL_CACHE)
+class TestStubPeTokenForReplay(SimpleTestCase):
+    """Replay never authenticates and never writes the token cache; recording uses a real token."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.real_fetch = engines._fetch_pe_bearer_token
+        cache.delete(_PE_TOKEN_CACHE_KEY)
+
+    def _stub(self, recording: bool, test: unittest.TestCase) -> None:
+        with mock.patch("programs.programs.testing_fixtures.pe_integration._can_record", return_value=recording):
+            stub_pe_token_for_replay(test)
+
+    def test_replay_gets_the_placeholder_without_caching_it(self) -> None:
+        self._stub(recording=False, test=self)
+
+        self.assertEqual(engines._fetch_pe_bearer_token(), TEST_PE_TOKEN)
+        self.assertIsNone(cache.get(_PE_TOKEN_CACHE_KEY))
+
+    def test_replay_leaves_a_cached_real_token_alone(self) -> None:
+        cache.set(_PE_TOKEN_CACHE_KEY, "real-token", timeout=600)
+
+        self._stub(recording=False, test=self)
+
+        self.assertEqual(engines._fetch_pe_bearer_token(), TEST_PE_TOKEN)
+        self.assertEqual(cache.get(_PE_TOKEN_CACHE_KEY), "real-token")
+
+    def test_the_replay_stub_ends_with_the_test(self) -> None:
+        test = unittest.TestCase()
+        self._stub(recording=False, test=test)
+
+        test.doCleanups()
+
+        self.assertIs(engines._fetch_pe_bearer_token, self.real_fetch)
+
+    def test_recording_fetches_for_real(self) -> None:
+        self._stub(recording=True, test=self)
+
+        self.assertIs(engines._fetch_pe_bearer_token, self.real_fetch)
+
+    def test_recording_drops_a_leftover_placeholder(self) -> None:
+        cache.set(_PE_TOKEN_CACHE_KEY, TEST_PE_TOKEN, timeout=None)
+
+        self._stub(recording=True, test=self)
+
+        self.assertIsNone(cache.get(_PE_TOKEN_CACHE_KEY))
+
+    def test_recording_keeps_a_cached_real_token(self) -> None:
+        cache.set(_PE_TOKEN_CACHE_KEY, "real-token", timeout=600)
+
+        self._stub(recording=True, test=self)
+
+        self.assertEqual(cache.get(_PE_TOKEN_CACHE_KEY), "real-token")

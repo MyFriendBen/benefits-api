@@ -180,7 +180,7 @@ VCR_MODE=none venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -q
 git add programs/programs/white_labels/mo/pts/tests/
 ```
 
-`PE_RECORD=1` is what allows the live auth0 token exchange. Without it every run seeds a placeholder token and touches no network, so an ordinary `pytest` never authenticates even on a machine with PolicyEngine credentials in `.env`.
+`PE_RECORD=1` is what allows the live auth0 token exchange. Without it the harness patches the token fetch to return a placeholder (`pe_integration.py::stub_pe_token_for_replay`), so an ordinary `pytest` never authenticates, even on a machine with PolicyEngine credentials in `.env`, and never overwrites a real token cached in Redis. The real token lasts ~30 days, one per pytest worker's Redis database; PolicyEngine limits how many are minted per month, so don't flush Redis needlessly.
 
 The pinned version must be one PolicyEngine currently serves — it rejects exact versions other than what `current`/`frontier` resolve to:
 

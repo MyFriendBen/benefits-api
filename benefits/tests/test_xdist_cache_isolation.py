@@ -3,8 +3,8 @@
 ``clear_cache`` empties the cache before every test, and on django_redis ``clear()``
 issues FLUSHDB -- the whole database, ignoring KEY_PREFIX. Workers sharing a database
 therefore delete each other's entries mid-test, which surfaced in CI as a worker losing
-the PolicyEngine bearer token ``seed_pe_token`` had just written and falling through to
-a live auth attempt.
+the PolicyEngine bearer token a test had just written and falling through to a live auth
+attempt.
 """
 
 import os
