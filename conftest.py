@@ -7,10 +7,13 @@ from cassettes using VCR's built-in filtering capabilities.
 
 VCR behavior controlled by VCR_MODE environment variable:
 - VCR_MODE=none (PRs and push to main): Replays only, never records, errors on any new HTTP request
-- VCR_MODE=once (local default): Replays existing interactions, ERRORS if cassette missing new HTTP
-  request. Downgraded to `none` inside an xdist worker unless PE_RECORD is set, so a parallel
-  run cannot record a missing cassette live (see vcr_record_mode)
+- VCR_MODE=once (local default): Replays existing interactions and errors on a request the cassette
+  doesn't hold, but records live when the cassette file is missing entirely. Downgraded to `none`
+  inside an xdist worker unless PE_RECORD is set, so a parallel run cannot record a missing
+  cassette live (see vcr_record_mode)
 - VCR_MODE=new_episodes: Replays existing interactions, records NEW HTTP requests not in cassette
+- PolicyEngine harness tests replay strictly (`none`) under any mode unless PE_RECORD is set with
+  credentials, so they never call the API without the opt-in (see cassette_record_mode)
 - VCR_MODE=all (manual only): Never replays, re-records ALL cassettes from scratch
 
 A run that may write a cassette is forced single-process (see pytest_configure): parallel
@@ -426,6 +429,42 @@ def _run_records_cassettes(mode: str) -> bool:
     return _recording_opted_in()
 
 
+# Marks the PolicyEngine harness's tests (PeIntegrationTestCase), whose live calls need the
+# PE_RECORD opt-in whatever VCR_MODE says. Registered in pytest.ini.
+PE_CASSETTE_MARKER = "pe_cassette"
+
+
+def pe_may_record(mode: str) -> bool:
+    """Whether a PolicyEngine harness test may send a request live, rather than only replay.
+
+    Recording PolicyEngine is opted into with ``PE_RECORD``, needs credentials to get a real
+    bearer token, and can't happen under ``none``. Anything short of all three would send a
+    placeholder token live, which can only 401 -- and a 401 makes ``PrivateApiSim`` evict the
+    real token cached in Redis.
+    """
+    if not _recording_opted_in() or mode == "none":
+        return False
+
+    return bool(config("POLICY_ENGINE_CLIENT_ID", default="")) and bool(
+        config("POLICY_ENGINE_CLIENT_SECRET", default="")
+    )
+
+
+def cassette_record_mode(mode: str, pe_test: bool) -> str:
+    """The record mode a test's cassette opens in.
+
+    VCR's ``once`` records when the cassette file is missing, and ``new_episodes`` records any
+    request that matches nothing, a changed PolicyEngine body included. Neither is a recording
+    opt-in for PolicyEngine, so a PolicyEngine test that may not record replays strictly: a
+    miss fails as "no match" instead of calling the API. Other integrations (HUD) keep the
+    mode as given; they record a missing cassette under ``once`` by design.
+    """
+    if pe_test and not pe_may_record(mode):
+        return "none"
+
+    return mode
+
+
 def pytest_configure(config):
     """Reject an unrecognized VCR_MODE before any test runs, and isolate per-worker state.
 
@@ -574,8 +613,10 @@ def auto_vcr(request, vcr_config):
     - Detects if a test is marked with @pytest.mark.integration
     - Automatically uses VCR to record/replay HTTP interactions
     - VCR_MODE=none (PRs and push to main): Read-only - replays only, never records, errors on new HTTP requests
-    - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP
-      request. Becomes `none` in a parallel worker unless PE_RECORD is set
+    - VCR_MODE=once (local default): replays existing cassettes and errors on a new HTTP request, but
+      records when the cassette file is missing. Becomes `none` in a parallel worker unless PE_RECORD is set
+    - PolicyEngine harness tests replay with `none` under any mode unless they may record
+      (see cassette_record_mode)
     - VCR_MODE=new_episodes: Flexible - replays existing, records new HTTP requests not yet in cassette
     - VCR_MODE=all (manual only): Fresh start - never replays, re-records all cassettes from scratch
 
@@ -601,9 +642,11 @@ def auto_vcr(request, vcr_config):
     # Possible values:
     #   - "new_episodes": Flexible - replays existing, records new HTTP requests
     #   - "all": Fresh start - never replays, re-records everything from scratch (manual only)
-    #   - "once" (default): Strict - replays existing, errors if cassette missing new HTTP request (local dev)
+    #   - "once" (default): replays existing, errors on a new HTTP request, records a missing cassette file
     #   - "none": Read-only - replays only, never records, errors on new HTTP requests (strict mode)
-    record_mode = vcr_record_mode()
+    record_mode = cassette_record_mode(
+        vcr_record_mode(), pe_test=request.node.get_closest_marker(PE_CASSETTE_MARKER) is not None
+    )
 
     # Log VCR configuration for visibility in CI
     logger.info(f"VCR mode: {record_mode} | Test: {request.node.name}")

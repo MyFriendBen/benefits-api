@@ -41,11 +41,10 @@ from typing import Optional
 from unittest.mock import patch
 
 import pytest
-from decouple import config
 from django.core.cache import cache
 from django.test import TestCase
 
-from conftest import PE_CAPTURE_DIR_ENV_VAR, vcr_record_mode
+from conftest import PE_CAPTURE_DIR_ENV_VAR, pe_may_record, vcr_record_mode
 from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
@@ -62,12 +61,6 @@ from programs.framework.pe_dependencies.payload import pe_input
 # Token the replay stub returns. Never sent anywhere real or cached: the recorded response
 # replays regardless of the token, and conftest redacts the Authorization header from cassettes.
 TEST_PE_TOKEN = "pe-integration-test-token"
-
-# Env var that opts a run in to recording. Recording is explicit rather than inferred from
-# VCR_MODE: the default mode ("once") only records when the cassette file is missing, so the
-# mode alone can't tell us whether this run needs a real token.
-PE_RECORD_ENV_VAR = "PE_RECORD"
-_TRUTHY = ("1", "true", "yes")
 
 # The PolicyEngine version every PeIntegrationTestCase records and replays at unless it
 # overrides ``pe_version``. Adopting a new version is a bump here plus a re-record of every
@@ -108,15 +101,11 @@ def _can_record() -> bool:
     matters because ``ignore_hosts`` lets the token exchange through to the network, so
     inferring "might record" from the presence of credentials made every local run of a
     fully-recorded suite fire a live auth call for no benefit.
+
+    The same rule decides whether the cassette may record at all (conftest's
+    ``cassette_record_mode``), so a run that gets the replay stub can't also reach the API.
     """
-    if os.getenv(PE_RECORD_ENV_VAR, "").lower() not in _TRUTHY:
-        return False
-
-    has_credentials = bool(config("POLICY_ENGINE_CLIENT_ID", default="")) and bool(
-        config("POLICY_ENGINE_CLIENT_SECRET", default="")
-    )
-
-    return has_credentials and vcr_record_mode() != "none"
+    return pe_may_record(vcr_record_mode())
 
 
 def _forces_live_recording() -> bool:
@@ -318,7 +307,7 @@ class PeIntegrationTestCase(TestCase):
     # decorate: a class that forgot the marker would get no cassette at all, call PolicyEngine
     # live on every run, pass locally for anyone with credentials, and fail in CI with a 401
     # that looks like a program bug. Subclasses may still decorate themselves — marks compose.
-    pytestmark = pytest.mark.integration
+    pytestmark = [pytest.mark.integration, pytest.mark.pe_cassette]
 
     # Exact MAJOR.MINOR.PATCH the cassettes in this module were recorded against.
     pe_version: str = PE_TEST_VERSION

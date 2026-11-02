@@ -21,6 +21,7 @@ from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from benefits.tests.cache_override import LOCAL_CACHE
+from conftest import PE_CASSETTE_MARKER, cassette_record_mode
 from integrations.clients.policyengine import engines
 from integrations.clients.policyengine.engines import _PE_TOKEN_CACHE_KEY
 from programs.programs.testing_fixtures.pe_integration import (
@@ -174,3 +175,38 @@ class TestStubPeTokenForReplay(SimpleTestCase):
         self._stub(recording=True, test=self)
 
         self.assertEqual(cache.get(_PE_TOKEN_CACHE_KEY), "real-token")
+
+
+class TestCassetteRecordMode(SimpleTestCase):
+    """A PolicyEngine harness test calls the API only when it may record; a miss otherwise fails."""
+
+    def _mode(self, mode: str, pe_test: bool, pe_record: bool, credentials: bool) -> str:
+        env = {"PE_RECORD": "1" if pe_record else ""}
+        value = "set" if credentials else ""
+        with mock.patch.dict("os.environ", env), mock.patch("conftest.config", return_value=value):
+            return cassette_record_mode(mode, pe_test=pe_test)
+
+    def test_the_harness_marks_its_tests(self) -> None:
+        names = [mark.name for mark in PeIntegrationTestCase.pytestmark]
+
+        self.assertIn(PE_CASSETTE_MARKER, names)
+
+    def test_without_pe_record_a_missing_cassette_does_not_record(self) -> None:
+        self.assertEqual(self._mode("once", pe_test=True, pe_record=False, credentials=True), "none")
+
+    def test_without_pe_record_a_changed_body_is_not_recorded_as_a_new_episode(self) -> None:
+        self.assertEqual(self._mode("new_episodes", pe_test=True, pe_record=False, credentials=True), "none")
+
+    def test_pe_record_without_credentials_does_not_record(self) -> None:
+        self.assertEqual(self._mode("once", pe_test=True, pe_record=True, credentials=False), "none")
+
+    def test_pe_record_with_credentials_keeps_the_mode(self) -> None:
+        self.assertEqual(self._mode("once", pe_test=True, pe_record=True, credentials=True), "once")
+        self.assertEqual(self._mode("new_episodes", pe_test=True, pe_record=True, credentials=True), "new_episodes")
+
+    def test_none_stays_none(self) -> None:
+        self.assertEqual(self._mode("none", pe_test=True, pe_record=True, credentials=True), "none")
+
+    def test_other_integrations_keep_the_mode(self) -> None:
+        self.assertEqual(self._mode("once", pe_test=False, pe_record=False, credentials=False), "once")
+        self.assertEqual(self._mode("new_episodes", pe_test=False, pe_record=False, credentials=False), "new_episodes")
