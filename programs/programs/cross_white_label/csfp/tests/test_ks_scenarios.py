@@ -42,7 +42,6 @@ CURRENT_BENEFIT_ROWS = {
 
 @pytest.mark.integration
 class TestKsCsfpScenarios(PeIntegrationTestCase):
-
     def build(self, screen_id, household_size, location=SEDGWICK):
         zipcode, county = location
         # make_screen creates the white label; make_program looks it up, so it runs second.

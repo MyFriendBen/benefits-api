@@ -39,7 +39,6 @@ TYPE_UNDER_TEST = 3_000
 
 @pytest.mark.integration
 class TestMoCsfpScenarios(PeIntegrationTestCase):
-
     def build(self, screen_id, household_size, location=BOONE):
         zipcode, county = location
         # make_screen creates the white label; make_program looks it up, so it runs second.
