@@ -3,8 +3,8 @@
 ``clear_cache`` empties the cache before every test, and on django_redis ``clear()``
 issues FLUSHDB -- the whole database, ignoring KEY_PREFIX. Workers sharing a database
 therefore delete each other's entries mid-test, which surfaced in CI as a worker losing
-the PolicyEngine bearer token ``seed_pe_token`` had just written and falling through to
-a live auth attempt.
+the PolicyEngine bearer token a test had just written and falling through to a live auth
+attempt.
 """
 
 import os
@@ -124,8 +124,8 @@ class TestWorkerIsolation(SimpleTestCase):
 
     def test_workers_never_get_the_base_database(self):
         """The base database stays free for serial runs and for test_redis_backend.py,
-        which pins REDIS_URL directly and flushes whatever it points at. Offsetting from
-        0 rather than from the configured database put gw0 straight onto it."""
+        which pins REDIS_URL directly. Offsetting from 0 rather than from the configured
+        database put gw0 straight onto it."""
         base = str(_redis_database(BASE_LOCATION))
         databases = {self._resolved_database(f"gw{i}") for i in range(_isolatable_database_count())}
 

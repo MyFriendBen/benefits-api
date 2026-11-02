@@ -63,8 +63,8 @@ class TestPeTokenSurvivesTestCacheFlush(TestCase):
     def test_token_with_no_expiry_is_restored_with_no_expiry(self):
         """A ttl of None means the key exists and never expires - distinct from a ttl of 0.
 
-        ``seed_pe_token`` stores its placeholder this way, so conflating the two signals would
-        either drop it or, worse, treat a genuinely expired token as unexpiring.
+        Conflating the two signals would either drop an unexpiring token or, worse, treat a
+        genuinely expired token as unexpiring.
         """
         cache.set(_PE_TOKEN_CACHE_KEY, "token-abc", timeout=None)
 

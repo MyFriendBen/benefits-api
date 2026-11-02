@@ -130,8 +130,8 @@ def resolve_version(target: str, served: dict[str, str]) -> str:
 def require_credentials() -> None:
     """Fail unless PolicyEngine credentials are set.
 
-    Without them the harness quietly seeds a placeholder token instead of fetching a real one
-    (pe_integration.py::_can_record), and every live request fails.
+    Without them the harness stubs the token fetch with a placeholder instead of fetching a
+    real one (pe_integration.py::_can_record), and every live request fails.
     """
     missing = [name for name in CREDENTIAL_SETTINGS if not config(name, default="")]
     if missing:

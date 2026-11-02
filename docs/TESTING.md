@@ -35,7 +35,7 @@ roughly three minutes to under one. Two things follow from that:
 - **Each worker gets its own Redis database** when `REDIS_URL` is set, because
   `clear_cache` issues FLUSHDB and would otherwise wipe other workers' entries mid-test.
   Workers are numbered *above* the database `REDIS_URL` names, leaving that one to serial
-  runs and to `benefits/tests/test_redis_backend.py`, which flushes it directly. Pointing
+  runs and to `benefits/tests/test_redis_backend.py`, which uses its own key prefix there. Pointing
   `REDIS_URL` at a higher database leaves fewer to hand out.
   `pytest.ini` therefore caps the fan-out with `--maxprocesses 14`, which is what keeps
   `-n auto` safe on a large machine: it counts *logical* cores here (xdist prefers
@@ -180,7 +180,7 @@ VCR_MODE=none venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -q
 git add programs/programs/white_labels/mo/pts/tests/
 ```
 
-`PE_RECORD=1` is what allows the live auth0 token exchange. Without it every run seeds a placeholder token and touches no network, so an ordinary `pytest` never authenticates even on a machine with PolicyEngine credentials in `.env`.
+`PE_RECORD=1` (with credentials) is the only way a PolicyEngine test reaches the network. Without it the harness patches the token fetch to return a placeholder (`pe_integration.py::stub_pe_token_for_replay`), and its cassettes open in `none` whatever `VCR_MODE` says (`conftest.py::cassette_record_mode`): a missing cassette or a changed body fails as "no match" instead of sending the placeholder live. So an ordinary `pytest` never authenticates or calls PolicyEngine, even on a machine with credentials in `.env`, and never overwrites or evicts a real token cached in Redis. Recording runs in one process, so it fetches one real token and caches it in the Redis database `REDIS_URL` names, where it lasts ~30 days. PolicyEngine limits how many are minted per month, so don't flush that database needlessly.
 
 The pinned version must be one PolicyEngine currently serves — it rejects exact versions other than what `current`/`frontier` resolve to:
 
