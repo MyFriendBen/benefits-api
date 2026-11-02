@@ -6,7 +6,7 @@ interactions:
       "families": {"family": {"members": ["1601", "1602"]}}, "households": {"household":
       {"members": ["1601", "1602"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit":
       {"members": ["1601", "1602"], "school_meal_countable_income": {"2026": 28000.0}}},
-      "marital_units": {"1601-1602": {"members": ["1601", "1602"]}}}, "version": "2.5.0"}'
+      "marital_units": {"1601-1602": {"members": ["1601", "1602"]}}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -15,7 +15,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '599'
+      - '600'
       Content-Type:
       - application/json
       User-Agent:
@@ -32,26 +32,26 @@ interactions:
         ["1601", "1602"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit":
         {"members": ["1601", "1602"], "school_meal_countable_income": {"2026": 28000.0}}},
         "marital_units": {"1601-1602": {"members": ["1601", "1602"]}}}, "policyengine_bundle":
-        {"model_version": "2.5.0", "data_version": null, "dataset": null}}'
+        {"model_version": "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '701'
+      - '702'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 20:46:54 GMT
+      - Mon, 02 Nov 2026 19:09:34 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-0634b2afbe0da7158cec86fbb0dccbc3-62b0ea76111ac32f-00
+      - 00-b69335cd63a6a35cf144411c1bd3c622-fb08cc6106cf9920-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 0634b2afbe0da7158cec86fbb0dccbc3
+      - b69335cd63a6a35cf144411c1bd3c622
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -59,7 +59,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - a0e6ddfe-ea16-4dc7-818b-e57fd416055a
+      - 10a945f0-632d-4824-8904-fdc3235c3580
       x-policyengine-route-channel:
       - current
     status:

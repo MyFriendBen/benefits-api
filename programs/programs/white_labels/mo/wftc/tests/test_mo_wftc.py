@@ -33,11 +33,17 @@ from screener.models import Expense, HouseholdMember, Screen
 from programs.programs.white_labels.mo.wftc.calculator import MoWftc
 from programs.framework.pe_dependencies import member
 
+PE_VERSION = "2.9.0"
+PE_VERSION_REASON = "Values change at PolicyEngine 2.53.1. Held here until the change is reconciled with the spec; then remove PE_VERSION and this reason and re-record."
+
 BIRTH_MONTH = 6
 
 
 class MoWftcScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is Cole County, ZIP 65101."""
+
+    pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0
