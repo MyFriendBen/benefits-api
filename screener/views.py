@@ -425,6 +425,8 @@ CALC_ORDER = (
     # ks_rca is defined as the program for refugees TANF cannot reach, so it gates on
     # ks_tanf strictly and needs it resolved first.
     "ks_tanf",
+    # Early Head Start reads SSI eligibility as public assistance.
+    "federal_ssi",
 )
 
 
