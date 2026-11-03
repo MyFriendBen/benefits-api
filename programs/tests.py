@@ -634,3 +634,19 @@ class NavigatorDataControllerAssistantNotesTests(TestCase):
 
         self.assertNotIn("assistant_notes", data)
         self.assertIn("phone_number", data)
+
+    def test_admin_rejects_notes_with_contact_details(self) -> None:
+        for notes in (
+            "Call (303) 555-0100 instead.",
+            "Call 555-0100 instead.",
+            "Email intake@example.org for help.",
+            "Apply at benefitsinaction.org.",
+            "See https://example.org/help.",
+        ):
+            with self.assertRaises(ValidationError, msg=notes):
+                Navigator._meta.get_field("assistant_notes").clean(notes, self.navigator)
+
+    def test_admin_accepts_notes_without_contact_details(self) -> None:
+        notes = "Helps by phone only. Closed Dec 24 to Jan 3 for the 2025-2026 move. Dial 2-1-1."
+
+        Navigator._meta.get_field("assistant_notes").clean(notes, self.navigator)

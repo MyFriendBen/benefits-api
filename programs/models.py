@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -1658,6 +1660,32 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         return Model.objects.new_navigator("_default", external_name, None)
 
 
+# Contact details in free text: a US phone number (10 digits, or 7 with a separator),
+# an email address, or a link, bare domains included. Kept in step with ai-service's
+# `_CONTACT_SHAPED`, which drops the same notes as a last line.
+NAVIGATOR_NOTE_CONTACT_SHAPED = re.compile(
+    r"(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|(?<!\d)\d{3}[\s.-]\d{4}(?!\d)"
+    r"|[^@\s]+@[^@\s]+\.\w+"
+    r"|https?://|\bwww\.|\b[\w-]+\.(?:org|com|gov|net|us|edu|info)\b",
+    re.IGNORECASE,
+)
+
+
+def validate_no_contact_details(value: str) -> None:
+    """Keep phone numbers, emails and links out of a navigator's assistant notes.
+
+    Benji may only give contact details copied from the card's own fields, so a note is
+    never a place for them: a number typed here would reach the model with nothing on
+    the household's card to match it.
+    """
+    if NAVIGATOR_NOTE_CONTACT_SHAPED.search(value):
+        raise ValidationError(
+            "Notes can't contain phone numbers, email addresses or links. Put those in the "
+            "navigator's phone number, email or assistance link fields instead."
+        )
+
+
 class Navigator(models.Model):
     white_label = models.ForeignKey(
         WhiteLabel,
@@ -1699,6 +1727,7 @@ class Navigator(models.Model):
         blank=True,
         default="",
         max_length=800,
+        validators=[validate_no_contact_details],
         help_text=(
             "Notes for Benji only, never shown on the results page. Describe how this "
             "organization works, e.g. 'Helps by phone only; does not take requests by email.' "

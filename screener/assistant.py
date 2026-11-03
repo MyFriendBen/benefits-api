@@ -40,6 +40,7 @@ from programs.models import (
     Document,
     Navigator,
     Program,
+    NAVIGATOR_NOTE_CONTACT_SHAPED,
     ProgramNavigator,
     Referrer,
     TranslationOverride,
@@ -505,7 +506,8 @@ def _program_navigators(
     only the programs the page displayed (force-calculated upstreams that were withheld
     never get a row), so it matches the `displayed_eligibility` the view filters on.
 
-    Serialized flat and in the screen's language, like everything else in the payload.
+    Serialized flat and in the screen's language, like everything else in the payload,
+    except `notes`: staff guidance for Benji that the card never shows, always English.
     A navigator with no usable name is dropped rather than sent nameless: the prompt
     describes this list as complete, and a blank entry in a complete list is worse than
     a shorter one.
@@ -555,6 +557,14 @@ def _program_navigators(
         # Staff notes for Benji (MFB-2364), not card content: the one navigator field the
         # household never sees. English whatever the screen language, like the prompt.
         notes = _clipped(" ".join(navigator.assistant_notes.split()), f"assistant notes of {label}")
+        if notes and NAVIGATOR_NOTE_CONTACT_SHAPED.search(notes):
+            # The admin validator rejects these, but an import or a shell edit skips it.
+            # Dropped whole: contact details may only come from the card's own fields.
+            _report_once(
+                f"note_contact:{navigator.external_name or navigator.id}",
+                f"Dropping assistant notes of {label}: they contain a phone number, email or link",
+            )
+            notes = ""
         if notes:
             entry["notes"] = notes
         entries.append(entry)

@@ -1320,7 +1320,7 @@ class NavigatorsTests(TestCase):
 
         self.assertEqual(navigator, {"external_name": "bare", "name": "Bare Navigator"})
 
-    def test_assistant_notes_are_forwarded_as_notes(self):
+    def test_assistant_notes_are_forwarded_as_notes(self) -> None:
         """Staff notes for Benji (MFB-2364) ride along with the card fields, flattened to
         one line — they are prompt text, not layout."""
         seed_navigator(
@@ -1334,12 +1334,42 @@ class NavigatorsTests(TestCase):
 
         self.assertEqual(navigator["notes"], "Helps by phone only. Does not take requests by email.")
 
-    def test_blank_assistant_notes_are_omitted(self):
+    def test_blank_assistant_notes_are_omitted(self) -> None:
         seed_navigator(self.programs["snap"], "blank_notes", name="Blank Notes", assistant_notes="  \n ")
 
         [navigator] = self.navigators()
 
         self.assertNotIn("notes", navigator)
+
+    def test_over_long_assistant_notes_are_clipped_and_reported(self) -> None:
+        """Measured after whitespace is collapsed, so the admin's 800-character limit and
+        this one agree on what counts."""
+        seed_navigator(
+            self.programs["snap"], "long_notes", name="Long Notes", assistant_notes="A" * (MAX_PROMPT_TEXT_LEN + 50)
+        )
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as reported:
+                [navigator] = self.navigators()
+
+        self.assertEqual(len(navigator["notes"]), MAX_PROMPT_TEXT_LEN)
+        self.assertEqual(reported.call_count, 1)
+        self.assertIn("exceeds MAX_PROMPT_TEXT_LEN", reported.call_args.args[0])
+
+    def test_assistant_notes_with_contact_details_are_dropped_and_reported(self) -> None:
+        """The admin validator rejects these, but an import or a shell edit skips it.
+        Contact details may only come from the card's own fields."""
+        seed_navigator(
+            self.programs["snap"], "contact_notes", name="Contact Notes", assistant_notes="Call 303-555-0100 instead."
+        )
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as reported:
+                [navigator] = self.navigators()
+
+        self.assertNotIn("notes", navigator)
+        self.assertEqual(reported.call_count, 1)
+        self.assertIn("phone number, email or link", reported.call_args.args[0])
 
     def test_navigator_without_a_name_is_dropped(self):
         """A nameless entry in a list the prompt calls complete is worse than a shorter list."""
