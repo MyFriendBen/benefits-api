@@ -1568,7 +1568,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "assistant_notes": navigator.assistant_notes,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         navigator = self.instance
 
         navigator.phone_number = data["phone_number"]
@@ -1660,13 +1660,19 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         return Model.objects.new_navigator("_default", external_name, None)
 
 
-# Contact details in free text: a US phone number (10 digits, or 7 with a separator),
-# an email address, or a link, bare domains included. Kept in step with ai-service's
-# `_CONTACT_SHAPED`, which drops the same notes as a last line.
+# One address, no display name, no scheme. The assistant's card-email check anchors it
+# (`screener.assistant._EMAIL_SHAPED`); the note check below searches for it anywhere.
+EMAIL_BODY = r"[^@\s]+@[^@\s]+\.[^@\s]+"
+
+# Contact details in free text, matched anywhere in the string: a US phone number (10
+# digits, or 7 with or without a separator), an international number written with a
+# leading +, an email address, or a link, bare domains included. Kept in step with
+# ai-service's `_CONTACT_SHAPED`, which drops the same notes as a last line.
 NAVIGATOR_NOTE_CONTACT_SHAPED = re.compile(
     r"(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"
-    r"|(?<!\d)\d{3}[\s.-]\d{4}(?!\d)"
-    r"|[^@\s]+@[^@\s]+\.\w+"
+    r"|(?<!\d)\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|\+\d[\d\s().-]{6,}\d"
+    rf"|{EMAIL_BODY}"
     r"|https?://|\bwww\.|\b[\w-]+\.(?:org|com|gov|net|us|edu|info)\b",
     re.IGNORECASE,
 )

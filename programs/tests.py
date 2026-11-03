@@ -639,6 +639,8 @@ class NavigatorDataControllerAssistantNotesTests(TestCase):
         for notes in (
             "Call (303) 555-0100 instead.",
             "Call 555-0100 instead.",
+            "Call 5550100 instead.",
+            "Call +44 20 7946 0958 instead.",
             "Email intake@example.org for help.",
             "Apply at benefitsinaction.org.",
             "See https://example.org/help.",

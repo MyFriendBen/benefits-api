@@ -1356,6 +1356,18 @@ class NavigatorsTests(TestCase):
         self.assertEqual(reported.call_count, 1)
         self.assertIn("exceeds MAX_PROMPT_TEXT_LEN", reported.call_args.args[0])
 
+    def test_contact_check_runs_before_notes_are_clipped(self) -> None:
+        """Clipping first would cut a number at the cap into a fragment the pattern no
+        longer recognizes, and the fragment would be forwarded."""
+        notes = "A" * (MAX_PROMPT_TEXT_LEN - 12) + " call 303-555-0100"
+        seed_navigator(self.programs["snap"], "edge_notes", name="Edge Notes", assistant_notes=notes)
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message"):
+                [navigator] = self.navigators()
+
+        self.assertNotIn("notes", navigator)
+
     def test_assistant_notes_with_contact_details_are_dropped_and_reported(self) -> None:
         """The admin validator rejects these, but an import or a shell edit skips it.
         Contact details may only come from the card's own fields."""

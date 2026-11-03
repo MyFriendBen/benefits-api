@@ -37,10 +37,11 @@ from configuration.models import Configuration
 from programs.federal import filter_programs_by_name, visible_to
 from programs.framework.base import Eligibility
 from programs.models import (
+    EMAIL_BODY,
+    NAVIGATOR_NOTE_CONTACT_SHAPED,
     Document,
     Navigator,
     Program,
-    NAVIGATOR_NOTE_CONTACT_SHAPED,
     ProgramNavigator,
     Referrer,
     TranslationOverride,
@@ -187,7 +188,7 @@ NAVIGATOR_LANGUAGE_LABELS = {
 # prefix (one does in production) is normalized rather than dropped. Anything else that
 # isn't address-shaped is dropped: like a phone number, an email reaches the model as a
 # thing to reproduce verbatim, so there is no safe rewrite of a malformed one.
-_EMAIL_SHAPED = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_EMAIL_SHAPED = re.compile(rf"^{EMAIL_BODY}$")
 # Reject threshold for an email, like MAX_URL_LEN for a link: validated, never truncated.
 # RFC 5321's path limit; nothing real is longer, and anything longer is a config problem.
 MAX_EMAIL_LEN = 254
@@ -556,15 +557,17 @@ def _program_navigators(
             entry["languages"] = languages
         # Staff notes for Benji (MFB-2364), not card content: the one navigator field the
         # household never sees. English whatever the screen language, like the prompt.
-        notes = _clipped(" ".join(navigator.assistant_notes.split()), f"assistant notes of {label}")
+        notes = " ".join(navigator.assistant_notes.split())
         if notes and NAVIGATOR_NOTE_CONTACT_SHAPED.search(notes):
             # The admin validator rejects these, but an import or a shell edit skips it.
             # Dropped whole: contact details may only come from the card's own fields.
+            # Checked before clipping, which could halve a number into an unmatched fragment.
             _report_once(
                 f"note_contact:{navigator.external_name or navigator.id}",
                 f"Dropping assistant notes of {label}: they contain a phone number, email or link",
             )
             notes = ""
+        notes = _clipped(notes, f"assistant notes of {label}")
         if notes:
             entry["notes"] = notes
         entries.append(entry)
