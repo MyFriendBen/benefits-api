@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -1544,6 +1546,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "programs": list[str],
             "eligibility_programs": list[str],
             "white_label": str,
+            "assistant_notes": str,
         },
     )
 
@@ -1562,12 +1565,17 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "programs": [p.external_name for p in navigator.programs.all()],
             "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
             "white_label": navigator.white_label.code,
+            "assistant_notes": navigator.assistant_notes,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         navigator = self.instance
 
         navigator.phone_number = data["phone_number"]
+        # Absent from snapshots exported before the field existed (MFB-2364). Left alone
+        # then, so importing an old snapshot doesn't wipe notes written since.
+        if "assistant_notes" in data:
+            navigator.assistant_notes = data["assistant_notes"]
 
         try:
             white_label = WhiteLabel.objects.get(code=data["white_label"])
@@ -1652,6 +1660,38 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         return Model.objects.new_navigator("_default", external_name, None)
 
 
+# One address, no display name, no scheme. The assistant's card-email check anchors it
+# (`screener.assistant._EMAIL_SHAPED`); the note check below searches for it anywhere.
+EMAIL_BODY = r"[^@\s]+@[^@\s]+\.[^@\s]+"
+
+# Contact details in free text, matched anywhere in the string: a US phone number (10
+# digits, or 7 with or without a separator), an international number written with a
+# leading +, an email address, or a link, bare domains included. Kept in step with
+# ai-service's `_CONTACT_SHAPED`, which drops the same notes as a last line.
+NAVIGATOR_NOTE_CONTACT_SHAPED = re.compile(
+    r"(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|(?<!\d)\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|\+\d[\d\s().-]{6,}\d"
+    rf"|{EMAIL_BODY}"
+    r"|https?://|\bwww\.|\b[\w-]+\.(?:org|com|gov|net|us|edu|info)\b",
+    re.IGNORECASE,
+)
+
+
+def validate_no_contact_details(value: str) -> None:
+    """Keep phone numbers, emails and links out of a navigator's assistant notes.
+
+    Benji may only give contact details copied from the card's own fields, so a note is
+    never a place for them: a number typed here would reach the model with nothing on
+    the household's card to match it.
+    """
+    if NAVIGATOR_NOTE_CONTACT_SHAPED.search(value):
+        raise ValidationError(
+            "Notes can't contain phone numbers, email addresses or links. Put those in the "
+            "navigator's phone number, email or assistance link fields instead."
+        )
+
+
 class Navigator(models.Model):
     white_label = models.ForeignKey(
         WhiteLabel,
@@ -1683,6 +1723,22 @@ class Navigator(models.Model):
         related_name="eligibility_navigators",
         blank=True,
         help_text="Navigator is only shown when the household qualifies for ALL of these programs.",
+    )
+    # What Benji should know about how this organization works that the card doesn't say
+    # (MFB-2364): "help is by phone, not email", "no longer offers tax help". Read only by
+    # the assistant, never rendered on the results page, so it is plain English text
+    # rather than a Translation. The form-level max_length matches the assistant's
+    # MAX_PROMPT_TEXT_LEN, so admins see the limit instead of having notes clipped.
+    assistant_notes = models.TextField(
+        blank=True,
+        default="",
+        max_length=800,
+        validators=[validate_no_contact_details],
+        help_text=(
+            "Notes for Benji only, never shown on the results page. Describe how this "
+            "organization works, e.g. 'Helps by phone only; does not take requests by email.' "
+            "Put phone numbers, emails and links in the card fields, not here."
+        ),
     )
 
     name = models.ForeignKey(

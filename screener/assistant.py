@@ -37,6 +37,8 @@ from configuration.models import Configuration
 from programs.federal import filter_programs_by_name, visible_to
 from programs.framework.base import Eligibility
 from programs.models import (
+    EMAIL_BODY,
+    NAVIGATOR_NOTE_CONTACT_SHAPED,
     Document,
     Navigator,
     Program,
@@ -186,7 +188,7 @@ NAVIGATOR_LANGUAGE_LABELS = {
 # prefix (one does in production) is normalized rather than dropped. Anything else that
 # isn't address-shaped is dropped: like a phone number, an email reaches the model as a
 # thing to reproduce verbatim, so there is no safe rewrite of a malformed one.
-_EMAIL_SHAPED = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_EMAIL_SHAPED = re.compile(rf"^{EMAIL_BODY}$")
 # Reject threshold for an email, like MAX_URL_LEN for a link: validated, never truncated.
 # RFC 5321's path limit; nothing real is longer, and anything longer is a config problem.
 MAX_EMAIL_LEN = 254
@@ -505,7 +507,8 @@ def _program_navigators(
     only the programs the page displayed (force-calculated upstreams that were withheld
     never get a row), so it matches the `displayed_eligibility` the view filters on.
 
-    Serialized flat and in the screen's language, like everything else in the payload.
+    Serialized flat and in the screen's language, like everything else in the payload,
+    except `notes`: staff guidance for Benji that the card never shows, always English.
     A navigator with no usable name is dropped rather than sent nameless: the prompt
     describes this list as complete, and a blank entry in a complete list is worse than
     a shorter one.
@@ -552,6 +555,21 @@ def _program_navigators(
         ]
         if languages:
             entry["languages"] = languages
+        # Staff notes for Benji (MFB-2364), not card content: the one navigator field the
+        # household never sees. English whatever the screen language, like the prompt.
+        notes = " ".join(navigator.assistant_notes.split())
+        if notes and NAVIGATOR_NOTE_CONTACT_SHAPED.search(notes):
+            # The admin validator rejects these, but an import or a shell edit skips it.
+            # Dropped whole: contact details may only come from the card's own fields.
+            # Checked before clipping, which could halve a number into an unmatched fragment.
+            _report_once(
+                f"note_contact:{navigator.external_name or navigator.id}",
+                f"Dropping assistant notes of {label}: they contain a phone number, email or link",
+            )
+            notes = ""
+        notes = _clipped(notes, f"assistant notes of {label}")
+        if notes:
+            entry["notes"] = notes
         entries.append(entry)
 
     if len(entries) > MAX_NAVIGATORS_PER_PROGRAM:
