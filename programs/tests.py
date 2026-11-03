@@ -20,6 +20,7 @@ from programs.models import (
     Referrer,
     _get_fpl_data,
 )
+from programs.serializers import NavigatorAPISerializer
 from screener.models import Screen, WhiteLabel
 from translations.models import Translation
 
@@ -593,3 +594,43 @@ class ProgramDataControllerYearTypeRoundTripTests(TestCase):
 
         program.refresh_from_db()
         self.assertEqual(program.year_type, "hardcoded")
+
+
+class NavigatorDataControllerAssistantNotesTests(TestCase):
+    """`assistant_notes` (MFB-2364) travels with the navigator's exported snapshot, so
+    notes written in prod reach staging and local through the usual import."""
+
+    def setUp(self) -> None:
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        self.navigator = Navigator.objects.new_navigator("co", "phone_only")
+        self.navigator.assistant_notes = "Helps by phone only."
+        self.navigator.save()
+
+    def test_export_then_import_preserves_notes(self) -> None:
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        self.assertEqual(data["assistant_notes"], "Helps by phone only.")
+
+        fresh = Navigator.objects.new_navigator("co", "fresh")
+        fresh.TranslationExportBuilder(fresh).from_model_data(data)
+
+        fresh.refresh_from_db()
+        self.assertEqual(fresh.assistant_notes, "Helps by phone only.")
+
+    def test_snapshot_without_notes_leaves_existing_notes_alone(self) -> None:
+        """An older snapshot, exported before the field existed, has no key at all.
+        Importing it must not wipe notes written since."""
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        del data["assistant_notes"]
+
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.navigator.refresh_from_db()
+        self.assertEqual(self.navigator.assistant_notes, "Helps by phone only.")
+
+    def test_notes_stay_off_the_navigator_api(self) -> None:
+        """The partner-facing navigator endpoint serializes every other field; staff
+        guidance for Benji is not API data."""
+        data = NavigatorAPISerializer(self.navigator).data
+
+        self.assertNotIn("assistant_notes", data)
+        self.assertIn("phone_number", data)

@@ -1544,6 +1544,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "programs": list[str],
             "eligibility_programs": list[str],
             "white_label": str,
+            "assistant_notes": str,
         },
     )
 
@@ -1562,12 +1563,17 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "programs": [p.external_name for p in navigator.programs.all()],
             "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
             "white_label": navigator.white_label.code,
+            "assistant_notes": navigator.assistant_notes,
         }
 
     def from_model_data(self, data: DataType):
         navigator = self.instance
 
         navigator.phone_number = data["phone_number"]
+        # Absent from snapshots exported before the field existed (MFB-2364). Left alone
+        # then, so importing an old snapshot doesn't wipe notes written since.
+        if "assistant_notes" in data:
+            navigator.assistant_notes = data["assistant_notes"]
 
         try:
             white_label = WhiteLabel.objects.get(code=data["white_label"])
@@ -1683,6 +1689,21 @@ class Navigator(models.Model):
         related_name="eligibility_navigators",
         blank=True,
         help_text="Navigator is only shown when the household qualifies for ALL of these programs.",
+    )
+    # What Benji should know about how this organization works that the card doesn't say
+    # (MFB-2364): "help is by phone, not email", "no longer offers tax help". Read only by
+    # the assistant, never rendered on the results page, so it is plain English text
+    # rather than a Translation. The form-level max_length matches the assistant's
+    # MAX_PROMPT_TEXT_LEN, so admins see the limit instead of having notes clipped.
+    assistant_notes = models.TextField(
+        blank=True,
+        default="",
+        max_length=800,
+        help_text=(
+            "Notes for Benji only, never shown on the results page. Describe how this "
+            "organization works, e.g. 'Helps by phone only; does not take requests by email.' "
+            "Put phone numbers, emails and links in the card fields, not here."
+        ),
     )
 
     name = models.ForeignKey(

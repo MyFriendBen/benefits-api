@@ -1320,6 +1320,27 @@ class NavigatorsTests(TestCase):
 
         self.assertEqual(navigator, {"external_name": "bare", "name": "Bare Navigator"})
 
+    def test_assistant_notes_are_forwarded_as_notes(self):
+        """Staff notes for Benji (MFB-2364) ride along with the card fields, flattened to
+        one line — they are prompt text, not layout."""
+        seed_navigator(
+            self.programs["snap"],
+            "phone_only",
+            name="Phone Only Help",
+            assistant_notes="Helps by phone only.\n\nDoes not take requests by email.",
+        )
+
+        [navigator] = self.navigators()
+
+        self.assertEqual(navigator["notes"], "Helps by phone only. Does not take requests by email.")
+
+    def test_blank_assistant_notes_are_omitted(self):
+        seed_navigator(self.programs["snap"], "blank_notes", name="Blank Notes", assistant_notes="  \n ")
+
+        [navigator] = self.navigators()
+
+        self.assertNotIn("notes", navigator)
+
     def test_navigator_without_a_name_is_dropped(self):
         """A nameless entry in a list the prompt calls complete is worse than a shorter list."""
         seed_navigator(self.programs["snap"], "nameless", phone_number="+13035551234")

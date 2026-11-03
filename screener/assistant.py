@@ -552,6 +552,11 @@ def _program_navigators(
         ]
         if languages:
             entry["languages"] = languages
+        # Staff notes for Benji (MFB-2364), not card content: the one navigator field the
+        # household never sees. English whatever the screen language, like the prompt.
+        notes = _clipped(" ".join(navigator.assistant_notes.split()), f"assistant notes of {label}")
+        if notes:
+            entry["notes"] = notes
         entries.append(entry)
 
     if len(entries) > MAX_NAVIGATORS_PER_PROGRAM:

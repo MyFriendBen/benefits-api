@@ -177,6 +177,7 @@ def seed_navigator(
     language_codes: tuple[str, ...] = (),
     eligibility_programs: tuple[Program, ...] = (),
     order: int = 999,
+    assistant_notes: str = "",
 ) -> Navigator:
     """Attach a Navigator to `program` through the ordered through table, with its
     translations filled in.
@@ -191,6 +192,9 @@ def seed_navigator(
     for field, text in (("name", name), ("description", description), ("email", email), ("assistance_link", link)):
         if text:
             _set_default_text(getattr(navigator, field), text)
+    if assistant_notes:
+        navigator.assistant_notes = assistant_notes
+        navigator.save(update_fields=["assistant_notes"])
 
     for county_name in county_names:
         county, _ = County.objects.get_or_create(white_label=program.white_label, name=county_name)
