@@ -486,6 +486,27 @@ class ProgramYearTypeSaveTests(TestCase):
         with self.assertRaises(ValidationError):
             program.clean()
 
+    def test_prior_tax_year_save_does_not_touch_year_fk(self):
+        # prior_tax_year behaves like hardcoded in save() — the FK is managed
+        # by roll_program_years, not by save(). Verifies we didn't accidentally
+        # wire it to a sentinel row.
+        fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "prior_tax_year"
+        program.year_offset = -1
+        program.year = fpl_2025
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, fpl_2025.id)
+
+    def test_flip_month_default_is_january(self):
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        self.assertEqual(program.flip_month, 1)
+
+    def test_year_offset_default_is_zero(self):
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        self.assertEqual(program.year_offset, 0)
+
 
 class FederalPovertyLimitPeriodValidationTests(TestCase):
     """FederalPoveryLimit.save() validates `period` up front (MFB-564 finding #5).

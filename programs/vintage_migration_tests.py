@@ -136,3 +136,44 @@ class TestMoTaxCreditsMigrationMovesToPriorTaxYear(TestCase):
         self.migration.forwards(django_apps, None)
         wftc.refresh_from_db()
         self.assertEqual(wftc.year.period, "2027")
+
+
+class TestConfirmedTaxCreditsMigrationMovesToPriorTaxYear(TestCase):
+    """Run 0203's forwards against real rows.
+
+    0203 moves federal_ctc, mo_pts, and mo_wftc to year_type=prior_tax_year with
+    year_offset=-1 and a concrete FPL FK for 2025. roll_program_years advances the
+    FK each January without a per-program migration.
+    """
+
+    def setUp(self):
+        self.fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
+        WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal", "state_code": "US"})
+        WhiteLabel.objects.get_or_create(code="mo", defaults={"name": "Missouri", "state_code": "MO"})
+        self.migration = _migration("programs.migrations.0203_prior_tax_year_confirmed_programs")
+
+    def _program(self, white_label, abbr):
+        program = Program.objects.new_program(white_label=white_label, name_abbreviated=abbr)
+        program.year = self.fpl_2025
+        program.year_type = "hardcoded"
+        program.save()
+        return program
+
+    def test_forwards_moves_all_three_to_concrete_2025_row(self):
+        programs = [
+            self._program("federal", "federal_ctc"),
+            self._program("mo", "mo_pts"),
+            self._program("mo", "mo_wftc"),
+        ]
+
+        self.migration.forwards(django_apps, None)
+
+        for program in programs:
+            program.refresh_from_db()
+            self.assertEqual(program.year.period, "2025", program.name_abbreviated)
+            self.assertEqual(program.year_type, "prior_tax_year", program.name_abbreviated)
+            self.assertEqual(program.year_offset, -1, program.name_abbreviated)
+
+    def test_forwards_skips_missing_programs_silently(self):
+        # An environment that never imported these programs should not raise.
+        self.migration.forwards(django_apps, None)
