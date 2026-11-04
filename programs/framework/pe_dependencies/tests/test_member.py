@@ -1841,29 +1841,6 @@ class TestSsiReceiptDependencies(TestCase):
         self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
 
 
-class TestWicDependency(TestCase):
-    """
-    The WIC program's output stays on the ungated ``wic``.
-
-    ``wic`` is ``wic_if_takes_up`` gated on ``takes_up_wic_if_eligible``, which defaults True and
-    which we never send, so the two are the same number for every payload we submit. Staying
-    ungated keeps WIC out of the version floor and so out of ``_drop_unreadable_programs``.
-    """
-
-    def setUp(self):
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
-        self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="65101", county="Test County", household_size=1, completed=False
-        )
-        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=29)
-
-    def test_field_name(self):
-        self.assertEqual(member.Wic(self.screen, self.head, {}).field, "wic")
-
-    def test_not_version_gated(self):
-        self.assertEqual(member.Wic.min_pe_version, ())
-
-
 class TestSsiCountableResourcesDependency(TestCase):
     """
     Tests for SsiCountableResourcesDependency. SSI's resource limit is a hard cutoff, and

@@ -159,31 +159,12 @@ class TaxUnitDependentDependency(Member):
         return False
 
 
-class WicCategory(Member):
-    field = "wic_category"
-
-
 class MedicaidCategory(Member):
     field = "medicaid_category"
 
 
 class MedicaidSeniorOrDisabled(Member):
     field = "is_optional_senior_or_disabled_for_medicaid"
-
-
-class Wic(Member):
-    """
-    PolicyEngine's ``wic`` person output — the member's WIC entitlement by food package.
-
-    Already the would-be value for our payloads, unlike SSI/SNAP/TANF, whose programs need the
-    ``*_if_takes_up`` variants: ``wic`` is ``wic_if_takes_up`` gated on
-    ``takes_up_wic_if_eligible``, which defaults True and which we never send, so the two are
-    equal for every household we submit. (``receives_wic`` is measurably inert, so it is not
-    wired either.) Being ungated also keeps WIC clear of the ``min_pe_version`` floor, and so of
-    ``_drop_unreadable_programs``.
-    """
-
-    field = "wic"
 
 
 class Medicaid(Member):
