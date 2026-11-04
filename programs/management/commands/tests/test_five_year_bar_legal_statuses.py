@@ -38,6 +38,8 @@ CALCULATED = {
     "notPregnantOrUnder19ForEmergencyMedicaid",
     "notPregnantForMassHealthLimited",
     "notPregnantOrChildForMassHealthLimited",
+    "lawfulHealthCarePregnant",
+    "lawfulHealthCareUnder19",
 }
 KNOWN_LABELS = USER_SELECTED | CALCULATED
 
@@ -254,6 +256,7 @@ class MigrationLabelsTest(SimpleTestCase):
         super().setUpClass()
         cls.bar = cls._migration("0168", "fix_five_year_bar_legal_statuses")
         cls.mo_snap = cls._migration("0169", "drop_refugee_from_mo_snap")
+        cls.lawful_health_care = cls._migration("0203", "add_lawful_health_care_legal_statuses")
 
     def test_every_label_named_in_a_migration_is_known(self):
         named = {self.mo_snap.STATUS} | set(self.bar.SEEDABLE)
@@ -261,6 +264,14 @@ class MigrationLabelsTest(SimpleTestCase):
             named |= set(to_add) | set(to_remove)
 
         self.assertEqual(named - KNOWN_LABELS, set())
+
+    def test_every_label_0203_seeds_is_a_calculated_label_the_frontend_defines(self):
+        """
+        Every label seeded by 0203 must be defined as a calculated label in the frontend, or it
+        would never match. User-selected statuses must not be seeded here because reversing 0203
+        would delete their LegalStatus records and remove their assignments from every program.
+        """
+        self.assertEqual(set(self.lawful_health_care.SEEDABLE) - CALCULATED, set())
 
     def test_every_label_a_migration_adds_may_be_seeded(self):
         """
