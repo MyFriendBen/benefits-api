@@ -943,7 +943,6 @@ class Insurance(models.Model):
             # having it. Every CHIP calculator's code must be here; a test checks.
             "wa_apple_health_for_kids": self.chp,
             "ks_chip": self.chp,
-            "mo_chip": self.chp,
             "tx_chip": self.chp,
             "il_all_kids": self.chp,
             "nj_chip": self.chp,
