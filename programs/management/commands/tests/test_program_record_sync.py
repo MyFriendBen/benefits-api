@@ -840,7 +840,11 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
         self.assertTrue(
             ProgramNavigator.objects.filter(program=self.federal_program(), navigator=self.state_nav).exists()
         )
-        self.assertIn("navigator 'shared_hotline' is on the 'co' white label, so on this federal program only", output)
+        self.assertIn(
+            "navigator 'shared_hotline' is on the 'co' white label, so on this federal program only screens in the "
+            "same state as 'co' see it.",
+            output,
+        )
         self.assertIn("Matches the record", self.run_import())
 
     def test_a_federal_navigator_the_federal_record_references_gets_no_note(self) -> None:

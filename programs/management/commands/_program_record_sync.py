@@ -754,8 +754,8 @@ class RecordSync:
             if owner != FEDERAL_WHITE_LABEL:
                 plan.notes.append(
                     f"navigator '{name}' is on the '{owner}' white label, so on this federal program only "
-                    f"'{owner}' screens see it. To show it in every state, own it in this record (give its "
-                    f"fields), which moves it to '{FEDERAL_WHITE_LABEL}'."
+                    f"screens in the same state as '{owner}' see it. To show it in every state, own it in this "
+                    f"record (give its fields), which moves it to '{FEDERAL_WHITE_LABEL}'."
                 )
             return
         key = f"navigator:{name}.white_label"
