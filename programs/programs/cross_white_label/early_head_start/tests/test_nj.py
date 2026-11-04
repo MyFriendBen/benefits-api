@@ -6,9 +6,8 @@ program-ops).
 The federal rules are tested against stand-in states in ``test_mfb_base.py``; these run the
 spec's households end to end through real screener rows.
 
-The spec states values to the cent; the base rounds each member's value half-up to whole
-dollars, so these expect $16,909 (from $16,909.14), $15,059 ($15,059.48) and $13,446
-($13,445.80).
+Each member's value is rounded half-up to whole dollars, as the spec states: $16,909 (from
+$16,909.14), $15,059 ($15,059.48) and $13,446 ($13,445.80).
 
 Scenarios 7 and 10 report SSI or WIC as a current benefit. NJ's SSI is the ``federal_ssi``
 row and NJ has no WIC row, so the tests seed a stand-in row with the right ``base_program``.
