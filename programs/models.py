@@ -1563,7 +1563,13 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
             "counties": self._counties(),
             "languages": self._languages(),
-            "programs": [p.external_name for p in navigator.programs.all()],
+            # From `ProgramNavigator`, which the admin inline and the record import write and the
+            # results page reads. The legacy `programs` table misses every link made since the
+            # ordering migration (0126), and `from_model_data` deletes links a snapshot leaves out.
+            "programs": [
+                {"external_name": link.program.external_name, "order": link.order}
+                for link in navigator.program_navigators.select_related("program").order_by("order", "id")
+            ],
             "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
             "white_label": navigator.white_label.code,
             "assistant_notes": navigator.assistant_notes,
