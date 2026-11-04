@@ -13,7 +13,7 @@ from django.utils.html import format_html
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
-from .federal import FEDERAL_WHITE_LABEL, is_federal, navigators_linkable_to
+from .federal import FEDERAL_WHITE_LABEL, is_federal, linkable_with, navigators_linkable_to, visible_to_any
 from .models import (
     LegalStatus,
     Program,
@@ -102,9 +102,7 @@ class ProgramNavigatorInline(TabularInline):
                     program = Program.objects.select_related("white_label").get(pk=obj_id)
                     allowed = navigators_linkable_to(program)
                     if not request.user.is_superuser:
-                        allowed &= Q(white_label__in=request.user.white_labels.all()) | Q(
-                            white_label__code=FEDERAL_WHITE_LABEL
-                        )
+                        allowed &= visible_to_any(request.user.white_labels.all())
                     linked = Q(pk__in=program.program_navigators.values("navigator"))
                     kwargs["queryset"] = Navigator.objects.filter(allowed | linked)
                 except Program.DoesNotExist:
@@ -306,22 +304,41 @@ class NavigatorAdmin(SecureAdmin):
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def get_search_results(
-        self, request: HttpRequest, queryset: QuerySet[Navigator], search_term: str
-    ) -> tuple[QuerySet[Navigator], bool]:
-        """Offer federal navigators in the program page's navigator autocomplete.
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Navigator]:
+        """A partner admin's navigators plus the federal ones, which they may view but not change.
 
-        `get_queryset` limits a white label admin to their own white labels' navigators, but any
-        program may link a federal one. The inline's form field still checks the program's rules on
-        save; this only widens what the search offers.
+        Any program may link a federal navigator, so partner admins need to find them in the
+        program page's autocomplete and open them from the program. Changing one changes it for
+        every white label, so that stays with superusers (`has_change_permission`).
         """
-        if (
-            request.GET.get("model_name") == ProgramNavigator._meta.model_name
-            and request.GET.get("field_name") == "navigator"
-            and not request.user.is_superuser
-        ):
-            queryset = queryset | Navigator.objects.filter(white_label__code=FEDERAL_WHITE_LABEL)
-        return super().get_search_results(request, queryset, search_term)
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+        return queryset | Navigator.objects.filter(white_label__code=FEDERAL_WHITE_LABEL)
+
+    def has_view_permission(self, request: HttpRequest, obj: Optional[Navigator] = None) -> bool:
+        if obj is not None and obj.white_label.code == FEDERAL_WHITE_LABEL:
+            return True
+        return super().has_view_permission(request, obj)
+
+    def _set_select_queryset(
+        self, field_name: str, field: forms.ModelMultipleChoiceField, obj: Optional[Navigator], request: HttpRequest
+    ) -> None:
+        """Counties and required programs follow the linking rule (`linkable_with`), not the
+        navigator's white label alone.
+
+        A state navigator may require a federal program, and a federal navigator may use any white
+        label's counties and programs. Rows already chosen stay valid, so a navigator moved to
+        `federal` keeps the counties and programs of the state it came from.
+        """
+        if field_name not in self.white_label_filter_horizontal or obj is None:
+            super()._set_select_queryset(field_name, field, obj, request)
+            return
+        allowed = linkable_with(obj.white_label)
+        if not request.user.is_superuser:
+            allowed &= visible_to_any(request.user.white_labels.all())
+        chosen = Q(pk__in=getattr(obj, field_name).values("pk"))
+        field.queryset = field.queryset.filter(allowed | chosen)
 
     def get_str(self, obj: Navigator) -> str:
         return str(obj) if str(obj).strip() else "unnamed"

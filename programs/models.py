@@ -8,7 +8,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
-from programs.federal import may_link_navigator
+from programs.federal import FEDERAL_WHITE_LABEL, may_link_navigator
 from programs.util import Dependencies, UnregisteredCalculatorError
 from sentry_sdk import capture_message
 from typing import Optional, TypedDict, Union
@@ -1582,7 +1582,11 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             white_label = WhiteLabel.objects.get(code=data["white_label"])
         except WhiteLabel.DoesNotExist:
             white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
-        navigator.white_label = white_label
+        # A navigator is moved to `federal` on purpose (a migration, or a federal program record
+        # that owns it), never back, and on a federal program a state navigator reaches only that
+        # state. A snapshot exported before the move would undo it, so it stays on `federal`.
+        if not (navigator.white_label_id and navigator.white_label.code == FEDERAL_WHITE_LABEL):
+            navigator.white_label = white_label
 
         # get or create counties
         counties = []

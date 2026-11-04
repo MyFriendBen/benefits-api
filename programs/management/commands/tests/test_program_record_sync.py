@@ -18,6 +18,7 @@ from django.test import TestCase
 from programs.management.commands._program_record_sync import is_unconfirmed, unconfirmed
 from programs.management.commands.export_program_record import BEGIN_MARKER, END_MARKER
 from programs.models import (
+    County,
     Document,
     FederalPoveryLimit,
     LegalStatus,
@@ -836,6 +837,69 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
         self.assertIn("navigator 'shared_hotline' belongs to the 'co' white label", output)
         self.state_nav.refresh_from_db()
         self.assertEqual(self.state_nav.white_label.code, "co")
+
+    def own_shared_hotline(self) -> None:
+        self.federal_record["navigators"][0]["external_name"] = "shared_hotline"
+        self.write(self.federal_record, program=FEDERAL_PROGRAM)
+
+    def test_a_navigator_moved_back_in_the_admin_is_kept_as_an_admin_edit(self) -> None:
+        self.own_shared_hotline()
+        self.run_import()
+        Navigator.objects.filter(pk=self.state_nav.pk).update(white_label=self.white_label)
+
+        output = self.run_import()
+
+        self.assertFalse(self.records_failed)
+        self.state_nav.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "co")
+        self.assertIn(
+            f"revert with --revert-admin-edit {FEDERAL_PROGRAM}_program_record.json:navigator:shared_hotline.white_label",
+            output,
+        )
+
+    def test_reverting_the_navigator_white_label_moves_it_to_federal_again(self) -> None:
+        self.own_shared_hotline()
+        self.run_import()
+        Navigator.objects.filter(pk=self.state_nav.pk).update(white_label=self.white_label)
+
+        self.run_import(
+            "--revert-admin-edit", f"{FEDERAL_PROGRAM}_program_record.json:navigator:shared_hotline.white_label"
+        )
+
+        self.assertFalse(self.records_failed)
+        self.state_nav.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "federal")
+
+    def test_moving_a_navigator_other_programs_show_names_them(self) -> None:
+        """The move is the plan's only change to the row, and it still says which programs share it."""
+        self.record["navigators"] = [{**self.federal_record["navigators"][0], "external_name": "shared_hotline"}]
+        state_record = self.write(self.record)
+        self.run_import()
+        state_record.unlink()
+        self.state_nav.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "co")
+        self.own_shared_hotline()
+
+        output = self.run_import("--dry-run")
+
+        self.assertIn("navigator:shared_hotline.white_label", output)
+        self.assertIn(f"navigator 'shared_hotline' is also shown on co/{PROGRAM}", output)
+
+    def test_a_moved_navigator_keeps_its_state_counties(self) -> None:
+        denver = County.objects.create(name="Denver County", white_label=self.white_label)
+        self.state_nav.counties.add(denver)
+        self.own_shared_hotline()
+        self.federal_record["navigators"][0]["counties"] = ["Adams County", "Denver County"]
+        self.write(self.federal_record, program=FEDERAL_PROGRAM)
+
+        self.run_import("--revert-admin-edits")
+
+        self.assertFalse(self.records_failed)
+        self.assertEqual(County.objects.filter(name="Denver County").count(), 1)
+        self.assertEqual(
+            sorted(self.state_nav.counties.values_list("name", flat=True)), ["Adams County", "Denver County"]
+        )
+        self.assertIn(denver, self.state_nav.counties.all())
 
     def test_a_state_record_owning_another_white_labels_navigator_leaves_it_there(self) -> None:
         WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")

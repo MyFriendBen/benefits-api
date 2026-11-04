@@ -33,7 +33,7 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0201_move_state_wic_current_benefits"),
+        ("programs", "0202_navigator_assistant_notes"),
     ]
 
     operations = [
