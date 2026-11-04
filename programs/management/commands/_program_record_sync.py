@@ -22,9 +22,12 @@ yet; once someone changes it, it's an admin edit. Either way it's kept until som
 Navigators, documents and warning messages are shared rows. An entry naming only an
 `external_name` is a reference: it links the row and never edits it. An entry with any other
 field is a full entry: the record owns that row's content, and two records owning one row is an
-error. A row the record stops listing is unlinked from this program, never deleted.
+error. A row the record stops listing is unlinked from this program, never deleted. On a federal
+record a navigator reference may also name the state white label that owns it, to link it for
+that state's screens only (`_plan_federal_navigator_owner`).
 """
 
+import json
 import shlex
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
@@ -110,10 +113,14 @@ class EntitySpec:
     lists: tuple[str, ...] = ()
     scalars: tuple[str, ...] = ()
     extra_keys: tuple[str, ...] = ()
+    # Keys a reference may carry besides `external_name` without becoming a full entry.
+    reference_keys: tuple[str, ...] = ()
 
     @property
     def keys(self) -> frozenset[str]:
-        return frozenset({"external_name", *self.translated, *self.lists, *self.scalars, *self.extra_keys})
+        return frozenset(
+            {"external_name", *self.translated, *self.lists, *self.scalars, *self.extra_keys, *self.reference_keys}
+        )
 
 
 DOCUMENT = EntitySpec(kind="document", model=Document, translated=("text", "link_url", "link_text"), required=("text",))
@@ -124,6 +131,7 @@ NAVIGATOR = EntitySpec(
     required=("name", "email", "description", "assistance_link"),
     lists=("counties", "languages", "eligibility_programs"),
     scalars=("phone_number",),
+    reference_keys=("white_label",),
 )
 WARNING = EntitySpec(
     kind="warning",
@@ -167,8 +175,8 @@ def _stored_phone_number(value: Any) -> Any:
     return None if stored is None else str(stored)
 
 
-def is_reference(entry: dict[str, Any]) -> bool:
-    return set(entry) == {"external_name"}
+def is_reference(entry: dict[str, Any], spec: EntitySpec) -> bool:
+    return set(entry) - set(spec.reference_keys) == {"external_name"}
 
 
 def validate_record(record: Any) -> list[str]:
@@ -241,9 +249,11 @@ def validate_record(record: Any) -> list[str]:
                 problems.append(f"{where} is listed twice")
             seen.add(name)
             problems += [f"{where}: unknown key '{key}'" for key in sorted(set(entry) - spec.keys)]
-            if "white_label" in entry and entry["white_label"] != record["white_label"].get("code"):
+            if spec is NAVIGATOR:
+                problems += _navigator_white_label_problems(entry, where, record["white_label"].get("code"))
+            elif "white_label" in entry and entry["white_label"] != record["white_label"].get("code"):
                 problems.append(f"{where}: white_label '{entry['white_label']}' isn't the record's white label")
-            if is_reference(entry):
+            if is_reference(entry, spec):
                 continue
             missing = [key for key in spec.required if key not in entry]
             if missing:
@@ -252,6 +262,26 @@ def validate_record(record: Any) -> list[str]:
                     f"an existing {spec.kind}, or give every required field to own it."
                 )
     return problems
+
+
+def _navigator_white_label_problems(entry: dict[str, Any], where: str, record_white_label: Any) -> list[str]:
+    """A navigator entry's `white_label` names the state that owns a navigator a federal record
+    references, so it is valid only there."""
+    if "white_label" not in entry:
+        return []
+    if not is_reference(entry, NAVIGATOR):
+        return [
+            f"{where}: white_label goes only on a navigator reference (external_name and white_label). A "
+            f"navigator the record owns belongs to the record's white label."
+        ]
+    if record_white_label != FEDERAL_WHITE_LABEL:
+        return [
+            f"{where}: white_label on a navigator reference applies only to a '{FEDERAL_WHITE_LABEL}' record, "
+            f"where it keeps a state's navigator to that state's screens"
+        ]
+    if not isinstance(entry["white_label"], str) or not entry["white_label"]:
+        return [f"{where}: white_label must be a white label code"]
+    return []
 
 
 def owned_rows(record: dict[str, Any]) -> list[tuple[str, str]]:
@@ -264,7 +294,7 @@ def owned_rows(record: dict[str, Any]) -> list[tuple[str, str]]:
         rows += [
             (spec.kind, entry["external_name"])
             for entry in entries
-            if isinstance(entry, dict) and isinstance(entry.get("external_name"), str) and not is_reference(entry)
+            if isinstance(entry, dict) and isinstance(entry.get("external_name"), str) and not is_reference(entry, spec)
         ]
     return rows
 
@@ -667,7 +697,7 @@ class RecordSync:
             row = spec.model.objects.filter(external_name=name).first()
             new_row = row is None
             if new_row:
-                if is_reference(entry):
+                if is_reference(entry, spec):
                     raise CommandError(
                         f"{spec.kind} '{name}' doesn't exist, and the record only references it. Give its fields to "
                         f"create it."
@@ -682,13 +712,13 @@ class RecordSync:
                         phase=0,
                     )
                 )
-            elif not is_reference(entry):
+            elif not is_reference(entry, spec):
                 # An existing row is shared: creating this program doesn't make the record newer
                 # than an admin edit to it, so it's labelled like any update, never as fresh.
                 self._plan_row(plan, spec, entry, row, baseline, fresh=False)
             if spec is NAVIGATOR:
                 self._plan_federal_navigator_owner(plan, entry, row, baseline)
-            if not new_row and not is_reference(entry):
+            if not new_row and not is_reference(entry, spec):
                 others = self._other_programs(row, spec, program)
                 if others and any(change.key.startswith(f"{spec.kind}:{name}.") for change in plan.changes):
                     plan.notes.append(
@@ -730,13 +760,21 @@ class RecordSync:
     def _plan_federal_navigator_owner(
         self, plan: RecordPlan, entry: dict[str, Any], row: Optional[Navigator], baseline: Optional[dict[str, Any]]
     ) -> None:
-        """A federal record's navigators must belong to `federal`.
+        """Which states see a federal record's navigators.
 
         On a federal program a state's navigator is shown only to that state's screens
         (`screener.navigators.filter_by_white_label`), and a navigator belongs to whichever white
-        label created it first. A navigator this record owns is moved to `federal`; that leaves
-        the state programs still linking it unchanged, since they don't filter by white label. One
-        it only references is refused, since moving it would override the record that owns it.
+        label created it first. So a navigator's white label is the only thing saying who sees it:
+
+        - A navigator this record owns is meant for every state and is moved to `federal`; that
+          leaves the state programs still linking it unchanged, since they don't filter by white
+          label.
+        - A reference naming its owner (`{"external_name": ..., "white_label": "co"}`) is meant
+          for that state only, such as a state's WIC clinics once its WIC row is retired. It must
+          match the navigator's white label, so a move made since fails loudly.
+        - A bare reference to a state's navigator is refused: it would reach that state only,
+          which for a national navigator first imported by a state (the USDA hunger hotline, on
+          `mo`) is a mistake, and the record can't move a row another record owns.
 
         The white label is a field the record manages, so a move an admin undoes later is kept and
         reported like any admin edit. Until an import has applied it there is nothing to protect:
@@ -747,12 +785,20 @@ class RecordSync:
         name = entry["external_name"]
         # A row this run creates is created on the record's white label (`_create_row`).
         owner = FEDERAL_WHITE_LABEL if row is None else row.white_label.code
-        if is_reference(entry):
-            if owner != FEDERAL_WHITE_LABEL:
+        if is_reference(entry, NAVIGATOR):
+            scoped_to = entry.get("white_label")
+            if scoped_to is not None and scoped_to != owner:
+                raise CommandError(
+                    f"navigator '{name}' is referenced as belonging to '{scoped_to}', but it belongs to the "
+                    f"'{owner}' white label. Correct the reference's white_label, or move the navigator back in "
+                    f"the admin."
+                )
+            if scoped_to is None and owner != FEDERAL_WHITE_LABEL:
                 raise CommandError(
                     f"navigator '{name}' belongs to the '{owner}' white label, so on this federal program only "
-                    f"'{owner}' screens would see it. Own it in this record (give its fields) to move it to "
-                    f"'{FEDERAL_WHITE_LABEL}', or link it from the state program instead."
+                    f"'{owner}' screens would see it. If that's intended, add {json.dumps({'white_label': owner})} "
+                    f"to the reference; to show it in every state, own it in this record (give its fields) to move it to "
+                    f"'{FEDERAL_WHITE_LABEL}'."
                 )
             return
         key = f"navigator:{name}.white_label"
@@ -1236,7 +1282,7 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
             rows = [
                 link.navigator
                 for link in ProgramNavigator.objects.filter(program=program)
-                .select_related("navigator")
+                .select_related("navigator__white_label")
                 .order_by("order", "id")
             ]
         else:
@@ -1249,8 +1295,8 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
         entries = []
         for row in rows:
             entry = previous_entries.get(row.external_name)
-            if entry is None or is_reference(entry):
-                entries.append({"external_name": row.external_name})
+            if entry is None or is_reference(entry, spec):
+                entries.append(_reference_to(spec, row, program))
             else:
                 entries.append(_entry_from_row(spec, row, entry))
         if not entries:
@@ -1261,6 +1307,19 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
             record[section] = entries
     canonical = ("white_label", "program_category", "program", "documents", "navigators")
     return _keyed_like(record, list(existing), (*canonical, "warning_message", "warning_messages"))
+
+
+def _reference_to(spec: EntitySpec, row: Any, program: Program) -> dict[str, Any]:
+    """A reference to `row`. On a federal program a state's navigator names its white label, as
+    the import requires (`_plan_federal_navigator_owner`), so the export imports cleanly."""
+    reference = {"external_name": row.external_name}
+    if (
+        spec is NAVIGATOR
+        and program.white_label.code == FEDERAL_WHITE_LABEL
+        and row.white_label.code != FEDERAL_WHITE_LABEL
+    ):
+        reference["white_label"] = row.white_label.code
+    return reference
 
 
 def _keyed_like(values: dict[str, Any], previous: list[str], canonical: tuple[str, ...]) -> dict[str, Any]:
