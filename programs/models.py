@@ -1,3 +1,4 @@
+import logging
 import re
 
 from django.core.exceptions import ValidationError
@@ -13,6 +14,8 @@ from programs.util import Dependencies, UnregisteredCalculatorError
 from sentry_sdk import capture_message
 from typing import Optional, TypedDict, Union
 from programs.translation_overrides import warning_calculators
+
+logger = logging.getLogger(__name__)
 
 _FPL_DEFAULTS = {
     "2023": {
@@ -1532,6 +1535,21 @@ class NavigatorManager(models.Manager):
         return navigator
 
 
+def _log_cross_state_link(navigator: "Navigator", program: "Program", relation: str) -> None:
+    """A snapshot copies links the environment it came from already holds, so it keeps a link the
+    linking rule (`programs.federal.may_link`) would refuse if someone made it today, such as a
+    state program on another state's navigator: refusing it failed the whole snapshot load.
+    Logged so the cross-state links that predate the rule can be found and cleaned up."""
+    logger.warning(
+        "Snapshot keeps navigator %s (%s) %s %s/%s, which the linking rule would refuse today.",
+        navigator.external_name,
+        navigator.white_label.code,
+        relation,
+        program.white_label.code,
+        program.name_abbreviated,
+    )
+
+
 class NavigatorDataController(ModelDataController["Navigator"]):
     _model_name = "Navigator"
     dependencies = ["Program"]
@@ -1628,7 +1646,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
                 continue
             program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
             if not may_link_navigator(program_instance, navigator.white_label.code):
-                raise self.DeferCreation()
+                _log_cross_state_link(navigator, program_instance, "linked to")
             programs.append(program_instance)
             if order_value is not None:
                 program_orders[program_instance.id] = order_value
@@ -1660,7 +1678,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
                 continue
             program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
             if not may_link_navigator(program_instance, navigator.white_label.code):
-                raise self.DeferCreation()
+                _log_cross_state_link(navigator, program_instance, "requiring")
             eligibility_programs.append(program_instance)
         navigator.eligibility_programs.set(eligibility_programs)
 
