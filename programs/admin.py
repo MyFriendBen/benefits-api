@@ -244,6 +244,37 @@ class ProgramAdmin(SecureAdmin):
 
     next_period_update.short_description = "Next period update"  # type: ignore[attr-defined]
 
+    def save_model(self, request: HttpRequest, obj: Program, form: Any, change: bool) -> None:
+        super().save_model(request, obj, form, change)
+        if obj.year_type != "prior_tax_year":
+            return
+        from datetime import date
+
+        from programs.models import _get_fpl_data
+
+        today = date.today()
+        target_year = today.year
+        if str(target_year) not in _get_fpl_data():
+            messages.warning(
+                request,
+                f"No FPL data for {target_year} in _FPL_DEFAULTS — year FK not updated. "
+                f"Add the data and run roll_program_years.",
+            )
+            return
+        if today.month < obj.flip_month:
+            messages.info(
+                request,
+                f"flip_month={obj.flip_month} not yet reached (current month={today.month}) — "
+                f"year FK unchanged. It will roll on the next roll_program_years run after that month.",
+            )
+            return
+        from programs.models import FederalPoveryLimit
+
+        period = str(target_year + obj.year_offset)
+        fpl_row, _ = FederalPoveryLimit.objects.get_or_create(year=period, defaults={"period": period})
+        Program.objects.filter(pk=obj.pk).update(year=fpl_row)
+        messages.success(request, f"Year FK updated to period {period}.")
+
     def get_fields(self, request: HttpRequest, obj: Optional[Program] = None) -> list[str]:
         fields = list(super().get_fields(request, obj))
         if obj is not None and is_federal(obj) and obj.active:
