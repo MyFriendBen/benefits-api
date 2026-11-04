@@ -939,8 +939,13 @@ class Insurance(models.Model):
             "nc_medicaid": self.medicaid,
             "co_medicaid": self.medicaid,
             "wa_apple_health_medicaid": self.medicaid,
+            # Each state's CHIP program, so a child reporting CHIP coverage is marked as already
+            # having it. Every CHIP calculator's code must be here; a test checks.
             "wa_apple_health_for_kids": self.chp,
             "ks_chip": self.chp,
+            "tx_chip": self.chp,
+            "il_all_kids": self.chp,
+            "nj_chip": self.chp,
             "ma_mass_health": self.mass_health or self.medicaid,
             "medicare": self.medicare,
             "emergency_medicaid": self.emergency_medicaid,
