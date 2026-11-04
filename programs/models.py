@@ -1554,7 +1554,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
     _model_name = "Navigator"
     dependencies = ["Program"]
 
-    CountiesType = list[TypedDict("CountyType", {"name": str})]
+    CountiesType = list[TypedDict("CountyType", {"name": str, "white_label": str}, total=False)]
     LanugagesType = list[TypedDict("LanguageType", {"code": str})]
     DataType = TypedDict(
         "DataType",
@@ -1563,6 +1563,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "counties": CountiesType,
             "languages": LanugagesType,
             "programs": list[str],
+            "program_links": list[dict],
             "eligibility_programs": list[str],
             "white_label": str,
             "assistant_notes": str,
@@ -1570,10 +1571,30 @@ class NavigatorDataController(ModelDataController["Navigator"]):
     )
 
     def _counties(self) -> CountiesType:
-        return [{"name": c.name} for c in self.instance.counties.all()]
+        # Each county with its own white label: a navigator moved to `federal` keeps its state's
+        # counties, and looking them up under the navigator's white label would make federal copies.
+        return [{"name": c.name, "white_label": c.white_label.code} for c in self.instance.counties.all()]
 
     def _languages(self) -> LanugagesType:
         return [{"code": l.code} for l in self.instance.languages.all()]
+
+    def _county(self, county: dict, navigator_white_label: str) -> "County":
+        """The County row a snapshot names. A snapshot that gives the county's white label is exact.
+        An older one gives only the name: a county the navigator already has is kept, so a navigator
+        moved to `federal` doesn't get federal copies of its state's counties; otherwise it's looked
+        up, or created, under the navigator's white label from the snapshot."""
+        name = county["name"]
+        white_label_code = county.get("white_label")
+        if white_label_code is None:
+            existing = self.instance.counties.filter(name=name).first() if self.instance.pk else None
+            if existing is not None:
+                return existing
+            white_label_code = navigator_white_label
+        found = County.objects.filter(name=name, white_label__code=white_label_code).first()
+        if found is not None:
+            return found
+        white_label, _ = WhiteLabel.objects.get_or_create(code=white_label_code, defaults={"name": white_label_code})
+        return County.objects.create(name=name, white_label=white_label)
 
     def to_model_data(self) -> DataType:
         navigator = self.instance
@@ -1581,10 +1602,12 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
             "counties": self._counties(),
             "languages": self._languages(),
-            # From `ProgramNavigator`, which the admin inline and the record import write and the
-            # results page reads. The legacy `programs` table misses every link made since the
-            # ordering migration (0126), and `from_model_data` deletes links a snapshot leaves out.
-            "programs": [
+            # The legacy table, as before, for loaders that predate `program_links`.
+            "programs": [p.external_name for p in navigator.programs.all()],
+            # Every link, from `ProgramNavigator`, which the admin inline and the record import write
+            # and the results page reads. The legacy table misses every link made since the ordering
+            # migration (0126). Its presence tells `from_model_data` the list is complete.
+            "program_links": [
                 {"external_name": link.program.external_name, "order": link.order}
                 for link in navigator.program_navigators.select_related("program").order_by("order", "id")
             ],
@@ -1613,14 +1636,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             navigator.white_label = white_label
 
         # get or create counties
-        counties = []
-        for county in data["counties"]:
-            try:
-                county_instance = County.objects.get(name=county["name"], white_label__code=data["white_label"])
-            except County.DoesNotExist:
-                county_instance = County.objects.create(name=county["name"], white_label=white_label)
-
-            counties.append(county_instance)
+        counties = [self._county(county, data["white_label"]) for county in data["counties"]]
         navigator.counties.set(counties)
 
         # get or create languages
@@ -1633,9 +1649,13 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             langs.append(lang_instance)
         navigator.languages.set(langs)
 
+        # A snapshot with `program_links` lists every link, so links it leaves out are removed. An
+        # older one lists only the legacy table, which misses the links made since the ordering
+        # migration (0126): its links are added, and nothing is removed.
+        complete = "program_links" in data
         programs = []
         program_orders = {}
-        for item in data["programs"]:
+        for item in data["program_links"] if complete else data["programs"]:
             if isinstance(item, str):
                 external_name = item
                 order_value = None
@@ -1665,7 +1685,8 @@ class NavigatorDataController(ModelDataController["Navigator"]):
                 defaults=defaults,
             )
 
-        ProgramNavigator.objects.filter(navigator=navigator).exclude(program__in=programs).delete()
+        if complete:
+            ProgramNavigator.objects.filter(navigator=navigator).exclude(program__in=programs).delete()
 
         through = Navigator._meta.get_field("programs").remote_field.through
         if getattr(through, "__name__", str(through)) != "ProgramNavigator":

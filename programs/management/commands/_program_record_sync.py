@@ -1129,6 +1129,9 @@ def print_plan(
     conflicts = plan.by_label(CONFLICT)
     if not plan.changes:
         stdout.write("  ✓ Matches the record.")
+        # Notes still print: one may describe the program as it stands, such as which state sees a
+        # state navigator on a federal program, not only a change.
+        _print_notes(plan, stdout)
         return
 
     sections = [
@@ -1147,6 +1150,10 @@ def print_plan(
             if record_file and change.label == ADMIN_EDIT and not plan.reverts(change, revert_admin_edits, revert_keys):
                 # Quoted for a shell: a key carries the row's external_name, which may have spaces.
                 stdout.write(f"      {REVERT_HINT} {shlex.quote(f'{record_file}:{change.key}')}")
+    _print_notes(plan, stdout)
+
+
+def _print_notes(plan: RecordPlan, stdout: OutputWrapper) -> None:
     if plan.notes:
         stdout.write("  Notes:")
         for note in plan.notes:

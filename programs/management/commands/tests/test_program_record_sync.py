@@ -845,7 +845,9 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
             "same state as 'co' see it.",
             output,
         )
-        self.assertIn("Matches the record", self.run_import())
+        second = self.run_import()
+        self.assertIn("Matches the record", second)
+        self.assertIn("navigator 'shared_hotline' is on the 'co' white label", second)
 
     def test_a_federal_navigator_the_federal_record_references_gets_no_note(self) -> None:
         Navigator.objects.filter(pk=self.state_nav.pk).update(
