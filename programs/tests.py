@@ -17,6 +17,7 @@ from programs.models import (
     FederalPovertyLimitValue,
     Navigator,
     Program,
+    ProgramNavigator,
     Referrer,
     _get_fpl_data,
 )
@@ -615,6 +616,22 @@ class NavigatorDataControllerAssistantNotesTests(TestCase):
 
         fresh.refresh_from_db()
         self.assertEqual(fresh.assistant_notes, "Helps by phone only.")
+
+    def test_a_round_trip_keeps_links_made_after_the_ordering_migration(self) -> None:
+        """The admin inline and the record import write only `ProgramNavigator`. A snapshot read
+        from the legacy `programs` table left those links out, and its import deleted them."""
+        program = Program.objects.new_program("co", "co_linked")
+        program.external_name = "co_linked"
+        program.save()
+        ProgramNavigator.objects.create(program=program, navigator=self.navigator, order=3)
+        self.assertFalse(self.navigator.programs.exists())
+
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.assertEqual(data["programs"], [{"external_name": "co_linked", "order": 3}])
+        link = ProgramNavigator.objects.get(program=program, navigator=self.navigator)
+        self.assertEqual(link.order, 3)
 
     def test_snapshot_without_notes_leaves_existing_notes_alone(self) -> None:
         """An older snapshot, exported before the field existed, has no key at all.
