@@ -87,6 +87,8 @@ PROGRAM_SCALAR_FIELDS = (
     "has_calculator",
     "value_format",
     "base_program",
+    "flip_month",
+    "year_offset",
 )
 PROGRAM_OPTIONAL_FIELDS = ("external_name",)
 PROGRAM_PROGRAM_LISTS = ("required_programs", "excludes_programs")
@@ -950,9 +952,10 @@ class RecordSync:
             except FederalPoveryLimit.DoesNotExist:
                 raise CommandError(f"program.year '{value}' has no FederalPovertyLimit row") from None
             # A dynamic row's year type has to agree with it, the same rule the create path follows.
-            program.year_type = {"THIS_YEAR_CALENDAR": "calendar_year", "THIS_YEAR_FISCAL": "fiscal_year"}.get(
-                value, "hardcoded"
-            )
+            program.year_type = {
+                "THIS_YEAR_CALENDAR": "calendar_year",
+                "THIS_YEAR_FISCAL": "fiscal_year",
+            }.get(value, "hardcoded")
         program.save(update_fields=["year", "year_type"])
 
     def _set_category(self, value: Optional[str]) -> None:
