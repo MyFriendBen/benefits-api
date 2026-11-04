@@ -631,7 +631,7 @@ class NavigatorDataControllerAssistantNotesTests(TestCase):
         self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
 
         self.assertEqual(data["program_links"], [{"external_name": "co_linked", "order": 3}])
-        self.assertEqual(data["programs"], [])
+        self.assertNotIn("programs", data)
         link = ProgramNavigator.objects.get(program=program, navigator=self.navigator)
         self.assertEqual(link.order, 3)
 
@@ -642,21 +642,23 @@ class NavigatorDataControllerAssistantNotesTests(TestCase):
         ProgramNavigator.objects.create(program=program, navigator=self.navigator)
         return program
 
-    def test_an_older_snapshot_adds_links_and_removes_none(self) -> None:
-        """An older snapshot lists only the legacy table, so a link it leaves out may just be one
-        made since the ordering migration: it is kept."""
+    def test_an_older_snapshot_leaves_links_alone(self) -> None:
+        """An older snapshot lists only the legacy table: it misses links made since the ordering
+        migration and still holds links removed in the admin since, so it neither adds nor removes."""
         kept = self.link("co_kept")
-        listed = Program.objects.new_program("co", "co_listed")
-        listed.external_name = "co_listed"
-        listed.save()
+        removed_in_admin = Program.objects.new_program("co", "co_removed")
+        removed_in_admin.external_name = "co_removed"
+        removed_in_admin.save()
         data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
         del data["program_links"]
-        data["programs"] = ["co_listed"]
+        data["programs"] = ["co_removed"]
 
-        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+        with self.assertLogs("programs.models", level="INFO") as logs:
+            self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
 
         linked = set(ProgramNavigator.objects.filter(navigator=self.navigator).values_list("program", flat=True))
-        self.assertEqual(linked, {kept.pk, listed.pk})
+        self.assertEqual(linked, {kept.pk})
+        self.assertIn("predates program_links", logs.output[0])
 
     def test_a_snapshot_with_program_links_removes_a_link_it_leaves_out(self) -> None:
         dropped = self.link("co_dropped")

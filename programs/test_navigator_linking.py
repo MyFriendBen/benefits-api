@@ -193,7 +193,7 @@ class TestNavigatorImportLinks(_Fixtures):
                 "phone_number": None,
                 "counties": [],
                 "languages": [],
-                "programs": [p.external_name for p in programs],
+                "program_links": [{"external_name": p.external_name} for p in programs],
                 "eligibility_programs": [p.external_name for p in eligibility_programs],
                 "white_label": white_label or navigator.white_label.code,
             }

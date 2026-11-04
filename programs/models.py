@@ -1562,7 +1562,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "phone_number": Optional[str],
             "counties": CountiesType,
             "languages": LanugagesType,
-            "programs": list[str],
+            "programs": list[str],  # older snapshots only; no longer exported
             "program_links": list[dict],
             "eligibility_programs": list[str],
             "white_label": str,
@@ -1577,6 +1577,46 @@ class NavigatorDataController(ModelDataController["Navigator"]):
 
     def _languages(self) -> LanugagesType:
         return [{"code": l.code} for l in self.instance.languages.all()]
+
+    def _set_program_links(self, navigator: "Navigator", items: list) -> None:
+        """Make the navigator's program links match a snapshot's `program_links`, keeping each order."""
+        programs = []
+        program_orders = {}
+        for item in items:
+            if isinstance(item, str):
+                external_name = item
+                order_value = None
+            else:
+                external_name = item.get("external_name") or item.get("name")
+                order_value = item.get("order") if isinstance(item, dict) else None
+            if not external_name:
+                continue
+            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
+            if not may_link_navigator(program_instance, navigator.white_label.code):
+                _log_cross_state_link(navigator, program_instance, "linked to")
+            programs.append(program_instance)
+            if order_value is not None:
+                program_orders[program_instance.id] = order_value
+
+        seen_program_ids = set()
+        for program in programs:
+            if program.id in seen_program_ids:
+                continue
+            seen_program_ids.add(program.id)
+            defaults = {}
+            if program.id in program_orders:
+                defaults["order"] = program_orders[program.id]
+            ProgramNavigator.objects.update_or_create(
+                program=program,
+                navigator=navigator,
+                defaults=defaults,
+            )
+
+        ProgramNavigator.objects.filter(navigator=navigator).exclude(program__in=programs).delete()
+
+        through = Navigator._meta.get_field("programs").remote_field.through
+        if getattr(through, "__name__", str(through)) != "ProgramNavigator":
+            navigator.programs.set(programs)
 
     def _county(self, county: dict, navigator_white_label: str) -> "County":
         """The County row a snapshot names. A snapshot that gives the county's white label is exact.
@@ -1602,11 +1642,11 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
             "counties": self._counties(),
             "languages": self._languages(),
-            # The legacy table, as before, for loaders that predate `program_links`.
-            "programs": [p.external_name for p in navigator.programs.all()],
             # Every link, from `ProgramNavigator`, which the admin inline and the record import write
-            # and the results page reads. The legacy table misses every link made since the ordering
-            # migration (0126). Its presence tells `from_model_data` the list is complete.
+            # and the results page reads. The legacy `programs` list is no longer exported: it missed
+            # every link made since the ordering migration (0126), and a loader that predates
+            # `program_links` deleted the links it left out. Without it, such a loader fails on the
+            # missing key and the whole load rolls back.
             "program_links": [
                 {"external_name": link.program.external_name, "order": link.order}
                 for link in navigator.program_navigators.select_related("program").order_by("order", "id")
@@ -1649,48 +1689,17 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             langs.append(lang_instance)
         navigator.languages.set(langs)
 
-        # A snapshot with `program_links` lists every link, so links it leaves out are removed. An
-        # older one lists only the legacy table, which misses the links made since the ordering
-        # migration (0126): its links are added, and nothing is removed.
-        complete = "program_links" in data
-        programs = []
-        program_orders = {}
-        for item in data["program_links"] if complete else data["programs"]:
-            if isinstance(item, str):
-                external_name = item
-                order_value = None
-            else:
-                external_name = item.get("external_name") or item.get("name")
-                order_value = item.get("order") if isinstance(item, dict) else None
-            if not external_name:
-                continue
-            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
-            if not may_link_navigator(program_instance, navigator.white_label.code):
-                _log_cross_state_link(navigator, program_instance, "linked to")
-            programs.append(program_instance)
-            if order_value is not None:
-                program_orders[program_instance.id] = order_value
-
-        seen_program_ids = set()
-        for program in programs:
-            if program.id in seen_program_ids:
-                continue
-            seen_program_ids.add(program.id)
-            defaults = {}
-            if program.id in program_orders:
-                defaults["order"] = program_orders[program.id]
-            ProgramNavigator.objects.update_or_create(
-                program=program,
-                navigator=navigator,
-                defaults=defaults,
+        # A snapshot with `program_links` lists every link, so the navigator's links are made to match
+        # it. An older one lists only the legacy table, which misses the links made since the
+        # ordering migration (0126) and still holds links removed in the admin since, so its links
+        # are left alone: neither added nor removed.
+        if "program_links" in data:
+            self._set_program_links(navigator, data["program_links"])
+        else:
+            logger.info(
+                "Snapshot predates program_links; left navigator %s's program links alone.",
+                navigator.external_name,
             )
-
-        if complete:
-            ProgramNavigator.objects.filter(navigator=navigator).exclude(program__in=programs).delete()
-
-        through = Navigator._meta.get_field("programs").remote_field.through
-        if getattr(through, "__name__", str(through)) != "ProgramNavigator":
-            navigator.programs.set(programs)
 
         eligibility_programs = []
         for item in data.get("eligibility_programs", []):
