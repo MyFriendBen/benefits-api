@@ -30,7 +30,7 @@ def forwards(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0202_add_flip_month_and_year_offset"),
+        ("programs", "0206_add_flip_month_and_year_offset"),
     ]
 
     operations = [

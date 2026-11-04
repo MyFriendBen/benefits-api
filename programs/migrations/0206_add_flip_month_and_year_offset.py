@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0201_move_state_wic_current_benefits"),
+        ("programs", "0205_add_lawful_health_care_legal_statuses"),
     ]
     operations = [
         migrations.AlterField(
