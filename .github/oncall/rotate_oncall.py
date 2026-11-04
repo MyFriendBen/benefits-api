@@ -41,6 +41,7 @@ RESPONSIBILITIES = [
     ":sunrise: Daily standup",
     ":speech_balloon: Ad-hoc eng questions",
     ":handshake: PolicyEngine comms",
+    ":test_tube: PolicyEngine cassette refresh: Mon/Tue check, Wed adopt (<https://myfriendben.getoutline.com/doc/on-call-rotation-4bQEOJWiy8|steps>)",
     ":bug: Sentry + #bugs triage",
     ":rocket: The weekly deploy",
 ]
