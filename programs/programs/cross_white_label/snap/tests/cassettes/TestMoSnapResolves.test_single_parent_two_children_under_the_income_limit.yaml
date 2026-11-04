@@ -33,7 +33,7 @@ interactions:
       false}, "heating_cooling_expense": {"2026": 0.0}, "childcare_expenses": {"2026":
       0.0}, "water_expense": {"2026": 0.0}, "phone_expense": {"2026": 0.0}, "homeowners_association_fees":
       {"2026": 0.0}, "homeowners_insurance": {"2026": 0.0}, "snap_if_takes_up": {"2026-01":
-      null}}}, "marital_units": {}}, "version": "1.815.1"}'
+      null}}}, "marital_units": {}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -42,7 +42,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '2958'
+      - '2957'
       Content-Type:
       - application/json
       User-Agent:
@@ -85,27 +85,27 @@ interactions:
         {"2026": 0.0}, "childcare_expenses": {"2026": 0.0}, "water_expense": {"2026":
         0.0}, "phone_expense": {"2026": 0.0}, "homeowners_association_fees": {"2026":
         0.0}, "homeowners_insurance": {"2026": 0.0}, "snap_if_takes_up": {"2026-01":
-        487.69998}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "1.815.1", "data_version": null, "dataset": null}}'
+        487.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.53.1",
+        "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '3065'
+      - '3060'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 09:39:57 GMT
+      - Mon, 02 Nov 2026 19:11:07 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-53843e541118dc6d8086153765187d37-404fb48f54800b89-01
+      - 00-0d41d8e34af73788ff5b713675eb9c02-896d338f117db92a-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 53843e541118dc6d8086153765187d37;o=1
+      - 0d41d8e34af73788ff5b713675eb9c02
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -113,9 +113,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 46058642-9eaa-49dd-b2e0-4c2eca8510f6
+      - 80b263d3-30f6-47b3-b0ea-685faea965bf
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK

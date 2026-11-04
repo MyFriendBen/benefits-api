@@ -51,19 +51,11 @@ from screener.models import Expense
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
-PE_VERSION = "1.815.1"
-PE_VERSION_REASON = (
-    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
-    "re-recorded at PE_TEST_VERSION."
-)
 YEAR = "2026"
 
 
 class MoTanfScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is St. Louis City, ZIP 63101."""
-
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     #

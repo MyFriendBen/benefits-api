@@ -21,7 +21,7 @@ interactions:
       "families": {"family": {"members": ["82221", "82222"]}}, "households": {"household":
       {"members": ["82221", "82222"], "state_code": {"2025": "MO"}}}, "spm_units":
       {"spm_unit": {"members": ["82221", "82222"]}}, "marital_units": {"82221-82222":
-      {"members": ["82221", "82222"]}}}, "version": "2.9.0"}'
+      {"members": ["82221", "82222"]}}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -30,7 +30,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1829'
+      - '1830'
       Content-Type:
       - application/json
       User-Agent:
@@ -62,26 +62,26 @@ interactions:
         {"members": ["82221", "82222"], "state_code": {"2025": "MO"}}}, "spm_units":
         {"spm_unit": {"members": ["82221", "82222"]}}, "marital_units": {"82221-82222":
         {"members": ["82221", "82222"]}}}, "policyengine_bundle": {"model_version":
-        "2.9.0", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1930'
+      - '1931'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 21:45:36 GMT
+      - Mon, 02 Nov 2026 19:12:52 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-9d3e9fd1a43148ac691d32726c240e74-ca1731aebc99a478-00
+      - 00-61b34b217df67a412072dafb3b25b527-f4532ed99e2942e6-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 9d3e9fd1a43148ac691d32726c240e74
+      - 61b34b217df67a412072dafb3b25b527
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -89,7 +89,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - ad45e63f-62e6-4ffb-b8dd-7baba61ec42d
+      - d8251590-9834-450e-8fcb-bcc7f4ced512
       x-policyengine-route-channel:
       - current
     status:

@@ -5,7 +5,7 @@ interactions:
       {"family": {"members": ["1701"]}}, "households": {"household": {"members": ["1701"],
       "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1701"],
       "school_meal_countable_income": {"2026": 18000.0}}}, "marital_units": {}}, "version":
-      "2.5.0"}'
+      "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -14,7 +14,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '439'
+      - '440'
       Content-Type:
       - application/json
       User-Agent:
@@ -29,26 +29,26 @@ interactions:
         ["1701"]}}, "households": {"household": {"members": ["1701"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1701"], "school_meal_countable_income":
         {"2026": 18000.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.5.0", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '540'
+      - '541'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 20:46:55 GMT
+      - Mon, 02 Nov 2026 19:09:35 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-0e9dee2862cd154bc4e05de9e959dba8-b149fa30cb310a32-00
+      - 00-cba6400762b5b8687d8c220cb563b449-3df132da15f3227e-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 0e9dee2862cd154bc4e05de9e959dba8
+      - cba6400762b5b8687d8c220cb563b449
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -56,7 +56,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - a2194a9c-f601-49d3-bfb4-ae55aa2a1575
+      - 2e37b09b-c445-4e3a-a0c1-962a42901d67
       x-policyengine-route-channel:
       - current
     status:

@@ -18,7 +18,7 @@ interactions:
       {"family": {"members": ["73011", "73012"]}}, "households": {"household": {"members":
       ["73011", "73012"], "state_code": {"2026": "MA"}}}, "spm_units": {"spm_unit":
       {"members": ["73011", "73012"], "spm_unit_assets": {"2026": 0}, "ma_ccfa_eligible":
-      {"2026": null}}}, "marital_units": {}}, "version": "2.5.0"}'
+      {"2026": null}}}, "marital_units": {}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -27,7 +27,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1573'
+      - '1574'
       Content-Type:
       - application/json
       User-Agent:
@@ -56,26 +56,26 @@ interactions:
         {"members": ["73011", "73012"], "state_code": {"2026": "MA"}}}, "spm_units":
         {"spm_unit": {"members": ["73011", "73012"], "spm_unit_assets": {"2026": 0},
         "ma_ccfa_eligible": {"2026": true}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.5.0", "data_version": null, "dataset": null}}'
+        {"model_version": "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1674'
+      - '1675'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Fri, 18 Sep 2026 20:03:47 GMT
+      - Mon, 02 Nov 2026 19:08:08 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-e567d3c646e2cebaed132618552a8173-52b934233745edc3-00
+      - 00-c2dc0aeda15eb07ff0500d1a7602f1ca-89562eab6b10dac9-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - e567d3c646e2cebaed132618552a8173
+      - c2dc0aeda15eb07ff0500d1a7602f1ca;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -83,9 +83,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 76968e4f-fb9a-4b6a-a300-91135d487cd2
+      - a637b1eb-4ab3-4648-84c3-ffa06d784878
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK
