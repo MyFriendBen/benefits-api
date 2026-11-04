@@ -193,7 +193,7 @@ class TestNavigatorImportLinks(_Fixtures):
                 "phone_number": None,
                 "counties": [],
                 "languages": [],
-                "programs": [p.external_name for p in programs],
+                "program_links": [{"external_name": p.external_name} for p in programs],
                 "eligibility_programs": [p.external_name for p in eligibility_programs],
                 "white_label": white_label or navigator.white_label.code,
             }
@@ -208,9 +208,23 @@ class TestNavigatorImportLinks(_Fixtures):
         self._import(self.federal_nav, self.co_program)
         self.assertTrue(ProgramNavigator.objects.filter(navigator=self.federal_nav, program=self.co_program).exists())
 
-    def test_another_states_navigator_is_deferred(self) -> None:
-        with self.assertRaises(NavigatorDataController.DeferCreation):
+    def test_a_snapshot_keeps_another_states_navigator_and_logs_it(self) -> None:
+        """A snapshot copies links its environment already holds. Refusing one the linking rule
+        wouldn't allow today failed the whole snapshot load."""
+        with self.assertLogs("programs.models", level="WARNING") as logs:
             self._import(self.ks_nav, self.co_program)
+        self.assertTrue(ProgramNavigator.objects.filter(navigator=self.ks_nav, program=self.co_program).exists())
+        self.assertIn(f"{self.ks_nav.external_name} (ks_link) linked to", logs.output[0])
+
+    def test_a_snapshot_keeps_another_states_required_program_and_logs_it(self) -> None:
+        with self.assertLogs("programs.models", level="WARNING") as logs:
+            self._import(self.ks_nav, eligibility_programs=(self.co_program,))
+        self.assertEqual(list(self.ks_nav.eligibility_programs.all()), [self.co_program])
+        self.assertIn("requiring", logs.output[0])
+
+    def test_an_allowed_link_logs_nothing(self) -> None:
+        with self.assertNoLogs("programs.models", level="WARNING"):
+            self._import(self.co_nav, self.co_program, self.federal_program)
 
     def test_state_navigator_may_require_a_federal_program(self) -> None:
         self._import(self.co_nav, eligibility_programs=(self.federal_program,))

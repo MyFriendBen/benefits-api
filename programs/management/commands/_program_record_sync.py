@@ -730,13 +730,16 @@ class RecordSync:
     def _plan_federal_navigator_owner(
         self, plan: RecordPlan, entry: dict[str, Any], row: Optional[Navigator], baseline: Optional[dict[str, Any]]
     ) -> None:
-        """A federal record's navigators must belong to `federal`.
+        """Which states see a federal record's navigators.
 
-        On a federal program a state's navigator is shown only to that state's screens
-        (`screener.navigators.filter_by_white_label`), and a navigator belongs to whichever white
-        label created it first. A navigator this record owns is moved to `federal`; that leaves
-        the state programs still linking it unchanged, since they don't filter by white label. One
-        it only references is refused, since moving it would override the record that owns it.
+        On a federal program a navigator's white label decides who sees it: one on `federal` shows
+        in every state, a state's only to that state's screens
+        (`screener.navigators.filter_by_white_label`). A navigator this record owns is meant for
+        every state and is moved to `federal`; that leaves the state programs still linking it
+        unchanged, since they don't filter by white label. One it only references keeps its white
+        label, such as a state's WIC clinics on federal WIC, and the plan notes which state sees
+        it, so a national navigator a state imported first (the USDA hunger hotline sat on `mo`)
+        shows up in the dry run.
 
         The white label is a field the record manages, so a move an admin undoes later is kept and
         reported like any admin edit. Until an import has applied it there is nothing to protect:
@@ -749,10 +752,10 @@ class RecordSync:
         owner = FEDERAL_WHITE_LABEL if row is None else row.white_label.code
         if is_reference(entry):
             if owner != FEDERAL_WHITE_LABEL:
-                raise CommandError(
-                    f"navigator '{name}' belongs to the '{owner}' white label, so on this federal program only "
-                    f"'{owner}' screens would see it. Own it in this record (give its fields) to move it to "
-                    f"'{FEDERAL_WHITE_LABEL}', or link it from the state program instead."
+                plan.notes.append(
+                    f"navigator '{name}' is on the '{owner}' white label, so on this federal program only "
+                    f"screens in the same state as '{owner}' see it. To show it in every state, own it in this "
+                    f"record (give its fields), which moves it to '{FEDERAL_WHITE_LABEL}'."
                 )
             return
         key = f"navigator:{name}.white_label"
@@ -1126,6 +1129,9 @@ def print_plan(
     conflicts = plan.by_label(CONFLICT)
     if not plan.changes:
         stdout.write("  ✓ Matches the record.")
+        # Notes still print: one may describe the program as it stands, such as which state sees a
+        # state navigator on a federal program, not only a change.
+        _print_notes(plan, stdout)
         return
 
     sections = [
@@ -1144,6 +1150,10 @@ def print_plan(
             if record_file and change.label == ADMIN_EDIT and not plan.reverts(change, revert_admin_edits, revert_keys):
                 # Quoted for a shell: a key carries the row's external_name, which may have spaces.
                 stdout.write(f"      {REVERT_HINT} {shlex.quote(f'{record_file}:{change.key}')}")
+    _print_notes(plan, stdout)
+
+
+def _print_notes(plan: RecordPlan, stdout: OutputWrapper) -> None:
     if plan.notes:
         stdout.write("  Notes:")
         for note in plan.notes:
