@@ -36,6 +36,7 @@ from django.db import transaction
 from configuration.models import Configuration
 
 from integrations.clients.google_translate import Translate, TranslationIntegrityError, is_auto_translatable
+from programs.federal import FEDERAL_WHITE_LABEL
 from programs.models import (
     BaseProgram,
     County,
@@ -685,6 +686,9 @@ class RecordSync:
                 # An existing row is shared: creating this program doesn't make the record newer
                 # than an admin edit to it, so it's labelled like any update, never as fresh.
                 self._plan_row(plan, spec, entry, row, baseline, fresh=False)
+            if spec is NAVIGATOR:
+                self._plan_federal_navigator_owner(plan, entry, row, baseline)
+            if not new_row and not is_reference(entry):
                 others = self._other_programs(row, spec, program)
                 if others and any(change.key.startswith(f"{spec.kind}:{name}.") for change in plan.changes):
                     plan.notes.append(
@@ -722,6 +726,46 @@ class RecordSync:
                     plan.notes.append(
                         f"{spec.kind} '{name}' is linked to no other program, so unlinking it leaves it unused."
                     )
+
+    def _plan_federal_navigator_owner(
+        self, plan: RecordPlan, entry: dict[str, Any], row: Optional[Navigator], baseline: Optional[dict[str, Any]]
+    ) -> None:
+        """A federal record's navigators must belong to `federal`.
+
+        On a federal program a state's navigator is shown only to that state's screens
+        (`screener.navigators.filter_by_white_label`), and a navigator belongs to whichever white
+        label created it first. A navigator this record owns is moved to `federal`; that leaves
+        the state programs still linking it unchanged, since they don't filter by white label. One
+        it only references is refused, since moving it would override the record that owns it.
+
+        The white label is a field the record manages, so a move an admin undoes later is kept and
+        reported like any admin edit. Until an import has applied it there is nothing to protect:
+        the white label is only import order, so the first import moves it.
+        """
+        if self.white_label.code != FEDERAL_WHITE_LABEL:
+            return
+        name = entry["external_name"]
+        # A row this run creates is created on the record's white label (`_create_row`).
+        owner = FEDERAL_WHITE_LABEL if row is None else row.white_label.code
+        if is_reference(entry):
+            if owner != FEDERAL_WHITE_LABEL:
+                raise CommandError(
+                    f"navigator '{name}' belongs to the '{owner}' white label, so on this federal program only "
+                    f"'{owner}' screens would see it. Own it in this record (give its fields) to move it to "
+                    f"'{FEDERAL_WHITE_LABEL}', or link it from the state program instead."
+                )
+            return
+        key = f"navigator:{name}.white_label"
+        self._add(
+            plan,
+            key,
+            FEDERAL_WHITE_LABEL,
+            owner,
+            lambda _value, name=name: Navigator.objects.filter(external_name=name).update(white_label=self.white_label),
+            0,
+            baseline,
+            fresh=key not in (baseline or {}),
+        )
 
     def _plan_row(
         self,
@@ -1021,7 +1065,13 @@ class RecordSync:
                 f"'{self.white_label.code}' county list the screener sends"
             )
         if spec is NAVIGATOR:
-            return [County.objects.get_or_create(name=name, white_label=self.white_label)[0] for name in names]
+            # A county the navigator already has is kept, so one moved to `federal` doesn't get a
+            # federal copy of each of its state's counties.
+            return [
+                row.counties.filter(name=name).first()
+                or County.objects.get_or_create(name=name, white_label=self.white_label)[0]
+                for name in names
+            ]
         counties = []
         for name in names:
             county = County.objects.filter(name=name, white_label=row.white_label).first()
