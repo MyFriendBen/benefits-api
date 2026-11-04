@@ -23,7 +23,7 @@ from programs.models import (
     _get_fpl_data,
 )
 from programs.serializers import NavigatorAPISerializer
-from screener.models import Screen, WhiteLabel
+from screener.models import CurrentBenefit, Screen, WhiteLabel
 from translations.models import Translation
 
 
@@ -748,3 +748,163 @@ class NavigatorDataControllerCountyTests(TestCase):
 
         created = self.navigator.counties.get()
         self.assertEqual((created.name, created.white_label.code), ("Platte County", "ks"))
+
+
+class MoveStateCdccToFederalMigrationTests(TestCase):
+    """Covers migration 0205's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0205_move_state_cdcc_current_benefits")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        self.federal_wl = WhiteLabel.objects.create(name="Federal", code="federal", state_code="")
+        self.ks = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        self.mo = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+
+    def _program(self, white_label: WhiteLabel, name: str, active: bool, has_benefits_step: bool = False) -> Program:
+        program = Program.objects.new_program(white_label.code, name)
+        Program.objects.filter(id=program.id).update(active=active, show_in_has_benefits_step=has_benefits_step)
+        program.refresh_from_db()
+        return program
+
+    def _state_rows(self, active: bool = True) -> tuple[Program, Program]:
+        return (
+            self._program(self.ks, "ks_cdcc_federal", active, has_benefits_step=True),
+            self._program(self.mo, "mo_cdcc_federal", active, has_benefits_step=True),
+        )
+
+    def _screen(self, white_label: WhiteLabel) -> Screen:
+        return Screen.objects.create(white_label=white_label, completed=False)
+
+    def _run(self) -> None:
+        with patch("builtins.print"):
+            self.migration.forwards(global_apps, self.schema_editor)
+
+    def test_moves_current_benefits_onto_the_federal_row(self) -> None:
+        ks_row, mo_row = self._state_rows()
+        federal = self._program(self.federal_wl, "federal_cdcc", active=False)
+        ks_screen, mo_screen = self._screen(self.ks), self._screen(self.mo)
+        CurrentBenefit.objects.create(screen=ks_screen, program=ks_row)
+        CurrentBenefit.objects.create(screen=mo_screen, program=mo_row)
+
+        self._run()
+
+        self.assertEqual(
+            set(CurrentBenefit.objects.values_list("screen_id", "program_id")),
+            {(ks_screen.id, federal.id), (mo_screen.id, federal.id)},
+        )
+
+    def test_switches_the_state_rows_off_and_federal_on_without_deleting(self) -> None:
+        ks_row, mo_row = self._state_rows()
+        federal = self._program(self.federal_wl, "federal_cdcc", active=False)
+
+        self._run()
+
+        for row in (ks_row, mo_row):
+            row.refresh_from_db()
+            self.assertFalse(row.active)
+            self.assertFalse(row.show_in_has_benefits_step)
+        federal.refresh_from_db()
+        self.assertTrue(federal.active)
+
+    def test_leaves_the_ks_state_credit_alone(self) -> None:
+        """ks_cdcc is Kansas's own credit, not the federal one: it stays live and keeps its households."""
+        self._state_rows()
+        self._program(self.federal_wl, "federal_cdcc", active=False)
+        ks_credit = self._program(self.ks, "ks_cdcc", active=True, has_benefits_step=True)
+        screen = self._screen(self.ks)
+        CurrentBenefit.objects.create(screen=screen, program=ks_credit)
+
+        self._run()
+
+        ks_credit.refresh_from_db()
+        self.assertTrue(ks_credit.active)
+        self.assertTrue(ks_credit.show_in_has_benefits_step)
+        self.assertTrue(CurrentBenefit.objects.filter(screen=screen, program=ks_credit).exists())
+
+    def test_a_screen_holding_both_state_rows_ends_with_one_federal_row(self) -> None:
+        ks_row, mo_row = self._state_rows()
+        federal = self._program(self.federal_wl, "federal_cdcc", active=False)
+        screen = self._screen(self.ks)
+        CurrentBenefit.objects.create(screen=screen, program=ks_row)
+        CurrentBenefit.objects.create(screen=screen, program=mo_row)
+
+        self._run()
+
+        self.assertEqual(
+            list(CurrentBenefit.objects.filter(screen=screen).values_list("program_id", flat=True)), [federal.id]
+        )
+
+    def test_a_screen_already_on_the_federal_row_keeps_it_and_loses_the_state_row(self) -> None:
+        ks_row, _ = self._state_rows()
+        federal = self._program(self.federal_wl, "federal_cdcc", active=False)
+        screen = self._screen(self.ks)
+        CurrentBenefit.objects.create(screen=screen, program=ks_row)
+        CurrentBenefit.objects.create(screen=screen, program=federal)
+
+        self._run()
+
+        self.assertEqual(
+            list(CurrentBenefit.objects.filter(screen=screen).values_list("program_id", flat=True)), [federal.id]
+        )
+
+    def test_fails_closed_when_cdcc_is_live_but_federal_is_not_imported(self) -> None:
+        ks_row, mo_row = self._state_rows()
+        CurrentBenefit.objects.create(screen=self._screen(self.ks), program=ks_row)
+
+        with self.assertRaisesRegex(RuntimeError, "federal/federal_cdcc must be imported"):
+            self._run()
+
+        ks_row.refresh_from_db()
+        mo_row.refresh_from_db()
+        self.assertTrue(ks_row.active)
+        self.assertTrue(mo_row.active)
+        self.assertEqual(CurrentBenefit.objects.filter(program=ks_row).count(), 1)
+
+    def test_fails_closed_when_only_current_benefits_are_waiting(self) -> None:
+        """Staging's state rows are already off, but households may still hold them."""
+        ks_row, _ = self._state_rows(active=False)
+        CurrentBenefit.objects.create(screen=self._screen(self.ks), program=ks_row)
+
+        with self.assertRaisesRegex(RuntimeError, "federal/federal_cdcc must be imported"):
+            self._run()
+
+    def test_an_environment_with_the_state_rows_already_off_keeps_federal_off(self) -> None:
+        """Staging case: the rows were switched off by hand, so federal is switched on in the admin."""
+        ks_row, _ = self._state_rows(active=False)
+        federal = self._program(self.federal_wl, "federal_cdcc", active=False)
+        screen = self._screen(self.ks)
+        CurrentBenefit.objects.create(screen=screen, program=ks_row)
+
+        self._run()
+
+        federal.refresh_from_db()
+        self.assertFalse(federal.active)
+        self.assertTrue(CurrentBenefit.objects.filter(screen=screen, program=federal).exists())
+
+    def test_does_not_switch_on_a_federal_row_that_is_already_on_or_touch_it(self) -> None:
+        self._state_rows()
+        federal = self._program(self.federal_wl, "federal_cdcc", active=True)
+
+        self._run()
+
+        federal.refresh_from_db()
+        self.assertTrue(federal.active)
+
+    def test_a_database_without_cdcc_rows_does_nothing(self) -> None:
+        self._run()
+
+        self.assertFalse(Program.objects.exists())
+
+    def test_running_twice_changes_nothing_more(self) -> None:
+        ks_row, _ = self._state_rows()
+        federal = self._program(self.federal_wl, "federal_cdcc", active=False)
+        screen = self._screen(self.ks)
+        CurrentBenefit.objects.create(screen=screen, program=ks_row)
+
+        self._run()
+        self._run()
+
+        self.assertEqual(list(CurrentBenefit.objects.values_list("program_id", flat=True)), [federal.id])
+
+    def test_is_irreversible(self) -> None:
+        self.assertFalse(self.migration.Migration.operations[0].reversible)
