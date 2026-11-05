@@ -138,6 +138,13 @@ class NcConfigurationData(ConfigurationData):
                 "_default_message": "Medical Expenses & Debt",
             },
         },
+        "drugAlcoholUse": {
+            "icon": {"_icon": "Drug_alcohol_use", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.drugAlcoholUse",
+                "_default_message": "Help with drug or alcohol use",
+            },
+        },
     }
 
     sign_up_options = {
