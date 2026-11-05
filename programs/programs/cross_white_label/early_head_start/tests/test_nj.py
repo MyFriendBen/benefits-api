@@ -11,20 +11,26 @@ $16,909.14), $15,059 ($15,059.48) and $13,446 ($13,445.80).
 
 Scenarios 7 and 10 report SSI or WIC as a current benefit. NJ's SSI is the ``federal_ssi``
 row and NJ has no WIC row, so the tests seed a stand-in row with the right ``base_program``.
+
+Scenarios 12 and 25 turn on NJ TANF's child-only case for a relative caretaker, so they run
+``NjTanf`` on the same household and pass its result in, as the screener does.
 """
 
 from datetime import date
 from decimal import Decimal
+from unittest.mock import Mock
 
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility
 from programs.programs.cross_white_label.early_head_start.mfb_base import MfbEarlyHeadStart
 from programs.programs.cross_white_label.early_head_start.nj import NjEarlyHeadStart
+from programs.programs.cross_white_label.tanf.nj import NjTanf
 from programs.programs.testing_fixtures.custom_calculator import (
     CustomCalculatorTestCase,
     eligible_result,
     ineligible_result,
 )
+from programs.util import Dependencies
 from screener.models import HouseholdMember, Screen
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
@@ -67,6 +73,10 @@ class NjEarlyHeadStartTestCase(CustomCalculatorTestCase):
         _write_current_benefits(screen, [name])
         screen.invalidate_current_benefits_cache()
 
+    def with_nj_tanf(self, screen: Screen) -> dict[str, Eligibility]:
+        """The ``nj_tanf`` result the screener calculates first and passes down."""
+        return {"nj_tanf": NjTanf(screen, Mock(), {}, Dependencies()).calc()}
+
     def assert_eligible(self, eligibility: Eligibility, value: int = INFANT) -> None:
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, value)
@@ -91,8 +101,8 @@ class TestNjValues(NjEarlyHeadStartTestCase):
         )
         self.assertEqual(NjEarlyHeadStart.program_weeks, 46)
 
-    def test_gates_on_federal_ssi_only(self):
-        self.assertEqual(NjEarlyHeadStart.gates_on_any, ("federal_ssi",))
+    def test_gates_on_federal_ssi_and_nj_tanf(self):
+        self.assertEqual(NjEarlyHeadStart.gates_on_any, ("federal_ssi", "nj_tanf"))
         self.assertEqual(NjEarlyHeadStart.gates_on, ())
 
     def test_children_are_built_at_the_months_the_scenarios_state(self):
@@ -192,7 +202,7 @@ class TestPublicAssistance(NjEarlyHeadStartTestCase):
         self.assert_eligible(self.calculate(screen))
 
     def test_eligible_for_federal_ssi_qualifies(self):
-        """`federal_ssi` stands in for `{ssi_program_code}`; SNAP and TANF have none in NJ."""
+        """`federal_ssi` stands in for `{ssi_program_code}`."""
         screen = self.over_income_household()
 
         self.assert_eligible(self.calculate(screen, data={"federal_ssi": eligible_result()}))
@@ -201,6 +211,26 @@ class TestPublicAssistance(NjEarlyHeadStartTestCase):
         screen = self.over_income_household()
 
         self.assert_ineligible(self.calculate(screen, data={"federal_ssi": ineligible_result()}))
+
+    def test_eligible_for_nj_tanf_qualifies(self):
+        """`nj_tanf` stands in for `{tanf_program_code}`."""
+        screen = self.over_income_household()
+
+        self.assert_eligible(self.calculate(screen, data={"nj_tanf": eligible_result()}))
+
+    def test_ineligible_for_nj_tanf_does_not_qualify(self):
+        screen = self.over_income_household()
+
+        self.assert_ineligible(self.calculate(screen, data={"nj_tanf": ineligible_result()}))
+
+    def test_scenario_25_grandchild_eligible_for_child_only_tanf(self):
+        """The grandchild alone is NJ TANF's unit, so the grandmother's income doesn't count there."""
+        screen = self.household(2, head_wages=90_000, head_age=60)
+        self.add_member(screen, "grandChild", months(10))
+        data = self.with_nj_tanf(screen)
+
+        self.assertTrue(data["nj_tanf"].eligible)
+        self.assert_eligible(self.calculate(screen, data=data))
 
 
 class TestFosterCare(NjEarlyHeadStartTestCase):
@@ -211,10 +241,14 @@ class TestFosterCare(NjEarlyHeadStartTestCase):
         self.assert_eligible(self.calculate(screen), value=TODDLER)
 
     def test_scenario_12_grandchild_not_in_foster_care(self):
+        """The child support reported under the grandmother is the grandchild's, over NJ TANF's limit."""
         screen = self.household(2, head_wages=90_000, head_age=60)
+        self.add_income(screen.get_head(), 600, "childSupport")
         self.add_member(screen, "grandChild", 2)
+        data = self.with_nj_tanf(screen)
 
-        eligibility = self.calculate(screen)
+        self.assertFalse(data["nj_tanf"].eligible)
+        eligibility = self.calculate(screen, data=data)
 
         self.assert_ineligible(eligibility)
         self.assertEqual(eligibility.fail_messages, [messages.income(90_000, 21_640)])

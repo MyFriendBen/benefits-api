@@ -8,18 +8,27 @@ spec's households end to end through real screener rows.
 The spec states values to the cent ($9,938.20); the base rounds a member's value to whole
 dollars, so these expect $9,938 a child.
 
-Scenarios 8, 9, 10 and 13 report SNAP, TANF, SSI or WIC as a current benefit. NJ has no
-Program row for any of them yet, so the screener can't send these households today; the
-tests seed a stand-in row with the right ``base_program`` so the rule is covered once it can.
+Scenarios 8, 9, 10 and 13 report SNAP, TANF, SSI or WIC as a current benefit. The tests seed a
+stand-in row with the right ``base_program``, since NJ's own rows aren't in the test database.
+
+Scenarios 15 and 22 turn on NJ TANF's child-only case for a relative caretaker, so they run
+``NjTanf`` on the same household and pass its result in, as the screener does.
 """
 
 from datetime import date
+from unittest.mock import Mock
 
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility
 from programs.programs.cross_white_label.head_start.mfb_base import MfbHeadStart
 from programs.programs.cross_white_label.head_start.nj import NjHeadStart
-from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from programs.programs.cross_white_label.tanf.nj import NjTanf
+from programs.programs.testing_fixtures.custom_calculator import (
+    CustomCalculatorTestCase,
+    eligible_result,
+    ineligible_result,
+)
+from programs.util import Dependencies
 from screener.models import Screen
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
@@ -50,6 +59,10 @@ class NjHeadStartTestCase(CustomCalculatorTestCase):
         _write_current_benefits(screen, [name])
         screen.invalidate_current_benefits_cache()
 
+    def with_nj_tanf(self, screen: Screen) -> dict[str, Eligibility]:
+        """The ``nj_tanf`` result the screener calculates first and passes down."""
+        return {"nj_tanf": NjTanf(screen, Mock(), {}, Dependencies()).calc()}
+
     def assert_eligible(self, eligibility: Eligibility, children: int = 1) -> None:
         self.assertTrue(eligibility.eligible)
         self.assertEqual(eligibility.value, children * VALUE_PER_CHILD)
@@ -75,8 +88,9 @@ class TestNjValues(NjHeadStartTestCase):
         self.assertEqual(NjHeadStart.weekly_price, 292.30)
         self.assertEqual(NjHeadStart.program_weeks, 1_020 // 30)
 
-    def test_gates_on_no_state_program(self):
-        self.assertEqual(NjHeadStart.gates_on_any, ())
+    def test_gates_on_federal_ssi_and_nj_tanf(self):
+        self.assertEqual(NjHeadStart.gates_on_any, ("federal_ssi", "nj_tanf"))
+        self.assertEqual(NjHeadStart.gates_on, ())
 
 
 class TestIncomePovertyLine(NjHeadStartTestCase):
@@ -187,6 +201,35 @@ class TestPublicAssistance(NjHeadStartTestCase):
 
         self.assert_eligible(self.calculate(screen))
 
+    def test_eligible_for_federal_ssi_qualifies(self):
+        screen = self.over_income_household()
+
+        self.assert_eligible(self.calculate(screen, data={"federal_ssi": eligible_result()}))
+
+    def test_ineligible_for_federal_ssi_does_not_qualify(self):
+        screen = self.over_income_household()
+
+        self.assert_ineligible(self.calculate(screen, data={"federal_ssi": ineligible_result()}))
+
+    def test_eligible_for_nj_tanf_qualifies(self):
+        screen = self.over_income_household()
+
+        self.assert_eligible(self.calculate(screen, data={"nj_tanf": eligible_result()}))
+
+    def test_ineligible_for_nj_tanf_does_not_qualify(self):
+        screen = self.over_income_household()
+
+        self.assert_ineligible(self.calculate(screen, data={"nj_tanf": ineligible_result()}))
+
+    def test_scenario_22_grandchild_eligible_for_child_only_tanf(self):
+        """The grandchild alone is NJ TANF's unit, so the grandmother's income doesn't count there."""
+        screen = self.household(2, head_wages=60_000, head_age=60)
+        self.add_member(screen, "grandChild", 4)
+        data = self.with_nj_tanf(screen)
+
+        self.assertTrue(data["nj_tanf"].eligible)
+        self.assert_eligible(self.calculate(screen, data=data))
+
     def test_scenario_13_wic_only(self):
         screen = self.over_income_household()
         self.receive(screen, "wic")
@@ -205,10 +248,14 @@ class TestFosterCare(NjHeadStartTestCase):
         self.assert_eligible(self.calculate(screen))
 
     def test_scenario_15_grandchild_over_income(self):
+        """The child support reported under the grandmother is the grandchild's, over NJ TANF's limit."""
         screen = self.household(2, head_wages=60_000, head_age=60)
+        self.add_income(screen.get_head(), 600, "childSupport")
         self.add_member(screen, "grandChild", 4)
+        data = self.with_nj_tanf(screen)
 
-        eligibility = self.calculate(screen)
+        self.assertFalse(data["nj_tanf"].eligible)
+        eligibility = self.calculate(screen, data=data)
 
         self.assert_ineligible(eligibility)
         self.assertEqual(eligibility.fail_messages, [messages.income(60_000, 21_640)])
