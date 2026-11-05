@@ -411,6 +411,14 @@ def test_spawn_redis_foreground_on_windows_native(monkeypatch, tmp_path, capsys)
 
     monkeypatch.setattr("screener.management.commands.runserver.shutil.which", fake_which)
 
+    # The CREATE_NEW_PROCESS_GROUP / DETACHED_PROCESS constants only exist on
+    # Windows builds of Python, but this test simulates Windows behavior
+    # while actually running on whatever OS runs the test suite (e.g. Linux
+    # CI), so provide them here instead of relying on the real subprocess
+    # module to expose them.
+    monkeypatch.setattr("screener.management.commands.runserver.subprocess.CREATE_NEW_PROCESS_GROUP", 0x200, raising=False)
+    monkeypatch.setattr("screener.management.commands.runserver.subprocess.DETACHED_PROCESS", 0x8, raising=False)
+
     class FakeProcess:
         pid = 4321
 

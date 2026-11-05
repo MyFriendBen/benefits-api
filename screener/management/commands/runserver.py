@@ -221,11 +221,19 @@ class Command(StaticFilesRunserver):
                 # plus DETACHED_PROCESS gives the child its own console/group
                 # so it keeps running after runserver exits, matching the
                 # documented behaviour on POSIX (daemonized redis-server).
+                # These constants only exist in the subprocess module on
+                # Windows builds of Python, so look them up with getattr:
+                # this branch only runs when platform.system() == "Windows"
+                # (or in tests that simulate it), but the module itself is
+                # still imported and byte-compiled on Linux/macOS CI, where
+                # a bare attribute access would raise AttributeError.
                 popen_kwargs = {}
                 if platform.system() == "Windows":
-                    popen_kwargs["creationflags"] = (
-                        subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+                    creation_flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(
+                        subprocess, "DETACHED_PROCESS", 0
                     )
+                    if creation_flags:
+                        popen_kwargs["creationflags"] = creation_flags
                 process = subprocess.Popen(
                     runner,
                     stdout=subprocess.DEVNULL,
