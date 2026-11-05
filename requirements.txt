@@ -56,7 +56,7 @@ odfpy==1.4.1
 openpyxl==3.1.4
 packaging==23.2
 phonenumbers==8.12.53
-pillow==10.3.0
+pillow==13.0.0
 platformdirs==3.5.1
 pluggy==1.6.0
 proto-plus==1.27.1
