@@ -40,18 +40,10 @@ from programs.programs.testing_fixtures.pe_integration import (
 )
 from programs.programs.cross_white_label.head_start.tx import TxHeadStart
 
-PE_VERSION = "1.786.5"
-PE_VERSION_REASON = (
-    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
-    "re-recorded at PE_TEST_VERSION."
-)
-
 
 @pytest.mark.integration
 class TestPeIntegrationHarness(PeIntegrationTestCase):
     # The asserted value has held across 1.779.3 → 1.784.3 → 1.786.5.
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
 
     def test_replays_a_member_level_program_from_a_cassette(self):
         """One household, one POST, one cassette: a 3-year-old under the income limit.

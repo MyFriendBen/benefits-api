@@ -29,7 +29,7 @@ interactions:
       "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
       {"2026": false}}}, "marital_units": {"301-302": {"members": ["301", "302"]}}},
-      "version": "1.815.1"}'
+      "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -38,7 +38,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '2419'
+      - '2418'
       Content-Type:
       - application/json
       User-Agent:
@@ -76,27 +76,27 @@ interactions:
         ["301", "302", "303"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
         "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
         "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {"301-302":
-        {"members": ["301", "302"]}}}, "policyengine_bundle": {"model_version": "1.815.1",
+        {"members": ["301", "302"]}}}, "policyengine_bundle": {"model_version": "2.53.1",
         "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '2514'
+      - '2513'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 25 Aug 2026 13:44:56 GMT
+      - Mon, 02 Nov 2026 19:10:06 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-8004043f6f562913a2cb33f7c8133872-c5146d9d195be280-00
+      - 00-fcaf140e9eddc8bfbbf3e0bfbe23b6fb-71662c592b3aa717-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 8004043f6f562913a2cb33f7c8133872
+      - fcaf140e9eddc8bfbbf3e0bfbe23b6fb
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -104,9 +104,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - c1deadcd-4ac8-416a-acbe-cf4276c96287
+      - a9744706-bc29-40cb-9a05-29009fdb8457
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK

@@ -28,11 +28,6 @@ from programs.programs.testing_fixtures.pe_integration import (
     screener_value,
 )
 
-PE_VERSION = "1.815.1"
-PE_VERSION_REASON = (
-    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
-    "re-recorded at PE_TEST_VERSION."
-)
 YEAR = "2026"
 
 # `Snap.pe_period_month` reads today's month, which is part of the recorded request body,
@@ -45,9 +40,6 @@ TODAY = date(int(YEAR), 1, 15)
 @pytest.mark.integration
 class TestMoSnapResolves(PeIntegrationTestCase):
     """A Missouri household PolicyEngine should find eligible comes back with a benefit."""
-
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
 
     def test_single_parent_two_children_under_the_income_limit(self):
         """Three-person St. Louis City household on $1,500/month in wages.

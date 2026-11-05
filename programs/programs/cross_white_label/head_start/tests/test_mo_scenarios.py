@@ -42,11 +42,6 @@ from programs.programs.testing_fixtures.pe_integration import (
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
-PE_VERSION = "1.821.2"
-PE_VERSION_REASON = (
-    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
-    "re-recorded at PE_TEST_VERSION."
-)
 YEAR = "2026"
 
 # Above spm_unit_fpg ($27,320 for a household of three), below MO SNAP's simulated ceiling.
@@ -60,9 +55,6 @@ MO_PER_CHILD_VALUE = 16_314
 class MoHeadStartReceiptTestCase(PeIntegrationTestCase):
     """Shared household builder. Jefferson City, ZIP 65101, matching the spec's other
     scenarios: Head Start's value is state-keyed, so the county is presentation only."""
-
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0

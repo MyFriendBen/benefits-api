@@ -53,6 +53,45 @@ def is_federal(program: "Program") -> bool:
     return program.white_label.code == FEDERAL_WHITE_LABEL
 
 
+def visible_to_any(white_labels: Iterable["WhiteLabel"]) -> Q:
+    """Rows on any of `white_labels`, or on `federal`: what a partner admin may pick from."""
+    return Q(white_label__in=white_labels) | Q(white_label__code=FEDERAL_WHITE_LABEL)
+
+
+def may_link(white_label_code: str, other_white_label_code: str) -> bool:
+    """The navigator linking rule: a program and a navigator may be linked when either is on
+    `federal` or both are on the same white label.
+
+    A federal program takes any white label's navigators, because
+    `screener.navigators.filter_by_white_label` shows each state's only to that state's screens.
+    A state program takes federal navigators (a national hotline) as well as its own. The rule is
+    symmetric, so it also says which programs a navigator may require (`eligibility_programs`).
+    `linkable_with` is the same rule as a query filter.
+    """
+    return (
+        FEDERAL_WHITE_LABEL in (white_label_code, other_white_label_code) or white_label_code == other_white_label_code
+    )
+
+
+def linkable_with(white_label: "WhiteLabel") -> Q:
+    """`may_link` as a filter on a model with a `white_label`: the navigators a program on
+    `white_label` may link, or the programs and counties a navigator on it may use."""
+    if white_label.code == FEDERAL_WHITE_LABEL:
+        # Not an empty Q(): OR-ing an empty Q with another condition drops it.
+        return Q(pk__isnull=False)
+    return Q(white_label_id=white_label.id) | Q(white_label__code=FEDERAL_WHITE_LABEL)
+
+
+def navigators_linkable_to(program: "Program") -> Q:
+    """The navigators `program` may link (`linkable_with` its white label)."""
+    return linkable_with(program.white_label)
+
+
+def may_link_navigator(program: "Program", navigator_white_label_code: str) -> bool:
+    """Whether `program` may link a navigator on `navigator_white_label_code` (`may_link`)."""
+    return may_link(program.white_label.code, navigator_white_label_code)
+
+
 def preferred_program(kept: Optional["Program"], candidate: "Program", where: str) -> "Program":
     """Of two programs with the same name, the one a screen should see.
 

@@ -12,7 +12,7 @@ interactions:
       {"members": ["82041"], "mo_property_tax_credit": {"2025": null}}}, "families":
       {"family": {"members": ["82041"]}}, "households": {"household": {"members":
       ["82041"], "state_code": {"2025": "MO"}}}, "spm_units": {"spm_unit": {"members":
-      ["82041"]}}, "marital_units": {}}, "version": "2.9.0"}'
+      ["82041"]}}, "marital_units": {}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -21,7 +21,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1051'
+      - '1052'
       Content-Type:
       - application/json
       User-Agent:
@@ -44,26 +44,26 @@ interactions:
         {"family": {"members": ["82041"]}}, "households": {"household": {"members":
         ["82041"], "state_code": {"2025": "MO"}}}, "spm_units": {"spm_unit": {"members":
         ["82041"]}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.9.0", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1150'
+      - '1151'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 21:45:03 GMT
+      - Mon, 02 Nov 2026 19:12:13 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-93705940e5d9102bad60990e8db1d46f-80697d05ba38a264-00
+      - 00-709b2cfa8389c31786b9711b376648e2-f2039547bdeef067-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 93705940e5d9102bad60990e8db1d46f
+      - 709b2cfa8389c31786b9711b376648e2
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -71,7 +71,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 6ec52595-645d-4188-b198-c80e573e0ed9
+      - 34875113-f5da-421c-99eb-5010a507b4d8
       x-policyengine-route-channel:
       - current
     status:

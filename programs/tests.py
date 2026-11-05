@@ -13,13 +13,16 @@ from django.test import SimpleTestCase, TestCase
 from programs.fpl_values import MAX_MATERIALIZED_SIZE, limits_for_period, sync_fpl_values
 from programs.models import (
     _FPL_DEFAULTS,
+    County,
     FederalPoveryLimit,
     FederalPovertyLimitValue,
     Navigator,
     Program,
+    ProgramNavigator,
     Referrer,
     _get_fpl_data,
 )
+from programs.serializers import NavigatorAPISerializer
 from screener.models import Screen, WhiteLabel
 from translations.models import Translation
 
@@ -593,3 +596,155 @@ class ProgramDataControllerYearTypeRoundTripTests(TestCase):
 
         program.refresh_from_db()
         self.assertEqual(program.year_type, "hardcoded")
+
+
+class NavigatorDataControllerAssistantNotesTests(TestCase):
+    """`assistant_notes` (MFB-2364) travels with the navigator's exported snapshot, so
+    notes written in prod reach staging and local through the usual import."""
+
+    def setUp(self) -> None:
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        self.navigator = Navigator.objects.new_navigator("co", "phone_only")
+        self.navigator.assistant_notes = "Helps by phone only."
+        self.navigator.save()
+
+    def test_export_then_import_preserves_notes(self) -> None:
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        self.assertEqual(data["assistant_notes"], "Helps by phone only.")
+
+        fresh = Navigator.objects.new_navigator("co", "fresh")
+        fresh.TranslationExportBuilder(fresh).from_model_data(data)
+
+        fresh.refresh_from_db()
+        self.assertEqual(fresh.assistant_notes, "Helps by phone only.")
+
+    def test_a_round_trip_keeps_links_made_after_the_ordering_migration(self) -> None:
+        """The admin inline and the record import write only `ProgramNavigator`. A snapshot read
+        from the legacy `programs` table left those links out, and its import deleted them."""
+        program = Program.objects.new_program("co", "co_linked")
+        program.external_name = "co_linked"
+        program.save()
+        ProgramNavigator.objects.create(program=program, navigator=self.navigator, order=3)
+        self.assertFalse(self.navigator.programs.exists())
+
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.assertEqual(data["program_links"], [{"external_name": "co_linked", "order": 3}])
+        self.assertNotIn("programs", data)
+        link = ProgramNavigator.objects.get(program=program, navigator=self.navigator)
+        self.assertEqual(link.order, 3)
+
+    def link(self, name: str) -> Program:
+        program = Program.objects.new_program("co", name)
+        program.external_name = name
+        program.save()
+        ProgramNavigator.objects.create(program=program, navigator=self.navigator)
+        return program
+
+    def test_an_older_snapshot_leaves_links_alone(self) -> None:
+        """An older snapshot lists only the legacy table: it misses links made since the ordering
+        migration and still holds links removed in the admin since, so it neither adds nor removes."""
+        kept = self.link("co_kept")
+        removed_in_admin = Program.objects.new_program("co", "co_removed")
+        removed_in_admin.external_name = "co_removed"
+        removed_in_admin.save()
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        del data["program_links"]
+        data["programs"] = ["co_removed"]
+
+        with self.assertLogs("programs.models", level="INFO") as logs:
+            self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        linked = set(ProgramNavigator.objects.filter(navigator=self.navigator).values_list("program", flat=True))
+        self.assertEqual(linked, {kept.pk})
+        self.assertIn("predates program_links", logs.output[0])
+
+    def test_a_snapshot_with_program_links_removes_a_link_it_leaves_out(self) -> None:
+        dropped = self.link("co_dropped")
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        data["program_links"] = []
+
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.assertFalse(ProgramNavigator.objects.filter(navigator=self.navigator, program=dropped).exists())
+
+    def test_snapshot_without_notes_leaves_existing_notes_alone(self) -> None:
+        """An older snapshot, exported before the field existed, has no key at all.
+        Importing it must not wipe notes written since."""
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        del data["assistant_notes"]
+
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.navigator.refresh_from_db()
+        self.assertEqual(self.navigator.assistant_notes, "Helps by phone only.")
+
+    def test_notes_stay_off_the_navigator_api(self) -> None:
+        """The partner-facing navigator endpoint serializes every other field; staff
+        guidance for Benji is not API data."""
+        data = NavigatorAPISerializer(self.navigator).data
+
+        self.assertNotIn("assistant_notes", data)
+        self.assertIn("phone_number", data)
+
+    def test_admin_rejects_notes_with_contact_details(self) -> None:
+        for notes in (
+            "Call (303) 555-0100 instead.",
+            "Call 555-0100 instead.",
+            "Call 5550100 instead.",
+            "Call +44 20 7946 0958 instead.",
+            "Email intake@example.org for help.",
+            "Apply at benefitsinaction.org.",
+            "See https://example.org/help.",
+        ):
+            with self.assertRaises(ValidationError, msg=notes):
+                Navigator._meta.get_field("assistant_notes").clean(notes, self.navigator)
+
+    def test_admin_accepts_notes_without_contact_details(self) -> None:
+        notes = "Helps by phone only. Closed Dec 24 to Jan 3 for the 2025-2026 move. Dial 2-1-1."
+
+        Navigator._meta.get_field("assistant_notes").clean(notes, self.navigator)
+
+
+class NavigatorDataControllerCountyTests(TestCase):
+    """A navigator moved to `federal` keeps its state's counties through a snapshot round trip."""
+
+    def setUp(self) -> None:
+        self.ks = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        self.federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        self.clay = County.objects.create(name="Clay County", white_label=self.ks)
+        self.navigator = Navigator.objects.new_navigator("ks", "lifeline_copy")
+        self.navigator.counties.add(self.clay)
+        Navigator.objects.filter(pk=self.navigator.pk).update(white_label=self.federal)
+        self.navigator.refresh_from_db()
+
+    def builder(self) -> "Navigator.TranslationExportBuilder":
+        return self.navigator.TranslationExportBuilder(self.navigator)
+
+    def test_a_round_trip_keeps_the_state_county(self) -> None:
+        data = self.builder().to_model_data()
+        self.assertEqual(data["counties"], [{"name": "Clay County", "white_label": "ks"}])
+
+        self.builder().from_model_data(data)
+
+        self.assertEqual(list(self.navigator.counties.all()), [self.clay])
+        self.assertFalse(County.objects.filter(white_label=self.federal).exists())
+
+    def test_an_older_snapshot_reuses_a_county_the_navigator_has(self) -> None:
+        data = self.builder().to_model_data()
+        data["counties"] = [{"name": "Clay County"}]
+
+        self.builder().from_model_data(data)
+
+        self.assertEqual(list(self.navigator.counties.all()), [self.clay])
+        self.assertFalse(County.objects.filter(white_label=self.federal).exists())
+
+    def test_a_county_named_under_a_white_label_it_lacks_is_created_there(self) -> None:
+        data = self.builder().to_model_data()
+        data["counties"] = [{"name": "Platte County", "white_label": "ks"}]
+
+        self.builder().from_model_data(data)
+
+        created = self.navigator.counties.get()
+        self.assertEqual((created.name, created.white_label.code), ("Platte County", "ks"))

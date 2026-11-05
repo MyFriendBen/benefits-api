@@ -17,7 +17,6 @@ from django.http import (
 from django.db.models import ProtectedError, Q
 from django.db import models
 from sentry_sdk import capture_exception
-import traceback
 from programs.models import (
     County,
     Program,
@@ -66,10 +65,6 @@ class TranslationView(views.APIView):
                 "error": "Translations temporarily unavailable",
                 "error_type": type(error).__name__,
             }
-
-            # Add traceback in debug mode
-            if settings.DEBUG:
-                error_response["traceback"] = traceback.format_exc()
 
             return Response(error_response, status=503)
 
