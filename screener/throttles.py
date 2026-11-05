@@ -11,10 +11,22 @@ Rates live in `DEFAULT_THROTTLE_RATES` (benefits/settings.py), keyed by `scope`.
 import hashlib
 
 from rest_framework import throttling
+from rest_framework.request import Request
+from rest_framework.views import APIView
 
 
 class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
-    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
+    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored.
+
+    A method the view has no handler for doesn't count: DRF throttles before it picks
+    the handler, so a stale client's 405s would otherwise use up the IP's allowance.
+    """
+
+    def allow_request(self, request: Request, view: APIView) -> bool:
+        method = request.method.lower()
+        if method not in view.http_method_names or not hasattr(view, method):
+            return True
+        return super().allow_request(request, view)
 
     def get_cache_key(self, request, view):
         ident = self.get_ident(request)

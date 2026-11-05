@@ -124,7 +124,7 @@ class TestRemImpactSerializer(TestCase):
 
 
 class TestRemImpactView(APITestCase):
-    """Integration tests for GET /api/screener-options/<white_label>/rem-impact/; POST runs the same cases below."""
+    """Integration tests for POST /api/screener-options/<white_label>/rem-impact/ (address in the JSON body)."""
 
     URL = "/api/screener-options/cesn/rem-impact/"
 
@@ -153,7 +153,7 @@ class TestRemImpactView(APITestCase):
     }
 
     def _call(self, params: dict[str, str] | None = None) -> Response:
-        return self.client.get(self.URL, params or {})
+        return self.client.post(self.URL, params or {}, format="json")
 
     def setUp(self):
         # Disable the REM rate throttle so individual tests are not throttled.
@@ -283,12 +283,12 @@ class TestRemImpactView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["emissions_delta"]["median"]["unit"], "lbCO2e")
 
-
-class TestRemImpactViewPost(TestRemImpactView):
-    """The same cases over POST, which carries the address in the JSON body instead of the URL."""
-
-    def _call(self, params: dict[str, str] | None = None) -> Response:
-        return self.client.post(self.URL, params or {}, format="json")
+    @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
+    def test_get_is_not_allowed(self, mock_fetch: Mock) -> None:
+        """GET is gone: clients must send the address in the body, not the URL."""
+        response = self.client.get(self.URL, self.VALID_PARAMS)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        mock_fetch.assert_not_called()
 
     def test_non_object_body_returns_400(self):
         for body in ([self.VALID_PARAMS], "742 Invented Lane"):
