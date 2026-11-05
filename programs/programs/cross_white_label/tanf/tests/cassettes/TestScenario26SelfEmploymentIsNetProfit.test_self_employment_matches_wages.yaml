@@ -27,7 +27,7 @@ interactions:
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
       {"2026": false}, "spm_unit_cash_assets": {"2026": 0}, "childcare_expenses":
       {"2026": 0.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version":
-      "1.815.1"}'
+      "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -36,7 +36,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '2252'
+      - '2251'
       Content-Type:
       - application/json
       User-Agent:
@@ -73,27 +73,27 @@ interactions:
         {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
         {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}, "spm_unit_cash_assets":
         {"2026": 0}, "childcare_expenses": {"2026": 0.0}, "mo_tanf": {"2026": 1369.0355}}},
-        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.815.1",
-        "data_version": null, "dataset": null}}'
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.53.1", "data_version":
+        null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '2356'
+      - '2355'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 20:38:53 GMT
+      - Mon, 02 Nov 2026 19:11:52 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-327030d566398b759d08998e8609c21b-b5657dadc802fa17-00
+      - 00-5264f571063a74a8d08b27f4bead1c19-c27ac83a4090e9e9-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 327030d566398b759d08998e8609c21b
+      - 5264f571063a74a8d08b27f4bead1c19
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -101,7 +101,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 5e73c54b-e298-483b-99be-17c2f7c68518
+      - b66b3c1c-1e67-4317-bc5d-1665d96bfab7
       x-policyengine-route-channel:
       - current
     status:

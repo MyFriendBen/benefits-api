@@ -38,20 +38,12 @@ from programs.programs.testing_fixtures.pe_integration import (
     screener_value,
 )
 
-PE_VERSION = "1.815.1"
-PE_VERSION_REASON = (
-    "Recorded before the suite-wide pin. Remove PE_VERSION and this reason once the module is "
-    "re-recorded at PE_TEST_VERSION."
-)
 YEAR = "2026"
 
 
 @pytest.mark.integration
 class TestMoHealthNetSmoke(PeIntegrationTestCase):
     """Cole County, ZIP 65101 — the same household shape MO PTS uses."""
-
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
 
     def test_expansion_adult_under_income_limit_is_eligible(self):
         """Childless adult at $1,200/month (~92% FPL) → eligible via ACA expansion.
@@ -130,9 +122,6 @@ class TestMoHealthNetValueRouting(PeIntegrationTestCase):
     reading the aged/disabled pathway ahead of PE's category produced the wrong answer in
     production: either the disabled rate over an expansion one, or no answer at all.
     """
-
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
 
     def _single_adult(self, screen_id, age, income_type, monthly_amount, **flags):
         """One-person Cole County household, as Scenarios 6/19/21/24 describe it."""

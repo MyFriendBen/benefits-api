@@ -21,7 +21,7 @@ interactions:
       "families": {"family": {"members": ["82151", "82152"]}}, "households": {"household":
       {"members": ["82151", "82152"], "state_code": {"2025": "MO"}}}, "spm_units":
       {"spm_unit": {"members": ["82151", "82152"]}}, "marital_units": {"82151-82152":
-      {"members": ["82151", "82152"]}}}, "version": "2.9.0"}'
+      {"members": ["82151", "82152"]}}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -30,7 +30,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1833'
+      - '1834'
       Content-Type:
       - application/json
       User-Agent:
@@ -62,27 +62,27 @@ interactions:
         ["82151", "82152"]}}, "households": {"household": {"members": ["82151", "82152"],
         "state_code": {"2025": "MO"}}}, "spm_units": {"spm_unit": {"members": ["82151",
         "82152"]}}, "marital_units": {"82151-82152": {"members": ["82151", "82152"]}}},
-        "policyengine_bundle": {"model_version": "2.9.0", "data_version": null, "dataset":
+        "policyengine_bundle": {"model_version": "2.53.1", "data_version": null, "dataset":
         null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '1934'
+      - '1935'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 21:45:23 GMT
+      - Mon, 02 Nov 2026 19:12:36 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-f46a98da073bd13727c056ea0a34e071-87c6b369ea0aa375-00
+      - 00-8e579063390635522ade1ac6bb02d999-2fa1c332e1d10282-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - f46a98da073bd13727c056ea0a34e071
+      - 8e579063390635522ade1ac6bb02d999
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -90,7 +90,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 31599f22-851d-4a66-bad3-c7327ad56975
+      - 8f4d703d-04d9-470f-92ba-ad2f47789b54
       x-policyengine-route-channel:
       - current
     status:

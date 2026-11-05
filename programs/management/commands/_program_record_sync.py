@@ -36,6 +36,7 @@ from django.db import transaction
 from configuration.models import Configuration
 
 from integrations.clients.google_translate import Translate, TranslationIntegrityError, is_auto_translatable
+from programs.federal import FEDERAL_WHITE_LABEL
 from programs.models import (
     BaseProgram,
     County,
@@ -685,6 +686,9 @@ class RecordSync:
                 # An existing row is shared: creating this program doesn't make the record newer
                 # than an admin edit to it, so it's labelled like any update, never as fresh.
                 self._plan_row(plan, spec, entry, row, baseline, fresh=False)
+            if spec is NAVIGATOR:
+                self._plan_federal_navigator_owner(plan, entry, row, baseline)
+            if not new_row and not is_reference(entry):
                 others = self._other_programs(row, spec, program)
                 if others and any(change.key.startswith(f"{spec.kind}:{name}.") for change in plan.changes):
                     plan.notes.append(
@@ -722,6 +726,49 @@ class RecordSync:
                     plan.notes.append(
                         f"{spec.kind} '{name}' is linked to no other program, so unlinking it leaves it unused."
                     )
+
+    def _plan_federal_navigator_owner(
+        self, plan: RecordPlan, entry: dict[str, Any], row: Optional[Navigator], baseline: Optional[dict[str, Any]]
+    ) -> None:
+        """Which states see a federal record's navigators.
+
+        On a federal program a navigator's white label decides who sees it: one on `federal` shows
+        in every state, a state's only to that state's screens
+        (`screener.navigators.filter_by_white_label`). A navigator this record owns is meant for
+        every state and is moved to `federal`; that leaves the state programs still linking it
+        unchanged, since they don't filter by white label. One it only references keeps its white
+        label, such as a state's WIC clinics on federal WIC, and the plan notes which state sees
+        it, so a national navigator a state imported first (the USDA hunger hotline sat on `mo`)
+        shows up in the dry run.
+
+        The white label is a field the record manages, so a move an admin undoes later is kept and
+        reported like any admin edit. Until an import has applied it there is nothing to protect:
+        the white label is only import order, so the first import moves it.
+        """
+        if self.white_label.code != FEDERAL_WHITE_LABEL:
+            return
+        name = entry["external_name"]
+        # A row this run creates is created on the record's white label (`_create_row`).
+        owner = FEDERAL_WHITE_LABEL if row is None else row.white_label.code
+        if is_reference(entry):
+            if owner != FEDERAL_WHITE_LABEL:
+                plan.notes.append(
+                    f"navigator '{name}' is on the '{owner}' white label, so on this federal program only "
+                    f"screens in the same state as '{owner}' see it. To show it in every state, own it in this "
+                    f"record (give its fields), which moves it to '{FEDERAL_WHITE_LABEL}'."
+                )
+            return
+        key = f"navigator:{name}.white_label"
+        self._add(
+            plan,
+            key,
+            FEDERAL_WHITE_LABEL,
+            owner,
+            lambda _value, name=name: Navigator.objects.filter(external_name=name).update(white_label=self.white_label),
+            0,
+            baseline,
+            fresh=key not in (baseline or {}),
+        )
 
     def _plan_row(
         self,
@@ -1021,7 +1068,13 @@ class RecordSync:
                 f"'{self.white_label.code}' county list the screener sends"
             )
         if spec is NAVIGATOR:
-            return [County.objects.get_or_create(name=name, white_label=self.white_label)[0] for name in names]
+            # A county the navigator already has is kept, so one moved to `federal` doesn't get a
+            # federal copy of each of its state's counties.
+            return [
+                row.counties.filter(name=name).first()
+                or County.objects.get_or_create(name=name, white_label=self.white_label)[0]
+                for name in names
+            ]
         counties = []
         for name in names:
             county = County.objects.filter(name=name, white_label=row.white_label).first()
@@ -1076,6 +1129,9 @@ def print_plan(
     conflicts = plan.by_label(CONFLICT)
     if not plan.changes:
         stdout.write("  ✓ Matches the record.")
+        # Notes still print: one may describe the program as it stands, such as which state sees a
+        # state navigator on a federal program, not only a change.
+        _print_notes(plan, stdout)
         return
 
     sections = [
@@ -1094,6 +1150,10 @@ def print_plan(
             if record_file and change.label == ADMIN_EDIT and not plan.reverts(change, revert_admin_edits, revert_keys):
                 # Quoted for a shell: a key carries the row's external_name, which may have spaces.
                 stdout.write(f"      {REVERT_HINT} {shlex.quote(f'{record_file}:{change.key}')}")
+    _print_notes(plan, stdout)
+
+
+def _print_notes(plan: RecordPlan, stdout: OutputWrapper) -> None:
     if plan.notes:
         stdout.write("  Notes:")
         for note in plan.notes:

@@ -21,7 +21,7 @@ interactions:
       "MO"}}}, "spm_units": {"spm_unit": {"members": ["1801", "1802"], "tanf": {"2026":
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-      false}}}, "marital_units": {}}, "version": "1.815.1"}'
+      false}}}, "marital_units": {}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -30,7 +30,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1764'
+      - '1763'
       Content-Type:
       - application/json
       User-Agent:
@@ -61,26 +61,26 @@ interactions:
         "1802"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
         {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
         {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "1.815.1", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1866'
+      - '1865'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 25 Aug 2026 13:45:31 GMT
+      - Mon, 02 Nov 2026 19:10:38 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-0af18c98c1739cb47db8a9561a6aeee1-36376a8ad77c0abb-00
+      - 00-0475400ee93f9c3a81bf417ccd7534b0-1403e888981dfd4c-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 0af18c98c1739cb47db8a9561a6aeee1
+      - 0475400ee93f9c3a81bf417ccd7534b0
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -88,9 +88,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 54d1c571-8fa1-459a-beae-01e34ed99af5
+      - c168dbfc-14bf-4b75-a02b-91c9ba47d965
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK
