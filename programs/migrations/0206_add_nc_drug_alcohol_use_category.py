@@ -2,7 +2,7 @@
 # the new "Help with drug or alcohol use" NC urgent need category, and to move the
 # existing "Alcohol Drug Council of NC" resource onto it.
 #
-# 0202 already created the UrgentNeedType ("Type") row used for admin categorization,
+# 0205 already created the UrgentNeedType ("Type") row used for admin categorization,
 # but that field is separate from the one that actually drives results-page matching:
 # resource selection filters UrgentNeed.type_short__name against NEED_CATEGORY_FIELDS
 # (screener/urgent_needs.py), and "drug alcohol use" didn't exist as an UrgentNeedCategory
@@ -62,7 +62,7 @@ def add_urgent_need_categories(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0202_add_nc_substance_use_urgent_need_type"),
+        ("programs", "0205_add_nc_drug_alcohol_use_urgent_need_type"),
     ]
 
     operations = [
