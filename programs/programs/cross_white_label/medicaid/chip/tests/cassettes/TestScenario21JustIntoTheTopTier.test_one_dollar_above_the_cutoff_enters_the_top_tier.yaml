@@ -21,7 +21,7 @@ interactions:
       "MO"}}}, "spm_units": {"spm_unit": {"members": ["2101", "2102"], "tanf": {"2026":
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-      false}}}, "marital_units": {}}, "version": "1.815.1"}'
+      false}}}, "marital_units": {}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -30,7 +30,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1764'
+      - '1763'
       Content-Type:
       - application/json
       User-Agent:
@@ -61,26 +61,26 @@ interactions:
         "2102"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
         {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
         {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "1.815.1", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1867'
+      - '1866'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 25 Aug 2026 13:58:53 GMT
+      - Mon, 02 Nov 2026 19:10:48 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-ed3a44d63941c8603e5b2a3d67684b41-0b0978197de1e685-01
+      - 00-4286f7a06ce7a5a804754d203afe0fe1-ab7b0e7bec975694-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - ed3a44d63941c8603e5b2a3d67684b41;o=1
+      - 4286f7a06ce7a5a804754d203afe0fe1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -88,9 +88,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 0cb5093c-0ef8-46d5-a2b9-22fbfbda1e65
+      - 2af25c4e-e72f-4359-8e14-e11b8073bc87
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK

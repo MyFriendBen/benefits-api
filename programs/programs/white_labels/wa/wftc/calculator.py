@@ -1,6 +1,5 @@
 """WA Working Families Tax Credit."""
 
-from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 import programs.framework.pe_dependencies as dependency
 
@@ -17,7 +16,7 @@ class WaWftc(PolicyEngineTaxUnitCalulator):
     Washington-specific scaling and $50 minimum-credit floor for any otherwise-
     eligible filer.
 
-    Inputs reuse the federal `Eitc.pe_inputs` set (member age, tax-unit
+    Inputs reuse the shared `eitc_inputs` set (member age, tax-unit
     composition, and the per-member IRS gross income breakdown) and add the WA
     state code so PolicyEngine knows to apply the WFTC instead of just the
     federal EITC.
@@ -38,7 +37,7 @@ class WaWftc(PolicyEngineTaxUnitCalulator):
 
     pe_name = "wa_working_families_tax_credit"
     pe_inputs = [
-        *Eitc.pe_inputs,
+        *dependency.eitc_inputs,
         dependency.household.WaStateCodeDependency,
     ]
     pe_outputs = [dependency.tax.WaWftc]

@@ -9,7 +9,8 @@ from translations.serializers import ModelTranslationSerializer
 class NavigatorAPISerializer(serializers.ModelSerializer):
     class Meta:
         model = Navigator
-        fields = "__all__"
+        # Staff guidance for Benji (MFB-2364), not data for API clients.
+        exclude = ("assistant_notes",)
 
 
 class ProgramSerializerMeta:

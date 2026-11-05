@@ -1,3 +1,6 @@
+import logging
+import re
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -6,10 +9,13 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
+from programs.federal import FEDERAL_WHITE_LABEL, may_link_navigator
 from programs.util import Dependencies, UnregisteredCalculatorError
 from sentry_sdk import capture_message
 from typing import Optional, TypedDict, Union
 from programs.translation_overrides import warning_calculators
+
+logger = logging.getLogger(__name__)
 
 _FPL_DEFAULTS = {
     "2023": {
@@ -534,16 +540,20 @@ class ProgramManager(models.Manager):
         "apply_button_link",
         "apply_button_description",
         "estimated_delivery_time",
+        "estimated_decision_time",
         "estimated_application_time",
         "estimated_value",
         "website_description",
     )
     no_auto_fields = ("apply_button_link", "learn_more_link")
+    # Fields a new program starts empty on rather than with the placeholder: an empty decision time
+    # means the wait varies, and an empty button description renders the default label.
+    blank_by_default_fields = ("apply_button_description", "estimated_decision_time")
 
     def new_program(self, white_label: str, name_abbreviated: str, external_name: Optional[str] = None):
         translations = {}
         for field in self.translated_fields:
-            default_message = "" if field == "apply_button_description" else BLANK_TRANSLATION_PLACEHOLDER
+            default_message = "" if field in self.blank_by_default_fields else BLANK_TRANSLATION_PLACEHOLDER
             translations[field] = Translation.objects.add_translation(
                 f"program.{name_abbreviated}_temporary_key-{field}",
                 default_message=default_message,
@@ -856,6 +866,13 @@ class Program(models.Model):
     estimated_delivery_time = models.ForeignKey(
         Translation,
         related_name="program_estimated_delivery_time",
+        blank=False,
+        null=False,
+        on_delete=models.PROTECT,
+    )
+    estimated_decision_time = models.ForeignKey(
+        Translation,
+        related_name="program_estimated_decision_time",
         blank=False,
         null=False,
         on_delete=models.PROTECT,
@@ -1518,11 +1535,26 @@ class NavigatorManager(models.Manager):
         return navigator
 
 
+def _log_cross_state_link(navigator: "Navigator", program: "Program", relation: str) -> None:
+    """A snapshot copies links the environment it came from already holds, so it keeps a link the
+    linking rule (`programs.federal.may_link`) would refuse if someone made it today, such as a
+    state program on another state's navigator: refusing it failed the whole snapshot load.
+    Logged so the cross-state links that predate the rule can be found and cleaned up."""
+    logger.warning(
+        "Snapshot keeps navigator %s (%s) %s %s/%s, which the linking rule would refuse today.",
+        navigator.external_name,
+        navigator.white_label.code,
+        relation,
+        program.white_label.code,
+        program.name_abbreviated,
+    )
+
+
 class NavigatorDataController(ModelDataController["Navigator"]):
     _model_name = "Navigator"
     dependencies = ["Program"]
 
-    CountiesType = list[TypedDict("CountyType", {"name": str})]
+    CountiesType = list[TypedDict("CountyType", {"name": str, "white_label": str}, total=False)]
     LanugagesType = list[TypedDict("LanguageType", {"code": str})]
     DataType = TypedDict(
         "DataType",
@@ -1530,64 +1562,27 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "phone_number": Optional[str],
             "counties": CountiesType,
             "languages": LanugagesType,
-            "programs": list[str],
+            "programs": list[str],  # older snapshots only; no longer exported
+            "program_links": list[dict],
             "eligibility_programs": list[str],
             "white_label": str,
+            "assistant_notes": str,
         },
     )
 
     def _counties(self) -> CountiesType:
-        return [{"name": c.name} for c in self.instance.counties.all()]
+        # Each county with its own white label: a navigator moved to `federal` keeps its state's
+        # counties, and looking them up under the navigator's white label would make federal copies.
+        return [{"name": c.name, "white_label": c.white_label.code} for c in self.instance.counties.all()]
 
     def _languages(self) -> LanugagesType:
         return [{"code": l.code} for l in self.instance.languages.all()]
 
-    def to_model_data(self) -> DataType:
-        navigator = self.instance
-        return {
-            "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
-            "counties": self._counties(),
-            "languages": self._languages(),
-            "programs": [p.external_name for p in navigator.programs.all()],
-            "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
-            "white_label": navigator.white_label.code,
-        }
-
-    def from_model_data(self, data: DataType):
-        navigator = self.instance
-
-        navigator.phone_number = data["phone_number"]
-
-        try:
-            white_label = WhiteLabel.objects.get(code=data["white_label"])
-        except WhiteLabel.DoesNotExist:
-            white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
-        navigator.white_label = white_label
-
-        # get or create counties
-        counties = []
-        for county in data["counties"]:
-            try:
-                county_instance = County.objects.get(name=county["name"], white_label__code=data["white_label"])
-            except County.DoesNotExist:
-                county_instance = County.objects.create(name=county["name"], white_label=white_label)
-
-            counties.append(county_instance)
-        navigator.counties.set(counties)
-
-        # get or create languages
-        langs = []
-        for lang in data["languages"]:
-            try:
-                lang_instance = NavigatorLanguage.objects.get(code=lang["code"])
-            except NavigatorLanguage.DoesNotExist:
-                lang_instance = NavigatorLanguage.objects.create(code=lang["code"])
-            langs.append(lang_instance)
-        navigator.languages.set(langs)
-
+    def _set_program_links(self, navigator: "Navigator", items: list) -> None:
+        """Make the navigator's program links match a snapshot's `program_links`, keeping each order."""
         programs = []
         program_orders = {}
-        for item in data["programs"]:
+        for item in items:
             if isinstance(item, str):
                 external_name = item
                 order_value = None
@@ -1596,9 +1591,9 @@ class NavigatorDataController(ModelDataController["Navigator"]):
                 order_value = item.get("order") if isinstance(item, dict) else None
             if not external_name:
                 continue
-            program_instance = Program.objects.get(external_name=external_name)
-            if program_instance.white_label_id != navigator.white_label_id:
-                raise self.DeferCreation()
+            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
+            if not may_link_navigator(program_instance, navigator.white_label.code):
+                _log_cross_state_link(navigator, program_instance, "linked to")
             programs.append(program_instance)
             if order_value is not None:
                 program_orders[program_instance.id] = order_value
@@ -1623,14 +1618,97 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         if getattr(through, "__name__", str(through)) != "ProgramNavigator":
             navigator.programs.set(programs)
 
+    def _county(self, county: dict, navigator_white_label: str) -> "County":
+        """The County row a snapshot names. A snapshot that gives the county's white label is exact.
+        An older one gives only the name: a county the navigator already has is kept, so a navigator
+        moved to `federal` doesn't get federal copies of its state's counties; otherwise it's looked
+        up, or created, under the navigator's white label from the snapshot."""
+        name = county["name"]
+        white_label_code = county.get("white_label")
+        if white_label_code is None:
+            existing = self.instance.counties.filter(name=name).first() if self.instance.pk else None
+            if existing is not None:
+                return existing
+            white_label_code = navigator_white_label
+        found = County.objects.filter(name=name, white_label__code=white_label_code).first()
+        if found is not None:
+            return found
+        white_label, _ = WhiteLabel.objects.get_or_create(code=white_label_code, defaults={"name": white_label_code})
+        return County.objects.create(name=name, white_label=white_label)
+
+    def to_model_data(self) -> DataType:
+        navigator = self.instance
+        return {
+            "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
+            "counties": self._counties(),
+            "languages": self._languages(),
+            # Every link, from `ProgramNavigator`, which the admin inline and the record import write
+            # and the results page reads. The legacy `programs` list is no longer exported: it missed
+            # every link made since the ordering migration (0126), and a loader that predates
+            # `program_links` deleted the links it left out. Without it, such a loader fails on the
+            # missing key and the whole load rolls back.
+            "program_links": [
+                {"external_name": link.program.external_name, "order": link.order}
+                for link in navigator.program_navigators.select_related("program").order_by("order", "id")
+            ],
+            "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
+            "white_label": navigator.white_label.code,
+            "assistant_notes": navigator.assistant_notes,
+        }
+
+    def from_model_data(self, data: DataType) -> None:
+        navigator = self.instance
+
+        navigator.phone_number = data["phone_number"]
+        # Absent from snapshots exported before the field existed (MFB-2364). Left alone
+        # then, so importing an old snapshot doesn't wipe notes written since.
+        if "assistant_notes" in data:
+            navigator.assistant_notes = data["assistant_notes"]
+
+        try:
+            white_label = WhiteLabel.objects.get(code=data["white_label"])
+        except WhiteLabel.DoesNotExist:
+            white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
+        # A navigator is moved to `federal` on purpose (a migration, or a federal program record
+        # that owns it), never back, and on a federal program a state navigator reaches only that
+        # state. A snapshot exported before the move would undo it, so it stays on `federal`.
+        if not (navigator.white_label_id and navigator.white_label.code == FEDERAL_WHITE_LABEL):
+            navigator.white_label = white_label
+
+        # get or create counties
+        counties = [self._county(county, data["white_label"]) for county in data["counties"]]
+        navigator.counties.set(counties)
+
+        # get or create languages
+        langs = []
+        for lang in data["languages"]:
+            try:
+                lang_instance = NavigatorLanguage.objects.get(code=lang["code"])
+            except NavigatorLanguage.DoesNotExist:
+                lang_instance = NavigatorLanguage.objects.create(code=lang["code"])
+            langs.append(lang_instance)
+        navigator.languages.set(langs)
+
+        # A snapshot with `program_links` lists every link, so the navigator's links are made to match
+        # it. An older one lists only the legacy table, which misses the links made since the
+        # ordering migration (0126) and still holds links removed in the admin since, so its links
+        # are left alone: neither added nor removed.
+        if "program_links" in data:
+            self._set_program_links(navigator, data["program_links"])
+        else:
+            logger.info(
+                "Snapshot predates program_links; left navigator %s's program links alone.",
+                navigator.external_name,
+            )
+
         eligibility_programs = []
         for item in data.get("eligibility_programs", []):
             external_name = item if isinstance(item, str) else (item.get("external_name") or item.get("name"))
             if not external_name:
                 continue
-            program_instance = Program.objects.get(external_name=external_name)
-            if program_instance.white_label_id != navigator.white_label_id:
-                raise self.DeferCreation()
+            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
+            if not may_link_navigator(program_instance, navigator.white_label.code):
+                _log_cross_state_link(navigator, program_instance, "requiring")
             eligibility_programs.append(program_instance)
         navigator.eligibility_programs.set(eligibility_programs)
 
@@ -1639,6 +1717,38 @@ class NavigatorDataController(ModelDataController["Navigator"]):
     @classmethod
     def create_instance(cls, external_name: str, Model: type["Navigator"]) -> "Navigator":
         return Model.objects.new_navigator("_default", external_name, None)
+
+
+# One address, no display name, no scheme. The assistant's card-email check anchors it
+# (`screener.assistant._EMAIL_SHAPED`); the note check below searches for it anywhere.
+EMAIL_BODY = r"[^@\s]+@[^@\s]+\.[^@\s]+"
+
+# Contact details in free text, matched anywhere in the string: a US phone number (10
+# digits, or 7 with or without a separator), an international number written with a
+# leading +, an email address, or a link, bare domains included. Kept in step with
+# ai-service's `_CONTACT_SHAPED`, which drops the same notes as a last line.
+NAVIGATOR_NOTE_CONTACT_SHAPED = re.compile(
+    r"(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|(?<!\d)\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|\+\d[\d\s().-]{6,}\d"
+    rf"|{EMAIL_BODY}"
+    r"|https?://|\bwww\.|\b[\w-]+\.(?:org|com|gov|net|us|edu|info)\b",
+    re.IGNORECASE,
+)
+
+
+def validate_no_contact_details(value: str) -> None:
+    """Keep phone numbers, emails and links out of a navigator's assistant notes.
+
+    Benji may only give contact details copied from the card's own fields, so a note is
+    never a place for them: a number typed here would reach the model with nothing on
+    the household's card to match it.
+    """
+    if NAVIGATOR_NOTE_CONTACT_SHAPED.search(value):
+        raise ValidationError(
+            "Notes can't contain phone numbers, email addresses or links. Put those in the "
+            "navigator's phone number, email or assistance link fields instead."
+        )
 
 
 class Navigator(models.Model):
@@ -1672,6 +1782,22 @@ class Navigator(models.Model):
         related_name="eligibility_navigators",
         blank=True,
         help_text="Navigator is only shown when the household qualifies for ALL of these programs.",
+    )
+    # What Benji should know about how this organization works that the card doesn't say
+    # (MFB-2364): "help is by phone, not email", "no longer offers tax help". Read only by
+    # the assistant, never rendered on the results page, so it is plain English text
+    # rather than a Translation. The form-level max_length matches the assistant's
+    # MAX_PROMPT_TEXT_LEN, so admins see the limit instead of having notes clipped.
+    assistant_notes = models.TextField(
+        blank=True,
+        default="",
+        max_length=800,
+        validators=[validate_no_contact_details],
+        help_text=(
+            "Notes for Benji only, never shown on the results page. Describe how this "
+            "organization works, e.g. 'Helps by phone only; does not take requests by email.' "
+            "Put phone numbers, emails and links in the card fields, not here."
+        ),
     )
 
     name = models.ForeignKey(
@@ -2093,13 +2219,12 @@ class TranslationOverride(models.Model):
         return f"{white_label_name}{name}"
 
 
-class ProgramConfigImport(models.Model):
+class ProgramRecordImport(models.Model):
     """
-    Tracks which program configuration JSON files have been imported.
+    One row per program-ops program record, written by `import_program_records`.
 
-    Similar to Django's migrations table, this model keeps track of which
-    program config files have been successfully imported to avoid re-importing
-    the same configuration.
+    `applied_record` holds what the record set when it was last applied, which is how the
+    next import tells a record change from an admin edit.
     """
 
     filename = models.CharField(
@@ -2125,6 +2250,12 @@ class ProgramConfigImport(models.Model):
         default="",
         help_text="SHA-256 of the config file when it was applied. A file whose hash no longer matches "
         "is treated as pending again, so edits to a config are picked up on the next run.",
+    )
+    applied_record = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="What a program-ops record set when it was last applied, field by field. Comparing it with "
+        "the record and the database tells a record edit from an admin edit.",
     )
 
     class Meta:

@@ -171,15 +171,14 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     if screen.calc_gross_income("yearly", (_SSI_INCOME_TYPE,)) > 0:
         # An empty result is normal, not a config gap: `_default`,
         # `co_tax_calculator` and `dbg_wl` ship no SSI program at all.
-        # An inactive federal row is one not launched yet, so it can't be a benefit the
-        # household holds; inactive state rows are kept as before.
+        # Active rows only: an inactive row is either a federal program not launched yet
+        # or a state row the federal program replaced, and neither is shown anywhere.
         derived |= set(
             Program.objects.filter(
                 visible_to(screen.white_label),
                 base_program=_SSI_BASE_PROGRAM,
-            )
-            .exclude(white_label__code=FEDERAL_WHITE_LABEL, active=False)
-            .values_list("name_abbreviated", flat=True)
+                active=True,
+            ).values_list("name_abbreviated", flat=True)
         )
     return derived
 

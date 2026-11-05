@@ -18,7 +18,7 @@ interactions:
       {"spm_unit": {"members": ["1", "2"], "tanf": {"2025": null}, "receives_tanf":
       {"2025": false}, "takes_up_tanf_if_eligible": {"2025": false}, "receives_snap":
       {"2025": false}, "takes_up_snap_if_eligible": {"2025": false}}}, "marital_units":
-      {}}, "version": "1.786.5"}'
+      {}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -27,7 +27,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1489'
+      - '1488'
       Content-Type:
       - application/json
       User-Agent:
@@ -55,26 +55,26 @@ interactions:
         {"members": ["1", "2"], "tanf": {"2025": 0.0}, "receives_tanf": {"2025": false},
         "takes_up_tanf_if_eligible": {"2025": false}, "receives_snap": {"2025": false},
         "takes_up_snap_if_eligible": {"2025": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "1.786.5", "data_version": null, "dataset": null}}'
+        {"model_version": "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1592'
+      - '1591'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 22:44:39 GMT
+      - Mon, 02 Nov 2026 19:07:48 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-d1e999408e28594483be0e596440a669-2cb0a08213d8b32e-01
+      - 00-f5370ecb417c362fbf72253429a28622-13e80bf83f382405-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - d1e999408e28594483be0e596440a669;o=1
+      - f5370ecb417c362fbf72253429a28622
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -82,7 +82,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 1b9d18ce-596d-4254-8d3b-1081cc39d91e
+      - 9f4dd355-4603-4e79-9367-c9bf9ccb7817
       x-policyengine-route-channel:
       - current
     status:

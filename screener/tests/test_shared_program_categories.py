@@ -24,6 +24,7 @@ PROGRAM_REQUIRED_TRANSLATION_FIELDS = (
     "apply_button_link",
     "apply_button_description",
     "estimated_delivery_time",
+    "estimated_decision_time",
     "estimated_application_time",
     "estimated_value",
     "name",

@@ -32,14 +32,11 @@ from screener.models import Expense
 from programs.programs.white_labels.mo.pts.calculator import MoPts
 from programs.framework.pe_dependencies import member
 
-PE_VERSION = "2.9.0"
 CLAIM_YEAR = 2025
 
 
 class MoPtsScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is Cole County, ZIP 65101."""
-
-    pe_version = PE_VERSION
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0

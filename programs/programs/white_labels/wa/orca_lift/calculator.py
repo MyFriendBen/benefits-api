@@ -39,7 +39,7 @@ class WaOrcaLift(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         categorical = (
             self.screen.has_benefit("wa_snap")
-            or self.screen.has_benefit("wa_wic")
+            or self.screen.has_base_benefit("wic")
             or any(
                 member.has_insurance("wa_apple_health_medicaid") or member.has_insurance("wa_apple_health_for_kids")
                 for member in self.screen.household_members.all()

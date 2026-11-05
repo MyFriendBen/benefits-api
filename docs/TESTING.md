@@ -35,7 +35,7 @@ roughly three minutes to under one. Two things follow from that:
 - **Each worker gets its own Redis database** when `REDIS_URL` is set, because
   `clear_cache` issues FLUSHDB and would otherwise wipe other workers' entries mid-test.
   Workers are numbered *above* the database `REDIS_URL` names, leaving that one to serial
-  runs and to `benefits/tests/test_redis_backend.py`, which flushes it directly. Pointing
+  runs and to `benefits/tests/test_redis_backend.py`, which uses its own key prefix there. Pointing
   `REDIS_URL` at a higher database leaves fewer to hand out.
   `pytest.ini` therefore caps the fan-out with `--maxprocesses 14`, which is what keeps
   `-n auto` safe on a large machine: it counts *logical* cores here (xdist prefers
@@ -134,14 +134,14 @@ Test what the state *adds* beside the variant, not the inheritance.
 
 ```python
 import pytest
-from programs.framework.tests.integration_test_helpers import (
+from programs.programs.testing_fixtures.pe_integration import (
     PeIntegrationTestCase, add_income, add_member, calc_pe_program, make_program, make_screen,
     screener_value,
 )
 
 @pytest.mark.integration          # applies VCR (the base class carries this too)
 class TestTxHeadStart(PeIntegrationTestCase):
-    pe_version = "1.779.3"        # version the cassettes were recorded at
+    # Records and replays at PE_TEST_VERSION. No pe_version needed.
 
     def test_scenario_1_single_parent_child_age_3_under_income_limit(self):
         screen = make_screen(screen_id=1, white_label_code="tx", state_code="TX",
@@ -160,8 +160,10 @@ class TestTxHeadStart(PeIntegrationTestCase):
 Three rules make a PolicyEngine cassette replayable — the helpers enforce them, don't work around them:
 
 1. **Assign explicit primary keys.** The request keys `household.people` by member id and the *response* is keyed the same way, so a cassette recorded under different auto-increment pks can neither be matched nor read.
-2. **Pin the model version** via `pe_version`. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
+2. **Pin the model version.** Every test case records at `PE_TEST_VERSION` (`pe_integration.py`) unless it overrides `pe_version`, and an override must set `pe_version_reason`. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
 3. **Assert the truncated value** with `screener_value(...)`. PolicyEngine returns fractional dollars; the API truncates before serving, so whole dollars are what the spec and the user see.
+
+**Build each scenario at the program's recorded year.** `calc_pe_program` fails a scenario whose `Program.year` differs from the edition `programs/vintage.py` records for that program, since `year` is the PolicyEngine request period and a test at another year asserts values no household is shown. A scenario that deliberately runs another year — one proving the calculator reads year-specific parameters — passes `off_vintage` saying why. Programs with no entry in `programs/vintage.py` aren't checked.
 
 ### Recording and verifying
 
@@ -178,7 +180,7 @@ VCR_MODE=none venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -q
 git add programs/programs/white_labels/mo/pts/tests/
 ```
 
-`PE_RECORD=1` is what allows the live auth0 token exchange. Without it every run seeds a placeholder token and touches no network, so an ordinary `pytest` never authenticates even on a machine with PolicyEngine credentials in `.env`.
+`PE_RECORD=1` (with credentials) is the only way a PolicyEngine test reaches the network. Without it the harness patches the token fetch to return a placeholder (`pe_integration.py::stub_pe_token_for_replay`), and its cassettes open in `none` whatever `VCR_MODE` says (`conftest.py::cassette_record_mode`): a missing cassette or a changed body fails as "no match" instead of sending the placeholder live. So an ordinary `pytest` never authenticates or calls PolicyEngine, even on a machine with credentials in `.env`, and never overwrites or evicts a real token cached in Redis. Recording runs in one process, so it fetches one real token and caches it in the Redis database `REDIS_URL` names, where it lasts ~30 days. PolicyEngine limits how many are minted per month, so don't flush that database needlessly.
 
 The pinned version must be one PolicyEngine currently serves — it rejects exact versions other than what `current`/`frontier` resolve to:
 
@@ -188,7 +190,7 @@ curl -s https://household.api.policyengine.org/versions/us
 
 ### Refreshing after PolicyEngine moves
 
-A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: update `pe_version`, delete the affected cassettes, re-run step 1, and review the value diff. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
+A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: bump `PE_TEST_VERSION`, delete the affected cassettes, re-run step 1, and review the value diff. A module that can't move yet keeps its cassettes by overriding `pe_version` with its old version and a `pe_version_reason`; delete both once it is re-recorded. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
 
 Re-recording and adopting a new PolicyEngine version are always the same act: PolicyEngine serves only what `current`/`frontier` currently resolve to, and returns `422 unsupported_version` for anything else. A cassette can never be refreshed at its original pin.
 

@@ -26,8 +26,6 @@ from programs.programs.testing_fixtures.pe_integration import (
     screener_value,
 )
 
-PE_VERSION = "2.5.0"
-
 #: The period ``ma_ccdf`` is configured for. It decides which CCFA income limit applies:
 #: PolicyEngine holds the new-applicant limit at 50% of SMI before 2026-01-01 and 85%
 #: from it, and screening asks the new-applicant question.
@@ -36,8 +34,6 @@ YEAR = "2026"
 
 class MaCcfaTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is Suffolk County, ZIP 02108."""
-
-    pe_version = PE_VERSION
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0

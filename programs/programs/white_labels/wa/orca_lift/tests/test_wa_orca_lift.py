@@ -36,7 +36,7 @@ def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_m
 
 def make_calculator(
     has_wa_snap=False,
-    has_wa_wic=False,
+    has_wic=False,
     members=None,
     yearly_income=24_000,
     household_size=1,
@@ -47,10 +47,10 @@ def make_calculator(
     def has_benefit(name):
         return {
             "wa_snap": has_wa_snap,
-            "wa_wic": has_wa_wic,
         }.get(name, False)
 
     mock_screen.has_benefit = Mock(side_effect=has_benefit)
+    mock_screen.has_base_benefit = Mock(side_effect=lambda base_program: base_program == "wic" and has_wic)
     mock_screen.household_size = household_size
 
     def calc_gross_income(freq, types, **kwargs):
@@ -166,7 +166,7 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
         self.assertTrue(e.eligible)
 
     def test_wic_bypasses_income(self):
-        calc = make_calculator(has_wa_wic=True, yearly_income=60_000, fpl_annual=15_960)
+        calc = make_calculator(has_wic=True, yearly_income=60_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 

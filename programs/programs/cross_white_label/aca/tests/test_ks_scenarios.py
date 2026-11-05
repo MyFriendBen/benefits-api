@@ -31,11 +31,9 @@ from programs.programs.testing_fixtures.pe_integration import (
 )
 from screener.models import Insurance
 
-# Recorded at "current" rather than "frontier": production and staging both ride the
-# floating current alias, so this is the version real households are scored against.
-# 1.821.2 and frontier 1.821.10 return identical values for every scenario here, so no
-# PolicyEngineConfig pin is needed to ship.
-PE_VERSION = "1.821.2"
+# Recorded at the suite pin (PE_TEST_VERSION), which tracks PolicyEngine's "current" rather
+# than "frontier": production and staging both ride current, so this is the version real
+# households are scored against.
 YEAR = "2026"
 
 # Age 35 at the 2026 coverage year, stated in the spec as birth month/year March 1991. Fixed
@@ -46,8 +44,6 @@ AGE = 35
 
 @pytest.mark.integration
 class TestKsAcaScenarios(PeIntegrationTestCase):
-    pe_version = PE_VERSION
-
     def _single_adult(self, screen_id, zipcode, county, annual_income, employer_coverage=False):
         """The spec's household: one adult, no dependents.
 

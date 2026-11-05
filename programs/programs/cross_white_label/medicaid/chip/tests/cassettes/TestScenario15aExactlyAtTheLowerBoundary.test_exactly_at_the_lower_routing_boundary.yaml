@@ -29,7 +29,7 @@ interactions:
       ["1501", "1502", "1503"], "tanf": {"2026": null}, "receives_tanf": {"2026":
       false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026":
       false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {"1501-1502":
-      {"members": ["1501", "1502"]}}}, "version": "1.815.1"}'
+      {"members": ["1501", "1502"]}}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -38,7 +38,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '2439'
+      - '2438'
       Content-Type:
       - application/json
       User-Agent:
@@ -77,26 +77,26 @@ interactions:
         {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
         {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
         {"1501-1502": {"members": ["1501", "1502"]}}}, "policyengine_bundle": {"model_version":
-        "1.815.1", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '2534'
+      - '2533'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 25 Aug 2026 13:45:24 GMT
+      - Mon, 02 Nov 2026 19:10:32 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-b6939794bbcd2132ebaba9c619d2bb6b-fa01740e2fb107c5-01
+      - 00-ac6276ece99412586182dfaec665f098-87a9705ce4b50836-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - b6939794bbcd2132ebaba9c619d2bb6b;o=1
+      - ac6276ece99412586182dfaec665f098
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -104,9 +104,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 7c7edc55-c408-4f4e-85da-735719004d32
+      - 4029b007-436c-4334-b457-facc8a333050
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK

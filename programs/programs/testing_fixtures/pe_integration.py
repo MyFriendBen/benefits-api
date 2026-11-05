@@ -23,8 +23,8 @@ three are handled here:
    ``pin_pe_version`` removes both.
 3. **A bearer token that isn't fetched during replay.** The auth0 host is in VCR's
    ``ignore_hosts`` so the token exchange is never written to a cassette (its response body
-   is a real token). ``PE_RECORD=1`` fetches one live; every other run seeds a placeholder
-   and touches no network at all.
+   is a real token). ``PE_RECORD=1`` fetches one live; every other run patches the fetch to
+   return a placeholder, touching neither the network nor the cache.
 
 These helpers run exactly one POST to household.api per scenario, which is what makes a
 cassette hold a single meaningful interaction.
@@ -34,36 +34,64 @@ serves what ``current``/``frontier`` currently resolve to — so these tests ski
 rather than fail a release. Re-recording is always also the act of adopting a new version.
 """
 
+import json
 import math
 import os
 from typing import Optional
+from unittest.mock import patch
 
 import pytest
-from decouple import config
 from django.core.cache import cache
 from django.test import TestCase
 
-from conftest import vcr_record_mode
+from conftest import PE_CAPTURE_DIR_ENV_VAR, pe_may_record, vcr_record_mode
 from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
 from programs.util import Dependencies
+from programs.vintage import PROGRAM_VINTAGE
 from programs.programs.testing_fixtures import households
 from programs.programs.testing_fixtures.households import add_income, make_program  # noqa: F401 -- re-exports
 from screener.models import HouseholdMember, Screen
 
+from integrations.clients.policyengine import engines
 from integrations.clients.policyengine.engines import _PE_TOKEN_CACHE_KEY, PrivateApiSim
 from programs.framework.pe_dependencies.payload import pe_input
 
-# Placeholder used when replaying. Never sent anywhere real: the recorded response replays
-# regardless of the token, and conftest redacts the Authorization header from cassettes.
+# Token the replay stub returns. Never sent anywhere real or cached: the recorded response
+# replays regardless of the token, and conftest redacts the Authorization header from cassettes.
 TEST_PE_TOKEN = "pe-integration-test-token"
 
-# Env var that opts a run in to recording. Recording is explicit rather than inferred from
-# VCR_MODE: the default mode ("once") only records when the cassette file is missing, so the
-# mode alone can't tell us whether this run needs a real token.
-PE_RECORD_ENV_VAR = "PE_RECORD"
-_TRUTHY = ("1", "true", "yes")
+# The PolicyEngine version every PeIntegrationTestCase records and replays at unless it
+# overrides ``pe_version``. Adopting a new version is a bump here plus a re-record of every
+# module that doesn't override. Must be one PolicyEngine currently serves (see docs/TESTING.md).
+PE_TEST_VERSION = "2.53.1"
+
+# Used by the record_and_diff management command. The override replaces every test case's
+# pe_version for the run, so the whole suite can be recorded at a new version without editing any
+# module. The capture directory (PE_CAPTURE_DIR_ENV_VAR, from conftest) collects each scenario's
+# outcome (see capture_result).
+PE_VERSION_OVERRIDE_ENV_VAR = "PE_VERSION_OVERRIDE"
+
+
+def check_pe_version_pin(test_name: str, pe_version: str, pe_version_reason: str) -> None:
+    """Fail a test class whose pin is missing, or departs from the suite pin without saying why.
+
+    A module still on an older version can't simply follow ``PE_TEST_VERSION``: the version is
+    part of the request body VCR matches on, so its cassettes replay only at the version they
+    were recorded at. Overriding is therefore allowed, but has to carry a reason, so that every
+    module behind the suite pin is a deliberate, visible exception rather than a forgotten one.
+    """
+    if not pe_version:
+        raise AssertionError(
+            f"{test_name} must set pe_version to the exact PolicyEngine version its cassettes were recorded at."
+        )
+
+    if pe_version != PE_TEST_VERSION and not pe_version_reason.strip():
+        raise AssertionError(
+            f"{test_name} pins PolicyEngine {pe_version} instead of the suite pin {PE_TEST_VERSION}. "
+            "Set pe_version_reason to say why, or re-record its cassettes at the suite pin."
+        )
 
 
 def _can_record() -> bool:
@@ -73,15 +101,11 @@ def _can_record() -> bool:
     matters because ``ignore_hosts`` lets the token exchange through to the network, so
     inferring "might record" from the presence of credentials made every local run of a
     fully-recorded suite fire a live auth call for no benefit.
+
+    The same rule decides whether the cassette may record at all (conftest's
+    ``cassette_record_mode``), so a run that gets the replay stub can't also reach the API.
     """
-    if os.getenv(PE_RECORD_ENV_VAR, "").lower() not in _TRUTHY:
-        return False
-
-    has_credentials = bool(config("POLICY_ENGINE_CLIENT_ID", default="")) and bool(
-        config("POLICY_ENGINE_CLIENT_SECRET", default="")
-    )
-
-    return has_credentials and vcr_record_mode() != "none"
+    return pe_may_record(vcr_record_mode())
 
 
 def _forces_live_recording() -> bool:
@@ -97,22 +121,28 @@ def _forces_live_recording() -> bool:
     return vcr_record_mode() == "all"
 
 
-def seed_pe_token(token: str = TEST_PE_TOKEN) -> None:
-    """Make a bearer token available without recording the auth exchange.
+def stub_pe_token_for_replay(test: TestCase) -> None:
+    """Give a replayed request a bearer token without authenticating or touching the cache.
 
-    When recording (``PE_RECORD=1``), leave the cache alone so ``PrivateApiSim`` fetches a real
-    token — the auth0 host is in VCR's ``ignore_hosts``, so that request passes through and is
-    never written to a cassette (its response body is a live token).
+    ``PrivateApiSim`` asks ``engines._fetch_pe_bearer_token`` for a token before every request,
+    replayed or not. With nothing cached that would authenticate live, or fail in CI, which has no
+    credentials. Replay needs no real token (cassettes match on the body, and conftest redacts the
+    Authorization header), so the fetch is patched for this test instead. The cache then only ever
+    holds real tokens, which keep their ~30-day lease across replay runs.
 
-    Otherwise seed a placeholder so nothing tries to authenticate at all. ``engines`` reads the
-    token from the Django cache, which the autouse ``clear_cache`` fixture empties before every
-    test — so this has to be re-seeded per test (``PeIntegrationTestCase.setUp`` does).
+    When recording (``PE_RECORD=1``) the fetch runs for real and caches a live token. The auth0
+    host is in VCR's ``ignore_hosts``, so that exchange is never written to a cassette.
     """
     if _can_record():
+        # Earlier versions of this harness cached the placeholder with no expiry, and clear_cache
+        # carries the token entry across its flush, so one can still be there. Sent live, it 401s.
+        if cache.get(_PE_TOKEN_CACHE_KEY) == TEST_PE_TOKEN:
+            cache.delete(_PE_TOKEN_CACHE_KEY)
         return
 
-    # No expiry: the entry only has to outlive this one test, and clear_cache removes it.
-    cache.set(_PE_TOKEN_CACHE_KEY, token, timeout=None)
+    patcher = patch.object(engines, "_fetch_pe_bearer_token", return_value=TEST_PE_TOKEN)
+    patcher.start()
+    test.addCleanup(patcher.stop)
 
 
 def pin_pe_version(version: str) -> None:
@@ -162,8 +192,14 @@ def calc_pe_program(
     calculator_class: type,
     program: Program,
     missing_dependencies: Optional[Dependencies] = None,
+    off_vintage: str = "",
 ) -> Eligibility:
     """Run one PolicyEngine calculator end to end and return its Eligibility.
+
+    The program's year must be the edition ``programs/vintage.py`` records for it, so scenarios
+    test the year production serves. A scenario that deliberately runs another year — one proving
+    the calculator reads year-specific parameters, say — passes ``off_vintage`` saying why. See
+    ``check_program_vintage``.
 
     Deliberately does not go through ``calc_pe_eligibility``: that function catches every
     exception, reports it to Sentry and returns an empty result, which would turn a cassette
@@ -175,6 +211,8 @@ def calc_pe_program(
     is a property that reads ``self.program.year``, so a class would yield a property object
     as the period key rather than the period.
     """
+    check_program_vintage(program, off_vintage)
+
     calculator = calculator_class(screen, program, missing_dependencies or Dependencies())
 
     # The one production step we can't skip silently. calc_pe_eligibility drops a calculator
@@ -188,10 +226,62 @@ def calc_pe_program(
             "on the program's absence instead of on an Eligibility."
         )
 
-    sim = PrivateApiSim(pe_input(screen, [calculator]))
-    calculator.set_engine(sim)
+    try:
+        sim = PrivateApiSim(pe_input(screen, [calculator]))
+        calculator.set_engine(sim)
+        eligibility = calculator.calc()
+    except Exception as error:
+        capture_result(error=f"{type(error).__name__}: {error}")
+        raise
 
-    return calculator.calc()
+    capture_result(eligible=bool(eligibility.eligible), value=math.trunc(eligibility.value))
+
+    return eligibility
+
+
+def check_program_vintage(program: Program, off_vintage: str = "") -> None:
+    """Fail a scenario whose program year isn't the edition production is meant to be on.
+
+    ``Program.year`` is the PolicyEngine request period, so a test built at another year asserts
+    values no household is shown. Only programs with an entry in ``PROGRAM_VINTAGE`` are checked;
+    one without is unresearched, and ``audit_program_vintage`` reports it.
+    """
+    vintage = PROGRAM_VINTAGE.get((program.white_label.code, program.name_abbreviated))
+    if vintage is None or off_vintage.strip():
+        return
+
+    if program.year.period != vintage.edition:
+        raise AssertionError(
+            f"{program.name_abbreviated} is built at {program.year.period}, but programs/vintage.py records "
+            f"{vintage.edition} ({vintage.rule}). Build the scenario at {vintage.edition}, or pass off_vintage "
+            "to calc_pe_program saying why this scenario runs another year."
+        )
+
+
+def capture_result(eligible: Optional[bool] = None, value: Optional[int] = None, error: Optional[str] = None) -> None:
+    """Append this test's PolicyEngine outcome to the capture directory, when one is set.
+
+    A no-op unless ``PE_CAPTURE_DIR`` is set. ``record_and_diff`` sets it on a replay run and a
+    recording run and compares the two, which is how a new PolicyEngine version's effect is
+    measured per scenario. Captured before the test asserts, so a changed value is recorded even
+    though the test then fails. Each xdist worker writes its own file, so lines never interleave.
+    """
+    capture_dir = os.getenv(PE_CAPTURE_DIR_ENV_VAR)
+    if not capture_dir:
+        return
+
+    os.makedirs(capture_dir, exist_ok=True)
+    worker = os.getenv("PYTEST_XDIST_WORKER", "main")
+    record = {
+        # PYTEST_CURRENT_TEST is "<nodeid> (<phase>)".
+        "test": os.getenv("PYTEST_CURRENT_TEST", "").rsplit(" ", 1)[0],
+        "pe_version": PolicyEngineConfig.current_version(),
+        "eligible": eligible,
+        "value": value,
+        "error": error,
+    }
+    with open(os.path.join(capture_dir, f"{worker}.jsonl"), "a") as f:
+        f.write(json.dumps(record) + "\n")
 
 
 def screener_value(eligibility: Eligibility) -> int:
@@ -208,27 +298,27 @@ def screener_value(eligibility: Eligibility) -> int:
 class PeIntegrationTestCase(TestCase):
     """Base class for a program's PolicyEngine tests.
 
-    Subclasses set ``pe_version`` to the version the cassettes were recorded at (keep it in
-    sync with the pinned ``PolicyEngineConfig`` version; changing it means re-recording).
+    Cassettes are recorded at ``PE_TEST_VERSION`` by default. A subclass whose cassettes were
+    recorded at another version overrides ``pe_version`` and says why in
+    ``pe_version_reason``; changing either version means re-recording.
     """
 
     # Applies VCR to every subclass. Carried here rather than left to each subclass to
     # decorate: a class that forgot the marker would get no cassette at all, call PolicyEngine
     # live on every run, pass locally for anyone with credentials, and fail in CI with a 401
     # that looks like a program bug. Subclasses may still decorate themselves — marks compose.
-    pytestmark = pytest.mark.integration
+    pytestmark = [pytest.mark.integration, pytest.mark.pe_cassette]
 
     # Exact MAJOR.MINOR.PATCH the cassettes in this module were recorded against.
-    pe_version: str = ""
+    pe_version: str = PE_TEST_VERSION
 
-    def setUp(self):
+    # Required whenever pe_version differs from PE_TEST_VERSION.
+    pe_version_reason: str = ""
+
+    def setUp(self) -> None:
         super().setUp()
 
-        if not self.pe_version:
-            raise AssertionError(
-                f"{type(self).__name__} must set pe_version to the exact PolicyEngine version "
-                "its cassettes were recorded at."
-            )
+        check_pe_version_pin(type(self).__name__, self.pe_version, self.pe_version_reason)
 
         if _forces_live_recording():
             self.skipTest(
@@ -237,5 +327,5 @@ class PeIntegrationTestCase(TestCase):
                 "(422 unsupported_version). Refresh cassettes deliberately — see docs/TESTING.md."
             )
 
-        pin_pe_version(self.pe_version)
-        seed_pe_token()
+        pin_pe_version(os.getenv(PE_VERSION_OVERRIDE_ENV_VAR) or self.pe_version)
+        stub_pe_token_for_replay(self)

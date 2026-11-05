@@ -333,7 +333,7 @@ class TestScreen(TestCase):
         program in production carries it, and a row without it is the config gap
         `_derived_current_benefit_names` reports to Sentry.
         """
-        seed_program(self.white_label, "ssi", base_program="ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
@@ -378,7 +378,7 @@ class TestScreen(TestCase):
                 Program.objects.filter(white_label=self.white_label).delete()
                 CurrentBenefit.objects.filter(screen=self.screen).delete()
                 self.screen.invalidate_current_benefits_cache()
-                seed_program(self.white_label, name, base_program="ssi")
+                seed_program(self.white_label, name, base_program="ssi", active=True)
 
                 _write_current_benefits(self.screen, [])
                 self.screen.invalidate_current_benefits_cache()
@@ -399,7 +399,7 @@ class TestScreen(TestCase):
                 Program.objects.filter(white_label=self.white_label).delete()
                 CurrentBenefit.objects.filter(screen=self.screen).delete()
                 self.screen.invalidate_current_benefits_cache()
-                seed_program(self.white_label, name, base_program="ssi")
+                seed_program(self.white_label, name, base_program="ssi", active=True)
 
                 _write_current_benefits(self.screen, [])
                 self.screen.invalidate_current_benefits_cache()
@@ -408,7 +408,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_ssi_not_derived_without_reported_ssi_income(self):
         """The derive is driven by the income stream, not by the program existing."""
-        seed_program(self.white_label, "mo_ssi", base_program="ssi")
+        seed_program(self.white_label, "mo_ssi", base_program="ssi", active=True)
         _write_current_benefits(self.screen, [])
         self.screen.invalidate_current_benefits_cache()
 
@@ -422,8 +422,8 @@ class TestScreen(TestCase):
         to drop those; the derive is now scoped itself, so assert it directly.
         """
         other_wl = WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
-        seed_program(self.white_label, "mo_ssi", base_program="ssi")
-        seed_program(other_wl, "wa_ssi", base_program="ssi")
+        seed_program(self.white_label, "mo_ssi", base_program="ssi", active=True)
+        seed_program(other_wl, "wa_ssi", base_program="ssi", active=True)
 
         self._report_ssi_income()
         self.assertEqual(_derived_current_benefit_names(self.screen), {"mo_ssi"})
@@ -1102,8 +1102,10 @@ class TestHouseholdMember(TestCase):
         result = adult_child.is_dependent()
         self.assertFalse(result)
 
-    def test_is_dependent_returns_false_for_child_with_high_income(self):
-        """Test is_dependent returns False for child whose income exceeds 50% of household income."""
+    def test_is_dependent_returns_true_for_child_with_high_income(self):
+        """MFB-1693: a qualifying child's own income no longer removes them from the
+        qualifying-child path — the IRS qualifying-child test has no support/income
+        condition (only the qualifying-relative path does)."""
         self.screen.household_size = 2
         self.screen.save()
 
@@ -1113,16 +1115,17 @@ class TestHouseholdMember(TestCase):
             screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
         )
 
-        # Child has high income (more than half)
+        # Child has high income (more than half of household income under the old, incorrect test)
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=17)
 
         IncomeStream.objects.create(
             screen=self.screen, household_member=child, type="wages", amount=2000, frequency="monthly"
         )
 
-        # Child income $24,000 > household $36,000 / 2 = $18,000
+        # Child income $24,000 > household $36,000 / 2 = $18,000 under the removed test,
+        # but age <= 18 and eligible relationship are still satisfied, so still a dependent.
         result = child.is_dependent()
-        self.assertFalse(result)
+        self.assertTrue(result)
 
     def test_is_dependent_edge_case_age_18_not_student(self):
         """Test is_dependent for member exactly age 18 (not student)."""
@@ -1224,11 +1227,12 @@ class TestStaleStoredAge(TestCase):
         self.assertEqual(member.age_at_end_of_year(2026), 18)
         self.assertEqual(member.age_at_end_of_year(2025), 17)
 
-    def test_age_at_end_of_year_is_never_negative(self):
+    def test_age_at_end_of_year_is_none_before_birth(self):
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=0, birth_year_month=date(2026, 2, 1)
         )
-        self.assertEqual(member.age_at_end_of_year(2025), 0)
+        self.assertIsNone(member.age_at_end_of_year(2025))
+        self.assertEqual(member.age_at_end_of_year(2026), 0)
 
     def test_age_at_end_of_year_falls_back_to_calc_age(self):
         member = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=12)

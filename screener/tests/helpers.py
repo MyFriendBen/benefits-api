@@ -25,17 +25,23 @@ from screener.models import WhiteLabel
 from translations.models import Translation
 
 
-def seed_program(white_label: WhiteLabel, *name_abbreviateds: str, base_program: str | None = None) -> None:
+def seed_program(
+    white_label: WhiteLabel, *name_abbreviateds: str, base_program: str | None = None, active: bool = False
+) -> None:
     """Create one or more Programs (with required Translation FKs) so the
     join-table read path can resolve `program__name_abbreviated=name`. Thin
     wrapper around the canonical `Program.objects.new_program` manager method.
 
     `new_program` leaves `base_program` unset, so pass `base_program=` when the code
-    under test resolves variants structurally (e.g. `has_base_benefit`)."""
+    under test resolves variants structurally (e.g. `has_base_benefit`). It also creates
+    the program switched off; pass `active=True` when the code under test reads only
+    live programs (e.g. the SSI derive)."""
     for name in name_abbreviateds:
         program = Program.objects.new_program(white_label.code, name)
-        if base_program is not None:
-            program.base_program = base_program
+        if base_program is not None or active:
+            if base_program is not None:
+                program.base_program = base_program
+            program.active = active
             program.save()
 
 
@@ -171,6 +177,7 @@ def seed_navigator(
     language_codes: tuple[str, ...] = (),
     eligibility_programs: tuple[Program, ...] = (),
     order: int = 999,
+    assistant_notes: str = "",
 ) -> Navigator:
     """Attach a Navigator to `program` through the ordered through table, with its
     translations filled in.
@@ -185,6 +192,9 @@ def seed_navigator(
     for field, text in (("name", name), ("description", description), ("email", email), ("assistance_link", link)):
         if text:
             _set_default_text(getattr(navigator, field), text)
+    if assistant_notes:
+        navigator.assistant_notes = assistant_notes
+        navigator.save(update_fields=["assistant_notes"])
 
     for county_name in county_names:
         county, _ = County.objects.get_or_create(white_label=program.white_label, name=county_name)

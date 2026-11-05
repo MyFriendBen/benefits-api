@@ -18,7 +18,7 @@ import programs.framework.pe_dependencies as dependency
 from benefits.tests.cache_override import LOCAL_CACHE
 from integrations.clients.policyengine import policy_engine as pe
 from integrations.external_api_status import POLICY_ENGINE, get_external_api_failures, track_external_api_failures
-from programs.framework.pe_dependencies.base import ConflictingDependencyError, Member
+from programs.framework.pe_dependencies.base import ConflictingDependencyError, Member, SpmUnit
 from programs.framework.pe_dependencies.payload import build_pe_input
 from screener.models import HouseholdMember, Screen, WhiteLabel
 
@@ -44,6 +44,14 @@ class FortyTwoYearOld(Member):
 
     def value(self):
         return 42
+
+
+class NeedsVersionOne(SpmUnit):
+    """A fake output that needs PolicyEngine 1.0.0 or later. Like `snap_if_takes_up`, it is dropped when the
+    version is unknown."""
+
+    field = "needs_version_one"
+    min_pe_version = (1, 0, 0)
 
 
 def sent_payloads(log):
@@ -148,6 +156,17 @@ class TestEveryLossReportsToTheResultsBanner(PeBucketTestBase):
 
         return result, log, failures
 
+    def run_with_resolved_version(self, version):
+        """Run one normal program and one gated program. `version` is what `/versions/us` gives."""
+        gated = self.calculator([FortyYearOld])
+        gated.pe_outputs = [NeedsVersionOne]
+
+        with patch.object(pe.pe_versions, "resolve_unpinned_comparable_version", return_value=version) as resolve:
+            result, _, failures = self.run_tracked({"healthy": self.calculator([FortyYearOld]), "gated": gated})
+
+        resolve.assert_called_once()
+        return result, failures
+
     def test_a_full_result_reports_nothing(self):
         result, _, failures = self.run_tracked({"only": self.calculator([FortyYearOld])})
 
@@ -210,6 +229,21 @@ class TestEveryLossReportsToTheResultsBanner(PeBucketTestBase):
         )
 
         self.assertEqual(sorted(result["eligibility"]), ["answerable"])
+        self.assertEqual(failures, [])
+
+    def test_a_program_dropped_because_versions_us_failed_reports(self):
+        """If `/versions/us` fails, the version is unknown, so the gated program is dropped.
+        The household must still see the banner."""
+        result, failures = self.run_with_resolved_version(None)
+
+        self.assertEqual(sorted(result["eligibility"]), ["healthy"])
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_a_resolved_version_keeps_the_gated_program_and_reports_nothing(self):
+        """If `/versions/us` works, the gated program is kept and no banner is shown."""
+        result, failures = self.run_with_resolved_version(NeedsVersionOne.min_pe_version)
+
+        self.assertEqual(sorted(result["eligibility"]), ["gated", "healthy"])
         self.assertEqual(failures, [])
 
 

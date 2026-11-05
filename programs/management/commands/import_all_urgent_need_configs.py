@@ -22,7 +22,7 @@ class Command(BaseCommand):
     Import every urgent need configuration in import_urgent_need_config_data/data/ that
     does not already exist in the database.
 
-    Unlike import_all_program_configs there is no tracking table: an urgent need counts as
+    Unlike import_program_records there is no tracking table: an urgent need counts as
     imported when an UrgentNeed row with the config's external_name exists.
 
     --override deletes and recreates urgent needs that already exist, discarding any edits

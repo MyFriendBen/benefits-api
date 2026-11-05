@@ -5,7 +5,7 @@ interactions:
       {"family": {"members": ["901"]}}, "households": {"household": {"members": ["901"],
       "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["901"],
       "school_meal_countable_income": {"2026": 24600.0}}}, "marital_units": {}}, "version":
-      "2.5.0"}'
+      "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -14,7 +14,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '434'
+      - '435'
       Content-Type:
       - application/json
       User-Agent:
@@ -29,26 +29,26 @@ interactions:
         ["901"]}}, "households": {"household": {"members": ["901"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["901"], "school_meal_countable_income":
         {"2026": 24600.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.5.0", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '533'
+      - '534'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 28 Sep 2026 20:47:06 GMT
+      - Mon, 02 Nov 2026 19:09:51 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-88e77794dfac750c8c6749329ae588d7-a6bb3f57fe83dcb0-00
+      - 00-aaaf60a9ccfe7afef8651c5f9ddeef66-41de16ff38b001a9-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 88e77794dfac750c8c6749329ae588d7
+      - aaaf60a9ccfe7afef8651c5f9ddeef66
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -56,7 +56,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 51a0b713-a6e7-4619-8a66-f332f85c6799
+      - 721a991c-92c2-42ad-90e5-5b7a953ab0bd
       x-policyengine-route-channel:
       - current
     status:

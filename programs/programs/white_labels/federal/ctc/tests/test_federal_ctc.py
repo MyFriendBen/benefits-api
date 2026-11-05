@@ -16,14 +16,8 @@ from unittest.mock import patch
 
 from programs.framework.base import Eligibility
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
-from programs.programs.white_labels.federal.ctc.calculator import (
-    CTC_YEARS,
-    HEAD_OF_HOUSEHOLD,
-    JOINT,
-    SINGLE,
-    FederalCtc,
-    income_tax,
-)
+from programs.programs.white_labels.federal.ctc.calculator import CTC_YEARS, FederalCtc
+from programs.programs.white_labels.federal.tax import HEAD_OF_HOUSEHOLD, JOINT, SINGLE, income_tax
 from screener.models import HouseholdMember, Screen
 
 TAX_YEAR = 2025
@@ -101,7 +95,7 @@ class TestRegistration(FederalCtcTestCase):
 class TestIncomeTax(FederalCtcTestCase):
     """`income_tax` against published rows of the 2025 Tax Table and the Tax Computation Worksheet."""
 
-    brackets = CTC_YEARS[TAX_YEAR].tax_brackets
+    brackets = CTC_YEARS[TAX_YEAR].tax.tax_brackets
 
     def test_tax_table_rows_are_priced_at_the_midpoint(self):
         # (taxable income, single, joint, head of household) from the published table.
@@ -417,6 +411,32 @@ class TestScenarios(FederalCtcTestCase):
         self.member(screen, "sisterOrBrother", 16, disabled=True, long_term_disability=False)
 
         self.assert_eligible(self.calculate(screen), 0)
+
+
+class TestBirthAfterTheTaxYear(FederalCtcTestCase):
+    """A child born after the tax year wasn't alive in it, so isn't claimed for it."""
+
+    def test_a_child_born_after_the_tax_year_is_not_a_dependent(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 30, income={"wages": 20_000})
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR + 1, 1, 1))
+
+        self.assert_ineligible(self.calculate(screen))
+
+    def test_a_child_born_in_december_of_the_tax_year_is_counted(self):
+        screen = self.make_screen(household_size=2)
+        self.member(screen, "headOfHousehold", 30, income={"wages": 20_000})
+        self.member(screen, "child", 0, month=12)
+
+        self.assert_eligible(self.calculate(screen), 1_700)
+
+    def test_a_newborn_does_not_stop_an_older_child_counting(self):
+        screen = self.make_screen(household_size=3)
+        self.member(screen, "headOfHousehold", 30, income={"wages": 40_000})
+        self.member(screen, "child", 4)
+        self.add_member(screen, "child", age=None, birth_year_month=date(TAX_YEAR + 1, 1, 1))
+
+        self.assert_eligible(self.calculate(screen), 2_200)
 
 
 class TestAgeOnlyHouseholds(FederalCtcTestCase):

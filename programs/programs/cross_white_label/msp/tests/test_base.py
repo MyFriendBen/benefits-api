@@ -55,7 +55,7 @@ class TestFederalMsp(TestCase):
         self.assertEqual(distinct_state_codes(Msp), set())
 
     def test_is_not_registered_directly(self):
-        """Unlike Ctc/Eitc, MSP is never registered bare — the asset test needs a state."""
+        """MSP is never registered bare — the asset test needs a state."""
         self.assertNotIn(Msp, all_calculators.values())
 
 

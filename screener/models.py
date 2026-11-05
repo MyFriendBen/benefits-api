@@ -645,14 +645,12 @@ class HouseholdMember(models.Model):
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
         age = self.calc_age()
 
-        # Path 1: Qualifying Child
-        is_qualifying_child = (
-            has_eligible_relationship
-            and ((age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability())
-            and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
+        # Path 1: Qualifying Child (income test removed per IRS rules)
+        is_qualifying_child = has_eligible_relationship and (
+            (age is not None and (age <= 18 or (self.student and age <= 23))) or self.has_disability()
         )
 
-        # Path 2: Qualifying Relative
+        # Path 2: Qualifying Relative (unchanged)
         threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
         is_qualifying_relative = has_eligible_relationship and self.calc_gross_income("yearly", ["all"]) < threshold
 
@@ -694,12 +692,16 @@ class HouseholdMember(models.Model):
         """
         Age on December 31 of ``year``, for rules judged over a tax or claim year
         rather than on the screening date. Falls back to ``calc_age()`` when the birth
-        year or the year is unknown.
+        year or the year is unknown, and is None for someone born after ``year``, who had
+        no age that year.
         """
         if self.birth_year is None or year is None:
             return self.calc_age()
 
-        return max(year - self.birth_year, 0)
+        if self.birth_year > year:
+            return None
+
+        return year - self.birth_year
 
     @staticmethod
     def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
@@ -937,8 +939,13 @@ class Insurance(models.Model):
             "nc_medicaid": self.medicaid,
             "co_medicaid": self.medicaid,
             "wa_apple_health_medicaid": self.medicaid,
+            # Each state's CHIP program, so a child reporting CHIP coverage is marked as already
+            # having it. Every CHIP calculator's code must be here; a test checks.
             "wa_apple_health_for_kids": self.chp,
             "ks_chip": self.chp,
+            "tx_chip": self.chp,
+            "il_all_kids": self.chp,
+            "nj_chip": self.chp,
             "ma_mass_health": self.mass_health or self.medicaid,
             "medicare": self.medicare,
             "emergency_medicaid": self.emergency_medicaid,

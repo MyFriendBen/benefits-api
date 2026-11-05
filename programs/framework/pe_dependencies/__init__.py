@@ -24,6 +24,16 @@ ctc_inputs = [
     *irs_gross_income,
 ]
 
+# What an EITC is computed from: each member's age, the tax unit's spouse and dependent
+# structure, and every IRS gross income stream. The state EITCs and working-family credits
+# send this plus their state code; the federal credit is an MFB calculator and sends nothing.
+eitc_inputs = [
+    member.AgeDependency,
+    member.TaxUnitSpouseDependency,
+    member.TaxUnitDependentDependency,
+    *irs_gross_income,
+]
+
 # Every variable in PolicyEngine's `gov.usda.wic.income.sources` (7 CFR 246.7(d)(2)(ii)(A))
 # that the screener collects. WIC keeps its own source list and does NOT read
 # `school_meal_countable_income`, so a calculator sending none of these gets PE's

@@ -31,7 +31,6 @@ from programs.programs.testing_fixtures.pe_integration import (
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
-PE_VERSION = "1.821.2"
 YEAR = "2026"
 
 # See the Head Start suite: above the Head Start/EHS income test, below MO SNAP's ceiling.
@@ -43,8 +42,6 @@ MO_PER_PARTICIPANT_VALUE = 19_616
 
 class MoEarlyHeadStartReceiptTestCase(PeIntegrationTestCase):
     """Shared household builder — the same one the Head Start suite uses."""
-
-    pe_version = PE_VERSION
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0

@@ -24,7 +24,6 @@ from programs.programs.testing_fixtures.pe_integration import (
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
-PE_VERSION = "2.5.0"
 YEAR = "2026"
 
 # gov.usda.csfp.amount for 2026, per qualifying individual.
@@ -43,8 +42,6 @@ CURRENT_BENEFIT_ROWS = {
 
 @pytest.mark.integration
 class TestKsCsfpScenarios(PeIntegrationTestCase):
-    pe_version = PE_VERSION
-
     def build(self, screen_id, household_size, location=SEDGWICK):
         zipcode, county = location
         # make_screen creates the white label; make_program looks it up, so it runs second.

@@ -12,7 +12,7 @@ interactions:
       {"members": ["82021"], "mo_property_tax_credit": {"2025": null}}}, "families":
       {"family": {"members": ["82021"]}}, "households": {"household": {"members":
       ["82021"], "state_code": {"2025": "MO"}}}, "spm_units": {"spm_unit": {"members":
-      ["82021"]}}, "marital_units": {}}, "version": "2.9.0"}'
+      ["82021"]}}, "marital_units": {}}, "version": "2.53.1"}'
     headers:
       Accept:
       - '*/*'
@@ -21,7 +21,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1051'
+      - '1052'
       Content-Type:
       - application/json
       User-Agent:
@@ -44,26 +44,26 @@ interactions:
         {"family": {"members": ["82021"]}}, "households": {"household": {"members":
         ["82021"], "state_code": {"2025": "MO"}}}, "spm_units": {"spm_unit": {"members":
         ["82021"]}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.9.0", "data_version": null, "dataset": null}}'
+        "2.53.1", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1151'
+      - '1152'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 05 Oct 2026 21:44:58 GMT
+      - Mon, 02 Nov 2026 19:12:09 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-2c7badceb497275258bfe1d3bcad1bef-46db5789f85b66b3-01
+      - 00-c016c5e7459b3d0930635b72bf9e57a0-923784bba080229c-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 2c7badceb497275258bfe1d3bcad1bef;o=1
+      - c016c5e7459b3d0930635b72bf9e57a0;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -71,7 +71,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - bd5c0dbf-fdaa-4e7d-b4bf-b29a01136ff6
+      - f77af10a-665f-40fa-856f-1a096db018de
       x-policyengine-route-channel:
       - current
     status:

@@ -2,10 +2,6 @@ from .base import TaxUnit
 from .member import TaxUnitHeadDependency, TaxUnitSpouseDependency
 
 
-class Eitc(TaxUnit):
-    field = "eitc"
-
-
 class Coeitc(TaxUnit):
     field = "co_eitc"
 
@@ -59,10 +55,6 @@ class Ilctc(TaxUnit):
 
 class MaChildFamilyCredit(TaxUnit):
     field = "ma_child_and_family_credit"
-
-
-class Cdcc(TaxUnit):
-    field = "cdcc"
 
 
 class KsCdcc(TaxUnit):

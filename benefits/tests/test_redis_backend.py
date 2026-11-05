@@ -15,6 +15,7 @@ from django.core.cache import caches
 from django.test import SimpleTestCase, override_settings
 
 from benefits.cache_config import redis_pool_kwargs
+from benefits.tests.cache_override import LOCAL_CACHE
 from decouple import config
 
 REDIS_URL = config("REDIS_URL", default=None)
@@ -39,8 +40,17 @@ def _ssl_kwargs() -> dict:
     return {"ssl_cert_reqs": None} if "ssl_cert_reqs" in kwargs else {}
 
 
+# The backend under test gets its own alias, and "default" stays in memory. conftest's autouse
+# clear_cache flushes the default cache before every test, and it runs after this class's
+# override takes effect: were the Redis backend "default", that would FLUSHDB the database
+# REDIS_URL names, which locally is where the dev server and serial (recording) runs keep their
+# cached data and the PolicyEngine bearer token. Deleting the token costs a monthly-limited
+# re-mint.
+REDIS_ALIAS = "redis_backend_under_test"
+
 REDIS_CACHE = {
-    "default": {
+    "default": LOCAL_CACHE["default"],
+    REDIS_ALIAS: {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL or "redis://127.0.0.1:6379/0",
         "OPTIONS": {
@@ -55,7 +65,7 @@ REDIS_CACHE = {
         },
         "KEY_PREFIX": "benefits-test",
         "TIMEOUT": 300,
-    }
+    },
 }
 
 
@@ -63,8 +73,10 @@ REDIS_CACHE = {
 @override_settings(CACHES=REDIS_CACHE)
 class TestRedisBackend(SimpleTestCase):
     def setUp(self):
-        self.cache = caches["default"]
-        self.cache.clear()
+        self.cache = caches[REDIS_ALIAS]
+        # Only this test's own keys (its KEY_PREFIX), for the same reason: clear() is a FLUSHDB.
+        self.cache.delete_pattern("*")
+        self.addCleanup(self.cache.delete_pattern, "*")
 
     def test_set_reports_success(self):
         """A silent None here is what a rejected TLS cert looked like on staging."""

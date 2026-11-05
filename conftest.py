@@ -7,10 +7,13 @@ from cassettes using VCR's built-in filtering capabilities.
 
 VCR behavior controlled by VCR_MODE environment variable:
 - VCR_MODE=none (PRs and push to main): Replays only, never records, errors on any new HTTP request
-- VCR_MODE=once (local default): Replays existing interactions, ERRORS if cassette missing new HTTP
-  request. Downgraded to `none` inside an xdist worker unless PE_RECORD is set, so a parallel
-  run cannot record a missing cassette live (see vcr_record_mode)
+- VCR_MODE=once (local default): Replays existing interactions and errors on a request the cassette
+  doesn't hold, but records live when the cassette file is missing entirely. Downgraded to `none`
+  inside an xdist worker unless PE_RECORD is set, so a parallel run cannot record a missing
+  cassette live (see vcr_record_mode)
 - VCR_MODE=new_episodes: Replays existing interactions, records NEW HTTP requests not in cassette
+- PolicyEngine harness tests replay strictly (`none`) under any mode unless PE_RECORD is set with
+  credentials, so they never call the API without the opt-in (see cassette_record_mode)
 - VCR_MODE=all (manual only): Never replays, re-records ALL cassettes from scratch
 
 A run that may write a cassette is forced single-process (see pytest_configure): parallel
@@ -28,7 +31,7 @@ import json
 import logging
 import os
 import re
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 from asgiref.local import Local
@@ -50,8 +53,8 @@ HUD_TEST_PATH_FRAGMENT = "hud_income_limits"
 
 # Hosts VCR passes straight through, never recording. PolicyEngine's OAuth exchange lives
 # here: its response body is a real bearer token, so it must not be written to a cassette.
-# Recording fetches a token live; replay pre-seeds a placeholder instead (see
-# programs/programs/testing_fixtures/pe_integration.py).
+# Recording fetches a token live; replay patches the fetch instead (see
+# programs/programs/testing_fixtures/pe_integration.py::stub_pe_token_for_replay).
 VCR_IGNORE_HOSTS = ["policyengine.uk.auth0.com"]
 
 # Recording PolicyEngine cassettes is an explicit opt-in rather than a VCR_MODE, so the
@@ -215,6 +218,48 @@ def _json_body(request):
         return body
 
 
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# Redirects every cassette into a parallel tree rooted here instead of next to its test, so a
+# run can record at a new PolicyEngine version without touching the committed cassettes.
+# Used by programs/management/commands/record_and_diff.py.
+CASSETTE_ROOT_ENV_VAR = "PE_CASSETTE_ROOT"
+
+
+def cassette_dir_for(test_dir: str) -> str:
+    """The cassettes directory for tests in ``test_dir``: beside them, or mirrored under the root."""
+    root = os.getenv(CASSETTE_ROOT_ENV_VAR)
+    if not root:
+        return os.path.join(test_dir, "cassettes")
+
+    return os.path.join(root, os.path.relpath(os.path.abspath(test_dir), REPO_ROOT), "cassettes")
+
+
+# Set by record_and_diff on each pytest pass it runs. pe_integration.py::capture_result writes
+# each scenario's PolicyEngine outcome here, and record_test_outcome writes each test's
+# pass/fail/skip beneath it, so a scenario whose assertions fail at a new PolicyEngine version
+# is never mistaken for an unchanged one.
+PE_CAPTURE_DIR_ENV_VAR = "PE_CAPTURE_DIR"
+TEST_OUTCOMES_SUBDIR = "outcomes"
+
+
+def record_test_outcome(report: pytest.TestReport) -> None:
+    """Append a test phase's outcome under the capture directory, when one is set.
+
+    Every failed or skipped phase is written, but a pass only for the call phase: a test passed
+    when its call passed and nothing else failed. record_and_diff reads the worst outcome per test.
+    """
+    capture_dir = os.getenv(PE_CAPTURE_DIR_ENV_VAR)
+    if not capture_dir or (report.passed and report.when != "call"):
+        return
+
+    outcomes_dir = os.path.join(capture_dir, TEST_OUTCOMES_SUBDIR)
+    os.makedirs(outcomes_dir, exist_ok=True)
+    worker = os.getenv("PYTEST_XDIST_WORKER", "main")
+    with open(os.path.join(outcomes_dir, f"{worker}.jsonl"), "a") as f:
+        f.write(json.dumps({"test": report.nodeid, "outcome": report.outcome}) + "\n")
+
+
 def cassette_name(request) -> str:
     """Cassette filename for a test, qualified by its class when it has one.
 
@@ -291,12 +336,12 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     ``clear_cache`` flushes the cache before every test, and on django_redis ``clear()``
     issues FLUSHDB -- the whole database, not just this run's prefix. Workers sharing a
     database therefore delete each other's entries mid-test: the symptom is a worker
-    losing the bearer token ``seed_pe_token`` just wrote and authenticating against live
+    losing the bearer token a test had just written and authenticating against live
     PolicyEngine ("client id or secret not configured" in CI).
 
-    Workers map to databases 1..15, leaving database 0 to non-xdist runs and to
-    ``benefits/tests/test_redis_backend.py``, which pins REDIS_URL directly and flushes
-    whatever it points at. More workers than databases wrap around and share, so
+    Workers map to the databases above the one REDIS_URL names, leaving that one to non-xdist
+    runs and to ``benefits/tests/test_redis_backend.py``, which pins REDIS_URL directly. More
+    workers than databases wrap around and share, so
     ``pytest_configure`` caps the worker count instead of letting that happen.
 
     Rewriting ``settings.CACHES`` is not enough on its own: the connection handler caches
@@ -315,9 +360,9 @@ def _isolate_cache_per_xdist_worker(worker_id: str) -> None:
     location = settings.CACHES["default"]["LOCATION"]
 
     # Offset from the database REDIS_URL already names, not from 0. That database is the
-    # one a serial run uses and the one benefits/tests/test_redis_backend.py pins and
-    # FLUSHDBs, so a worker landing on it recreates the cross-process flush this function
-    # exists to prevent -- and the repo's own .env points at /1, not /0.
+    # one a serial run uses and the one benefits/tests/test_redis_backend.py pins, so a
+    # worker landing on it recreates the cross-process flush this function exists to
+    # prevent -- and the repo's own .env points at /1, not /0.
     index = int(worker_id.removeprefix("gw"))
     db = _redis_database(location) + 1 + index
     settings.CACHES["default"]["LOCATION"] = redis_url_for_database(location, db)
@@ -384,6 +429,42 @@ def _run_records_cassettes(mode: str) -> bool:
     return _recording_opted_in()
 
 
+# Marks the PolicyEngine harness's tests (PeIntegrationTestCase), whose live calls need the
+# PE_RECORD opt-in whatever VCR_MODE says. Registered in pytest.ini.
+PE_CASSETTE_MARKER = "pe_cassette"
+
+
+def pe_may_record(mode: str) -> bool:
+    """Whether a PolicyEngine harness test may send a request live, rather than only replay.
+
+    Recording PolicyEngine is opted into with ``PE_RECORD``, needs credentials to get a real
+    bearer token, and can't happen under ``none``. Anything short of all three would send a
+    placeholder token live, which can only 401 -- and a 401 makes ``PrivateApiSim`` evict the
+    real token cached in Redis.
+    """
+    if not _recording_opted_in() or mode == "none":
+        return False
+
+    return bool(config("POLICY_ENGINE_CLIENT_ID", default="")) and bool(
+        config("POLICY_ENGINE_CLIENT_SECRET", default="")
+    )
+
+
+def cassette_record_mode(mode: str, pe_test: bool) -> str:
+    """The record mode a test's cassette opens in.
+
+    VCR's ``once`` records when the cassette file is missing, and ``new_episodes`` records any
+    request that matches nothing, a changed PolicyEngine body included. Neither is a recording
+    opt-in for PolicyEngine, so a PolicyEngine test that may not record replays strictly: a
+    miss fails as "no match" instead of calling the API. Other integrations (HUD) keep the
+    mode as given; they record a missing cassette under ``once`` by design.
+    """
+    if pe_test and not pe_may_record(mode):
+        return "none"
+
+    return mode
+
+
 def pytest_configure(config):
     """Reject an unrecognized VCR_MODE before any test runs, and isolate per-worker state.
 
@@ -445,6 +526,7 @@ def pytest_runtest_makereport(item, call):
     """
     report = yield
     setattr(item, f"rep_{report.when}", report)
+    record_test_outcome(report)
     return report
 
 
@@ -482,7 +564,7 @@ def _discard_failed_recording(cassette_path: str, contents_before: Optional[byte
 
 
 @pytest.fixture(scope="module")
-def vcr_config(request):
+def vcr_config(request: pytest.FixtureRequest) -> dict[str, Any]:
     """
     Configure VCR with security-focused defaults.
 
@@ -497,7 +579,7 @@ def vcr_config(request):
     """
     # Get the directory containing the test file
     test_dir = os.path.dirname(str(request.fspath))
-    cassette_dir = os.path.join(test_dir, "cassettes")
+    cassette_dir = cassette_dir_for(test_dir)
 
     return {
         "cassette_library_dir": cassette_dir,
@@ -531,8 +613,10 @@ def auto_vcr(request, vcr_config):
     - Detects if a test is marked with @pytest.mark.integration
     - Automatically uses VCR to record/replay HTTP interactions
     - VCR_MODE=none (PRs and push to main): Read-only - replays only, never records, errors on new HTTP requests
-    - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP
-      request. Becomes `none` in a parallel worker unless PE_RECORD is set
+    - VCR_MODE=once (local default): replays existing cassettes and errors on a new HTTP request, but
+      records when the cassette file is missing. Becomes `none` in a parallel worker unless PE_RECORD is set
+    - PolicyEngine harness tests replay with `none` under any mode unless they may record
+      (see cassette_record_mode)
     - VCR_MODE=new_episodes: Flexible - replays existing, records new HTTP requests not yet in cassette
     - VCR_MODE=all (manual only): Fresh start - never replays, re-records all cassettes from scratch
 
@@ -558,9 +642,11 @@ def auto_vcr(request, vcr_config):
     # Possible values:
     #   - "new_episodes": Flexible - replays existing, records new HTTP requests
     #   - "all": Fresh start - never replays, re-records everything from scratch (manual only)
-    #   - "once" (default): Strict - replays existing, errors if cassette missing new HTTP request (local dev)
+    #   - "once" (default): replays existing, errors on a new HTTP request, records a missing cassette file
     #   - "none": Read-only - replays only, never records, errors on new HTTP requests (strict mode)
-    record_mode = vcr_record_mode()
+    record_mode = cassette_record_mode(
+        vcr_record_mode(), pe_test=request.node.get_closest_marker(PE_CASSETTE_MARKER) is not None
+    )
 
     # Log VCR configuration for visibility in CI
     logger.info(f"VCR mode: {record_mode} | Test: {request.node.name}")

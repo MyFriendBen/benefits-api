@@ -33,7 +33,7 @@ class EnergyCalculatorAffordableResidentialEnergy(ProgramCalculator):
         "andcs",
         "oap",
         "co_snap",
-        "co_wic",
+        "wic",
         "co_andso",
         "ssi",
     ]

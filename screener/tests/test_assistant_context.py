@@ -1320,6 +1320,69 @@ class NavigatorsTests(TestCase):
 
         self.assertEqual(navigator, {"external_name": "bare", "name": "Bare Navigator"})
 
+    def test_assistant_notes_are_forwarded_as_notes(self) -> None:
+        """Staff notes for Benji (MFB-2364) ride along with the card fields, flattened to
+        one line — they are prompt text, not layout."""
+        seed_navigator(
+            self.programs["snap"],
+            "phone_only",
+            name="Phone Only Help",
+            assistant_notes="Helps by phone only.\n\nDoes not take requests by email.",
+        )
+
+        [navigator] = self.navigators()
+
+        self.assertEqual(navigator["notes"], "Helps by phone only. Does not take requests by email.")
+
+    def test_blank_assistant_notes_are_omitted(self) -> None:
+        seed_navigator(self.programs["snap"], "blank_notes", name="Blank Notes", assistant_notes="  \n ")
+
+        [navigator] = self.navigators()
+
+        self.assertNotIn("notes", navigator)
+
+    def test_over_long_assistant_notes_are_clipped_and_reported(self) -> None:
+        """Measured after whitespace is collapsed, so the admin's 800-character limit and
+        this one agree on what counts."""
+        seed_navigator(
+            self.programs["snap"], "long_notes", name="Long Notes", assistant_notes="A" * (MAX_PROMPT_TEXT_LEN + 50)
+        )
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as reported:
+                [navigator] = self.navigators()
+
+        self.assertEqual(len(navigator["notes"]), MAX_PROMPT_TEXT_LEN)
+        self.assertEqual(reported.call_count, 1)
+        self.assertIn("exceeds MAX_PROMPT_TEXT_LEN", reported.call_args.args[0])
+
+    def test_contact_check_runs_before_notes_are_clipped(self) -> None:
+        """Clipping first would cut a number at the cap into a fragment the pattern no
+        longer recognizes, and the fragment would be forwarded."""
+        notes = "A" * (MAX_PROMPT_TEXT_LEN - 12) + " call 303-555-0100"
+        seed_navigator(self.programs["snap"], "edge_notes", name="Edge Notes", assistant_notes=notes)
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message"):
+                [navigator] = self.navigators()
+
+        self.assertNotIn("notes", navigator)
+
+    def test_assistant_notes_with_contact_details_are_dropped_and_reported(self) -> None:
+        """The admin validator rejects these, but an import or a shell edit skips it.
+        Contact details may only come from the card's own fields."""
+        seed_navigator(
+            self.programs["snap"], "contact_notes", name="Contact Notes", assistant_notes="Call 303-555-0100 instead."
+        )
+
+        with mock.patch("screener.assistant._REPORTED", set()):
+            with mock.patch("screener.assistant.capture_message") as reported:
+                [navigator] = self.navigators()
+
+        self.assertNotIn("notes", navigator)
+        self.assertEqual(reported.call_count, 1)
+        self.assertIn("phone number, email or link", reported.call_args.args[0])
+
     def test_navigator_without_a_name_is_dropped(self):
         """A nameless entry in a list the prompt calls complete is worse than a shorter list."""
         seed_navigator(self.programs["snap"], "nameless", phone_number="+13035551234")
@@ -1376,6 +1439,29 @@ class NavigatorsTests(TestCase):
         seed_navigator(self.programs["snap"], "statewide", name="Statewide Help")
 
         self.assertEqual([n["external_name"] for n in self.navigators()], ["statewide"])
+
+    def test_federal_program_navigators_are_those_of_the_screens_state(self):
+        """On a federal program, each state sees its own navigators and the federal ones, as
+        the page does: another white label in the same state counts, another state doesn't."""
+        federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        WhiteLabel.objects.create(name="Test State Energy", code="test_energy", state_code="TS")
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        seed_program(federal, "federal_snap_test")
+        self.add_snapshot_row("federal_snap_test")
+        program = Program.objects.get(name_abbreviated="federal_snap_test")
+        for code, external_name in (
+            ("federal", "national"),
+            ("test", "own"),
+            ("test_energy", "same_state"),
+            ("other", "other_state"),
+        ):
+            navigator = seed_navigator(program, external_name, name=external_name)
+            navigator.white_label = WhiteLabel.objects.get(code=code)
+            navigator.save()
+
+        self.assertEqual(
+            sorted(n["external_name"] for n in self.navigators("federal_snap_test")), ["national", "own", "same_state"]
+        )
 
     def test_county_restricted_navigator_is_excluded_when_the_screen_has_no_county(self):
         self.screen.county = None

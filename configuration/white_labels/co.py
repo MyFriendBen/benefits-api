@@ -1766,6 +1766,7 @@ class CoConfigurationData(ConfigurationData):
             "pitkin": "PitkinCounty_MFBLogo",
             "cudenver": "CUDenver_Logo",
             "denver-public-schools": "DPS_MFBLogo",
+            "dpp": "DPP_MFBLogo",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
@@ -1843,6 +1844,10 @@ class CoConfigurationData(ConfigurationData):
             "denver-public-schools": {
                 "id": "referrerHook.logoAlts.dps",
                 "defaultMessage": "Denver Public Schools and MyFriendBen home page button",
+            },
+            "dpp": {
+                "id": "referrerHook.logoAlts.dpp",
+                "defaultMessage": "Denver Preschool Program and MyFriendBen home page button",
             },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
