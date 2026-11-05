@@ -8,8 +8,9 @@ import subprocess
 import tempfile
 import time
 import uuid
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
+from decouple import config
 from django.conf import settings
 from django.contrib.staticfiles.management.commands.runserver import (
     Command as StaticFilesRunserver,
@@ -45,7 +46,9 @@ class Command(StaticFilesRunserver):
             try:
                 self._maybe_start_redis(options)
             except Exception as exc:  # defensive: never hard-fail runserver
-                self.stdout.write(f"Warning: auto-start redis failed: {exc}. Continuing without redis.")
+                self.stderr.write(
+                    self.style.WARNING(f"Warning: auto-start redis failed: {exc}. Continuing without redis.")
+                )
 
         return super().handle(*args, **options)
 
@@ -54,8 +57,11 @@ class Command(StaticFilesRunserver):
         if options.get("no_redis"):
             return
 
-        # Persistent opt-out via env
-        if os.environ.get("AUTO_START_REDIS", "true").lower() in ("0", "false", "no"):
+        # Persistent opt-out via .env or the shell environment. Use decouple
+        # (rather than os.environ.get) since decouple reads .env directly but
+        # never copies its values into os.environ, so AUTO_START_REDIS=false
+        # in .env would otherwise be silently ignored here.
+        if not config("AUTO_START_REDIS", default=True, cast=bool):
             return
 
         # Only act when REDIS_URL is configured
@@ -69,6 +75,18 @@ class Command(StaticFilesRunserver):
             return
 
         parsed = urlparse(redis_url)
+
+        # Only handle plain redis:// URLs here. rediss:// is handled (and
+        # rejected) explicitly below with a specific message; other schemes
+        # such as unix:///path/to/redis.sock have no TCP host/port to speak
+        # of, and parsed.hostname would silently fall back to "localhost",
+        # which would start an unrelated TCP redis-server the app never uses.
+        if parsed.scheme not in ("redis", "rediss"):
+            return
+
+        if parsed.scheme == "redis" and not parsed.hostname:
+            return
+
         host = parsed.hostname or "localhost"
         port = parsed.port or 6379
 
@@ -89,7 +107,10 @@ class Command(StaticFilesRunserver):
             )
             return
 
-        if parsed.username or parsed.password:
+        query_params = parse_qs(parsed.query)
+        has_query_password = bool(query_params.get("password")) or bool(query_params.get("username"))
+
+        if parsed.username or parsed.password or has_query_password:
             self.stdout.write(
                 "REDIS_URL includes credentials; skipping auto-start since the local "
                 "redis-server this command spawns has no auth configured."
@@ -100,6 +121,7 @@ class Command(StaticFilesRunserver):
         try:
             with socket.create_connection((host, port), timeout=1):
                 # connected -> redis is up
+                self.stdout.write(f"Redis already running on {host}:{port}; not starting another.")
                 return
         except OSError:
             # no connection -> we'll attempt to spawn
@@ -109,10 +131,11 @@ class Command(StaticFilesRunserver):
         # binaries. Prefer a native redis-server when present. On Windows, if
         # redis-server is not on PATH but WSL is available, try starting
         # redis-server inside WSL so developers using WSL work seamlessly.
-        # Look for a native redis binary. On Windows installations this may be
-        # `redis-server.exe` or Memurai (`memurai.exe`), so check a few common
-        # names before falling back to WSL.
-        candidates = ["redis-server", "redis-server.exe", "memurai", "memurai.exe"]
+        # Look for a native redis binary. shutil.which already tries PATHEXT
+        # (so "redis-server" alone resolves "redis-server.exe" on Windows),
+        # so we only need the base names here; Memurai ships as "memurai" for
+        # the same reason.
+        candidates = ["redis-server", "memurai"]
         redis_bin = None
         for c in candidates:
             p = shutil.which(c)
@@ -128,8 +151,11 @@ class Command(StaticFilesRunserver):
             start_mode = "wsl"
         else:
             # Print a single-line hint so it stays visible but not noisy.
-            self.stdout.write(
-                "redis-server not found on PATH; skipping auto-start. Install Redis or use --no-redis / AUTO_START_REDIS=false."
+            self.stderr.write(
+                self.style.WARNING(
+                    "redis-server not found on PATH; skipping auto-start. Install Redis or "
+                    "use --no-redis / AUTO_START_REDIS=false."
+                )
             )
             return
 
@@ -149,11 +175,19 @@ class Command(StaticFilesRunserver):
             wsl_tmp = f"/tmp/mfb-redis-{uuid.uuid4().hex}"
             # Build the redis-server command to run inside WSL. Use -- to
             # pass args to the Linux binary; prefer wsl -- <cmd> form.
+            # Bind to both loopback addresses explicitly: without a config
+            # file redis-server listens on every interface by default, and
+            # protected-mode only blocks remote *commands*, not where the
+            # server listens. The leading "-" on ::1 tells redis-server to
+            # not fail to start if IPv6 loopback isn't available.
             redis_cmd = " ".join(
                 [
                     "redis-server",
                     "--port",
                     str(port),
+                    "--bind",
+                    "127.0.0.1",
+                    "-::1",
                     "--maxmemory",
                     "25mb",
                     "--maxmemory-policy",
@@ -179,12 +213,26 @@ class Command(StaticFilesRunserver):
                 # DEVNULL to avoid tying up file descriptors and detach from
                 # the parent as much as possible. Keep the Popen object so we
                 # can report the PID to the user.
+                #
+                # On Windows a child process normally shares the parent's
+                # console, so Ctrl-C (which sends CTRL_C_EVENT to the whole
+                # console process group) would also stop this redis-server
+                # when the developer stops runserver. CREATE_NEW_PROCESS_GROUP
+                # plus DETACHED_PROCESS gives the child its own console/group
+                # so it keeps running after runserver exits, matching the
+                # documented behaviour on POSIX (daemonized redis-server).
+                popen_kwargs = {}
+                if platform.system() == "Windows":
+                    popen_kwargs["creationflags"] = (
+                        subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+                    )
                 process = subprocess.Popen(
                     runner,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     stdin=subprocess.DEVNULL,
                     close_fds=True,
+                    **popen_kwargs,
                 )
             else:
                 # For native redis-server (daemonizes) and the WSL path we
@@ -293,6 +341,9 @@ class Command(StaticFilesRunserver):
             redis_bin,
             "--port",
             str(port),
+            "--bind",
+            "127.0.0.1",
+            "-::1",
             "--maxmemory",
             "25mb",
             "--maxmemory-policy",
