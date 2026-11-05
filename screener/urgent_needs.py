@@ -95,6 +95,7 @@ NEED_CATEGORY_FIELDS = {
     "free low cost medical care": "needs_free_low_cost_medical_care",
     "transportation": "needs_transportation",
     "medical expenses and debt": "needs_medical_expenses_and_debt",
+    "drug alcohol use": "needs_drug_alcohol_use",
 }
 
 
