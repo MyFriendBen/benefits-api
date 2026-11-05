@@ -52,7 +52,7 @@ def forwards(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
             raise RuntimeError(
                 f"federal/federal_cdcc must be imported before this migration runs: {live_state_rows} state CDCC "
                 f"rows are switched on and {waiting} current-benefit rows are waiting to move. Import it with "
-                "program-ops' scripts/import_programs.py --program federal_cdcc, then migrate again."
+                "program-ops' scripts/import_programs.py --env <staging|prod> --program federal_cdcc, then migrate again."
             )
         print("  no federal/federal_cdcc and no live state CDCC rows in this environment; nothing to do")
         return
