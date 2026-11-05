@@ -1714,9 +1714,15 @@ def _proxy(method: str, path: str, json_body: dict = None, params: dict = None) 
             headers=_ai_headers(),
             timeout=AI_SERVICE_TIMEOUT,
         )
-    except requests.RequestException as e:
+    except requests.RequestException:
+        logger.warning("AI service proxy request failed.", exc_info=True)
         return Response(
-            {"error": {"code": "ai_upstream_error", "message": str(e)}},
+            {
+                "error": {
+                    "code": "ai_upstream_error",
+                    "message": "Unable to reach AI service.",
+                }
+            },
             status=status.HTTP_502_BAD_GATEWAY,
         )
     try:
