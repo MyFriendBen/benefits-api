@@ -18,7 +18,7 @@ interactions:
       "school_meal_countable_income": {"2026": 43800.0}, "spm_unit_cash_assets": {"2026":
       0}, "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.53.1"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -55,7 +55,7 @@ interactions:
         {"2026": 43800.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": 0.0},
         "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
         "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
-        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.53.1", "data_version":
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version":
         null, "dataset": null}}'
     headers:
       Alt-Svc:
@@ -67,15 +67,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:09:21 GMT
+      - Thu, 05 Nov 2026 18:24:27 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-0b9768bd723fd019a3d0dd2a896b826e-508c3262d87fb6c0-01
+      - 00-44c69de0336ebd9473308170296e80e0-dfefec6acd893073-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 0b9768bd723fd019a3d0dd2a896b826e;o=1
+      - 44c69de0336ebd9473308170296e80e0
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -83,7 +83,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - fbd85ef6-bc71-4c87-b7aa-23402b5507d3
+      - 8eb5278a-534d-4d39-8a05-b2123925eb11
       x-policyengine-route-channel:
       - current
     status:

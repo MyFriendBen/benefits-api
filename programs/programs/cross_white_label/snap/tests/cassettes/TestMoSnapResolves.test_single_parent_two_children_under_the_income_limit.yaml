@@ -33,7 +33,7 @@ interactions:
       false}, "heating_cooling_expense": {"2026": 0.0}, "childcare_expenses": {"2026":
       0.0}, "water_expense": {"2026": 0.0}, "phone_expense": {"2026": 0.0}, "homeowners_association_fees":
       {"2026": 0.0}, "homeowners_insurance": {"2026": 0.0}, "snap_if_takes_up": {"2026-01":
-      null}}}, "marital_units": {}}, "version": "2.53.1"}'
+      null}}}, "marital_units": {}}, "version": "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -85,7 +85,7 @@ interactions:
         {"2026": 0.0}, "childcare_expenses": {"2026": 0.0}, "water_expense": {"2026":
         0.0}, "phone_expense": {"2026": 0.0}, "homeowners_association_fees": {"2026":
         0.0}, "homeowners_insurance": {"2026": 0.0}, "snap_if_takes_up": {"2026-01":
-        487.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.53.1",
+        487.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.72.5",
         "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
@@ -97,15 +97,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:11:07 GMT
+      - Thu, 05 Nov 2026 18:26:08 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-0d41d8e34af73788ff5b713675eb9c02-896d338f117db92a-00
+      - 00-14dd1db56419b281c42123de712d9965-c667920a99dcd7b1-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 0d41d8e34af73788ff5b713675eb9c02
+      - 14dd1db56419b281c42123de712d9965
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -113,7 +113,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 80b263d3-30f6-47b3-b0ea-685faea965bf
+      - de0f8b89-3fbe-46b1-aaad-d5085f991957
       x-policyengine-route-channel:
       - current
     status:

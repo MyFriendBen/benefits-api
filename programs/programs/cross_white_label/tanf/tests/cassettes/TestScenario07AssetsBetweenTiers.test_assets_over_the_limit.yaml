@@ -26,7 +26,7 @@ interactions:
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
       false}, "spm_unit_cash_assets": {"2026": 4000}, "childcare_expenses": {"2026":
-      0.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.53.1"}'
+      0.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -72,11 +72,11 @@ interactions:
         false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026":
         false}, "takes_up_snap_if_eligible": {"2026": false}, "spm_unit_cash_assets":
         {"2026": 4000}, "childcare_expenses": {"2026": 0.0}, "mo_tanf": {"2026": 0.0}}},
-        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.53.1", "data_version":
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version":
         null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '2339'
       access-control-allow-origin:
@@ -84,15 +84,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:11:19 GMT
+      - Thu, 05 Nov 2026 18:26:21 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-8e45b325a988a3e3403d3a249ab54e4a-b78e68ae45f30aef-00
+      - 00-ef420cd5fc1727e8068f55e9a03d9880-b9ecf28edcd71663-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 8e45b325a988a3e3403d3a249ab54e4a
+      - ef420cd5fc1727e8068f55e9a03d9880
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -100,7 +100,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - d15d2673-78c6-4fdf-a37d-069b0190a2e0
+      - 1e5c0cc5-1ae1-40bf-a51c-9c22896db668
       x-policyengine-route-channel:
       - current
     status:

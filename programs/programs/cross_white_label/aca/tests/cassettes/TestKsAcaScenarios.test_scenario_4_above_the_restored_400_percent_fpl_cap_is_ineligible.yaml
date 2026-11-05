@@ -15,7 +15,7 @@ interactions:
       "WYANDOTTE_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf":
       {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.53.1"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -49,10 +49,10 @@ interactions:
         {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
         "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
         "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.53.1", "data_version": null, "dataset": null}}'
+        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '1357'
       access-control-allow-origin:
@@ -60,15 +60,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:07:59 GMT
+      - Thu, 05 Nov 2026 18:23:16 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-73ebfb64e3770310bab2183285b283b6-febfc3a15f544cfc-00
+      - 00-2e43cffb6ff77737264b4cc4531f2070-a8463daf5b841978-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 73ebfb64e3770310bab2183285b283b6
+      - 2e43cffb6ff77737264b4cc4531f2070
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -76,7 +76,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - bcef9557-9a86-4a95-bb4b-12438474db22
+      - b5804d06-31c7-4ae9-991b-d606ba38b168
       x-policyengine-route-channel:
       - current
     status:
