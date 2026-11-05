@@ -65,7 +65,7 @@ TEST_PE_TOKEN = "pe-integration-test-token"
 # The PolicyEngine version every PeIntegrationTestCase records and replays at unless it
 # overrides ``pe_version``. Adopting a new version is a bump here plus a re-record of every
 # module that doesn't override. Must be one PolicyEngine currently serves (see docs/TESTING.md).
-PE_TEST_VERSION = "2.53.1"
+PE_TEST_VERSION = "2.72.5"
 
 # Used by the record_and_diff management command. The override replaces every test case's
 # pe_version for the run, so the whole suite can be recorded at a new version without editing any

@@ -36,7 +36,7 @@ interactions:
       {"spm_unit": {"members": ["1201", "1202", "1203", "1204"], "tanf": {"2026":
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-      false}}}, "marital_units": {}}, "version": "2.53.1"}'
+      false}}}, "marital_units": {}}, "version": "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -90,11 +90,11 @@ interactions:
         {"spm_unit": {"members": ["1201", "1202", "1203", "1204"], "tanf": {"2026":
         0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
         false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-        false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.53.1",
+        false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.72.5",
         "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
       - '3134'
       access-control-allow-origin:
@@ -102,15 +102,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:10:25 GMT
+      - Thu, 05 Nov 2026 18:25:26 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-9305c2c293bbc548b3dc8b5b77fe7f32-fe54af93b5592d55-01
+      - 00-197a564e3bc8a542c485fd06633b525b-b1653d0c47bd1793-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 9305c2c293bbc548b3dc8b5b77fe7f32;o=1
+      - 197a564e3bc8a542c485fd06633b525b
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -118,7 +118,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 246f4ccf-61d2-4131-b19d-e2d41c3320b8
+      - e670aec2-8e49-40a4-93da-f5996bd958d6
       x-policyengine-route-channel:
       - current
     status:
