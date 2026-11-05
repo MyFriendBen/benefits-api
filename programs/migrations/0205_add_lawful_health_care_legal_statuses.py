@@ -38,7 +38,7 @@ def remove_statuses(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0202_navigator_assistant_notes"),
+        ("programs", "0204_move_national_navigator_copies_to_federal"),
     ]
 
     operations = [
