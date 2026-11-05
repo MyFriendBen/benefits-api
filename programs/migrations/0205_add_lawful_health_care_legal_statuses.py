@@ -11,8 +11,9 @@ from django.db import migrations
 # This migration only creates the labels. Assigning them to programs is done in admin, so no
 # program's `legal_status_required` is changed here.
 #
-# `get_or_create` is safe for these two names only: neither exists in any environment yet, and
-# `LegalStatus.status` has no unique constraint, so the set is kept explicit rather than open-ended.
+# The reverse is a no-op: deleting the statuses would also drop their admin assignments, which
+# re-running this migration would not restore. If the rows already exist, `get_or_create` reuses
+# them. `LegalStatus.status` has no unique constraint, so the set is kept explicit.
 SEEDABLE = {"lawfulHealthCarePregnant", "lawfulHealthCareUnder19"}
 
 
@@ -24,23 +25,11 @@ def seed_statuses(apps, schema_editor):
         print(f"➕ seeded legal status '{status}'" if created else f"✔️  legal status '{status}' already exists")
 
 
-def remove_statuses(apps, schema_editor):
-    """
-    Deleting a LegalStatus also drops it from every program it was assigned to in admin. That is
-    the intended rollback: once the frontend no longer defines a label, an assignment to it never
-    matches anyway.
-    """
-    LegalStatus = apps.get_model("programs", "LegalStatus")
-
-    _, deleted = LegalStatus.objects.filter(status__in=SEEDABLE).delete()
-    print(f"⏪ removed {deleted.get('programs.LegalStatus', 0)} legal status rows: {', '.join(sorted(SEEDABLE))}")
-
-
 class Migration(migrations.Migration):
     dependencies = [
         ("programs", "0204_move_national_navigator_copies_to_federal"),
     ]
 
     operations = [
-        migrations.RunPython(seed_statuses, remove_statuses),
+        migrations.RunPython(seed_statuses, migrations.RunPython.noop),
     ]
