@@ -324,6 +324,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_free_low_cost_medical_care",
             "needs_transportation",
             "needs_medical_expenses_and_debt",
+            "needs_drug_alcohol_use",
             "utm_id",
             "utm_source",
             "utm_medium",
