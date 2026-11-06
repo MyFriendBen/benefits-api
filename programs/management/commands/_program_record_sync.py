@@ -87,6 +87,8 @@ PROGRAM_SCALAR_FIELDS = (
     "has_calculator",
     "value_format",
     "base_program",
+    "flip_month",
+    "year_offset",
 )
 PROGRAM_OPTIONAL_FIELDS = ("external_name",)
 PROGRAM_PROGRAM_LISTS = ("required_programs", "excludes_programs")
@@ -950,9 +952,15 @@ class RecordSync:
             except FederalPoveryLimit.DoesNotExist:
                 raise CommandError(f"program.year '{value}' has no FederalPovertyLimit row") from None
             # A dynamic row's year type has to agree with it, the same rule the create path follows.
-            program.year_type = {"THIS_YEAR_CALENDAR": "calendar_year", "THIS_YEAR_FISCAL": "fiscal_year"}.get(
-                value, "hardcoded"
-            )
+            year_type = {
+                "THIS_YEAR_CALENDAR": "calendar_year",
+                "THIS_YEAR_FISCAL": "fiscal_year",
+            }.get(value, "hardcoded")
+            # A concrete year with a non-zero offset is a prior_tax_year program —
+            # roll_program_years manages its FK each January.
+            if year_type == "hardcoded" and self.record["program"].get("year_offset", 0) != 0:
+                year_type = "prior_tax_year"
+            program.year_type = year_type
         program.save(update_fields=["year", "year_type"])
 
     def _set_category(self, value: Optional[str]) -> None:
@@ -1176,6 +1184,8 @@ PROGRAM_KEY_ORDER = (
     "estimated_value",
     "value_format",
     "year",
+    "flip_month",
+    "year_offset",
     "show_on_current_benefits",
     "has_calculator",
     "show_in_has_benefits_step",
@@ -1229,6 +1239,10 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
         values["external_name"] = program.external_name
     if program.low_confidence or "low_confidence" in previous:
         values["low_confidence"] = program.low_confidence
+    if program.flip_month != 1 or "flip_month" in previous:
+        values["flip_month"] = program.flip_month
+    if program.year_offset != 0 or "year_offset" in previous:
+        values["year_offset"] = program.year_offset
     for name in PROGRAM_PROGRAM_LISTS:
         keys = list(getattr(program, name).values_list("name_abbreviated", flat=True))
         if keys or name in previous:

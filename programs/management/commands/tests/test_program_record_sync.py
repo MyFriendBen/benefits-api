@@ -789,6 +789,43 @@ class RecordSyncTestCase(RecordSyncBase):
 
         self.assertEqual(self.english(program.estimated_decision_time), "")
 
+    def test_nonzero_year_offset_sets_prior_tax_year_type_on_import(self) -> None:
+        self.record["program"]["year_offset"] = -1
+        self.import_record()
+
+        program = self.program()
+        self.assertEqual(program.year_type, "prior_tax_year")
+        self.assertEqual(program.year_offset, -1)
+
+    def test_zero_year_offset_leaves_year_type_hardcoded(self) -> None:
+        self.record["program"]["year_offset"] = 0
+        self.import_record()
+
+        self.assertEqual(self.program().year_type, "hardcoded")
+
+    def test_export_includes_flip_month_and_year_offset_when_nondefault(self) -> None:
+        from programs.management.commands._program_record_sync import record_from_database
+
+        self.import_record()
+        program = self.program()
+        program.flip_month = 2
+        program.year_offset = -1
+        program.save(update_fields=["flip_month", "year_offset"])
+
+        exported = record_from_database(program)
+        self.assertEqual(exported["program"]["flip_month"], 2)
+        self.assertEqual(exported["program"]["year_offset"], -1)
+
+    def test_export_omits_flip_month_and_year_offset_when_default(self) -> None:
+        from programs.management.commands._program_record_sync import record_from_database
+
+        self.import_record()
+        program = self.program()
+
+        exported = record_from_database(program)
+        self.assertNotIn("flip_month", exported["program"])
+        self.assertNotIn("year_offset", exported["program"])
+
 
 FEDERAL_PROGRAM = "federal_test_program"
 

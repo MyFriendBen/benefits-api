@@ -114,8 +114,8 @@ _TAX_YEAR_UNSETTLED = (
 )
 
 #: The tax year a household is filing: the calendar year just ended, rolling over on January 1
-#: rather than when filing season opens. Nothing rolls it forward automatically, so an entry
-#: on this rule goes stale every January.
+#: rather than when filing season opens. Programs using year_type=prior_tax_year advance each
+#: January via `python manage.py roll_program_years --all` once FPL data is ready.
 _PRIOR_TAX_YEAR = (
     "prior tax year: the calendar year just ended, which is what a household screening now "
     "files; rolls over on January 1"
