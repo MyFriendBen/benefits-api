@@ -47,50 +47,44 @@
      * `zipcode`
      * `county`
    * Source: WA HCA Lifeline Phone Services page; 47 CFR § 54.410(b); https://www.lifelinesupport.org/how-to-qualify/
-9. **Program-based eligibility: Participation in Pell Grant program (current award year)** ⚠️ *data gap*
-
-* Note: there is no `pell_grant` current benefit in the screener schema. No screener field captures Pell Grant participation. Additionally, Pell Grant is not in PolicyEngine's Lifeline categorical eligibility list (see PolicyEngine Implementation Notes below).
-* Source: USAC Lifeline National Verifier – Do I Qualify; https://www.lifelinesupport.org/how-to-qualify/; 47 CFR § 54.409(a)(2)
-* Impact: Low (Pell Grant recipients typically have low income and qualify via income pathway)
-
-10. **Program-based eligibility: Participation in Veterans Pension and Survivors Benefit** ⚠️ *data gap*
+9. **Program-based eligibility: Participation in Veterans Pension and Survivors Benefit** ⚠️ *data gap*
 
 * Note: The screener has a 'veteran' field on HouseholdMember and a `va` current benefit (`has_benefit("va")`) at the screen level, but these indicate veteran status or VA health care, not specifically Veterans Pension or Survivors Benefit receipt. Cannot distinguish between VA health care and VA pension/survivors benefits.
 * Source: USAC Lifeline National Verifier – Do I Qualify; 47 CFR § 54.409(a)(2)(iv); https://www.lifelinesupport.org/how-to-qualify/
 * Impact: Medium
 
-11. **Program-based eligibility: Participation in Bureau of Indian Affairs General Assistance** ⚠️ *data gap*
+10. **Program-based eligibility: Participation in Bureau of Indian Affairs General Assistance** ⚠️ *data gap*
 
 * Note: No screener field captures BIA General Assistance participation. This is relevant for tribal members in Washington State.
 * Source: USAC Lifeline National Verifier – Do I Qualify; 47 CFR § 54.409(a)(2); https://www.lifelinesupport.org/how-to-qualify/
 * Impact: Low
 
-12. **Program-based eligibility: Participation in Tribally-Administered TANF** ⚠️ *data gap*
+11. **Program-based eligibility: Participation in Tribally-Administered TANF** ⚠️ *data gap*
 
 * Note: The `tanf` current benefit may partially capture this, but Tribally-Administered TANF is a distinct program. Cannot differentiate between state TANF and tribal TANF.
 * Source: USAC Lifeline National Verifier – Do I Qualify; 47 CFR § 54.409(a)(2); https://www.lifelinesupport.org/how-to-qualify/
 * Impact: Low
 
-13. **Program-based eligibility: Participation in Food Distribution Program on Indian Reservations (FDPIR)** ⚠️ *data gap*
+12. **Program-based eligibility: Participation in Food Distribution Program on Indian Reservations (FDPIR)** ⚠️ *data gap*
 
 * Note: No screener field captures FDPIR participation.
 * Source: USAC Lifeline National Verifier – Do I Qualify; 47 CFR § 54.409(a)(2); https://www.lifelinesupport.org/how-to-qualify/
 * Impact: Low
 
-14. **Applicant must not be an institutionalized person (e.g., in prison, nursing facility where Medicaid pays for care)** ⚠️ *data gap*
+13. **Applicant must not be an institutionalized person (e.g., in prison, nursing facility where Medicaid pays for care)** ⚠️ *data gap*
 
 * Note: No screener field captures institutionalization status. This is an edge case for most screener users.
 * Source: 47 CFR § 54.400(h) (household definition excludes certain institutional settings)
 * Impact: Low
 
-15. **Applicant must be a legal adult (18 years old or older) or emancipated minor** ⚠️ *data gap*
+14. **Applicant must be a legal adult (18 years old or older) or emancipated minor** ⚠️ *data gap*
 
 * Note: The screener does not capture if a minor has been emancipated. Evaluable (age>=18) with a partial gap; emancipated minor exception cannot be detected.
 * Source: FCC FORM 5631; https://www.usac.org/wp-content/uploads/lifeline/documents/forms/LI_Worksheet_NVstates-1.pdf
 * Screener field: `age`
 * Impact: Medium
 
-16. **Household must not currently receive Lifeline (one benefit per household rule)**
+15. **Household must not currently receive Lifeline (one benefit per household rule)**
 
 * Screener fields:
   * `has_benefit("lifeline")`
@@ -117,9 +111,9 @@
 ## Implementation Coverage
 
 * ✅ Evaluable criteria: 9
-* ⚠️  Data gaps: 7
+* ⚠️  Data gaps: 6
 
-9 of 16 total eligibility criteria can be evaluated with current screener fields. The most critical evaluable criteria are: income at or below 135% FPL (income-based pathway), participation in qualifying programs (Medicaid, SNAP, SSI, TANF, WIC, Section 8), Washington State residency, and the one-Lifeline-per-household exclusion (`has_benefit("lifeline")`). The 7 criteria that cannot be evaluated are: Pell Grant (no `pell_grant` current benefit), tribal-specific programs (BIA General Assistance, FDPIR, Tribal TANF), and edge cases (institutionalization, Veterans Pension specifically, emancipated-minor exception). The evaluable criteria cover the vast majority of applicants since Medicaid, SNAP, SSI, and income-based qualification are the most common pathways.
+9 of 15 total eligibility criteria can be evaluated with current screener fields. The most critical evaluable criteria are: income at or below 135% FPL (income-based pathway), participation in qualifying programs (Medicaid, SNAP, SSI, TANF, WIC, Section 8), Washington State residency, and the one-Lifeline-per-household exclusion (`has_benefit("lifeline")`). The 6 criteria that cannot be evaluated are: tribal-specific programs (BIA General Assistance, FDPIR, Tribal TANF), and edge cases (institutionalization, Veterans Pension specifically, emancipated-minor exception). The evaluable criteria cover the vast majority of applicants since Medicaid, SNAP, SSI, and income-based qualification are the most common pathways.
 
 ## Research Sources
 
@@ -229,7 +223,7 @@ PolicyEngine's parameters (`gov/hhs/fpg.yaml`) use:
 
 ### Programs Missing from PolicyEngine's Categorical Eligibility
 
-PolicyEngine's `categorical_eligibility.yaml` for non-tribal households lists only: `medicaid`, `snap`, `ssi`. The following programs referenced in the eligibility criteria are NOT in PolicyEngine's non-tribal categorical eligibility list: TANF (tribal only), WIC, Section 8/HCV, Pell Grant.
+PolicyEngine's `categorical_eligibility.yaml` for non-tribal households lists only: `medicaid`, `snap`, `ssi`. The following programs referenced in the eligibility criteria are NOT in PolicyEngine's non-tribal categorical eligibility list: TANF (tribal only), WIC, Section 8/HCV. Pell Grant is not a Lifeline qualifying program: 47 CFR § 54.409(a)(2) lists only Medicaid, SNAP, SSI, Federal Public Housing Assistance and the Veterans and Survivors Pension Benefit.
 
 ### Age Requirement Not Enforced by PolicyEngine
 
