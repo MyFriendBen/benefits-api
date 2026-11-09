@@ -1147,6 +1147,29 @@ class ProgramEligibilitySnapshot(models.Model):
 # interface rather than a data-model change.
 
 
+class AssistantChannel(models.TextChoices):
+    WEB = "web", "Web widget"
+    SMS = "sms", "Text message"
+
+
+class AssistantConversationStatus(models.TextChoices):
+    """A conversation's lifecycle. Only `active` conversations take new turns.
+
+    `closed` means superseded: a newer conversation replaced it, as when an SMS on-ramp
+    from another screen takes over a phone's binding. `expired` means it ran out of
+    time: an SMS conversation with no inbound text for 90 days. Neither is set by
+    anything yet; the SMS work sets both (MFB-1916 proposal v2, decision 3). Web
+    conversations never expire.
+
+    Not enforced with a check constraint, unlike `channel`: this column predates the
+    vocabulary, and production rows were not re-read to prove they all fit it.
+    """
+
+    ACTIVE = "active", "Active"
+    CLOSED = "closed", "Closed"
+    EXPIRED = "expired", "Expired"
+
+
 class AssistantConversation(models.Model):
     """One Benji conversation, plus the screen-context snapshot the model saw.
 
@@ -1172,7 +1195,21 @@ class AssistantConversation(models.Model):
     # because it changes how the transcript should be read.
     mode = models.CharField(max_length=16, blank=True, null=True)
     prompt_version = models.CharField(max_length=64, blank=True, null=True)
-    status = models.CharField(max_length=16, default="active")
+    # Where the conversation happens (MFB-2432). A screen can hold one active
+    # conversation per channel, so a texted conversation and the web widget's can
+    # coexist on one screen as separate rows (MFB-1916 proposal v2, decision 3).
+    #
+    # Migration 0170 also keeps a DATABASE-level DEFAULT 'web' on this column, which
+    # Django 4.2 cannot express in the model. It is what let benefits-api migrate
+    # before ai-service knew the column existed: ai-service's inserts named no
+    # channel, and a NOT NULL column without a database default would have rejected
+    # every one of them.
+    channel = models.CharField(max_length=8, choices=AssistantChannel.choices, default=AssistantChannel.WEB)
+    status = models.CharField(
+        max_length=16,
+        choices=AssistantConversationStatus.choices,
+        default=AssistantConversationStatus.ACTIVE,
+    )
     # Snapshot of the household/program context the prompt was built from. PII: see
     # ADR-001 in the ai-service repo. jsonb, so analytics can index into it.
     context = models.JSONField(default=dict, blank=True)
@@ -1187,10 +1224,19 @@ class AssistantConversation(models.Model):
             # could previously produce two active conversations for one screen and
             # split the history between them. Enforce it in the one place that can:
             # the database.
+            #
+            # Per channel since MFB-2432: one active web conversation and one active
+            # SMS conversation on the same screen is the intended state, not a race.
             models.UniqueConstraint(
-                fields=["screen_uuid"],
+                fields=["screen_uuid", "channel"],
                 condition=models.Q(status="active"),
-                name="assistant_one_active_conv_per_screen",
+                name="assistant_one_active_conv_per_screen_channel",
+            ),
+            # ai-service writes this column with raw SQL, so the choices above are no
+            # guard at all on its inserts. This is.
+            models.CheckConstraint(
+                check=models.Q(channel__in=["web", "sms"]),
+                name="assistant_conv_channel_valid",
             ),
         ]
         indexes = [
