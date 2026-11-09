@@ -12,6 +12,7 @@ from django.test import SimpleTestCase
 
 import programs.framework.pe_dependencies as dependency
 from programs.framework.pe_dependencies import member as member_deps
+from programs.programs.cross_white_label.medicaid import federal_base
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.medicaid.federal_base import (
     AGED,
@@ -111,6 +112,22 @@ class TestRegistration(SimpleTestCase):
 
 class TestInputs(SimpleTestCase):
     """What the base sends PolicyEngine."""
+
+    def test_magi_income_is_the_shared_taxable_income_with_only_the_spec_differences(self) -> None:
+        """Every stream in ``irs_gross_income`` reaches PolicyEngine, except where the spec's
+        MAGI rules say otherwise: rental income adds boarder payments, pension leaves out VA
+        benefits, and all alimony is added. Any other difference fails here, to be checked
+        against the spec before the expected sets change."""
+        replaced = {
+            dependency.member.RentalIncomeDependency: dependency.member.RentalAndBoarderIncomeDependency,
+            dependency.member.PensionIncomeDependency: dependency.member.PensionIncomeWithoutVeteranDependency,
+        }
+        added = {dependency.member.TaxableAlimonyIncomeDependency}
+
+        expected = {replaced.get(stream, stream) for stream in dependency.irs_gross_income} | added
+        self.assertEqual(set(federal_base.MAGI_INCOME_INPUTS), expected)
+        for stream in federal_base.MAGI_INCOME_INPUTS:
+            self.assertIn(stream, FederalMedicaid.pe_inputs)
 
     def test_magi_income_leaves_out_va_benefits(self) -> None:
         """``expansion_income`` and the other MAGI rules exclude ``veteran``."""
