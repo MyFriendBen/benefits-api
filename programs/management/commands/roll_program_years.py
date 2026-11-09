@@ -38,13 +38,10 @@ class Command(BaseCommand):
         today = date.today()
 
         if str(target_year) not in _get_fpl_data():
-            raise CommandError(
-                f"No FPL data for {target_year}. Add to _FPL_DEFAULTS in programs/models.py first."
-            )
+            raise CommandError(f"No FPL data for {target_year}. Add to _FPL_DEFAULTS in programs/models.py first.")
 
-        qs = (
-            Program.objects.exclude(year_type__in=["hardcoded", "calendar_year", "fiscal_year"])
-            .select_related("white_label", "year")
+        qs = Program.objects.exclude(year_type__in=["hardcoded", "calendar_year", "fiscal_year"]).select_related(
+            "white_label", "year"
         )
         if not options["all"]:
             qs = qs.filter(name_abbreviated__in=options["programs"])
@@ -57,9 +54,7 @@ class Command(BaseCommand):
                 continue
 
             period = str(target_year + program.year_offset)
-            fpl_row, _ = FederalPoveryLimit.objects.get_or_create(
-                year=period, defaults={"period": period}
-            )
+            fpl_row, _ = FederalPoveryLimit.objects.get_or_create(year=period, defaults={"period": period})
             if not dry_run:
                 Program.objects.filter(pk=program.pk).update(year=fpl_row)
             prefix = "DRY   " if dry_run else "OK    "

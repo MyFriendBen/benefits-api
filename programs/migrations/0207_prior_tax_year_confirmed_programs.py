@@ -14,9 +14,7 @@ def forwards(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
     FederalPoveryLimit = apps.get_model("programs", "FederalPoveryLimit")
 
-    fpl_2025 = FederalPoveryLimit.objects.filter(year="2025", period="2025").first()
-    if fpl_2025 is None:
-        raise RuntimeError("No FederalPoveryLimit row for 2025 — seed _FPL_DEFAULTS first.")
+    fpl_2025, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
 
     print("Moving confirmed tax credits to prior_tax_year:")
     for white_label, abbr in PROGRAMS:

@@ -490,7 +490,7 @@ class ProgramYearTypeSaveTests(TestCase):
         # prior_tax_year behaves like hardcoded in save() — the FK is managed
         # by roll_program_years, not by save(). Verifies we didn't accidentally
         # wire it to a sentinel row.
-        fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
+        fpl_2025, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
         program = Program.objects.new_program(self.white_label.code, "snap")
         program.year_type = "prior_tax_year"
         program.year_offset = -1

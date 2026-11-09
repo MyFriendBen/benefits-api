@@ -89,13 +89,16 @@ class RecordSyncBase(TestCase):
     """A white label, poverty tables, a category, a temporary program-ops checkout, and mocked translation."""
 
     def setUp(self) -> None:
-        self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
-        WhiteLabel.objects.create(name="Federal", code="federal")
+        self.white_label, _ = WhiteLabel.objects.get_or_create(
+            code="co", defaults={"name": "Colorado", "state_code": "CO"}
+        )
+        WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
         for status in ("citizen", "refugee"):
-            LegalStatus.objects.create(status=status)
+            LegalStatus.objects.get_or_create(status=status)
         for year in ("2025", "2026"):
-            FederalPoveryLimit.objects.create(year=year, period=year)
-        ProgramCategory.objects.new_program_category(None, "food", "food")
+            FederalPoveryLimit.objects.get_or_create(year=year, defaults={"period": year})
+        if not ProgramCategory.objects.filter(external_name="food").exists():
+            ProgramCategory.objects.new_program_category(None, "food", "food")
 
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
@@ -516,7 +519,7 @@ class RecordSyncTestCase(RecordSyncBase):
         self.assertIsNone(self.program().base_program)
 
     def test_a_category_scoped_to_another_white_label_fails(self) -> None:
-        texas = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+        texas, _ = WhiteLabel.objects.get_or_create(code="tx", defaults={"name": "Texas", "state_code": "TX"})
         ProgramCategory.objects.new_program_category(texas.code, "tx_only", "tx_only")
         self.record["program_category"] = {"external_name": "tx_only"}
 
@@ -789,19 +792,95 @@ class RecordSyncTestCase(RecordSyncBase):
 
         self.assertEqual(self.english(program.estimated_decision_time), "")
 
-    def test_nonzero_year_offset_sets_prior_tax_year_type_on_import(self) -> None:
+    def test_explicit_year_type_prior_tax_year_sets_year_type_leaves_fk(self) -> None:
+        # First import creates the program with year="2025", year_type="hardcoded".
+        self.import_record()
+        program = self.program()
+        original_year_id = program.year_id
+
+        # Re-import with explicit year_type instead of a year FK.
+        self.record["program"].pop("year", None)
+        self.record["program"]["year_type"] = "prior_tax_year"
         self.record["program"]["year_offset"] = -1
         self.import_record()
 
-        program = self.program()
+        program.refresh_from_db()
         self.assertEqual(program.year_type, "prior_tax_year")
         self.assertEqual(program.year_offset, -1)
+        self.assertEqual(program.year_id, original_year_id)
 
-    def test_zero_year_offset_leaves_year_type_hardcoded(self) -> None:
-        self.record["program"]["year_offset"] = 0
+    def test_explicit_year_type_calendar_year_sets_year_type_leaves_fk(self) -> None:
+        calendar_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
+        )
+        # First import creates the program, then manually set it to calendar_year state.
+        self.import_record()
+        program = self.program()
+        program.year = calendar_fpl
+        program.year_type = "calendar_year"
+        program.save(update_fields=["year", "year_type"])
+        original_year_id = program.year_id
+
+        # Re-import with explicit year_type — FK should not change.
+        self.record["program"].pop("year", None)
+        self.record["program"]["year_type"] = "calendar_year"
         self.import_record()
 
-        self.assertEqual(self.program().year_type, "hardcoded")
+        program.refresh_from_db()
+        self.assertEqual(program.year_type, "calendar_year")
+        self.assertEqual(program.year_id, original_year_id)
+
+    def test_old_format_record_without_year_type_still_sets_year_fk(self) -> None:
+        FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
+        self.record["program"]["year"] = "2025"
+        self.record["program"].pop("year_type", None)
+        self.import_record()
+
+        program = self.program()
+        self.assertEqual(program.year.year, "2025")
+        self.assertEqual(program.year_type, "hardcoded")
+
+    def test_export_rule_based_program_exports_year_type_not_year(self) -> None:
+        from programs.management.commands._program_record_sync import record_from_database
+
+        self.import_record()
+        calendar_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
+        )
+        program = self.program()
+        program.year = calendar_fpl
+        program.year_type = "calendar_year"
+        program.save(update_fields=["year", "year_type"])
+
+        exported = record_from_database(program)
+        self.assertEqual(exported["program"]["year_type"], "calendar_year")
+        self.assertNotIn("year", exported["program"])
+
+    def test_export_prior_tax_year_program_exports_year_type_not_year(self) -> None:
+        from programs.management.commands._program_record_sync import record_from_database
+
+        self.import_record()
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
+        program = self.program()
+        program.year = fpl
+        program.year_type = "prior_tax_year"
+        program.year_offset = -1
+        program.save(update_fields=["year", "year_type", "year_offset"])
+
+        exported = record_from_database(program)
+        self.assertEqual(exported["program"]["year_type"], "prior_tax_year")
+        self.assertEqual(exported["program"]["year_offset"], -1)
+        self.assertNotIn("year", exported["program"])
+
+    def test_export_hardcoded_program_exports_year_not_year_type(self) -> None:
+        from programs.management.commands._program_record_sync import record_from_database
+
+        self.import_record()
+        program = self.program()
+
+        exported = record_from_database(program)
+        self.assertIn("year", exported["program"])
+        self.assertNotIn("year_type", exported["program"])
 
     def test_export_includes_flip_month_and_year_offset_when_nondefault(self) -> None:
         from programs.management.commands._program_record_sync import record_from_database
@@ -940,8 +1019,8 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
     def test_a_referenced_state_navigator_moved_in_the_admin_still_imports(self) -> None:
         """The navigator's white label decides who sees it, so an admin move is not the record's to undo."""
         self.reference_shared_hotline()
-        WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
-        Navigator.objects.filter(pk=self.state_nav.pk).update(white_label=WhiteLabel.objects.get(code="il"))
+        il, _ = WhiteLabel.objects.get_or_create(code="il", defaults={"name": "Illinois", "state_code": "IL"})
+        Navigator.objects.filter(pk=self.state_nav.pk).update(white_label=il)
 
         output = self.run_import()
 
@@ -986,7 +1065,7 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
         self.assertNotIn("so on this federal program only", output)
 
     def test_a_state_record_referencing_another_white_labels_navigator_gets_no_note(self) -> None:
-        WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
+        WhiteLabel.objects.get_or_create(code="wa", defaults={"name": "Washington", "state_code": "WA"})
         wa_nav = Navigator.objects.new_navigator(white_label="wa", name="wa_shared")
         wa_nav.external_name = "wa_shared"
         wa_nav.save()
@@ -1064,7 +1143,7 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
         self.assertIn(denver, self.state_nav.counties.all())
 
     def test_a_state_record_owning_another_white_labels_navigator_leaves_it_there(self) -> None:
-        WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
+        WhiteLabel.objects.get_or_create(code="wa", defaults={"name": "Washington", "state_code": "WA"})
         wa_nav = Navigator.objects.new_navigator(white_label="wa", name=f"{PROGRAM}_nav_a")
         wa_nav.external_name = f"{PROGRAM}_nav_a"
         wa_nav.save()

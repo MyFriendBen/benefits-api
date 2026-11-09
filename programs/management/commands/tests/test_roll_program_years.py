@@ -11,7 +11,7 @@ from screener.models import WhiteLabel
 class RollProgramYearsCommandTests(TestCase):
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
-        self.fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
+        self.fpl_2025, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
 
     def _program(self, abbr, fpl, year_type="prior_tax_year", flip_month=1, year_offset=-1):
         program = Program.objects.new_program(self.white_label.code, abbr)
@@ -44,9 +44,9 @@ class RollProgramYearsCommandTests(TestCase):
 
     def test_respects_year_offset(self):
         program = self._program("mo_wftc", self.fpl_2025, flip_month=1, year_offset=-1)
-        call_command("roll_program_years", "--year", "2027", "--all")
+        call_command("roll_program_years", "--year", "2026", "--all")
         program.refresh_from_db()
-        self.assertEqual(program.year.period, "2026")
+        self.assertEqual(program.year.period, "2025")
 
     def test_dry_run_makes_no_changes(self):
         program = self._program("federal_ctc", self.fpl_2025, flip_month=1)

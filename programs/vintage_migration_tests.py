@@ -58,8 +58,8 @@ class TestCsfpMigrationMovesEveryDayEats(TestCase):
     """Run 0180's forwards/backwards against real rows, matched the way it matches them."""
 
     def setUp(self):
-        self.fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
-        self.fpl_2026 = FederalPoveryLimit.objects.create(year="2026", period="2026")
+        self.fpl_2025, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
+        self.fpl_2026, _ = FederalPoveryLimit.objects.get_or_create(year="2026", defaults={"period": "2026"})
         WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         self.migration = _migration("programs.migrations.0180_ssi_msp_csfp_current_edition")
 
@@ -100,8 +100,8 @@ class TestMoTaxCreditsMigrationMovesToPriorTaxYear(TestCase):
     """Run 0181's forwards/backwards against real rows."""
 
     def setUp(self):
-        self.fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
-        self.fpl_2026 = FederalPoveryLimit.objects.create(year="2026", period="2026")
+        self.fpl_2025, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
+        self.fpl_2026, _ = FederalPoveryLimit.objects.get_or_create(year="2026", defaults={"period": "2026"})
         WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
         self.migration = _migration("programs.migrations.0181_mo_tax_credits_prior_tax_year")
 
@@ -147,10 +147,10 @@ class TestConfirmedTaxCreditsMigrationMovesToPriorTaxYear(TestCase):
     """
 
     def setUp(self):
-        self.fpl_2025 = FederalPoveryLimit.objects.create(year="2025", period="2025")
+        self.fpl_2025, _ = FederalPoveryLimit.objects.get_or_create(year="2025", defaults={"period": "2025"})
         WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal", "state_code": "US"})
         WhiteLabel.objects.get_or_create(code="mo", defaults={"name": "Missouri", "state_code": "MO"})
-        self.migration = _migration("programs.migrations.0203_prior_tax_year_confirmed_programs")
+        self.migration = _migration("programs.migrations.0207_prior_tax_year_confirmed_programs")
 
     def _program(self, white_label, abbr):
         program = Program.objects.new_program(white_label=white_label, name_abbreviated=abbr)
