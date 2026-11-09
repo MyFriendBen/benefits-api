@@ -253,6 +253,32 @@ class TestChannelDatabaseDefault(TestCase):
         self.assertEqual(AssistantConversation.objects.get(conversation_id=conversation_id).channel, "web")
 
 
+class TestRollbackGuard(TestCase):
+    """Reversing 0170 is refused, with instructions, while channels coexist on a screen.
+
+    Without the guard the reverse dies on a duplicate key while re-creating the old
+    one-active-per-screen index, partway through a rollback.
+    """
+
+    def _guard(self) -> None:
+        MIGRATION_0170._refuse_rollback_while_channels_coexist(None, connection.schema_editor())
+
+    def test_rollback_is_refused_while_a_screen_has_web_and_sms_active(self):
+        screen_uuid = uuid.uuid4()
+        make_conversation(screen_uuid=screen_uuid, channel="web")
+        make_conversation(screen_uuid=screen_uuid, channel="sms")
+
+        with self.assertRaisesMessage(RuntimeError, str(screen_uuid)):
+            self._guard()
+
+    def test_rollback_is_allowed_once_the_sms_conversation_is_closed(self):
+        screen_uuid = uuid.uuid4()
+        make_conversation(screen_uuid=screen_uuid, channel="web")
+        make_conversation(screen_uuid=screen_uuid, channel="sms", status="closed")
+
+        self._guard()
+
+
 class TestDatabaseLevelCascade(TransactionTestCase):
     """Migration 0163's SQL, exercised for real against Postgres.
 

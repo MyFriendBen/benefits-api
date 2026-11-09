@@ -21,6 +21,32 @@
 
 from django.db import migrations, models
 
+# ROLLBACK: reversing this migration re-creates the old one-active-per-screen index,
+# which cannot be built once a screen has an active web AND an active SMS conversation
+# (the state this migration exists to allow). The reverse guard below checks for that
+# first and stops with instructions, rather than failing halfway on a duplicate key.
+_SCREENS_WITH_SEVERAL_ACTIVE = """
+SELECT screen_uuid FROM screener_assistantconversation
+WHERE status = 'active'
+GROUP BY screen_uuid
+HAVING COUNT(*) > 1
+LIMIT 5
+"""
+
+
+def _refuse_rollback_while_channels_coexist(apps, schema_editor) -> None:
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute(_SCREENS_WITH_SEVERAL_ACTIVE)
+        screens = [str(row[0]) for row in cursor.fetchall()]
+    if screens:
+        raise RuntimeError(
+            "Cannot reverse screener 0170: some screens have more than one active Benji "
+            f"conversation (for example {', '.join(screens)}), and the one-per-screen "
+            "index it would restore cannot be built over them. Set status='closed' on "
+            "every active non-web conversation first, then migrate back."
+        )
+
+
 _SET_DB_DEFAULT = "ALTER TABLE screener_assistantconversation ALTER COLUMN channel SET DEFAULT 'web'"
 _DROP_DB_DEFAULT = "ALTER TABLE screener_assistantconversation ALTER COLUMN channel DROP DEFAULT"
 
@@ -52,6 +78,8 @@ class Migration(migrations.Migration):
             model_name="assistantconversation",
             name="assistant_one_active_conv_per_screen",
         ),
+        # Forward: nothing. Reverse: runs just before the old index is re-created.
+        migrations.RunPython(migrations.RunPython.noop, reverse_code=_refuse_rollback_while_channels_coexist),
         migrations.AddConstraint(
             model_name="assistantconversation",
             constraint=models.CheckConstraint(
