@@ -8,13 +8,14 @@ interactions:
       0}, "taxable_alimony_income": {"2026": 0}, "is_medicare_eligible": {"2026":
       null}, "meets_ssi_disability_criteria": {"2026": false}, "ssi_engaged_in_sga":
       {"2026": null}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
-      {"2026": false}, "medicaid": {"2026": null}}}, "tax_units": {"main_tax_unit":
-      {"members": ["1"]}}, "families": {"family": {"members": ["1"]}}, "households":
-      {"household": {"members": ["1"], "state_code": {"2026": "NJ"}, "county_str":
-      {"2026": "MERCER_COUNTY_NJ"}}}, "spm_units": {"spm_unit": {"members": ["1"],
-      "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
-      {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
+      {"2026": false}, "medicaid": {"2026": null}, "medicaid_category": {"2026": null}}},
+      "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families": {"family": {"members":
+      ["1"]}}, "households": {"household": {"members": ["1"], "state_code": {"2026":
+      "NJ"}, "county_str": {"2026": "MERCER_COUNTY_NJ"}}}, "spm_units": {"spm_unit":
+      {"members": ["1"], "tanf": {"2026": null}, "receives_tanf": {"2026": false},
+      "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
+      "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "version":
+      "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -23,7 +24,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1213'
+      - '1250'
       Content-Type:
       - application/json
       User-Agent:
@@ -41,33 +42,34 @@ interactions:
         {"2026": 0}, "is_medicare_eligible": {"2026": false}, "meets_ssi_disability_criteria":
         {"2026": false}, "ssi_engaged_in_sga": {"2026": false}, "ssi": {"2026": 0.0},
         "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
-        "medicaid": {"2026": 12919.577}}}, "tax_units": {"main_tax_unit": {"members":
-        ["1"]}}, "families": {"family": {"members": ["1"]}}, "households": {"household":
-        {"members": ["1"], "state_code": {"2026": "NJ"}, "county_str": {"2026": "MERCER_COUNTY_NJ"}}},
-        "spm_units": {"spm_unit": {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf":
-        {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
-        {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
-        {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version": null,
-        "dataset": null}}'
+        "medicaid": {"2026": 12919.577}, "medicaid_category": {"2026": "ADULT"}}},
+        "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families": {"family":
+        {"members": ["1"]}}, "households": {"household": {"members": ["1"], "state_code":
+        {"2026": "NJ"}, "county_str": {"2026": "MERCER_COUNTY_NJ"}}}, "spm_units":
+        {"spm_unit": {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026":
+        false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026":
+        false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}},
+        "policyengine_bundle": {"model_version": "2.72.5", "data_version": null, "dataset":
+        null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1318'
+      - '1358'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:42:45 GMT
+      - Tue, 10 Nov 2026 20:57:02 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-8f341bf3357c109373c3bb93ab52548f-305502975349d34a-00
+      - 00-1aa4edc505bf0f237c8d2ad6319e82c3-fead824de42614cc-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 8f341bf3357c109373c3bb93ab52548f
+      - 1aa4edc505bf0f237c8d2ad6319e82c3;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -75,7 +77,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - b59617da-0204-4af6-9a19-c3a1b24c6af5
+      - cc8956f9-97f9-4004-9b47-fbfcb7d63d01
       x-policyengine-route-channel:
       - current
     status:
