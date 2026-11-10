@@ -449,6 +449,12 @@ UNFOLD = {
 REWIRING_AMERICA_API_KEY = config("REWIRING_AMERICA_API_KEY", default="")
 GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
 
+# Twilio, shared by Save My Results texts (integrations.services.communications.message)
+# and Benji SMS (integrations.services.communications.benji_sms).
+TWILIO_SID = config("TWILIO_SID", default="")
+TWILIO_TOKEN = config("TWILIO_TOKEN", default="")
+TWILIO_PHONE_NUMBER = config("TWILIO_PHONE_NUMBER", default="")
+
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields
 GRAPH_MODELS = {

@@ -11,13 +11,12 @@ and POSTs them. Local only: refuses unless DEBUG is on and the URL is on this ma
 """
 
 import uuid
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import urlparse
 
 import requests
-from decouple import config
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand, CommandError, CommandParser
 from twilio.request_validator import RequestValidator
 
 # The inbound webhook arrives with MFB-2439; it should live at this path.
@@ -56,7 +55,7 @@ def sign(token: str, url: str, params: dict[str, str]) -> str:
 class Command(BaseCommand):
     help = "Post a Twilio-signed fake inbound SMS to the local Benji SMS webhook. Local only."
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("body", help="Message text, as the person would type it")
         parser.add_argument("--from", dest="from_", default=DEFAULT_FROM, help=f"Sender (default {DEFAULT_FROM})")
         parser.add_argument("--to", default=None, help="Our number (default TWILIO_PHONE_NUMBER, else a fake one)")
@@ -65,7 +64,7 @@ class Command(BaseCommand):
         parser.add_argument("--url", default=None, help=f"Webhook URL (default BACKEND_DOMAIN + {DEFAULT_PATH})")
         parser.add_argument("--token", default=None, help="Signing token (default TWILIO_TOKEN)")
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         if not settings.DEBUG:
             raise CommandError("Refusing to run: fake_benji_sms_inbound is for local work and needs DEBUG on.")
 
@@ -74,7 +73,7 @@ class Command(BaseCommand):
         if host not in LOCAL_HOSTS:
             raise CommandError(f"Refusing to post to {host!r}: only local URLs are allowed.")
 
-        token = options["token"] or str(config("TWILIO_TOKEN", default=""))
+        token = options["token"] or str(settings.TWILIO_TOKEN)
         if not token:
             raise CommandError("No signing token: set TWILIO_TOKEN or pass --token (any string the server also uses).")
 
@@ -82,7 +81,7 @@ class Command(BaseCommand):
             raise CommandError("--media cannot be negative.")
 
         sid = options["sid"] or "SM" + uuid.uuid4().hex
-        to = options["to"] or str(config("TWILIO_PHONE_NUMBER", default="")) or DEFAULT_TO
+        to = options["to"] or str(settings.TWILIO_PHONE_NUMBER) or DEFAULT_TO
         params = build_params(options["body"], options["from_"], to, sid, options["media"])
 
         response = self._post(url, params, sign(token, url, params))
