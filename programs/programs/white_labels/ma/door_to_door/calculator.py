@@ -1,5 +1,6 @@
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.residency import lives_in
 
 
 class MaDoorToDoor(ProgramCalculator):
@@ -28,7 +29,7 @@ class MaDoorToDoor(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Location check - must be Cambridge resident
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = lives_in(self.screen, self.eligible_city)
         e.condition(is_cambridge, messages.location())
 
     def member_eligible(self, e: MemberEligibility):

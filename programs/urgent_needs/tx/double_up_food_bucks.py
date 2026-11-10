@@ -1,4 +1,5 @@
 from ..base import UrgentNeedFunction
+from programs.programs.shared.program_results import has_or_is_eligible_for
 
 
 class DoubleUpFoodBucks(UrgentNeedFunction):
@@ -16,13 +17,4 @@ class DoubleUpFoodBucks(UrgentNeedFunction):
 
     def eligible(self) -> bool:
         # Must have or be eligible for SNAP
-        if self.screen.has_benefit("tx_snap"):
-            return True
-
-        for program in self.data or []:
-            if not isinstance(program, dict):
-                continue
-            if program.get("name_abbreviated") == "tx_snap" and program.get("eligible"):
-                return True
-
-        return False
+        return has_or_is_eligible_for(self.screen, self.data, "tx_snap")

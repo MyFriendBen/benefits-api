@@ -3,9 +3,7 @@
   "need": {
     "external_name": "wa_wellspring_family_store",
     "category_type": {
-      "external_name": "wa_diapers_and_baby_supplies",
-      "name": "Diapers and other baby supplies",
-      "icon": "baby_supplies"
+      "external_name": "baby_supplies"
     },
     "type_short": ["baby supplies"],
     "functions": [],

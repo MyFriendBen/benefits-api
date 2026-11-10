@@ -5,9 +5,7 @@
   "need": {
     "external_name": "mo_behavioral_health_response",
     "category_type": {
-      "external_name": "mo_behavioral_health",
-      "name": "Behavioral health",
-      "icon": "behavioral_health"
+      "external_name": "behavioral_health"
     },
     "type_short": [
       "mental health"

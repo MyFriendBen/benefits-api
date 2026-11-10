@@ -1,6 +1,7 @@
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.residency import lives_in
 
 
 class Cha(ProgramCalculator):
@@ -37,7 +38,7 @@ class Cha(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # Location: Must be in Cambridge
         # (Note: currently, our MA implementation stores city name in 'county' field, see MFB-548 for details)
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = lives_in(self.screen, self.eligible_city)
         e.condition(is_cambridge, messages.location())
 
         # Age: Head of household must be at least 18 years old
