@@ -224,6 +224,13 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="DOE effective-date lag: the 200% column in force is the prior year's guideline",
         source="DOE Weatherization Program Notice 25-3",
     ),
+    ("nj", "nj_medicaid"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="coverage year; NJ's 2026 income standards chart (Medicaid Communication 26-03) uses the 2026 guideline",
+        source="program-ops cross_white_label/medicaid/nj/medicaid_nj_spec.md",
+    ),
     ("nj", "nj_cover_all_kids"): Vintage(
         edition="2026",
         basis=Basis.TABLE_EDITION,
