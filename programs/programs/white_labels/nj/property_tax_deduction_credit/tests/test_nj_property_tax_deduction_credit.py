@@ -67,6 +67,17 @@ class TestRegistration(NjPtdTestCase):
 
 
 class TestBirthAfterTheTaxYear(NjPtdTestCase):
+    # `is_dependent()` judges age on the screening date, so pin it: unpinned, the December
+    # 2025 child would age out of the qualifying-child test.
+    reference_date = date(2026, 3, 15)
+
+    def single_renter_with_a_child_born(self, birth_year_month: date) -> Screen:
+        """A single renter on 15,000, who files and gets the 50 credit when they have no dependent."""
+        screen, (head,) = self.household(("headOfHousehold", 30, {"yearly_income": 15_000}))
+        self.add_member(screen, "child", None, birth_year_month=birth_year_month)
+        self.add_expense(head, 1_000, "rent", "monthly")
+        return screen
+
     def test_a_member_born_after_the_tax_year_is_not_a_senior(self):
         screen, _ = self.household(("headOfHousehold", 40, {}))
         newborn = self.add_member(screen, "child", None, birth_year_month=date(2026, 1, 1))
@@ -74,6 +85,22 @@ class TestBirthAfterTheTaxYear(NjPtdTestCase):
 
         self.assertEqual(calculator._age_at_year_end(newborn), 0)
         self.assertFalse(calculator._is_senior(newborn))
+
+    def test_a_child_born_after_the_tax_year_is_not_a_dependent(self):
+        screen = self.single_renter_with_a_child_born(date(2026, 1, 1))
+        calculator = self.make_calculator(screen)
+
+        self.assertEqual(calculator._dependent_count, 0)
+        self.assertValue(screen, 50)
+
+    def test_a_child_born_in_december_of_the_tax_year_is_a_dependent(self):
+        screen = self.single_renter_with_a_child_born(date(2025, 12, 1))
+        calculator = self.make_calculator(screen)
+
+        # The dependent raises the filing threshold to 20,000; 15,000 is under it and the
+        # head is under 65 and not disabled, so the non-filer route is closed too.
+        self.assertEqual(calculator._dependent_count, 1)
+        self.assertIneligible(screen)
 
 
 class TestSpecScenarios(NjPtdTestCase):
