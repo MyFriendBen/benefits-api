@@ -56,7 +56,7 @@ from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
-from .models import AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .models import AssistantChannel, AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
 from .navigators import navigators_for_program
 from .urgent_needs import eligible_urgent_needs
 from .throttles import (
@@ -1698,6 +1698,14 @@ def _clean_value(value: object) -> Optional[int]:
     return int(value)
 
 
+# Every route in this file serves the results-page widget, so every call it makes to
+# ai-service names the web channel (MFB-2432). Sent rather than left to ai-service's
+# default so that a web request can never reach an SMS conversation: ai-service refuses
+# a message whose channel does not match its conversation. Safe to send before
+# ai-service knows the field, since it ignores unknown body keys and query parameters.
+WEB_CHANNEL = AssistantChannel.WEB.value
+
+
 def _proxy(method: str, path: str, json_body: dict = None, params: dict = None) -> Response:
     """Forward a request to mfb-ai-service and pass its response through.
 
@@ -1812,7 +1820,7 @@ class AssistantStartView(views.APIView):
         if not screen.white_label.has_feature("benbot"):
             return Response({"error": {"code": "assistant_disabled"}}, status=status.HTTP_403_FORBIDDEN)
 
-        return _proxy("GET", "/v1/conversations", params={"screen_uuid": str(screen.uuid)})
+        return _proxy("GET", "/v1/conversations", params={"screen_uuid": str(screen.uuid), "channel": WEB_CHANNEL})
 
     def post(self, request, screen_uuid):
         # CONTEXT_PREFETCH keeps _build_context's per-program enrollment checks on the
@@ -1835,6 +1843,7 @@ class AssistantStartView(views.APIView):
             # unchecked string could overflow the conversation's varchar(12) in ai-service.
             "locale": screen.supported_language_code(body.get("locale")),
             "context": _build_context(screen, _visible_programs(body)),
+            "channel": WEB_CHANNEL,
         }
         return _proxy("POST", "/v1/conversations", payload)
 
@@ -1864,6 +1873,7 @@ class AssistantMessageView(views.APIView):
             "screen_uuid": str(screen.uuid),
             "text": body.get("text", ""),
             "client_message_id": body.get("client_message_id"),
+            "channel": WEB_CHANNEL,
         }
         return _proxy("POST", f"/v1/conversations/{conversation_id}/messages", payload)
 
@@ -1969,6 +1979,10 @@ class AssistantMessageRatingView(views.APIView):
                 message_id=message_id,
                 conversation_id=conversation_id,
                 conversation__screen_uuid=screen.uuid,
+                # The widget rates only its own replies. SMS rows keep NULL ratings by
+                # design (MFB-1916 decision 9), and the weekly report reads a rating as
+                # web feedback, so a texted reply must not be rateable from here.
+                conversation__channel=WEB_CHANNEL,
                 role="assistant",
             )
             .only("message_id", "rating", "rated_at", "rating_reason")

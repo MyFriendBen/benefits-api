@@ -1,5 +1,6 @@
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.programs.shared.income import table_income_limit
 
 
 class WaWsosCts(ProgramCalculator):
@@ -47,10 +48,9 @@ class WaWsosCts(ProgramCalculator):
     dependencies = ["income_amount", "income_frequency", "household_size"]
 
     def income_limit_125(self) -> int:
-        size = self.screen.household_size
-        if size in self.MFI_125_BY_SIZE:
-            return self.MFI_125_BY_SIZE[size]
-        return self.MFI_125_BY_SIZE[6] + (size - 6) * self.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
+        return table_income_limit(
+            self.MFI_125_BY_SIZE, self.screen.household_size, self.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
+        )
 
     def household_eligible(self, e: Eligibility):
         """

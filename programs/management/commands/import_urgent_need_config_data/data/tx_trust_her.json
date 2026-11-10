@@ -3,9 +3,7 @@
   "need": {
     "external_name": "tx_trust_her",
     "category_type": {
-      "external_name": "tx_family_planning",
-      "name": "Family planning",
-      "icon": "family_planning"
+      "external_name": "family_planning"
     },
     "type_short": ["family planning"],
     "translations": {

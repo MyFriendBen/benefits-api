@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_adult_education_centers",
     "category_type": {
-      "external_name": "ks_education_resources",
-      "name": "Education and literacy",
-      "icon": "job_resources"
+      "external_name": "education_resources"
     },
     "type_short": [
       "job resources"

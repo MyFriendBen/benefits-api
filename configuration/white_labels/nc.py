@@ -1827,6 +1827,7 @@ class NcConfigurationData(ConfigurationData):
         "defaultLanguage": {
             "default": "en-us",
             "hfed": "es",
+            "punc": "es",
         },
         "footerPhone": {
             "default": "",

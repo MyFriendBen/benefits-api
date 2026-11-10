@@ -72,14 +72,17 @@ def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> tuple[list, list, 
     """Every program code passed to `self.program_eligible(...)` inside this class.
 
     Resolves a literal argument directly, and a loop variable back to the class attribute
-    it iterates. `self.any_program_eligible(self.<attr>)` on an attribute this class does
-    not assign is a base reading codes its subclasses declare, so the attribute name is
-    returned for `_inherited_gates` to resolve. Any other argument is reported so it cannot
+    it iterates. `self.any_program_eligible(self.<attr>)`, or a loop over `self.<attr>`, on an
+    attribute this class does not assign is a base reading codes its subclasses declare, so
+    the attribute name is returned for `_inherited_gates` to resolve. Any other argument is reported so it cannot
     pass unnoticed.
     """
     codes, unresolved, inherited = [], [], []
     # Loop variable -> the attribute it iterates: `for program in self.presumptive_eligibility`
     loop_sources = {}
+    # Loop variable -> an attribute this class iterates but doesn't assign: a base looping over
+    # codes its subclasses declare (`for code in self.medicaid_chip_program_codes`).
+    inherited_loop_sources = {}
     for node in ast.walk(class_node):
         if isinstance(node, ast.For) and isinstance(node.target, ast.Name):
             it = node.iter
@@ -87,6 +90,8 @@ def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> tuple[list, list, 
                 loop_sources[node.target.id] = it.attr
             elif isinstance(it, ast.Name) and it.id in attrs:
                 loop_sources[node.target.id] = it.id
+            elif isinstance(it, ast.Attribute) and isinstance(it.value, ast.Name) and it.value.id == "self":
+                inherited_loop_sources[node.target.id] = it.attr
 
     for node in ast.walk(class_node):
         if not (
@@ -101,6 +106,8 @@ def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> tuple[list, list, 
             codes.append(arg.value)
         elif isinstance(arg, ast.Name) and arg.id in loop_sources:
             codes.extend(attrs[loop_sources[arg.id]])
+        elif isinstance(arg, ast.Name) and arg.id in inherited_loop_sources:
+            inherited.append(inherited_loop_sources[arg.id])
         elif isinstance(arg, ast.Attribute) and arg.attr in attrs:
             codes.extend(attrs[arg.attr])
         elif node.func.attr == "any_program_eligible" and isinstance(arg, ast.Attribute):
@@ -184,6 +191,56 @@ def find_program_gates():
     return gates
 
 
+def _strict_inherited_attributes(class_node: ast.ClassDef) -> set:
+    """Attributes this class loops over and passes to a raising accessor, where it doesn't
+    assign the attribute itself: a base reading, strictly, codes its subclasses declare."""
+    assigned = _string_assignments(class_node)
+    loop_sources = {}
+    for node in ast.walk(class_node):
+        if (
+            isinstance(node, ast.For)
+            and isinstance(node.target, ast.Name)
+            and isinstance(node.iter, ast.Attribute)
+            and isinstance(node.iter.value, ast.Name)
+            and node.iter.value.id == "self"
+            and node.iter.attr not in assigned
+        ):
+            loop_sources[node.target.id] = node.iter.attr
+
+    attributes = set()
+    for node in ast.walk(class_node):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in ("program_eligible", "member_program_eligible")
+            and node.args
+            and isinstance(node.args[0], ast.Name)
+            and node.args[0].id in loop_sources
+        ):
+            attributes.add(loop_sources[node.args[0].id])
+    return attributes
+
+
+def find_strict_inherited_gates() -> set:
+    """(gating program_code, upstream) for each strict gate a base reads off its subclass."""
+    registries = _all_calculator_classes()
+    gates = set()
+    for path in PROGRAMS_ROOT.rglob("*.py"):
+        if "/tests/" in path.as_posix():
+            continue
+        source = path.read_text()
+        if "program_eligible" not in source:
+            continue
+        for node in ast.walk(ast.parse(source)):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for attribute in _strict_inherited_attributes(node):
+                gates.update(
+                    (code, upstream) for _, code, upstream in _inherited_gates(path, node.name, attribute, registries)
+                )
+    return gates
+
+
 def find_unresolved_gate_arguments():
     """Call sites whose argument this test could not resolve to a program code."""
     unresolved = []
@@ -240,6 +297,18 @@ class TestProgramGatesAreDiscoverable(SimpleTestCase):
         gates = _inherited_gates(base_path, "MfbHeadStart", "gates_on_any", {"test_gated_head_start": GatedHeadStart})
 
         self.assertEqual(gates, [(Path(__file__).resolve(), "test_gated_head_start", "test_snap")])
+
+    def test_a_base_looping_over_its_subclasses_codes_resolves_per_subclass(self):
+        """`MfbAca` loops over `self.medicaid_chip_program_codes`, which each state declares,
+        and passes the loop variable to `member_program_eligible`."""
+        from programs.programs.cross_white_label.aca.mfb_base import MfbAca
+
+        found = {(g, u) for _, g, u in find_program_gates()}
+        self.assertIn(("nj_aca_ptc", "nj_medicaid"), found)
+        self.assertIn(("nj_aca_ptc", "nj_chip"), found)
+
+        base_path = Path(inspect.getfile(MfbAca))
+        self.assertNotIn(base_path.resolve(), {path.resolve() for path, _ in find_unresolved_gate_arguments()})
 
     def test_every_gating_calculator_declares_a_program_code(self):
         for path, gating_code, _ in find_program_gates():
@@ -437,10 +506,12 @@ class TestDeclarationsMatchTheCalls(SimpleTestCase):
 
     def _called(self):
         strict, tolerant = {}, {}
+        strict_inherited = find_strict_inherited_gates()
         for path, gating, upstream in find_program_gates():
             if gating is None:
                 continue
-            bucket = strict if _is_strict_gate(path, upstream) else tolerant
+            is_strict = _is_strict_gate(path, upstream) or (gating, upstream) in strict_inherited
+            bucket = strict if is_strict else tolerant
             bucket.setdefault(gating, set()).add(upstream)
         return strict, tolerant
 
@@ -508,7 +579,7 @@ class TestForceCalculatedUpstreams(SimpleTestCase):
 
         self.assertEqual(set(force_calculated_codes()) & set(pe_calculators), set())
 
-    def test_the_force_calculated_set_is_the_eight_custom_upstreams(self):
+    def test_the_force_calculated_set_is_the_nine_custom_upstreams(self):
         """Pinned by name so a new gate on a custom upstream is a visible diff here."""
         self.assertEqual(
             sorted(force_calculated_codes()),
@@ -520,6 +591,7 @@ class TestForceCalculatedUpstreams(SimpleTestCase):
                 "federal_ssi",
                 "il_family_care",
                 "il_moms_and_babies",
+                "nj_chip",
                 "nj_tanf",
             ],
         )

@@ -1,7 +1,20 @@
-from screener.models import EARNED_INCOME_TYPES
+from typing import Optional
+
+from screener.models import EARNED_INCOME_TYPES, HouseholdMember
 
 from .base import Member
 from .receipt import SSI_INCOME_TYPE, member_reports_ssi_amount, screen_reports_ssi_without_amount
+
+SSDI_INCOME_TYPE = "sSDisability"
+
+
+def member_reports_ssdi_amount(member: HouseholdMember) -> bool:
+    """Whether this member reports Social Security Disability Benefits of their own.
+
+    Only ``sSDisability`` counts. Dependent, survivor and retirement benefits have their own
+    income types, and none of them rests on this member's disability.
+    """
+    return member.calc_gross_income("yearly", [SSDI_INCOME_TYPE]) > 0
 
 
 class AgeDependency(Member):
@@ -283,6 +296,32 @@ class TakesUpSsiIfEligibleDependency(Member):
         return screen_reports_ssi_without_amount(self.screen)
 
 
+class TakesUpOwnReportedSsiDependency(Member):
+    """
+    PolicyEngine's ``takes_up_ssi_if_eligible``, True only for a member who reports an SSI
+    amount of their own.
+
+    ``TakesUpSsiIfEligibleDependency`` holds take-up at PolicyEngine's default for a household
+    that ticked the SSI tile without an amount, so PolicyEngine simulates SSI for whoever it
+    finds eligible. That is the right call for programs that only need to know someone gets
+    SSI. The federal Medicaid base spec's SSI route counts only a member's own SSI income line
+    and accepts missing a tile-only recipient, so a simulated benefit must not stand in for
+    receipt there. Same field, so a screen with the tile and no amount splits the request
+    between the two.
+    """
+
+    field = "takes_up_ssi_if_eligible"
+    min_pe_version = (1, 779, 3)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self) -> bool:
+        return member_reports_ssi_amount(self.member)
+
+
 class IsDisabledDependency(Member):
     field = "is_disabled"
 
@@ -363,6 +402,56 @@ class MeetsSsiDisabilityCriteriaDependency(Member):
 
     def value(self):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
+
+
+class OwnSsdiDisabilityDependency(Member):
+    """
+    PolicyEngine's ``meets_ssi_disability_criteria``, set from the member's own Social
+    Security Disability Benefits.
+
+    An SSA disability determination binds the Medicaid agency (42 CFR 435.541(b)(1)(i)), and a
+    worker draws disability benefits only on a finding of disability under the same definition
+    (20 CFR 404.315(a)(3), 404.1505(a)). The federal Medicaid base spec takes a member's own
+    reported ``sSDisability`` income as the screener's stand-in for that finding. The
+    self-reported disability checkboxes are not a determination and are not read here, which is
+    what separates this from ``MeetsSsiDisabilityCriteriaDependency``.
+    """
+
+    field = "meets_ssi_disability_criteria"
+    min_pe_version = (1, 715, 2)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self) -> bool:
+        return member_reports_ssdi_amount(self.member)
+
+
+class OwnSsdiNotEngagedInSgaDependency(Member):
+    """
+    PolicyEngine's ``ssi_engaged_in_sga``, held False for a member drawing their own Social
+    Security Disability Benefits.
+
+    PolicyEngine turns ``meets_ssi_disability_criteria`` into a disability finding only for a
+    member it does not find working above the substantial gainful activity limit. SSA already
+    weighed earnings when it awarded the benefit, and the federal Medicaid base spec applies no
+    earnings screen to its own-SSDI stand-in, so the screen is switched off for exactly the
+    members ``OwnSsdiDisabilityDependency`` marks. Everyone else is left to PolicyEngine.
+    """
+
+    field = "ssi_engaged_in_sga"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self) -> Optional[bool]:
+        if member_reports_ssdi_amount(self.member):
+            return False
+        return None
 
 
 class MedicalExpenseDependency(Member):
@@ -776,6 +865,35 @@ class SelfEmploymentIncomeDependency(IncomeDependency):
 class RentalIncomeDependency(IncomeDependency):
     field = "rental_income"
     income_types = ["rental"]
+
+
+class RentalAndBoarderIncomeDependency(IncomeDependency):
+    """
+    Rental income with boarder and lodger payments added, as PolicyEngine's ``rental_income``.
+
+    Room-and-board payments a household takes in are rent, so they are gross income
+    (26 U.S.C. 61(a)(5)), and MAGI counts them. ``RentalIncomeDependency`` sends only the
+    ``rental`` stream; this one is for the MAGI calculators whose spec counts ``boarder`` too.
+    Amounts go in as entered: the screener does not say whether expenses have come off.
+    """
+
+    field = "rental_income"
+    income_types = ["rental", "boarder"]
+
+
+class TaxableAlimonyIncomeDependency(IncomeDependency):
+    """
+    All reported alimony, as PolicyEngine's ``taxable_alimony_income``.
+
+    Alimony is gross income only under a divorce or separation instrument executed before
+    2019 and not later modified to apply the 2017 change. The screener does not collect the
+    instrument's date, and the federal Medicaid base spec settles on counting all alimony, so
+    this sends the whole amount as taxable rather than leaving PolicyEngine to apply its
+    divorce-year test to a year it is never given.
+    """
+
+    field = "taxable_alimony_income"
+    income_types = ["alimony"]
 
 
 class PensionIncomeDependency(IncomeDependency):

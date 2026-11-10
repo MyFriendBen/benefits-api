@@ -3,9 +3,7 @@
   "need": {
     "external_name": "wa_puget_sound_energy_low_income_programs",
     "category_type": {
-      "external_name": "wa_housing_rent_utilities",
-      "name": "Help with managing your mortgage, rent, or utilities",
-      "icon": "managing_housing"
+      "external_name": "managing_housing_costs"
     },
     "type_short": ["housing"],
     "functions": [],

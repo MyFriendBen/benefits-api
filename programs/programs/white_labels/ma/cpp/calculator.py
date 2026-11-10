@@ -1,6 +1,7 @@
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.residency import lives_in
 
 
 class MaCpp(ProgramCalculator):
@@ -37,7 +38,7 @@ class MaCpp(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # Cambridge residency required
         # Note: MA stores city name in county field (see MFB-548)
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = lives_in(self.screen, self.eligible_city)
         e.condition(is_cambridge, messages.location())
 
     def member_eligible(self, e: MemberEligibility):

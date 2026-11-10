@@ -83,9 +83,17 @@ class UrgentNeedTypeViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, vi
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Scope by the urgent needs' white label rather than the type's own. A
+        # shared type has no white label, so filtering on it would drop every
+        # shared row.
         return UrgentNeedType.objects.filter(
             urgent_needs__isnull=False,
             urgent_needs__active=True,
             urgent_needs__show_on_current_benefits=True,
-            white_label__code=self.kwargs["white_label"],
+            urgent_needs__white_label__code=self.kwargs["white_label"],
         ).distinct()
+
+    def get_serializer_context(self) -> dict:
+        # The serializer needs the white label to filter a shared type's urgent
+        # needs down to the ones this white label owns.
+        return {**super().get_serializer_context(), "white_label": self.kwargs["white_label"]}

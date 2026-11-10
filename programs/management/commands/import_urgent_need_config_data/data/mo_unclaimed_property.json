@@ -5,9 +5,7 @@
   "need": {
     "external_name": "mo_unclaimed_property",
     "category_type": {
-      "external_name": "mo_savings",
-      "name": "Savings to improve financial stability",
-      "icon": "savings"
+      "external_name": "savings"
     },
     "type_short": [
       "savings"
