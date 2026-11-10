@@ -121,8 +121,11 @@ class MfbSnap(ProgramCalculator, abstract=True):
     - only liquid resources are counted; no household is treated as homeless
     - the first month is not prorated
 
-    A state may set ``utility_allowance`` (its standard, where it requires one) and extend the
-    categorical route by overriding ``categorically_eligible``. Everything else is federal.
+    A state may set ``utility_allowance`` (its standard, where it requires one), or override
+    ``utility_costs`` when its rule is more than a flat amount; extend the categorical route by
+    overriding ``categorically_eligible``; round the net income inputs by overriding
+    ``round_amount``; and adjust the federal allotment by overriding ``state_allotment``.
+    Everything else is federal.
 
     The value is the monthly allotment made annual, and never less than 1 dollar for an eligible
     household so the results page keeps it.
@@ -186,11 +189,22 @@ class MfbSnap(ProgramCalculator, abstract=True):
 
     def allotment(self) -> int:
         """Monthly allotment: the maximum less 30% of net income (rounded up), or the minimum benefit."""
+        return self.state_allotment(self.federal_allotment())
+
+    def federal_allotment(self) -> int:
         size = self.household_size
         reduction = ceil(NET_INCOME_SHARE * self.net_income)
         floor = MINIMUM_BENEFIT if size <= MINIMUM_BENEFIT_MAX_SIZE else 0
 
         return max(max_allotment(size) - reduction, floor)
+
+    def state_allotment(self, federal_allotment: int) -> int:
+        """The allotment after any state supplement. The federal amount where the state adds none."""
+        return federal_allotment
+
+    def round_amount(self, amount: Decimal) -> Decimal:
+        """How a state rounds each income amount and each deduction. The federal base does not."""
+        return amount
 
     # ----- household composition -----
 
@@ -276,6 +290,16 @@ class MfbSnap(ProgramCalculator, abstract=True):
         """Monthly income of the members who are counted, of the given types."""
         return sum((money(member.calc_gross_income("monthly", types)) for member in self.counted_members), Decimal(0))
 
+    def rounded_income(self, types: list[str]) -> Decimal:
+        """Like ``income``, with each income stream rounded by the state's ``round_amount``."""
+        total = Decimal(0)
+        for member in self.counted_members:
+            for stream in member.income_streams.all():
+                if "all" in types or stream.type in types:
+                    total += self.round_amount(money(stream.monthly()))
+
+        return total
+
     def expenses(self, types: list[str]) -> Decimal:
         return money(self.screen.calc_expenses("monthly", types))
 
@@ -287,11 +311,12 @@ class MfbSnap(ProgramCalculator, abstract=True):
     @cached_property
     def net_income(self) -> Decimal:
         """Countable income after the earned income, standard, dependent care, medical and shelter deductions."""
-        earned = self.income(["wages", "selfEmployment", "boarder"])
-        adjusted = self.countable_income - EARNED_INCOME_DEDUCTION * earned
+        income = self.rounded_income(["all"]) - self.expenses(["childSupport"])
+        earned = self.rounded_income(["wages", "selfEmployment", "boarder"])
+        adjusted = income - self.round_amount(EARNED_INCOME_DEDUCTION * earned)
         adjusted -= standard_deduction(self.household_size)
-        adjusted -= self.expenses(["childCare", "dependentCare"])
-        adjusted -= self.excess_medical_deduction()
+        adjusted -= self.round_amount(self.expenses(["childCare", "dependentCare"]))
+        adjusted -= self.round_amount(self.excess_medical_deduction())
         adjusted -= self.excess_shelter_deduction(adjusted)
 
         return max(Decimal(0), adjusted)
@@ -302,13 +327,18 @@ class MfbSnap(ProgramCalculator, abstract=True):
 
         return max(Decimal(0), self.expenses(["medical"]) - EXCESS_MEDICAL_THRESHOLD)
 
+    def utility_costs(self) -> Decimal:
+        """Monthly utility costs in the shelter total: the state's standard allowance, or actual bills."""
+        if self.utility_allowance is not None:
+            return Decimal(self.utility_allowance)
+
+        return self.expenses(["heating", "cooling", "telephone", "otherUtilities"])
+
     def excess_shelter_deduction(self, income_after_other_deductions: Decimal) -> Decimal:
         shelter = self.expenses(["rent", "mortgage", "propertyTax", "hoa", "homeownersInsurance"])
-        if self.utility_allowance is not None:
-            shelter += self.utility_allowance
-        else:
-            shelter += self.expenses(["heating", "cooling", "telephone", "otherUtilities"])
+        shelter += self.utility_costs()
 
         excess = max(Decimal(0), shelter - SHELTER_INCOME_SHARE * income_after_other_deductions)
+        excess = self.round_amount(excess)
 
         return excess if self.has_elderly_or_disabled_member else min(excess, Decimal(SHELTER_CAP))
