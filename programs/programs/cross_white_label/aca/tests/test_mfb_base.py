@@ -79,6 +79,7 @@ class TestApplicablePercentage(MfbAcaTestCase):
                 percentage = aca.applicable_percentage(250)
 
         self.assertEqual(percentage, APPLICABLE_PERCENTAGE_TABLES[max(APPLICABLE_PERCENTAGE_TABLES)][4].initial)
+        report.assert_called_once()
         self.assertIn("coverage year 2028", report.call_args.args[0])
 
 

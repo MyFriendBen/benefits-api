@@ -318,8 +318,9 @@ class MfbAca(ProgramCalculator, abstract=True):
 
     def applicable_percentage(self, fpl_percent: int) -> Decimal:
         """The share of income the household is expected to pay, in percent, to 0.01%."""
-        for band in self._applicable_percentage_table():
-            in_band = band.start <= fpl_percent < band.end or (band is self._last_band() and fpl_percent == band.end)
+        table = self._applicable_percentage_table()
+        for band in table:
+            in_band = band.start <= fpl_percent < band.end or (band is table[-1] and fpl_percent == band.end)
             if not in_band:
                 continue
 
@@ -342,9 +343,6 @@ class MfbAca(ProgramCalculator, abstract=True):
             level="warning",
         )
         return APPLICABLE_PERCENTAGE_TABLES[latest]
-
-    def _last_band(self) -> ApplicableBand:
-        return self._applicable_percentage_table()[-1]
 
     def value(self, e: Eligibility) -> None:
         if not e.eligible:
