@@ -1413,45 +1413,82 @@ class AssistantMessage(models.Model):
 
 # --- Benji over SMS (MFB-2435; MFB-1916 proposal v2, decisions 3, 4 and 5) ----------
 #
-# Three tables, all written by benefits-api only. ai-service never sees a phone
-# number, a hash, or these rows.
+# Four tables, all written by benefits-api only. ai-service never sees a phone number,
+# a hash, or these rows.
 #
 # THE PHONE NUMBER IS NEVER STORED. `phone_hash` is an HMAC-SHA256 of the E.164 number
 # under BENJI_SMS_HASH_KEY (integrations/services/communications/benji_sms_hash.py).
 # That is still personal data, reversible by anyone holding the key and a candidate
-# number, so the hash is treated like the number: superuser-only in the admin, and
-# never in Sentry, alarms, the weekly report or the job queue (privacy companion §2).
+# number, so the hash is treated like the number: superuser-only, never searchable in
+# the admin (a search puts it in the URL), and never in Sentry, alarms, the weekly
+# report or the job queue (privacy companion §2).
+#
+# PER PHONE vs PER BINDING. What is true of a phone whatever screen it is bound to
+# (revoked, marked shared) lives on `BenjiSmsPhone`, once. What is true of one on-ramp
+# (screen, consent, lifecycle) lives on `BenjiSmsBinding`. Keeping the phone's state on
+# its bindings would leave it on closed rows (a shared mark set by an on-ramp that opens
+# no binding, a revocation START cleared on only the newest) and make every check
+# aggregate across them.
 #
 # RETENTION follows the conversation. A deletion request ("remove my texts") hashes
-# the number the requester gives, finds the bindings, and deletes their conversations.
-# Bindings and deliveries then cascade, in the ORM and in the database (migration
-# 0172, for the same raw-DELETE reason as 0163). Stranger rows live one day.
+# the number the requester gives (`manage.py find_benji_sms_phone`), deletes the
+# conversations of that phone's bindings, which cascades bindings and deliveries in the
+# ORM and in the database (migration 0172, for the same raw-DELETE reason as 0163),
+# and then deletes the phone row. `BenjiSmsBinding.phone` is PROTECT so that last step
+# cannot run first and leave conversations behind. Stranger rows live one day.
 
 
-class BenjiSmsBindingStatus(models.TextChoices):
-    """A binding's lifecycle, mirroring its SMS conversation's.
+class BenjiSmsPhone(models.Model):
+    """One phone, by hash: the state that belongs to the number, not to an on-ramp.
 
-    `closed`: superseded, when an on-ramp from another screen takes over the phone.
-    `expired`: no inbound text for the quiet interval (working figure 90 days).
+    Created by the first on-ramp for the number. A number that only ever texts as a
+    stranger gets no row here (see `BenjiSmsStrangerReply`).
     """
 
-    ACTIVE = "active", "Active"
-    CLOSED = "closed", "Closed"
-    EXPIRED = "expired", "Expired"
+    phone_hash = models.CharField(max_length=64)
+    # Set by STOP, or by a revocation in any wording. Every send checks it, and the
+    # on-ramp refuses the phone while it is set. START clears it if the newest
+    # binding's conversation has not expired.
+    revoked_at = models.DateTimeField(blank=True, null=True)
+    # Shared-phone guard: while in the future, inbound texts get the fixed "linked to
+    # more than one set of results" reply and no model turn, and the on-ramp opens no
+    # binding. The nightly sweep clears marks past the window.
+    shared_until = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            # A Meta constraint rather than unique=True on the field: on Postgres the
+            # field form adds a varchar_pattern_ops index for LIKE queries that nothing
+            # runs against a hash.
+            models.UniqueConstraint(fields=["phone_hash"], name="benji_sms_phone_hash_unique"),
+        ]
+
+    def __str__(self) -> str:
+        # No hash: __str__ ends up in admin breadcrumbs, logs and error pages.
+        return f"Benji SMS phone {self.pk}"
 
 
 class BenjiSmsBinding(models.Model):
-    """Links a phone (by hash) to one screen's SMS conversation, with its consent record.
+    """Links a phone to one screen's SMS conversation, with its consent record.
 
-    One active binding per phone hash: a new on-ramp from a different screen closes the
-    previous binding and opens a new one, unseeded. A hash with several closed bindings
-    over time is a normal state.
+    One active binding per phone: a new on-ramp from a different screen closes the
+    previous binding and opens a new one, unseeded. A phone with several closed
+    bindings over time is a normal state.
+
+    One active binding per conversation, too. ai-service keeps one active SMS
+    conversation per screen (MFB-2432), so a second phone's on-ramp on the same screen
+    would otherwise be handed the first phone's conversation and interleave two
+    people's texts in one transcript. The on-ramp has to decide that case explicitly.
+
+    The screen is `conversation.screen_uuid`, not a column here: a copy could drift
+    from the conversation the replies are actually built from.
+
+    Status reuses `AssistantConversationStatus`: a binding's lifecycle is its SMS
+    conversation's (`closed` when superseded, `expired` after the quiet interval).
     """
 
-    phone_hash = models.CharField(max_length=64, db_index=True)
-    # Plain column, not a FK to Screen, for the same reason as on AssistantConversation:
-    # Screen.uuid has no unique constraint.
-    screen_uuid = models.UUIDField(db_index=True)
+    phone = models.ForeignKey(BenjiSmsPhone, related_name="bindings", on_delete=models.PROTECT)
     # A real FK, unlike AssistantConversation's code string: benefits-api writes these
     # rows, and every send needs the WhiteLabel for the benji_sms flag check.
     white_label = models.ForeignKey(WhiteLabel, related_name="benji_sms_bindings", on_delete=models.PROTECT)
@@ -1460,47 +1497,45 @@ class BenjiSmsBinding(models.Model):
         related_name="sms_bindings",
         on_delete=models.CASCADE,
     )
-    # --- consent (decision 4). The User's TCPA columns are neither read nor written. ---
+    # --- consent (decision 4). The User's TCPA columns are neither read nor written.
+    # Revocation is per phone: BenjiSmsPhone.revoked_at. ---
     consented_at = models.DateTimeField()
     # The consent sentence's translation label plus a revision, so the exact words
     # consented to can be reproduced later.
     consent_version = models.CharField(max_length=128)
-    # Set by STOP, or by a revocation in any wording, on every binding for the hash.
-    # START clears it on the newest binding if its conversation has not expired. Every
-    # send checks it.
-    revoked_at = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
         max_length=16,
-        choices=BenjiSmsBindingStatus.choices,
-        default=BenjiSmsBindingStatus.ACTIVE,
+        choices=AssistantConversationStatus.choices,
+        default=AssistantConversationStatus.ACTIVE,
     )
-    # Shared-phone guard: while in the future, inbound texts get the fixed "linked to
-    # more than one set of results" reply and no model turn. The nightly sweep clears
-    # marks past the window.
-    shared_until = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
-    # What expiry is measured from. NULL until the first reply after the on-ramp text.
+    # What expiry is measured from, falling back to created_at. NULL until the first
+    # reply after the on-ramp text.
     last_inbound_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         constraints = [
-            # Inbound routing resolves a hash to exactly one binding. Two on-ramps racing
-            # for one phone would otherwise leave two active rows and an arbitrary pick.
+            # Inbound routing resolves a phone to exactly one binding. Two on-ramps
+            # racing for one phone would otherwise leave two active rows.
             models.UniqueConstraint(
-                fields=["phone_hash"],
-                condition=models.Q(status="active"),
+                fields=["phone"],
+                condition=models.Q(status=AssistantConversationStatus.ACTIVE),
                 name="benji_sms_one_active_binding_per_phone",
+            ),
+            models.UniqueConstraint(
+                fields=["conversation"],
+                condition=models.Q(status=AssistantConversationStatus.ACTIVE),
+                name="benji_sms_one_active_binding_per_conversation",
             ),
             # A new table, so unlike AssistantConversation.status this can be enforced.
             models.CheckConstraint(
-                check=models.Q(status__in=["active", "closed", "expired"]),
+                check=models.Q(status__in=AssistantConversationStatus.values),
                 name="benji_sms_binding_status_valid",
             ),
         ]
 
     def __str__(self) -> str:
-        # No hash: __str__ ends up in admin breadcrumbs, logs and error pages.
-        return f"Benji SMS binding {self.pk} (screen {self.screen_uuid}, {self.status})"
+        return f"Benji SMS binding {self.pk} ({self.status})"
 
 
 class BenjiSmsDeliveryKind(models.TextChoices):
@@ -1515,11 +1550,19 @@ class BenjiSmsDeliveryKind(models.TextChoices):
     FIXED = "fixed", "Fixed reply"
 
 
+# Kinds that answer the person in a conversation. They need a binding: it is what
+# every send checks for revocation, and what per-phone caps and audits count by.
+_CONVERSATION_KINDS = [BenjiSmsDeliveryKind.REPLY, BenjiSmsDeliveryKind.REMAINDER, BenjiSmsDeliveryKind.DISCLOSURE]
+# Kinds that carry model-written text. They need their message.
+_MODEL_KINDS = [BenjiSmsDeliveryKind.REPLY, BenjiSmsDeliveryKind.REMAINDER]
+
+
 class BenjiSmsDeliveryStatus(models.TextChoices):
     """Twilio's message statuses, as its status callback reports them.
 
     Not a check constraint: Twilio can add a status, and a callback carrying one should
-    be recorded rather than rejected.
+    be recorded rather than rejected. The column is wider than the longest known value
+    (`partially_delivered`, 19) for the same reason.
     """
 
     ACCEPTED = "accepted", "Accepted"
@@ -1528,10 +1571,13 @@ class BenjiSmsDeliveryStatus(models.TextChoices):
     SENDING = "sending", "Sending"
     SENT = "sent", "Sent"
     DELIVERED = "delivered", "Delivered"
+    PARTIALLY_DELIVERED = "partially_delivered", "Partially delivered"
     UNDELIVERED = "undelivered", "Undelivered"
     FAILED = "failed", "Failed"
     READ = "read", "Read"
     CANCELED = "canceled", "Canceled"
+    RECEIVING = "receiving", "Receiving"
+    RECEIVED = "received", "Received"
 
 
 class BenjiSmsDelivery(models.Model):
@@ -1554,8 +1600,8 @@ class BenjiSmsDelivery(models.Model):
         blank=True,
         null=True,
     )
-    # Set for every send that belongs to a conversation. NULL only for fixed replies to
-    # a number with no binding (stranger) and the shared-phone on-ramp text.
+    # Required for replies, remainders and the disclosure. NULL only for an on-ramp text
+    # that opened no binding (shared phone) and fixed replies to a number with none.
     binding = models.ForeignKey(
         BenjiSmsBinding,
         related_name="deliveries",
@@ -1565,11 +1611,11 @@ class BenjiSmsDelivery(models.Model):
     )
     # The inbound MessageSid this send answers; NULL for the on-ramp text. Not unique:
     # one inbound can produce the disclosure and the reply.
-    inbound_sid = models.CharField(max_length=34, blank=True, null=True, db_index=True)
-    # Unique, because the status callback finds its row by it.
-    outbound_sid = models.CharField(max_length=34, blank=True, null=True, unique=True)
+    inbound_sid = models.CharField(max_length=34, blank=True, null=True)
+    # Unique (Meta), because the status callback finds its row by it.
+    outbound_sid = models.CharField(max_length=34, blank=True, null=True)
     delivery_status = models.CharField(
-        max_length=16,
+        max_length=32,
         choices=BenjiSmsDeliveryStatus.choices,
         blank=True,
         null=True,
@@ -1585,18 +1631,27 @@ class BenjiSmsDelivery(models.Model):
     status_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
+        # Indexes and uniqueness declared here, not on the fields: the field forms add a
+        # varchar_pattern_ops index on Postgres that nothing runs a LIKE against.
         constraints = [
+            # NULLs are distinct, so unsent rows do not collide.
+            models.UniqueConstraint(fields=["outbound_sid"], name="benji_sms_delivery_outbound_sid_unique"),
             models.CheckConstraint(
-                check=models.Q(kind__in=["reply", "remainder", "onramp", "disclosure", "fixed"]),
+                check=models.Q(kind__in=BenjiSmsDeliveryKind.values),
                 name="benji_sms_delivery_kind_valid",
             ),
             # A reply without its message could not be traced back to what was said.
             models.CheckConstraint(
-                check=~models.Q(kind__in=["reply", "remainder"]) | models.Q(message__isnull=False),
+                check=~models.Q(kind__in=_MODEL_KINDS) | models.Q(message__isnull=False),
                 name="benji_sms_delivery_reply_has_message",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(kind__in=_CONVERSATION_KINDS) | models.Q(binding__isnull=False),
+                name="benji_sms_delivery_conversation_kind_has_binding",
             ),
         ]
         indexes = [
+            models.Index(fields=["inbound_sid"], name="benji_sms_delivery_inbound_idx"),
             # "Sent, no status after N minutes" and daily segment spend both scan by it.
             models.Index(fields=["sent_at"], name="benji_sms_delivery_sent_idx"),
         ]
@@ -1608,6 +1663,9 @@ class BenjiSmsDelivery(models.Model):
 class BenjiSmsStrangerReply(models.Model):
     """When a number with no binding last got the fixed stranger reply.
 
+    Kept apart from `BenjiSmsPhone` on purpose: these rows are purged after a day, and
+    a texter who never used the on-ramp should leave no lasting trace.
+
     At most one reply per number per day, remembered in Postgres so it holds under a
     Redis outage (privacy companion §9). One row per hash, so two webhooks racing for
     one number cannot both claim the reply: the reply path inserts, or moves an
@@ -1615,8 +1673,17 @@ class BenjiSmsStrangerReply(models.Model):
     purges rows older than a day.
     """
 
-    phone_hash = models.CharField(max_length=64, unique=True)
-    replied_at = models.DateTimeField(default=timezone.now, db_index=True)
+    phone_hash = models.CharField(max_length=64)
+    replied_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["phone_hash"], name="benji_sms_stranger_hash_unique"),
+        ]
+        indexes = [
+            # The nightly purge.
+            models.Index(fields=["replied_at"], name="benji_sms_stranger_replied_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"Benji SMS stranger reply {self.pk}"

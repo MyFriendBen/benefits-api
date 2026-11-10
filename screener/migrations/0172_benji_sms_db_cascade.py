@@ -12,7 +12,9 @@
 # schema editor's deferred SQL after every operation in the migration has run, so a
 # lookup inside 0171 would find no constraint to alter.
 #
-# The WhiteLabel foreign key stays NO ACTION, matching on_delete=PROTECT.
+# The binding's WhiteLabel and BenjiSmsPhone foreign keys stay NO ACTION, matching
+# on_delete=PROTECT: a phone row cannot be deleted while its bindings, and so its
+# conversations, still exist.
 
 from django.db import migrations
 

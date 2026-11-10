@@ -46,12 +46,17 @@ def normalize(number: str) -> str:
     Checks that the number is a possible length for its country, not that it is
     assigned: that is the on-ramp's job, and a fixed reply to an unassigned number is
     harmless. Raises ``InvalidPhoneNumber``.
+
+    A number that is only possible as a local number is refused: a 7-digit US number
+    with no area code ("555-0100") would otherwise format as "+15550100", and every
+    such number from every area code would share one hash. ``is_possible_number``
+    accepts those, so the reason is checked exactly.
     """
     try:
         parsed = phonenumbers.parse(number, DEFAULT_REGION)
     except phonenumbers.NumberParseException:
         raise InvalidPhoneNumber() from None
-    if not phonenumbers.is_possible_number(parsed):
+    if phonenumbers.is_possible_number_with_reason(parsed) != phonenumbers.ValidationResult.IS_POSSIBLE:
         raise InvalidPhoneNumber()
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
