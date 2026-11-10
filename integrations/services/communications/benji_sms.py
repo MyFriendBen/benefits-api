@@ -14,18 +14,27 @@ functions, and both refuse unless every gate that applies holds:
 ``send_fixed_reply`` is for fixed replies that belong to no white label (stranger,
 expired, shared). Same gates minus the flag.
 
-Nothing else in the codebase should create a Twilio client for Benji. The Save My
-Results text in ``message.py`` is a separate, older path and is not gated here.
+Nothing else should send Benji texts or call ``twilio_client()``. The Save My Results
+text in ``message.py`` is a separate path with its own client and is not gated here.
+
+Failures raise one of two errors, both ``BenjiSmsError``, so a caller can tell
+whether retrying is safe:
+
+``BenjiSmsSendError``
+    Not sent: Twilio rejected the request, or it never reached Twilio. Safe to retry.
+``BenjiSmsDeliveryUnknown``
+    The request may have reached Twilio (read timeout, connection dropped after
+    sending). Retrying can text the person twice; record it and do not resend.
 
 Nothing here logs or raises the phone number or the body: refusals log the reason
-and white label code, and Twilio errors are re-raised as ``BenjiSmsSendError``
-carrying only Twilio's status and error code.
+and white label code, and both errors carry only Twilio's status and error code or
+the exception type, with the original chain suppressed.
 """
 
 import logging
 from typing import Optional
 
-from decouple import config
+import requests
 from django.conf import settings
 from twilio.base.exceptions import TwilioRestException
 
@@ -40,22 +49,30 @@ SWITCH = "BENJI_SMS_OUTBOUND_ENABLED"
 _TRUE_VALUES = frozenset({"true", "1", "yes", "on"})
 
 
-class BenjiSmsSendError(Exception):
-    """Twilio refused a send. Carries Twilio's status and error code, never the number."""
+class BenjiSmsError(Exception):
+    """A Benji SMS send failed. Never carries the number or the body."""
+
+
+class BenjiSmsSendError(BenjiSmsError):
+    """Not sent. Carries Twilio's status and error code when Twilio answered."""
 
     def __init__(self, status: Optional[int], code: Optional[int]) -> None:
         self.status = status
         self.code = code
-        super().__init__(f"Twilio refused a Benji SMS send: status={status} code={code}")
+        super().__init__(f"Benji SMS not sent: status={status} code={code}")
+
+
+class BenjiSmsDeliveryUnknown(BenjiSmsError):
+    """The request may have reached Twilio, so the text may have gone out. Do not resend."""
+
+    def __init__(self, cause: str) -> None:
+        self.cause = cause
+        super().__init__(f"Benji SMS delivery unknown: {cause}")
 
 
 def outbound_enabled() -> bool:
-    """The global kill switch. Missing or unrecognised means off.
-
-    Read on every call rather than at import, so a test or a config change never
-    sees a stale value.
-    """
-    raw = config(SWITCH, default="")
+    """The global kill switch. Missing or unrecognised means off."""
+    raw = getattr(settings, SWITCH, "")
     return str(raw).strip().lower() in _TRUE_VALUES
 
 
@@ -142,4 +159,12 @@ def _send(
         # Twilio's message can name the number ("The 'To' number +1... is not valid").
         # `from None` suppresses the chained original, which Sentry honours.
         raise BenjiSmsSendError(e.status, e.code) from None
+    except requests.ConnectTimeout:
+        # Never connected, so nothing was sent. Checked before ConnectionError,
+        # which it subclasses.
+        raise BenjiSmsSendError(None, None) from None
+    except requests.RequestException as e:
+        # Read timeout, or the connection dropped after the request went out: Twilio
+        # may have queued the message.
+        raise BenjiSmsDeliveryUnknown(type(e).__name__) from None
     return message.sid

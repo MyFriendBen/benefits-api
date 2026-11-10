@@ -25,6 +25,8 @@ LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0"})
 # 555-01xx numbers are reserved for fiction, so a fake sender is never a real person.
 DEFAULT_FROM = "+15555550100"
 DEFAULT_TO = "+15555550199"
+# Long enough for a Celery-eager turn that calls ai-service inline.
+POST_TIMEOUT_SECONDS = 60
 
 
 def build_params(body: str, from_: str, to: str, sid: str, num_media: int) -> dict[str, str]:
@@ -91,7 +93,13 @@ class Command(BaseCommand):
 
     def _post(self, url: str, params: dict[str, str], signature: str) -> requests.Response:
         try:
-            return requests.post(url, data=params, headers={"X-Twilio-Signature": signature}, timeout=60)
+            return requests.post(
+                url, data=params, headers={"X-Twilio-Signature": signature}, timeout=POST_TIMEOUT_SECONDS
+            )
+        except requests.ConnectTimeout as e:
+            raise CommandError(f"Could not reach {url}: is the dev server running?") from e
+        except requests.Timeout as e:
+            raise CommandError(f"{url} took longer than {POST_TIMEOUT_SECONDS} s to answer.") from e
         except requests.ConnectionError as e:
             raise CommandError(f"Could not reach {url}: is the dev server running?") from e
 

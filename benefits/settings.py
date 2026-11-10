@@ -449,11 +449,15 @@ UNFOLD = {
 REWIRING_AMERICA_API_KEY = config("REWIRING_AMERICA_API_KEY", default="")
 GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
 
-# Twilio, shared by Save My Results texts (integrations.services.communications.message)
-# and Benji SMS (integrations.services.communications.benji_sms).
+# Twilio for Benji SMS (integrations.services.communications.benji_sms). Save My Results
+# (integrations.services.communications.message) still reads the same env vars itself.
 TWILIO_SID = config("TWILIO_SID", default="")
 TWILIO_TOKEN = config("TWILIO_TOKEN", default="")
 TWILIO_PHONE_NUMBER = config("TWILIO_PHONE_NUMBER", default="")
+
+# Benji SMS kill switch (MFB-2433), raw. benji_sms.outbound_enabled() parses it
+# fail-closed: only true/1/yes/on means on; missing or anything else is off.
+BENJI_SMS_OUTBOUND_ENABLED = config("BENJI_SMS_OUTBOUND_ENABLED", default="")
 
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields

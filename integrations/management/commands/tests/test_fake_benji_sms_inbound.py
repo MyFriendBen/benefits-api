@@ -79,6 +79,11 @@ class FakeBenjiSmsInboundTest(SimpleTestCase):
             call_command("fake_benji_sms_inbound", "hi", stdout=StringIO())
         self.post.assert_not_called()
 
+    def test_server_too_slow(self) -> None:
+        self.post.side_effect = requests.ReadTimeout()
+        with self.assertRaisesMessage(CommandError, "took longer"):
+            self.run_cmd("hi")
+
     def test_server_not_running(self) -> None:
         self.post.side_effect = requests.ConnectionError()
         with self.assertRaisesMessage(CommandError, "dev server"):

@@ -8,6 +8,8 @@ from contextlib import contextmanager
 from typing import Iterator, Optional
 from unittest.mock import MagicMock, patch
 
+import requests
+from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from twilio.base.exceptions import TwilioRestException
@@ -23,18 +25,12 @@ TWILIO = {"TWILIO_SID": "AC" + "0" * 32, "TWILIO_TOKEN": "token", "TWILIO_PHONE_
 
 @contextmanager
 def switch(value: object = _MISSING) -> Iterator[None]:
-    """Set BENJI_SMS_OUTBOUND_ENABLED as decouple would see it; _MISSING means unset.
-
-    Patches the module's config lookup rather than os.environ, so a developer's .env
-    can never leak a value into these tests.
-    """
-
-    def fake_config(key: str, default: object = "", **kwargs: object) -> object:
-        if key == benji_sms.SWITCH:
-            return default if value is _MISSING else value
-        return default
-
-    with patch.object(benji_sms, "config", side_effect=fake_config):
+    """Set the BENJI_SMS_OUTBOUND_ENABLED setting; _MISSING removes it entirely."""
+    with override_settings():
+        if value is _MISSING:
+            del settings.BENJI_SMS_OUTBOUND_ENABLED
+        else:
+            setattr(settings, benji_sms.SWITCH, value)
         yield
 
 
@@ -207,3 +203,23 @@ class SendTest(TestCase):
         # Chain suppressed, so error reporters don't pick up Twilio's message.
         self.assertIsNone(err.__cause__)
         self.assertTrue(err.__suppress_context__)
+
+    def test_connect_timeout_is_not_sent(self) -> None:
+        self.create.side_effect = requests.ConnectTimeout("api.twilio.com")
+        with switch("true"), self.assertRaises(benji_sms.BenjiSmsSendError) as ctx:
+            self.fixed_reply()
+        self.assertTrue(ctx.exception.__suppress_context__)
+
+    def test_read_timeout_and_dropped_connection_are_delivery_unknown(self) -> None:
+        for exc in [requests.ReadTimeout("slow"), requests.ConnectionError("reset")]:
+            with self.subTest(exc=type(exc).__name__), switch("true"):
+                self.create.side_effect = exc
+                with self.assertRaises(benji_sms.BenjiSmsDeliveryUnknown) as ctx:
+                    self.screen_send(make_white_label(flag=True))
+                err = ctx.exception
+                self.assertEqual(err.cause, type(exc).__name__)
+                self.assertTrue(err.__suppress_context__)
+                # Not a BenjiSmsSendError, so `except BenjiSmsSendError: retry` can't resend it.
+                self.assertNotIsInstance(err, benji_sms.BenjiSmsSendError)
+                self.assertIsInstance(err, benji_sms.BenjiSmsError)
+                WhiteLabel.objects.filter(code="test_sms").delete()

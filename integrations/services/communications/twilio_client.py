@@ -1,4 +1,7 @@
-"""The Twilio client every SMS sender in benefits-api uses.
+"""The Twilio client Benji SMS sends through.
+
+Save My Results (``message.py``) keeps its own client on purpose, so Benji's dark
+launch leaves that live path's behaviour, including its lack of a timeout, unchanged.
 
 One client per thread, so each thread reuses its own HTTP session and connections
 (a ``requests.Session`` is not guaranteed thread-safe), rebuilt if the credentials

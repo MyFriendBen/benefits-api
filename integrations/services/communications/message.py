@@ -5,15 +5,17 @@ import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 from decouple import config
 from django.conf import settings
+from twilio.rest import Client
 from django.utils import timezone
 from configuration.white_labels import white_label_config
-from .twilio_client import twilio_client
 
 
 class MessageUser:
     front_end_domain: str = str(config("FRONTEND_DOMAIN", default="http://localhost:3000"))
 
-    cell_from_phone_number: str = str(settings.TWILIO_PHONE_NUMBER)
+    cell_account_sid: str = str(config("TWILIO_SID", default=""))
+    cell_auth_token: str = str(config("TWILIO_TOKEN", default=""))
+    cell_from_phone_number: str = str(config("TWILIO_PHONE_NUMBER", default=""))
 
     email_from: str = str(config("EMAIL_FROM", default=""))
     email_api_key: str = str(config("SENDGRID", default=""))
@@ -102,7 +104,7 @@ class MessageUser:
         return self._get_text("from_name")
 
     def _cell_client(self):
-        return twilio_client()
+        return Client(self.cell_account_sid, self.cell_auth_token)
 
     def _generate_link(self):
         return f"{self.front_end_domain}/{self.screen.white_label.code}/{self.screen.uuid}/results/benefits"
