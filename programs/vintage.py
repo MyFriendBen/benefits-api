@@ -231,6 +231,13 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="coverage year; NJ's 2026 income standards chart (Medicaid Communication 26-03) uses the 2026 guideline",
         source="program-ops cross_white_label/medicaid/nj/medicaid_nj_spec.md",
     ),
+    ("nj", "nj_aca_ptc"): Vintage(
+        edition="2026",
+        basis=Basis.TABLE_EDITION,
+        status=Status.CONFIRMED,
+        rule="the guideline in effect when open enrollment for coverage year 2027 opened on November 1, 2026: the 2026 guideline",
+        source="program-ops cross_white_label/aca/base/aca_base_spec.md (income_fpl_band)",
+    ),
     ("nj", "nj_cover_all_kids"): Vintage(
         edition="2026",
         basis=Basis.TABLE_EDITION,
