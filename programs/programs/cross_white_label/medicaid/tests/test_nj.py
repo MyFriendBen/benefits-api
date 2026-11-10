@@ -13,6 +13,8 @@ so a cassette refresh shows which upstream fix has landed. Nothing here works ar
   spending groups (MACStats Exhibit 22), so every value test is a known discrepancy.
 """
 
+from typing import Callable
+
 import pytest
 
 import programs.framework.pe_dependencies as dependency
@@ -137,10 +139,12 @@ KNOWN_ELIGIBILITY_DISCREPANCIES: dict[int, str] = {
 
 
 class TestNjMedicaidClass(SimpleTestCase):
-    def test_program_code(self):
+    """What the NJ class adds to the federal base, and that it adds nothing else."""
+
+    def test_program_code(self) -> None:
         self.assertEqual(NjMedicaid.program_code, "nj_medicaid")
 
-    def test_is_the_federal_base_with_nj_location_inputs(self):
+    def test_is_the_federal_base_with_nj_location_inputs(self) -> None:
         self.assertTrue(issubclass(NjMedicaid, FederalMedicaid))
         self.assertFalse(NjMedicaid._abstract)
         self.assertEqual(
@@ -152,7 +156,7 @@ class TestNjMedicaidClass(SimpleTestCase):
             ],
         )
 
-    def test_layers_nothing_on_policyengine(self):
+    def test_layers_nothing_on_policyengine(self) -> None:
         self.assertIs(NjMedicaid.member_value, FederalMedicaid.member_value)
         self.assertEqual(NjMedicaid.pe_outputs, [dependency.member.Medicaid])
 
@@ -197,6 +201,7 @@ class TestNjMedicaidScenarios(PeIntegrationTestCase):
         return {me.member.id: me.value for me in eligibility.eligible_members}
 
     def check_eligibility(self, number: int) -> None:
+        """Assert the members PolicyEngine finds eligible are exactly the ones the scenario expects."""
         values = self.member_values(number)
         eligible = {member_id for member_id, value in values.items() if value > 0}
         self.assertEqual(
@@ -204,22 +209,27 @@ class TestNjMedicaidScenarios(PeIntegrationTestCase):
         )
 
     def check_value(self, number: int) -> None:
+        """Assert each expected member's annual value is the spec's §7 monthly figure × 12."""
         values = self.member_values(number)
         expected = {member_id: monthly * 12 for member_id, monthly in EXPECTED[number].items()}
         actual = {member_id: round(values.get(member_id, 0)) for member_id in expected}
         self.assertEqual(actual, expected, next(s for s in SCENARIOS if s["number"] == number)["expected"])
 
 
-def _eligibility_test(number: int):
-    def test(self):
+def _eligibility_test(number: int) -> Callable[[TestNjMedicaidScenarios], None]:
+    """One scenario's eligibility test, a strict xfail where PolicyEngine is known to answer differently."""
+
+    def test(self: TestNjMedicaidScenarios) -> None:
         self.check_eligibility(number)
 
     reason = KNOWN_ELIGIBILITY_DISCREPANCIES.get(number)
     return pytest.mark.xfail(strict=True, reason=reason)(test) if reason else test
 
 
-def _value_test(number: int):
-    def test(self):
+def _value_test(number: int) -> Callable[[TestNjMedicaidScenarios], None]:
+    """One scenario's value test, a strict xfail while PolicyEngine values Medicaid by its own method."""
+
+    def test(self: TestNjMedicaidScenarios) -> None:
         self.check_value(number)
 
     return pytest.mark.xfail(strict=True, reason=_VALUE_METHOD)(test)
