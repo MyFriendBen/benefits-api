@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.urls import reverse
 from authentication.admin import SecureAdmin
-from .models import AssistantConversation, AssistantMessage, WhiteLabel
+from .models import (
+    AssistantConversation,
+    AssistantMessage,
+    BenjiSmsBinding,
+    BenjiSmsDelivery,
+    BenjiSmsStrangerReply,
+    WhiteLabel,
+)
 
 
 class WhiteLabelAdmin(SecureAdmin):
@@ -213,3 +220,99 @@ class AssistantConversationAdmin(SecureAdmin):
 
 
 admin.site.register(AssistantConversation, AssistantConversationAdmin)
+
+
+class SuperuserReadOnlyAdmin(SecureAdmin):
+    """Read-only and superuser-only, stated outright rather than inherited.
+
+    For tables tenant staff must not see at all. SecureAdmin's white-label scoping is
+    the wrong tool for them: it would show `BenjiSmsBinding` (which has a real
+    `white_label` FK) to that white label's staff, and for models without one it falls
+    back to `always_can_view`. Every permission is answered here instead.
+    """
+
+    always_can_view = False
+
+    def get_queryset(self, request):
+        if not self._is_superuser(request):
+            return self.model._default_manager.none()
+        return super().get_queryset(request)
+
+    def has_module_permission(self, request):
+        return self._is_superuser(request)
+
+    def has_view_permission(self, request, obj=None):
+        return self._is_superuser(request)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# Benji SMS (MFB-2435). benefits-api's SMS code is the only writer of these tables, and
+# a hand-edit would desynchronize routing and consent from what was actually texted.
+#
+# The phone hash is shown only as an opaque value for support lookups, and search is
+# by hash only. Searching by phone number would be convenient, but it would put the
+# number in the admin URL's query string, and so in server logs and browser history.
+
+
+class BenjiSmsBindingAdmin(SuperuserReadOnlyAdmin):
+    list_display = ("id", "screen_uuid", "white_label", "status", "revoked_at", "shared_until", "created_at")
+    list_filter = ("status", "white_label")
+    # The uuids are searched as text, as on AssistantConversationAdmin: an exact lookup
+    # would raise on any query that is not a valid uuid, a hash included.
+    search_fields = ("=phone_hash", "screen_uuid", "conversation__conversation_id")
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "phone_hash",
+        "screen_uuid",
+        "white_label",
+        "conversation",
+        "status",
+        "consented_at",
+        "consent_version",
+        "revoked_at",
+        "shared_until",
+        "created_at",
+        "last_inbound_at",
+    )
+    list_select_related = ("white_label",)
+
+
+class BenjiSmsDeliveryAdmin(SuperuserReadOnlyAdmin):
+    list_display = ("id", "kind", "delivery_status", "delivery_error_code", "segments", "sent_at", "status_at")
+    list_filter = ("kind", "delivery_status")
+    search_fields = ("=inbound_sid", "=outbound_sid")
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "kind",
+        "message",
+        "binding",
+        "inbound_sid",
+        "outbound_sid",
+        "delivery_status",
+        "delivery_error_code",
+        "segments",
+        "remainder_text",
+        "created_at",
+        "sent_at",
+        "status_at",
+    )
+
+
+class BenjiSmsStrangerReplyAdmin(SuperuserReadOnlyAdmin):
+    list_display = ("id", "replied_at")
+    search_fields = ("=phone_hash",)
+    ordering = ("-replied_at",)
+    readonly_fields = ("phone_hash", "replied_at")
+
+
+admin.site.register(BenjiSmsBinding, BenjiSmsBindingAdmin)
+admin.site.register(BenjiSmsDelivery, BenjiSmsDeliveryAdmin)
+admin.site.register(BenjiSmsStrangerReply, BenjiSmsStrangerReplyAdmin)
