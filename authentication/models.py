@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
@@ -65,8 +66,12 @@ class User(AbstractUser):
         self.email = None
         self.save()
 
-    def save(self, **kwargs):
+    def save(self, **kwargs: Any) -> None:
+        # email and cell are unique but optional, so a missing value must be stored as NULL:
+        # only one row could hold "". AbstractUser.clean() turns a missing email into ""
+        # (normalize_email), which made every admin-created user without an email collide.
         self.cell = self.cell or None
+        self.email = self.email or None
         super().save(**kwargs)
 
     def __str__(self):
