@@ -159,8 +159,8 @@ class AssistantConversationAdmin(SecureAdmin):
 
     always_can_view = False
     inlines = (AssistantMessageInline,)
-    list_display = ("conversation_id", "screen_uuid", "white_label", "status", "mode", "updated_at")
-    list_filter = ("white_label", "status", "mode")
+    list_display = ("conversation_id", "screen_uuid", "white_label", "channel", "status", "mode", "updated_at")
+    list_filter = ("white_label", "channel", "status", "mode")
     search_fields = ("conversation_id", "screen_uuid")
     ordering = ("-updated_at",)
     readonly_fields = (
@@ -170,6 +170,7 @@ class AssistantConversationAdmin(SecureAdmin):
         "locale",
         "mode",
         "prompt_version",
+        "channel",
         "status",
         "context",
         "created_at",
