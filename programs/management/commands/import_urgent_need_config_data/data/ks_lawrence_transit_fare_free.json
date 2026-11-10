@@ -5,7 +5,7 @@
   "need": {
     "external_name": "ks_lawrence_transit_fare_free",
     "category_type": {
-      "external_name": "ks_transportation"
+      "external_name": "transportation"
     },
     "type_short": [
       "transportation"

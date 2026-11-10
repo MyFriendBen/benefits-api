@@ -3,9 +3,7 @@
   "need": {
     "external_name": "tx_dallas_eviction_advocacy",
     "category_type": {
-      "external_name": "tx_civil_legal_needs",
-      "name": "Civil Legal Needs",
-      "icon": "legal_services"
+      "external_name": "civil_legal_needs"
     },
     "type_short": ["legal services"],
     "translations": {

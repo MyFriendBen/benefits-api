@@ -5,9 +5,7 @@
   "need": {
     "external_name": "mo_harvesters",
     "category_type": {
-      "external_name": "mo_food_or_groceries",
-      "name": "Food or groceries",
-      "icon": "food_groceries"
+      "external_name": "food_or_groceries"
     },
     "type_short": [
       "food"
