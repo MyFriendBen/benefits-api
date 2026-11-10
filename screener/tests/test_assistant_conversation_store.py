@@ -254,21 +254,29 @@ class TestChannelDatabaseDefault(TestCase):
 
 
 class TestRollbackGuard(TestCase):
-    """Reversing 0170 is refused, with instructions, while channels coexist on a screen.
+    """Reversing 0170 is refused, with instructions, while a non-web conversation is active.
 
     Without the guard the reverse dies on a duplicate key while re-creating the old
-    one-active-per-screen index, partway through a rollback.
+    one-active-per-screen index, or, on a screen with only an SMS conversation, succeeds
+    and lets the previous ai-service resume the texts as the widget's conversation.
     """
 
     def _guard(self) -> None:
-        MIGRATION_0170._refuse_rollback_while_channels_coexist(None, connection.schema_editor())
+        MIGRATION_0170._refuse_rollback_while_non_web_is_active(None, connection.schema_editor())
 
     def test_rollback_is_refused_while_a_screen_has_web_and_sms_active(self):
         screen_uuid = uuid.uuid4()
         make_conversation(screen_uuid=screen_uuid, channel="web")
-        make_conversation(screen_uuid=screen_uuid, channel="sms")
+        sms = make_conversation(screen_uuid=screen_uuid, channel="sms")
 
-        with self.assertRaisesMessage(RuntimeError, str(screen_uuid)):
+        with self.assertRaisesMessage(RuntimeError, str(sms.conversation_id)):
+            self._guard()
+
+    def test_rollback_is_refused_for_an_active_sms_conversation_on_its_own(self):
+        """The old index would build, but the old ai-service would show the texts in the widget."""
+        make_conversation(channel="sms")
+
+        with self.assertRaises(RuntimeError):
             self._guard()
 
     def test_rollback_is_allowed_once_the_sms_conversation_is_closed(self):
@@ -277,6 +285,51 @@ class TestRollbackGuard(TestCase):
         make_conversation(screen_uuid=screen_uuid, channel="sms", status="closed")
 
         self._guard()
+
+
+class TestChannelSurvivesRollback(TestCase):
+    """Reversing 0170 drops `channel`; re-applying it must not relabel texts as web.
+
+    The column itself can't be dropped and re-added inside a test, so this runs the
+    two statements that carry the value across: the stash the reverse runs before the
+    column goes, and the restore the forward runs after it is back (when every row has
+    just been backfilled with the default, simulated here by setting it to 'web').
+    """
+
+    def _run(self, sql: str) -> None:
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+
+    def test_a_closed_sms_conversation_is_still_sms_after_rollback_and_reapply(self):
+        sms = make_conversation(channel="sms", status="closed")
+        web = make_conversation(channel="web")
+
+        self._run(MIGRATION_0170._STASH_CHANNEL)
+        AssistantConversation.objects.filter(pk=sms.pk).update(channel="web")  # the re-applied default
+        self._run(MIGRATION_0170._RESTORE_CHANNEL)
+
+        sms.refresh_from_db()
+        web.refresh_from_db()
+        self.assertEqual(sms.channel, "sms")
+        self.assertEqual(web.channel, "web")
+
+    def test_the_stash_leaves_no_trace_in_the_context(self):
+        sms = make_conversation(channel="sms", status="closed")
+        original = dict(sms.context)
+
+        self._run(MIGRATION_0170._STASH_CHANNEL)
+        self._run(MIGRATION_0170._RESTORE_CHANNEL)
+
+        sms.refresh_from_db()
+        self.assertEqual(sms.context, original)
+
+    def test_the_forward_restore_is_a_no_op_on_a_first_migration(self):
+        web = make_conversation(channel="web")
+
+        self._run(MIGRATION_0170._RESTORE_CHANNEL)
+
+        web.refresh_from_db()
+        self.assertEqual(web.channel, "web")
 
 
 class TestDatabaseLevelCascade(TransactionTestCase):
