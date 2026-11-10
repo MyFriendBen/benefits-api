@@ -1,4 +1,5 @@
 from ..base import UrgentNeedFunction
+from programs.programs.shared.program_results import eligible_in_results
 
 
 class MassHealthApplication(UrgentNeedFunction):
@@ -11,11 +12,4 @@ class MassHealthApplication(UrgentNeedFunction):
     dependencies = []
 
     def eligible(self) -> bool:
-
-        # Check eligibility for MassHealth
-        is_masshealth_eligible = any(
-            program.get("name_abbreviated") == "ma_mass_health" and program.get("eligible")
-            for program in (self.data or [])
-        )
-
-        return is_masshealth_eligible
+        return eligible_in_results(self.data, "ma_mass_health")

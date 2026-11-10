@@ -1,5 +1,6 @@
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.income import fpl_income_limit
 
 
 class IlSilverAccess(ProgramCalculator):
@@ -33,7 +34,7 @@ class IlSilverAccess(ProgramCalculator):
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
         # Household income ≤ 250% FPL
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        income_limit = fpl_income_limit(self.program.year, self.screen.household_size, self.fpl_percent)
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
         # Household income must exceed the 138% FPL Medicaid threshold; if the household
