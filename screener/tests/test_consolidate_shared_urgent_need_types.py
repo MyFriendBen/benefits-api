@@ -17,7 +17,7 @@ from programs.models import UrgentNeed, UrgentNeedType
 from screener.models import WhiteLabel
 from translations.models import Translation
 
-migration = importlib.import_module("programs.migrations.0188_consolidate_shared_urgent_need_types")
+migration = importlib.import_module("programs.migrations.0207_consolidate_shared_urgent_need_types")
 
 
 def make_type(external_name: str, white_label: str, name: str) -> UrgentNeedType:

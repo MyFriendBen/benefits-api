@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('screener', '0168_household_rows_default_id_ordering'),
-        ('programs', '0186_rename_nc_nslp'),
+        ('programs', '0205_add_lawful_health_care_legal_statuses'),
     ]
 
     operations = [

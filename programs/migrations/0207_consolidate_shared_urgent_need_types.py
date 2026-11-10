@@ -330,7 +330,7 @@ def _delete_type(urgent_need_type: "UrgentNeedType") -> None:
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0187_alter_urgentneedtype_white_label"),
+        ("programs", "0206_alter_urgentneedtype_white_label"),
     ]
 
     operations = [
