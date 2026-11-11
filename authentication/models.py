@@ -66,6 +66,12 @@ class User(AbstractUser):
         self.email = None
         self.save()
 
+    def clean(self) -> None:
+        # Edit forms check uniqueness after clean() and before save(); restore NULL so a
+        # leftover email="" row can't block saving another user with no email.
+        super().clean()
+        self.email = self.email or None
+
     def save(self, **kwargs: Any) -> None:
         # email and cell are unique but optional, so a missing value must be stored as NULL:
         # only one row could hold "". AbstractUser.clean() turns a missing email into ""

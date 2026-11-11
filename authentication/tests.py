@@ -212,6 +212,26 @@ class UserAdminBlankEmailTests(TestCase):
             user.refresh_from_db()
             self.assertIsNone(user.email)
 
+    def test_editing_user_with_empty_email_when_legacy_blank_row_exists(self) -> None:
+        # Rows saved before this fix hold email="". update() skips save(), so the seed keeps "".
+        legacy = User.objects.create_user(email_or_cell="legacy@example.com")
+        User.objects.filter(pk=legacy.pk).update(email="")
+        target = User.objects.create_user(email_or_cell="target@example.com")
+
+        response = self.client.post(
+            reverse("admin:authentication_user_change", args=[target.pk]),
+            {
+                "email_or_cell": target.email_or_cell,
+                "email": "",
+                "is_active": "on",
+                "date_joined_0": "2026-01-01",
+                "date_joined_1": "00:00:00",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        target.refresh_from_db()
+        self.assertIsNone(target.email)
+
     def test_model_save_stores_blank_email_as_null(self) -> None:
         user = User(email_or_cell="direct@example.com", email="")
         user.save()
