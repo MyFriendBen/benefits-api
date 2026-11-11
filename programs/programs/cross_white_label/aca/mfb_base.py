@@ -81,8 +81,10 @@ APPLICABLE_PERCENTAGE_TABLES: dict[int, tuple[ApplicableBand, ...]] = {
 
 @dataclass(frozen=True)
 class DependentFilingFigures:
-    """A tax year's amounts for when a single dependent must file (26 U.S.C. 6012(a)(1))."""
+    """One tax year's amounts for when a single dependent must file (26 U.S.C. 6012(a)(1))."""
 
+    #: The tax year these amounts are for.
+    tax_year: int
     #: The least a dependent's standard deduction can be.
     floor: int
     #: Added to earned income for a dependent's standard deduction.
@@ -93,11 +95,9 @@ class DependentFilingFigures:
     additional: int
 
 
-#: By coverage year: Rev. Proc. 2025-32 §4.14 (2026) and Rev. Proc. 2026-35 §3.15 (2027).
-DEPENDENT_FILING_FIGURES: dict[int, DependentFilingFigures] = {
-    2026: DependentFilingFigures(floor=1_350, addon=450, basic=16_100, additional=2_050),
-    2027: DependentFilingFigures(floor=1_400, addon=500, basic=16_600, additional=2_100),
-}
+#: Rev. Proc. 2026-35 §3.15. Replace with the next Rev. Proc.'s amounts when the coverage year
+#: rolls over; until then a screen for another coverage year is reported to Sentry.
+DEPENDENT_FILING = DependentFilingFigures(tax_year=2027, floor=1_400, addon=500, basic=16_600, additional=2_100)
 DEPENDENT_SELF_EMPLOYMENT_THRESHOLD = 400
 #: Social Security enters a dependent's gross income only where half of it plus their other
 #: income exceeds this.
@@ -207,7 +207,7 @@ class MfbAca(ProgramCalculator, abstract=True):
     def dependent_must_file(self, member: HouseholdMember) -> bool:
         """
         Whether a dependent's income is high enough that they must file a return, by 26 U.S.C.
-        6012(a)(1) at the coverage year's amounts: gross income at least the basic standard
+        6012(a)(1) at ``DEPENDENT_FILING``'s amounts: gross income at least the basic standard
         deduction (plus the additional amount from 65), unearned income over the floor, or gross
         income over the dependent's standard deduction.
         """
@@ -237,16 +237,15 @@ class MfbAca(ProgramCalculator, abstract=True):
         return gross >= gross_threshold or unearned > figures.floor + extra or gross > dependent_deduction
 
     def _dependent_filing_figures(self) -> DependentFilingFigures:
+        """The current dependent filing amounts, reported when they aren't the coverage year's."""
         year = self.coverage_year()
-        if year in DEPENDENT_FILING_FIGURES:
-            return DEPENDENT_FILING_FIGURES[year]
+        if year != DEPENDENT_FILING.tax_year:
+            capture_message(
+                f"ACA reads the {DEPENDENT_FILING.tax_year} dependent filing amounts for coverage year {year}.",
+                level="warning",
+            )
 
-        latest = max(DEPENDENT_FILING_FIGURES)
-        capture_message(
-            f"No ACA dependent filing figures for coverage year {year}; using {latest}.",
-            level="warning",
-        )
-        return DEPENDENT_FILING_FIGURES[latest]
+        return DEPENDENT_FILING
 
     def poverty_line(self) -> int:
         """

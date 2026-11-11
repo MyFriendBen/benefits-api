@@ -149,17 +149,7 @@ class TestHouseholdIncome(MfbAcaTestCase):
         self.assertEqual(under.household_income(), 30_000)
         self.assertEqual(at.household_income(), 48_700)
 
-    def test_2026_coverage_reads_the_2026_figures(self) -> None:
-        with patch.object(Screen, "get_reference_date", lambda _self: date(2026, 6, 1)):
-            under, _ = self.household(yearly_income=16_099)
-            at, _ = self.household(yearly_income=16_100)
-            unearned, _ = self.household(yearly_income=1_351, income_type="investment")
-
-            self.assertEqual(under.household_income(), 30_000)
-            self.assertEqual(at.household_income(), 46_100)
-            self.assertEqual(unearned.household_income(), 31_351)
-
-    def test_a_coverage_year_with_no_figures_uses_the_latest_and_reports_it(self) -> None:
+    def test_another_coverage_year_reads_the_current_amounts_and_reports_it(self) -> None:
         with patch.object(Screen, "get_reference_date", lambda _self: date(2027, 11, 1)):
             aca, _ = self.household(yearly_income=16_600)
 
@@ -169,6 +159,14 @@ class TestHouseholdIncome(MfbAcaTestCase):
         self.assertEqual(income, 46_600)
         report.assert_called_once()
         self.assertIn("coverage year 2028", report.call_args.args[0])
+
+    def test_the_current_coverage_year_is_not_reported(self) -> None:
+        aca, _ = self.household(yearly_income=16_600)
+
+        with patch("programs.programs.cross_white_label.aca.mfb_base.capture_message") as report:
+            aca.household_income()
+
+        report.assert_not_called()
 
     def test_social_security_counts_toward_filing_only_above_the_base_amount(self):
         aca, child = self.household(yearly_income=30_000, income_type="sSSurvivor")
