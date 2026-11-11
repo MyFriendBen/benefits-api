@@ -20,11 +20,10 @@ interactions:
       "medicaid": {"2026": null}, "medicaid_category": {"2026": null}}}, "tax_units":
       {"main_tax_unit": {"members": ["1", "2"]}}, "families": {"family": {"members":
       ["1", "2"]}}, "households": {"household": {"members": ["1", "2"], "state_code":
-      {"2026": "NJ"}, "county_str": {"2026": "MERCER_COUNTY_NJ"}}}, "spm_units": {"spm_unit":
-      {"members": ["1", "2"], "tanf": {"2026": null}, "receives_tanf": {"2026": false},
-      "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
-      "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "version":
-      "2.72.5"}'
+      {"2026": "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1", "2"], "tanf":
+      {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+      {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+      {"2026": false}}}, "marital_units": {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -33,7 +32,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '2003'
+      - '1959'
       Content-Type:
       - application/json
       User-Agent:
@@ -63,31 +62,30 @@ interactions:
         "medicaid": {"2026": 10403.492}, "medicaid_category": {"2026": "OLDER_CHILD"}}},
         "tax_units": {"main_tax_unit": {"members": ["1", "2"]}}, "families": {"family":
         {"members": ["1", "2"]}}, "households": {"household": {"members": ["1", "2"],
-        "state_code": {"2026": "NJ"}, "county_str": {"2026": "MERCER_COUNTY_NJ"}}},
-        "spm_units": {"spm_unit": {"members": ["1", "2"], "tanf": {"2026": 0.0}, "receives_tanf":
-        {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
-        {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
-        {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version": null,
-        "dataset": null}}'
+        "state_code": {"2026": "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1",
+        "2"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+        {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+        {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
+        "2.94.7", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '2127'
+      - '2083'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 20:57:21 GMT
+      - Wed, 11 Nov 2026 15:12:48 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-c7542ee8b401ae7b8cff03c0080b40a9-2ddd648e1ab67cc0-00
+      - 00-1288e2816294943a3b585431e4057a4f-e3a0b808d89d652a-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - c7542ee8b401ae7b8cff03c0080b40a9
+      - 1288e2816294943a3b585431e4057a4f;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -95,9 +93,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 7e112562-70a2-47c9-9722-e14e843c0de1
+      - 1f4610ae-c009-4a33-ae77-73e83cdcafb3
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK

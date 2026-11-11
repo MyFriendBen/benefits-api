@@ -20,6 +20,7 @@ from unittest.mock import Mock
 import pytest
 
 import programs.framework.pe_dependencies as dependency
+from programs.framework.base import Eligibility
 from programs.programs.cross_white_label.medicaid.federal_base import FederalMedicaid
 from programs.programs.cross_white_label.medicaid.nj import NjMedicaid
 from programs.programs.cross_white_label.medicaid.tests.nj_scenarios import SCENARIOS
@@ -151,17 +152,15 @@ class TestNjMedicaidClass(SimpleTestCase):
     def test_program_code(self) -> None:
         self.assertEqual(NjMedicaid.program_code, "nj_medicaid")
 
-    def test_is_the_federal_base_with_nj_location_inputs(self) -> None:
+    def test_is_the_federal_base_with_nj_state_code(self) -> None:
         self.assertTrue(issubclass(NjMedicaid, FederalMedicaid))
         self.assertFalse(NjMedicaid._abstract)
-        self.assertEqual(
-            NjMedicaid.pe_inputs,
-            [
-                *FederalMedicaid.pe_inputs,
-                dependency.household.NjStateCodeDependency,
-                dependency.household.NjCountyDependency,
-            ],
-        )
+        self.assertEqual(NjMedicaid.pe_inputs, [*FederalMedicaid.pe_inputs, dependency.household.NjStateCodeDependency])
+
+    def test_county_is_not_required(self) -> None:
+        # No rule in the spec's §3–§5 reads the county.
+        for pe_input in NjMedicaid.pe_inputs:
+            self.assertFalse(issubclass(pe_input, dependency.household.CountyDependency))
 
     def test_values_by_macstats_exhibit_22(self) -> None:
         self.assertEqual(
@@ -179,10 +178,17 @@ class TestNjMedicaidClass(SimpleTestCase):
 
 
 class TestNjMedicaidScenarios(PeIntegrationTestCase):
-    """The NJ spec's Test Scenarios, at PolicyEngine ``PE_TEST_VERSION``."""
+    """The NJ spec's Test Scenarios, at PolicyEngine ``pe_version``."""
+
+    pe_version = "2.94.7"
+    pe_version_reason = (
+        "Recorded at PolicyEngine current (2.94.7) on 2026-11-11, ahead of the suite pin, so NJ Medicaid "
+        "ships against the version production runs (MFB-1798). Moves back to PE_TEST_VERSION when the "
+        "suite pin reaches it."
+    )
 
     def member_values(self, number: int) -> dict[int, float]:
-        """Each member's annual value from PolicyEngine for one scenario's household."""
+        """Each eligible member's annual value for one scenario's household."""
         scenario = next(s for s in SCENARIOS if s["number"] == number)
         screen = make_screen(
             screen_id=number,
@@ -215,12 +221,20 @@ class TestNjMedicaidScenarios(PeIntegrationTestCase):
                 add_income(member, amount, income_type=income_type, frequency=frequency)
 
         eligibility = calc_pe_program(screen, NjMedicaid, make_program("nj", "nj_medicaid", year=YEAR))
-        return {me.member.id: me.value for me in eligibility.eligible_members}
+        self.assert_no_eligible_member_at_zero(eligibility)
+        return {me.member.id: me.value for me in eligibility.eligible_members if me.eligible}
+
+    def assert_no_eligible_member_at_zero(self, eligibility: Eligibility) -> None:
+        """The screener hides a $0 program, so no eligible member may be valued at $0."""
+        for me in eligibility.eligible_members:
+            if me.eligible:
+                self.assertGreater(me.value, 0, f"member {me.member.id} is eligible at $0")
+        self.assertEqual(eligibility.eligible, eligibility.value > 0)
 
     def check_eligibility(self, number: int) -> None:
         """Assert the members PolicyEngine finds eligible are exactly the ones the scenario expects."""
         values = self.member_values(number)
-        eligible = {member_id for member_id, value in values.items() if value > 0}
+        eligible = set(values)
         self.assertEqual(
             eligible, set(EXPECTED[number]), next(s for s in SCENARIOS if s["number"] == number)["expected"]
         )

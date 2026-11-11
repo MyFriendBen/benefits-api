@@ -19,8 +19,8 @@ class NjMedicaid(FederalMedicaid):
     NJ FamilyCare (Medicaid). Rules: program-ops
     ``programs/cross_white_label/medicaid/nj/medicaid_nj_spec.md``.
 
-    PolicyEngine decides eligibility from NJ's state code and county; the value is §7's figure for
-    the member's spending group.
+    PolicyEngine decides eligibility from NJ's state code; the value is §7's figure for the
+    member's spending group. No rule in §3–§5 depends on the county, so it is not sent.
     """
 
     program_code = "nj_medicaid"
@@ -28,7 +28,6 @@ class NjMedicaid(FederalMedicaid):
     pe_inputs = [
         *FederalMedicaid.pe_inputs,
         dependency.household.NjStateCodeDependency,
-        dependency.household.NjCountyDependency,
     ]
 
     # §7: New Jersey's row of MACStats Exhibit 22, FY 2023, "Full-benefit enrollees" columns.

@@ -8,6 +8,8 @@ from unittest.mock import Mock
 
 from django.test import SimpleTestCase
 
+from programs.framework.base import MemberEligibility
+
 import programs.framework.pe_dependencies as dependency
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.medicaid.federal_base import MAGI_INCOME_INPUTS, FederalMedicaid
@@ -79,15 +81,24 @@ class TestFederalMedicaidValue(SimpleTestCase):
     def member(self, age: int, pregnant: bool = False) -> Mock:
         return Mock(id=7, pregnant=pregnant, calc_age=Mock(return_value=age))
 
+    def member_eligibility(self, pe_value: float, category: str, age: int) -> MemberEligibility:
+        e = MemberEligibility(self.member(age))
+        self.calculator(pe_value, category).member_eligible(e)
+        return e
+
     def test_asks_policyengine_for_eligibility_and_category(self) -> None:
         self.assertEqual(FederalMedicaid.pe_name, "medicaid")
         self.assertEqual(FederalMedicaid.pe_outputs, [dependency.member.Medicaid, dependency.member.MedicaidCategory])
 
-    def test_ineligible_member_is_valued_at_nothing(self) -> None:
-        self.assertEqual(self.calculator(0, "ADULT").member_value(self.member(30)), 0)
+    def test_member_policyengine_turns_away_is_ineligible_and_valued_at_nothing(self) -> None:
+        e = self.member_eligibility(0, "ADULT", 30)
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.value, 0)
 
     def test_value_ignores_policyengines_amount(self) -> None:
-        self.assertEqual(self.calculator(12_919.58, "ADULT").member_value(self.member(30)), 604 * 12)
+        e = self.member_eligibility(12_919.58, "ADULT", 30)
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 604 * 12)
 
     def test_each_member_rounds_to_the_nearest_dollar_half_up_before_annualising(self) -> None:
         # $4,203 ÷ 12 = $350.25 → $350; $28,650 ÷ 12 = $2,387.50 → $2,388.
@@ -109,19 +120,66 @@ class TestFederalMedicaidValue(SimpleTestCase):
         ]
         for category, age, monthly in cases:
             with self.subTest(category=category, age=age):
-                self.assertEqual(self.calculator(1, category).member_value(self.member(age)), monthly * 12)
+                e = self.member_eligibility(1, category, age)
+                self.assertTrue(e.eligible)
+                self.assertEqual(e.value, monthly * 12)
 
-    def test_category_without_a_figure_is_valued_at_nothing(self) -> None:
-        self.assertEqual(self.calculator(1, "MEDICALLY_NEEDY").member_value(self.member(40)), 0)
+    def test_every_eligible_member_has_a_value_above_zero(self) -> None:
+        # The screener hides a program whose value is $0, so an eligible member at $0 would never
+        # be seen. Unknown age falls to the adult and disabled groups.
+        for category in FederalMedicaid.covered_categories:
+            for age in (None, 0, 18, 19, 64, 65, 90):
+                with self.subTest(category=category, age=age):
+                    e = self.member_eligibility(1, category, age)
+                    self.assertTrue(e.eligible)
+                    self.assertGreater(e.value, 0)
 
-    def test_group_the_state_does_not_price_is_valued_at_nothing(self) -> None:
-        calculator = StandInState.__new__(StandInState)
-        calculator.get_member_variable = Mock(return_value=1)
-        calculator.get_member_dependency_value = Mock(return_value="ADULT")
-        self.assertEqual(calculator.member_value(self.member(40)), 0)
+    def test_category_outside_the_specs_routes_is_ineligible(self) -> None:
+        # §3's routes include none of these; NJ records medically needy and WorkAbility as
+        # pathways MFB does not screen (decisions.md 7 and 13).
+        for category in ("MEDICALLY_NEEDY", "YOUNG_ADULT", "WORKING_DISABLED_BUY_IN", "SECTION_1115_MEC_ADULT", "NONE"):
+            with self.subTest(category=category):
+                e = self.member_eligibility(1, category, 40)
+                self.assertFalse(e.eligible)
+                self.assertEqual(e.value, 0)
+
+    def test_household_eligibility_comes_from_the_members_not_the_value(self) -> None:
+        calculator = self.calculator(1, "ADULT")
+        calculator.screen = Mock(household_members=Mock(all=Mock(return_value=[self.member(30)])))
+        calculator.get_variable = Mock(return_value=0)
+        e = calculator.eligible()
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 604 * 12)
+
+        calculator = self.calculator(0, "ADULT")
+        calculator.screen = Mock(household_members=Mock(all=Mock(return_value=[self.member(30)])))
+        self.assertFalse(calculator.eligible().eligible)
+
+    def test_state_must_price_every_group_it_can_reach(self) -> None:
+        class Unpriced(FederalMedicaid, abstract=True):
+            group_spend_per_fye_enrollee = {"child": 4_203}
+
+        with self.assertRaises(ValueError):
+            Unpriced.check_every_reachable_group_is_priced()
+        StandInPricedState.check_every_reachable_group_is_priced()
+
+    def test_abstract_base_need_not_price(self) -> None:
+        self.assertEqual(StandInState.annual_value_by_group, {})
 
     def test_unknown_spending_group_is_refused(self) -> None:
         with self.assertRaises(ValueError):
 
             class Bad(FederalMedicaid, abstract=True):
                 group_spend_per_fye_enrollee = {"teen": 1}
+
+    def test_category_mapped_to_unknown_group_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+
+            class Misspelled(FederalMedicaid, abstract=True):
+                category_groups = {**FederalMedicaid.category_groups, "ADULT": "new-adult"}
+
+    def test_covered_category_without_a_group_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+
+            class Uncovered(FederalMedicaid, abstract=True):
+                covered_categories = (*FederalMedicaid.covered_categories, "MEDICALLY_NEEDY")
