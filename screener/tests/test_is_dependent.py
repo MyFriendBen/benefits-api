@@ -1,3 +1,4 @@
+from datetime import date
 from django.test import TestCase
 from configuration.white_labels.base import ConfigurationData
 from screener.irs_parameters import get_qualifying_relative_threshold
@@ -300,3 +301,58 @@ class TestIsDependent(TestCase):
         self.assertIn(str(self.head.id), main_tax_members)
         self.assertIn(str(child.id), main_tax_members)
         self.assertNotIn(SECONDARY_TAX_UNIT, tax_units)
+
+
+class TestIsDependentInATaxYear(TestCase):
+    """`is_dependent(tax_year)` judges the member as of December 31 of the tax year."""
+
+    def setUp(self) -> None:
+        white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+        self.screen = Screen.objects.create(white_label=white_label, completed=False)
+        # Late in 2026, so a 2007 child has had their 19th birthday since the 2025 tax year.
+        self.screen._reference_date = date(2026, 11, 11)
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+
+    def _child(self, birth_year_month: date, income: int = 0, **kwargs: object) -> HouseholdMember:
+        child = HouseholdMember.objects.create(
+            screen=self.screen, relationship="child", birth_year_month=birth_year_month, **kwargs
+        )
+        if income:
+            IncomeStream.objects.create(
+                screen=self.screen, household_member=child, type="wages", amount=income, frequency="yearly"
+            )
+        return child
+
+    def test_a_child_who_turned_19_after_the_tax_year_is_a_dependent_in_it(self) -> None:
+        child = self._child(date(2007, 6, 1), income=6_000)
+
+        self.assertFalse(child.is_dependent())
+        self.assertTrue(child.is_dependent(2025))
+
+    def test_a_student_who_turned_24_after_the_tax_year_is_a_dependent_in_it(self) -> None:
+        student = self._child(date(2002, 6, 1), income=6_000, student=True)
+
+        self.assertFalse(student.is_dependent())
+        self.assertTrue(student.is_dependent(2025))
+
+    def test_a_child_born_after_the_tax_year_is_not_a_dependent_in_it(self) -> None:
+        # With no income the qualifying-relative path would otherwise take them too.
+        newborn = self._child(date(2026, 3, 1))
+
+        self.assertTrue(newborn.is_dependent())
+        self.assertFalse(newborn.is_dependent(2025))
+
+    def test_a_disabled_child_born_after_the_tax_year_is_not_a_dependent_in_it(self) -> None:
+        newborn = self._child(date(2026, 3, 1), disabled=True)
+
+        self.assertFalse(newborn.is_dependent(2025))
+
+    def test_the_qualifying_relative_limit_is_the_tax_years(self) -> None:
+        # Between the 2025 limit (5,200) and the 2026 one (5,300).
+        parent = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=70)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=parent, type="wages", amount=5_250, frequency="yearly"
+        )
+
+        self.assertTrue(parent.is_dependent())
+        self.assertFalse(parent.is_dependent(2025))

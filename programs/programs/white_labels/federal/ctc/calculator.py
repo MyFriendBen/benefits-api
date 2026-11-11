@@ -175,7 +175,7 @@ class FederalCtc(ProgramCalculator):
         others: list[HouseholdMember] = []
         for member in self.screen.household_members.all():
             # A child born after the tax year wasn't alive in it, so is neither kind of dependent.
-            if member in self._filers or self._born_after_tax_year(member):
+            if member in self._filers or member.born_after(self.tax_year):
                 continue
             if self._is_qualifying_child(member):
                 (children if self._is_ctc_child(member) else others).append(member)
@@ -231,9 +231,6 @@ class FederalCtc(ProgramCalculator):
             return False
 
         return self._countable_income(member) < self._params.qualifying_relative_income_limit
-
-    def _born_after_tax_year(self, member: HouseholdMember) -> bool:
-        return member.birth_year is not None and member.birth_year > self.tax_year
 
     @staticmethod
     def _is_permanently_disabled(member: HouseholdMember) -> bool:
