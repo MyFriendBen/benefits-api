@@ -90,38 +90,85 @@ class TestHouseholdIncome(MfbAcaTestCase):
         child = self.add_member(screen, relationship="child", age=dependent.pop("age", 17), **dependent)
         return self.calculator(screen), child
 
-    def test_a_dependent_under_the_filing_threshold_is_left_out(self):
-        aca, _ = self.household(yearly_income=15_750)
+    def test_a_dependent_under_the_basic_standard_deduction_is_left_out(self) -> None:
+        aca, _ = self.household(yearly_income=16_599)
 
         self.assertEqual(aca.household_income(), 30_000)
 
-    def test_a_dependent_over_the_earned_threshold_is_counted(self):
-        aca, _ = self.household(yearly_income=15_751)
+    def test_a_dependent_at_the_basic_standard_deduction_is_counted(self) -> None:
+        """2027: gross income of at least $16,600 files, not only more than it."""
+        aca, _ = self.household(yearly_income=16_600)
 
-        self.assertEqual(aca.household_income(), 45_751)
+        self.assertEqual(aca.household_income(), 46_600)
 
-    def test_a_dependent_with_400_dollars_of_self_employment_is_counted(self):
+    def test_a_dependent_with_400_dollars_of_self_employment_is_counted(self) -> None:
         aca, _ = self.household(yearly_income=400, income_type="selfEmployment")
 
         self.assertEqual(aca.household_income(), 30_400)
 
-    def test_a_dependent_over_the_unearned_threshold_is_counted(self):
-        aca, _ = self.household(yearly_income=1_351, income_type="investment")
+    def test_a_dependent_at_the_unearned_floor_is_left_out(self) -> None:
+        aca, _ = self.household(yearly_income=1_400, income_type="investment")
 
-        self.assertEqual(aca.household_income(), 31_351)
+        self.assertEqual(aca.household_income(), 30_000)
 
-    def test_a_dependent_over_the_gross_threshold_is_counted(self):
-        """$1,000 wages + $1,000 investment: unearned and earned are each under their limits,
-        but $2,000 is over max($1,350, $1,000 + $450)."""
+    def test_a_dependent_over_the_unearned_floor_is_counted(self) -> None:
+        aca, _ = self.household(yearly_income=1_401, income_type="investment")
+
+        self.assertEqual(aca.household_income(), 31_401)
+
+    def test_a_dependent_over_their_standard_deduction_is_counted(self) -> None:
+        """$1,000 wages + $1,000 investment: under $16,600 and unearned under $1,400, but
+        $2,000 is over the dependent's standard deduction, max($1,400, $1,000 + $500)."""
         aca, child = self.household(yearly_income=1_000)
         self.add_income(child, 1_000, income_type="investment", frequency="yearly")
 
         self.assertEqual(aca.household_income(), 32_000)
 
-    def test_a_blind_dependent_files_at_the_higher_threshold(self):
-        aca, _ = self.household(yearly_income=1_351, income_type="investment", visually_impaired=True)
+    def test_a_dependent_at_their_standard_deduction_is_left_out(self) -> None:
+        aca, child = self.household(yearly_income=1_000)
+        self.add_income(child, 500, income_type="investment", frequency="yearly")
 
         self.assertEqual(aca.household_income(), 30_000)
+
+    def test_blindness_raises_the_unearned_and_deduction_tests(self) -> None:
+        """$1,401 unearned is over $1,400 but not over $1,400 + $2,100."""
+        aca, _ = self.household(yearly_income=1_401, income_type="investment", visually_impaired=True)
+
+        self.assertEqual(aca.household_income(), 30_000)
+
+    def test_blindness_alone_does_not_raise_the_gross_income_threshold(self) -> None:
+        aca, _ = self.household(yearly_income=16_600, visually_impaired=True)
+
+        self.assertEqual(aca.household_income(), 46_600)
+
+    def test_age_65_raises_the_gross_income_threshold(self) -> None:
+        """$16,600 + $2,100 = $18,700 for a dependent 65 or older (a disabled adult child here)."""
+        under, _ = self.household(age=70, yearly_income=18_699, disabled=True)
+        at, _ = self.household(age=70, yearly_income=18_700, disabled=True)
+
+        self.assertEqual(under.household_income(), 30_000)
+        self.assertEqual(at.household_income(), 48_700)
+
+    def test_2026_coverage_reads_the_2026_figures(self) -> None:
+        with patch.object(Screen, "get_reference_date", lambda _self: date(2026, 6, 1)):
+            under, _ = self.household(yearly_income=16_099)
+            at, _ = self.household(yearly_income=16_100)
+            unearned, _ = self.household(yearly_income=1_351, income_type="investment")
+
+            self.assertEqual(under.household_income(), 30_000)
+            self.assertEqual(at.household_income(), 46_100)
+            self.assertEqual(unearned.household_income(), 31_351)
+
+    def test_a_coverage_year_with_no_figures_uses_the_latest_and_reports_it(self) -> None:
+        with patch.object(Screen, "get_reference_date", lambda _self: date(2027, 11, 1)):
+            aca, _ = self.household(yearly_income=16_600)
+
+            with patch("programs.programs.cross_white_label.aca.mfb_base.capture_message") as report:
+                income = aca.household_income()
+
+        self.assertEqual(income, 46_600)
+        report.assert_called_once()
+        self.assertIn("coverage year 2028", report.call_args.args[0])
 
     def test_social_security_counts_toward_filing_only_above_the_base_amount(self):
         aca, child = self.household(yearly_income=30_000, income_type="sSSurvivor")

@@ -196,6 +196,43 @@ class TestNjAcaScenarios(NjAcaTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 11_231)
 
+    def parent_and_teen(self, parent_wages: int, teen_wages: int) -> tuple[Screen, HouseholdMember, HouseholdMember]:
+        """Scenarios 15–17: a parent aged 62 and a 16-year-old on job-based coverage."""
+        screen = self.make_screen(household_size=2)
+        head = self.add_member(screen, age=62, yearly_income=parent_wages)
+        teen = self.add_member(screen, relationship="child", age=16, yearly_income=teen_wages)
+        self.add_insurance(teen, employer=True, none=False)
+        return screen, head, teen
+
+    def test_scenario_15_teen_one_dollar_under_the_dependent_filing_threshold(self) -> None:
+        screen, head, teen = self.parent_and_teen(70_000, 16_599)
+
+        e = self.calculate_nj(screen)
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 7_541)
+        self.assertTrue(self.member_result(e, head).eligible)
+        self.assertFalse(self.member_result(e, teen).eligible)
+
+    def test_scenario_16_teen_exactly_at_the_dependent_filing_threshold(self) -> None:
+        screen, _, _ = self.parent_and_teen(70_000, 16_600)
+
+        e = self.calculate_nj(screen)
+
+        self.assertFalse(e.eligible)
+        # The teen must file, so their wages count: $86,600 > 4.00 × $21,640 = $86,560.
+        self.assertEqual(self.make_calculator(screen, data=nj_familycare()).household_income(), 86_600)
+
+    def test_scenario_17_teen_who_must_file_only_on_total_income(self) -> None:
+        screen, _, teen = self.parent_and_teen(81_000, 5_000)
+        self.add_income(teen, 1_000, income_type="investment", frequency="yearly")
+
+        e = self.calculate_nj(screen)
+
+        self.assertFalse(e.eligible)
+        # $6,000 is over the teen's $5,500 standard deduction, so it counts: $87,000 > $86,560.
+        self.assertEqual(self.make_calculator(screen, data=nj_familycare()).household_income(), 87_000)
+
 
 class TestNjAcaBenchmarkPremium(NjAcaTestCase):
     def test_base_rate_times_the_age_factor(self):
