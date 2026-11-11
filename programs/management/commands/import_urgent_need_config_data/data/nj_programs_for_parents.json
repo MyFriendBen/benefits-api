@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_programs_for_parents",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Programs for Parents (Newark)",
+      "description": "Programs for Parents in Newark helps parents and families. There are no eligibility rules to be referred. Contact them by phone, email or online, Monday to Friday 8:30am-4:30pm. Call 973-297-1114.",
+      "link": "https://programsforparents.org",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

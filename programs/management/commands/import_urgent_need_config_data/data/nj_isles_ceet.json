@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_isles_ceet",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Isles, Inc. - CEET (Trenton)",
+      "description": "Isles, Inc. in Trenton runs CEET, a job training program that starts in groups (cohorts). No eligibility restrictions are stated. Use the inquiry form or call 609-341-4700. It can take a few weeks.",
+      "link": "https://isles.org/services/education-and-job-training/",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

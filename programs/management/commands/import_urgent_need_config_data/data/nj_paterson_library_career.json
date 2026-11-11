@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_paterson_library_career",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Paterson Free Public Library Career Services",
+      "description": "Paterson Free Public Library Career Services helps with resumes, cover letters and job applications. No eligibility rules are published. Make an appointment through the Reference desk. Call 973-321-1223 ext. 2295.",
+      "link": "https://patersonpl.org/career-services/",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Passaic County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

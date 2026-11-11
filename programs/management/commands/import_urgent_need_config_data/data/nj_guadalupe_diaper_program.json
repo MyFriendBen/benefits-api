@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_guadalupe_diaper_program",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Guadalupe Family Services Diaper Program (Camden)",
+      "description": "Guadalupe Family Services gives diapers to Camden City residents with a child age 3 or under. Walk in on a distribution day, which is two Thursdays a month from 3 to 5pm. Call 856-365-8081.",
+      "link": "https://www.guadalupefamilyservices.org",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_pharmacist_contraception",
+    "category_type": {
+      "external_name": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "NJ pharmacist-furnished contraception",
+      "description": "In New Jersey you can get birth control directly from a pharmacist. There is no age limit, no income test and no insurance needed. About 150 pharmacies in all 21 counties take part. You can get a 3-month supply the same day. See the NJ Department of Health pharmacy list to find one.",
+      "link": "https://nj.gov/health/reproductivehealth/birth-control-resources/",
+      "warning": "",
+      "website_description": "Learn about family planning and sexual health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_usda_hunger_hotline",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "USDA National Hunger Hotline",
+      "description": "Call the USDA National Hunger Hotline and an operator will help you find food nearby. Open Monday to Friday 8am-8pm Eastern. Call 1-866-348-6479.",
+      "link": "https://www.fns.usda.gov/national-hunger-hotline",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

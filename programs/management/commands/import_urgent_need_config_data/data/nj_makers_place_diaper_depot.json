@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_makers_place_diaper_depot",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "The Maker's Place Diaper Depot (Trenton)",
+      "description": "The Maker's Place Diaper Depot gives diapers to families in the Trenton area who have children in diapers. You only need to show the child's birth certificate. Make an appointment by calling 609-751-9128. It usually takes a few days.",
+      "link": "https://www.makersplace.org/diapers",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_central_jersey_legal_services",
+    "category_type": {
+      "external_name": "civil_legal_needs"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Central Jersey Legal Services",
+      "description": "Central Jersey Legal Services helps people in Mercer, Middlesex and Union counties. Your income and assets are screened by phone with no documents (250% of the poverty level). Anyone 60 or older gets advice regardless of income. Call Mercer 609-695-6249, Middlesex 732-249-7600 or Union 908-354-4340.",
+      "link": "https://centraljerseylegalservices.org/",
+      "warning": "",
+      "website_description": "Learn about free or low-cost legal help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County",
+      "Middlesex County",
+      "Union County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

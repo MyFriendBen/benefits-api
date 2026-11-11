@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_bpu_customer_assistance",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "NJ Board of Public Utilities Customer Assistance",
+      "description": "The NJ Board of Public Utilities helps any utility customer. They enforce your rights, including a 12-month deferred payment plan, a 90-day hold on shutoffs for medical reasons, and no shutoffs from Friday to Sunday. Call 1-800-624-0241, 9am-4pm.",
+      "link": "https://www.nj.gov/bpu/assistance/complaints",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

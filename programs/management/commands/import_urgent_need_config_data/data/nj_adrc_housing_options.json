@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_adrc_housing_options",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "ADRC Housing Options Counseling",
+      "description": "ADRC Housing Options Counseling helps seniors, adults with disabilities and caregivers. There is no income test. Call 877-222-3737. Home visits are available.",
+      "link": "https://www.nj.gov/humanservices/doas/assistance/county-offices",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

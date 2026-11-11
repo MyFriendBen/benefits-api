@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_newark_library_job_search",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Newark Public Library Job Search Drop-In",
+      "description": "The Newark Public Library has a free job search drop-in on Thursdays 2-4pm. It is first come, first served, with no registration. Call 973-733-7779.",
+      "link": "https://www.npl.org/job-search-drop-in-hours/",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

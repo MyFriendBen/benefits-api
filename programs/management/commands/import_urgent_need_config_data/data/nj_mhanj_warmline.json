@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_mhanj_warmline",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "MHANJ Peer Recovery WarmLine",
+      "description": "The MHANJ Peer Recovery WarmLine offers peer support by phone. Open weekdays 8am-10pm and weekends 5-10pm. Call 877-292-5588.",
+      "link": "https://www.mhanj.org/call-lines/",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_njcdc_help_center",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "NJCDC Neighborhood Help Center (Paterson)",
+      "description": "The NJCDC Neighborhood Help Center in Paterson serves residents of the Great Falls neighborhood. Walk in, call or email, Monday to Friday 10am-8pm.",
+      "link": "https://www.njcdc.org/news-1/find-help-and-hope-at-our-neighborhood-help-center",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Passaic County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

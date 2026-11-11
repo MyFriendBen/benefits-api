@@ -1,0 +1,46 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_family_connects",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Family Connects NJ",
+      "description": "Family Connects NJ supports any family with a newborn, up to about 12 weeks after birth. Schedule online yourself. It is available in 17 of 21 counties (not Hunterdon, Morris, Union or Warren). It can take 1-4 weeks.",
+      "link": "https://www.familyconnectsnj.org/",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Atlantic County",
+      "Bergen County",
+      "Burlington County",
+      "Camden County",
+      "Cape May County",
+      "Cumberland County",
+      "Essex County",
+      "Gloucester County",
+      "Hudson County",
+      "Mercer County",
+      "Middlesex County",
+      "Monmouth County",
+      "Ocean County",
+      "Passaic County",
+      "Salem County",
+      "Somerset County",
+      "Sussex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
