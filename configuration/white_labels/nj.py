@@ -859,11 +859,43 @@ class NjConfigurationData(ConfigurationData):
 
     # NJ uses generic MFB branding and the default step directory, so it inherits everything
     # from base and overrides only the values that are NJ-specific.
+    #
+    # "211nj" is the 2-1-1 New Jersey co-brand overlay. It is logo-only, like Denver Public
+    # Schools and Denver Preschool Program in co.py: no theme, no custom step directory, and the
+    # standard sign-up step stays. Only keys it changes carry a "211nj" entry.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        # Omits the Immediate Help tab from the results page, matching the other recently
-        # added states (MO, WA).
-        "uiOptions": {"default": ["no_results_more_help"]},
-        "shareLink": {"default": "https://screener.myfriendben.org/nj/step-1"},
-        "stateName": {"default": "New Jersey"},
+        # Both keys below repeat base's "default" because a referrer dict replaces base's whole
+        # dict for that key, it does not merge with it.
+        "logoSource": {"default": "MFB_Logo", "211nj": "NJ211_MFBLogo"},
+        "logoAlt": {
+            "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
+            "211nj": {
+                "id": "referrerHook.logoAlts.211nj",
+                "defaultMessage": "2-1-1 New Jersey and MyFriendBen home page button",
+            },
+        },
+        # The lockup (2053x375, ~5.5:1) is wider than the default .logo rule expects. A class name
+        # can't start with a digit, hence nj211.
+        "logoClass": {"default": "logo", "211nj": "nj211-logo-size"},
+        "uiOptions": {
+            # Omits the Immediate Help tab from the results page, matching the other recently
+            # added states (MO, WA).
+            "default": ["no_results_more_help"],
+            # A referrer's list replaces the default rather than extending it, so
+            # no_results_more_help has to be repeated here or 211nj users would get the Immediate
+            # Help tab back that the rest of NJ doesn't show.
+            #
+            # white_header is not cosmetic: their logo is blue on transparent, and the default
+            # header bar is filled with --primary-color.
+            "211nj": ["no_results_more_help", "white_header"],
+        },
+        "shareLink": {
+            "default": "https://screener.myfriendben.org/nj/step-1",
+            # Without a referrer in the share link, a shared screener silently drops the branding.
+            "211nj": "https://screener.myfriendben.org/nj/step-1?referrer=211nj",
+        },
+        # The lockup already says "New Jersey", so the label the header puts under the logo would
+        # repeat it. Cleared the same way 211ks and 211mo are in ks.py and mo.py.
+        "stateName": {"default": "New Jersey", "211nj": ""},
     }

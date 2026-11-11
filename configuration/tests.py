@@ -359,6 +359,60 @@ class TestStateOptionsConfiguration(SimpleTestCase):
                         )
 
 
+class TestNj211ReferrerConfiguration(SimpleTestCase):
+    """
+    Guards the 2-1-1 New Jersey overlay. Each assertion is a way the overlay breaks without any
+    error: a referrer's list replaces the default, so a dropped entry or a missing default shows
+    up only as wrong branding on the page.
+    """
+
+    REFERRER = "211nj"
+
+    def setUp(self) -> None:
+        self.referrer_data = white_label_config["nj"].referrer_data
+
+    def test_is_logo_only(self) -> None:
+        """No theme, no custom step directory: the standard sign-up step stays, with no custom colors."""
+        for key in ("theme", "stepDirectory"):
+            with self.subTest(key=key):
+                self.assertNotIn(self.REFERRER, self.referrer_data.get(key, {}))
+
+    def test_logo_points_at_the_lockup(self) -> None:
+        self.assertEqual(self.referrer_data["logoSource"][self.REFERRER], "NJ211_MFBLogo")
+        self.assertEqual(self.referrer_data["logoClass"][self.REFERRER], "nj211-logo-size")
+        self.assertEqual(self.referrer_data["logoAlt"][self.REFERRER]["id"], "referrerHook.logoAlts.211nj")
+        self.assertIn("2-1-1 New Jersey", self.referrer_data["logoAlt"][self.REFERRER]["defaultMessage"])
+
+    def test_other_nj_referrers_keep_the_default_branding(self) -> None:
+        """Overriding a key replaces base's dict, so each override must still carry its default."""
+        self.assertEqual(self.referrer_data["logoSource"]["default"], "MFB_Logo")
+        self.assertEqual(self.referrer_data["logoClass"]["default"], "logo")
+        self.assertEqual(self.referrer_data["logoAlt"]["default"]["id"], "referrerHook.logoAlts.default")
+        self.assertEqual(self.referrer_data["stateName"]["default"], "New Jersey")
+
+    def test_ui_options_repeat_the_default_and_add_a_white_header(self) -> None:
+        """Without the repeat, 211nj users would get the Immediate Help tab the rest of NJ hides."""
+        default = self.referrer_data["uiOptions"]["default"]
+        overlay = self.referrer_data["uiOptions"][self.REFERRER]
+
+        self.assertIn("no_results_more_help", default)
+        for option in default:
+            with self.subTest(option=option):
+                self.assertIn(option, overlay)
+        self.assertIn("white_header", overlay)
+
+    def test_state_label_is_cleared_under_the_lockup(self) -> None:
+        """The lockup already says "New Jersey", so the header's state label would repeat it."""
+        self.assertEqual(self.referrer_data["stateName"][self.REFERRER], "")
+
+    def test_share_link_keeps_the_referrer(self) -> None:
+        """A share link without the referrer silently drops the branding."""
+        self.assertEqual(
+            self.referrer_data["shareLink"][self.REFERRER],
+            "https://screener.myfriendben.org/nj/step-1?referrer=211nj",
+        )
+
+
 class TestPublicChargeRuleConfiguration(SimpleTestCase):
     """
     Asserts every white label's public charge rule carries both a link and a visible label. The
