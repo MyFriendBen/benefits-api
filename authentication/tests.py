@@ -183,6 +183,7 @@ class UserAdminBlankEmailTests(TestCase):
         self.client.force_login(self.superuser)
 
     def test_adding_two_users_without_email(self) -> None:
+        """The second admin add without an email used to collide with the first."""
         url = reverse("admin:authentication_user_add")
         for login in ("first-staff@example.com", "second-staff@example.com"):
             response = self.client.post(
@@ -193,10 +194,10 @@ class UserAdminBlankEmailTests(TestCase):
             self.assertIsNone(User.objects.get(email_or_cell=login).email)
 
     def test_editing_user_with_empty_email_stores_null(self) -> None:
+        """Two edits with Email left empty: the second would collide if the first stored ""."""
         User.objects.create_user(email_or_cell="other@example.com")
         target = User.objects.create_user(email_or_cell="target@example.com")
 
-        # Two edits with Email left empty: the second would collide if the first stored "".
         for user in (target, User.objects.get(email_or_cell="other@example.com")):
             response = self.client.post(
                 reverse("admin:authentication_user_change", args=[user.pk]),
