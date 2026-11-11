@@ -106,13 +106,8 @@ class NjPropertyTaxDeductionCredit(ProgramCalculator):
 
     @cached_property
     def _dependent_count(self) -> int:
-        """
-        Members who are dependents in the tax year. A child born after it isn't one yet, even
-        though `is_dependent()`, which judges age on the screening date, counts them.
-        """
-        return sum(
-            1 for m in self.screen.household_members.all() if m.is_dependent() and not self._born_after_tax_year(m)
-        )
+        """Members who are dependents in the tax year, judged by their age at its end."""
+        return sum(1 for m in self.screen.household_members.all() if m.is_dependent(self.tax_year))
 
     @cached_property
     def _property_tax_paid(self) -> Decimal:
@@ -205,9 +200,6 @@ class NjPropertyTaxDeductionCredit(ProgramCalculator):
     def _age_at_year_end(self, member: HouseholdMember) -> int:
         age = member.age_at_end_of_year(self.tax_year)
         return age if age is not None else 0
-
-    def _born_after_tax_year(self, member: HouseholdMember) -> bool:
-        return member.birth_year is not None and member.birth_year > self.tax_year
 
     def _is_senior(self, member: HouseholdMember) -> bool:
         return self._age_at_year_end(member) >= self.senior_age

@@ -66,19 +66,18 @@ class TestRegistration(NjPtdTestCase):
             self.calculate(screen, missing=screen.missing_fields())
 
 
-class TestBirthAfterTheTaxYear(NjPtdTestCase):
-    # `is_dependent()` judges age on the screening date, so pin it: unpinned, the December
-    # 2025 child would age out of the qualifying-child test.
-    reference_date = date(2026, 3, 15)
+class TestDependentsJudgedAtTheTaxYearEnd(NjPtdTestCase):
+    # Late in the year after the tax year, so a 2007 child has had their 19th birthday.
+    reference_date = date(2026, 11, 11)
 
-    def single_renter_with_a_child_born(self, birth_year_month: date) -> Screen:
+    def single_renter_with_a_child_born(self, birth_year_month: date, **kwargs: object) -> Screen:
         """A single renter on 15,000, who files and gets the 50 credit when they have no dependent."""
         screen, (head,) = self.household(("headOfHousehold", 30, {"yearly_income": 15_000}))
-        self.add_member(screen, "child", None, birth_year_month=birth_year_month)
+        self.add_member(screen, "child", None, birth_year_month=birth_year_month, **kwargs)
         self.add_expense(head, 1_000, "rent", "monthly")
         return screen
 
-    def test_a_member_born_after_the_tax_year_is_not_a_senior(self):
+    def test_a_member_born_after_the_tax_year_is_not_a_senior(self) -> None:
         screen, _ = self.household(("headOfHousehold", 40, {}))
         newborn = self.add_member(screen, "child", None, birth_year_month=date(2026, 1, 1))
         calculator = self.make_calculator(screen)
@@ -86,14 +85,23 @@ class TestBirthAfterTheTaxYear(NjPtdTestCase):
         self.assertEqual(calculator._age_at_year_end(newborn), 0)
         self.assertFalse(calculator._is_senior(newborn))
 
-    def test_a_child_born_after_the_tax_year_is_not_a_dependent(self):
+    def test_a_child_born_after_the_tax_year_is_not_a_dependent(self) -> None:
         screen = self.single_renter_with_a_child_born(date(2026, 1, 1))
         calculator = self.make_calculator(screen)
 
         self.assertEqual(calculator._dependent_count, 0)
         self.assertValue(screen, 50)
 
-    def test_a_child_born_in_december_of_the_tax_year_is_a_dependent(self):
+    def test_a_child_18_at_the_tax_year_end_is_a_dependent_after_turning_19(self) -> None:
+        # 19 on the screening date and over the qualifying-relative limit, but 18 on
+        # December 31, 2025, so a qualifying child for the 2025 return.
+        screen = self.single_renter_with_a_child_born(date(2007, 6, 1), yearly_income=6_000)
+        calculator = self.make_calculator(screen)
+
+        self.assertEqual(calculator._dependent_count, 1)
+        self.assertIneligible(screen)
+
+    def test_a_child_born_in_december_of_the_tax_year_is_a_dependent(self) -> None:
         screen = self.single_renter_with_a_child_born(date(2025, 12, 1))
         calculator = self.make_calculator(screen)
 
