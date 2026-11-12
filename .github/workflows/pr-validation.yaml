@@ -19,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # One job per group of the suite, balanced by the committed .test_durations file
-    # (see docs/TESTING.md to refresh it). Each job still fans out across the runner's
-    # cores with xdist. Changing the number of groups means changing splits, group, and
+    # One job per group of the suite, balanced by test durations the latest staging
+    # deploy recorded, or the committed .test_durations when none are cached (see
+    # docs/TESTING.md). Each job still fans out across the runner's cores with xdist. Changing the number of groups means changing splits, group, and
     # codecov.yml's after_n_builds together.
     strategy:
       # Let every group finish, so a PR shows all its failures in one run rather than
