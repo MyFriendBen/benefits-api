@@ -19,14 +19,7 @@
       "notification_message": ""
     },
     "functions": [],
-    "counties": [
-      "Bergen County",
-      "Hudson County",
-      "Essex County",
-      "Union County",
-      "Passaic County",
-      "Morris County"
-    ],
+    "counties": [],
     "required_expense_types": [],
     "active": true,
     "low_confidence": false,
