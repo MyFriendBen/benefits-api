@@ -44,6 +44,28 @@ roughly three minutes to under one. Two things follow from that:
 
 Pass `-n 0` to force a serial run when debugging test interdependence.
 
+### Split Across CI Jobs
+
+PR validation also splits the suite across 3 parallel jobs with
+[pytest-split](https://github.com/jerry-git/pytest-split), each of which still fans out
+with xdist. The groups are balanced by `.test_durations`, a committed record of how long
+each test took. To run one group locally the way CI does:
+
+```bash
+pytest --splits 3 --group 1
+```
+
+The file only steers how the work is divided: a test missing from it is still run, and
+counted at the average duration. Refresh it when the groups' run times in CI drift apart,
+for instance after a large batch of new tests:
+
+```bash
+pytest --store-durations --clean-durations
+```
+
+`--clean-durations` drops tests that no longer exist. Commit the updated file on its own
+branch, since every refresh rewrites most of its lines.
+
 ### Unit Tests Only
 ```bash
 # Skip integration tests

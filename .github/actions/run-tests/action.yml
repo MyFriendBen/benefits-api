@@ -16,6 +16,14 @@ inputs:
   hud-api-token:
     description: 'HUD API token for real API calls'
     required: true
+  splits:
+    description: 'Split the suite into this many groups with pytest-split and run only one of them (see group). Leave empty to run the whole suite.'
+    required: false
+    default: ''
+  group:
+    description: 'Which of the splits groups to run, starting at 1. Required when splits is set.'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -41,6 +49,8 @@ runs:
       env:
         VCR_MODE: ${{ inputs.vcr-mode }}
         HUD_API_TOKEN: ${{ inputs.hud-api-token }}
+        SPLITS: ${{ inputs.splits }}
+        GROUP: ${{ inputs.group }}
       run: |
         if [ "${{ inputs.vcr-mode }}" = "all" ]; then
           echo "Running tests with REAL API CALLS - VCR_MODE=all (re-records all cassettes)"
@@ -57,10 +67,24 @@ runs:
         # per-test output is noise. The other branch is the deploy path, which records
         # against live APIs -- keep the verbose flags there, since a cassette or API
         # failure is hardest to diagnose from a bare assertion.
+        #
+        # With splits set, pytest-split runs only one group of the suite, balanced by the
+        # committed .test_durations file. Both branches take it: fork PRs shard too, they
+        # just skip the coverage upload.
+        SPLIT_ARGS=()
+        if [ -n "$SPLITS" ]; then
+          if [ -z "$GROUP" ]; then
+            echo "ERROR: group is required when splits is set"
+            exit 1
+          fi
+          SPLIT_ARGS=(--splits "$SPLITS" --group "$GROUP" --splitting-algorithm duration_based_chunks)
+          echo "Running test group $GROUP of $SPLITS"
+        fi
+
         if [ "${{ inputs.upload-coverage }}" = "true" ]; then
-          pytest --cov --cov-branch --cov-report=xml
+          pytest --cov --cov-branch --cov-report=xml "${SPLIT_ARGS[@]}"
         else
-          pytest --cov --cov-branch --verbosity=2 --log-cli-level=INFO
+          pytest --cov --cov-branch --verbosity=2 --log-cli-level=INFO "${SPLIT_ARGS[@]}"
         fi
 
     - name: Upload coverage to Codecov
