@@ -10,6 +10,7 @@ from .models import (
     AssistantConversation,
     AssistantMessage,
     BenjiSmsBinding,
+    BenjiSmsDeadLetter,
     BenjiSmsDelivery,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
@@ -315,7 +316,31 @@ class BenjiSmsStrangerReplyAdmin(SuperuserReadOnlyAdmin):
     readonly_fields = ("phone_hash", "replied_at")
 
 
+class BenjiSmsDeadLetterAdmin(SuperuserReadOnlyAdmin):
+    """Jobs that failed every attempt (MFB-2436). Ids and error classes only."""
+
+    list_display = ("id", "task_name", "attempts", "error_type", "conversation", "created_at")
+    list_filter = ("task_name", "error_type")
+    # Only so the admin renders the search box: get_search_results replaces the lookup.
+    search_fields = ("task_id",)
+    search_help_text = "An exact Celery task id, conversation id or inbound Twilio message SID."
+    ordering = ("-created_at",)
+    readonly_fields = ("task_name", "task_id", "conversation", "inbound_sid", "attempts", "error_type", "created_at")
+
+    def get_search_results(self, request: HttpRequest, queryset: QuerySet, search_term: str) -> tuple[QuerySet, bool]:
+        term = search_term.strip()
+        if not term:
+            return queryset, False
+        lookup = Q(task_id=term) | Q(inbound_sid=term)
+        try:
+            lookup |= Q(conversation_id=uuid.UUID(term))
+        except ValueError:
+            pass
+        return queryset.filter(lookup), False
+
+
 admin.site.register(BenjiSmsPhone, BenjiSmsPhoneAdmin)
 admin.site.register(BenjiSmsBinding, BenjiSmsBindingAdmin)
 admin.site.register(BenjiSmsDelivery, BenjiSmsDeliveryAdmin)
 admin.site.register(BenjiSmsStrangerReply, BenjiSmsStrangerReplyAdmin)
+admin.site.register(BenjiSmsDeadLetter, BenjiSmsDeadLetterAdmin)

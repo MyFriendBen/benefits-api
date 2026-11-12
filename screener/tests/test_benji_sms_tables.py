@@ -22,6 +22,7 @@ from authentication.models import User
 from screener.admin import (
     AssistantConversationAdmin,
     BenjiSmsBindingAdmin,
+    BenjiSmsDeadLetterAdmin,
     BenjiSmsDeliveryAdmin,
     BenjiSmsPhoneAdmin,
     BenjiSmsStrangerReplyAdmin,
@@ -33,6 +34,7 @@ from screener.models import (
     AssistantConversationStatus,
     AssistantMessage,
     BenjiSmsBinding,
+    BenjiSmsDeadLetter,
     BenjiSmsDelivery,
     BenjiSmsDeliveryKind,
     BenjiSmsDeliveryStatus,
@@ -83,6 +85,18 @@ def make_binding(white_label: WhiteLabel, phone: BenjiSmsPhone, **overrides: obj
 def make_delivery(**overrides: object) -> BenjiSmsDelivery:
     defaults = {"kind": BenjiSmsDeliveryKind.FIXED}
     return BenjiSmsDelivery.objects.create(**{**defaults, **overrides})
+
+
+def make_dead_letter(conversation: AssistantConversation, **overrides: object) -> BenjiSmsDeadLetter:
+    defaults = {
+        "task_name": "screener.benji_sms_turn",
+        "task_id": str(uuid.uuid4()),
+        "conversation": conversation,
+        "inbound_sid": SID,
+        "attempts": 2,
+        "error_type": "requests.exceptions.Timeout",
+    }
+    return BenjiSmsDeadLetter.objects.create(**{**defaults, **overrides})
 
 
 class TestPhone(TestCase):
@@ -357,7 +371,7 @@ class TestDatabaseLevelCascade(TransactionTestCase):
 
 
 class TestSmsAdminAccess(TestCase):
-    """Superusers only, read-only, for all four tables (privacy companion §11).
+    """Superusers only, read-only, for every SMS table (privacy companion §11).
 
     `BenjiSmsBinding` has a real `white_label` FK, so SecureAdmin alone would show a
     white label's bindings to its staff. These tests pin that it does not.
@@ -368,6 +382,7 @@ class TestSmsAdminAccess(TestCase):
         (BenjiSmsBindingAdmin, BenjiSmsBinding),
         (BenjiSmsDeliveryAdmin, BenjiSmsDelivery),
         (BenjiSmsStrangerReplyAdmin, BenjiSmsStrangerReply),
+        (BenjiSmsDeadLetterAdmin, BenjiSmsDeadLetter),
     )
 
     def setUp(self) -> None:
@@ -379,11 +394,13 @@ class TestSmsAdminAccess(TestCase):
             kind=BenjiSmsDeliveryKind.DISCLOSURE, binding=self.binding, inbound_sid="SM" + "4" * 32, outbound_sid=SID
         )
         self.stranger = BenjiSmsStrangerReply.objects.create(phone_hash=OTHER_HASH)
+        self.dead_letter = make_dead_letter(self.binding.conversation)
         self.rows = {
             BenjiSmsPhone: self.phone,
             BenjiSmsBinding: self.binding,
             BenjiSmsDelivery: self.delivery,
             BenjiSmsStrangerReply: self.stranger,
+            BenjiSmsDeadLetter: self.dead_letter,
         }
 
         self.staff = User.objects.create_user(email_or_cell="tenant-staff@example.com", password="pw")
@@ -472,6 +489,7 @@ class TestSmsAdminPagesRender(TestCase):
             kind=BenjiSmsDeliveryKind.REPLY, message=message, binding=self.binding, outbound_sid=SID
         )
         self.stranger = BenjiSmsStrangerReply.objects.create(phone_hash=OTHER_HASH)
+        self.dead_letter = make_dead_letter(self.binding.conversation)
         superuser = User.objects.create_user(email_or_cell="root@example.com", password="pw")
         superuser.is_staff = True
         superuser.is_superuser = True
@@ -484,6 +502,7 @@ class TestSmsAdminPagesRender(TestCase):
             "benjismsbinding": self.binding,
             "benjismsdelivery": self.delivery,
             "benjismsstrangerreply": self.stranger,
+            "benjismsdeadletter": self.dead_letter,
         }
         for name, row in rows.items():
             base = f"/admin/screener/{name}/"

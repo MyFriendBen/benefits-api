@@ -22,6 +22,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
 from benefits.cache_config import redis_pool_kwargs
+from benefits.celery_config import BROKER_POOL_LIMIT, BROKER_SOCKET_TIMEOUT, broker_use_ssl
 from benefits.sentry_scrub import scrub_event
 
 EXTRA_LANG_INFO = {
@@ -464,6 +465,60 @@ BENJI_SMS_OUTBOUND_ENABLED = config("BENJI_SMS_OUTBOUND_ENABLED", default="")
 # every binding, which expires every SMS conversation: a deliberate operation, never
 # routine. Generate with: python -c "import secrets; print(secrets.token_hex(32))"
 BENJI_SMS_HASH_KEY = config("BENJI_SMS_HASH_KEY", default="")
+
+# Celery (MFB-2436), for the Benji SMS worker. Runbook: docs/BENJI_SMS_WORKER.md.
+#
+# The broker is its own Redis add-on, attached as CELERY_BROKER, never the cache's
+# REDIS_URL (see benefits/celery_config.py). Empty means none is attached: the enqueue
+# helpers in screener/tasks.py then refuse instead of letting Celery try its default
+# broker on localhost.
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="")
+# Eager runs a task in-process at the call, so local work needs no broker or worker.
+# On by default when DEBUG is, and in tests (pytest.ini). A developer running a real
+# worker locally sets CELERY_TASK_ALWAYS_EAGER=False.
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=DEBUG, cast=bool)
+# Off, so an eager job behaves as it would on a worker: retried, then dead-lettered,
+# with the failure on the result rather than raised at the call. Propagating raises
+# before Celery runs the retry or the task's on_failure, which would skip both.
+CELERY_TASK_EAGER_PROPAGATES = False
+CELERY_BROKER_USE_SSL = broker_use_ssl(CELERY_BROKER_URL)
+CELERY_BROKER_POOL_LIMIT = BROKER_POOL_LIMIT
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    # With late acks, a job whose worker died is handed out again once this many
+    # seconds pass unacknowledged. A reply that turns up an hour later (Celery's
+    # default) is worse than none, so it is short. It must stay above the longest a job
+    # can be held unacknowledged: one attempt's time limit plus the retry countdown
+    # (screener/tasks.py), or a slow job runs twice while still running.
+    "visibility_timeout": 300,
+    "socket_timeout": BROKER_SOCKET_TIMEOUT,
+    "socket_connect_timeout": BROKER_SOCKET_TIMEOUT,
+}
+# Publishing retries briefly, then raises: the inbound webhook enqueues, and Twilio
+# should get an error it can retry rather than a request that hangs on a dead broker.
+CELERY_TASK_PUBLISH_RETRY_POLICY = {
+    "max_retries": 2,
+    "interval_start": 0,
+    "interval_step": 0.5,
+    "interval_max": 1,
+}
+CELERY_TASK_DEFAULT_QUEUE = "benji_sms"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+# At least once, not at most once: a job is acknowledged after it runs, and handed out
+# again if the worker is lost mid-job (a dyno restart). Duplicates are the turn's to
+# absorb (screener/tasks.py); a lost reply is not recoverable.
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+# One job per worker child at a time, so a slow turn never holds others hostage.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# Results are off by default; only the ping that benji_sms_worker_check waits on keeps
+# one, briefly, on the broker.
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL or None
+CELERY_REDIS_BACKEND_USE_SSL = broker_use_ssl(CELERY_BROKER_URL)
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_RESULT_EXPIRES = 600  # seconds
 
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields
