@@ -2,7 +2,8 @@
 
 from decimal import ROUND_HALF_UP, Decimal
 
-from programs.programs.cross_white_label.snap.mfb_base import MfbSnap, _by_size
+from programs.programs.cross_white_label.snap.mfb_base import MfbSnap
+from programs.programs.shared.income import table_income_limit
 
 # 185% of poverty, monthly: the gross income standard for broad-based categorical eligibility,
 # 2026-10-01 through 2027-09-30 (N.J.A.C. 10:87-2.36(a)).
@@ -19,7 +20,7 @@ STATE_MINIMUM_BENEFIT = 95
 
 def bbce_gross_limit(household_size: int) -> int:
     """Monthly gross income a household must be under to qualify through NJ's 185% route."""
-    return _by_size(BBCE_GROSS_LIMITS, BBCE_GROSS_LIMIT_PER_ADDITIONAL, household_size)
+    return table_income_limit(BBCE_GROSS_LIMITS, household_size, BBCE_GROSS_LIMIT_PER_ADDITIONAL)
 
 
 class NjSnap(MfbSnap):

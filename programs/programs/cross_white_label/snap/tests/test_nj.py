@@ -13,6 +13,7 @@ from programs.framework.base import Eligibility
 from programs.programs.cross_white_label.snap import nj
 from programs.programs.cross_white_label.snap.nj import NjSnap
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
+from programs.programs.testing_fixtures.households import add_income
 from screener.models import Screen
 
 
@@ -407,3 +408,38 @@ class TestRegistration(NjSnapTestCase):
     def test_inherits_the_federal_dependencies(self):
         self.assertIn("household_assets", NjSnap.dependencies)
         self.assertIn("expense_type", NjSnap.dependencies)
+
+
+class TestRegressions(NjSnapTestCase):
+    def test_a_weekly_amount_on_a_half_dollar_rounds_up(self):
+        # 250 a week is exactly 1,087.50 a month; NJ rounds half up to 1,088.
+        screen = self.household(("headOfHousehold", 40))
+        add_income(screen.household_members.get(), 250, "wages", "weekly")
+
+        self.assertEqual(self.calculator(screen).rounded_income(["all"]), Decimal("1088"))
+
+    def test_biweekly_and_hourly_amounts_on_a_half_dollar_round_up(self):
+        # 500 biweekly is 1,087.50 a month; 5 an hour for 50 hours is 250 a week, also 1,087.50.
+        screen = self.household(("headOfHousehold", 40))
+        member = screen.household_members.get()
+        add_income(member, 500, "wages", "biweekly")
+        self.assertEqual(self.calculator(screen).rounded_income(["all"]), Decimal("1088"))
+
+        screen = self.household(("headOfHousehold", 40))
+        stream = add_income(screen.household_members.get(), 5, "wages", "hourly")
+        stream.hours_worked = 50
+        stream.save()
+        self.assertEqual(self.calculator(screen).rounded_income(["all"]), Decimal("1088"))
+
+    def test_an_excluded_students_ssi_does_not_make_the_household_categorically_eligible(self):
+        screen = self.household(
+            ("headOfHousehold", 40, wages(5_000)),
+            ("sisterOrBrother", 22, {"student": True, "student_full_time": True}),
+        )
+        student = screen.household_members.get(relationship="sisterOrBrother")
+        add_income(student, 900, "sSI", "monthly")
+
+        calculator = self.calculator(screen)
+        self.assertEqual(calculator.household_size, 1)
+        self.assertFalse(calculator.categorically_eligible())
+        self.assertFalse(calculator.has_elderly_or_disabled_member)

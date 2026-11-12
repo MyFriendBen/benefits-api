@@ -360,13 +360,6 @@ class TestResourceLimit(MfbSnapTestCase):
     def test_resources_over_3000_fail_without_an_elderly_or_disabled_member(self):
         self.assert_ineligible(self.calculate(self.single(age=59, assets=4_750)))
 
-    def test_unanswered_resources_count_as_zero(self):
-        screen = self.single()
-        screen.household_assets = None
-        screen.save(update_fields=["household_assets"])
-
-        self.assertTrue(self.calculate(screen).eligible)
-
 
 class TestCategoricalEligibility(MfbSnapTestCase):
     def test_cash_assistance_income_passes_without_the_income_tests(self):

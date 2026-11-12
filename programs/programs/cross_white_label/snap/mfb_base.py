@@ -1,16 +1,20 @@
 """Supplemental Nutrition Assistance Program — MFB federal base."""
 
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from functools import cached_property
 from math import ceil
 from typing import ClassVar, Optional
 
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility, ProgramCalculator
-from programs.framework.pe_dependencies.receipt import screen_reports_tanf
-from screener.models import HouseholdMember
+from programs.framework.pe_dependencies.member import SSDI_INCOME_TYPE
+from programs.framework.pe_dependencies.receipt import SSI_INCOME_TYPE, screen_reports_tanf
+from programs.programs.shared.income import table_income_limit
+from screener.models import HouseholdMember, IncomeStream
 
 MONTHS_PER_YEAR = 12
+# The screener's weeks-per-month factor, as an exact Decimal.
+WEEKS_PER_MONTH = Decimal("4.35")
 
 ELDERLY_AGE = 60
 # The age bounds of the student rule: under 18 or 50 and over is excused.
@@ -19,10 +23,8 @@ STUDENT_MAX_AGE = 50
 # A parent of a child under 6 is excused from the student rule; a single parent, under 12.
 YOUNG_CHILD_AGE = 6
 SINGLE_PARENT_CHILD_AGE = 12
-# The categorical route's receipt streams (7 U.S.C. 2014(a)): SSI. TANF comes from `screen_reports_tanf`.
-SSI_INCOME_TYPE = "sSI"
 # Income streams that make a member "elderly or disabled" besides age and the disability flags.
-DISABILITY_INCOME_TYPES = ["sSI", "sSDisability"]
+DISABILITY_INCOME_TYPES = [SSI_INCOME_TYPE, SSDI_INCOME_TYPE]
 PARTNER_RELATIONSHIPS = ("spouse", "domesticPartner")
 HOUSEHOLD_ADULT_RELATIONSHIPS = ("headOfHousehold", *PARTNER_RELATIONSHIPS)
 
@@ -55,23 +57,14 @@ def money(amount: float) -> Decimal:
     return Decimal(str(amount))
 
 
-def _by_size(table: dict[int, int], per_additional: int, household_size: int) -> int:
-    """A table figure for the household size; each member above the table's last row adds a step."""
-    last = max(table)
-    if household_size <= last:
-        return table[household_size]
-
-    return table[last] + per_additional * (household_size - last)
-
-
 def gross_income_limit(household_size: int) -> int:
     """Monthly gross income limit, 130% of poverty."""
-    return _by_size(GROSS_INCOME_LIMITS, GROSS_INCOME_LIMIT_PER_ADDITIONAL, household_size)
+    return table_income_limit(GROSS_INCOME_LIMITS, household_size, GROSS_INCOME_LIMIT_PER_ADDITIONAL)
 
 
 def net_income_limit(household_size: int) -> int:
     """Monthly net income limit, 100% of poverty."""
-    return _by_size(NET_INCOME_LIMITS, NET_INCOME_LIMIT_PER_ADDITIONAL, household_size)
+    return table_income_limit(NET_INCOME_LIMITS, household_size, NET_INCOME_LIMIT_PER_ADDITIONAL)
 
 
 def max_allotment(household_size: int) -> int:
@@ -79,7 +72,7 @@ def max_allotment(household_size: int) -> int:
     if household_size >= LARGEST_HOUSEHOLD:
         return MAX_ALLOTMENT_LARGEST
 
-    return _by_size(MAX_ALLOTMENTS, MAX_ALLOTMENT_PER_ADDITIONAL, household_size)
+    return table_income_limit(MAX_ALLOTMENTS, household_size, MAX_ALLOTMENT_PER_ADDITIONAL)
 
 
 def standard_deduction(household_size: int) -> int:
@@ -174,18 +167,16 @@ class MfbSnap(ProgramCalculator, abstract=True):
         net_limit = net_income_limit(size)
         e.condition(net <= net_limit, messages.income(net * MONTHS_PER_YEAR, net_limit * MONTHS_PER_YEAR))
 
-        assets = self.screen.household_assets if self.screen.household_assets is not None else 0
+        assets = self.screen.household_assets
         asset_limit = RESOURCE_LIMIT_ELDERLY_DISABLED if self.has_elderly_or_disabled_member else RESOURCE_LIMIT
         e.condition(assets <= asset_limit, messages.assets(asset_limit))
 
     def categorically_eligible(self) -> bool:
         """Receives TANF-funded benefits or SSI. A state adds its own qualifying assistance here."""
-        return screen_reports_tanf(self.screen) or self.screen.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0
+        return screen_reports_tanf(self.screen) or self.counted_yearly_income([SSI_INCOME_TYPE]) > 0
 
     def household_value(self) -> int:
-        annual = (Decimal(self.allotment()) * MONTHS_PER_YEAR).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
-
-        return max(1, int(annual))
+        return max(1, self.allotment() * MONTHS_PER_YEAR)
 
     def allotment(self) -> int:
         """Monthly allotment: the maximum less 30% of net income (rounded up), or the minimum benefit."""
@@ -230,12 +221,16 @@ class MfbSnap(ProgramCalculator, abstract=True):
     @cached_property
     def has_elderly_or_disabled_member(self) -> bool:
         """Someone 60 or older, disabled, or reporting SSI or Social Security disability."""
-        for member in self.members:
+        for member in self.counted_members:
             age = member.calc_age()
             if (age is not None and age >= ELDERLY_AGE) or member.has_disability():
                 return True
 
-        return self.screen.calc_gross_income("yearly", DISABILITY_INCOME_TYPES) > 0
+        return self.counted_yearly_income(DISABILITY_INCOME_TYPES) > 0
+
+    def counted_yearly_income(self, types: list[str]) -> float:
+        """Yearly income of the given types for the members who are counted (not excluded students)."""
+        return sum(member.calc_gross_income("yearly", types) for member in self.counted_members)
 
     def is_ineligible_student(self, member: HouseholdMember) -> bool:
         """A full-time student who meets none of the exceptions to the student rule."""
@@ -296,9 +291,26 @@ class MfbSnap(ProgramCalculator, abstract=True):
         for member in self.counted_members:
             for stream in member.income_streams.all():
                 if "all" in types or stream.type in types:
-                    total += self.round_amount(money(stream.monthly()))
+                    total += self.round_amount(self.monthly_amount(stream))
 
         return total
+
+    @staticmethod
+    def monthly_amount(stream: IncomeStream) -> Decimal:
+        """
+        A stream's monthly amount as an exact Decimal. ``IncomeStream.monthly`` builds its weekly
+        factor from the float 4.35, which is slightly under 4.35, so a weekly 250 comes out at
+        1,087.4999… and a round-half-up state rounds it down. The factors here are exact.
+        """
+        amount = stream.amount
+        if stream.frequency == "weekly":
+            return amount * WEEKS_PER_MONTH
+        if stream.frequency == "biweekly":
+            return amount * WEEKS_PER_MONTH / 2
+        if stream.frequency == "hourly":
+            return amount * stream.hours_worked * WEEKS_PER_MONTH
+
+        return money(stream.monthly())
 
     def expenses(self, types: list[str]) -> Decimal:
         return money(self.screen.calc_expenses("monthly", types))
