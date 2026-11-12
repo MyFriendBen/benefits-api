@@ -860,9 +860,8 @@ class NjConfigurationData(ConfigurationData):
     # NJ uses generic MFB branding and the default step directory, so it inherits everything
     # from base and overrides only the values that are NJ-specific.
     #
-    # "211nj" is the 2-1-1 New Jersey co-brand overlay. It is logo-only, like Denver Public
-    # Schools and Denver Preschool Program in co.py: no theme, no custom step directory, and the
-    # standard sign-up step stays. Only keys it changes carry a "211nj" entry.
+    # "211nj" is the 2-1-1 New Jersey co-brand overlay. It is logo-only: no theme, no custom step
+    # directory, and the standard sign-up step stays. Only keys it changes carry a "211nj" entry.
     referrer_data = {
         **ConfigurationData.referrer_data,
         # Both keys below repeat base's "default" because a referrer dict replaces base's whole
@@ -879,8 +878,7 @@ class NjConfigurationData(ConfigurationData):
         # can't start with a digit, hence nj211.
         "logoClass": {"default": "logo", "211nj": "nj211-logo-size"},
         "uiOptions": {
-            # Omits the Immediate Help tab from the results page, matching the other recently
-            # added states (MO, WA).
+            # Omits the Immediate Help tab from the results page.
             "default": ["no_results_more_help"],
             # A referrer's list replaces the default rather than extending it, so
             # no_results_more_help has to be repeated here or 211nj users would get the Immediate
@@ -896,6 +894,6 @@ class NjConfigurationData(ConfigurationData):
             "211nj": "https://screener.myfriendben.org/nj/step-1?referrer=211nj",
         },
         # The lockup already says "New Jersey", so the label the header puts under the logo would
-        # repeat it. Cleared the same way 211ks and 211mo are in ks.py and mo.py.
+        # repeat it.
         "stateName": {"default": "New Jersey", "211nj": ""},
     }
