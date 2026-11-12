@@ -381,6 +381,15 @@ class TestNoHead(NjCdccTestCase):
 
         self.assertIneligible(screen)
 
+    def test_a_spouse_with_no_head_is_ineligible(self):
+        """A spouse files with the head, so without a head there's no NJ return to judge."""
+        screen = self.make_screen(household_size=2)
+        spouse = self.member(screen, "spouse", 34, income={"wages": 40_000})
+        self.member(screen, "child", 5)
+        self.add_expense(spouse, 300, "childCare", "monthly")
+
+        self.assertIneligible(screen)
+
 
 class TestFederalCredit(NjCdccTestCase):
     def test_a_federal_credit_of_0_fails(self):
