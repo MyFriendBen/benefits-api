@@ -241,7 +241,7 @@ class MfbSnap(ProgramCalculator, abstract=True):
         if age is not None and (age < STUDENT_MIN_AGE or age >= STUDENT_MAX_AGE):
             return False
 
-        if member.has_disability():
+        if member.has_disability() or member.calc_gross_income("yearly", DISABILITY_INCOME_TYPES) > 0:
             return False
 
         if member.student_works_20_plus_hrs is True or member.student_has_work_study is True:

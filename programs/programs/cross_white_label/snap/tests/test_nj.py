@@ -431,15 +431,31 @@ class TestRegressions(NjSnapTestCase):
         stream.save()
         self.assertEqual(self.calculator(screen).rounded_income(["all"]), Decimal("1088"))
 
-    def test_an_excluded_students_ssi_does_not_make_the_household_categorically_eligible(self):
-        screen = self.household(
-            ("headOfHousehold", 40, wages(5_000)),
-            ("sisterOrBrother", 22, {"student": True, "student_full_time": True}),
-        )
-        student = screen.household_members.get(relationship="sisterOrBrother")
-        add_income(student, 900, "sSI", "monthly")
+    def test_a_student_reporting_ssi_or_ssdi_is_treated_as_disabled_and_not_left_out(self):
+        for income_type in ("sSI", "sSDisability"):
+            with self.subTest(income_type=income_type):
+                screen = self.household(
+                    ("headOfHousehold", 40, wages(5_000)),
+                    ("sisterOrBrother", 22, {"student": True, "student_full_time": True}),
+                )
+                add_income(screen.household_members.get(relationship="sisterOrBrother"), 900, income_type, "monthly")
 
-        calculator = self.calculator(screen)
-        self.assertEqual(calculator.household_size, 1)
-        self.assertFalse(calculator.categorically_eligible())
-        self.assertFalse(calculator.has_elderly_or_disabled_member)
+                calculator = self.calculator(screen)
+                self.assertEqual(calculator.ineligible_students, [])
+                self.assertEqual(calculator.household_size, 2)
+                self.assertTrue(calculator.has_elderly_or_disabled_member)
+
+    def test_a_lone_student_reporting_ssi_is_not_rejected_as_an_empty_household(self):
+        screen = self.household(("headOfHousehold", 22, {"student": True, "student_full_time": True}))
+        add_income(screen.household_members.get(), 900, "sSI", "monthly")
+
+        self.assertEqual(self.calculator(screen).household_size, 1)
+        self.assertTrue(self.calculate(screen).eligible)
+
+    def test_a_student_with_no_disability_flag_or_disability_income_is_still_left_out(self):
+        screen = self.household(
+            ("headOfHousehold", 40, wages(2_400)),
+            ("sisterOrBrother", 22, {**wages(900), "student": True, "student_full_time": True}),
+        )
+
+        self.assertEqual(self.calculator(screen).household_size, 1)
