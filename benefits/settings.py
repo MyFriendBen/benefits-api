@@ -459,6 +459,12 @@ TWILIO_PHONE_NUMBER = config("TWILIO_PHONE_NUMBER", default="")
 # fail-closed: only true/1/yes/on means on; missing or anything else is off.
 BENJI_SMS_OUTBOUND_ENABLED = config("BENJI_SMS_OUTBOUND_ENABLED", default="")
 
+# Benji SMS phone-hash key (MFB-2435), one per environment, also kept in the password
+# manager. benji_sms_hash.phone_hash() refuses to run without it. Rotating it orphans
+# every binding, which expires every SMS conversation: a deliberate operation, never
+# routine. Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+BENJI_SMS_HASH_KEY = config("BENJI_SMS_HASH_KEY", default="")
+
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields
 GRAPH_MODELS = {

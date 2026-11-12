@@ -18,6 +18,7 @@ from django.utils import timezone
 from authentication.models import User
 from screener.admin import AssistantConversationAdmin
 from screener.models import AssistantConversation, AssistantMessage, WhiteLabel
+from screener.tests.assistant_helpers import make_conversation, make_message
 
 # Migration 0163 turns the message foreign key into a database-level ON DELETE
 # CASCADE. Imported by name because the module starts with a digit, so the plain
@@ -43,30 +44,6 @@ INSERT INTO screener_assistantconversation
     (conversation_id, screen_uuid, status, context, created_at, updated_at)
 VALUES (%s, %s, 'active', '{}', %s, %s)
 """
-
-
-def make_conversation(**overrides) -> AssistantConversation:
-    defaults = {
-        "conversation_id": uuid.uuid4(),
-        "screen_uuid": uuid.uuid4(),
-        "white_label": "co",
-        "locale": "en-US",
-        "mode": "live",
-        "prompt_version": "test-1",
-        "context": {"household": {"size": 3}, "eligible_programs": []},
-    }
-    return AssistantConversation.objects.create(**{**defaults, **overrides})
-
-
-def make_message(conversation: AssistantConversation, seq: int, **overrides) -> AssistantMessage:
-    defaults = {
-        "message_id": uuid.uuid4(),
-        "conversation": conversation,
-        "seq": seq,
-        "role": "user",
-        "text": "hello",
-    }
-    return AssistantMessage.objects.create(**{**defaults, **overrides})
 
 
 class TestAssistantConversationConstraints(TestCase):
