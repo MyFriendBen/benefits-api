@@ -107,6 +107,9 @@ class MfbSnap(ProgramCalculator, abstract=True):
     - every listed member is assumed to buy and prepare food with the household, and none is a
       boarder, institution resident, or a person the work, SSN, felony, strike or program-violation
       rules would leave out
+    - the student rule applies to full-time students only, because the screener asks nothing finer;
+      the regulation applies it from half-time enrollment, so a half-time student with no exception
+      is counted in the household
     - income is counted as entered, with no exclusions (education aid, K-12 earnings, energy
       assistance, irregular income), and no sponsor is deemed
     - every reported ``childSupport`` expense is subtracted, as if legally owed to a non-member
