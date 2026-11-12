@@ -1,0 +1,12 @@
+# PR validation splits the test suite across 3 parallel jobs, and each one uploads the
+# coverage of only its own group (.github/workflows/pr-validation.yaml). Codecov merges
+# the uploads for a commit, but would otherwise post statuses and its PR comment after
+# the first one arrives -- reporting most of the codebase as untested. Wait for all 3.
+#
+# Keep after_n_builds equal to the number of groups in pr-validation.yaml's matrix.
+codecov:
+  notify:
+    after_n_builds: 3
+
+comment:
+  after_n_builds: 3

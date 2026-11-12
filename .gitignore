@@ -26,6 +26,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+# pytest-split's record of test durations. CI keeps it in the Actions cache (see
+# docs/TESTING.md); a local `pytest --store-durations` writes one here.
+.test_durations
 
 .vscode/**/*
 !.vscode/settings.json.default
