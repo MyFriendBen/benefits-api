@@ -355,6 +355,15 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         "guideline each July 1; the 2026 guideline runs July 2026 to June 2027",
         source="program-ops federal_wic_spec.md section 4 income_limit, 91 FR 23050",
     ),
+    ("federal", "federal_pell_grant"): Vintage(
+        edition="2026",
+        basis=Basis.TABLE_EDITION,
+        status=Status.DEFERRED,
+        rule="the 2026-27 award year compares 2024 income with the 2024 guideline; the screener "
+        "tests current income, so the current-year guideline is used instead",
+        source="program-ops federal_pell_grant_spec.md section 4 need_based_award "
+        "(poverty_guideline_year), 2026-27 SAI and Pell Grant Eligibility Guide",
+    ),
     ("il", "il_msp"): Vintage(
         edition="2026",
         basis=Basis.COVERAGE_YEAR,
