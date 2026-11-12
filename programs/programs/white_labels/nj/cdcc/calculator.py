@@ -66,6 +66,11 @@ class NjCdcc(FederalCdcc):
 
     def household_eligible(self, e: Eligibility) -> None:
         super().household_eligible(e)
+        # No head of household: the federal rules already fail, and the NJ income test can't run,
+        # since judging dependents needs a head.
+        if not self._filers:
+            return
+
         # Spec §4 `federal_cdcc_allowed`: the federal credit above 0. Checked only once the
         # federal rules pass, since the credit needs a filer to compute.
         if e.eligible:

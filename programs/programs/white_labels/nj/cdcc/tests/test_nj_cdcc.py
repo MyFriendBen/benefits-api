@@ -372,6 +372,16 @@ class TestScenarios(NjCdccTestCase):
         self.assertEqual(self.make_calculator(screen)._taxable_income, 59_500)
 
 
+class TestNoHead(NjCdccTestCase):
+    def test_a_household_with_no_head_is_ineligible(self):
+        """Ineligible, as for the federal credit, rather than raising on the NJ income test."""
+        screen = self.make_screen(household_size=1)
+        child = self.member(screen, "child", 5)
+        self.add_expense(child, 300, "childCare", "monthly")
+
+        self.assertIneligible(screen)
+
+
 class TestFederalCredit(NjCdccTestCase):
     def test_a_federal_credit_of_0_fails(self):
         """The federal rules can pass while the credit rounds to 0; New Jersey needs it above 0."""
