@@ -11,6 +11,7 @@ has no Program row for some of them yet, so the tests seed a stand-in row with t
 """
 
 from datetime import date
+from typing import Optional
 
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility
@@ -22,6 +23,8 @@ from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
 VALUE_PER_CHILD = 120
+# 17 on the tests' 2026-10-15, but 16 on July 1, 2026, inside the school-age window.
+BORN_OCTOBER_2009 = date(2009, 10, 1)
 
 
 class NjSunBucksTestCase(CustomCalculatorTestCase):
@@ -34,10 +37,17 @@ class NjSunBucksTestCase(CustomCalculatorTestCase):
     # Screened on 2026-10-15, so the window is July 1, 2026 - August 31, 2027 (scenarios 10-13).
     reference_date = date(2026, 10, 15)
 
-    def household(self, size: int, head_wages: int = 0, head_age: int = 35) -> Screen:
-        """A screen of `size` whose head earns `head_wages` a year. The test adds the rest."""
+    def household(self, size: int, head_wages: int = 0, head_age: int = 35, head_born: Optional[date] = None) -> Screen:
+        """
+        A screen of `size` whose head earns `head_wages` a year. The test adds the rest.
+
+        `head_born` pins the head's birth month, for a head whose school age depends on the window.
+        """
         screen = self.make_screen(household_size=size)
-        self.add_member(screen, "headOfHousehold", head_age, yearly_income=head_wages)
+        if head_born is None:
+            self.add_member(screen, "headOfHousehold", head_age, yearly_income=head_wages)
+        else:
+            self.add_member(screen, "headOfHousehold", None, yearly_income=head_wages, birth_year_month=head_born)
 
         return screen
 
@@ -220,7 +230,7 @@ class TestScenario21TheDayAfter(RolloverTestCase):
 
 class TestSchoolMealsAndIncome(NjSunBucksTestCase):
     def test_scenario_14_child_certified_for_school_meals(self):
-        screen = self.household(1, head_wages=40_000, head_age=17)
+        screen = self.household(1, head_wages=40_000, head_born=BORN_OCTOBER_2009)
         self.receive(screen, "nslp")
 
         eligibility = self.calculate(screen)
@@ -240,12 +250,12 @@ class TestSchoolMealsAndIncome(NjSunBucksTestCase):
         self.assertEqual([m.value for m in eligibility.eligible_members], [0, 0, 120])
 
     def test_scenario_15_well_under_the_income_limit(self):
-        screen = self.household(1, head_wages=20_000, head_age=17)
+        screen = self.household(1, head_wages=20_000, head_born=BORN_OCTOBER_2009)
 
         self.assert_eligible(self.calculate(screen))
 
     def test_scenario_16_at_the_income_limit(self):
-        screen = self.household(1, head_wages=29_526, head_age=17)
+        screen = self.household(1, head_wages=29_526, head_born=BORN_OCTOBER_2009)
 
         eligibility = self.calculate(screen)
 
@@ -253,7 +263,7 @@ class TestSchoolMealsAndIncome(NjSunBucksTestCase):
         self.assertEqual(eligibility.pass_messages, [messages.income(29_526, 29_526)])
 
     def test_scenario_17_one_dollar_over_the_income_limit(self):
-        screen = self.household(1, head_wages=29_527, head_age=17)
+        screen = self.household(1, head_wages=29_527, head_born=BORN_OCTOBER_2009)
 
         eligibility = self.calculate(screen)
 
