@@ -1446,8 +1446,9 @@ class AssistantMessage(models.Model):
 # RETENTION follows the conversation. A deletion request ("remove my texts") is
 # `manage.py find_benji_sms_phone --delete`, which runs
 # `BenjiSmsPhone.delete_with_conversations()`: the phone's SMS conversations (their
-# messages, bindings and deliveries cascade, in the ORM and in the database through
-# migration 0172), its stranger row, then the phone row, in one transaction.
+# messages, bindings, deliveries and dead letters cascade, in the ORM and in the
+# database through migrations 0172 and 0174), its stranger row, then the phone row, in
+# one transaction.
 # `BenjiSmsBinding.phone` is PROTECT so the phone row can never go first and leave
 # conversations behind. Stranger rows, and delivery rows that belong to no binding,
 # live one day (`BenjiSmsStrangerReply.objects.purge_expired()`).
@@ -1807,3 +1808,88 @@ class BenjiSmsStrangerReply(models.Model):
 
     def __str__(self) -> str:
         return f"Benji SMS stranger reply {self.pk}"
+
+
+class BenjiSmsDeadLetterManager(models.Manager):
+    def record(
+        self,
+        *,
+        task_name: str,
+        task_id: str,
+        attempts: int,
+        error_type: str,
+        conversation_id: Optional[str] = None,
+        inbound_sid: Optional[str] = None,
+    ) -> "BenjiSmsDeadLetter":
+        """Record a job that failed for good (screener.tasks.BenjiSmsTask.dead_letter).
+
+        A conversation deleted while its job was queued or retrying (a deletion request)
+        leaves nothing to point at, so the row keeps neither the conversation nor the
+        inbound SID: a SID resolves to the number at Twilio, and the row would outlive
+        the deletion it belongs to. The conversation row is locked from the check to the
+        insert, so a deletion cannot land in between and fail the insert.
+        """
+        with transaction.atomic():
+            if (
+                conversation_id is None
+                or not AssistantConversation.objects.select_for_update().filter(pk=conversation_id).exists()
+            ):
+                conversation_id = None
+                inbound_sid = None
+            return self.create(
+                task_name=task_name,
+                task_id=task_id,
+                attempts=attempts,
+                error_type=error_type,
+                conversation_id=conversation_id,
+                inbound_sid=inbound_sid,
+            )
+
+
+class BenjiSmsDeadLetter(models.Model):
+    """A Benji SMS job that failed every attempt (MFB-2436; proposal v3, decision 5).
+
+    Ids and the error's class only, like the job payload: never the message text, the
+    phone number or its hash, and never the exception's message, which can quote any of
+    them. Retention follows the conversation: it cascades with it, in the ORM and in the
+    database through migration 0174, so a deletion request takes these rows too.
+    Writing a row also logs an ERROR, which is the alarm.
+    """
+
+    # The Celery task name, e.g. "screener.benji_sms_turn".
+    task_name = models.CharField(max_length=64)
+    # Celery's id for the job. Retries keep it, so it names the job, not an attempt.
+    task_id = models.CharField(max_length=64)
+    conversation = models.ForeignKey(
+        AssistantConversation,
+        related_name="sms_dead_letters",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    # The inbound MessageSid the job was answering.
+    inbound_sid = models.CharField(max_length=34, blank=True, null=True)
+    attempts = models.PositiveSmallIntegerField()
+    # Qualified class name of the last attempt's exception, e.g. "requests.exceptions.Timeout".
+    error_type = models.CharField(max_length=128)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = BenjiSmsDeadLetterManager()
+
+    class Meta:
+        constraints = [
+            # A SID with no conversation could outlive the deletion that removed the
+            # conversation it came from (see BenjiSmsDeadLetterManager.record).
+            models.CheckConstraint(
+                check=models.Q(inbound_sid__isnull=True) | models.Q(conversation__isnull=False),
+                name="benji_sms_dead_letter_sid_has_conversation",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["created_at"], name="benji_sms_dead_letter_at_idx"),
+            # benji_sms_worker_check --fail finds its job's row by it.
+            models.Index(fields=["task_id"], name="benji_sms_dead_letter_task_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Benji SMS dead letter {self.pk} ({self.task_name}, {self.error_type})"

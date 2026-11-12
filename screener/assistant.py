@@ -80,6 +80,13 @@ AI_SERVICE_TOKEN = os.getenv("AI_SERVICE_TOKEN", "")
 # than the JSON error shape the widget handles, while this worker stayed blocked on a
 # request no one was waiting for. 25 leaves room to return our own 502 first.
 AI_SERVICE_TIMEOUT = 25
+# The Benji SMS worker's per-call budget (MFB-2436), passed as `timeout` to
+# ai_service_request. No router stands between a worker and its caller, so the 25s
+# above does not apply. The ceiling now is ai-service's own Heroku router, which ends
+# ai-service's side of the call at 30s with an H12. 35 rather than 30, so the worker
+# receives that answer (ai-service's JSON error or the router's 503) instead of
+# racing it to a client-side timeout.
+AI_SERVICE_WORKER_TIMEOUT = 35
 
 # Upper bound on the client-supplied visible-programs list. Comfortably above the
 # largest white label's active program count; exists to bound untrusted input.
@@ -1706,6 +1713,29 @@ def _clean_value(value: object) -> Optional[int]:
 WEB_CHANNEL = AssistantChannel.WEB.value
 
 
+def ai_service_request(
+    method: str,
+    path: str,
+    *,
+    json_body: Optional[dict] = None,
+    params: Optional[dict] = None,
+    timeout: float = AI_SERVICE_TIMEOUT,
+) -> requests.Response:
+    """One call to mfb-ai-service, with the service token. Raises what requests raises.
+
+    `timeout` defaults to the web budget. A caller not behind benefits-api's router,
+    the Benji SMS worker, passes AI_SERVICE_WORKER_TIMEOUT.
+    """
+    return requests.request(
+        method,
+        f"{AI_SERVICE_URL}{path}",
+        json=json_body,
+        params=params,
+        headers=_ai_headers(),
+        timeout=timeout,
+    )
+
+
 def _proxy(method: str, path: str, json_body: dict = None, params: dict = None) -> Response:
     """Forward a request to mfb-ai-service and pass its response through.
 
@@ -1714,14 +1744,7 @@ def _proxy(method: str, path: str, json_body: dict = None, params: dict = None) 
     takes its screen id as a query parameter.
     """
     try:
-        resp = requests.request(
-            method,
-            f"{AI_SERVICE_URL}{path}",
-            json=json_body,
-            params=params,
-            headers=_ai_headers(),
-            timeout=AI_SERVICE_TIMEOUT,
-        )
+        resp = ai_service_request(method, path, json_body=json_body, params=params)
     except requests.RequestException:
         logger.warning("AI service proxy request failed.", exc_info=True)
         return Response(
