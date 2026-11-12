@@ -78,6 +78,21 @@ class ScrubEventTest(TestCase):
             expected = json.loads(json.dumps(event))
             self.assertEqual(scrub_event(event, {}), expected, url)
 
+    def test_celery_job_events_lose_args_kwargs_and_frame_vars(self) -> None:
+        sid = "SM" + "ab" * 16
+        for tags in ({"celery_task_id": "t-1"}, [["celery_task_id", "t-1"]], {}):
+            event = {
+                "tags": tags,
+                "extra": {
+                    "celery-job": {"task_name": "screener.benji_sms_turn", "args": ["c", sid], "kwargs": {"s": sid}}
+                },
+                "exception": {"values": [{"stacktrace": {"frames": [{"function": "turn", "vars": {"sid": sid}}]}}]},
+            }
+            scrubbed = scrub_event(event, {})
+            self.assertEqual(scrubbed["extra"]["celery-job"], {"task_name": "screener.benji_sms_turn"}, tags)
+            self.assertNotIn("vars", scrubbed["exception"]["values"][0]["stacktrace"]["frames"][0], tags)
+            self.assertNotIn(sid, json.dumps(scrubbed), tags)
+
     def test_event_without_request_is_unchanged(self) -> None:
         event = {"message": "background job failed"}
         self.assertEqual(scrub_event(event, {}), {"message": "background job failed"})

@@ -485,9 +485,9 @@ CELERY_BROKER_USE_SSL = broker_use_ssl(CELERY_BROKER_URL)
 CELERY_BROKER_POOL_LIMIT = BROKER_POOL_LIMIT
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BROKER_TRANSPORT_OPTIONS = {
-    # With late acks, a job whose worker died is handed out again once this many
-    # seconds pass unacknowledged. A reply that turns up an hour later (Celery's
-    # default) is worse than none, so it is short. It must stay above the longest a job
+    # With late acks, a job whose worker vanished without handing it back (a crash, a
+    # SIGKILL) is handed out again once this many seconds pass unacknowledged. A reply
+    # that turns up an hour later (Celery's default) is worse than none, so it is short. It must stay above the longest a job
     # can be held unacknowledged: one attempt's time limit plus the retry countdown
     # (screener/tasks.py), or a slow job runs twice while still running.
     "visibility_timeout": 300,
@@ -512,6 +512,12 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 # One job per worker child at a time, so a slow turn never holds others hostage.
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# Heroku stops a dyno by sending SIGTERM to every process in it, then SIGKILL 30s later.
+# Celery's pool children would exit on that SIGTERM mid-job, so the Procfile sets
+# REMAP_SIGTERM=SIGQUIT: the children ignore it and the main process runs a cold
+# shutdown, which first gives running jobs this long to finish, then hands the rest
+# back to the broker (late acks) for the next worker.
+CELERY_WORKER_SOFT_SHUTDOWN_TIMEOUT = 25  # seconds, inside Heroku's 30
 # Results are off by default; only the ping that benji_sms_worker_check waits on keeps
 # one, briefly, on the broker.
 CELERY_TASK_IGNORE_RESULT = True

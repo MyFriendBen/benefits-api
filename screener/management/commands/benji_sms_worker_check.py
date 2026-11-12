@@ -21,7 +21,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from screener.models import BenjiSmsDeadLetter
-from screener.tasks import BENJI_SMS_QUEUE, BrokerNotConfigured, benji_sms_ping, require_broker
+from screener.tasks import BENJI_SMS_QUEUE, MAX_RETRIES, BrokerNotConfigured, benji_sms_ping, require_broker
 
 DEFAULT_TIMEOUT_SECONDS = 60
 POLL_SECONDS = 1
@@ -83,6 +83,12 @@ class Command(BaseCommand):
                     f"No dead-letter row for task {task_id} after {timeout:.0f}s. Is the worker scaled up?"
                 )
             time.sleep(POLL_SECONDS)
+        # A row after one attempt would prove the dead-letter path but not the retry.
+        if dead_letter.attempts != MAX_RETRIES + 1:
+            raise CommandError(
+                f"Dead letter {dead_letter.pk} for task {task_id} records {dead_letter.attempts} attempt(s), "
+                f"not {MAX_RETRIES + 1}: the retry did not run."
+            )
         self.stdout.write(
             self.style.SUCCESS(
                 f"Forced failure dead-lettered after {dead_letter.attempts} attempt(s): "

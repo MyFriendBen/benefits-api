@@ -12,6 +12,7 @@ Tests run Celery eagerly (pytest.ini), so a job runs inside the call that queues
 """
 
 import importlib
+import json
 import logging
 import ssl
 import uuid
@@ -22,6 +23,7 @@ from unittest import mock
 import pytest
 import redis
 import requests
+from celery.exceptions import Reject
 from celery.exceptions import TimeoutError as CeleryTimeoutError
 from django.conf import settings
 from django.core.management import call_command
@@ -34,11 +36,18 @@ from benefits.celery import app as celery_app
 from benefits.celery_config import broker_client_kwargs, broker_use_ssl, queue_list_names
 from screener import assistant
 from screener.models import AssistantConversation, AssistantMessage, BenjiSmsDeadLetter
+from benefits.tests.test_sentry_scrub import _recording_sentry
+from integrations.services.communications import twilio_client
+from screener import tasks
 from screener.tasks import (
     BENJI_SMS_QUEUE,
+    DELIVERY_COUNT_PREFIX,
+    MAX_DELIVERIES,
     MAX_RETRIES,
+    RETRYABLE_ERRORS,
     BenjiSmsTask,
     BrokerNotConfigured,
+    TooManyDeliveries,
     TransientTurnError,
     benji_sms_ping,
     benji_sms_turn,
@@ -226,6 +235,121 @@ class TestRetriesAndDeadLetter(TestCase):
         self.assertFalse(BenjiSmsDeadLetter.objects.exists())
 
 
+class TestRetryThatCannotBeQueued(TestCase):
+    """Celery deletes a job whose retry cannot be published and skips on_failure."""
+
+    def test_is_dead_lettered_and_still_rejected(self) -> None:
+        conversation = make_conversation(channel="sms")
+        task_id = str(uuid.uuid4())
+        benji_sms_turn.push_request(
+            id=task_id, args=(str(conversation.pk), SID), kwargs={}, retries=0, is_eager=False, called_directly=False
+        )
+        self.addCleanup(benji_sms_turn.pop_request)
+        with (
+            mock.patch(
+                "celery.canvas.Signature.apply_async", side_effect=redis.ResponseError("OOM command not allowed")
+            ),
+            self.assertLogs(TASKS_LOGGER, level="ERROR") as logs,
+            self.assertRaises(Reject),
+        ):
+            benji_sms_turn.retry(exc=requests.Timeout("ai-service"), countdown=5)
+
+        dead_letter = BenjiSmsDeadLetter.objects.get()
+        self.assertEqual(dead_letter.task_id, task_id)
+        self.assertEqual(dead_letter.attempts, 1)
+        self.assertEqual(dead_letter.error_type, "requests.exceptions.Timeout")
+        self.assertEqual(dead_letter.conversation_id, conversation.pk)
+        self.assertEqual(dead_letter.inbound_sid, SID)
+        self.assertIn("dead-lettered", logs.output[0])
+
+    def test_a_retry_that_is_queued_leaves_no_dead_letter(self) -> None:
+        benji_sms_turn.push_request(
+            id="t", args=(str(uuid.uuid4()), SID), kwargs={}, retries=0, is_eager=False, called_directly=False
+        )
+        self.addCleanup(benji_sms_turn.pop_request)
+        with mock.patch("celery.canvas.Signature.apply_async"), self.assertRaises(Exception) as raised:
+            benji_sms_turn.retry(exc=requests.Timeout("ai-service"), countdown=5)
+
+        self.assertNotIsInstance(raised.exception, Reject)
+        self.assertFalse(BenjiSmsDeadLetter.objects.exists())
+
+
+@override_settings(CELERY_BROKER_URL="redis://broker:6379/0")
+class TestDeliveryCap(SimpleTestCase):
+    """A job that keeps killing its worker is requeued each time; the cap ends that."""
+
+    def _before_start(self, task_id: str = "t", is_eager: bool = False) -> None:
+        benji_sms_ping.push_request(id=task_id, is_eager=is_eager)
+        try:
+            benji_sms_ping.before_start(task_id, (), {})
+        finally:
+            benji_sms_ping.pop_request()
+
+    def test_allows_two_attempts_and_one_redelivery(self) -> None:
+        self.assertEqual(MAX_DELIVERIES, MAX_RETRIES + 2)
+        for count in range(1, MAX_DELIVERIES + 1):
+            with self.subTest(count=count), mock.patch.object(tasks, "_count_delivery", return_value=count):
+                self._before_start()
+
+    def test_refuses_the_next_delivery(self) -> None:
+        with (
+            mock.patch.object(tasks, "_count_delivery", return_value=MAX_DELIVERIES + 1),
+            self.assertRaises(TooManyDeliveries),
+        ):
+            self._before_start()
+
+    def test_the_refusal_is_dead_lettered_not_retried(self) -> None:
+        self.assertNotIsInstance(TooManyDeliveries(), RETRYABLE_ERRORS)
+
+    def test_an_unreachable_counter_lets_the_job_run(self) -> None:
+        with (
+            mock.patch.object(tasks, "_count_delivery", side_effect=redis.ConnectionError("down")),
+            self.assertLogs(TASKS_LOGGER, level="WARNING") as logs,
+        ):
+            self._before_start()
+        self.assertIn("delivery not counted (ConnectionError)", logs.output[0])
+
+    def test_eager_jobs_and_no_broker_are_not_counted(self) -> None:
+        with mock.patch.object(tasks, "_count_delivery") as count:
+            self._before_start(is_eager=True)
+            with override_settings(CELERY_BROKER_URL=""):
+                self._before_start()
+        count.assert_not_called()
+
+
+@pytest.mark.skipif(not settings.REDIS_URL, reason="needs a Redis server (REDIS_URL)")
+class TestDeliveryCountOnRedis(SimpleTestCase):
+    def test_counts_per_job_and_expires(self) -> None:
+        url = settings.REDIS_URL
+        task_id = f"test-{uuid.uuid4().hex}"
+        client = redis.Redis.from_url(url, **broker_client_kwargs(url))
+        self.addCleanup(client.delete, f"{DELIVERY_COUNT_PREFIX}{task_id}")
+        self.addCleanup(setattr, tasks, "_broker_client", None)
+        tasks._broker_client = None
+
+        with override_settings(CELERY_BROKER_URL=url):
+            self.assertEqual([tasks._count_delivery(task_id) for _ in range(3)], [1, 2, 3])
+
+        ttl = client.ttl(f"{DELIVERY_COUNT_PREFIX}{task_id}")
+        self.assertGreater(ttl, 0)
+        self.assertLessEqual(ttl, tasks.DELIVERY_COUNT_TTL_SECONDS)
+
+
+class TestJobArgumentsStayOutOfSentry(TestCase):
+    """Sentry's Celery integration attaches job args and locals; the scrub removes them."""
+
+    def test_a_failed_turn_reaches_sentry_without_its_sid(self) -> None:
+        conversation = make_conversation(channel="sms")
+        with _recording_sentry() as events, self.assertLogs(TASKS_LOGGER, level="ERROR"):
+            benji_sms_turn.delay(str(conversation.pk), SID)
+
+        celery_events = [e for e in events if "celery-job" in (e.get("extra") or {})]
+        self.assertTrue(celery_events, "the Celery integration captured nothing, so this test proves nothing")
+        self.assertEqual(celery_events[0]["extra"]["celery-job"]["task_name"], "screener.benji_sms_turn")
+        for event in events:
+            self.assertNotIn(SID, json.dumps(event))
+
+
 class TestEnqueueTurn(TestCase):
     def test_refuses_anything_but_a_conversation_id_and_a_message_sid(self) -> None:
         conversation_id = uuid.uuid4()
@@ -388,6 +512,7 @@ class TestBrokerAlarms(SimpleTestCase):
             logging.getLogger(BROKER_LOGGER).debug("start")
             call_command("check_benji_sms_broker", *args, stdout=stdout, stderr=StringIO())
         self.from_url = from_url
+        self.templates = [r.msg for r in logs.records if r.levelno >= logging.ERROR]
         return stdout.getvalue(), [r.getMessage() for r in logs.records if r.levelno >= logging.ERROR]
 
     def test_a_healthy_broker_raises_no_alarm(self) -> None:
@@ -436,6 +561,24 @@ class TestBrokerAlarms(SimpleTestCase):
         self.assertEqual(len(alarms), 2)
         self.assertTrue(any("memory at" in alarm for alarm in alarms))
         self.assertTrue(any("waiting on benji_sms" in alarm for alarm in alarms))
+
+    def test_each_alarm_kind_groups_as_its_own_sentry_issue(self) -> None:
+        """Sentry groups log events by template: numbers in the template would split one
+        kind into many issues, one template for all kinds would merge them into one."""
+        client = _fake_broker(used=20_000_000, depth=40, policy="allkeys-lru")
+        _, alarms = self._run(client)
+        templates = list(self.templates)
+        client.info.side_effect = redis.ConnectionError("down")
+        self._run(client)
+        templates += self.templates
+        with override_settings(CELERY_BROKER_URL=""):
+            self._run(client)
+        templates += self.templates
+
+        self.assertEqual(len(templates), 5)
+        self.assertEqual(len(set(templates)), 5)
+        for template in templates:
+            self.assertNotRegex(template, r"\d{2}")
 
     def test_no_maxmemory_means_no_memory_alarm(self) -> None:
         """A local Redis has no maxmemory; the share is undefined, not 100%."""
@@ -496,6 +639,19 @@ class TestWorkerCheck(TestCase):
             call_command("benji_sms_worker_check", "--timeout", "0.1", stdout=StringIO())
 
     @override_settings(CELERY_TASK_ALWAYS_EAGER=False, CELERY_BROKER_URL="redis://broker:6379/0")
+    def test_fail_needs_the_retry_to_have_run(self) -> None:
+        task_id = uuid.UUID(int=7)
+        BenjiSmsDeadLetter.objects.create(
+            task_name="screener.benji_sms_ping", task_id=str(task_id), attempts=1, error_type="x"
+        )
+        with (
+            mock.patch.object(benji_sms_ping, "apply_async"),
+            mock.patch("screener.management.commands.benji_sms_worker_check.uuid.uuid4", return_value=task_id),
+            self.assertRaisesMessage(CommandError, "the retry did not run"),
+        ):
+            call_command("benji_sms_worker_check", "--fail", stdout=StringIO())
+
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=False, CELERY_BROKER_URL="redis://broker:6379/0")
     def test_fail_with_no_dead_letter_in_time_is_a_failure(self) -> None:
         with (
             mock.patch.object(benji_sms_ping, "apply_async"),
@@ -523,5 +679,7 @@ class TestAiServiceTimeout(SimpleTestCase):
         self.assertEqual(request.call_args.kwargs["timeout"], assistant.AI_SERVICE_WORKER_TIMEOUT)
         self.assertGreater(assistant.AI_SERVICE_WORKER_TIMEOUT, assistant.AI_SERVICE_TIMEOUT)
 
-    def test_the_worker_budget_fits_inside_one_attempt(self) -> None:
-        self.assertLess(assistant.AI_SERVICE_WORKER_TIMEOUT, benji_sms_turn.soft_time_limit)
+    def test_one_ai_service_call_and_three_twilio_calls_fit_inside_one_attempt(self) -> None:
+        """A turn reads the inbound's From, may send the disclosure, and sends the reply."""
+        budget = assistant.AI_SERVICE_WORKER_TIMEOUT + 3 * twilio_client.TIMEOUT_SECONDS
+        self.assertLess(budget, benji_sms_turn.soft_time_limit)

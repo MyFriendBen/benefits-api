@@ -11,7 +11,9 @@ Checks the dedicated Celery broker (CELERY_BROKER_URL), never the cache Redis:
 
 Each alarm is one ERROR log line, which Sentry turns into an event and the Scheduler
 dyno's log shows; the message names this command, so an alarm traces back here. Counts
-and settings only. Every run also prints one summary line, alarm or not.
+and settings only. Each kind of alarm has its own message template, so Sentry groups each
+into its own issue: a memory alarm never hides under an earlier depth alarm. Every run
+also prints one summary line, alarm or not.
 
 Thresholds are options so an alarm can be fired on purpose: `--memory-threshold 0
 --depth-threshold 0` fires both on any broker (the "both alarms fire on a test" check).
@@ -60,7 +62,7 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         url = settings.CELERY_BROKER_URL
         if not url:
-            self._alarm("no broker is configured (CELERY_BROKER_URL is empty).")
+            logger.error(f"{ALARM_PREFIX}: no broker is configured (CELERY_BROKER_URL is empty).")
             return
 
         try:
@@ -69,7 +71,7 @@ class Command(BaseCommand):
             depth = sum(client.llen(name) for name in queue_list_names(BENJI_SMS_QUEUE))
         except redis.RedisError as exc:
             # The class only: a connection error's message can carry the host.
-            self._alarm(f"the broker did not answer ({type(exc).__name__}).")
+            logger.error(f"{ALARM_PREFIX}: the broker did not answer (%s).", type(exc).__name__)
             return
 
         used = int(memory.get("used_memory", 0))
@@ -77,21 +79,25 @@ class Command(BaseCommand):
         policy = memory.get("maxmemory_policy", "unknown")
         share = used / maxmemory if maxmemory else None
 
+        # Sentry groups a log event by its template, not the formatted text, so the
+        # numbers go in as arguments and each kind keeps a template of its own.
         if policy != "noeviction":
-            self._alarm(f"maxmemory-policy is {policy}, not noeviction; queued jobs can be evicted.")
+            logger.error(f"{ALARM_PREFIX}: maxmemory-policy is %s, not noeviction; queued jobs can be evicted.", policy)
         if share is not None and share >= options["memory_threshold"]:
-            self._alarm(
-                f"memory at {share:.0%} of maxmemory ({used} of {maxmemory} bytes), "
-                f"threshold {options['memory_threshold']:.0%}."
+            logger.error(
+                f"{ALARM_PREFIX}: memory at %d%% of maxmemory (%d of %d bytes), threshold %d%%.",
+                round(share * 100),
+                used,
+                maxmemory,
+                round(options["memory_threshold"] * 100),
             )
         if depth >= options["depth_threshold"]:
-            self._alarm(
-                f"{depth} job(s) waiting on {BENJI_SMS_QUEUE}, threshold {options['depth_threshold']}. "
-                "Check that the worker is up (heroku ps)."
+            logger.error(
+                f"{ALARM_PREFIX}: %d job(s) waiting on %s, threshold %d. Check that the worker is up (heroku ps).",
+                depth,
+                BENJI_SMS_QUEUE,
+                options["depth_threshold"],
             )
 
         share_text = f"{share:.0%}" if share is not None else "no maxmemory set"
         self.stdout.write(f"Benji SMS broker: memory {used} bytes ({share_text}), policy {policy}, {depth} waiting.")
-
-    def _alarm(self, detail: str) -> None:
-        logger.error("%s: %s", ALARM_PREFIX, detail)

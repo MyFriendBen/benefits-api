@@ -25,15 +25,33 @@ check proves the path a turn takes.
 **Payloads carry ids only:** the conversation id and the inbound Twilio `MessageSid`.
 Never message text, the phone number or its hash. `enqueue_turn` refuses anything else.
 
-**At least once.** Jobs are acknowledged after they run. A job whose worker died is
-handed out again after the 300 s visibility timeout, so a turn can run twice and has to
-absorb that (MFB-2440: the SID goes to ai-service as `client_message_id`).
+**At least once.** Jobs are acknowledged after they run, so a turn can run twice and has
+to absorb that (MFB-2440: the SID goes to ai-service as `client_message_id`). A job comes
+back to the queue when its worker stops mid-job:
+- On a Heroku restart (deploys, the daily cycle, config changes), Heroku sends SIGTERM to
+  every process in the dyno. The Procfile sets `REMAP_SIGTERM=SIGQUIT`, so the pool
+  children ignore it and the worker runs a cold shutdown. It gives running jobs 25 s to
+  finish (`CELERY_WORKER_SOFT_SHUTDOWN_TIMEOUT`, inside Heroku's 30 s), then hands the
+  rest back to the broker for the next worker.
+- If a pool child dies mid-job, the job is requeued at once.
+- If the whole worker vanishes without handing jobs back (SIGKILL, a crash), they return
+  after the 300 s visibility timeout.
+
+Each job is delivered at most 3 times: its two attempts, plus one redelivery after a lost
+worker. The count is kept on the broker. A job past the cap is dead-lettered without
+running (`TooManyDeliveries`), so one that kills its worker every time cannot loop.
 
 **Retries.** Connection errors, timeouts and `TransientTurnError` get one retry, 5 s
-later. Any other error fails at once. Each attempt has a 50 s soft limit and a 60 s hard
-limit; one ai-service call is at most 35 s (`AI_SERVICE_WORKER_TIMEOUT`). The worst case
-for a turn that fails both attempts is therefore about two minutes. The proposal's 60 s
-was a working figure for a successful turn.
+later. Any other error fails at once. Each attempt has an 80 s soft limit and a 95 s hard
+limit. That allows one ai-service call of at most 35 s (`AI_SERVICE_WORKER_TIMEOUT`) and up
+to three Twilio calls of 10 s each. The worst case for a turn that fails both attempts is
+therefore about three minutes. The proposal's 60 s was a working figure for a successful
+turn.
+
+**Sentry.** Installing Celery switches on Sentry's Celery integration. It attaches each
+job's arguments and stack locals to its events, which for a turn means the SID and, once
+MFB-2440 lands, the number and the message text. `benefits/sentry_scrub.py` strips both
+from every Celery event.
 
 ## The broker is not the cache
 
@@ -70,7 +88,8 @@ there, and without it every job fails with `not enough values to unpack (expecte
 got 0)`. Heroku runs Linux, where the children fork, so production does not need it.
 `--pool solo` also works.
 
-Then, in another shell with the same two variables:
+`REMAP_SIGTERM` is not needed locally; Ctrl+C is a warm shutdown. Then, in another shell
+with the same two variables:
 
 ```bash
 python manage.py benji_sms_worker_check
@@ -84,15 +103,25 @@ python manage.py benji_sms_worker_check --fail
 
 Steps 1 to 4 are one-time and per app. Replace `<app>` with the Heroku app name.
 
-1. **Broker add-on.** Size it for the queue and for connections. The queue needs almost
-   nothing: a job is a few hundred bytes. Connections are what count. Each web process
-   holds up to 4 broker connections once it has published (`BROKER_POOL_LIMIT`). The
-   worker holds a few for its main process and each of its 2 children. Each Scheduler
-   run and one-off dyno opens 1. Mini allows 20 in total, so if
-   (web dynos × `WEB_CONCURRENCY` × 4) + 8 is over 20, take a larger plan.
+1. **Broker add-on.** Two things decide the plan: durability and connections.
+   - **Durability.** Heroku Redis Mini keeps no data across a reboot or failure and has
+     no standby. If the instance restarts, every queued job and every job handed out but
+     not yet acknowledged is lost, with no dead-letter row and no alarm (the depth check
+     reads 0 afterwards). Premium plans keep an append-only file and have an HA standby.
+     Mini is fine for staging. Production needs a decision before MFB-2447 scales the
+     worker up: premium-0, or Mini with that loss accepted and written down.
+   - **Connections.** The queue needs almost nothing: a job is a few hundred bytes. Each
+     web process holds up to 4 broker connections once it has published
+     (`BROKER_POOL_LIMIT`). The worker holds a few for its main process and each of its
+     2 children. Each Scheduler run and one-off dyno opens 1. Mini allows 20 in total,
+     so if (web dynos × `WEB_CONCURRENCY` × 4) + 8 is over 20, take a larger plan.
 
    ```bash
-   heroku addons:create heroku-redis:mini --as CELERY_BROKER -a <app>
+   heroku addons:create heroku-redis:mini --as CELERY_BROKER -a <staging-app>
+   ```
+
+   ```bash
+   heroku addons:create heroku-redis:premium-0 --as CELERY_BROKER -a cobenefits-api
    ```
 
    ```bash
@@ -112,10 +141,18 @@ Steps 1 to 4 are one-time and per app. Replace `<app>` with the Heroku app name.
    heroku addons:create scheduler:standard -a <app>
    ```
 
-4. **Sentry alert rules.** Alarms are ERROR logs, so they arrive as Sentry issues.
-   Create an alert that notifies on new issues from the logger
-   `screener.management.commands.check_benji_sms_broker`, and another on messages
-   containing `Benji SMS job dead-lettered` (logger `screener.tasks`).
+4. **Sentry alert rules.** Alarms are ERROR logs, so they arrive as Sentry issues. Sentry
+   groups events by message template. Each broker alarm kind (memory, depth, policy,
+   unreachable, unconfigured) is its own issue, and every dead letter joins one issue.
+   An alert on "a new issue is created" would therefore fire once and then go quiet.
+   Instead, alert when an issue is seen more than 0 times in 10 minutes, and also when
+   an issue changes from resolved to unresolved. Use a 10-minute action interval. Set
+   up two rules, one per source:
+   - logger `screener.management.commands.check_benji_sms_broker`
+   - logger `screener.tasks` with the message containing `Benji SMS job dead-lettered`
+
+   If staging and production share a Sentry project, filter each rule by server name so
+   the staging test does not page for production.
 
 5. **Deploy.** Migrations 0173 and 0174 apply in the usual migration step.
 
@@ -134,8 +171,9 @@ heroku run python manage.py benji_sms_worker_check --fail -a <staging-app>
 ```
 
 The first prints `Round trip OK`. The second prints `Forced failure dead-lettered after
-2 attempt(s)`, and the row appears under Benji SMS dead letters in the admin. Fire both
-alarms on purpose and confirm each reaches Sentry:
+2 attempt(s)`, and the row appears under Benji SMS dead letters in the admin. It fails if
+the row records any other number of attempts, since that would mean the retry never ran.
+Fire both alarms on purpose and confirm each reaches Sentry as its own issue:
 
 ```bash
 heroku run python manage.py check_benji_sms_broker --memory-threshold 0 --depth-threshold 0 -a <staging-app>
@@ -159,13 +197,21 @@ depth alarm fires once 25 are waiting. Nothing queues a turn until the inbound w
 
 ## Dead letters
 
-A row means a job failed every attempt. It holds the task name and id, the conversation,
-the inbound SID, the attempt count and the class of the last error, never its message.
+A row means a job failed for good. That is one of three things:
+- it failed every attempt;
+- its retry could not be queued (a full or unreachable broker). Celery would otherwise
+  delete it silently;
+- it was delivered more than 3 times (`TooManyDeliveries`).
+
+A row holds the task name and id, the conversation, the inbound SID, the attempt count and
+the class of the last error, never its message.
 Writing the row logs `Benji SMS job dead-lettered` at ERROR, which is the alarm. Rows
 cascade with their conversation, in the ORM and in the database (migration 0174), so a
 deletion request removes them too. If the conversation was already gone, the row keeps
 neither the conversation nor the SID.
 
-One failure leaves no row: a job killed by the 60 s hard time limit. Celery skips the
-failure hook then and logs `Hard time limit exceeded` at ERROR, which reaches Sentry. The
-50 s soft limit normally ends the job first, through the hook, so it is dead-lettered.
+Two failures leave no row:
+- **A job killed by the 95 s hard time limit.** Celery skips the failure hook then and logs
+  `Hard time limit exceeded` at ERROR, which reaches Sentry. The 80 s soft limit normally
+  ends the job first, through the hook, so it is dead-lettered.
+- **A job lost with a non-persistent broker** (see Provisioning, step 1).

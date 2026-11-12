@@ -15,12 +15,18 @@ AT LEAST ONCE. Jobs are acknowledged after they run and handed out again if the
 worker dies mid-job (settings: CELERY_TASK_ACKS_LATE), so a turn can run twice. The
 turn absorbs that by sending the inbound SID to ai-service as `client_message_id`
 (ai-service answers a repeat with the stored reply) and by checking the delivery row
-before sending.
+before sending. A job is delivered at most MAX_DELIVERIES times, counted on the broker,
+so one that kills its worker every time cannot loop.
 
 RETRIES. Connection failures, timeouts and `TransientTurnError` are retried once, after
 a fixed backoff: two attempts, the proposal's working figure. Anything else fails
 at once. A job that fails its last attempt is dead-lettered: a `BenjiSmsDeadLetter`
-row with ids and the error's class, and an ERROR log that reaches Sentry.
+row with ids and the error's class, and an ERROR log that reaches Sentry. So is a job
+whose retry cannot be queued, and one delivered too many times.
+
+SENTRY. Sentry's Celery integration switches itself on with Celery and attaches each
+job's arguments and stack locals to its events; benefits/sentry_scrub.py strips them,
+so the SID reaches Sentry only through what this module logs, which leaves it out.
 """
 
 import logging
@@ -28,10 +34,14 @@ import re
 import uuid
 from typing import Any, Optional
 
+import redis
 import requests
 from celery import Task, shared_task
+from celery.exceptions import Reject
 from celery.result import AsyncResult
 from django.conf import settings
+
+from benefits.celery_config import broker_client_kwargs
 
 from .models import BenjiSmsDeadLetter
 
@@ -50,17 +60,30 @@ MAX_RETRIES = 1
 RETRY_BACKOFF_SECONDS = 5
 RETRY_BACKOFF_MAX_SECONDS = 30
 
-# Per attempt. The longest step is one ai-service call, AI_SERVICE_WORKER_TIMEOUT (35s,
-# screener/assistant.py); the rest is the database and one Twilio send (10s timeout).
-# The soft limit raises SoftTimeLimitExceeded inside the job, which fails it through
-# on_failure and so dead-letters it. The hard limit kills the worker child, and Celery
-# then skips on_failure: it logs "Hard time limit exceeded" at ERROR (Sentry sees it)
-# but writes no dead-letter row. Only a job that swallows the soft limit, or hangs
-# where Python cannot interrupt it, gets that far. One attempt's hard limit plus the
-# backoff must stay under the broker's visibility_timeout (settings), or a slow job is
-# handed out twice.
-SOFT_TIME_LIMIT_SECONDS = 50
-TIME_LIMIT_SECONDS = 60
+# Per attempt. A turn makes one ai-service call, AI_SERVICE_WORKER_TIMEOUT (35s,
+# screener/assistant.py), and up to three Twilio calls at 10s each (read the inbound's
+# `From`, send the disclosure on a first reply, send the reply), plus the database:
+# about 65s at worst. The soft limit raises SoftTimeLimitExceeded inside the job, which
+# fails it through on_failure and so dead-letters it. MFB-2440: a soft limit that lands
+# during or after a Twilio send is BenjiSmsDeliveryUnknown, not a clean failure; the
+# reply may be out, so no resend and no apology. The hard limit kills the worker child,
+# and Celery then skips on_failure: it logs "Hard time limit exceeded" at ERROR (Sentry
+# sees it) but writes no dead-letter row. Only a job that swallows the soft limit, or
+# hangs where Python cannot interrupt it, gets that far. One attempt's hard limit plus
+# the backoff must stay under the broker's visibility_timeout (settings), or a slow job
+# is handed out twice.
+SOFT_TIME_LIMIT_SECONDS = 80
+TIME_LIMIT_SECONDS = 95
+
+# Deliveries of one job before it is dead-lettered unrun: its two attempts, plus one
+# redelivery after a lost worker (a deploy or a crash mid-job). Only a job that keeps
+# killing its worker child reaches the cap, which CELERY_TASK_REJECT_ON_WORKER_LOST would
+# otherwise requeue forever.
+MAX_DELIVERIES = MAX_RETRIES + 2
+# The count lives on the broker under this prefix, and expires well after any job could
+# still be redelivered (the visibility timeout is 300s).
+DELIVERY_COUNT_PREFIX = "benji_sms:deliveries:"
+DELIVERY_COUNT_TTL_SECONDS = 3600
 
 
 class TransientTurnError(Exception):
@@ -70,6 +93,10 @@ class TransientTurnError(Exception):
     Its message never reaches the dead-letter row, but it does reach logs and Sentry,
     so it must not quote message text, numbers or hashes.
     """
+
+
+class TooManyDeliveries(Exception):
+    """The job was handed out MAX_DELIVERIES times without finishing."""
 
 
 class BrokerNotConfigured(RuntimeError):
@@ -90,6 +117,23 @@ def _sid_or_none(value: Any) -> Optional[str]:
     return value if isinstance(value, str) and MESSAGE_SID_RE.match(value) else None
 
 
+_broker_client: Optional[redis.Redis] = None
+
+
+def _count_delivery(task_id: str) -> int:
+    """Count one more delivery of this job on the broker, and return the total."""
+    global _broker_client
+    url = settings.CELERY_BROKER_URL
+    if _broker_client is None:
+        _broker_client = redis.Redis.from_url(url, **broker_client_kwargs(url))
+    key = f"{DELIVERY_COUNT_PREFIX}{task_id}"
+    pipe = _broker_client.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, DELIVERY_COUNT_TTL_SECONDS)
+    count, _ = pipe.execute()
+    return int(count)
+
+
 class BenjiSmsTask(Task):
     """Retry and dead-letter policy shared by every job on the Benji SMS queue."""
 
@@ -106,10 +150,69 @@ class BenjiSmsTask(Task):
         that carry neither."""
         return None, None
 
+    def before_start(self, task_id: str, args: tuple, kwargs: dict) -> None:
+        """Refuse a job delivered more than MAX_DELIVERIES times.
+
+        Raising here fails the job through on_failure, so it is dead-lettered without
+        running. Skipped in eager mode, where nothing is delivered. If the broker cannot
+        count (it is full or down), the job runs: a count is not worth a lost reply.
+        """
+        if self.request.is_eager or not settings.CELERY_BROKER_URL:
+            return
+        try:
+            deliveries = _count_delivery(task_id)
+        except redis.RedisError as exc:
+            logger.warning("Benji SMS job %s: delivery not counted (%s).", task_id, type(exc).__name__)
+            return
+        if deliveries > MAX_DELIVERIES:
+            raise TooManyDeliveries(f"Delivered {deliveries} times; the cap is {MAX_DELIVERIES}.")
+
+    def retry(
+        self,
+        args: Optional[tuple] = None,
+        kwargs: Optional[dict] = None,
+        exc: Optional[BaseException] = None,
+        throw: bool = True,
+        eta: Any = None,
+        countdown: Optional[float] = None,
+        max_retries: Optional[int] = None,
+        **options: Any,
+    ) -> Any:
+        """Celery's retry, plus a dead letter when the next attempt cannot be queued.
+
+        When publishing the retry fails (a full or unreachable broker), Celery raises
+        Reject(requeue=False): the message is deleted and on_failure never runs, so the
+        job would vanish with no row and no alarm.
+        """
+        try:
+            return super().retry(
+                args=args,
+                kwargs=kwargs,
+                exc=exc,
+                throw=throw,
+                eta=eta,
+                countdown=countdown,
+                max_retries=max_retries,
+                **options,
+            )
+        except Reject as reject:
+            request = self.request
+            self.dead_letter(
+                exc if exc is not None else reject.reason,
+                request.id,
+                tuple(request.args or ()),
+                dict(request.kwargs or {}),
+            )
+            raise
+
     def on_failure(self, exc: BaseException, task_id: str, args: tuple, kwargs: dict, einfo: Any) -> None:
         """Celery calls this once per job, when it fails for good: a retryable error on
         the last attempt, or any other error on any attempt. Earlier attempts go through
         on_retry instead."""
+        self.dead_letter(exc, task_id, args, kwargs)
+
+    def dead_letter(self, exc: BaseException, task_id: str, args: tuple, kwargs: dict) -> None:
+        """Record the job as failed for good, and raise the alarm."""
         attempts = self.request.retries + 1
         error_type = f"{type(exc).__module__}.{type(exc).__qualname__}"
         conversation_id, inbound_sid = self.dead_letter_ids(args, kwargs)

@@ -1821,24 +1821,29 @@ class BenjiSmsDeadLetterManager(models.Manager):
         conversation_id: Optional[str] = None,
         inbound_sid: Optional[str] = None,
     ) -> "BenjiSmsDeadLetter":
-        """Record a job that failed its last attempt (screener.tasks.BenjiSmsTask.on_failure).
+        """Record a job that failed for good (screener.tasks.BenjiSmsTask.dead_letter).
 
         A conversation deleted while its job was queued or retrying (a deletion request)
         leaves nothing to point at, so the row keeps neither the conversation nor the
         inbound SID: a SID resolves to the number at Twilio, and the row would outlive
-        the deletion it belongs to.
+        the deletion it belongs to. The conversation row is locked from the check to the
+        insert, so a deletion cannot land in between and fail the insert.
         """
-        if conversation_id is None or not AssistantConversation.objects.filter(pk=conversation_id).exists():
-            conversation_id = None
-            inbound_sid = None
-        return self.create(
-            task_name=task_name,
-            task_id=task_id,
-            attempts=attempts,
-            error_type=error_type,
-            conversation_id=conversation_id,
-            inbound_sid=inbound_sid,
-        )
+        with transaction.atomic():
+            if (
+                conversation_id is None
+                or not AssistantConversation.objects.select_for_update().filter(pk=conversation_id).exists()
+            ):
+                conversation_id = None
+                inbound_sid = None
+            return self.create(
+                task_name=task_name,
+                task_id=task_id,
+                attempts=attempts,
+                error_type=error_type,
+                conversation_id=conversation_id,
+                inbound_sid=inbound_sid,
+            )
 
 
 class BenjiSmsDeadLetter(models.Model):
