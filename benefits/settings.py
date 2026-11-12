@@ -328,7 +328,10 @@ if config("SENTRY_DSN", None) is not None:
     sentry_sdk.init(
         dsn=config("SENTRY_DSN"),
         integrations=[DjangoIntegration()],
-        environment="dev" if DEBUG else "production",
+        # Staging and production both run with DEBUG off, so without SENTRY_ENVIRONMENT
+        # they report as one environment and an alert rule cannot tell them apart
+        # (docs/BENJI_SMS_WORKER.md). Set SENTRY_ENVIRONMENT=staging on the staging app.
+        environment=config("SENTRY_ENVIRONMENT", default="dev" if DEBUG else "production"),
         before_send=scrub_event,
     )
 
@@ -470,8 +473,8 @@ BENJI_SMS_HASH_KEY = config("BENJI_SMS_HASH_KEY", default="")
 #
 # The broker is its own Redis add-on, attached as CELERY_BROKER, never the cache's
 # REDIS_URL (see benefits/celery_config.py). Empty means none is attached: the enqueue
-# helpers in screener/tasks.py then refuse instead of letting Celery try its default
-# broker on localhost.
+# helpers in screener/tasks.py then refuse with BrokerNotConfigured, instead of Celery
+# trying its default broker on localhost and failing with an error that does not say why.
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="")
 # Eager runs a task in-process at the call, so local work needs no broker or worker.
 # On by default when DEBUG is, and in tests (pytest.ini). A developer running a real
@@ -487,15 +490,18 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     # With late acks, a job whose worker vanished without handing it back (a crash, a
     # SIGKILL) is handed out again once this many seconds pass unacknowledged. A reply
-    # that turns up an hour later (Celery's default) is worse than none, so it is short. It must stay above the longest a job
-    # can be held unacknowledged: one attempt's time limit plus the retry countdown
-    # (screener/tasks.py), or a slow job runs twice while still running.
+    # that turns up an hour later (Celery's default) is worse than none, so it is short.
+    # It must stay above the longest a fetched job can sit unacknowledged, or a slow job
+    # runs twice while still running: a retry is fetched at once and held through its
+    # countdown, may then wait up to one attempt for a free child, then runs its own
+    # attempt. That is about 5 + 95 + 95 s (screener/tasks.py); 300 leaves room for
+    # several retries fetched together and for kombu's coarse restore cadence.
     "visibility_timeout": 300,
     "socket_timeout": BROKER_SOCKET_TIMEOUT,
     "socket_connect_timeout": BROKER_SOCKET_TIMEOUT,
 }
 # Publishing retries briefly, then raises: the inbound webhook enqueues, and Twilio
-# should get an error it can retry rather than a request that hangs on a dead broker.
+# should get an error it can retry rather than a request held open on a dead broker.
 CELERY_TASK_PUBLISH_RETRY_POLICY = {
     "max_retries": 2,
     "interval_start": 0,

@@ -78,20 +78,57 @@ class ScrubEventTest(TestCase):
             expected = json.loads(json.dumps(event))
             self.assertEqual(scrub_event(event, {}), expected, url)
 
-    def test_celery_job_events_lose_args_kwargs_and_frame_vars(self) -> None:
-        sid = "SM" + "ab" * 16
-        for tags in ({"celery_task_id": "t-1"}, [["celery_task_id", "t-1"]], {}):
+    def test_celery_job_extra_loses_args_and_kwargs(self) -> None:
+        event = {
+            "extra": {
+                "celery-job": {"task_name": "screener.benji_sms_turn", "args": ["c", "+13035550100"], "kwargs": {}}
+            },
+            "exception": {
+                "values": [{"stacktrace": {"frames": [{"function": "turn", "vars": {"to": "+13035550100"}}]}}]
+            },
+        }
+        scrubbed = scrub_event(event, {})
+        self.assertEqual(scrubbed["extra"]["celery-job"], {"task_name": "screener.benji_sms_turn"})
+        self.assertNotIn("vars", scrubbed["exception"]["values"][0]["stacktrace"]["frames"][0])
+
+    def test_frame_vars_go_on_any_celery_tagged_event(self) -> None:
+        """Tagged by Celery's integration but with no celery-job extra: the tag alone counts."""
+        for tags in ({"celery_task_id": "t-1"}, [["celery_task_id", "t-1"]], [("celery_task_id", "t-1")]):
             event = {
                 "tags": tags,
-                "extra": {
-                    "celery-job": {"task_name": "screener.benji_sms_turn", "args": ["c", sid], "kwargs": {"s": sid}}
-                },
-                "exception": {"values": [{"stacktrace": {"frames": [{"function": "turn", "vars": {"sid": sid}}]}}]},
+                "exception": {"values": [{"stacktrace": {"frames": [{"function": "turn", "vars": {"to": "+1303"}}]}}]},
             }
             scrubbed = scrub_event(event, {})
-            self.assertEqual(scrubbed["extra"]["celery-job"], {"task_name": "screener.benji_sms_turn"}, tags)
             self.assertNotIn("vars", scrubbed["exception"]["values"][0]["stacktrace"]["frames"][0], tags)
-            self.assertNotIn(sid, json.dumps(scrubbed), tags)
+
+    def test_frame_vars_stay_on_other_events(self) -> None:
+        event = {
+            "tags": {"other": "x"},
+            "exception": {"values": [{"stacktrace": {"frames": [{"function": "view", "vars": {"x": 1}}]}}]},
+        }
+        self.assertEqual(scrub_event(event, {})["exception"]["values"][0]["stacktrace"]["frames"][0]["vars"], {"x": 1})
+
+    def test_message_sids_are_redacted_wherever_they_appear(self) -> None:
+        sid, mms = "SM" + "ab" * 16, "MM" + "0" * 32
+        event = {
+            "message": f"failed for {sid}",
+            "exception": {"values": [{"value": f"GET /2010-04-01/Accounts/AC1/Messages/{sid}.json: 404"}]},
+            "breadcrumbs": {
+                "values": [
+                    {"category": "celery.worker.strategy", "data": {"args": f"('c', '{sid}')"}},
+                    {"category": "httplib", "data": {"url": f"https://api.twilio.com/Messages/{mms}/Media.json"}},
+                ]
+            },
+            "extra": {"nested": [{"tuple": (sid,)}]},
+        }
+        scrubbed = json.dumps(scrub_event(event, {}))
+        self.assertNotIn(sid, scrubbed)
+        self.assertNotIn(mms, scrubbed)
+        self.assertIn("[MessageSid]", scrubbed)
+
+    def test_strings_that_only_look_alike_are_left_alone(self) -> None:
+        event = {"message": "SMS sent; SM123; " + "SM" + "AB" * 16 + "; CA" + "0" * 32}
+        self.assertEqual(scrub_event(event, {}), event)
 
     def test_event_without_request_is_unchanged(self) -> None:
         event = {"message": "background job failed"}

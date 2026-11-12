@@ -24,9 +24,12 @@ at once. A job that fails its last attempt is dead-lettered: a `BenjiSmsDeadLett
 row with ids and the error's class, and an ERROR log that reaches Sentry. So is a job
 whose retry cannot be queued, and one delivered too many times.
 
-SENTRY. Sentry's Celery integration switches itself on with Celery and attaches each
-job's arguments and stack locals to its events; benefits/sentry_scrub.py strips them,
-so the SID reaches Sentry only through what this module logs, which leaves it out.
+SENTRY AND LOGS. Celery prints a job's arguments in its own log lines ("Task ...
+received"), which Sentry also keeps as breadcrumbs; the turn task publishes with the SID
+masked in that printed form (`argsrepr`), retries included. Sentry's Celery integration
+attaches each job's arguments and stack locals to its events, and benefits/sentry_scrub.py
+strips those from every Celery event and redacts anything shaped like a MessageSid from
+every event, wherever it appears (exception text, breadcrumbs, request URLs).
 """
 
 import logging
@@ -39,6 +42,7 @@ import requests
 from celery import Task, shared_task
 from celery.exceptions import Reject
 from celery.result import AsyncResult
+from celery.utils.saferepr import saferepr
 from django.conf import settings
 
 from benefits.celery_config import broker_client_kwargs
@@ -67,11 +71,12 @@ RETRY_BACKOFF_MAX_SECONDS = 30
 # fails it through on_failure and so dead-letters it. MFB-2440: a soft limit that lands
 # during or after a Twilio send is BenjiSmsDeliveryUnknown, not a clean failure; the
 # reply may be out, so no resend and no apology. The hard limit kills the worker child,
-# and Celery then skips on_failure: it logs "Hard time limit exceeded" at ERROR (Sentry
-# sees it) but writes no dead-letter row. Only a job that swallows the soft limit, or
-# hangs where Python cannot interrupt it, gets that far. One attempt's hard limit plus
-# the backoff must stay under the broker's visibility_timeout (settings), or a slow job
-# is handed out twice.
+# and Celery then skips on_failure: it logs "Hard time limit (95s) exceeded for ..." at
+# ERROR (Sentry sees it) but writes no dead-letter row. Only a job that swallows the soft limit, or
+# hangs where Python cannot interrupt it, gets that far. The broker's visibility_timeout
+# (settings) must outlast the longest a fetched job can stay unacknowledged, or a slow
+# job is handed out twice: the retry countdown, then a wait for a free child (up to one
+# attempt), then its own attempt. That is RETRY_BACKOFF_SECONDS + 2 * TIME_LIMIT_SECONDS.
 SOFT_TIME_LIMIT_SECONDS = 80
 TIME_LIMIT_SECONDS = 95
 
@@ -245,7 +250,29 @@ class BenjiSmsTask(Task):
         )
 
 
+# What a MessageSid argument prints as in Celery's log lines and task events.
+MASKED_SID = "<MessageSid>"
+
+
+def _mask_sid(value: Any) -> Any:
+    return MASKED_SID if _sid_or_none(value) else value
+
+
 class BenjiSmsTurnTask(BenjiSmsTask):
+    def apply_async(
+        self, args: Optional[tuple] = None, kwargs: Optional[dict] = None, *rest: Any, **options: Any
+    ) -> AsyncResult:
+        """Publish with the SID masked in the printed form of the arguments.
+
+        Celery logs `argsrepr` ("Task ... received") and Sentry keeps those lines as
+        breadcrumbs. A retry publishes a fresh message through here too, and Celery does
+        not carry the first message's argsrepr over, so masking at enqueue alone would
+        let the retry print the SID.
+        """
+        options.setdefault("argsrepr", saferepr(tuple(_mask_sid(arg) for arg in (args or ()))))
+        options.setdefault("kwargsrepr", saferepr({key: _mask_sid(value) for key, value in (kwargs or {}).items()}))
+        return super().apply_async(args, kwargs, *rest, **options)
+
     def dead_letter_ids(self, args: tuple, kwargs: dict) -> tuple[Optional[str], Optional[str]]:
         conversation_id = kwargs.get("conversation_id", args[0] if len(args) > 0 else None)
         message_sid = kwargs.get("message_sid", args[1] if len(args) > 1 else None)
@@ -287,8 +314,8 @@ def benji_sms_ping(fail: bool = False) -> str:
 def require_broker() -> None:
     """Raise BrokerNotConfigured unless a job would actually reach a worker.
 
-    Without a broker URL Celery falls back to an AMQP broker on localhost and a publish
-    blocks retrying it, which inside the inbound webhook is a hang, not an error.
+    Without a broker URL Celery falls back to an AMQP broker on localhost, and a publish
+    fails with a connection-refused error that does not name the missing setting.
     """
     if not settings.CELERY_TASK_ALWAYS_EAGER and not settings.CELERY_BROKER_URL:
         raise BrokerNotConfigured("CELERY_BROKER_URL is not set and Celery is not in eager mode.")

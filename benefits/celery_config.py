@@ -49,9 +49,10 @@ def broker_use_ssl(broker_url: str) -> Optional[dict]:
 def broker_client_kwargs(broker_url: str) -> dict:
     """Keyword arguments for redis.Redis.from_url when reading the broker directly.
 
-    Only the broker alarm (check_benji_sms_broker) does that; Celery manages its own
-    connections. redis-py spells "no verification" as ssl_cert_reqs=None, and accepts
-    it only on a TLS URL.
+    Two things do, besides Celery's own connections: the broker alarm
+    (check_benji_sms_broker), one connection per run, and the delivery count in
+    screener/tasks.py, one long-lived connection per worker child. redis-py spells "no
+    verification" as ssl_cert_reqs=None, and accepts it only on a TLS URL.
     """
     kwargs: dict = {
         "socket_timeout": BROKER_SOCKET_TIMEOUT,

@@ -48,10 +48,14 @@ to three Twilio calls of 10 s each. The worst case for a turn that fails both at
 therefore about three minutes. The proposal's 60 s was a working figure for a successful
 turn.
 
-**Sentry.** Installing Celery switches on Sentry's Celery integration. It attaches each
-job's arguments and stack locals to its events, which for a turn means the SID and, once
-MFB-2440 lands, the number and the message text. `benefits/sentry_scrub.py` strips both
-from every Celery event.
+**Sentry and logs.** Installing Celery switches on Sentry's Celery integration. It
+attaches each job's arguments and stack locals to its events, which for a turn means the
+SID and, once MFB-2440 lands, the number and the message text. `benefits/sentry_scrub.py`
+strips both from every Celery event. It also replaces anything shaped like a MessageSid in
+any event, because SIDs surface elsewhere too: Celery's "Task ... received" breadcrumbs, a
+Twilio request URL, a Twilio error's text. The turn task masks the SID in Celery's own
+log lines (`argsrepr`), retries included, so the worker's Heroku logs show
+`<MessageSid>` instead.
 
 ## The broker is not the cache
 
@@ -63,7 +67,8 @@ would lose jobs silently.
 
 With no `CELERY_BROKER_URL` and eager mode off, `enqueue_turn` and the worker check
 raise `BrokerNotConfigured`. Without that check, Celery would try an AMQP broker on
-localhost and the publish would hang.
+localhost and fail with a connection-refused error that does not name the missing
+setting.
 
 ## Local development
 
@@ -113,8 +118,11 @@ Steps 1 to 4 are one-time and per app. Replace `<app>` with the Heroku app name.
    - **Connections.** The queue needs almost nothing: a job is a few hundred bytes. Each
      web process holds up to 4 broker connections once it has published
      (`BROKER_POOL_LIMIT`). The worker holds a few for its main process and each of its
-     2 children. Each Scheduler run and one-off dyno opens 1. Mini allows 20 in total,
-     so if (web dynos × `WEB_CONCURRENCY` × 4) + 8 is over 20, take a larger plan.
+     2 children, one of them per child for the delivery count. Each Scheduler run and
+     one-off dyno opens 1. Mini allows 20 in total, so if
+     (web dynos × `WEB_CONCURRENCY` × 4) + 8 is over 20, take a larger plan. Raising the
+     worker's concurrency adds about 2 per child. If the broker runs out of connections,
+     the delivery count fails open: jobs still run, but uncounted.
 
    ```bash
    heroku addons:create heroku-redis:mini --as CELERY_BROKER -a <staging-app>
@@ -145,14 +153,23 @@ Steps 1 to 4 are one-time and per app. Replace `<app>` with the Heroku app name.
    groups events by message template. Each broker alarm kind (memory, depth, policy,
    unreachable, unconfigured) is its own issue, and every dead letter joins one issue.
    An alert on "a new issue is created" would therefore fire once and then go quiet.
-   Instead, alert when an issue is seen more than 0 times in 10 minutes, and also when
-   an issue changes from resolved to unresolved. Use a 10-minute action interval. Set
-   up two rules, one per source:
-   - logger `screener.management.commands.check_benji_sms_broker`
-   - logger `screener.tasks` with the message containing `Benji SMS job dead-lettered`
+   Instead, alert when an issue is seen more than 0 times in 15 minutes (with a
+   threshold of 0, any interval Sentry offers works), and also when an issue changes
+   from resolved to unresolved. Use a 10-minute action interval. Set up three rules:
+   - logger `screener.management.commands.check_benji_sms_broker` (broker alarms)
+   - logger `screener.tasks`, level error. This catches both `Benji SMS job
+     dead-lettered` and `... could not be dead-lettered`, the case where the dead-letter
+     row itself failed to write. Those are the only ERROR lines that logger writes.
+   - logger `celery.worker.request` with the message containing `Hard time limit`: a
+     job killed at 95 s, which writes no row.
 
-   If staging and production share a Sentry project, filter each rule by server name so
-   the staging test does not page for production.
+   Staging and production both report to Sentry as `production` unless told otherwise.
+   Set `SENTRY_ENVIRONMENT=staging` on the staging app and filter each rule by
+   environment, so the staging test does not page for production.
+
+   ```bash
+   heroku config:set SENTRY_ENVIRONMENT=staging -a <staging-app>
+   ```
 
 5. **Deploy.** Migrations 0173 and 0174 apply in the usual migration step.
 
@@ -210,8 +227,12 @@ cascade with their conversation, in the ORM and in the database (migration 0174)
 deletion request removes them too. If the conversation was already gone, the row keeps
 neither the conversation nor the SID.
 
-Two failures leave no row:
+Three failures leave no row:
 - **A job killed by the 95 s hard time limit.** Celery skips the failure hook then and logs
-  `Hard time limit exceeded` at ERROR, which reaches Sentry. The 80 s soft limit normally
-  ends the job first, through the hook, so it is dead-lettered.
+  `Hard time limit (95s) exceeded for screener.benji_sms_turn[<task id>]` at ERROR, which
+  reaches Sentry. The 80 s soft limit normally ends the job first, through the hook, so it
+  is dead-lettered.
+- **The row itself failed to write** (for example, the database was unavailable). This is
+  logged as `Benji SMS job <task id> (<task>) failed every attempt and could not be
+  dead-lettered` at ERROR.
 - **A job lost with a non-persistent broker** (see Provisioning, step 1).

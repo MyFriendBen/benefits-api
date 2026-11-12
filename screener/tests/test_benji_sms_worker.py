@@ -113,9 +113,11 @@ class TestBrokerConfig(SimpleTestCase):
         self.assertGreaterEqual(benji_sms_turn.retry_backoff, 5)
 
     def test_a_redelivered_job_cannot_overtake_a_running_one(self) -> None:
-        """The visibility timeout must outlast one attempt plus the retry countdown."""
+        """A fetched retry stays unacknowledged through its countdown, a wait for a free
+        child (up to one attempt) and its own attempt; the visibility timeout must outlast
+        all three, or kombu hands the job out again while it is still running."""
         visibility = celery_app.conf.broker_transport_options["visibility_timeout"]
-        self.assertGreater(visibility, benji_sms_turn.time_limit + benji_sms_turn.retry_backoff_max)
+        self.assertGreater(visibility, benji_sms_turn.retry_backoff_max + 2 * benji_sms_turn.time_limit)
 
 
 @pytest.mark.skipif(not settings.REDIS_URL, reason="needs a Redis server (REDIS_URL)")
@@ -333,6 +335,38 @@ class TestDeliveryCountOnRedis(SimpleTestCase):
         ttl = client.ttl(f"{DELIVERY_COUNT_PREFIX}{task_id}")
         self.assertGreater(ttl, 0)
         self.assertLessEqual(ttl, tasks.DELIVERY_COUNT_TTL_SECONDS)
+
+
+class TestSidMaskedInCeleryLogs(TestCase):
+    """Celery prints `argsrepr` in "Task ... received", which Sentry keeps as a breadcrumb."""
+
+    def test_the_turn_publishes_with_the_sid_masked(self) -> None:
+        conversation_id = str(uuid.uuid4())
+        with mock.patch("celery.app.task.Task.apply_async") as publish:
+            benji_sms_turn.apply_async(args=(conversation_id, SID), queue=BENJI_SMS_QUEUE)
+
+        options = publish.call_args.kwargs
+        self.assertEqual(publish.call_args.args[:2], ((conversation_id, SID), None))
+        self.assertNotIn(SID, options["argsrepr"])
+        self.assertIn(conversation_id, options["argsrepr"])
+        self.assertIn(tasks.MASKED_SID, options["argsrepr"])
+
+    def test_keyword_arguments_are_masked_too(self) -> None:
+        with mock.patch("celery.app.task.Task.apply_async") as publish:
+            benji_sms_turn.apply_async(kwargs={"conversation_id": "c", "message_sid": SID})
+
+        self.assertNotIn(SID, publish.call_args.kwargs["kwargsrepr"])
+
+    def test_a_retry_is_masked_as_well(self) -> None:
+        """Celery builds the retry's message afresh, without the first one's argsrepr."""
+        benji_sms_turn.push_request(
+            id="t", args=(str(uuid.uuid4()), SID), kwargs={}, retries=0, is_eager=False, called_directly=False
+        )
+        self.addCleanup(benji_sms_turn.pop_request)
+        with mock.patch("celery.app.task.Task.apply_async") as publish, self.assertRaises(Exception):
+            benji_sms_turn.retry(exc=requests.Timeout("ai-service"), countdown=5)
+
+        self.assertNotIn(SID, publish.call_args.kwargs["argsrepr"])
 
 
 class TestJobArgumentsStayOutOfSentry(TestCase):

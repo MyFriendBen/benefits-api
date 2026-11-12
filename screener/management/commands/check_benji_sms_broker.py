@@ -16,7 +16,9 @@ into its own issue: a memory alarm never hides under an earlier depth alarm. Eve
 also prints one summary line, alarm or not.
 
 Thresholds are options so an alarm can be fired on purpose: `--memory-threshold 0
---depth-threshold 0` fires both on any broker (the "both alarms fire on a test" check).
+--depth-threshold 0` fires both on any broker with a maxmemory set, as every Heroku
+Redis has (the "both alarms fire on a test" check). A local Redis usually has none, and
+then only the depth alarm fires.
 """
 
 import logging
