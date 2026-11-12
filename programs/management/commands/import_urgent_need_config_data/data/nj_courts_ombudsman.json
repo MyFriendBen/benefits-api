@@ -1,0 +1,29 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_courts_ombudsman",
+    "category_type": {
+      "external_name": "civil_legal_needs"
+    },
+    "type_short": [
+      "housing",
+      "legal services"
+    ],
+    "translations": {
+      "name": "NJ Courts Ombudsman / Court User Resource Centers",
+      "description": "NJ Courts Ombudsman and Court User Resource Centers help anyone who uses the courts, including tenants and others with legal problems. Walk in, call or email, Monday to Friday 8:30am-4:30pm. Use your county's phone number, not the general call center.",
+      "link": "https://www.njcourts.gov/public/get-help/judiciary-ombudsman-program",
+      "warning": "Use your county's phone number, not the general call center.",
+      "website_description": "Learn about free or low-cost legal help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

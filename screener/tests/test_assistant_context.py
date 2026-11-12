@@ -2153,6 +2153,14 @@ class AssistantStartViewTests(APITestCase):
         eligible = payload["context"]["eligible_programs"]
         self.assertEqual(sorted(p["external_name"] for p in eligible), ["snap", "wic"])
 
+    def test_names_the_web_channel(self):
+        """MFB-2432: a screen can also hold an SMS conversation; this route only ever means web."""
+        self.assertEqual(self._post({})["channel"], "web")
+
+    def test_channel_in_the_request_body_is_ignored(self):
+        """Taking it from the body would let a browser open or resume the SMS conversation."""
+        self.assertEqual(self._post({"channel": "sms"})["channel"], "web")
+
     def test_supported_locale_from_the_request_is_forwarded_lowercased(self):
         self.assertEqual(self._post({"locale": "PT-BR"})["locale"], "pt-br")
 
@@ -2336,7 +2344,7 @@ class AssistantHistoryViewTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(request.call_args.args[0], "GET")
         self.assertTrue(request.call_args.args[1].endswith("/v1/conversations"))
-        self.assertEqual(request.call_args.kwargs["params"], {"screen_uuid": str(self.screen.uuid)})
+        self.assertEqual(request.call_args.kwargs["params"], {"screen_uuid": str(self.screen.uuid), "channel": "web"})
 
     def test_sends_no_request_body(self):
         """A GET carrying a JSON body is not handled predictably by every intermediary,
@@ -2481,6 +2489,11 @@ class AssistantMessageViewTests(APITestCase):
 
         self.assertEqual(payload["screen_uuid"], str(self.screen.uuid))
 
+    def test_names_the_web_channel_even_when_the_body_says_otherwise(self):
+        """ai-service refuses a message whose channel doesn't match its conversation, so a
+        web request can't write into the screen's SMS conversation (MFB-2432)."""
+        self.assertEqual(self._post({"text": "hi", "channel": "sms"})["channel"], "web")
+
     def test_screen_uuid_comes_from_the_url_not_the_request_body(self):
         """Taking it from the body would hand the check straight back to the caller."""
         payload = self._post({"text": "hi", "screen_uuid": str(uuid.uuid4())})
@@ -2550,6 +2563,25 @@ class AssistantMessageRatingViewTests(APITestCase):
         if reason is not None:
             body["reason"] = reason
         return self.client.put(self._url(**kwargs), body, format="json")
+
+    def test_a_texted_reply_cannot_be_rated_from_the_widget(self):
+        """SMS rows keep NULL ratings (MFB-1916 decision 9), even on the same screen (MFB-2432)."""
+        sms = AssistantConversation.objects.create(
+            conversation_id=uuid.uuid4(),
+            screen_uuid=self.screen.uuid,
+            white_label=self.white_label.code,
+            prompt_version="v5",
+            channel="sms",
+        )
+        texted = AssistantMessage.objects.create(
+            message_id=uuid.uuid4(), conversation=sms, seq=1, role="assistant", text="Bring your ID."
+        )
+
+        response = self._put(1, message=texted, conversation=sms)
+
+        self.assertEqual(response.status_code, 404)
+        texted.refresh_from_db()
+        self.assertIsNone(texted.rating)
 
     # --- the happy path: set, change, clear ---
 

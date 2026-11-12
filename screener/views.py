@@ -429,8 +429,14 @@ CALC_ORDER = (
     # ks_rca is defined as the program for refugees TANF cannot reach, so it gates on
     # ks_tanf strictly and needs it resolved first.
     "ks_tanf",
-    # Early Head Start reads SSI eligibility as public assistance.
+    # NJ Head Start and Early Head Start read SSI and TANF eligibility as public assistance.
     "federal_ssi",
+    "nj_tanf",
+    # NJ's ACA Premium Tax Credit reads who NJ FamilyCare's Medicaid and CHIP would cover.
+    # NJ Medicaid is on the federal Medicaid base, not `Medicaid`, so the derived block above
+    # doesn't list it.
+    "nj_medicaid",
+    "nj_chip",
 )
 
 

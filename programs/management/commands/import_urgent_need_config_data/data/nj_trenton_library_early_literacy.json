@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_trenton_library_early_literacy",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Trenton Free Public Library Early Literacy",
+      "description": "The Trenton Free Public Library has early literacy programs for children. No eligibility rules are published. Walk in or drop in. Open Monday to Thursday 9am-8pm and Friday and Saturday 9am-5pm. Call 609-392-7188.",
+      "link": "https://www.trentonlib.org/storytimes-activities/",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

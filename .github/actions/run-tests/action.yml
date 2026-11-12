@@ -16,6 +16,22 @@ inputs:
   hud-api-token:
     description: 'HUD API token for real API calls'
     required: true
+  splits:
+    description: 'Split the suite into this many groups with pytest-split and run only one of them (see group). Leave empty to run the whole suite.'
+    required: false
+    default: ''
+  group:
+    description: 'Which of the splits groups to run, starting at 1. Required when splits is set.'
+    required: false
+    default: ''
+  store-durations:
+    description: 'Record every test''s duration and save them to the Actions cache, for split runs to balance their groups by. Needs the whole suite, so it cannot be combined with splits.'
+    required: false
+    default: 'false'
+  run-django-checks:
+    description: 'Run Django system checks and apply migrations before the tests. A split run only needs one of its groups to do this.'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -33,7 +49,10 @@ runs:
     - name: Setup Python and Django
       uses: ./.github/actions/setup-python-django
 
+    # pytest builds its own database without migrations (--nomigrations), so this only
+    # proves the migrations apply and the system checks pass -- once per run is enough.
     - name: Django checks and migrations
+      if: inputs.run-django-checks == 'true'
       uses: ./.github/actions/run-django-checks
 
     - name: Run tests
@@ -41,6 +60,9 @@ runs:
       env:
         VCR_MODE: ${{ inputs.vcr-mode }}
         HUD_API_TOKEN: ${{ inputs.hud-api-token }}
+        SPLITS: ${{ inputs.splits }}
+        GROUP: ${{ inputs.group }}
+        STORE_DURATIONS: ${{ inputs.store-durations }}
       run: |
         if [ "${{ inputs.vcr-mode }}" = "all" ]; then
           echo "Running tests with REAL API CALLS - VCR_MODE=all (re-records all cassettes)"
@@ -57,11 +79,54 @@ runs:
         # per-test output is noise. The other branch is the deploy path, which records
         # against live APIs -- keep the verbose flags there, since a cassette or API
         # failure is hardest to diagnose from a bare assertion.
-        if [ "${{ inputs.upload-coverage }}" = "true" ]; then
-          pytest --cov --cov-branch --cov-report=xml
-        else
-          pytest --cov --cov-branch --verbosity=2 --log-cli-level=INFO
+        #
+        # With splits set, pytest-split runs only one group of the suite, balanced by the
+        # .test_durations the caller placed in the workspace. Every group of a run must
+        # read the identical file, or their groups overlap and leave tests unrun; the
+        # hash printed below lets the groups' logs be compared. With no file, or an empty
+        # {}, pytest-split divides the tests evenly by count. Both branches take it: fork
+        # PRs shard too, they just skip the coverage upload.
+        #
+        # store-durations rewrites .test_durations from this run; --clean-durations drops
+        # tests that no longer exist. A split run sees only its own group, so recording
+        # from one would throw away every other group's durations.
+        SPLIT_ARGS=()
+        if [ -n "$SPLITS" ]; then
+          if [ -z "$GROUP" ]; then
+            echo "ERROR: group is required when splits is set"
+            exit 1
+          fi
+          if [ "$STORE_DURATIONS" = "true" ]; then
+            echo "ERROR: store-durations needs the whole suite and cannot be combined with splits"
+            exit 1
+          fi
+          SPLIT_ARGS=(--splits "$SPLITS" --group "$GROUP" --splitting-algorithm duration_based_chunks)
+          echo "Running test group $GROUP of $SPLITS"
+          if [ -f .test_durations ]; then
+            echo "Test durations: sha256 $(sha256sum .test_durations | cut -d' ' -f1)"
+          else
+            echo "Test durations: none, splitting evenly by test count"
+          fi
+        elif [ "$STORE_DURATIONS" = "true" ]; then
+          SPLIT_ARGS=(--store-durations --clean-durations)
         fi
+
+        if [ "${{ inputs.upload-coverage }}" = "true" ]; then
+          pytest --cov --cov-branch --cov-report=xml "${SPLIT_ARGS[@]}"
+        else
+          pytest --cov --cov-branch --verbosity=2 --log-cli-level=INFO "${SPLIT_ARGS[@]}"
+        fi
+
+    # Only after a passing run (the default), and never fatal: losing an entry just
+    # leaves the next PRs on the previous one. Unique per commit, since cache entries
+    # can't be overwritten; GitHub evicts those unused for 7 days.
+    - name: Save recorded test durations
+      if: inputs.store-durations == 'true'
+      continue-on-error: true
+      uses: actions/cache/save@v6
+      with:
+        path: .test_durations
+        key: test-durations-${{ github.sha }}
 
     - name: Upload coverage to Codecov
       if: inputs.upload-coverage == 'true'

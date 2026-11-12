@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_camcare_womens_health",
+    "category_type": {
+      "external_name": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "CAMcare Health - Women's Health (Camden)",
+      "description": "CAMcare Health offers women's health care in Camden. No insurance? No problem. Walk-ins are welcome. Open Monday to Friday 8am-5pm and Saturday 9am-1pm. Call 856-583-2400.",
+      "link": "https://www.camcare.net/womens-heath",
+      "warning": "",
+      "website_description": "Learn about family planning and sexual health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

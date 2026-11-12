@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_dca_eviction_prevention",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "NJ DCA Office of Eviction Prevention + Eviction Guide",
+      "description": "The NJ DCA Office of Eviction Prevention has a hotline and an online Eviction Guide. There are no eligibility rules. Just say you are a tenant. Call 609-376-0810 or email. The web tool is open 24/7.",
+      "link": "https://nj.gov/dca/dhcr/offices/dhcroep.shtml",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

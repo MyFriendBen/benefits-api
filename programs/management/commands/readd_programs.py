@@ -24,7 +24,6 @@ class Command(BaseCommand):
         {"abbr": "lifeline", "external": "lifeline"},
         {"abbr": "fps", "external": "fps"},
         {"abbr": "leap", "external": "leap"},
-        {"abbr": "pell_grant", "external": "pell_grant"},
         {"abbr": "mydenver", "external": "mydenver"},
         {"abbr": "nccip", "external": "nccip"},
         {"abbr": "ede", "external": "ede"},

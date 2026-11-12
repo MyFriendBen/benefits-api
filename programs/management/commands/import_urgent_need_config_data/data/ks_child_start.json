@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_child_start",
     "category_type": {
-      "external_name": "ks_child_development",
-      "name": "Child's development",
-      "icon": "child_development"
+      "external_name": "child_development"
     },
     "type_short": [
       "child dev"

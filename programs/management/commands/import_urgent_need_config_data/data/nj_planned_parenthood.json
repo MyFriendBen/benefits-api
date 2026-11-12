@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_planned_parenthood",
+    "category_type": {
+      "external_name": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "Planned Parenthood (New Jersey affiliates)",
+      "description": "Planned Parenthood has three New Jersey affiliates that offer family planning and sexual health care. No one is turned away for being unable to pay. Walk in, book online or call your nearest center. Hours depend on the center.",
+      "link": "https://www.plannedparenthood.org/planned-parenthood-northern-central-southern-new-jersey",
+      "warning": "",
+      "website_description": "Learn about family planning and sexual health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

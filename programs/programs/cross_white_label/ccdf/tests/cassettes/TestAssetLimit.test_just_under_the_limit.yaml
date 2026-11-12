@@ -18,7 +18,7 @@ interactions:
       {"family": {"members": ["73031", "73032"]}}, "households": {"household": {"members":
       ["73031", "73032"], "state_code": {"2026": "MA"}}}, "spm_units": {"spm_unit":
       {"members": ["73031", "73032"], "spm_unit_assets": {"2026": 999999}, "ma_ccfa_eligible":
-      {"2026": null}}}, "marital_units": {}}, "version": "2.53.1"}'
+      {"2026": null}}}, "marital_units": {}}, "version": "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -56,7 +56,7 @@ interactions:
         {"members": ["73031", "73032"], "state_code": {"2026": "MA"}}}, "spm_units":
         {"spm_unit": {"members": ["73031", "73032"], "spm_unit_assets": {"2026": 999999},
         "ma_ccfa_eligible": {"2026": true}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.53.1", "data_version": null, "dataset": null}}'
+        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
@@ -67,15 +67,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:08:20 GMT
+      - Thu, 05 Nov 2026 18:23:32 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-d3fff2f03693174c716ccc00c977804d-44bd6785fd4f6df3-00
+      - 00-1bfa39275c09ab029ef1ae77b7e8a95b-640a805f00a262cf-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - d3fff2f03693174c716ccc00c977804d
+      - 1bfa39275c09ab029ef1ae77b7e8a95b
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -83,7 +83,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 75348767-840a-46db-8858-4ae1db6d8642
+      - e8926c94-163f-4040-b0a9-b2c71a02daf5
       x-policyengine-route-channel:
       - current
     status:

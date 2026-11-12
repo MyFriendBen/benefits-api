@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_nhcac_jersey_city",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "NHCAC Jersey City Health Center",
+      "description": "NHCAC Jersey City Health Center gives a sliding fee discount to people without insurance. Call or walk in. Urgent care is seen the same day. Call 201-210-0200.",
+      "link": "https://www.nhcac.org/health-centers",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hudson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

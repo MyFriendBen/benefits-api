@@ -15,8 +15,8 @@ class NjEarlyHeadStart(MfbEarlyHeadStart):
       months 367.59 a week, toddlers 18 to 29 months 327.38, and 30 months and over 292.30.
       The year is the 46 weeks that 1,380 annual hours make at that table's 30-hour
       full-time week. A pregnant woman is priced as an infant.
-    - Public assistance reads ``federal_ssi``, which NJ households see. NJ has no SNAP or
-      TANF calculator yet, so those are read only from reported benefits and income.
+    - Public assistance reads ``federal_ssi`` and ``nj_tanf``, which NJ households see. NJ
+      has no SNAP calculator yet, so SNAP is read only from reported benefits.
 
     The spec is ``programs/cross_white_label/early_head_start/nj/early_head_start_nj_spec.md``
     in program-ops.
@@ -30,4 +30,4 @@ class NjEarlyHeadStart(MfbEarlyHeadStart):
         (30, Decimal("292.30")),
     )
     program_weeks = 1_380 // 30
-    gates_on_any = ("federal_ssi",)
+    gates_on_any = ("federal_ssi", "nj_tanf")

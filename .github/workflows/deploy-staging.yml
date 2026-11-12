@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Run Tests with Real API Calls
@@ -63,6 +66,9 @@ jobs:
           vcr-mode: none
           upload-coverage: "false"
           hud-api-token: ${{ secrets.HUD_API_TOKEN }}
+          # Records how long each test took and caches it, so PR validation can split
+          # the suite into evenly sized groups using timings from the latest main.
+          store-durations: "true"
 
   lint:
     name: Check Formatting

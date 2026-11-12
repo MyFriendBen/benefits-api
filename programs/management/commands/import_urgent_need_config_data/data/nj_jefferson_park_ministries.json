@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_jefferson_park_ministries",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Jefferson Park Ministries",
+      "description": "Jefferson Park Ministries gives diapers to low-income families with young children, with no income verification. Bring the child's birth certificate and a photo ID. It is first come, first served. Diapers: 3rd Thursday, 1-5pm. The pantry, which also has diapers: 2nd and 3rd Thursday, 1-5pm.",
+      "link": "https://www.jeffersonparks.com",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Union County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

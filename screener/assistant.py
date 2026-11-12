@@ -56,7 +56,7 @@ from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
-from .models import AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .models import AssistantChannel, AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
 from .navigators import navigators_for_program
 from .urgent_needs import eligible_urgent_needs
 from .throttles import (
@@ -80,6 +80,13 @@ AI_SERVICE_TOKEN = os.getenv("AI_SERVICE_TOKEN", "")
 # than the JSON error shape the widget handles, while this worker stayed blocked on a
 # request no one was waiting for. 25 leaves room to return our own 502 first.
 AI_SERVICE_TIMEOUT = 25
+# The Benji SMS worker's per-call budget (MFB-2436), passed as `timeout` to
+# ai_service_request. No router stands between a worker and its caller, so the 25s
+# above does not apply. The ceiling now is ai-service's own Heroku router, which ends
+# ai-service's side of the call at 30s with an H12. 35 rather than 30, so the worker
+# receives that answer (ai-service's JSON error or the router's 503) instead of
+# racing it to a client-side timeout.
+AI_SERVICE_WORKER_TIMEOUT = 35
 
 # Upper bound on the client-supplied visible-programs list. Comfortably above the
 # largest white label's active program count; exists to bound untrusted input.
@@ -1698,6 +1705,37 @@ def _clean_value(value: object) -> Optional[int]:
     return int(value)
 
 
+# Every route in this file serves the results-page widget, so every call it makes to
+# ai-service names the web channel (MFB-2432). Sent rather than left to ai-service's
+# default so that a web request can never reach an SMS conversation: ai-service refuses
+# a message whose channel does not match its conversation. Safe to send before
+# ai-service knows the field, since it ignores unknown body keys and query parameters.
+WEB_CHANNEL = AssistantChannel.WEB.value
+
+
+def ai_service_request(
+    method: str,
+    path: str,
+    *,
+    json_body: Optional[dict] = None,
+    params: Optional[dict] = None,
+    timeout: float = AI_SERVICE_TIMEOUT,
+) -> requests.Response:
+    """One call to mfb-ai-service, with the service token. Raises what requests raises.
+
+    `timeout` defaults to the web budget. A caller not behind benefits-api's router,
+    the Benji SMS worker, passes AI_SERVICE_WORKER_TIMEOUT.
+    """
+    return requests.request(
+        method,
+        f"{AI_SERVICE_URL}{path}",
+        json=json_body,
+        params=params,
+        headers=_ai_headers(),
+        timeout=timeout,
+    )
+
+
 def _proxy(method: str, path: str, json_body: dict = None, params: dict = None) -> Response:
     """Forward a request to mfb-ai-service and pass its response through.
 
@@ -1706,17 +1744,16 @@ def _proxy(method: str, path: str, json_body: dict = None, params: dict = None) 
     takes its screen id as a query parameter.
     """
     try:
-        resp = requests.request(
-            method,
-            f"{AI_SERVICE_URL}{path}",
-            json=json_body,
-            params=params,
-            headers=_ai_headers(),
-            timeout=AI_SERVICE_TIMEOUT,
-        )
-    except requests.RequestException as e:
+        resp = ai_service_request(method, path, json_body=json_body, params=params)
+    except requests.RequestException:
+        logger.warning("AI service proxy request failed.", exc_info=True)
         return Response(
-            {"error": {"code": "ai_upstream_error", "message": str(e)}},
+            {
+                "error": {
+                    "code": "ai_upstream_error",
+                    "message": "Unable to reach AI service.",
+                }
+            },
             status=status.HTTP_502_BAD_GATEWAY,
         )
     try:
@@ -1806,7 +1843,7 @@ class AssistantStartView(views.APIView):
         if not screen.white_label.has_feature("benbot"):
             return Response({"error": {"code": "assistant_disabled"}}, status=status.HTTP_403_FORBIDDEN)
 
-        return _proxy("GET", "/v1/conversations", params={"screen_uuid": str(screen.uuid)})
+        return _proxy("GET", "/v1/conversations", params={"screen_uuid": str(screen.uuid), "channel": WEB_CHANNEL})
 
     def post(self, request, screen_uuid):
         # CONTEXT_PREFETCH keeps _build_context's per-program enrollment checks on the
@@ -1829,6 +1866,7 @@ class AssistantStartView(views.APIView):
             # unchecked string could overflow the conversation's varchar(12) in ai-service.
             "locale": screen.supported_language_code(body.get("locale")),
             "context": _build_context(screen, _visible_programs(body)),
+            "channel": WEB_CHANNEL,
         }
         return _proxy("POST", "/v1/conversations", payload)
 
@@ -1858,6 +1896,7 @@ class AssistantMessageView(views.APIView):
             "screen_uuid": str(screen.uuid),
             "text": body.get("text", ""),
             "client_message_id": body.get("client_message_id"),
+            "channel": WEB_CHANNEL,
         }
         return _proxy("POST", f"/v1/conversations/{conversation_id}/messages", payload)
 
@@ -1963,6 +2002,10 @@ class AssistantMessageRatingView(views.APIView):
                 message_id=message_id,
                 conversation_id=conversation_id,
                 conversation__screen_uuid=screen.uuid,
+                # The widget rates only its own replies. SMS rows keep NULL ratings by
+                # design (MFB-1916 decision 9), and the weekly report reads a rating as
+                # web feedback, so a texted reply must not be rateable from here.
+                conversation__channel=WEB_CHANNEL,
                 role="assistant",
             )
             .only("message_id", "rating", "rated_at", "rating_reason")

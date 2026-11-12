@@ -1,7 +1,7 @@
 from collections.abc import Collection
 from typing import ClassVar, Optional
-from datetime import date
-from django.db import models
+from datetime import date, datetime, timedelta
+from django.db import models, transaction
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -636,14 +636,22 @@ class HouseholdMember(models.Model):
     def is_spouse(self) -> bool:
         return self.screen.relationship_map()[self.screen.get_head().id] == self.id
 
-    def is_dependent(self) -> bool:
+    def is_dependent(self, tax_year: Optional[int] = None) -> bool:
+        """
+        Whether the member is a dependent in the head's tax unit. With ``tax_year``, judged as
+        of December 31 of that year: age from ``age_at_end_of_year``, that year's qualifying-
+        relative limit, and no one born after it. Without it, judged on the screening date.
+        """
+        if tax_year is not None and self.born_after(tax_year):
+            return False
+
         is_tax_unit_spouse = self.is_spouse()
         is_tax_unit_head = self.is_head()
         if is_tax_unit_head or is_tax_unit_spouse:
             return False
 
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
-        age = self.calc_age()
+        age = self.calc_age() if tax_year is None else self.age_at_end_of_year(tax_year)
 
         # Path 1: Qualifying Child (income test removed per IRS rules)
         is_qualifying_child = has_eligible_relationship and (
@@ -651,7 +659,8 @@ class HouseholdMember(models.Model):
         )
 
         # Path 2: Qualifying Relative (unchanged)
-        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        threshold_year = self.screen.get_reference_date().year if tax_year is None else tax_year
+        threshold = get_qualifying_relative_threshold(threshold_year)
         is_qualifying_relative = has_eligible_relationship and self.calc_gross_income("yearly", ["all"]) < threshold
 
         return is_qualifying_child or is_qualifying_relative
@@ -698,10 +707,14 @@ class HouseholdMember(models.Model):
         if self.birth_year is None or year is None:
             return self.calc_age()
 
-        if self.birth_year > year:
+        if self.born_after(year):
             return None
 
         return year - self.birth_year
+
+    def born_after(self, year: int) -> bool:
+        """Born after ``year``, so not in the household that year. False without a birth year."""
+        return self.birth_year is not None and self.birth_year > year
 
     @staticmethod
     def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
@@ -939,8 +952,13 @@ class Insurance(models.Model):
             "nc_medicaid": self.medicaid,
             "co_medicaid": self.medicaid,
             "wa_apple_health_medicaid": self.medicaid,
+            # Each state's CHIP program, so a child reporting CHIP coverage is marked as already
+            # having it. Every CHIP calculator's code must be here; a test checks.
             "wa_apple_health_for_kids": self.chp,
             "ks_chip": self.chp,
+            "tx_chip": self.chp,
+            "il_all_kids": self.chp,
+            "nj_chip": self.chp,
             "ma_mass_health": self.mass_health or self.medicaid,
             "medicare": self.medicare,
             "emergency_medicaid": self.emergency_medicaid,
@@ -1142,6 +1160,29 @@ class ProgramEligibilitySnapshot(models.Model):
 # interface rather than a data-model change.
 
 
+class AssistantChannel(models.TextChoices):
+    WEB = "web", "Web widget"
+    SMS = "sms", "Text message"
+
+
+class AssistantConversationStatus(models.TextChoices):
+    """A conversation's lifecycle. Only `active` conversations take new turns.
+
+    `closed` means superseded: a newer conversation replaced it, as when an SMS on-ramp
+    from another screen takes over a phone's binding. `expired` means it ran out of
+    time: an SMS conversation with no inbound text for 90 days. Neither is set by
+    anything yet; the SMS work sets both (MFB-1916 proposal v2, decision 3). Web
+    conversations never expire.
+
+    Not enforced with a check constraint, unlike `channel`: this column predates the
+    vocabulary, and production rows were not re-read to prove they all fit it.
+    """
+
+    ACTIVE = "active", "Active"
+    CLOSED = "closed", "Closed"
+    EXPIRED = "expired", "Expired"
+
+
 class AssistantConversation(models.Model):
     """One Benji conversation, plus the screen-context snapshot the model saw.
 
@@ -1167,7 +1208,21 @@ class AssistantConversation(models.Model):
     # because it changes how the transcript should be read.
     mode = models.CharField(max_length=16, blank=True, null=True)
     prompt_version = models.CharField(max_length=64, blank=True, null=True)
-    status = models.CharField(max_length=16, default="active")
+    # Where the conversation happens (MFB-2432). A screen can hold one active
+    # conversation per channel, so a texted conversation and the web widget's can
+    # coexist on one screen as separate rows (MFB-1916 proposal v2, decision 3).
+    #
+    # Migration 0170 also keeps a DATABASE-level DEFAULT 'web' on this column, which
+    # Django 4.2 cannot express in the model. It is what let benefits-api migrate
+    # before ai-service knew the column existed: ai-service's inserts named no
+    # channel, and a NOT NULL column without a database default would have rejected
+    # every one of them.
+    channel = models.CharField(max_length=8, choices=AssistantChannel.choices, default=AssistantChannel.WEB)
+    status = models.CharField(
+        max_length=16,
+        choices=AssistantConversationStatus.choices,
+        default=AssistantConversationStatus.ACTIVE,
+    )
     # Snapshot of the household/program context the prompt was built from. PII: see
     # ADR-001 in the ai-service repo. jsonb, so analytics can index into it.
     context = models.JSONField(default=dict, blank=True)
@@ -1182,10 +1237,19 @@ class AssistantConversation(models.Model):
             # could previously produce two active conversations for one screen and
             # split the history between them. Enforce it in the one place that can:
             # the database.
+            #
+            # Per channel since MFB-2432: one active web conversation and one active
+            # SMS conversation on the same screen is the intended state, not a race.
             models.UniqueConstraint(
-                fields=["screen_uuid"],
+                fields=["screen_uuid", "channel"],
                 condition=models.Q(status="active"),
-                name="assistant_one_active_conv_per_screen",
+                name="assistant_one_active_conv_per_screen_channel",
+            ),
+            # ai-service writes this column with raw SQL, so the choices above are no
+            # guard at all on its inserts. This is.
+            models.CheckConstraint(
+                check=models.Q(channel__in=["web", "sms"]),
+                name="assistant_conv_channel_valid",
             ),
         ]
         indexes = [
@@ -1358,3 +1422,474 @@ class AssistantMessage(models.Model):
 
     def __str__(self) -> str:
         return f"{self.role} message {self.seq} of {self.conversation_id}"
+
+
+# --- Benji over SMS (MFB-2435; MFB-1916 proposal v3, decisions 3, 4 and 5) ----------
+#
+# Four tables, all written by benefits-api only. ai-service never sees a phone number,
+# a hash, or these rows.
+#
+# THE PHONE NUMBER IS NEVER STORED. `phone_hash` is an HMAC-SHA256 of the E.164 number
+# under BENJI_SMS_HASH_KEY (integrations/services/communications/benji_sms_hash.py).
+# That is still personal data, reversible by anyone holding the key and a candidate
+# number, so the hash is treated like the number: superuser-only, never searchable in
+# the admin (a search puts it in the URL), and never in Sentry, alarms, the weekly
+# report or the job queue (privacy companion §2).
+#
+# PER PHONE vs PER BINDING. What is true of a phone whatever screen it is bound to
+# (revoked, marked shared) lives on `BenjiSmsPhone`, once. What is true of one on-ramp
+# (screen, consent, lifecycle) lives on `BenjiSmsBinding`. Keeping the phone's state on
+# its bindings would leave it on closed rows (a shared mark set by an on-ramp that opens
+# no binding, a revocation START cleared on only the newest) and make every check
+# aggregate across them.
+#
+# RETENTION follows the conversation. A deletion request ("remove my texts") is
+# `manage.py find_benji_sms_phone --delete`, which runs
+# `BenjiSmsPhone.delete_with_conversations()`: the phone's SMS conversations (their
+# messages, bindings, deliveries and dead letters cascade, in the ORM and in the
+# database through migrations 0172 and 0174), its stranger row, then the phone row, in
+# one transaction.
+# `BenjiSmsBinding.phone` is PROTECT so the phone row can never go first and leave
+# conversations behind. Stranger rows, and delivery rows that belong to no binding,
+# live one day (`BenjiSmsStrangerReply.objects.purge_expired()`).
+
+# How long a stranger row, and a delivery row with no binding, are kept.
+BENJI_SMS_UNBOUND_RETENTION = timedelta(days=1)
+
+
+class BenjiSmsPhoneManager(models.Manager):
+    def for_number(self, number: str) -> Optional["BenjiSmsPhone"]:
+        """The phone row for a number, as typed on a form or as Twilio sends it, or None.
+
+        The one place a number becomes a lookup, so the on-ramp, the webhook and
+        support all normalize and hash it the same way. Raises `InvalidPhoneNumber`
+        and `ImproperlyConfigured` as `phone_hash` does.
+        """
+        return self.filter(phone_hash=_phone_hash(number)).first()
+
+
+def _phone_hash(number: str) -> str:
+    # Imported here: integrations.services.communications imports screener.models.
+    from integrations.services.communications.benji_sms_hash import phone_hash
+
+    return phone_hash(number)
+
+
+class BenjiSmsPhone(models.Model):
+    """One phone, by hash: the state that belongs to the number, not to an on-ramp.
+
+    Created by the first on-ramp for the number. A number that only ever texts as a
+    stranger gets no row here (see `BenjiSmsStrangerReply`).
+    """
+
+    objects = BenjiSmsPhoneManager()
+
+    phone_hash = models.CharField(max_length=64)
+    # Set by STOP, or by a revocation in any wording. Every send checks it, and the
+    # on-ramp refuses the phone while it is set. START clears it if the newest
+    # binding's conversation has not expired.
+    revoked_at = models.DateTimeField(blank=True, null=True)
+    # Shared-phone guard: while in the future, inbound texts get the fixed "linked to
+    # more than one set of results" reply and no model turn, and the on-ramp opens no
+    # binding. The nightly sweep clears marks past the window.
+    shared_until = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            # A Meta constraint rather than unique=True on the field: on Postgres the
+            # field form adds a varchar_pattern_ops index for LIKE queries that nothing
+            # runs against a hash.
+            models.UniqueConstraint(fields=["phone_hash"], name="benji_sms_phone_hash_unique"),
+        ]
+
+    def __str__(self) -> str:
+        # No hash: __str__ ends up in admin breadcrumbs, logs and error pages.
+        return f"Benji SMS phone {self.pk}"
+
+    def delete_with_conversations(self) -> int:
+        """Serve a deletion request ("remove my texts") for this phone. Returns the
+        number of conversations deleted.
+
+        In one transaction: the SMS conversations of every binding, whose messages,
+        bindings and deliveries cascade; the number's stranger row; then this row.
+        Only SMS conversations are deleted. A binding can only point at one (see
+        `BenjiSmsBinding.save`), and if one ever pointed elsewhere it would survive the
+        first step, PROTECT would refuse the last, and the whole request would roll
+        back rather than delete a web transcript.
+        """
+        with transaction.atomic():
+            conversation_ids = set(self.bindings.values_list("conversation_id", flat=True))
+            AssistantConversation.objects.filter(pk__in=conversation_ids, channel=AssistantChannel.SMS).delete()
+            BenjiSmsStrangerReply.objects.filter(phone_hash=self.phone_hash).delete()
+            self.delete()
+        return len(conversation_ids)
+
+
+class BenjiSmsBinding(models.Model):
+    """Links a phone to one screen's SMS conversation, with its consent record.
+
+    One active binding per phone: a new on-ramp from a different screen closes the
+    previous binding and opens a new one, unseeded. A phone with several closed
+    bindings over time is a normal state.
+
+    One binding per conversation, ever, so a conversation belongs to one phone for
+    good. ai-service keeps one active SMS conversation per screen (MFB-2432), so a
+    second phone's on-ramp on the same screen would otherwise be handed the first
+    phone's conversation: two people's texts in one transcript, the second phone's
+    prompt built from the first's, and a deletion request for one phone deleting the
+    other's transcript. Not only one *active* binding: a closed binding for phone A and
+    an active one for phone B on the same conversation has all the same problems. The
+    on-ramp has to open a new conversation for a new phone. A phone that resumes a
+    conversation (START) reactivates its own binding rather than adding one.
+
+    A binding's phone and conversation are fixed once it exists (`save`).
+
+    The screen is `conversation.screen_uuid`, not a column here: a copy could drift
+    from the conversation the replies are actually built from.
+
+    Status reuses `AssistantConversationStatus`: a binding's lifecycle is its SMS
+    conversation's (`closed` when superseded, `expired` after the quiet interval).
+    """
+
+    phone = models.ForeignKey(BenjiSmsPhone, related_name="bindings", on_delete=models.PROTECT)
+    # A real FK, unlike AssistantConversation's code string: benefits-api writes these
+    # rows, and every send needs the WhiteLabel for the benji_sms flag check.
+    white_label = models.ForeignKey(WhiteLabel, related_name="benji_sms_bindings", on_delete=models.PROTECT)
+    # One-to-one: enforced by the database, so two on-ramps racing for one conversation
+    # cannot both win, which a check in save() could not promise.
+    conversation = models.OneToOneField(
+        AssistantConversation,
+        related_name="sms_binding",
+        on_delete=models.CASCADE,
+    )
+    # --- consent (decision 4). The User's TCPA columns are neither read nor written.
+    # Revocation is per phone: BenjiSmsPhone.revoked_at. ---
+    consented_at = models.DateTimeField()
+    # The consent sentence's translation label plus a revision, so the exact words
+    # consented to can be reproduced later.
+    consent_version = models.CharField(max_length=128)
+    status = models.CharField(
+        max_length=16,
+        choices=AssistantConversationStatus.choices,
+        default=AssistantConversationStatus.ACTIVE,
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    # What expiry is measured from, falling back to created_at. NULL until the first
+    # reply after the on-ramp text.
+    last_inbound_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            # Inbound routing resolves a phone to exactly one binding. Two on-ramps
+            # racing for one phone would otherwise leave two active rows.
+            models.UniqueConstraint(
+                fields=["phone"],
+                condition=models.Q(status=AssistantConversationStatus.ACTIVE),
+                name="benji_sms_one_active_binding_per_phone",
+            ),
+            # A new table, so unlike AssistantConversation.status this can be enforced.
+            models.CheckConstraint(
+                check=models.Q(status__in=AssistantConversationStatus.values),
+                name="benji_sms_binding_status_valid",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Benji SMS binding {self.pk} ({self.status})"
+
+    def save(self, *args: object, **kwargs: object) -> None:
+        """Refuse a non-SMS conversation, and any change of phone or conversation.
+
+        A binding routes texts into its conversation. Pointed at the web widget's
+        conversation, a person's texts would land in a transcript the browser shows to
+        anyone holding the results link; re-pointed at another phone's, they would mix
+        two people's texts. A check constraint cannot reach across tables, so the
+        guard is here, on every save through the ORM. `QuerySet.update()` bypasses it;
+        nothing in the SMS code updates these two columns, and a deletion request
+        rolls back rather than delete a web transcript if one ever did.
+        """
+        if self.conversation.channel != AssistantChannel.SMS:
+            raise ValueError("A Benji SMS binding must point at an SMS conversation")
+        if not self._state.adding:
+            stored = BenjiSmsBinding.objects.filter(pk=self.pk).values("phone_id", "conversation_id").first()
+            if stored and (stored["phone_id"], stored["conversation_id"]) != (self.phone_id, self.conversation_id):
+                raise ValueError("A Benji SMS binding's phone and conversation cannot change")
+        super().save(*args, **kwargs)
+
+    def end(self, status: str) -> None:
+        """Close or expire this binding and its conversation together.
+
+        `status` and the conversation's `status` are two copies of one lifecycle (the
+        constraints above need it on this table). Changing one without the other would
+        leave an active binding on a dead conversation, routing texts to stale context
+        and blocking the phone's next on-ramp. Every lifecycle change goes through here.
+        """
+        if status not in (AssistantConversationStatus.CLOSED, AssistantConversationStatus.EXPIRED):
+            raise ValueError(f"Not an ending status: {status}")
+        with transaction.atomic():
+            BenjiSmsBinding.objects.filter(pk=self.pk).update(status=status)
+            AssistantConversation.objects.filter(pk=self.conversation_id).update(status=status)
+        self.status = status
+
+
+class BenjiSmsDeliveryKind(models.TextChoices):
+    """What an outbound text was. Only model replies have an AssistantMessage."""
+
+    REPLY = "reply", "Model reply"
+    # The held-back part of a capped reply, sent on MORE. Same message as its reply.
+    REMAINDER = "remainder", "Reply remainder (MORE)"
+    ONRAMP = "onramp", "On-ramp text"
+    DISCLOSURE = "disclosure", "AI disclosure"
+    # STOP, HELP, START, stranger, shared, expired, picture, daily cap, apology.
+    FIXED = "fixed", "Fixed reply"
+
+
+# Kinds that answer the person in a conversation. They need a binding: it is what
+# every send checks for revocation, and what per-phone caps and audits count by.
+_CONVERSATION_KINDS = [BenjiSmsDeliveryKind.REPLY, BenjiSmsDeliveryKind.REMAINDER, BenjiSmsDeliveryKind.DISCLOSURE]
+# Kinds that carry model-written text. They need their message.
+_MODEL_KINDS = [BenjiSmsDeliveryKind.REPLY, BenjiSmsDeliveryKind.REMAINDER]
+
+
+class BenjiSmsDeliveryStatus(models.TextChoices):
+    """Twilio's message statuses, as its status callback reports them.
+
+    Not a check constraint: Twilio can add a status, and a callback carrying one should
+    be recorded rather than rejected. The column is wider than the longest known value
+    (`partially_delivered`, 19) for the same reason.
+    """
+
+    ACCEPTED = "accepted", "Accepted"
+    SCHEDULED = "scheduled", "Scheduled"
+    QUEUED = "queued", "Queued"
+    SENDING = "sending", "Sending"
+    SENT = "sent", "Sent"
+    DELIVERED = "delivered", "Delivered"
+    PARTIALLY_DELIVERED = "partially_delivered", "Partially delivered"
+    UNDELIVERED = "undelivered", "Undelivered"
+    FAILED = "failed", "Failed"
+    READ = "read", "Read"
+    CANCELED = "canceled", "Canceled"
+    RECEIVING = "receiving", "Receiving"
+    RECEIVED = "received", "Received"
+
+
+class BenjiSmsDelivery(models.Model):
+    """One outbound Benji text and what happened to it. No bodies, no numbers.
+
+    `remainder_text` is the exception to "no bodies": the part of a reply over the
+    450-character cap, held for MORE. It is model-generated text of the same class as
+    the reply it belongs to, under the same controls (privacy companion §2).
+
+    A reply stored with no `outbound_sid` is retryable. One with an `outbound_sid` and
+    no `delivery_status` after a fixed interval is an alarm.
+    """
+
+    kind = models.CharField(max_length=16, choices=BenjiSmsDeliveryKind.choices)
+    # Set for replies and remainders. NULL for everything else, which no model wrote.
+    message = models.ForeignKey(
+        AssistantMessage,
+        related_name="sms_deliveries",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    # Required for replies, remainders and the disclosure. NULL only for an on-ramp text
+    # that opened no binding (shared phone) and fixed replies to a number with none.
+    # Rows with no binding can be tied to no phone, so like stranger rows they are kept
+    # one day (BenjiSmsStrangerReply.objects.purge_expired): their Twilio SIDs resolve
+    # to the number at Twilio.
+    binding = models.ForeignKey(
+        BenjiSmsBinding,
+        related_name="deliveries",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    # The inbound MessageSid this send answers; NULL for the on-ramp text. Not unique:
+    # one inbound can produce the disclosure and the reply.
+    inbound_sid = models.CharField(max_length=34, blank=True, null=True)
+    # Unique (Meta), because the status callback finds its row by it.
+    outbound_sid = models.CharField(max_length=34, blank=True, null=True)
+    delivery_status = models.CharField(
+        max_length=32,
+        choices=BenjiSmsDeliveryStatus.choices,
+        blank=True,
+        null=True,
+    )
+    # Twilio's ErrorCode on undelivered or failed, e.g. 30007 (carrier filtered).
+    delivery_error_code = models.IntegerField(blank=True, null=True)
+    # Twilio's NumSegments: what the text cost.
+    segments = models.SmallIntegerField(blank=True, null=True)
+    remainder_text = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(default=timezone.now)
+    sent_at = models.DateTimeField(blank=True, null=True)
+    # When `delivery_status` last changed.
+    status_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        # Indexes and uniqueness declared here, not on the fields: the field forms add a
+        # varchar_pattern_ops index on Postgres that nothing runs a LIKE against.
+        constraints = [
+            # NULLs are distinct, so unsent rows do not collide.
+            models.UniqueConstraint(fields=["outbound_sid"], name="benji_sms_delivery_outbound_sid_unique"),
+            models.CheckConstraint(
+                check=models.Q(kind__in=BenjiSmsDeliveryKind.values),
+                name="benji_sms_delivery_kind_valid",
+            ),
+            # A reply without its message could not be traced back to what was said.
+            models.CheckConstraint(
+                check=~models.Q(kind__in=_MODEL_KINDS) | models.Q(message__isnull=False),
+                name="benji_sms_delivery_reply_has_message",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(kind__in=_CONVERSATION_KINDS) | models.Q(binding__isnull=False),
+                name="benji_sms_delivery_conversation_kind_has_binding",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["inbound_sid"], name="benji_sms_delivery_inbound_idx"),
+            # "Sent, no status after N minutes" and daily segment spend both scan by it.
+            models.Index(fields=["sent_at"], name="benji_sms_delivery_sent_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Benji SMS {self.kind} {self.pk} ({self.delivery_status or 'no status'})"
+
+
+class BenjiSmsStrangerReplyManager(models.Manager):
+    def for_number(self, number: str) -> models.QuerySet:
+        """The number's stranger row, if any, as a queryset. Raises as `phone_hash` does."""
+        return self.filter(phone_hash=_phone_hash(number))
+
+    def purge_expired(self, now: Optional[datetime] = None) -> tuple[int, int]:
+        """Delete stranger rows, and delivery rows with no binding, older than a day.
+
+        For the nightly sweep. Returns (stranger rows, delivery rows) deleted. The two
+        go together because a stranger's reply leaves both, and a delivery row's Twilio
+        SIDs resolve to the number at Twilio as surely as the stranger row's hash does.
+        Daily spend and delivery alarms must read the day's rows before this runs.
+        """
+        cutoff = (now or timezone.now()) - BENJI_SMS_UNBOUND_RETENTION
+        with transaction.atomic():
+            strangers, _ = self.filter(replied_at__lt=cutoff).delete()
+            deliveries, _ = BenjiSmsDelivery.objects.filter(binding__isnull=True, created_at__lt=cutoff).delete()
+        return strangers, deliveries
+
+
+class BenjiSmsStrangerReply(models.Model):
+    """When a number with no binding last got the fixed stranger reply.
+
+    Kept apart from `BenjiSmsPhone` on purpose: these rows are purged after a day, and
+    a texter who never used the on-ramp should leave no lasting trace. That includes
+    the reply's delivery row, which `purge_expired` removes with it.
+
+    At most one reply per number per day, remembered in Postgres so it holds under a
+    Redis outage (privacy companion §9). One row per hash, so two webhooks racing for
+    one number cannot both claim the reply: the reply path inserts, or moves an
+    over-a-day-old `replied_at` forward, and replies only if it won. The nightly sweep
+    purges rows older than a day.
+    """
+
+    phone_hash = models.CharField(max_length=64)
+    replied_at = models.DateTimeField(default=timezone.now)
+
+    objects = BenjiSmsStrangerReplyManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["phone_hash"], name="benji_sms_stranger_hash_unique"),
+        ]
+        indexes = [
+            # The nightly purge.
+            models.Index(fields=["replied_at"], name="benji_sms_stranger_replied_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Benji SMS stranger reply {self.pk}"
+
+
+class BenjiSmsDeadLetterManager(models.Manager):
+    def record(
+        self,
+        *,
+        task_name: str,
+        task_id: str,
+        attempts: int,
+        error_type: str,
+        conversation_id: Optional[str] = None,
+        inbound_sid: Optional[str] = None,
+    ) -> "BenjiSmsDeadLetter":
+        """Record a job that failed for good (screener.tasks.BenjiSmsTask.dead_letter).
+
+        A conversation deleted while its job was queued or retrying (a deletion request)
+        leaves nothing to point at, so the row keeps neither the conversation nor the
+        inbound SID: a SID resolves to the number at Twilio, and the row would outlive
+        the deletion it belongs to. The conversation row is locked from the check to the
+        insert, so a deletion cannot land in between and fail the insert.
+        """
+        with transaction.atomic():
+            if (
+                conversation_id is None
+                or not AssistantConversation.objects.select_for_update().filter(pk=conversation_id).exists()
+            ):
+                conversation_id = None
+                inbound_sid = None
+            return self.create(
+                task_name=task_name,
+                task_id=task_id,
+                attempts=attempts,
+                error_type=error_type,
+                conversation_id=conversation_id,
+                inbound_sid=inbound_sid,
+            )
+
+
+class BenjiSmsDeadLetter(models.Model):
+    """A Benji SMS job that failed every attempt (MFB-2436; proposal v3, decision 5).
+
+    Ids and the error's class only, like the job payload: never the message text, the
+    phone number or its hash, and never the exception's message, which can quote any of
+    them. Retention follows the conversation: it cascades with it, in the ORM and in the
+    database through migration 0174, so a deletion request takes these rows too.
+    Writing a row also logs an ERROR, which is the alarm.
+    """
+
+    # The Celery task name, e.g. "screener.benji_sms_turn".
+    task_name = models.CharField(max_length=64)
+    # Celery's id for the job. Retries keep it, so it names the job, not an attempt.
+    task_id = models.CharField(max_length=64)
+    conversation = models.ForeignKey(
+        AssistantConversation,
+        related_name="sms_dead_letters",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    # The inbound MessageSid the job was answering.
+    inbound_sid = models.CharField(max_length=34, blank=True, null=True)
+    attempts = models.PositiveSmallIntegerField()
+    # Qualified class name of the last attempt's exception, e.g. "requests.exceptions.Timeout".
+    error_type = models.CharField(max_length=128)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = BenjiSmsDeadLetterManager()
+
+    class Meta:
+        constraints = [
+            # A SID with no conversation could outlive the deletion that removed the
+            # conversation it came from (see BenjiSmsDeadLetterManager.record).
+            models.CheckConstraint(
+                check=models.Q(inbound_sid__isnull=True) | models.Q(conversation__isnull=False),
+                name="benji_sms_dead_letter_sid_has_conversation",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["created_at"], name="benji_sms_dead_letter_at_idx"),
+            # benji_sms_worker_check --fail finds its job's row by it.
+            models.Index(fields=["task_id"], name="benji_sms_dead_letter_task_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"Benji SMS dead letter {self.pk} ({self.task_name}, {self.error_type})"

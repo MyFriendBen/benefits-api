@@ -37,6 +37,7 @@ def make_member(
     member.birth_year = birth_year
     member.calc_age = Mock(return_value=age)
     member.age_at_end_of_year = lambda year: HouseholdMember.age_at_end_of_year(member, year)
+    member.born_after = lambda year: HouseholdMember.born_after(member, year)
     member.relationship = relationship
     member.disabled = disabled
     member.visually_impaired = visually_impaired

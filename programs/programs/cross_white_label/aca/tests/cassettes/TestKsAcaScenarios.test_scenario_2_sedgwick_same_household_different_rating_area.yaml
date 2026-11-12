@@ -15,7 +15,7 @@ interactions:
       "SEDGWICK_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf":
       {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.53.1"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -49,10 +49,10 @@ interactions:
         {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
         "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
         "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.53.1", "data_version": null, "dataset": null}}'
+        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '1362'
       access-control-allow-origin:
@@ -60,15 +60,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:07:54 GMT
+      - Thu, 05 Nov 2026 18:23:12 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-eee69370e3867447bd5a583732d52c58-9bcece5285efca47-00
+      - 00-2642cff518e060a88310cb050a12d7f4-144a0919d2b0a21b-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - eee69370e3867447bd5a583732d52c58
+      - 2642cff518e060a88310cb050a12d7f4
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -76,7 +76,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 4ce273f2-2d14-4b6e-8128-3524fcd91037
+      - 59d312ec-7e06-441b-8f16-c65213878a72
       x-policyengine-route-channel:
       - current
     status:

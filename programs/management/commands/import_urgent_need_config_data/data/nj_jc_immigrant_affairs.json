@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_jc_immigrant_affairs",
+    "category_type": {
+      "external_name": "civil_legal_needs"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Jersey City Division of Immigrant Affairs",
+      "description": "Jersey City's Division of Immigrant Affairs is free to Jersey City residents, regardless of immigration status. Make an appointment by phone, Monday to Friday 9am-4pm. Call 201-547-4328.",
+      "link": "https://www.jerseycitynj.gov/immigrantaffairs",
+      "warning": "",
+      "website_description": "Learn about free or low-cost legal help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hudson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

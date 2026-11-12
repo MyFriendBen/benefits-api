@@ -22,6 +22,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
 from benefits.cache_config import redis_pool_kwargs
+from benefits.celery_config import BROKER_POOL_LIMIT, BROKER_SOCKET_TIMEOUT, broker_use_ssl
 from benefits.sentry_scrub import scrub_event
 
 EXTRA_LANG_INFO = {
@@ -327,7 +328,10 @@ if config("SENTRY_DSN", None) is not None:
     sentry_sdk.init(
         dsn=config("SENTRY_DSN"),
         integrations=[DjangoIntegration()],
-        environment="dev" if DEBUG else "production",
+        # Staging and production both run with DEBUG off, so without SENTRY_ENVIRONMENT
+        # they report as one environment and an alert rule cannot tell them apart
+        # (docs/BENJI_SMS_WORKER.md). Set SENTRY_ENVIRONMENT=staging on the staging app.
+        environment=config("SENTRY_ENVIRONMENT", default="dev" if DEBUG else "production"),
         before_send=scrub_event,
     )
 
@@ -448,6 +452,85 @@ UNFOLD = {
 
 REWIRING_AMERICA_API_KEY = config("REWIRING_AMERICA_API_KEY", default="")
 GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
+
+# Twilio for Benji SMS (integrations.services.communications.benji_sms). Save My Results
+# (integrations.services.communications.message) still reads the same env vars itself.
+TWILIO_SID = config("TWILIO_SID", default="")
+TWILIO_TOKEN = config("TWILIO_TOKEN", default="")
+TWILIO_PHONE_NUMBER = config("TWILIO_PHONE_NUMBER", default="")
+
+# Benji SMS kill switch (MFB-2433), raw. benji_sms.outbound_enabled() parses it
+# fail-closed: only true/1/yes/on means on; missing or anything else is off.
+BENJI_SMS_OUTBOUND_ENABLED = config("BENJI_SMS_OUTBOUND_ENABLED", default="")
+
+# Benji SMS phone-hash key (MFB-2435), one per environment, also kept in the password
+# manager. benji_sms_hash.phone_hash() refuses to run without it. Rotating it orphans
+# every binding, which expires every SMS conversation: a deliberate operation, never
+# routine. Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+BENJI_SMS_HASH_KEY = config("BENJI_SMS_HASH_KEY", default="")
+
+# Celery (MFB-2436), for the Benji SMS worker. Runbook: docs/BENJI_SMS_WORKER.md.
+#
+# The broker is its own Redis add-on, attached as CELERY_BROKER, never the cache's
+# REDIS_URL (see benefits/celery_config.py). Empty means none is attached: the enqueue
+# helpers in screener/tasks.py then refuse with BrokerNotConfigured, instead of Celery
+# trying its default broker on localhost and failing with an error that does not say why.
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="")
+# Eager runs a task in-process at the call, so local work needs no broker or worker.
+# On by default when DEBUG is, and in tests (pytest.ini). A developer running a real
+# worker locally sets CELERY_TASK_ALWAYS_EAGER=False.
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=DEBUG, cast=bool)
+# Off, so an eager job behaves as it would on a worker: retried, then dead-lettered,
+# with the failure on the result rather than raised at the call. Propagating raises
+# before Celery runs the retry or the task's on_failure, which would skip both.
+CELERY_TASK_EAGER_PROPAGATES = False
+CELERY_BROKER_USE_SSL = broker_use_ssl(CELERY_BROKER_URL)
+CELERY_BROKER_POOL_LIMIT = BROKER_POOL_LIMIT
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    # With late acks, a job whose worker vanished without handing it back (a crash, a
+    # SIGKILL) is handed out again once this many seconds pass unacknowledged. A reply
+    # that turns up an hour later (Celery's default) is worse than none, so it is short.
+    # It must stay above the longest a fetched job can sit unacknowledged, or a slow job
+    # runs twice while still running: a retry is fetched at once and held through its
+    # countdown, may then wait up to one attempt for a free child, then runs its own
+    # attempt. That is about 5 + 95 + 95 s (screener/tasks.py); 300 leaves room for
+    # several retries fetched together and for kombu's coarse restore cadence.
+    "visibility_timeout": 300,
+    "socket_timeout": BROKER_SOCKET_TIMEOUT,
+    "socket_connect_timeout": BROKER_SOCKET_TIMEOUT,
+}
+# Publishing retries briefly, then raises: the inbound webhook enqueues, and Twilio
+# should get an error it can retry rather than a request held open on a dead broker.
+CELERY_TASK_PUBLISH_RETRY_POLICY = {
+    "max_retries": 2,
+    "interval_start": 0,
+    "interval_step": 0.5,
+    "interval_max": 1,
+}
+CELERY_TASK_DEFAULT_QUEUE = "benji_sms"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+# At least once, not at most once: a job is acknowledged after it runs, and handed out
+# again if the worker is lost mid-job (a dyno restart). Duplicates are the turn's to
+# absorb (screener/tasks.py); a lost reply is not recoverable.
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+# One job per worker child at a time, so a slow turn never holds others hostage.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# Heroku stops a dyno by sending SIGTERM to every process in it, then SIGKILL 30s later.
+# Celery's pool children would exit on that SIGTERM mid-job, so the Procfile sets
+# REMAP_SIGTERM=SIGQUIT: the children ignore it and the main process runs a cold
+# shutdown, which first gives running jobs this long to finish, then hands the rest
+# back to the broker (late acks) for the next worker.
+CELERY_WORKER_SOFT_SHUTDOWN_TIMEOUT = 25  # seconds, inside Heroku's 30
+# Results are off by default; only the ping that benji_sms_worker_check waits on keeps
+# one, briefly, on the broker.
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL or None
+CELERY_REDIS_BACKEND_USE_SSL = broker_use_ssl(CELERY_BROKER_URL)
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_RESULT_EXPIRES = 600  # seconds
 
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields

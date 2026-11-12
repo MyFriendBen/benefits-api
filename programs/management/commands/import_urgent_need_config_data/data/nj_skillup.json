@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_skillup",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "SkillUp NJ",
+      "description": "SkillUp NJ is a free online site for building job skills. Anyone can use it, employed or not. Sign up on your own, 24/7.",
+      "link": "https://www.nj.gov/labor/career-services/education-training/skillup-nj/",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_ida_kushner_diaper_program",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Ida Kushner Central Jersey Diaper Program",
+      "description": "The Ida Kushner Central Jersey Diaper Program gives diapers to Middlesex County families with a child in diapers. They will not ask for a license, SSN, green card, immigration status or income proof. Register online once (about 2 days), then book an appointment. You can get diapers every other month. Call 732-296-9922.",
+      "link": "https://idakushnercjdp.org/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Middlesex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,84 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"1": {"age": {"2026": 50}, "is_pregnant": {"2026":
+      false}, "ssi_countable_resources": {"2026": 1000}, "employment_income": {"2026":
+      0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+      {"2026": 0}, "social_security": {"2026": 12000}, "unemployment_compensation":
+      {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
+      {"2026": 0}, "taxable_alimony_income": {"2026": 0}, "is_medicare_eligible":
+      {"2026": true}, "meets_ssi_disability_criteria": {"2026": true}, "ssi_engaged_in_sga":
+      {"2026": false}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+      {"2026": false}, "medicaid": {"2026": null}, "medicaid_category": {"2026": null}}},
+      "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families": {"family": {"members":
+      ["1"]}}, "households": {"household": {"members": ["1"], "state_code": {"2026":
+      "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf": {"2026": null},
+      "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
+      "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
+      "marital_units": {}}, "version": "2.94.7"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1213'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"1": {"age":
+        {"2026": 50}, "is_pregnant": {"2026": false}, "ssi_countable_resources": {"2026":
+        1000}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+        0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+        {"2026": 12000}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "taxable_alimony_income":
+        {"2026": 0}, "is_medicare_eligible": {"2026": true}, "meets_ssi_disability_criteria":
+        {"2026": true}, "ssi_engaged_in_sga": {"2026": false}, "ssi": {"2026": 0.0},
+        "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+        "medicaid": {"2026": 12919.576}, "medicaid_category": {"2026": "SENIOR_OR_DISABLED"}}},
+        "tax_units": {"main_tax_unit": {"members": ["1"]}}, "families": {"family":
+        {"members": ["1"]}}, "households": {"household": {"members": ["1"], "state_code":
+        {"2026": "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf": {"2026":
+        0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
+        false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
+        false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.94.7",
+        "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '1332'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 15:14:41 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-7b143906a5577c3338e969ff3383698c-2aa973ec1f52d4a5-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 7b143906a5577c3338e969ff3383698c
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 007d2a6d-e5f8-4271-8bf1-ee82c5de38a6
+      x-policyengine-route-channel:
+      - frontier
+    status:
+      code: 200
+      message: OK
+version: 1

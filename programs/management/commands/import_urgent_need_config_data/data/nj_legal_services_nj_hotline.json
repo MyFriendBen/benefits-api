@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_legal_services_nj_hotline",
+    "category_type": {
+      "external_name": "civil_legal_needs"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Legal Services of New Jersey hotline",
+      "description": "Legal Services of New Jersey gives free civil legal help to people who qualify financially. You are screened by phone and need no documents. If you have an emergency that needs immediate advice, the intake worker will arrange for you to talk to someone that day. Other matters get a callback within about 2 business days. Call 1-888-576-5529, Monday to Friday 8am-5:30pm, or use the online form.",
+      "link": "https://www.lsnj.org/get-legal-help/free-lsnjlaw-hotline",
+      "warning": "",
+      "website_description": "Learn about free or low-cost legal help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

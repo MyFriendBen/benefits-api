@@ -5,7 +5,7 @@ interactions:
       {"family": {"members": ["301"]}}, "households": {"household": {"members": ["301"],
       "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["301"],
       "school_meal_countable_income": {"2026": 23941.0}}}, "marital_units": {}}, "version":
-      "2.53.1"}'
+      "2.72.5"}'
     headers:
       Accept:
       - '*/*'
@@ -29,10 +29,10 @@ interactions:
         ["301"]}}, "households": {"household": {"members": ["301"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["301"], "school_meal_countable_income":
         {"2026": 23941.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.53.1", "data_version": null, "dataset": null}}'
+        "2.72.5", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
       - '534'
       access-control-allow-origin:
@@ -40,15 +40,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:09:40 GMT
+      - Thu, 05 Nov 2026 18:24:39 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-58efa35b8684d6d981e297c7a309f24e-fe8fc08f7e0fd06c-00
+      - 00-53d18a3228ed71fad540218fb7a1e4cc-df9515df9bc1bdd3-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 58efa35b8684d6d981e297c7a309f24e
+      - 53d18a3228ed71fad540218fb7a1e4cc
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -56,7 +56,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - b60835e9-ebb9-4c32-a8d4-0fa51eaf9ef2
+      - 7d8034b8-7184-43bb-92c7-ece1d1b5f5da
       x-policyengine-route-channel:
       - current
     status:
