@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('screener', '0169_screen_household_size_range'),
+        ('screener', '0174_benji_sms_dead_letter_db_cascade'),
     ]
 
     operations = [

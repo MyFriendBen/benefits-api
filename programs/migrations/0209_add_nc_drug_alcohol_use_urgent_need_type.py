@@ -80,7 +80,7 @@ def remove_urgent_need_types(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0204_move_national_navigator_copies_to_federal"),
+        ("programs", "0208_add_211nj_referrer"),
         ("screener", "0001_initial"),
         ("translations", "0001_initial"),
     ]
