@@ -582,45 +582,6 @@ class CareWorkerEligibleDependency(Member):
         return self.member.is_care_worker or False
 
 
-class PellGrant(Member):
-    field = "pell_grant"
-
-
-class PellGrantDependentAvailableIncomeDependency(Member):
-    field = "pell_grant_dependent_available_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.member.calc_gross_income("yearly", ["all"]))
-
-
-class PellGrantCountableAssetsDependency(Member):
-    field = "pell_grant_countable_assets"
-    dependencies = ("household_assets",)
-
-    def value(self):
-        return int(self.screen.household_assets)
-
-
-class CostOfAttendingCollegeDependency(Member):
-    field = "cost_of_attending_college"
-    dependencies = ("age", "student")
-
-    def value(self):
-        return 22_288 * (self.member.calc_age() >= 16 and self.member.student)
-
-
-class PellGrantMonthsInSchoolDependency(Member):
-    field = "pell_grant_months_in_school"
-
-    def value(self):
-        return 9
-
-
 class ChpEligible(Member):
     field = "co_chp_eligible"
 
