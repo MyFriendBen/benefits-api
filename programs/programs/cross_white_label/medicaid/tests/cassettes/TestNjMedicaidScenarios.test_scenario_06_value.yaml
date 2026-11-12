@@ -8,21 +8,22 @@ interactions:
       {"2026": 0}, "taxable_alimony_income": {"2026": 0}, "is_medicare_eligible":
       {"2026": null}, "meets_ssi_disability_criteria": {"2026": false}, "ssi_engaged_in_sga":
       {"2026": null}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
-      {"2026": false}, "medicaid": {"2026": null}}, "2": {"age": {"2026": 6}, "is_pregnant":
-      {"2026": false}, "ssi_countable_resources": {"2026": 0}, "employment_income":
-      {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
-      0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation":
-      {"2026": 0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions":
-      {"2026": 0}, "taxable_alimony_income": {"2026": 0}, "is_medicare_eligible":
-      {"2026": null}, "meets_ssi_disability_criteria": {"2026": false}, "ssi_engaged_in_sga":
-      {"2026": null}, "ssi": {"2026": null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
-      {"2026": false}, "medicaid": {"2026": null}}}, "tax_units": {"main_tax_unit":
-      {"members": ["1", "2"]}}, "families": {"family": {"members": ["1", "2"]}}, "households":
-      {"household": {"members": ["1", "2"], "state_code": {"2026": "NJ"}, "county_str":
-      {"2026": "MERCER_COUNTY_NJ"}}}, "spm_units": {"spm_unit": {"members": ["1",
-      "2"], "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+      {"2026": false}, "medicaid": {"2026": null}, "medicaid_category": {"2026": null}},
+      "2": {"age": {"2026": 6}, "is_pregnant": {"2026": false}, "ssi_countable_resources":
+      {"2026": 0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+      0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "taxable_alimony_income":
+      {"2026": 0}, "is_medicare_eligible": {"2026": null}, "meets_ssi_disability_criteria":
+      {"2026": false}, "ssi_engaged_in_sga": {"2026": null}, "ssi": {"2026": null},
+      "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
+      "medicaid": {"2026": null}, "medicaid_category": {"2026": null}}}, "tax_units":
+      {"main_tax_unit": {"members": ["1", "2"]}}, "families": {"family": {"members":
+      ["1", "2"]}}, "households": {"household": {"members": ["1", "2"], "state_code":
+      {"2026": "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1", "2"], "tanf":
+      {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -31,7 +32,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1929'
+      - '1959'
       Content-Type:
       - application/json
       User-Agent:
@@ -49,42 +50,42 @@ interactions:
         {"2026": 0}, "is_medicare_eligible": {"2026": false}, "meets_ssi_disability_criteria":
         {"2026": false}, "ssi_engaged_in_sga": {"2026": false}, "ssi": {"2026": 0.0},
         "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
-        "medicaid": {"2026": 15435.662}}, "2": {"age": {"2026": 6}, "is_pregnant":
-        {"2026": false}, "ssi_countable_resources": {"2026": 0}, "employment_income":
-        {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
-        0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0},
-        "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
-        0}, "taxable_ira_distributions": {"2026": 0}, "taxable_alimony_income": {"2026":
-        0}, "is_medicare_eligible": {"2026": false}, "meets_ssi_disability_criteria":
+        "medicaid": {"2026": 15435.662}, "medicaid_category": {"2026": "PARENT"}},
+        "2": {"age": {"2026": 6}, "is_pregnant": {"2026": false}, "ssi_countable_resources":
+        {"2026": 0}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+        0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026": 0}, "social_security":
+        {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+        {"2026": 0}, "taxable_ira_distributions": {"2026": 0}, "taxable_alimony_income":
+        {"2026": 0}, "is_medicare_eligible": {"2026": false}, "meets_ssi_disability_criteria":
         {"2026": false}, "ssi_engaged_in_sga": {"2026": false}, "ssi": {"2026": 0.0},
         "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false},
-        "medicaid": {"2026": 10403.492}}}, "tax_units": {"main_tax_unit": {"members":
-        ["1", "2"]}}, "families": {"family": {"members": ["1", "2"]}}, "households":
-        {"household": {"members": ["1", "2"], "state_code": {"2026": "NJ"}, "county_str":
-        {"2026": "MERCER_COUNTY_NJ"}}}, "spm_units": {"spm_unit": {"members": ["1",
+        "medicaid": {"2026": 10403.492}, "medicaid_category": {"2026": "OLDER_CHILD"}}},
+        "tax_units": {"main_tax_unit": {"members": ["1", "2"]}}, "families": {"family":
+        {"members": ["1", "2"]}}, "households": {"household": {"members": ["1", "2"],
+        "state_code": {"2026": "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1",
         "2"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
         {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
         {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.72.5", "data_version": null, "dataset": null}}'
+        "2.94.7", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '2040'
+      - '2083'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 15:43:10 GMT
+      - Wed, 11 Nov 2026 15:12:51 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-82ed444aa376ce52305329e4ff950d7e-1103e78f02d323ef-01
+      - 00-6ede2bb758af3440c9e42551196cd095-ebe8a8137612de1b-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 82ed444aa376ce52305329e4ff950d7e;o=1
+      - 6ede2bb758af3440c9e42551196cd095
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -92,9 +93,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - b4d49654-b99a-458f-9e0f-c68c51a4cc68
+      - b62f8819-db3a-4208-84c1-cfd5bb12b3eb
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK

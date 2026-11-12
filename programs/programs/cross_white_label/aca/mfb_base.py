@@ -80,21 +80,24 @@ APPLICABLE_PERCENTAGE_TABLES: dict[int, tuple[ApplicableBand, ...]] = {
 
 
 @dataclass(frozen=True)
-class DependentFilingThresholds:
-    """When a single dependent must file (IRS Publication 501, Table 2)."""
+class DependentFilingFigures:
+    """One tax year's amounts for when a single dependent must file (26 U.S.C. 6012(a)(1))."""
 
-    unearned: int
-    earned: int
-    #: Gross income must file above `max(gross_floor, min(earned, EARNED_CAP) + gross_addition)`.
-    gross_floor: int
-    gross_addition: int
+    #: The tax year these amounts are for.
+    tax_year: int
+    #: The least a dependent's standard deduction can be.
+    floor: int
+    #: Added to earned income for a dependent's standard deduction.
+    addon: int
+    #: The basic standard deduction for an unmarried filer.
+    basic: int
+    #: The additional standard deduction for an unmarried filer who is 65 or older, or blind.
+    additional: int
 
 
-#: The 2025-return figures the base spec states for every coverage year.
-DEPENDENT_UNDER_65_NOT_BLIND = DependentFilingThresholds(1_350, 15_750, 1_350, 450)
-DEPENDENT_65_OR_BLIND = DependentFilingThresholds(3_350, 17_750, 3_350, 2_450)
-DEPENDENT_65_AND_BLIND = DependentFilingThresholds(5_350, 19_750, 5_350, 4_450)
-DEPENDENT_EARNED_CAP = 15_300
+#: Rev. Proc. 2026-35 §3.15. Replace with the next Rev. Proc.'s amounts when the coverage year
+#: rolls over; until then a screen for another coverage year is reported to Sentry.
+DEPENDENT_FILING = DependentFilingFigures(tax_year=2027, floor=1_400, addon=500, basic=16_600, additional=2_100)
 DEPENDENT_SELF_EMPLOYMENT_THRESHOLD = 400
 #: Social Security enters a dependent's gross income only where half of it plus their other
 #: income exceeds this.
@@ -202,7 +205,12 @@ class MfbAca(ProgramCalculator, abstract=True):
         return income
 
     def dependent_must_file(self, member: HouseholdMember) -> bool:
-        """Whether a dependent's income is high enough that they must file a return."""
+        """
+        Whether a dependent's income is high enough that they must file a return, by 26 U.S.C.
+        6012(a)(1) at ``DEPENDENT_FILING``'s amounts: gross income at least the basic standard
+        deduction (plus the additional amount from 65), unearned income over the floor, or gross
+        income over the dependent's standard deduction.
+        """
         self_employment = member.calc_gross_income("yearly", ["selfEmployment"])
         if self_employment >= DEPENDENT_SELF_EMPLOYMENT_THRESHOLD:
             return True
@@ -214,25 +222,30 @@ class MfbAca(ProgramCalculator, abstract=True):
         if social_security / 2 + other > DEPENDENT_SOCIAL_SECURITY_BASE:
             unearned += social_security
 
-        thresholds = self._dependent_thresholds(member)
-        gross_limit = max(
-            thresholds.gross_floor,
-            min(earned, DEPENDENT_EARNED_CAP) + thresholds.gross_addition,
-        )
-
-        return unearned > thresholds.unearned or earned > thresholds.earned or earned + unearned > gross_limit
-
-    def _dependent_thresholds(self, member: HouseholdMember) -> DependentFilingThresholds:
+        figures = self._dependent_filing_figures()
         age = member.age_at_end_of_year(self.coverage_year())
         aged = age is not None and age >= MEDICARE_AGE
         blind = bool(member.visually_impaired)
 
-        if aged and blind:
-            return DEPENDENT_65_AND_BLIND
-        if aged or blind:
-            return DEPENDENT_65_OR_BLIND
+        # One additional amount each for 65 or older and for blindness; only age raises the
+        # gross income threshold.
+        extra = figures.additional * (int(aged) + int(blind))
+        gross = earned + unearned
+        gross_threshold = figures.basic + (figures.additional if aged else 0)
+        dependent_deduction = min(max(figures.floor, earned + figures.addon), figures.basic) + extra
 
-        return DEPENDENT_UNDER_65_NOT_BLIND
+        return gross >= gross_threshold or unearned > figures.floor + extra or gross > dependent_deduction
+
+    def _dependent_filing_figures(self) -> DependentFilingFigures:
+        """The current dependent filing amounts, reported when they aren't the coverage year's."""
+        year = self.coverage_year()
+        if year != DEPENDENT_FILING.tax_year:
+            capture_message(
+                f"ACA reads the {DEPENDENT_FILING.tax_year} dependent filing amounts for coverage year {year}.",
+                level="warning",
+            )
+
+        return DEPENDENT_FILING
 
     def poverty_line(self) -> int:
         """

@@ -218,7 +218,7 @@ class FederalCdcc(ProgramCalculator):
         """Spec section 4 `qualifying_individual`. On a joint return either filer is the
         other's spouse, whichever the screener recorded as head."""
         # Born after the tax year: not part of that year's household.
-        if member.birth_year is not None and member.birth_year > self.tax_year:
+        if member.born_after(self.tax_year):
             return False
 
         if member.relationship == "spouse" or (member.relationship == "headOfHousehold" and self._is_joint):

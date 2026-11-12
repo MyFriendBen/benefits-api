@@ -168,3 +168,73 @@ class UserAdminChangePasswordViewTests(TestCase):
         self.assertEqual(self.target.first_name, "Updated")
         self.assertEqual(self.target.password, original_hash)
         self.assertTrue(self.target.check_password("target-password-123"))
+
+
+@override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
+class UserAdminBlankEmailTests(TestCase):
+    """
+    email is unique but optional, so "no email" must be stored as NULL. Django's
+    AbstractUser.clean() turns a missing email into "", so every admin-created user
+    without one was saved as "" and the second such add failed with an IntegrityError.
+    """
+
+    def setUp(self) -> None:
+        self.superuser = User.objects.create_superuser(email_or_cell="admin@example.com", password="admin-pw-123")
+        self.client.force_login(self.superuser)
+
+    def test_adding_two_users_without_email(self) -> None:
+        """The second admin add without an email used to collide with the first."""
+        url = reverse("admin:authentication_user_add")
+        for login in ("first-staff@example.com", "second-staff@example.com"):
+            response = self.client.post(
+                url,
+                {"email_or_cell": login, "password1": "Zq8-fake-pass-xyz", "password2": "Zq8-fake-pass-xyz"},
+            )
+            self.assertEqual(response.status_code, 302, f"add failed for {login}")
+            self.assertIsNone(User.objects.get(email_or_cell=login).email)
+
+    def test_editing_user_with_empty_email_stores_null(self) -> None:
+        """Two edits with Email left empty: the second would collide if the first stored ""."""
+        User.objects.create_user(email_or_cell="other@example.com")
+        target = User.objects.create_user(email_or_cell="target@example.com")
+
+        for user in (target, User.objects.get(email_or_cell="other@example.com")):
+            response = self.client.post(
+                reverse("admin:authentication_user_change", args=[user.pk]),
+                {
+                    "email_or_cell": user.email_or_cell,
+                    "email": "",
+                    "is_active": "on",
+                    "date_joined_0": "2026-01-01",
+                    "date_joined_1": "00:00:00",
+                },
+            )
+            self.assertEqual(response.status_code, 302, f"edit failed for {user.email_or_cell}")
+            user.refresh_from_db()
+            self.assertIsNone(user.email)
+
+    def test_editing_user_with_empty_email_when_legacy_blank_row_exists(self) -> None:
+        # Rows saved before this fix hold email="". update() skips save(), so the seed keeps "".
+        legacy = User.objects.create_user(email_or_cell="legacy@example.com")
+        User.objects.filter(pk=legacy.pk).update(email="")
+        target = User.objects.create_user(email_or_cell="target@example.com")
+
+        response = self.client.post(
+            reverse("admin:authentication_user_change", args=[target.pk]),
+            {
+                "email_or_cell": target.email_or_cell,
+                "email": "",
+                "is_active": "on",
+                "date_joined_0": "2026-01-01",
+                "date_joined_1": "00:00:00",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        target.refresh_from_db()
+        self.assertIsNone(target.email)
+
+    def test_model_save_stores_blank_email_as_null(self) -> None:
+        user = User(email_or_cell="direct@example.com", email="")
+        user.save()
+        user.refresh_from_db()
+        self.assertIsNone(user.email)

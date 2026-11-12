@@ -2,22 +2,25 @@
 NJ FamilyCare (Medicaid) (``NjMedicaid``): one eligibility test and one value test per Test
 Scenario in the NJ spec (program-ops ``programs/cross_white_label/medicaid/nj/medicaid_nj_spec.md``).
 
-``NjMedicaid`` is pure PolicyEngine, so every answer comes from a recorded PolicyEngine response.
-Each test asserts the spec's outcome. Where PolicyEngine is known to answer differently, the test
-is a strict ``xfail`` naming the discrepancy: it fails loudly once PolicyEngine's answer changes,
-so a cassette refresh shows which upstream fix has landed. Nothing here works around them.
+``NjMedicaid`` takes eligibility from PolicyEngine, so every answer comes from a recorded
+PolicyEngine response. Each test asserts the spec's outcome. Where PolicyEngine's eligibility is
+known to differ, the test is a strict ``xfail`` naming the discrepancy: it fails loudly once
+PolicyEngine's answer changes, so a cassette refresh shows which upstream fix has landed. Nothing
+here works around them.
 
 - Eligibility: the members the spec finds eligible, and no others.
-- Value: each eligible member's annual value against the spec's §7 figure × 12. PolicyEngine values
-  Medicaid as the state's spending ÷ enrollment, split by the ACA age curve, not by the spec's
-  spending groups (MACStats Exhibit 22), so every value test is a known discrepancy.
+- Value: each eligible member's annual value against the spec's §7 figure × 12, from the member's
+  spending group. A value test is an expected failure only where PolicyEngine turns away a member
+  the spec finds eligible.
 """
 
 from typing import Callable
+from unittest.mock import Mock
 
 import pytest
 
 import programs.framework.pe_dependencies as dependency
+from programs.framework.base import Eligibility
 from programs.programs.cross_white_label.medicaid.federal_base import FederalMedicaid
 from programs.programs.cross_white_label.medicaid.nj import NjMedicaid
 from programs.programs.cross_white_label.medicaid.tests.nj_scenarios import SCENARIOS
@@ -125,13 +128,18 @@ _OTHER_MEMBERS_PREGNANCY = (
     "PolicyEngine counts another member's pregnancy as one person, not herself plus her expected child"
 )
 _ASSETS_AT_LIMIT = "PolicyEngine denies aged/disabled assets exactly at the limit, which the rule allows"
-_VALUE_METHOD = (
-    "PolicyEngine values Medicaid as the state's spending ÷ enrollment split by age, not by the spec's spending groups"
-)
 
 KNOWN_ELIGIBILITY_DISCREPANCIES: dict[int, str] = {
     **{n: _CHILD_COVERAGE for n in (5, 8, 34, 35, 54, 58, 61, 62, 63, 64, 65, 67, 72)},
     22: _FILER_WITH_18_YEAR_OLD,
+    26: _OTHER_MEMBERS_PREGNANCY,
+    47: _ASSETS_AT_LIMIT,
+    49: _ASSETS_AT_LIMIT,
+}
+
+# Scenarios whose value test fails because PolicyEngine turns away a member the spec values. A
+# discrepancy that only admits an extra member leaves the expected members' values right.
+KNOWN_VALUE_DISCREPANCIES: dict[int, str] = {
     26: _OTHER_MEMBERS_PREGNANCY,
     47: _ASSETS_AT_LIMIT,
     49: _ASSETS_AT_LIMIT,
@@ -144,28 +152,43 @@ class TestNjMedicaidClass(SimpleTestCase):
     def test_program_code(self) -> None:
         self.assertEqual(NjMedicaid.program_code, "nj_medicaid")
 
-    def test_is_the_federal_base_with_nj_location_inputs(self) -> None:
+    def test_is_the_federal_base_with_nj_state_code(self) -> None:
         self.assertTrue(issubclass(NjMedicaid, FederalMedicaid))
         self.assertFalse(NjMedicaid._abstract)
+        self.assertEqual(NjMedicaid.pe_inputs, [*FederalMedicaid.pe_inputs, dependency.household.NjStateCodeDependency])
+
+    def test_county_is_not_required(self) -> None:
+        # No rule in the spec's §3–§5 reads the county.
+        for pe_input in NjMedicaid.pe_inputs:
+            self.assertFalse(issubclass(pe_input, dependency.household.CountyDependency))
+
+    def test_values_by_macstats_exhibit_22(self) -> None:
         self.assertEqual(
-            NjMedicaid.pe_inputs,
-            [
-                *FederalMedicaid.pe_inputs,
-                dependency.household.NjStateCodeDependency,
-                dependency.household.NjCountyDependency,
-            ],
+            NjMedicaid.group_spend_per_fye_enrollee,
+            {"child": 4_203, "new_adult": 7_248, "other_adult": 7_351, "disabled": 38_688, "aged": 28_650},
         )
 
-    def test_layers_nothing_on_policyengine(self) -> None:
-        self.assertIs(NjMedicaid.member_value, FederalMedicaid.member_value)
-        self.assertEqual(NjMedicaid.pe_outputs, [dependency.member.Medicaid])
+    def test_pregnant_member_in_a_child_group_takes_the_other_adult_figure(self) -> None:
+        calculator = NjMedicaid.__new__(NjMedicaid)
+        member = Mock(pregnant=True, calc_age=Mock(return_value=17))
+        self.assertEqual(calculator.spending_group("OLDER_CHILD", member), "other_adult")
+        self.assertEqual(calculator.spending_group("SSI_RECIPIENT", member), "disabled")
+        member.pregnant = False
+        self.assertEqual(calculator.spending_group("OLDER_CHILD", member), "child")
 
 
 class TestNjMedicaidScenarios(PeIntegrationTestCase):
-    """The NJ spec's Test Scenarios, at PolicyEngine ``PE_TEST_VERSION``."""
+    """The NJ spec's Test Scenarios, at PolicyEngine ``pe_version``."""
+
+    pe_version = "2.94.7"
+    pe_version_reason = (
+        "Recorded at PolicyEngine current (2.94.7) on 2026-11-11, ahead of the suite pin, so NJ Medicaid "
+        "ships against the version production runs (MFB-1798). Moves back to PE_TEST_VERSION when the "
+        "suite pin reaches it."
+    )
 
     def member_values(self, number: int) -> dict[int, float]:
-        """Each member's annual value from PolicyEngine for one scenario's household."""
+        """Each eligible member's annual value for one scenario's household."""
         scenario = next(s for s in SCENARIOS if s["number"] == number)
         screen = make_screen(
             screen_id=number,
@@ -198,12 +221,20 @@ class TestNjMedicaidScenarios(PeIntegrationTestCase):
                 add_income(member, amount, income_type=income_type, frequency=frequency)
 
         eligibility = calc_pe_program(screen, NjMedicaid, make_program("nj", "nj_medicaid", year=YEAR))
-        return {me.member.id: me.value for me in eligibility.eligible_members}
+        self.assert_no_eligible_member_at_zero(eligibility)
+        return {me.member.id: me.value for me in eligibility.eligible_members if me.eligible}
+
+    def assert_no_eligible_member_at_zero(self, eligibility: Eligibility) -> None:
+        """The screener hides a $0 program, so no eligible member may be valued at $0."""
+        for me in eligibility.eligible_members:
+            if me.eligible:
+                self.assertGreater(me.value, 0, f"member {me.member.id} is eligible at $0")
+        self.assertEqual(eligibility.eligible, eligibility.value > 0)
 
     def check_eligibility(self, number: int) -> None:
         """Assert the members PolicyEngine finds eligible are exactly the ones the scenario expects."""
         values = self.member_values(number)
-        eligible = {member_id for member_id, value in values.items() if value > 0}
+        eligible = set(values)
         self.assertEqual(
             eligible, set(EXPECTED[number]), next(s for s in SCENARIOS if s["number"] == number)["expected"]
         )
@@ -227,12 +258,13 @@ def _eligibility_test(number: int) -> Callable[[TestNjMedicaidScenarios], None]:
 
 
 def _value_test(number: int) -> Callable[[TestNjMedicaidScenarios], None]:
-    """One scenario's value test, a strict xfail while PolicyEngine values Medicaid by its own method."""
+    """One scenario's value test, a strict xfail where PolicyEngine turns away a member the spec values."""
 
     def test(self: TestNjMedicaidScenarios) -> None:
         self.check_value(number)
 
-    return pytest.mark.xfail(strict=True, reason=_VALUE_METHOD)(test)
+    reason = KNOWN_VALUE_DISCREPANCIES.get(number)
+    return pytest.mark.xfail(strict=True, reason=reason)(test) if reason else test
 
 
 for _number in sorted(EXPECTED):

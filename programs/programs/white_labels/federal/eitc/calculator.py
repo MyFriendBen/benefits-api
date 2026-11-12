@@ -241,7 +241,7 @@ class FederalEitc(ProgramCalculator):
 
     def _meets_child_age(self, member: HouseholdMember) -> bool:
         # A child born after the tax year wasn't alive in it, disabled or not.
-        if member.birth_year is not None and member.birth_year > self.tax_year:
+        if member.born_after(self.tax_year):
             return False
 
         if member.has_disability():

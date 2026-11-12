@@ -636,14 +636,22 @@ class HouseholdMember(models.Model):
     def is_spouse(self) -> bool:
         return self.screen.relationship_map()[self.screen.get_head().id] == self.id
 
-    def is_dependent(self) -> bool:
+    def is_dependent(self, tax_year: Optional[int] = None) -> bool:
+        """
+        Whether the member is a dependent in the head's tax unit. With ``tax_year``, judged as
+        of December 31 of that year: age from ``age_at_end_of_year``, that year's qualifying-
+        relative limit, and no one born after it. Without it, judged on the screening date.
+        """
+        if tax_year is not None and self.born_after(tax_year):
+            return False
+
         is_tax_unit_spouse = self.is_spouse()
         is_tax_unit_head = self.is_head()
         if is_tax_unit_head or is_tax_unit_spouse:
             return False
 
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
-        age = self.calc_age()
+        age = self.calc_age() if tax_year is None else self.age_at_end_of_year(tax_year)
 
         # Path 1: Qualifying Child (income test removed per IRS rules)
         is_qualifying_child = has_eligible_relationship and (
@@ -651,7 +659,8 @@ class HouseholdMember(models.Model):
         )
 
         # Path 2: Qualifying Relative (unchanged)
-        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        threshold_year = self.screen.get_reference_date().year if tax_year is None else tax_year
+        threshold = get_qualifying_relative_threshold(threshold_year)
         is_qualifying_relative = has_eligible_relationship and self.calc_gross_income("yearly", ["all"]) < threshold
 
         return is_qualifying_child or is_qualifying_relative
@@ -698,10 +707,14 @@ class HouseholdMember(models.Model):
         if self.birth_year is None or year is None:
             return self.calc_age()
 
-        if self.birth_year > year:
+        if self.born_after(year):
             return None
 
         return year - self.birth_year
+
+    def born_after(self, year: int) -> bool:
+        """Born after ``year``, so not in the household that year. False without a birth year."""
+        return self.birth_year is not None and self.birth_year > year
 
     @staticmethod
     def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:

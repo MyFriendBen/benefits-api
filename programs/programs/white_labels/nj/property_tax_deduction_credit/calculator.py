@@ -106,7 +106,8 @@ class NjPropertyTaxDeductionCredit(ProgramCalculator):
 
     @cached_property
     def _dependent_count(self) -> int:
-        return sum(1 for m in self.screen.household_members.all() if m.is_dependent())
+        """Members who are dependents in the tax year, judged by their age at its end."""
+        return sum(1 for m in self.screen.household_members.all() if m.is_dependent(self.tax_year))
 
     @cached_property
     def _property_tax_paid(self) -> Decimal:
