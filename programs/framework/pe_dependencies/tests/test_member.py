@@ -602,7 +602,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
 
 
 class TestPregnancyDependency(TestCase):
-    """Tests for PregnancyDependency class used by WIC calculators."""
+    """Tests for PregnancyDependency."""
 
     def setUp(self):
         """Set up test data for pregnancy tests."""
@@ -644,7 +644,7 @@ class TestPregnancyDependency(TestCase):
 
 
 class TestExpectedChildrenPregnancyDependency(TestCase):
-    """Tests for ExpectedChildrenPregnancyDependency class used by WIC calculators."""
+    """Tests for ExpectedChildrenPregnancyDependency."""
 
     def setUp(self):
         """Set up test data for expected children pregnancy tests."""

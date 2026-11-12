@@ -290,9 +290,9 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
         # SNAP adds its would-be-benefit output
         self.assertIn("snap_if_takes_up", spm_unit)
 
-        # CHIP adds per-member fields to people
+        # CHIP adds its own per-member output, which SNAP doesn't request
         head_id = str(self.head.id)
-        self.assertIn("age", people[head_id])
+        self.assertIn("chip_category", people[head_id])
 
 
 class TestUnreadableProgramsAreDropped(PeInputTestBase):
@@ -313,7 +313,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
     def setUp(self):
         super().setUp()
 
-        # WIC is deliberately absent: it reads the ungated `wic`, so no floor applies to it.
+        # WIC has no PolicyEngine calculator, so it has no output to gate.
         # SSI is computed in our own code and reads no PolicyEngine output.
         self.gated_output_programs = {"snap": Snap, "tanf": Tanf}
 
