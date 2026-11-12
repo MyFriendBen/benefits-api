@@ -9,6 +9,7 @@ phone hash.
 
 import importlib
 import uuid
+from datetime import timedelta
 
 from django.contrib.admin.sites import AdminSite
 from django.db import IntegrityError, connection, transaction
@@ -494,3 +495,173 @@ class TestSmsAdminPagesRender(TestCase):
                 body = self.client.get(f"/admin/screener/{name}/").content.decode()
                 self.assertNotIn(HASH, body)
                 self.assertNotIn(OTHER_HASH, body)
+
+
+KEY_SETTINGS = {"BENJI_SMS_HASH_KEY": "k" * 64}
+NUMBER = "+13035550100"
+
+
+class TestBindingOnlyOnSmsConversations(TestCase):
+    def test_a_binding_on_a_web_conversation_is_refused(self) -> None:
+        """Texts would otherwise land in the transcript the browser widget shows."""
+        web = make_conversation(white_label="test_sms", channel=AssistantChannel.WEB)
+
+        with self.assertRaises(ValueError):
+            make_binding(make_white_label(), make_phone(), conversation=web)
+
+        self.assertFalse(BenjiSmsBinding.objects.exists())
+
+    def test_saving_an_existing_binding_does_not_re_check(self) -> None:
+        binding = make_binding(make_white_label(), make_phone())
+        binding.last_inbound_at = timezone.now()
+
+        binding.save()
+
+
+class TestBindingEnd(TestCase):
+    def setUp(self) -> None:
+        self.phone = make_phone()
+        self.binding = make_binding(make_white_label(), self.phone)
+
+    def test_closing_moves_the_binding_and_its_conversation_together(self) -> None:
+        for status in (AssistantConversationStatus.CLOSED, AssistantConversationStatus.EXPIRED):
+            with self.subTest(status=status):
+                self.binding.end(status)
+
+                self.binding.refresh_from_db()
+                self.binding.conversation.refresh_from_db()
+                self.assertEqual(self.binding.status, status)
+                self.assertEqual(self.binding.conversation.status, status)
+
+    def test_only_an_ending_status_is_accepted(self) -> None:
+        with self.assertRaises(ValueError):
+            self.binding.end(AssistantConversationStatus.ACTIVE)
+
+        self.binding.refresh_from_db()
+        self.assertEqual(self.binding.status, AssistantConversationStatus.ACTIVE)
+
+    def test_an_ended_binding_frees_the_phone_for_its_next_on_ramp(self) -> None:
+        self.binding.end(AssistantConversationStatus.CLOSED)
+
+        make_binding(make_white_label("test_sms_2"), self.phone)
+
+        self.assertEqual(self.phone.bindings.filter(status="active").count(), 1)
+
+
+@override_settings(**KEY_SETTINGS)
+class TestLookupByNumber(TestCase):
+    def test_every_spelling_finds_the_phone(self) -> None:
+        from integrations.services.communications.benji_sms_hash import phone_hash
+
+        phone = make_phone(phone_hash(NUMBER))
+        for spelling in (NUMBER, "(303) 555-0100", "303.555.0100"):
+            with self.subTest(spelling=spelling):
+                self.assertEqual(BenjiSmsPhone.objects.for_number(spelling), phone)
+
+    def test_an_unknown_number_finds_nothing(self) -> None:
+        self.assertIsNone(BenjiSmsPhone.objects.for_number(NUMBER))
+        self.assertFalse(BenjiSmsStrangerReply.objects.for_number(NUMBER).exists())
+
+    def test_finds_the_stranger_row(self) -> None:
+        from integrations.services.communications.benji_sms_hash import phone_hash
+
+        BenjiSmsStrangerReply.objects.create(phone_hash=phone_hash(NUMBER))
+
+        self.assertEqual(BenjiSmsStrangerReply.objects.for_number("303-555-0100").count(), 1)
+
+
+class TestDeleteWithConversations(TestCase):
+    """A deletion request: everything SMS for the phone, nothing else."""
+
+    def setUp(self) -> None:
+        self.white_label = make_white_label()
+        self.phone = make_phone()
+        self.closed = make_binding(self.white_label, self.phone, status=AssistantConversationStatus.CLOSED)
+        self.active = make_binding(self.white_label, self.phone)
+        message = make_message(self.active.conversation, seq=0, role="assistant")
+        make_delivery(kind=BenjiSmsDeliveryKind.REPLY, message=message, binding=self.active)
+        BenjiSmsStrangerReply.objects.create(phone_hash=HASH)
+        # The web widget's conversation on the same screen, and another phone entirely.
+        self.web = make_conversation(
+            white_label=self.white_label.code,
+            channel=AssistantChannel.WEB,
+            screen_uuid=self.active.conversation.screen_uuid,
+        )
+        self.other = make_binding(self.white_label, make_phone(OTHER_HASH))
+
+    def test_deletes_the_phones_sms_conversations_and_everything_on_them(self) -> None:
+        deleted = self.phone.delete_with_conversations()
+
+        self.assertEqual(deleted, 2)
+        self.assertFalse(BenjiSmsPhone.objects.filter(pk=self.phone.pk).exists())
+        self.assertFalse(BenjiSmsStrangerReply.objects.filter(phone_hash=HASH).exists())
+        self.assertFalse(
+            AssistantConversation.objects.filter(
+                pk__in=[self.closed.conversation_id, self.active.conversation_id]
+            ).exists()
+        )
+        self.assertFalse(BenjiSmsDelivery.objects.exists())
+        self.assertFalse(AssistantMessage.objects.exists())
+
+    def test_leaves_the_web_conversation_and_other_phones_alone(self) -> None:
+        self.phone.delete_with_conversations()
+
+        self.assertTrue(AssistantConversation.objects.filter(pk=self.web.pk).exists())
+        self.assertTrue(BenjiSmsBinding.objects.filter(pk=self.other.pk).exists())
+
+    def test_rolls_back_rather_than_delete_a_web_transcript(self) -> None:
+        """A binding forced onto the web conversation (bypassing save) survives the SMS
+        delete, PROTECT refuses the phone row, and nothing at all is deleted."""
+        BenjiSmsBinding.objects.filter(pk=self.closed.pk).update(conversation=self.web)
+
+        with self.assertRaises(ProtectedError):
+            self.phone.delete_with_conversations()
+
+        self.assertTrue(AssistantConversation.objects.filter(pk=self.web.pk).exists())
+        self.assertTrue(AssistantConversation.objects.filter(pk=self.active.conversation_id).exists())
+        self.assertTrue(BenjiSmsPhone.objects.filter(pk=self.phone.pk).exists())
+
+
+class TestPurgeExpired(TestCase):
+    def test_purges_stranger_rows_and_unbound_deliveries_older_than_a_day(self) -> None:
+        now = timezone.now()
+        old, recent = now - timedelta(days=1, minutes=1), now - timedelta(hours=23)
+        binding = make_binding(make_white_label(), make_phone())
+        BenjiSmsStrangerReply.objects.create(phone_hash=HASH, replied_at=old)
+        kept_stranger = BenjiSmsStrangerReply.objects.create(phone_hash=OTHER_HASH, replied_at=recent)
+        make_delivery(kind=BenjiSmsDeliveryKind.FIXED, created_at=old)
+        kept_unbound = make_delivery(kind=BenjiSmsDeliveryKind.FIXED, created_at=recent)
+        kept_bound = make_delivery(kind=BenjiSmsDeliveryKind.DISCLOSURE, binding=binding, created_at=old)
+
+        counts = BenjiSmsStrangerReply.objects.purge_expired(now=now)
+
+        self.assertEqual(counts, (1, 1))
+        self.assertEqual(list(BenjiSmsStrangerReply.objects.all()), [kept_stranger])
+        self.assertEqual(set(BenjiSmsDelivery.objects.values_list("pk", flat=True)), {kept_unbound.pk, kept_bound.pk})
+
+
+@override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
+class TestBindingChangelistQueries(TestCase):
+    def setUp(self) -> None:
+        self.white_label = make_white_label()
+        superuser = User.objects.create_user(email_or_cell="root@example.com", password="pw")
+        superuser.is_staff = True
+        superuser.is_superuser = True
+        superuser.save()
+        self.client.force_login(superuser)
+
+    def _queries_for_changelist(self) -> int:
+        from django.db import connection as conn
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(conn) as captured:
+            self.assertEqual(self.client.get("/admin/screener/benjismsbinding/").status_code, 200)
+        return len(captured)
+
+    def test_query_count_does_not_grow_with_rows(self) -> None:
+        make_binding(self.white_label, make_phone())
+        one = self._queries_for_changelist()
+        make_binding(self.white_label, make_phone(OTHER_HASH))
+        make_binding(self.white_label, make_phone("c" * 64))
+
+        self.assertEqual(self._queries_for_changelist(), one)

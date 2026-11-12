@@ -248,7 +248,7 @@ class BenjiSmsPhoneAdmin(SuperuserReadOnlyAdmin):
 class BenjiSmsBindingAdmin(SuperuserReadOnlyAdmin):
     list_display = ("id", "phone", "screen", "white_label", "status", "consented_at", "created_at")
     list_filter = ("status", "white_label")
-    list_select_related = ("white_label", "conversation")
+    list_select_related = ("phone", "white_label", "conversation")
     # Only so the admin renders the search box: get_search_results replaces the lookup.
     search_fields = ("conversation__screen_uuid",)
     search_help_text = "An exact screen uuid or conversation id."

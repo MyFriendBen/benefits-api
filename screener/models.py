@@ -1,7 +1,7 @@
 from collections.abc import Collection
 from typing import ClassVar, Optional
-from datetime import date
-from django.db import models
+from datetime import date, datetime, timedelta
+from django.db import models, transaction
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -1411,7 +1411,7 @@ class AssistantMessage(models.Model):
         return f"{self.role} message {self.seq} of {self.conversation_id}"
 
 
-# --- Benji over SMS (MFB-2435; MFB-1916 proposal v2, decisions 3, 4 and 5) ----------
+# --- Benji over SMS (MFB-2435; MFB-1916 proposal v3, decisions 3, 4 and 5) ----------
 #
 # Four tables, all written by benefits-api only. ai-service never sees a phone number,
 # a hash, or these rows.
@@ -1430,12 +1430,35 @@ class AssistantMessage(models.Model):
 # no binding, a revocation START cleared on only the newest) and make every check
 # aggregate across them.
 #
-# RETENTION follows the conversation. A deletion request ("remove my texts") hashes
-# the number the requester gives (`manage.py find_benji_sms_phone`), deletes the
-# conversations of that phone's bindings, which cascades bindings and deliveries in the
-# ORM and in the database (migration 0172, for the same raw-DELETE reason as 0163),
-# and then deletes the phone row. `BenjiSmsBinding.phone` is PROTECT so that last step
-# cannot run first and leave conversations behind. Stranger rows live one day.
+# RETENTION follows the conversation. A deletion request ("remove my texts") is
+# `manage.py find_benji_sms_phone --delete`, which runs
+# `BenjiSmsPhone.delete_with_conversations()`: the phone's SMS conversations (their
+# messages, bindings and deliveries cascade, in the ORM and in the database through
+# migration 0172), its stranger row, then the phone row, in one transaction.
+# `BenjiSmsBinding.phone` is PROTECT so the phone row can never go first and leave
+# conversations behind. Stranger rows, and delivery rows that belong to no binding,
+# live one day (`BenjiSmsStrangerReply.objects.purge_expired()`).
+
+# How long a stranger row, and a delivery row with no binding, are kept.
+BENJI_SMS_UNBOUND_RETENTION = timedelta(days=1)
+
+
+class BenjiSmsPhoneManager(models.Manager):
+    def for_number(self, number: str) -> Optional["BenjiSmsPhone"]:
+        """The phone row for a number, as typed on a form or as Twilio sends it, or None.
+
+        The one place a number becomes a lookup, so the on-ramp, the webhook and
+        support all normalize and hash it the same way. Raises `InvalidPhoneNumber`
+        and `ImproperlyConfigured` as `phone_hash` does.
+        """
+        return self.filter(phone_hash=_phone_hash(number)).first()
+
+
+def _phone_hash(number: str) -> str:
+    # Imported here: integrations.services.communications imports screener.models.
+    from integrations.services.communications.benji_sms_hash import phone_hash
+
+    return phone_hash(number)
 
 
 class BenjiSmsPhone(models.Model):
@@ -1444,6 +1467,8 @@ class BenjiSmsPhone(models.Model):
     Created by the first on-ramp for the number. A number that only ever texts as a
     stranger gets no row here (see `BenjiSmsStrangerReply`).
     """
+
+    objects = BenjiSmsPhoneManager()
 
     phone_hash = models.CharField(max_length=64)
     # Set by STOP, or by a revocation in any wording. Every send checks it, and the
@@ -1467,6 +1492,24 @@ class BenjiSmsPhone(models.Model):
     def __str__(self) -> str:
         # No hash: __str__ ends up in admin breadcrumbs, logs and error pages.
         return f"Benji SMS phone {self.pk}"
+
+    def delete_with_conversations(self) -> int:
+        """Serve a deletion request ("remove my texts") for this phone. Returns the
+        number of conversations deleted.
+
+        In one transaction: the SMS conversations of every binding, whose messages,
+        bindings and deliveries cascade; the number's stranger row; then this row.
+        Only SMS conversations are deleted. A binding can only point at one (see
+        `BenjiSmsBinding.save`), and if one ever pointed elsewhere it would survive the
+        first step, PROTECT would refuse the last, and the whole request would roll
+        back rather than delete a web transcript.
+        """
+        with transaction.atomic():
+            conversation_ids = set(self.bindings.values_list("conversation_id", flat=True))
+            AssistantConversation.objects.filter(pk__in=conversation_ids, channel=AssistantChannel.SMS).delete()
+            BenjiSmsStrangerReply.objects.filter(phone_hash=self.phone_hash).delete()
+            self.delete()
+        return len(conversation_ids)
 
 
 class BenjiSmsBinding(models.Model):
@@ -1537,6 +1580,30 @@ class BenjiSmsBinding(models.Model):
     def __str__(self) -> str:
         return f"Benji SMS binding {self.pk} ({self.status})"
 
+    def save(self, *args: object, **kwargs: object) -> None:
+        # A binding routes texts into its conversation. Pointed at the web widget's
+        # conversation, a person's texts would land in a transcript the browser shows
+        # to anyone holding the results link. A check constraint cannot reach across
+        # tables, so the guard is here, on every insert through the ORM.
+        if self._state.adding and self.conversation.channel != AssistantChannel.SMS:
+            raise ValueError("A Benji SMS binding must point at an SMS conversation")
+        super().save(*args, **kwargs)
+
+    def end(self, status: str) -> None:
+        """Close or expire this binding and its conversation together.
+
+        `status` and the conversation's `status` are two copies of one lifecycle (the
+        constraints above need it on this table). Changing one without the other would
+        leave an active binding on a dead conversation, routing texts to stale context
+        and blocking the phone's next on-ramp. Every lifecycle change goes through here.
+        """
+        if status not in (AssistantConversationStatus.CLOSED, AssistantConversationStatus.EXPIRED):
+            raise ValueError(f"Not an ending status: {status}")
+        with transaction.atomic():
+            BenjiSmsBinding.objects.filter(pk=self.pk).update(status=status)
+            AssistantConversation.objects.filter(pk=self.conversation_id).update(status=status)
+        self.status = status
+
 
 class BenjiSmsDeliveryKind(models.TextChoices):
     """What an outbound text was. Only model replies have an AssistantMessage."""
@@ -1602,6 +1669,9 @@ class BenjiSmsDelivery(models.Model):
     )
     # Required for replies, remainders and the disclosure. NULL only for an on-ramp text
     # that opened no binding (shared phone) and fixed replies to a number with none.
+    # Rows with no binding can be tied to no phone, so like stranger rows they are kept
+    # one day (BenjiSmsStrangerReply.objects.purge_expired): their Twilio SIDs resolve
+    # to the number at Twilio.
     binding = models.ForeignKey(
         BenjiSmsBinding,
         related_name="deliveries",
@@ -1660,11 +1730,32 @@ class BenjiSmsDelivery(models.Model):
         return f"Benji SMS {self.kind} {self.pk} ({self.delivery_status or 'no status'})"
 
 
+class BenjiSmsStrangerReplyManager(models.Manager):
+    def for_number(self, number: str) -> models.QuerySet:
+        """The number's stranger row, if any, as a queryset. Raises as `phone_hash` does."""
+        return self.filter(phone_hash=_phone_hash(number))
+
+    def purge_expired(self, now: Optional[datetime] = None) -> tuple[int, int]:
+        """Delete stranger rows, and delivery rows with no binding, older than a day.
+
+        For the nightly sweep. Returns (stranger rows, delivery rows) deleted. The two
+        go together because a stranger's reply leaves both, and a delivery row's Twilio
+        SIDs resolve to the number at Twilio as surely as the stranger row's hash does.
+        Daily spend and delivery alarms must read the day's rows before this runs.
+        """
+        cutoff = (now or timezone.now()) - BENJI_SMS_UNBOUND_RETENTION
+        with transaction.atomic():
+            strangers, _ = self.filter(replied_at__lt=cutoff).delete()
+            deliveries, _ = BenjiSmsDelivery.objects.filter(binding__isnull=True, created_at__lt=cutoff).delete()
+        return strangers, deliveries
+
+
 class BenjiSmsStrangerReply(models.Model):
     """When a number with no binding last got the fixed stranger reply.
 
     Kept apart from `BenjiSmsPhone` on purpose: these rows are purged after a day, and
-    a texter who never used the on-ramp should leave no lasting trace.
+    a texter who never used the on-ramp should leave no lasting trace. That includes
+    the reply's delivery row, which `purge_expired` removes with it.
 
     At most one reply per number per day, remembered in Postgres so it holds under a
     Redis outage (privacy companion §9). One row per hash, so two webhooks racing for
@@ -1675,6 +1766,8 @@ class BenjiSmsStrangerReply(models.Model):
 
     phone_hash = models.CharField(max_length=64)
     replied_at = models.DateTimeField(default=timezone.now)
+
+    objects = BenjiSmsStrangerReplyManager()
 
     class Meta:
         constraints = [

@@ -1,7 +1,7 @@
 """The keyed hash that stands in for a phone number in Benji SMS (MFB-2435).
 
-The phone number is never written to our database; ``BenjiSmsBinding.phone_hash`` and
-``BenjiSmsStrangerReply.phone_hash`` hold this instead (MFB-1916 proposal v2, decision
+The phone number is never written to our database; ``BenjiSmsPhone.phone_hash`` and
+``BenjiSmsStrangerReply.phone_hash`` hold this instead (MFB-1916 proposal v3, decision
 3; privacy companion §2). Inbound routing, STOP, expiry and a deletion request all work
 by hashing the number in hand and looking the hash up.
 
