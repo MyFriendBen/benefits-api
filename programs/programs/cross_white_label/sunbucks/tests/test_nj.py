@@ -190,8 +190,10 @@ class RolloverTestCase(NjSunBucksTestCase):
 
     def teen_and_young_child(self) -> Screen:
         """A Head Start household over the income limit: a child born August 2009 and one born September 2021."""
-        screen = self.child_born(date(2009, 8, 1))
+        screen = self.household(3, head_wages=200_000, head_age=45)
+        self.add_member(screen, "child", None, birth_year_month=date(2009, 8, 1))
         self.add_member(screen, "child", None, birth_year_month=date(2021, 9, 1))
+        self.receive(screen, "head_start")
 
         return screen
 
