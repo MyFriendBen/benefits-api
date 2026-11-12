@@ -1519,10 +1519,17 @@ class BenjiSmsBinding(models.Model):
     previous binding and opens a new one, unseeded. A phone with several closed
     bindings over time is a normal state.
 
-    One active binding per conversation, too. ai-service keeps one active SMS
-    conversation per screen (MFB-2432), so a second phone's on-ramp on the same screen
-    would otherwise be handed the first phone's conversation and interleave two
-    people's texts in one transcript. The on-ramp has to decide that case explicitly.
+    One binding per conversation, ever, so a conversation belongs to one phone for
+    good. ai-service keeps one active SMS conversation per screen (MFB-2432), so a
+    second phone's on-ramp on the same screen would otherwise be handed the first
+    phone's conversation: two people's texts in one transcript, the second phone's
+    prompt built from the first's, and a deletion request for one phone deleting the
+    other's transcript. Not only one *active* binding: a closed binding for phone A and
+    an active one for phone B on the same conversation has all the same problems. The
+    on-ramp has to open a new conversation for a new phone. A phone that resumes a
+    conversation (START) reactivates its own binding rather than adding one.
+
+    A binding's phone and conversation are fixed once it exists (`save`).
 
     The screen is `conversation.screen_uuid`, not a column here: a copy could drift
     from the conversation the replies are actually built from.
@@ -1535,9 +1542,11 @@ class BenjiSmsBinding(models.Model):
     # A real FK, unlike AssistantConversation's code string: benefits-api writes these
     # rows, and every send needs the WhiteLabel for the benji_sms flag check.
     white_label = models.ForeignKey(WhiteLabel, related_name="benji_sms_bindings", on_delete=models.PROTECT)
-    conversation = models.ForeignKey(
+    # One-to-one: enforced by the database, so two on-ramps racing for one conversation
+    # cannot both win, which a check in save() could not promise.
+    conversation = models.OneToOneField(
         AssistantConversation,
-        related_name="sms_bindings",
+        related_name="sms_binding",
         on_delete=models.CASCADE,
     )
     # --- consent (decision 4). The User's TCPA columns are neither read nor written.
@@ -1565,11 +1574,6 @@ class BenjiSmsBinding(models.Model):
                 condition=models.Q(status=AssistantConversationStatus.ACTIVE),
                 name="benji_sms_one_active_binding_per_phone",
             ),
-            models.UniqueConstraint(
-                fields=["conversation"],
-                condition=models.Q(status=AssistantConversationStatus.ACTIVE),
-                name="benji_sms_one_active_binding_per_conversation",
-            ),
             # A new table, so unlike AssistantConversation.status this can be enforced.
             models.CheckConstraint(
                 check=models.Q(status__in=AssistantConversationStatus.values),
@@ -1581,12 +1585,22 @@ class BenjiSmsBinding(models.Model):
         return f"Benji SMS binding {self.pk} ({self.status})"
 
     def save(self, *args: object, **kwargs: object) -> None:
-        # A binding routes texts into its conversation. Pointed at the web widget's
-        # conversation, a person's texts would land in a transcript the browser shows
-        # to anyone holding the results link. A check constraint cannot reach across
-        # tables, so the guard is here, on every insert through the ORM.
-        if self._state.adding and self.conversation.channel != AssistantChannel.SMS:
+        """Refuse a non-SMS conversation, and any change of phone or conversation.
+
+        A binding routes texts into its conversation. Pointed at the web widget's
+        conversation, a person's texts would land in a transcript the browser shows to
+        anyone holding the results link; re-pointed at another phone's, they would mix
+        two people's texts. A check constraint cannot reach across tables, so the
+        guard is here, on every save through the ORM. `QuerySet.update()` bypasses it;
+        nothing in the SMS code updates these two columns, and a deletion request
+        rolls back rather than delete a web transcript if one ever did.
+        """
+        if self.conversation.channel != AssistantChannel.SMS:
             raise ValueError("A Benji SMS binding must point at an SMS conversation")
+        if not self._state.adding:
+            stored = BenjiSmsBinding.objects.filter(pk=self.pk).values("phone_id", "conversation_id").first()
+            if stored and (stored["phone_id"], stored["conversation_id"]) != (self.phone_id, self.conversation_id):
+                raise ValueError("A Benji SMS binding's phone and conversation cannot change")
         super().save(*args, **kwargs)
 
     def end(self, status: str) -> None:

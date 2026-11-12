@@ -138,12 +138,14 @@ class TestBindingConstraints(TestCase):
         with self.assertRaises(IntegrityError), transaction.atomic():
             make_binding(self.white_label, make_phone(OTHER_HASH), conversation=first.conversation)
 
-    def test_a_closed_binding_does_not_hold_its_conversation(self) -> None:
+    def test_a_conversation_never_takes_a_second_binding_even_after_the_first_closes(self) -> None:
+        """A conversation belongs to one phone for good, enforced by the database."""
         first = make_binding(self.white_label, self.phone, status=AssistantConversationStatus.CLOSED)
 
-        make_binding(self.white_label, make_phone(OTHER_HASH), conversation=first.conversation)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            make_binding(self.white_label, make_phone(OTHER_HASH), conversation=first.conversation)
 
-        self.assertEqual(first.conversation.sms_bindings.count(), 2)
+        self.assertEqual(list(BenjiSmsBinding.objects.filter(conversation=first.conversation)), [first])
 
     def test_status_outside_the_vocabulary_is_rejected(self) -> None:
         with self.assertRaises(IntegrityError), transaction.atomic():
@@ -511,11 +513,38 @@ class TestBindingOnlyOnSmsConversations(TestCase):
 
         self.assertFalse(BenjiSmsBinding.objects.exists())
 
-    def test_saving_an_existing_binding_does_not_re_check(self) -> None:
+    def test_saving_other_fields_of_an_existing_binding_is_allowed(self) -> None:
         binding = make_binding(make_white_label(), make_phone())
         binding.last_inbound_at = timezone.now()
 
         binding.save()
+
+        binding.refresh_from_db()
+        self.assertIsNotNone(binding.last_inbound_at)
+
+    def test_an_existing_binding_cannot_be_moved_to_a_web_conversation(self) -> None:
+        binding = make_binding(make_white_label(), make_phone())
+        original = binding.conversation_id
+        binding.conversation = make_conversation(white_label="test_sms", channel=AssistantChannel.WEB)
+
+        with self.assertRaises(ValueError):
+            binding.save()
+
+        self.assertEqual(BenjiSmsBinding.objects.get(pk=binding.pk).conversation_id, original)
+
+    def test_an_existing_binding_cannot_change_conversation_or_phone(self) -> None:
+        white_label = make_white_label()
+        binding = make_binding(white_label, make_phone())
+        moves = {
+            "conversation": make_conversation(white_label=white_label.code, channel=AssistantChannel.SMS),
+            "phone": make_phone(OTHER_HASH),
+        }
+        for field, value in moves.items():
+            with self.subTest(field=field):
+                fresh = BenjiSmsBinding.objects.get(pk=binding.pk)
+                setattr(fresh, field, value)
+                with self.assertRaises(ValueError):
+                    fresh.save()
 
 
 class TestBindingEnd(TestCase):
@@ -607,6 +636,16 @@ class TestDeleteWithConversations(TestCase):
         self.phone.delete_with_conversations()
 
         self.assertTrue(AssistantConversation.objects.filter(pk=self.web.pk).exists())
+        self.assertTrue(BenjiSmsBinding.objects.filter(pk=self.other.pk).exists())
+
+    def test_another_phone_cannot_bind_a_conversation_this_phone_closed(self) -> None:
+        """Otherwise deleting this phone's data would delete the other phone's
+        transcript with it (the conversation cascades to every binding on it)."""
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            make_binding(self.white_label, self.other.phone, conversation=self.closed.conversation)
+
+        self.phone.delete_with_conversations()
+
         self.assertTrue(BenjiSmsBinding.objects.filter(pk=self.other.pk).exists())
 
     def test_rolls_back_rather_than_delete_a_web_transcript(self) -> None:
