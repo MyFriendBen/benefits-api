@@ -14,15 +14,63 @@ permissions:
   contents: read
 
 jobs:
+  # Picks the one set of test durations every group of this run splits the suite by.
+  # Each group resolving its own could not be trusted to agree: a staging deploy saving
+  # a newer entry between their restores, a re-run of one failed group after a merge, or
+  # one failed restore would hand the groups different files, and pytest-split would
+  # then cut the suite at different places -- some tests in two groups, some in none,
+  # and every group still green. Resolved here once, the file reaches every group as an
+  # artifact, which a re-run of failed groups reuses from the original attempt.
+  test-durations:
+    name: Resolve test durations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The newest entry the staging deploy saved (run-tests' store-durations). The key
+      # never matches -- it only has to be unique -- so restore-keys picks the newest
+      # entry; PR runs can read entries saved on main.
+      - name: Restore the latest recorded durations
+        id: restore
+        continue-on-error: true
+        uses: actions/cache/restore@v6
+        with:
+          path: .test_durations
+          key: test-durations-${{ github.sha }}
+          restore-keys: test-durations-
+
+      # Nothing cached yet, or the restore failed: an empty record makes pytest-split
+      # divide the tests evenly by count. Less balanced, but the same in every group.
+      - name: Fall back to an even split
+        env:
+          MATCHED_KEY: ${{ steps.restore.outputs.cache-matched-key }}
+        run: |
+          if [ -s .test_durations ]; then
+            echo "Using durations from cache entry $MATCHED_KEY"
+          else
+            echo "No recorded durations, so the groups will split evenly by test count"
+            echo '{}' > .test_durations
+          fi
+          echo "Test durations: sha256 $(sha256sum .test_durations | cut -d' ' -f1)"
+
+      - name: Hand the durations to the test groups
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-durations
+          path: .test_durations
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
   test:
     name: Run Tests with Coverage (${{ matrix.group }}/${{ matrix.splits }})
+    needs: test-durations
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # One job per group of the suite, balanced by test durations the latest staging
-    # deploy recorded, or the committed .test_durations when none are cached (see
-    # docs/TESTING.md). Each job still fans out across the runner's cores with xdist. Changing the number of groups means changing splits, group, and
-    # codecov.yml's after_n_builds together.
+    # One job per group of the suite, balanced by the durations resolved above (see
+    # docs/TESTING.md). Each job still fans out across the runner's cores with xdist.
+    # Changing the number of groups means changing splits, group, and codecov.yml's
+    # after_n_builds together.
     strategy:
       # Let every group finish, so a PR shows all its failures in one run rather than
       # only those in whichever group failed first.
@@ -77,6 +125,14 @@ jobs:
         with:
           fetch-depth: 2
 
+      # No continue-on-error: a group that can't get the shared file must fail rather
+      # than split the suite some other way.
+      - name: Download the test durations
+        uses: actions/download-artifact@v8
+        with:
+          name: test-durations
+          path: .
+
       - name: Run tests with VCR and upload coverage
         uses: ./.github/actions/run-tests
         with:
@@ -92,13 +148,18 @@ jobs:
           hud-api-token: ${{ secrets.HUD_API_TOKEN }}
           splits: ${{ matrix.splits }}
           group: ${{ matrix.group }}
+          # Checking that migrations apply and the system checks pass needs doing once
+          # per run, not once per group.
+          run-django-checks: ${{ matrix.group == 1 }}
 
   # A single check that passes only when every group passed. It keeps the name the
   # unsplit job had, so anything that waits on "Run Tests with Coverage" -- a required
-  # status check, a merge queue -- keeps working whatever the number of groups.
+  # status check, a merge queue -- keeps working whatever the number of groups. It runs
+  # when a group failed or was skipped, so those fail it, but not when the run was
+  # cancelled, so a cancellation isn't reported as a test failure.
   tests-passed:
     name: Run Tests with Coverage
-    if: always()
+    if: ${{ !cancelled() }}
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -49,28 +49,32 @@ Pass `-n 0` to force a serial run when debugging test interdependence.
 PR validation also splits the suite across 3 parallel jobs with
 [pytest-split](https://github.com/jerry-git/pytest-split), each of which still fans out
 with xdist. The groups are balanced by a `.test_durations` file, a record of how long each
-test took. To run one group locally the way CI does:
-
-```bash
-pytest --splits 3 --group 1
-```
-
-The durations keep themselves current, with nothing committed:
+test took. It isn't committed; CI keeps it current on its own:
 
 1. **Every merge to main**, the staging deploy runs the whole suite with
    `--store-durations --clean-durations` and saves the resulting `.test_durations` to the
    GitHub Actions cache as `test-durations-<commit sha>`.
-2. **Every PR test job** restores the newest of those entries over `.test_durations`
-   before running its group. All 3 groups restore the same one, so they split the suite
-   the same way.
-3. **The committed `.test_durations`** is only the fallback, used when nothing is cached
-   (cache entries unused for 7 days are evicted) or the restore fails.
+2. **Every PR run** starts with a "Resolve test durations" job that restores the newest of
+   those entries, once, and passes the file to all 3 test groups as an artifact. The groups
+   must split the suite by the identical file — two different files cut it in different
+   places, leaving some tests in two groups and some in none — so no group restores its
+   own, and a group that can't download the shared file fails instead of guessing. Each
+   group logs the file's sha256, so you can confirm they match.
+3. **With nothing cached** — before the first staging deploy, or after an entry goes 7
+   days unused and is evicted — the resolve job hands out an empty record, and pytest-split
+   divides the tests evenly by count: less balanced, but still consistent.
 
 The file only steers how the work is divided: a test missing from it — such as one the
-PR itself adds — is still run, and counted at the average duration. The committed copy
-needs no upkeep, but if the cache is ever unavailable for long and the groups' CI times
-drift apart, refresh it with `pytest --store-durations --clean-durations` and commit it
-on its own branch, since every refresh rewrites most of its lines.
+PR itself adds — is still run, and counted at the average duration until a staging deploy
+records it.
+
+To run one group locally the way CI does, record durations first (or skip that and get an
+even split by count):
+
+```bash
+pytest --store-durations --clean-durations
+pytest --splits 3 --group 1
+```
 
 ### Unit Tests Only
 ```bash

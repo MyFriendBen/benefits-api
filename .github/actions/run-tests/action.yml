@@ -28,6 +28,10 @@ inputs:
     description: 'Record every test''s duration and save them to the Actions cache, for split runs to balance their groups by. Needs the whole suite, so it cannot be combined with splits.'
     required: false
     default: 'false'
+  run-django-checks:
+    description: 'Run Django system checks and apply migrations before the tests. A split run only needs one of its groups to do this.'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -45,23 +49,11 @@ runs:
     - name: Setup Python and Django
       uses: ./.github/actions/setup-python-django
 
+    # pytest builds its own database without migrations (--nomigrations), so this only
+    # proves the migrations apply and the system checks pass -- once per run is enough.
     - name: Django checks and migrations
+      if: inputs.run-django-checks == 'true'
       uses: ./.github/actions/run-django-checks
-
-    # Durations recorded by the latest staging deploy (store-durations below), so the
-    # groups stay balanced as tests are added without anyone refreshing the committed
-    # file. The key never matches -- it only has to be unique -- so restore-keys picks
-    # the newest saved entry; PR runs can read entries saved on main. Every group of a
-    # run restores the same entry, which keeps their split consistent. With nothing to
-    # restore, or if the restore fails, pytest-split reads the committed .test_durations.
-    - name: Restore recorded test durations
-      if: inputs.splits != ''
-      continue-on-error: true
-      uses: actions/cache/restore@v6
-      with:
-        path: .test_durations
-        key: test-durations-${{ github.sha }}
-        restore-keys: test-durations-
 
     - name: Run tests
       shell: bash
@@ -88,9 +80,12 @@ runs:
         # against live APIs -- keep the verbose flags there, since a cassette or API
         # failure is hardest to diagnose from a bare assertion.
         #
-        # With splits set, pytest-split runs only one group of the suite, balanced by
-        # .test_durations (restored above, else the committed copy). Both branches take
-        # it: fork PRs shard too, they just skip the coverage upload.
+        # With splits set, pytest-split runs only one group of the suite, balanced by the
+        # .test_durations the caller placed in the workspace. Every group of a run must
+        # read the identical file, or their groups overlap and leave tests unrun; the
+        # hash printed below lets the groups' logs be compared. With no file, or an empty
+        # {}, pytest-split divides the tests evenly by count. Both branches take it: fork
+        # PRs shard too, they just skip the coverage upload.
         #
         # store-durations rewrites .test_durations from this run; --clean-durations drops
         # tests that no longer exist. A split run sees only its own group, so recording
@@ -107,6 +102,11 @@ runs:
           fi
           SPLIT_ARGS=(--splits "$SPLITS" --group "$GROUP" --splitting-algorithm duration_based_chunks)
           echo "Running test group $GROUP of $SPLITS"
+          if [ -f .test_durations ]; then
+            echo "Test durations: sha256 $(sha256sum .test_durations | cut -d' ' -f1)"
+          else
+            echo "Test durations: none, splitting evenly by test count"
+          fi
         elif [ "$STORE_DURATIONS" = "true" ]; then
           SPLIT_ARGS=(--store-durations --clean-durations)
         fi
