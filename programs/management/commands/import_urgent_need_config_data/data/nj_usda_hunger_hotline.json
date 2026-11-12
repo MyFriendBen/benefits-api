@@ -13,7 +13,7 @@
     "translations": {
       "name": "USDA National Hunger Hotline",
       "description": "Call the USDA National Hunger Hotline and an operator will help you find food nearby. Open Monday to Friday 8am-8pm Eastern. Call 1-866-348-6479.",
-      "link": "https://www.fns.usda.gov/national-hunger-hotline",
+      "link": "https://www.fna.usda.gov/national-hunger-hotline",
       "warning": "",
       "website_description": "Find out how to get food help.",
       "notification_message": ""
