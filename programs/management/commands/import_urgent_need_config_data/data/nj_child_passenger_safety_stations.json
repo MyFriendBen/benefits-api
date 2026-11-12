@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_child_passenger_safety_stations",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "NJ Child Passenger Safety inspection stations",
+      "description": "Get a free child car seat inspection at a station near you. Many sites take walk-ins with no appointment. Contact your county's child passenger safety coordinator for locations and hours. You can often be seen the same day, but it can take up to 2 weeks.",
+      "link": "https://www.njoag.gov/about/divisions-and-offices/division-of-highway-traffic-safety-home/division-of-highway-traffic-safety-child-passenger-safety/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

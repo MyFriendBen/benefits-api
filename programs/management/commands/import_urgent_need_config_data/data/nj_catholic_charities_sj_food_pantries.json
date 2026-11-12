@@ -1,0 +1,35 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_catholic_charities_sj_food_pantries",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Catholic Charities of South Jersey - food pantries",
+      "description": "Catholic Charities of South Jersey food pantries have no income test and ask for no income papers. Bring ID and proof of address if you have them. Walk in during distribution windows, which happen twice a month. Check their calendar. Call 856-342-4100.",
+      "link": "https://catholiccharitiessouthjersey.org/basicneeds/",
+      "warning": "Their financial assistance is separate and needs documents and a wait.",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Atlantic County",
+      "Camden County",
+      "Cape May County",
+      "Cumberland County",
+      "Gloucester County",
+      "Salem County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

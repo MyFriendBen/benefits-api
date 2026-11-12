@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_state_police_child_safety_seats",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "NJ State Police Child Safety Seat Inspection",
+      "description": "Get your child's car seat checked for free by the NJ State Police. Walk in, no appointment needed. Hours vary by site. Call 609-882-2000 ext. 6455 to find a site near you.",
+      "link": "https://njsp.njoag.gov/recruiting/?p=2555",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

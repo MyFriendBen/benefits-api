@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_henry_j_austin",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Henry J. Austin Health Center (Trenton)",
+      "description": "Henry J. Austin Health Center in Trenton never turns away a patient for being unable to pay, and you can state your own income. Call for an appointment, Monday to Friday 8am-4pm. Call 609-278-5900.",
+      "link": "https://www.henryjaustin.org",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

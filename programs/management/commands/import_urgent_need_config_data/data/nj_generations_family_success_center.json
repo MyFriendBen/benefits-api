@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_generations_family_success_center",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Generations Family Success Center (Burlington County)",
+      "description": "Generations Family Success Center is a state-funded center in Burlington County. There is no eligibility test. Appointments are available the 1st and 3rd week of the month, 9am-4pm. Call 609-267-4001.",
+      "link": "https://www.legacytreatment.org/locations/generations-family-success-center/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Burlington County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

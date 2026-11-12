@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_newark_community_health_centers",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Newark Community Health Centers",
+      "description": "Newark Community Health Centers do not deny service because you can't pay. Call or visit. Open Monday to Friday 9am-7pm, Saturday 9am-5pm and Sunday 9am-1pm. Call 800-994-6242.",
+      "link": "https://www.nchcfqhc.org/",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

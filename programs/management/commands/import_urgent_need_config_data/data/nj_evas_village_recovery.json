@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_evas_village_recovery",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "Eva's Village Recovery Community Center (Paterson)",
+      "description": "Eva's Village Recovery Community Center in Paterson offers free recovery coaching and peer support. No eligibility rules are published. Call or drop in Monday to Friday 8am-4pm. Call 973-381-0425.",
+      "link": "https://www.evasvillage.org/rcc.html",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Passaic County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

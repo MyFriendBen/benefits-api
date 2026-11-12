@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_getcovered_navigators",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "GetCoveredNJ Navigators",
+      "description": "GetCoveredNJ Navigators are certified assisters who help you find and sign up for health coverage for free. Find a local assister on the website. Help usually takes a few days.",
+      "link": "https://nj.gov/getcoverednj/help/local/",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

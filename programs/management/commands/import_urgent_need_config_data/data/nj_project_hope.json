@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_project_hope",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Project H.O.P.E. (Camden)",
+      "description": "Project H.O.P.E. in Camden is a Health Care for the Homeless health center for people experiencing homelessness and others in need. It also has a mobile van. Call 856-968-2320, Monday to Friday 8am-5pm.",
+      "link": "https://www.projecthopecamden.org",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

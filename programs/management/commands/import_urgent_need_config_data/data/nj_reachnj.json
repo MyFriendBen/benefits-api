@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_reachnj",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "ReachNJ",
+      "description": "ReachNJ is New Jersey's help line for addiction and substance use. Call any time, day or night. It does not matter whether you have insurance or can pay. Call 1-844-732-2465.",
+      "link": "https://www.nj.gov/humanservices/reachnj/",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

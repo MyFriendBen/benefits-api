@@ -1,0 +1,39 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_youth_corps",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "NJ Youth Corps",
+      "description": "NJ Youth Corps is for ages 16-25 without a high school diploma. There is no income test. Programs are full-time on weekdays. Apply online or walk into a local site. Enrollment is rolling, and cohorts start throughout the year.",
+      "link": "https://www.nj.gov/labor/career-services/special-services/youth/njyouthcorps.shtml",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sussex County",
+      "Passaic County",
+      "Warren County",
+      "Essex County",
+      "Hudson County",
+      "Union County",
+      "Middlesex County",
+      "Camden County",
+      "Cumberland County",
+      "Atlantic County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

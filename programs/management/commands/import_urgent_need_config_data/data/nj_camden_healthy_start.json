@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_camden_healthy_start",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Camden Healthy Start",
+      "description": "Camden Healthy Start helps Camden families from pregnancy through the child's first birthday. Call 856-963-1013 to get started. It can take 1-4 weeks to get started.",
+      "link": "https://camdenhealthystart.org/",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

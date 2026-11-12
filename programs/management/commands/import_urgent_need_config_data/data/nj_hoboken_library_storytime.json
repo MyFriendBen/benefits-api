@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_hoboken_library_storytime",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Hoboken Public Library Storytime",
+      "description": "The Hoboken Public Library has storytimes for children by age group. Drop in. No library card or residency is needed. Hours vary. Call 201-420-2346 ext. 5103.",
+      "link": "https://hobokenlibrary.org/kids/",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hudson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

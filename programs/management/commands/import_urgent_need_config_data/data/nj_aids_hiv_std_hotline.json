@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_aids_hiv_std_hotline",
+    "category_type": {
+      "external_name": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "NJ AIDS/HIV/STD Hotline",
+      "description": "The NJ AIDS/HIV/STD Hotline is free and confidential. Call, text or chat 24 hours a day. Call 1-800-624-2377.",
+      "link": "https://www.nj.gov/health/hiv",
+      "warning": "",
+      "website_description": "Learn about family planning and sexual health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

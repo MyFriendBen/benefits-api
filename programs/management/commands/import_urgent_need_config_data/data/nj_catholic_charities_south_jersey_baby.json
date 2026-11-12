@@ -1,0 +1,35 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_catholic_charities_south_jersey_baby",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Catholic Charities of South Jersey - baby supplies",
+      "description": "Catholic Charities of South Jersey helps anyone in need get items like diapers, car seats and cribs. Visit your county center during business hours. Call 856-342-4100.",
+      "link": "https://catholiccharitiessouthjersey.org/basicneeds/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Atlantic County",
+      "Camden County",
+      "Cape May County",
+      "Cumberland County",
+      "Gloucester County",
+      "Salem County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

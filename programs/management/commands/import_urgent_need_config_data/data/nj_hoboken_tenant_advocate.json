@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_hoboken_tenant_advocate",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Hoboken Tenant Advocate",
+      "description": "The Hoboken Tenant Advocate helps Hoboken residential tenants. You only need to live in a Hoboken rental. Book online or call 201-420-2000. Office hours are held periodically.",
+      "link": "https://hobokennj.gov/resources/tenant-advocate",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hudson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

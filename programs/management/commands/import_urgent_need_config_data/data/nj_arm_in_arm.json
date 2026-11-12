@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_arm_in_arm",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Arm In Arm (Trenton)",
+      "description": "Arm In Arm in Trenton offers food help. No eligibility rules are published. Walk in on Monday and Wednesday 9:30am-12pm. Call 609-396-9355.",
+      "link": "https://arminarm.org/preventing-hunger/",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

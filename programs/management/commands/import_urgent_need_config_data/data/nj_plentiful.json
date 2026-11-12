@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_plentiful",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Plentiful (text FOOD to 726-879)",
+      "description": "Plentiful lets you find a free food pantry and reserve a time by text, app or web. It is free for everyone, with no account and no income test. Text FOOD to 726-879. Hours depend on the pantry.",
+      "link": "https://plentiful.org",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

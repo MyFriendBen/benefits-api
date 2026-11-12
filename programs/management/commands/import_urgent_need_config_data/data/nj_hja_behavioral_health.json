@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_hja_behavioral_health",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "Henry J. Austin Health Center - Behavioral Health",
+      "description": "Henry J. Austin Health Center in Trenton offers behavioral health care and never turns away a patient for being unable to pay. Call or go online. Open Monday to Friday 8am-4pm. Call 609-278-5900.",
+      "link": "https://henryjaustin.org/service/behavioral-and-social-health/",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
