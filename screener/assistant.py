@@ -233,6 +233,7 @@ ACUTE_OPTION_FIELDS = {
     "freeLowCostMedicalCare": "needs_free_low_cost_medical_care",
     "transportation": "needs_transportation",
     "medicalExpensesAndDebt": "needs_medical_expenses_and_debt",
+    "drugAlcoholUse": "needs_drug_alcohol_use",
 }
 
 # Program names that look like member-level insurance, used only to report a config
