@@ -23,6 +23,7 @@ from django.test import TestCase
 from integrations.clients.hud_income_limits import HudIncomeClientError
 
 from programs.framework.base import Eligibility
+from programs.programs.testing_fixtures.payment_unit import assert_household_members_unpriced
 from programs.util import Dependencies
 from programs.programs.testing_fixtures.households import (
     add_expense,
@@ -181,7 +182,10 @@ class CustomCalculatorTestCase(TestCase):
         check against when migrating a file that has its own helper of the same name, since
         unpacking the single return value fails loudly rather than silently.
         """
-        return self.make_calculator(screen, data, missing).calc()
+        eligibility = self.make_calculator(screen, data, missing).calc()
+        assert_household_members_unpriced(eligibility, self.calculator_class.__name__)
+
+        return eligibility
 
 
 @contextmanager

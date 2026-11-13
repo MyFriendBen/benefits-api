@@ -1,5 +1,6 @@
 """National School Lunch Program."""
 
+from programs.framework.base import PaymentUnit
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 import programs.framework.pe_dependencies as dependency
 
@@ -16,6 +17,9 @@ class SchoolLunch(PolicyEngineSpmCalulator):
     """
 
     program_code = "nslp"
+    # The NSLP base spec's section 7 says `Payment unit: member`, so this opts out of the
+    # SPM base's household unit.
+    payment_unit = PaymentUnit.MEMBER
 
     pe_name = "school_meal_net_subsidy"
     pe_inputs = [
