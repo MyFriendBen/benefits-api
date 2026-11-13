@@ -8,23 +8,11 @@ if TYPE_CHECKING:
 
 
 class PaymentUnit(StrEnum):
-    """Who a benefit is paid to, matching the spec's section 7 `Payment unit`: "whether the
-    amount is what one member gets or what the household gets" (spec template).
+    """Who a benefit is paid for, matching the spec's section 7 `Payment unit`."""
 
-    The unit governs value, not only the results page's chip: a household program puts its
-    whole value in `household_value` and its members carry none. Tests hold every household
-    calculator to that (`assert_household_members_unpriced`, run by both scenario test
-    fixtures, and the registry check in `test_eligibility_protocol.py`).
-
-    A display-only unit was tried and dropped: it let a "Household" card carry member money,
-    which the spec's definition rules out, and it left each household calculator to zero
-    `member_value` by hand so the total wasn't double counted.
-    """
-
-    #: Each eligible member carries their own value; the results page names them.
+    #: The benefit is paid per member: each eligible member carries a value of their own.
     MEMBER = "member"
-    #: The whole value is `household_value`. Members are still evaluated and may gate or
-    #: size it, but carry no value; the results page names the household.
+    #: The benefit is one amount for the household, whatever the member verdicts say.
     HOUSEHOLD = "household"
 
 
@@ -50,7 +38,7 @@ class Eligibility:
         #: One verdict per household member, eligible or not, in household order.
         self.eligible_members: list[MemberEligibility] = []
         self.household_value: int = 0
-        #: Who the benefit is paid to; reported to the results API so the frontend can
+        #: Who the benefit is paid for; reported to the results API so the frontend can
         #: show the household rather than the members as the eligible party.
         self.payment_unit = payment_unit
 
@@ -132,9 +120,12 @@ class ProgramCalculator:
     amount = 0
     member_amount = 0
 
-    #: Who the benefit is paid to, matching the spec's section 7 `Payment unit`; see
-    #: `PaymentUnit`. ``PaymentUnit.MEMBER`` is the default. The results API carries it so
-    #: the frontend shows the members or the household as the eligible party.
+    #: Who the benefit is paid for, matching the spec's section 7 `Payment unit`.
+    #: ``PaymentUnit.MEMBER`` (the default) pays each eligible member.
+    #: ``PaymentUnit.HOUSEHOLD`` pays one amount for the household: `member_eligible` still
+    #: runs and still gates the household on at least one member passing, but no member is
+    #: paid, and the results API carries the unit so the frontend shows the household as the
+    #: eligible party.
     payment_unit: PaymentUnit = PaymentUnit.MEMBER
 
     #: Upstream program codes this calculator reads through `program_eligible` or
@@ -214,6 +205,9 @@ class ProgramCalculator:
             return
 
         e.household_value = self.household_value()
+
+        if e.payment_unit == PaymentUnit.HOUSEHOLD:
+            return
 
         for member_eligibility in e.eligible_members:
             if member_eligibility.eligible:

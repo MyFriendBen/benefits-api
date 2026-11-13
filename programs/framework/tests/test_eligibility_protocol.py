@@ -179,7 +179,7 @@ class EligibilityValueTests(TestCase):
 
 
 class EligibilityPaymentUnitTests(TestCase):
-    """`payment_unit` says who the benefit is paid to; it never hides a verdict."""
+    """`payment_unit` says who the benefit is paid for; it never hides a verdict."""
 
     def test_defaults_to_the_member_unit(self):
         self.assertEqual(Eligibility().payment_unit, PaymentUnit.MEMBER)
@@ -217,23 +217,29 @@ class HouseholdMembersUnpricedTests(TestCase):
 
 
 class PaymentUnitDeclarationTests(TestCase):
-    """No registered household calculator prices members (see `PaymentUnit`).
+    """A calculator that prices members cannot say it pays the household.
 
-    This catches the declared cases, `member_amount` or an overridden `member_value`. A value
-    set inside `member_eligible` or a replaced `value()` isn't visible on the class;
-    `assert_household_members_unpriced`, run by both scenario fixtures, catches those.
+    `payment_unit` only tells the results API who the eligible party is; PolicyEngine
+    calculators still set member values from `member_value` regardless. A household
+    declaration on a class that prices members would hide paid members behind a
+    "Household" chip, which is how `MaCcdf` could silently drift under the SPM base.
+
+    A household class that sets `member_amount` is caught too: the custom path would drop the
+    amount and the PolicyEngine path would pay it. A value written inside `member_eligible` or
+    a replaced `value()` isn't visible on the class; `assert_household_members_unpriced`, run
+    by both scenario fixtures, catches those.
     """
 
     def test_household_calculators_do_not_price_members(self):
         from integrations.clients.policyengine.registry import all_calculators
         from programs.programs import calculators
 
-        offenders = sorted(
+        offenders = [
             calculator.__name__
             for calculator in {**calculators, **all_calculators}.values()
             if calculator.payment_unit == PaymentUnit.HOUSEHOLD
             and (calculator.member_amount or calculator.member_value is not ProgramCalculator.member_value)
-        )
+        ]
 
         self.assertEqual(offenders, [])
 
@@ -320,12 +326,12 @@ class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
 
 
 class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
-    """A household-unit program evaluates its members like a member one, but its value is
-    the household's alone."""
+    """A household-unit program evaluates its members but pays only the household."""
 
     class HouseholdPaying(ProgramCalculator):
         payment_unit = PaymentUnit.HOUSEHOLD
         amount = 1_000
+        member_amount = 50
 
     def test_the_default_unit_is_member(self):
         class Plain(ProgramCalculator):
@@ -375,6 +381,17 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
         self.calculator(ReadsMembers).eligible()
 
         self.assertEqual(seen, [False, True])
+
+    def test_only_the_household_is_paid(self):
+        """`member_amount` is ignored: the household's value is the whole value."""
+        calc = self.calculator(self.HouseholdPaying)
+        e = calc.eligible()
+
+        calc.value(e)
+
+        self.assertEqual(e.household_value, 1_000)
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
+        self.assertEqual(e.value, 1_000)
 
 
 class ProgramCalculatorValueTests(ProgramCalculatorTestCase):

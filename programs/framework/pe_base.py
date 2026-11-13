@@ -141,8 +141,8 @@ class PolicyEngineCalulator(ProgramCalculator):
 class PolicyEngineSpmCalulator(PolicyEngineCalulator):
     pe_category = "spm_units"
     pe_sub_category = "spm_unit"
-    # PolicyEngine values an SPM unit as a whole. A subclass that pays members itself
-    # (`MaCcdf`) declares `PaymentUnit.MEMBER` so its card names them.
+    # PolicyEngine values an SPM unit as a whole. A subclass that prices members itself
+    # (`MaCcdf`) declares `PaymentUnit.MEMBER` instead.
     payment_unit = PaymentUnit.HOUSEHOLD
 
 
