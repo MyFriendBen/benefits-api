@@ -114,11 +114,12 @@ def version_supports(comparable_version: Optional[tuple], min_pe_version: tuple,
     return True
 
 
-def _fetch_pe_versions() -> Optional[dict]:
+def _fetch_pe_versions(use_cache: bool = True) -> Optional[dict]:
     """Fetch {"current": "...", "frontier": "..."} from PolicyEngine, cached.
     Returns None on any failure (network, non-200, bad JSON) — callers must treat
-    None as "unknown" and fall back to the conservative (withhold-gated) path."""
-    cached = cache.get(_PE_VERSIONS_CACHE_KEY)
+    None as "unknown" and fall back to the conservative (withhold-gated) path.
+    use_cache=False skips the cached read for callers that need PE's answer right now."""
+    cached = cache.get(_PE_VERSIONS_CACHE_KEY) if use_cache else None
     if cached is not None:
         return cached
     try:
