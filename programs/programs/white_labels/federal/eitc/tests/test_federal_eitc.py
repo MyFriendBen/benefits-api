@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 from unittest.mock import patch
 
-from programs.framework.base import HOUSEHOLD, Eligibility
+from programs.framework.base import Eligibility, PaymentUnit
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.federal.eitc.calculator import EITC_YEARS, FederalEitc, eic_table
 from screener.models import HouseholdMember, Screen
@@ -74,7 +74,7 @@ class TestRegistration(FederalEitcTestCase):
         e = self.calculate(screen)
 
         self.assertTrue(e.eligible)
-        self.assertEqual(e.payment_unit, HOUSEHOLD)
+        self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
         self.assertEqual([m.value for m in e.eligible_members], [0, 0])
 
     def test_a_tax_year_with_no_parameters_uses_the_latest_and_reports_it(self):

@@ -1,6 +1,7 @@
 from screener.models import Screen, HouseholdMember
 from programs.util import Dependencies, DependencyError, UpstreamAbsentError
-from typing import TYPE_CHECKING, Literal
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from programs.models import Program
@@ -20,15 +21,17 @@ class MemberEligibility:
             self.eligible = False
 
 
-#: The benefit is paid per member: each eligible member carries a value of their own.
-MEMBER = "member"
-#: The benefit is one amount for the household, whatever the member verdicts say.
-HOUSEHOLD = "household"
-PaymentUnit = Literal["member", "household"]
+class PaymentUnit(StrEnum):
+    """Who a benefit is paid for, matching the spec's section 7 `Payment unit`."""
+
+    #: The benefit is paid per member: each eligible member carries a value of their own.
+    MEMBER = "member"
+    #: The benefit is one amount for the household, whatever the member verdicts say.
+    HOUSEHOLD = "household"
 
 
 class Eligibility:
-    def __init__(self, payment_unit: PaymentUnit = MEMBER):
+    def __init__(self, payment_unit: PaymentUnit = PaymentUnit.MEMBER):
         self.eligible: bool = True
         self.pass_messages = []
         self.fail_messages = []
@@ -117,12 +120,13 @@ class ProgramCalculator:
     amount = 0
     member_amount = 0
 
-    #: Who the benefit is paid for, matching the spec's section 7 `Payment unit`. ``MEMBER``
-    #: (the default) pays each eligible member. ``HOUSEHOLD`` pays one amount for the
-    #: household: `member_eligible` still runs and still gates the household on at least one
-    #: member passing, but no member is paid, and the results API carries the unit so the
-    #: frontend shows the household as the eligible party.
-    payment_unit: PaymentUnit = MEMBER
+    #: Who the benefit is paid for, matching the spec's section 7 `Payment unit`.
+    #: ``PaymentUnit.MEMBER`` (the default) pays each eligible member.
+    #: ``PaymentUnit.HOUSEHOLD`` pays one amount for the household: `member_eligible` still
+    #: runs and still gates the household on at least one member passing, but no member is
+    #: paid, and the results API carries the unit so the frontend shows the household as the
+    #: eligible party.
+    payment_unit: PaymentUnit = PaymentUnit.MEMBER
 
     #: Upstream program codes this calculator reads through `program_eligible` or
     #: `member_program_eligible`. Those raise when the upstream was not calculated, so
@@ -202,7 +206,7 @@ class ProgramCalculator:
 
         e.household_value = self.household_value()
 
-        if e.payment_unit == HOUSEHOLD:
+        if e.payment_unit == PaymentUnit.HOUSEHOLD:
             return
 
         for member_eligibility in e.eligible_members:

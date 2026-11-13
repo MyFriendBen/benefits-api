@@ -14,7 +14,7 @@ from decimal import Decimal
 from typing import Optional
 from unittest.mock import patch
 
-from programs.framework.base import HOUSEHOLD, Eligibility
+from programs.framework.base import Eligibility, PaymentUnit
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.federal.ctc.calculator import CTC_YEARS, FederalCtc
 from programs.programs.white_labels.federal.tax import HEAD_OF_HOUSEHOLD, JOINT, SINGLE, income_tax
@@ -75,7 +75,7 @@ class TestRegistration(FederalCtcTestCase):
         e = self.calculate(screen)
 
         self.assert_eligible(e, 2_200)
-        self.assertEqual(e.payment_unit, HOUSEHOLD)
+        self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
         self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
         self.assertEqual([m.value for m in e.eligible_members], [0, 0])
 

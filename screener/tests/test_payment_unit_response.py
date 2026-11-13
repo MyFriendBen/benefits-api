@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from programs.framework.base import HOUSEHOLD, MEMBER
 from programs.models import FederalPoveryLimit, Program, ProgramCategory
 from programs.programs.testing_fixtures.households import add_income, add_member
 from screener.models import Screen, WhiteLabel
@@ -42,7 +41,7 @@ class TestPaymentUnitInResponse(TestCase):
         trump_account = self.results()["federal_trump_account"]
 
         self.assertTrue(trump_account["eligible"])
-        self.assertEqual(trump_account["payment_unit"], MEMBER)
+        self.assertEqual(trump_account["payment_unit"], "member")
         self.assertEqual([m["eligible"] for m in trump_account["members"]], [False, True])
         self.assertGreater(trump_account["members"][1]["value"], 0)
 
@@ -50,7 +49,7 @@ class TestPaymentUnitInResponse(TestCase):
         ctc = self.results()["federal_ctc"]
 
         self.assertTrue(ctc["eligible"])
-        self.assertEqual(ctc["payment_unit"], HOUSEHOLD)
+        self.assertEqual(ctc["payment_unit"], "household")
         self.assertEqual([m["eligible"] for m in ctc["members"]], [False, True])
         self.assertEqual([m["value"] for m in ctc["members"]], [0, 0])
         self.assertEqual(ctc["estimated_value"], ctc["household_value"])

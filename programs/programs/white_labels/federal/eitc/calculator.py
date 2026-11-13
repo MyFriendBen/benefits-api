@@ -5,7 +5,7 @@ from functools import cached_property
 
 from sentry_sdk import capture_message
 
-from programs.framework.base import HOUSEHOLD, Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, PaymentUnit, ProgramCalculator
 from programs.programs.shared.tax_filers import is_younger, tax_filers
 from programs.programs.white_labels.federal.tax import UNTAXED_INCOME_TYPES
 from screener.models import HouseholdMember
@@ -136,7 +136,7 @@ class FederalEitc(ProgramCalculator):
 
     program_code = "federal_eitc"
     # Spec section 7: one credit on the filers' return.
-    payment_unit = HOUSEHOLD
+    payment_unit = PaymentUnit.HOUSEHOLD
 
     child_relationships = ("child", "stepChild", "fosterChild", "grandChild", "sisterOrBrother", "stepSisterOrBrother")
     child_age_limit = 19

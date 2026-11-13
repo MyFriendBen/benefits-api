@@ -6,7 +6,7 @@ from math import ceil
 
 from sentry_sdk import capture_message
 
-from programs.framework.base import HOUSEHOLD, MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, PaymentUnit, ProgramCalculator
 from programs.programs.shared.tax_filers import is_younger, tax_filers
 from programs.programs.white_labels.federal.tax import (
     HEAD_OF_HOUSEHOLD,
@@ -77,7 +77,7 @@ class FederalCtc(ProgramCalculator):
 
     program_code = "federal_ctc"
     # Spec section 7: one credit on the filers' return, however many dependents size it.
-    payment_unit = HOUSEHOLD
+    payment_unit = PaymentUnit.HOUSEHOLD
 
     child_relationships = ("child", "stepChild", "fosterChild", "grandChild", "sisterOrBrother", "stepSisterOrBrother")
     dependent_relationships = DEPENDENT_ELIGIBLE_RELATIONSHIPS

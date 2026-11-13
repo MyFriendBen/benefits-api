@@ -15,7 +15,7 @@ diagnosed special need (``TestDisabledChildAgeThreshold``), which is the only wa
 reach the top of the age table.
 """
 
-from programs.framework.base import MEMBER
+from programs.framework.base import PaymentUnit
 from programs.programs.cross_white_label.ccdf.ma import MaCcdf
 from programs.programs.testing_fixtures.pe_integration import (
     PeIntegrationTestCase,
@@ -114,7 +114,7 @@ class TestValueByAge(MaCcfaTestCase):
         result = self.run_ccfa(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(screener_value(result), 23_191 + 12_632)
-        self.assertEqual(result.payment_unit, MEMBER)
+        self.assertEqual(result.payment_unit, PaymentUnit.MEMBER)
         self.assertEqual(result.household_value, 0)
         self.assertEqual([m.value for m in result.eligible_members], [0, 23_191, 12_632])
 

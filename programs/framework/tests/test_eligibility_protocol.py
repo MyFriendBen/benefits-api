@@ -15,7 +15,7 @@ import datetime
 
 from django.test import TestCase
 
-from programs.framework.base import HOUSEHOLD, MEMBER, Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, PaymentUnit, ProgramCalculator
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember, Screen, WhiteLabel
 
@@ -181,16 +181,16 @@ class EligibilityPaymentUnitTests(TestCase):
     """`payment_unit` says who the benefit is paid for; it never hides a verdict."""
 
     def test_defaults_to_the_member_unit(self):
-        self.assertEqual(Eligibility().payment_unit, MEMBER)
+        self.assertEqual(Eligibility().payment_unit, PaymentUnit.MEMBER)
 
     def test_a_household_unit_keeps_every_verdict(self):
-        e = Eligibility(payment_unit=HOUSEHOLD)
+        e = Eligibility(payment_unit=PaymentUnit.HOUSEHOLD)
         eligible, ineligible = MemberEligibility(None), MemberEligibility(None)
         ineligible.condition(False)
         e.add_member_eligibility(eligible)
         e.add_member_eligibility(ineligible)
 
-        self.assertEqual(e.payment_unit, HOUSEHOLD)
+        self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
         self.assertEqual(e.eligible_members, [eligible, ineligible])
 
 
@@ -210,7 +210,8 @@ class PaymentUnitDeclarationTests(TestCase):
         offenders = [
             calculator.__name__
             for calculator in {**calculators, **all_calculators}.values()
-            if calculator.payment_unit == HOUSEHOLD and calculator.member_value is not ProgramCalculator.member_value
+            if calculator.payment_unit == PaymentUnit.HOUSEHOLD
+            and calculator.member_value is not ProgramCalculator.member_value
         ]
 
         self.assertEqual(offenders, [])
@@ -301,7 +302,7 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
     """A household-unit program evaluates its members but pays only the household."""
 
     class HouseholdPaying(ProgramCalculator):
-        payment_unit = HOUSEHOLD
+        payment_unit = PaymentUnit.HOUSEHOLD
         amount = 1_000
         member_amount = 50
 
@@ -311,12 +312,12 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
 
         e = self.calculator(Plain).eligible()
 
-        self.assertEqual(e.payment_unit, MEMBER)
+        self.assertEqual(e.payment_unit, PaymentUnit.MEMBER)
 
     def test_the_unit_is_carried_onto_the_eligibility(self):
         e = self.calculator(self.HouseholdPaying).eligible()
 
-        self.assertEqual(e.payment_unit, HOUSEHOLD)
+        self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
 
     def test_members_are_still_evaluated(self):
         class HouseholdChildrenOnly(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
