@@ -13,18 +13,10 @@ why these are `TestCase`. The cross-program gates on the same class read only
 
 import datetime
 
-from unittest.mock import patch
+from django.test import TestCase
 
-from django.test import TestCase, override_settings
-
-from programs.framework.base import (
-    Eligibility,
-    HouseholdMemberValueError,
-    MemberEligibility,
-    PaymentUnit,
-    ProgramCalculator,
-)
-from programs.framework.pe_base import PolicyEngineSpmCalulator
+from programs.framework.base import Eligibility, MemberEligibility, PaymentUnit, ProgramCalculator
+from programs.programs.testing_fixtures.payment_unit import assert_household_members_unpriced
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember, Screen, WhiteLabel
 
@@ -203,52 +195,33 @@ class EligibilityPaymentUnitTests(TestCase):
         self.assertEqual(e.eligible_members, [eligible, ineligible])
 
 
-class MemberEligibilityValueTests(TestCase):
-    """A household program's member can't carry a value; a member program's can."""
+class HouseholdMembersUnpricedTests(TestCase):
+    """The scenario fixtures' check: a household program's members carry no value."""
 
-    def test_a_member_unit_member_takes_a_value(self):
+    def _eligibility(self, payment_unit: PaymentUnit, member_value: int) -> Eligibility:
+        e = Eligibility(payment_unit=payment_unit)
         member = MemberEligibility(None)
+        member.value = member_value
+        e.add_member_eligibility(member)
+        return e
 
-        member.value = 50
+    def test_a_household_program_with_a_member_value_fails(self):
+        with self.assertRaisesMessage(AssertionError, "Priced is household-paid but gave members values [50]"):
+            assert_household_members_unpriced(self._eligibility(PaymentUnit.HOUSEHOLD, 50), "Priced")
 
-        self.assertEqual(member.value, 50)
+    def test_a_household_program_with_unpriced_members_passes(self):
+        assert_household_members_unpriced(self._eligibility(PaymentUnit.HOUSEHOLD, 0), "Unpriced")
 
-    def test_a_household_unit_member_may_be_set_to_zero(self):
-        member = MemberEligibility(None, PaymentUnit.HOUSEHOLD, "test_program")
-
-        with patch("programs.framework.base.capture_message") as report:
-            member.value = 0
-
-        self.assertEqual(member.value, 0)
-        report.assert_not_called()
-
-    def test_a_household_unit_member_value_raises_in_tests(self):
-        """`STRICT_CALCULATOR_CHECKS` is on in pytest.ini."""
-        member = MemberEligibility(None, PaymentUnit.HOUSEHOLD, "test_program")
-
-        with self.assertRaises(HouseholdMemberValueError):
-            member.value = 50
-
-    @override_settings(STRICT_CALCULATOR_CHECKS=False)
-    def test_a_household_unit_member_value_is_dropped_and_reported_in_production(self):
-        member = MemberEligibility(None, PaymentUnit.HOUSEHOLD, "test_program")
-
-        with patch("programs.framework.base.capture_message") as report:
-            member.value = 50
-
-        self.assertEqual(member.value, 0)
-        report.assert_called_once()
-        self.assertIn("test_program", report.call_args.args[0])
-        self.assertIn("50", report.call_args.args[0])
+    def test_a_member_program_may_price_members(self):
+        assert_household_members_unpriced(self._eligibility(PaymentUnit.MEMBER, 50), "MemberPaid")
 
 
 class PaymentUnitDeclarationTests(TestCase):
-    """No registered household calculator prices members, so the runtime check in
-    `MemberEligibility.value` stays a safeguard rather than a fix.
+    """No registered household calculator prices members (see `PaymentUnit`).
 
-    This catches the declared cases, `member_amount` or an overridden `member_value`, in CI.
-    A value set inside `member_eligible` or a replaced `value()` isn't visible here; the
-    runtime check covers those.
+    This catches the declared cases, `member_amount` or an overridden `member_value`. A value
+    set inside `member_eligible` or a replaced `value()` isn't visible on the class;
+    `assert_household_members_unpriced`, run by both scenario fixtures, catches those.
     """
 
     def test_household_calculators_do_not_price_members(self):
@@ -353,7 +326,6 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
     class HouseholdPaying(ProgramCalculator):
         payment_unit = PaymentUnit.HOUSEHOLD
         amount = 1_000
-        member_amount = 50
 
     def test_the_default_unit_is_member(self):
         class Plain(ProgramCalculator):
@@ -403,60 +375,6 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
         self.calculator(ReadsMembers).eligible()
 
         self.assertEqual(seen, [False, True])
-
-    def test_member_values_fail_loudly_in_tests(self):
-        """`STRICT_CALCULATOR_CHECKS` is on in pytest.ini, so a household program that
-        prices members fails its own tests."""
-        with self.assertRaises(HouseholdMemberValueError):
-            self.calculator(self.HouseholdPaying).calc()
-
-    @override_settings(STRICT_CALCULATOR_CHECKS=False)
-    def test_member_values_are_dropped_and_reported_in_production(self):
-        with patch("programs.framework.base.capture_message") as report:
-            e = self.calculator(self.HouseholdPaying).calc()
-
-        self.assertEqual(e.household_value, 1_000)
-        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
-        self.assertEqual(e.value, 1_000)
-        self.assertEqual(report.call_count, 2)
-        self.assertIn("HouseholdPaying", report.call_args.args[0])
-
-    @override_settings(STRICT_CALCULATOR_CHECKS=False)
-    def test_the_policyengine_path_is_held_to_the_same_rule(self):
-        """PolicyEngine prices members inside `member_eligible`, not `value()`; the rule sits
-        on the member's value, so it holds there too."""
-
-        class HouseholdSpm(PolicyEngineSpmCalulator):
-            pe_inputs = []
-            member_amount = 50
-
-            def household_value(self) -> int:
-                return 1_000
-
-        with patch("programs.framework.base.capture_message") as report:
-            e = HouseholdSpm(self.screen, None, Dependencies(())).calc()
-
-        self.assertTrue(e.eligible)
-        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
-        self.assertEqual(e.value, 1_000)
-        self.assertEqual(report.call_count, 2)
-
-    def test_a_household_program_without_member_values_is_not_reported(self):
-        class HouseholdOnly(ProgramCalculator):
-            payment_unit = PaymentUnit.HOUSEHOLD
-            amount = 1_000
-
-        with patch("programs.framework.base.capture_message") as report:
-            e = self.calculator(HouseholdOnly).calc()
-
-        self.assertEqual(e.value, 1_000)
-        report.assert_not_called()
-
-    def test_member_verdicts_carry_the_unit_and_program(self):
-        e = self.calculator(self.HouseholdPaying).eligible()
-
-        self.assertEqual({m.payment_unit for m in e.eligible_members}, {PaymentUnit.HOUSEHOLD})
-        self.assertEqual({m.program for m in e.eligible_members}, {"HouseholdPaying"})
 
 
 class ProgramCalculatorValueTests(ProgramCalculatorTestCase):

@@ -1,8 +1,6 @@
 from screener.models import Screen, HouseholdMember
 from programs.util import Dependencies, DependencyError, UpstreamAbsentError
-from django.conf import settings
 from enum import StrEnum
-from sentry_sdk import capture_message
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -13,9 +11,10 @@ class PaymentUnit(StrEnum):
     """Who a benefit is paid to, matching the spec's section 7 `Payment unit`: "whether the
     amount is what one member gets or what the household gets" (spec template).
 
-    The unit governs value, not only the results page's chip: a household program's members
-    carry no value, so its total is its `household_value`. `MemberEligibility.value` refuses
-    a non-zero amount for a household program, whichever code path sets it.
+    The unit governs value, not only the results page's chip: a household program puts its
+    whole value in `household_value` and its members carry none. Tests hold every household
+    calculator to that (`assert_household_members_unpriced`, run by both scenario test
+    fixtures, and the registry check in `test_eligibility_protocol.py`).
 
     A display-only unit was tried and dropped: it let a "Household" card carry member money,
     which the spec's definition rules out, and it left each household calculator to zero
@@ -29,48 +28,11 @@ class PaymentUnit(StrEnum):
     HOUSEHOLD = "household"
 
 
-class HouseholdMemberValueError(Exception):
-    """A household-paid program tried to give a member a value. Raised only under
-    `STRICT_CALCULATOR_CHECKS` (tests); production reports it to Sentry instead."""
-
-
 class MemberEligibility:
-    def __init__(
-        self, member: HouseholdMember, payment_unit: PaymentUnit = PaymentUnit.MEMBER, program: str = ""
-    ) -> None:
+    def __init__(self, member: HouseholdMember) -> None:
         self.member = member
         self.eligible = True
-        #: The program's unit; a household program's members can't carry a value.
-        self.payment_unit = payment_unit
-        #: The program's name, for the report when a household program sets a value.
-        self.program = program
-        self._value: int = 0
-
-    @property
-    def value(self) -> int:
-        return self._value
-
-    @value.setter
-    def value(self, amount: int) -> None:
-        """
-        A household-paid program's member keeps a value of 0, so every reader agrees on the
-        total: `Eligibility.value`, the API's per-member values, and the frontend, which adds
-        member values itself. A non-zero amount means the calculator priced a member it
-        shouldn't: raised under `STRICT_CALCULATOR_CHECKS` (on in tests), so the calculator's
-        own tests fail; in production reported to Sentry and dropped, and the program still
-        shows its household value.
-        """
-        if amount and self.payment_unit == PaymentUnit.HOUSEHOLD:
-            message = (
-                f"{self.program or 'A program'} is household-paid but set a member value of {amount}; it was dropped."
-            )
-            if settings.STRICT_CALCULATOR_CHECKS:
-                raise HouseholdMemberValueError(message)
-
-            capture_message(message, level="error")
-            return
-
-        self._value = amount
+        self.value: int = 0
 
     def condition(self, passed: bool):
         """
@@ -217,7 +179,7 @@ class ProgramCalculator:
 
         one_member_eligible = False
         for member in self.screen.household_members.all():
-            member_eligibility = MemberEligibility(member, self.payment_unit, self._program_name)
+            member_eligibility = MemberEligibility(member)
             self.member_eligible(member_eligibility)
             e.add_member_eligibility(member_eligibility)
 
@@ -282,12 +244,6 @@ class ProgramCalculator:
         self.value(eligibility)
 
         return eligibility
-
-    @property
-    def _program_name(self) -> str:
-        """The program's code for reports, or the class name when there is no program row."""
-        program = getattr(self, "program", None)
-        return program.name_abbreviated if program is not None else type(self).__name__
 
     def program_eligible(self, program_code: str) -> bool:
         """

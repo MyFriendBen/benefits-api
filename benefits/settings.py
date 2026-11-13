@@ -67,10 +67,6 @@ SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DJANGO_DEBUG", "False") == "True"
-# Raise on calculator mistakes that production only reports to Sentry, such as a
-# household-paid program setting member values (programs/framework/base.py). On in tests
-# (pytest.ini), so the mistake fails CI instead of reaching the results page.
-STRICT_CALCULATOR_CHECKS = config("STRICT_CALCULATOR_CHECKS", default=False, cast=bool)
 
 ALLOWED_HOSTS = ["*"]
 
