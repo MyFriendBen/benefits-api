@@ -49,7 +49,7 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
    - **§4140 bypass** — enrollment in any of the following makes the household income-eligible
      regardless of the countable-income test:
      - SNAP — `screen.has_benefit("tx_snap")`
-     - WIC — `screen.has_benefit("tx_wic")`
+     - WIC — `screen.has_base_benefit("wic")` (`federal_wic`)
      - CHIP (applicant or their child) — `screen.has_insurance_types(("chp",))` (per-member
        insurance; `tx_chip` is a PE eligibility program, never a current-benefit tile, so
        `has_benefit("tx_chip")` is always False)
@@ -87,7 +87,7 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
 |-----------|--------|-------|
 | Age ≤ 64 | `birth_year`, `birth_month` | per-member; None-safe |
 | Countable income ≤ 250% FPL | per-member `calc_gross_income(["earned"])` (adults only), screen `["unearned"]` / `["childSupport"]`, `calc_expenses(["childSupport"])`, `household_size`, `program.year` | per FPP Definition of Income (Rev 24-2) + §4140; $75/mo child-support-received disregard; exempt income types not yet excluded (see limitation) |
-| §4140 bypass | `has_benefit("tx_snap")`, `has_benefit("tx_wic")`, `has_insurance_types(("chp",))` | CHIP Perinatal not captured (gap) |
+| §4140 bypass | `has_benefit("tx_snap")`, `has_base_benefit("wic")`, `has_insurance_types(("chp",))` | CHIP Perinatal not captured (gap) |
 | Medicaid exclusion | `member.insurance.medicaid` | Emergency Medicaid excluded from match |
 
 ## Test Scenarios
@@ -130,7 +130,7 @@ are the basis for the unit tests in `tx/fpp/tests/test_fpp.py`. The income limit
 | Scenario | Expected |
 |----------|----------|
 | Enrolled in SNAP (`tx_snap`) | eligible regardless of income |
-| Enrolled in WIC (`tx_wic`) | eligible regardless of income |
+| Enrolled in WIC (`federal_wic`) | eligible regardless of income |
 | CHIP coverage (per-member insurance) | eligible regardless of income |
 | High income, no bypass | ineligible |
 | Bare `snap` / `wic` (legacy unprefixed name) | no bypass |

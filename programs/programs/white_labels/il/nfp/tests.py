@@ -7,10 +7,9 @@ Tests verify:
 - Correct value calculation ($6,000 / 2.5 years = $2,400/year)
 """
 
+from programs.programs.testing_fixtures.current_benefit_fixtures import receive_federal_benefit
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
 from programs.programs.white_labels.il.nfp.calculator import IlNurseFamilyPartnership
-from screener.tests.helpers import seed_program
-from screener.serializers import _write_current_benefits
 
 
 class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
@@ -39,9 +38,8 @@ class TestIlNurseFamilyPartnership(CustomCalculatorTestCase):
     def test_household_eligible_with_wic_regardless_of_income(self):
         """Test household is eligible with WIC (presumed eligibility) regardless of income."""
         screen = self.make_screen(household_size=1)
-        # IL ships il_wic, resolved via base_program.
-        seed_program(self.white_label, "il_wic", base_program="wic")
-        _write_current_benefits(screen, ["il_wic"])
+        # WIC is the federal program, resolved via base_program.
+        receive_federal_benefit(screen, "federal_wic", "wic")
 
         parent = self.add_member(screen, relationship="headOfHousehold", age=28, pregnant=True, has_income=True)
         # Income above 300% FPL
