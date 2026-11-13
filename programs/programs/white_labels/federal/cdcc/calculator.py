@@ -142,7 +142,7 @@ class FederalCdcc(ProgramCalculator):
         e.condition(self._income_tax > 0)
 
     def household_value(self) -> int:
-        """Spec section 7 Benefit Value, carried on the household."""
+        """Spec section 7 Benefit Value, carried on the household; members carry no value."""
         params = self._params
         percentage = applicable_percentage(self._agi, self._is_joint, params)
         expense_limit = params.expense_limit[self._has_two_or_more_qualifying]
@@ -152,6 +152,9 @@ class FederalCdcc(ProgramCalculator):
         credit = min(Decimal(percentage) * base / 100, self._income_tax)
 
         return int(credit.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+    def member_value(self, member: HouseholdMember) -> int:
+        return 0
 
     @cached_property
     def _params(self) -> CdccYear:

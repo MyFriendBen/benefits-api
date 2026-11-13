@@ -194,29 +194,6 @@ class EligibilityPaymentUnitTests(TestCase):
         self.assertEqual(e.eligible_members, [eligible, ineligible])
 
 
-class PaymentUnitDeclarationTests(TestCase):
-    """A calculator that prices members cannot say it pays the household.
-
-    `payment_unit` only tells the results API who the eligible party is; PolicyEngine
-    calculators still set member values from `member_value` regardless. A household
-    declaration on a class that prices members would hide paid members behind a
-    "Household" chip, which is how `MaCcdf` could silently drift under the SPM base.
-    """
-
-    def test_household_calculators_do_not_price_members(self):
-        from integrations.clients.policyengine.registry import all_calculators
-        from programs.programs import calculators
-
-        offenders = [
-            calculator.__name__
-            for calculator in {**calculators, **all_calculators}.values()
-            if calculator.payment_unit == PaymentUnit.HOUSEHOLD
-            and calculator.member_value is not ProgramCalculator.member_value
-        ]
-
-        self.assertEqual(offenders, [])
-
-
 class ProgramCalculatorTestCase(TestCase):
     """A three-person household for the orchestration tests below."""
 
@@ -299,7 +276,7 @@ class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
 
 
 class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
-    """A household-unit program evaluates its members but pays only the household."""
+    """`payment_unit` is display only: a household-unit program runs exactly like a member one."""
 
     class HouseholdPaying(ProgramCalculator):
         payment_unit = PaymentUnit.HOUSEHOLD
@@ -330,8 +307,8 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
         self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
 
     def test_a_member_rule_still_gates_the_household(self):
-        """The unit changes who is paid, not what is checked: a household program that
-        qualifies through a member-scoped rule still needs one member to pass."""
+        """The unit changes who the card names, not what is checked: a household program
+        that qualifies through a member-scoped rule still needs one member to pass."""
 
         class HouseholdNoOne(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
             def member_eligible(self, e: MemberEligibility):
@@ -355,16 +332,21 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
 
         self.assertEqual(seen, [False, True])
 
-    def test_only_the_household_is_paid(self):
-        """`member_amount` is ignored: the household's value is the whole value."""
-        calc = self.calculator(self.HouseholdPaying)
-        e = calc.eligible()
+    def test_the_unit_does_not_change_the_value(self):
+        """Member amounts still count: a household-paid benefit can be sized per member."""
 
-        calc.value(e)
+        class MemberPaying(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
+            payment_unit = PaymentUnit.MEMBER
 
-        self.assertEqual(e.household_value, 1_000)
-        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
-        self.assertEqual(e.value, 1_000)
+        values = []
+        for calculator_class in (MemberPaying, self.HouseholdPaying):
+            calc = self.calculator(calculator_class)
+            e = calc.eligible()
+            calc.value(e)
+            values.append((e.household_value, [m.value for m in e.eligible_members], e.value))
+
+        self.assertEqual(values[0], (1_000, [50, 50], 1_100))
+        self.assertEqual(values[1], values[0])
 
 
 class ProgramCalculatorValueTests(ProgramCalculatorTestCase):
