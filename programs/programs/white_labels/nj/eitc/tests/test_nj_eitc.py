@@ -17,7 +17,7 @@ from datetime import date
 from typing import Optional
 from unittest.mock import patch
 
-from programs.framework.base import Eligibility
+from programs.framework.base import Eligibility, PaymentUnit
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.federal.eitc.calculator import EITC_YEARS
 from programs.programs.white_labels.nj.eitc.calculator import NjEitc
@@ -76,6 +76,10 @@ class NjEitcTestCase(CustomCalculatorTestCase):
 class TestRegistration(NjEitcTestCase):
     def test_program_code(self):
         self.assertEqual(NjEitc.program_code, "nj_eitc")
+
+    def test_the_credit_is_paid_to_the_household(self):
+        """Inherited from FederalEitc; the spec's section 7 says `household` too."""
+        self.assertEqual(NjEitc.payment_unit, PaymentUnit.HOUSEHOLD)
 
     def test_federal_eitc_keeps_its_own_code(self):
         """NjEitc subclasses FederalEitc, so a shared code would be a duplicate registry key."""

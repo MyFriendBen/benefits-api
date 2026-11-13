@@ -11,6 +11,7 @@ than today's age. Values are whole dollars, rounded half up from the spec's cent
 
 from datetime import date
 
+from programs.framework.base import PaymentUnit
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.nj.property_tax_deduction_credit.calculator import NjPropertyTaxDeductionCredit
 from programs.util import DependencyError
@@ -52,6 +53,20 @@ class NjPtdTestCase(CustomCalculatorTestCase):
 class TestRegistration(NjPtdTestCase):
     def test_program_code(self):
         self.assertEqual(NjPropertyTaxDeductionCredit.program_code, "nj_property_tax_deduction_credit")
+
+    def test_the_credit_is_paid_to_the_household(self):
+        """One deduction or credit on the filers' NJ-1040, so the results show the household
+        as eligible rather than each member."""
+        screen, (head, _, _) = self.household(
+            ("headOfHousehold", 35, {"monthly_income": 4_000}), ("spouse", 34, {}), ("child", 6, {})
+        )
+        self.add_expense(head, 1_800, "rent", "monthly")
+
+        e = self.calculate(screen)
+
+        self.assertEqual(e.value, 68)
+        self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0, 0])
 
     def test_constants(self):
         c = NjPropertyTaxDeductionCredit
