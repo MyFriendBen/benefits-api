@@ -202,31 +202,49 @@ class EligibilityPaymentUnitTests(TestCase):
         self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
         self.assertEqual(e.eligible_members, [eligible, ineligible])
 
-    def _with_member_values(self, payment_unit: PaymentUnit) -> Eligibility:
-        e = Eligibility(payment_unit=payment_unit)
-        e.household_value = 1_000
-        for value in (50, 0):
-            member = MemberEligibility(None)
-            member.value = value
-            e.add_member_eligibility(member)
-        return e
 
-    def test_a_member_total_adds_the_member_values(self):
-        self.assertEqual(self._with_member_values(PaymentUnit.MEMBER).value, 1_050)
+class MemberEligibilityValueTests(TestCase):
+    """A household program's member can't carry a value; a member program's can."""
 
-    def test_a_household_total_is_the_household_value_alone(self):
-        self.assertEqual(self._with_member_values(PaymentUnit.HOUSEHOLD).value, 1_000)
+    def test_a_member_unit_member_takes_a_value(self):
+        member = MemberEligibility(None)
 
-    def test_clear_member_values_returns_what_it_cleared(self):
-        e = self._with_member_values(PaymentUnit.HOUSEHOLD)
+        member.value = 50
 
-        self.assertEqual(e.clear_member_values(), [50])
-        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
+        self.assertEqual(member.value, 50)
+
+    def test_a_household_unit_member_may_be_set_to_zero(self):
+        member = MemberEligibility(None, PaymentUnit.HOUSEHOLD, "test_program")
+
+        with patch("programs.framework.base.capture_message") as report:
+            member.value = 0
+
+        self.assertEqual(member.value, 0)
+        report.assert_not_called()
+
+    def test_a_household_unit_member_value_raises_in_tests(self):
+        """`STRICT_CALCULATOR_CHECKS` is on in pytest.ini."""
+        member = MemberEligibility(None, PaymentUnit.HOUSEHOLD, "test_program")
+
+        with self.assertRaises(HouseholdMemberValueError):
+            member.value = 50
+
+    @override_settings(STRICT_CALCULATOR_CHECKS=False)
+    def test_a_household_unit_member_value_is_dropped_and_reported_in_production(self):
+        member = MemberEligibility(None, PaymentUnit.HOUSEHOLD, "test_program")
+
+        with patch("programs.framework.base.capture_message") as report:
+            member.value = 50
+
+        self.assertEqual(member.value, 0)
+        report.assert_called_once()
+        self.assertIn("test_program", report.call_args.args[0])
+        self.assertIn("50", report.call_args.args[0])
 
 
 class PaymentUnitDeclarationTests(TestCase):
     """No registered household calculator prices members, so the runtime check in
-    `ProgramCalculator.enforce_payment_unit` stays a safeguard rather than a fix.
+    `MemberEligibility.value` stays a safeguard rather than a fix.
 
     This catches the declared cases, `member_amount` or an overridden `member_value`, in CI.
     A value set inside `member_eligible` or a replaced `value()` isn't visible here; the
@@ -393,21 +411,20 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
             self.calculator(self.HouseholdPaying).calc()
 
     @override_settings(STRICT_CALCULATOR_CHECKS=False)
-    def test_member_values_are_cleared_and_reported_in_production(self):
+    def test_member_values_are_dropped_and_reported_in_production(self):
         with patch("programs.framework.base.capture_message") as report:
             e = self.calculator(self.HouseholdPaying).calc()
 
         self.assertEqual(e.household_value, 1_000)
         self.assertEqual([m.value for m in e.eligible_members], [0, 0])
         self.assertEqual(e.value, 1_000)
-        report.assert_called_once()
+        self.assertEqual(report.call_count, 2)
         self.assertIn("HouseholdPaying", report.call_args.args[0])
-        self.assertIn("[50, 50]", report.call_args.args[0])
 
     @override_settings(STRICT_CALCULATOR_CHECKS=False)
     def test_the_policyengine_path_is_held_to_the_same_rule(self):
-        """PolicyEngine prices members inside `member_eligible`, not `value()`, so the
-        rule has to run after its `calc()` too."""
+        """PolicyEngine prices members inside `member_eligible`, not `value()`; the rule sits
+        on the member's value, so it holds there too."""
 
         class HouseholdSpm(PolicyEngineSpmCalulator):
             pe_inputs = []
@@ -422,7 +439,7 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual([m.value for m in e.eligible_members], [0, 0])
         self.assertEqual(e.value, 1_000)
-        report.assert_called_once()
+        self.assertEqual(report.call_count, 2)
 
     def test_a_household_program_without_member_values_is_not_reported(self):
         class HouseholdOnly(ProgramCalculator):
@@ -434,6 +451,12 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
 
         self.assertEqual(e.value, 1_000)
         report.assert_not_called()
+
+    def test_member_verdicts_carry_the_unit_and_program(self):
+        e = self.calculator(self.HouseholdPaying).eligible()
+
+        self.assertEqual({m.payment_unit for m in e.eligible_members}, {PaymentUnit.HOUSEHOLD})
+        self.assertEqual({m.program for m in e.eligible_members}, {"HouseholdPaying"})
 
 
 class ProgramCalculatorValueTests(ProgramCalculatorTestCase):

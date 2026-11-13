@@ -67,7 +67,6 @@ class PolicyEngineCalulator(ProgramCalculator):
             raise DependencyError()
 
         eligibility = self.eligible()
-        self.enforce_payment_unit(eligibility)
 
         return eligibility
 

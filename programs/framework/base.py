@@ -9,30 +9,17 @@ if TYPE_CHECKING:
     from programs.models import Program
 
 
-class MemberEligibility:
-    def __init__(self, member: HouseholdMember) -> None:
-        self.member = member
-        self.eligible = True
-        self.value: int = 0
-
-    def condition(self, passed: bool):
-        """
-        Set eligibility to False if the condition does not pass
-        """
-        if not passed:
-            self.eligible = False
-
-
 class PaymentUnit(StrEnum):
     """Who a benefit is paid to, matching the spec's section 7 `Payment unit`: "whether the
     amount is what one member gets or what the household gets" (spec template).
 
-    The unit governs value, not only the results page's chip. A display-only unit was tried
-    and dropped: it let a "Household" card carry member money, which the spec's
-    definition rules out, and it left each household calculator to zero `member_value` by
-    hand so the total wasn't double counted. Here `Eligibility.value` counts only the
-    household value for a household program, and `ProgramCalculator.calc` clears and
-    reports any member value one sets.
+    The unit governs value, not only the results page's chip: a household program's members
+    carry no value, so its total is its `household_value`. `MemberEligibility.value` refuses
+    a non-zero amount for a household program, whichever code path sets it.
+
+    A display-only unit was tried and dropped: it let a "Household" card carry member money,
+    which the spec's definition rules out, and it left each household calculator to zero
+    `member_value` by hand so the total wasn't double counted.
     """
 
     #: Each eligible member carries their own value; the results page names them.
@@ -43,8 +30,54 @@ class PaymentUnit(StrEnum):
 
 
 class HouseholdMemberValueError(Exception):
-    """A household-paid program set member values. Raised only under
+    """A household-paid program tried to give a member a value. Raised only under
     `STRICT_CALCULATOR_CHECKS` (tests); production reports it to Sentry instead."""
+
+
+class MemberEligibility:
+    def __init__(
+        self, member: HouseholdMember, payment_unit: PaymentUnit = PaymentUnit.MEMBER, program: str = ""
+    ) -> None:
+        self.member = member
+        self.eligible = True
+        #: The program's unit; a household program's members can't carry a value.
+        self.payment_unit = payment_unit
+        #: The program's name, for the report when a household program sets a value.
+        self.program = program
+        self._value: int = 0
+
+    @property
+    def value(self) -> int:
+        return self._value
+
+    @value.setter
+    def value(self, amount: int) -> None:
+        """
+        A household-paid program's member keeps a value of 0, so every reader agrees on the
+        total: `Eligibility.value`, the API's per-member values, and the frontend, which adds
+        member values itself. A non-zero amount means the calculator priced a member it
+        shouldn't: raised under `STRICT_CALCULATOR_CHECKS` (on in tests), so the calculator's
+        own tests fail; in production reported to Sentry and dropped, and the program still
+        shows its household value.
+        """
+        if amount and self.payment_unit == PaymentUnit.HOUSEHOLD:
+            message = (
+                f"{self.program or 'A program'} is household-paid but set a member value of {amount}; it was dropped."
+            )
+            if settings.STRICT_CALCULATOR_CHECKS:
+                raise HouseholdMemberValueError(message)
+
+            capture_message(message, level="error")
+            return
+
+        self._value = amount
+
+    def condition(self, passed: bool):
+        """
+        Set eligibility to False if the condition does not pass
+        """
+        if not passed:
+            self.eligible = False
 
 
 class Eligibility:
@@ -93,23 +126,11 @@ class Eligibility:
         """
         self.eligible_members.append(member_eligibility)
 
-    def clear_member_values(self) -> list[int]:
-        """Set every member's value to 0 and return the non-zero values that were cleared."""
-        cleared = [member.value for member in self.eligible_members if member.value]
-        for member in self.eligible_members:
-            member.value = 0
-
-        return cleared
-
     @property
     def value(self) -> int:
         """
-        The program's total: the household value plus each member's value. A household-paid
-        program's total is its household value alone (see `PaymentUnit`).
+        The total value of the household and each member
         """
-        if self.payment_unit == PaymentUnit.HOUSEHOLD:
-            return self.household_value
-
         total = self.household_value
 
         for member in self.eligible_members:
@@ -196,7 +217,7 @@ class ProgramCalculator:
 
         one_member_eligible = False
         for member in self.screen.household_members.all():
-            member_eligibility = MemberEligibility(member)
+            member_eligibility = MemberEligibility(member, self.payment_unit, self._program_name)
             self.member_eligible(member_eligibility)
             e.add_member_eligibility(member_eligibility)
 
@@ -259,31 +280,14 @@ class ProgramCalculator:
         eligibility = self.eligible()
 
         self.value(eligibility)
-        self.enforce_payment_unit(eligibility)
 
         return eligibility
 
-    def enforce_payment_unit(self, e: Eligibility) -> None:
-        """
-        Clear any member value a household-paid program set, so the API's member values agree
-        with `Eligibility.value` and the frontend, which adds member values itself, can't
-        count them. A cleared value means the calculator priced members it shouldn't, so
-        it is reported: raised under `STRICT_CALCULATOR_CHECKS` (on in tests), sent to
-        Sentry in production while the results page shows the household value.
-        """
-        if e.payment_unit != PaymentUnit.HOUSEHOLD:
-            return
-
-        cleared = e.clear_member_values()
-        if not cleared:
-            return
-
-        program = self.program.name_abbreviated if self.program is not None else type(self).__name__
-        message = f"{program} is household-paid but set member values {cleared}; they were cleared."
-        if settings.STRICT_CALCULATOR_CHECKS:
-            raise HouseholdMemberValueError(message)
-
-        capture_message(message, level="error")
+    @property
+    def _program_name(self) -> str:
+        """The program's code for reports, or the class name when there is no program row."""
+        program = getattr(self, "program", None)
+        return program.name_abbreviated if program is not None else type(self).__name__
 
     def program_eligible(self, program_code: str) -> bool:
         """
