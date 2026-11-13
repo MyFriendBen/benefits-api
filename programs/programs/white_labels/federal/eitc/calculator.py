@@ -184,9 +184,6 @@ class FederalEitc(ProgramCalculator):
 
         return credit
 
-    def member_value(self, member: HouseholdMember) -> int:
-        return 0
-
     @cached_property
     def _params(self) -> EitcYear:
         """

@@ -1,6 +1,8 @@
 from screener.models import Screen, HouseholdMember
 from programs.util import Dependencies, DependencyError, UpstreamAbsentError
+from django.conf import settings
 from enum import StrEnum
+from sentry_sdk import capture_message
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -22,17 +24,27 @@ class MemberEligibility:
 
 
 class PaymentUnit(StrEnum):
-    """Who a benefit is paid to, matching the spec's section 7 `Payment unit`.
+    """Who a benefit is paid to, matching the spec's section 7 `Payment unit`: "whether the
+    amount is what one member gets or what the household gets" (spec template).
 
-    Display only: the results page names the eligible members or the household. It never
-    changes eligibility or value, which come from `household_value` and `member_value`
-    whatever the unit.
+    The unit governs value, not only the results page's chip. A display-only unit was tried
+    in MFB-2287 and dropped: it let a "Household" card carry member money, which the spec's
+    definition rules out, and it left each household calculator to zero `member_value` by
+    hand so the total wasn't double counted. Here `Eligibility.value` counts only the
+    household value for a household program, and `ProgramCalculator.calc` clears and
+    reports any member value one sets.
     """
 
-    #: The results page names each eligible member.
+    #: Each eligible member carries their own value; the results page names them.
     MEMBER = "member"
-    #: The results page names the household, even when member rules sized or gated it.
+    #: The whole value is `household_value`. Members are still evaluated and may gate or
+    #: size it, but carry no value; the results page names the household.
     HOUSEHOLD = "household"
+
+
+class HouseholdMemberValueError(Exception):
+    """A household-paid program set member values. Raised only under
+    `STRICT_CALCULATOR_CHECKS` (tests); production reports it to Sentry instead."""
 
 
 class Eligibility:
@@ -81,11 +93,23 @@ class Eligibility:
         """
         self.eligible_members.append(member_eligibility)
 
+    def clear_member_values(self) -> list[int]:
+        """Set every member's value to 0 and return the non-zero values that were cleared."""
+        cleared = [member.value for member in self.eligible_members if member.value]
+        for member in self.eligible_members:
+            member.value = 0
+
+        return cleared
+
     @property
     def value(self) -> int:
         """
-        The total value of the household and each member
+        The program's total: the household value plus each member's value. A household-paid
+        program's total is its household value alone (see `PaymentUnit`).
         """
+        if self.payment_unit == PaymentUnit.HOUSEHOLD:
+            return self.household_value
+
         total = self.household_value
 
         for member in self.eligible_members:
@@ -125,10 +149,9 @@ class ProgramCalculator:
     amount = 0
     member_amount = 0
 
-    #: Who the benefit is paid to, matching the spec's section 7 `Payment unit`. The results
-    #: API carries it so the frontend shows the members (``PaymentUnit.MEMBER``, the default)
-    #: or the household (``PaymentUnit.HOUSEHOLD``) as the eligible party. Display only:
-    #: eligibility and value run the same for both units.
+    #: Who the benefit is paid to, matching the spec's section 7 `Payment unit`; see
+    #: `PaymentUnit`. ``PaymentUnit.MEMBER`` is the default. The results API carries it so
+    #: the frontend shows the members or the household as the eligible party.
     payment_unit: PaymentUnit = PaymentUnit.MEMBER
 
     #: Upstream program codes this calculator reads through `program_eligible` or
@@ -236,8 +259,31 @@ class ProgramCalculator:
         eligibility = self.eligible()
 
         self.value(eligibility)
+        self.enforce_payment_unit(eligibility)
 
         return eligibility
+
+    def enforce_payment_unit(self, e: Eligibility) -> None:
+        """
+        Clear any member value a household-paid program set, so the API's member values agree
+        with `Eligibility.value` and the frontend, which adds member values itself, can't
+        count them. A cleared value means the calculator priced members it shouldn't, so
+        it is reported: raised under `STRICT_CALCULATOR_CHECKS` (on in tests), sent to
+        Sentry in production while the results page shows the household value.
+        """
+        if e.payment_unit != PaymentUnit.HOUSEHOLD:
+            return
+
+        cleared = e.clear_member_values()
+        if not cleared:
+            return
+
+        program = self.program.name_abbreviated if self.program is not None else type(self).__name__
+        message = f"{program} is household-paid but set member values {cleared}; they were cleared."
+        if settings.STRICT_CALCULATOR_CHECKS:
+            raise HouseholdMemberValueError(message)
+
+        capture_message(message, level="error")
 
     def program_eligible(self, program_code: str) -> bool:
         """

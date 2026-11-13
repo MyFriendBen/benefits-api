@@ -153,9 +153,6 @@ class FederalCdcc(ProgramCalculator):
 
         return int(credit.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
-    def member_value(self, member: HouseholdMember) -> int:
-        return 0
-
     @cached_property
     def _params(self) -> CdccYear:
         """

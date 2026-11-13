@@ -13,9 +13,18 @@ why these are `TestCase`. The cross-program gates on the same class read only
 
 import datetime
 
-from django.test import TestCase
+from unittest.mock import patch
 
-from programs.framework.base import Eligibility, MemberEligibility, PaymentUnit, ProgramCalculator
+from django.test import TestCase, override_settings
+
+from programs.framework.base import (
+    Eligibility,
+    HouseholdMemberValueError,
+    MemberEligibility,
+    PaymentUnit,
+    ProgramCalculator,
+)
+from programs.framework.pe_base import PolicyEngineSpmCalulator
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember, Screen, WhiteLabel
 
@@ -178,7 +187,7 @@ class EligibilityValueTests(TestCase):
 
 
 class EligibilityPaymentUnitTests(TestCase):
-    """`payment_unit` says who the benefit is paid for; it never hides a verdict."""
+    """`payment_unit` says who the benefit is paid to; it never hides a verdict."""
 
     def test_defaults_to_the_member_unit(self):
         self.assertEqual(Eligibility().payment_unit, PaymentUnit.MEMBER)
@@ -192,6 +201,50 @@ class EligibilityPaymentUnitTests(TestCase):
 
         self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
         self.assertEqual(e.eligible_members, [eligible, ineligible])
+
+    def _with_member_values(self, payment_unit: PaymentUnit) -> Eligibility:
+        e = Eligibility(payment_unit=payment_unit)
+        e.household_value = 1_000
+        for value in (50, 0):
+            member = MemberEligibility(None)
+            member.value = value
+            e.add_member_eligibility(member)
+        return e
+
+    def test_a_member_total_adds_the_member_values(self):
+        self.assertEqual(self._with_member_values(PaymentUnit.MEMBER).value, 1_050)
+
+    def test_a_household_total_is_the_household_value_alone(self):
+        self.assertEqual(self._with_member_values(PaymentUnit.HOUSEHOLD).value, 1_000)
+
+    def test_clear_member_values_returns_what_it_cleared(self):
+        e = self._with_member_values(PaymentUnit.HOUSEHOLD)
+
+        self.assertEqual(e.clear_member_values(), [50])
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
+
+
+class PaymentUnitDeclarationTests(TestCase):
+    """No registered household calculator prices members, so the runtime check in
+    `ProgramCalculator.enforce_payment_unit` stays a safeguard rather than a fix.
+
+    This catches the declared cases, `member_amount` or an overridden `member_value`, in CI.
+    A value set inside `member_eligible` or a replaced `value()` isn't visible here; the
+    runtime check covers those.
+    """
+
+    def test_household_calculators_do_not_price_members(self):
+        from integrations.clients.policyengine.registry import all_calculators
+        from programs.programs import calculators
+
+        offenders = sorted(
+            calculator.__name__
+            for calculator in {**calculators, **all_calculators}.values()
+            if calculator.payment_unit == PaymentUnit.HOUSEHOLD
+            and (calculator.member_amount or calculator.member_value is not ProgramCalculator.member_value)
+        )
+
+        self.assertEqual(offenders, [])
 
 
 class ProgramCalculatorTestCase(TestCase):
@@ -276,7 +329,8 @@ class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
 
 
 class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
-    """`payment_unit` is display only: a household-unit program runs exactly like a member one."""
+    """A household-unit program evaluates its members like a member one, but its value is
+    the household's alone."""
 
     class HouseholdPaying(ProgramCalculator):
         payment_unit = PaymentUnit.HOUSEHOLD
@@ -307,8 +361,8 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
         self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
 
     def test_a_member_rule_still_gates_the_household(self):
-        """The unit changes who the card names, not what is checked: a household program
-        that qualifies through a member-scoped rule still needs one member to pass."""
+        """The unit changes who is paid, not what is checked: a household program that
+        qualifies through a member-scoped rule still needs one member to pass."""
 
         class HouseholdNoOne(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
             def member_eligible(self, e: MemberEligibility):
@@ -332,21 +386,54 @@ class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
 
         self.assertEqual(seen, [False, True])
 
-    def test_the_unit_does_not_change_the_value(self):
-        """Member amounts still count: a household-paid benefit can be sized per member."""
+    def test_member_values_fail_loudly_in_tests(self):
+        """`STRICT_CALCULATOR_CHECKS` is on in pytest.ini, so a household program that
+        prices members fails its own tests."""
+        with self.assertRaises(HouseholdMemberValueError):
+            self.calculator(self.HouseholdPaying).calc()
 
-        class MemberPaying(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
-            payment_unit = PaymentUnit.MEMBER
+    @override_settings(STRICT_CALCULATOR_CHECKS=False)
+    def test_member_values_are_cleared_and_reported_in_production(self):
+        with patch("programs.framework.base.capture_message") as report:
+            e = self.calculator(self.HouseholdPaying).calc()
 
-        values = []
-        for calculator_class in (MemberPaying, self.HouseholdPaying):
-            calc = self.calculator(calculator_class)
-            e = calc.eligible()
-            calc.value(e)
-            values.append((e.household_value, [m.value for m in e.eligible_members], e.value))
+        self.assertEqual(e.household_value, 1_000)
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
+        self.assertEqual(e.value, 1_000)
+        report.assert_called_once()
+        self.assertIn("HouseholdPaying", report.call_args.args[0])
+        self.assertIn("[50, 50]", report.call_args.args[0])
 
-        self.assertEqual(values[0], (1_000, [50, 50], 1_100))
-        self.assertEqual(values[1], values[0])
+    @override_settings(STRICT_CALCULATOR_CHECKS=False)
+    def test_the_policyengine_path_is_held_to_the_same_rule(self):
+        """PolicyEngine prices members inside `member_eligible`, not `value()`, so the
+        rule has to run after its `calc()` too."""
+
+        class HouseholdSpm(PolicyEngineSpmCalulator):
+            pe_inputs = []
+            member_amount = 50
+
+            def household_value(self) -> int:
+                return 1_000
+
+        with patch("programs.framework.base.capture_message") as report:
+            e = HouseholdSpm(self.screen, None, Dependencies(())).calc()
+
+        self.assertTrue(e.eligible)
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
+        self.assertEqual(e.value, 1_000)
+        report.assert_called_once()
+
+    def test_a_household_program_without_member_values_is_not_reported(self):
+        class HouseholdOnly(ProgramCalculator):
+            payment_unit = PaymentUnit.HOUSEHOLD
+            amount = 1_000
+
+        with patch("programs.framework.base.capture_message") as report:
+            e = self.calculator(HouseholdOnly).calc()
+
+        self.assertEqual(e.value, 1_000)
+        report.assert_not_called()
 
 
 class ProgramCalculatorValueTests(ProgramCalculatorTestCase):
