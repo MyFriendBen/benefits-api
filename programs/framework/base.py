@@ -28,7 +28,7 @@ class PaymentUnit(StrEnum):
     amount is what one member gets or what the household gets" (spec template).
 
     The unit governs value, not only the results page's chip. A display-only unit was tried
-    in MFB-2287 and dropped: it let a "Household" card carry member money, which the spec's
+    and dropped: it let a "Household" card carry member money, which the spec's
     definition rules out, and it left each household calculator to zero `member_value` by
     hand so the total wasn't double counted. Here `Eligibility.value` counts only the
     household value for a household program, and `ProgramCalculator.calc` clears and
