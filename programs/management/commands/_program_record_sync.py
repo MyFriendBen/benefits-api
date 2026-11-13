@@ -87,11 +87,13 @@ PROGRAM_SCALAR_FIELDS = (
     "has_calculator",
     "value_format",
     "base_program",
+    "flip_month",
+    "year_offset",
 )
 PROGRAM_OPTIONAL_FIELDS = ("external_name",)
 PROGRAM_PROGRAM_LISTS = ("required_programs", "excludes_programs")
 PROGRAM_KEYS = frozenset(
-    {"name_abbreviated", "year", "legal_status_required"}
+    {"name_abbreviated", "year", "year_type", "legal_status_required"}
     | set(PROGRAM_SCALAR_FIELDS)
     | set(PROGRAM_OPTIONAL_FIELDS)
     | set(PROGRAM_PROGRAM_LISTS)
@@ -591,17 +593,51 @@ class RecordSync:
                     fresh,
                 )
 
-        year = data.get("year")
-        self._add(
-            plan,
-            "program.year",
-            None if year is None else str(year),
-            program.year.year if program.year_id else None,
-            self._set_year,
-            1,
-            baseline,
-            fresh,
-        )
+        year_type = data.get("year_type")
+        _RULE_BASED = {"calendar_year", "fiscal_year", "prior_tax_year"}
+        if year_type in _RULE_BASED:
+            # Rule-based: year_type drives the year. Leave year FK for save()/roll_program_years.
+            self._add(
+                plan,
+                "program.year_type",
+                year_type,
+                program.year_type,
+                self._set_year_type_only,
+                1,
+                baseline,
+                fresh,
+            )
+        else:
+            # Hardcoded (or old-format record without year_type): year FK is set directly.
+            year = data.get("year")
+            year_str = None if year is None else str(year)
+            self._add(
+                plan,
+                "program.year",
+                year_str,
+                program.year.year if program.year_id else None,
+                self._set_year,
+                1,
+                baseline,
+                fresh,
+            )
+            # Also track the inferred year_type in the baseline. Without this, a later
+            # record that switches to explicit year_type management would have no baseline
+            # entry for year_type and would treat the existing DB value as an admin edit.
+            inferred_year_type = {
+                "THIS_YEAR_CALENDAR": "calendar_year",
+                "THIS_YEAR_FISCAL": "fiscal_year",
+            }.get(year_str or "", "hardcoded")
+            self._add(
+                plan,
+                "program.year_type",
+                inferred_year_type,
+                program.year_type,
+                self._set_year_type_only,
+                1,
+                baseline,
+                fresh,
+            )
         self._add(
             plan,
             "program.category",
@@ -949,11 +985,17 @@ class RecordSync:
                 program.year = FederalPoveryLimit.objects.get(year=value)
             except FederalPoveryLimit.DoesNotExist:
                 raise CommandError(f"program.year '{value}' has no FederalPovertyLimit row") from None
-            # A dynamic row's year type has to agree with it, the same rule the create path follows.
-            program.year_type = {"THIS_YEAR_CALENDAR": "calendar_year", "THIS_YEAR_FISCAL": "fiscal_year"}.get(
-                value, "hardcoded"
-            )
+            year_type = {
+                "THIS_YEAR_CALENDAR": "calendar_year",
+                "THIS_YEAR_FISCAL": "fiscal_year",
+            }.get(value, "hardcoded")
+            program.year_type = year_type
         program.save(update_fields=["year", "year_type"])
+
+    def _set_year_type_only(self, value: str) -> None:
+        program = self._program()
+        program.year_type = value
+        program.save(update_fields=["year_type"])
 
     def _set_category(self, value: Optional[str]) -> None:
         category = None
@@ -1176,6 +1218,9 @@ PROGRAM_KEY_ORDER = (
     "estimated_value",
     "value_format",
     "year",
+    "year_type",
+    "flip_month",
+    "year_offset",
     "show_on_current_benefits",
     "has_calculator",
     "show_in_has_benefits_step",
@@ -1206,6 +1251,7 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
     existing = existing or {}
     previous = existing.get("program", {})
 
+    _RULE_BASED = {"calendar_year", "fiscal_year", "prior_tax_year"}
     values: dict[str, Any] = {
         "name_abbreviated": program.name_abbreviated,
         "legal_status_required": _ordered_like(
@@ -1213,11 +1259,14 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
             previous.get("legal_status_required", []),
         ),
         "value_format": program.value_format,
-        "year": program.year.year if program.year_id else None,
         "show_on_current_benefits": program.show_on_current_benefits,
         "has_calculator": program.has_calculator,
         "show_in_has_benefits_step": program.show_in_has_benefits_step,
     }
+    if program.year_type in _RULE_BASED:
+        values["year_type"] = program.year_type
+    else:
+        values["year"] = program.year.year if program.year_id else None
     for name in Program.objects.translated_fields:
         text = _english(getattr(program, name))
         if text or name in previous or name != "estimated_decision_time":
@@ -1229,6 +1278,10 @@ def record_from_database(program: Program, existing: Optional[dict[str, Any]] = 
         values["external_name"] = program.external_name
     if program.low_confidence or "low_confidence" in previous:
         values["low_confidence"] = program.low_confidence
+    if program.flip_month != 1 or "flip_month" in previous:
+        values["flip_month"] = program.flip_month
+    if program.year_offset != 0 or "year_offset" in previous:
+        values["year_offset"] = program.year_offset
     for name in PROGRAM_PROGRAM_LISTS:
         keys = list(getattr(program, name).values_list("name_abbreviated", flat=True))
         if keys or name in previous:

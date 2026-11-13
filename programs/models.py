@@ -788,11 +788,20 @@ class Program(models.Model):
         ("hardcoded", "Hardcoded"),
         ("fiscal_year", "Fiscal Year"),
         ("calendar_year", "Calendar Year"),
+        ("prior_tax_year", "Prior Tax Year"),
     ]
     year_type = models.CharField(
         max_length=32,
         default="hardcoded",
         choices=YEAR_TYPE_CHOICES,
+    )
+    flip_month = models.IntegerField(
+        default=1,
+        help_text="Month (1-12) when roll_program_years moves this program to the next period. 1=Jan, 2=Feb, 10=Oct.",
+    )
+    year_offset = models.IntegerField(
+        default=0,
+        help_text="Offset applied to the target year. -1 for prior tax year (e.g. 2026 target -> 2025 period).",
     )
     category = models.ForeignKey(
         ProgramCategory,
