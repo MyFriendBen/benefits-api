@@ -1,0 +1,43 @@
+name: PolicyEngine Version Pin Check
+
+# The PolicyEngine pin is a prod DB row, editable in the admin without a deploy, and PE
+# moves `current` on its own schedule. A pin that falls below `current` makes PE return
+# 400 on every screen, so check daily instead of waiting for the next deploy.
+# Runs the check_pe_version_pin management command against prod (MFB-1319).
+
+on:
+  schedule:
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pe-version-pin-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Check PolicyEngine version pin
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku run --exit-code -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py check_pe_version_pin"
+
+      - name: Send failure notification to Slack
+        if: failure()
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          status: failure
+          environment: production

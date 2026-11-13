@@ -159,6 +159,16 @@ jobs:
           release-url: ${{ github.event.release.html_url }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
 
+      # The pin lives in the prod DB, not the repo, so this has to run against prod. It runs
+      # on the new slug (the command ships with it). Fails the release when an explicit pin
+      # is below PolicyEngine's current; a PE outage only warns. The scheduled
+      # pe-version-pin-check workflow catches drift between deploys.
+      - name: Check PolicyEngine version pin
+        if: success()
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku run --exit-code -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py check_pe_version_pin"
+
       - name: Run database migrations
         if: success()
         id: migrations
