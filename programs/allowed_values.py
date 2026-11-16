@@ -91,17 +91,6 @@ class NavigatorLanguageCode(models.TextChoices):
     ALL = "ALL", "all languages"
 
 
-# Codes older translation snapshots carry, and the code each one meant. A snapshot import reads them
-# as their replacement so a restore still works; nothing else accepts them.
-LEGACY_NAVIGATOR_LANGUAGE_CODES = {
-    "en": NavigatorLanguageCode.ENGLISH,
-    "english": NavigatorLanguageCode.ENGLISH,
-    "English": NavigatorLanguageCode.ENGLISH,
-    "spanish": NavigatorLanguageCode.SPANISH,
-    "Spanish": NavigatorLanguageCode.SPANISH,
-}
-
-
 def unknown_warning_calculator(name: str) -> bool:
     """Whether `name` isn't a registered warning calculator, so a warning using it would never show."""
     from programs.warnings import warning_calculators

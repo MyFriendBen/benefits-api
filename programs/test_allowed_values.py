@@ -15,7 +15,6 @@ from django.test import RequestFactory, SimpleTestCase, TestCase
 from authentication.models import User
 from programs.admin import LegalStatusAdmin, NavigatorLanguageAdmin, WarningMessageAdminForm
 from programs.allowed_values import (
-    LEGACY_NAVIGATOR_LANGUAGE_CODES,
     USER_SELECTED_LEGAL_STATUSES,
     LegalStatusLabel,
     NavigatorLanguageCode,
@@ -28,10 +27,6 @@ class ListTests(SimpleTestCase):
     def test_user_selected_statuses_are_known_labels(self) -> None:
         self.assertEqual(len(USER_SELECTED_LEGAL_STATUSES), 6)
         self.assertLessEqual(set(USER_SELECTED_LEGAL_STATUSES), set(LegalStatusLabel.values))
-
-    def test_every_legacy_language_code_maps_to_a_known_one(self) -> None:
-        self.assertLessEqual(set(LEGACY_NAVIGATOR_LANGUAGE_CODES.values()), set(NavigatorLanguageCode.values))
-        self.assertFalse(set(LEGACY_NAVIGATOR_LANGUAGE_CODES) & set(NavigatorLanguageCode.values))
 
 
 class LegalStatusTests(TestCase):
@@ -68,10 +63,6 @@ class NavigatorLanguageTests(TestCase):
                 NavigatorLanguage.for_code(code)
 
         self.assertFalse(NavigatorLanguage.objects.exists())
-
-    def test_a_snapshot_import_reads_legacy_codes_as_their_replacement(self) -> None:
-        self.assertEqual(NavigatorLanguage.for_code("English", accept_legacy=True).code, "en-us")
-        self.assertEqual(NavigatorLanguage.for_code("spanish", accept_legacy=True).code, "es")
 
     def test_the_database_refuses_an_unknown_code(self) -> None:
         with self.assertRaises(IntegrityError), transaction.atomic():

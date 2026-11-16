@@ -10,7 +10,6 @@ from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 from programs.allowed_values import (
-    LEGACY_NAVIGATOR_LANGUAGE_CODES,
     USER_SELECTED_LEGAL_STATUSES,
     LegalStatusLabel,
     NavigatorLanguageCode,
@@ -1526,13 +1525,8 @@ class NavigatorLanguage(models.Model):
         return self.code
 
     @classmethod
-    def for_code(cls, code: str, accept_legacy: bool = False) -> "NavigatorLanguage":
-        """The row for a known code, created if this environment doesn't have it yet.
-
-        `accept_legacy` reads a code older translation snapshots carry as the code it meant.
-        """
-        if accept_legacy:
-            code = LEGACY_NAVIGATOR_LANGUAGE_CODES.get(code, code)
+    def for_code(cls, code: str) -> "NavigatorLanguage":
+        """The row for a known code, created if this environment doesn't have it yet."""
         if code not in NavigatorLanguageCode.values:
             raise ValueError(
                 f"navigator language '{code}' isn't one the screener shows. Use one of "
@@ -1726,7 +1720,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         # get or create languages
         langs = []
         for lang in data["languages"]:
-            langs.append(NavigatorLanguage.for_code(lang["code"], accept_legacy=True))
+            langs.append(NavigatorLanguage.for_code(lang["code"]))
         navigator.languages.set(langs)
 
         # A snapshot with `program_links` lists every link, so the navigator's links are made to match
