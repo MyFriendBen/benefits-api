@@ -14,34 +14,16 @@ from pathlib import Path
 
 from django.test import SimpleTestCase
 
+from programs.allowed_values import USER_SELECTED_LEGAL_STATUSES, LegalStatusLabel
+
 DATA_DIR = Path(__file__).resolve().parent.parent / "import_program_config_data" / "data"
 
-# The labels the frontend understands, from `CitizenLabels` in
-# benefits-calculator/src/Components/Results/Filter/citizenshipFilterConfig.tsx. The six
-# user-selected statuses are the filter buttons; the rest are derived from household data. A label
-# outside this set is dropped on import (LegalStatus.DoesNotExist) and silently never matches.
-USER_SELECTED = {
-    "citizen",
-    "non_citizen",
-    "gc_5plus",
-    "gc_5less",
-    "refugee",
-    "otherWithWorkPermission",
-}
-CALCULATED = {
-    "gc_18plus_no5",
-    "gc_under18_no5",
-    "otherHealthCarePregnant",
-    "otherHealthCareUnder19",
-    "otherHealthCareUnder21",
-    "notPregnantOrUnder19ForOmniSalud",
-    "notPregnantOrUnder19ForEmergencyMedicaid",
-    "notPregnantForMassHealthLimited",
-    "notPregnantOrChildForMassHealthLimited",
-    "lawfulHealthCarePregnant",
-    "lawfulHealthCareUnder19",
-}
-KNOWN_LABELS = USER_SELECTED | CALCULATED
+# The labels the screener understands (`programs/allowed_values.py`, which mirrors `CitizenLabels` in the
+# screener's citizenshipFilterConfig.tsx). The six user-selected statuses are the filter buttons; the
+# rest are derived from household data. A label outside this set matches no household.
+USER_SELECTED = {str(label) for label in USER_SELECTED_LEGAL_STATUSES}
+KNOWN_LABELS = set(LegalStatusLabel.values)
+CALCULATED = KNOWN_LABELS - USER_SELECTED
 
 # Programs pinned to the exact statuses each should declare — plus wa_fap, which the wa_snap edit
 # has to stay disjoint from. Pinning the whole set is what stops a later config pass from quietly

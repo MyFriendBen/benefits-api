@@ -977,10 +977,12 @@ class RecordSync:
     def _legal_statuses(self, codes: list[str]) -> list[LegalStatus]:
         statuses = []
         for code in codes:
-            status = LegalStatus.objects.filter(status=code).first()
-            if status is None:
-                raise CommandError(f"legal status '{code}' doesn't exist")
-            statuses.append(status)
+            # A known label is created if this environment doesn't have its row yet: the admin
+            # can't add legal statuses, so an import is how a missing one arrives.
+            try:
+                statuses.append(LegalStatus.for_label(code))
+            except ValueError as e:
+                raise CommandError(str(e)) from None
         return statuses
 
     def _programs(self, keys: list[str]) -> list[Program]:
@@ -1047,7 +1049,10 @@ class RecordSync:
         if field_name == "counties":
             row.counties.set(self._counties(spec, row, values))
         elif field_name == "languages":
-            row.languages.set([NavigatorLanguage.objects.get_or_create(code=code)[0] for code in values])
+            try:
+                row.languages.set([NavigatorLanguage.for_code(code) for code in values])
+            except ValueError as e:
+                raise CommandError(f"{spec.kind} '{row.external_name}': {e}") from None
         elif field_name == "legal_statuses":
             row.legal_statuses.set(self._legal_statuses(values))
         else:

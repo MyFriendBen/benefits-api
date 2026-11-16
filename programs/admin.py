@@ -13,9 +13,9 @@ from django.utils.html import format_html
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
+from .allowed_values import unknown_warning_calculator, warning_calculator_choices
 from .federal import FEDERAL_WHITE_LABEL, is_federal, linkable_with, navigators_linkable_to, visible_to_any
 from .models import (
-    LegalStatus,
     Program,
     ProgramCategory,
     ProgramNavigator,
@@ -32,7 +32,6 @@ from .models import (
     WebHookFunction,
     UrgentNeedCategory,
     County,
-    NavigatorLanguage,
     Document,
     TranslationOverride,
     ExpenseType,
@@ -272,18 +271,8 @@ class ProgramAdmin(SecureAdmin):
         )
 
 
-class LegalStatusAdmin(SecureAdmin):
-    always_can_view = True
-    search_fields = ("status",)
-
-
 class CountiesAdmin(SecureAdmin):
     search_fields = ("name",)
-
-
-class NavigatorLanguageAdmin(SecureAdmin):
-    always_can_view = True
-    search_fields = ("code",)
 
 
 class NavigatorAdmin(SecureAdmin):
@@ -383,7 +372,24 @@ class NavigatorAdmin(SecureAdmin):
     action_buttons.allow_tags = True
 
 
+class WarningMessageAdminForm(forms.ModelForm):
+    calculator = forms.ChoiceField(choices=warning_calculator_choices)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # A warning saved before its calculator was renamed or removed keeps that name as its
+        # current choice, marked, so the dropdown can't silently fall back to the first option.
+        # Saving it unchanged fails the model's check, so someone has to pick a registered one.
+        current = self.instance.calculator if self.instance.pk else None
+        if current and unknown_warning_calculator(current):
+            self.fields["calculator"].choices = [
+                (current, f"{current} (not registered: choose another)"),
+                *warning_calculator_choices(),
+            ]
+
+
 class WarningMessageAdmin(SecureAdmin):
+    form = WarningMessageAdminForm
     search_fields = ("external_name",)
     list_display = ["get_str", "calculator", "action_buttons"]
     white_label_filter_horizontal = (
@@ -848,10 +854,8 @@ class FormOptionAdmin(SecureAdmin):
     autocomplete_fields = ["icon"]
 
 
-admin.site.register(LegalStatus, LegalStatusAdmin)
 admin.site.register(Program, ProgramAdmin)
 admin.site.register(County, CountiesAdmin)
-admin.site.register(NavigatorLanguage, NavigatorLanguageAdmin)
 admin.site.register(Navigator, NavigatorAdmin)
 admin.site.register(WarningMessage, WarningMessageAdmin)
 admin.site.register(UrgentNeed, UrgentNeedAdmin)

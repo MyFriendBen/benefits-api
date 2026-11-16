@@ -9,6 +9,14 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
+from programs.allowed_values import (
+    USER_SELECTED_LEGAL_STATUSES,
+    check_legal_status_label,
+    check_navigator_language_code,
+    unknown_warning_calculator,
+    validate_legal_status_label,
+    validate_navigator_language_code,
+)
 from programs.federal import FEDERAL_WHITE_LABEL, may_link_navigator
 from programs.util import Dependencies, UnregisteredCalculatorError
 from sentry_sdk import capture_message
@@ -175,7 +183,7 @@ class FederalPovertyLimitValue(models.Model):
 
 
 class LegalStatus(models.Model):
-    status = models.CharField(max_length=256)
+    status = models.CharField(max_length=256, validators=[validate_legal_status_label])
     parent = models.ForeignKey(
         "self",
         related_name="children",
@@ -184,23 +192,25 @@ class LegalStatus(models.Model):
         on_delete=models.SET_NULL,
     )
 
+    @classmethod
+    def for_label(cls, label: str) -> "LegalStatus":
+        """The row for a known label, created if this environment doesn't have it yet."""
+        check_legal_status_label(label)
+        return cls.objects.filter(status=label).first() or cls.objects.create(status=label)
+
+    def save(self, *args, **kwargs) -> None:
+        check_legal_status_label(self.status)
+        super().save(*args, **kwargs)
+
     @property
-    def is_user_selected(self):
+    def is_user_selected(self) -> bool:
         """
         Check if this is a basic user-selected status (not auto-calculated).
 
         User-selected statuses are the core citizenship categories that users
         directly choose from. All other statuses are auto-calculated filters.
         """
-        user_selected_statuses = [
-            "citizen",
-            "non_citizen",
-            "gc_5plus",
-            "gc_5less",
-            "refugee",
-            "otherWithWorkPermission",
-        ]
-        return self.status in user_selected_statuses
+        return self.status in USER_SELECTED_LEGAL_STATUSES
 
     def __str__(self):
         if self.is_user_selected:
@@ -680,11 +690,7 @@ class ProgramDataController(ModelDataController["Program"]):
         legal_status_required = data["legal_status_required"]
         statuses = []
         for status in legal_status_required:
-            try:
-                legal_status_instance = LegalStatus.objects.get(status=status["status"])
-            except LegalStatus.DoesNotExist:
-                legal_status_instance = LegalStatus.objects.create(status=status["status"])
-            statuses.append(legal_status_instance)
+            statuses.append(LegalStatus.for_label(status["status"]))
         program.legal_status_required.set(statuses)
 
         # add documents
@@ -1503,10 +1509,20 @@ class UrgentNeed(models.Model):
 
 
 class NavigatorLanguage(models.Model):
-    code = models.CharField(max_length=8, unique=True)
+    code = models.CharField(max_length=8, unique=True, validators=[validate_navigator_language_code])
 
     def __str__(self) -> str:
         return self.code
+
+    @classmethod
+    def for_code(cls, code: str) -> "NavigatorLanguage":
+        """The row for a known code, created if this environment doesn't have it yet."""
+        check_navigator_language_code(code)
+        return cls.objects.get_or_create(code=code)[0]
+
+    def save(self, *args, **kwargs) -> None:
+        check_navigator_language_code(self.code)
+        super().save(*args, **kwargs)
 
 
 class NavigatorManager(models.Manager):
@@ -1694,11 +1710,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         # get or create languages
         langs = []
         for lang in data["languages"]:
-            try:
-                lang_instance = NavigatorLanguage.objects.get(code=lang["code"])
-            except NavigatorLanguage.DoesNotExist:
-                lang_instance = NavigatorLanguage.objects.create(code=lang["code"])
-            langs.append(lang_instance)
+            langs.append(NavigatorLanguage.for_code(lang["code"]))
         navigator.languages.set(langs)
 
         # A snapshot with `program_links` lists every link, so the navigator's links are made to match
@@ -1888,6 +1900,8 @@ class WarningMessageManager(models.Manager):
     no_auto_fields = ("link_url",)
 
     def new_warning(self, white_label: str, calculator: str, external_name: Optional[str] = None):
+        if unknown_warning_calculator(calculator):
+            raise ValueError(f"'{calculator}' isn't a registered warning calculator")
         translations = {}
         for field in self.translated_fields:
             translations[field] = Translation.objects.add_translation(
@@ -1965,11 +1979,7 @@ class WarningMessageDataController(ModelDataController["WarningMessage"]):
         legal_status_required = data["legal_status_required"]
         statuses = []
         for status in legal_status_required:
-            try:
-                legal_status_instance = LegalStatus.objects.get(status=status["status"])
-            except LegalStatus.DoesNotExist:
-                legal_status_instance = LegalStatus.objects.create(status=status["status"])
-            statuses.append(legal_status_instance)
+            statuses.append(LegalStatus.for_label(status["status"]))
         warning.legal_statuses.set(statuses)
 
         # get or create counties
@@ -1993,7 +2003,9 @@ class WarningMessageDataController(ModelDataController["WarningMessage"]):
 
     @classmethod
     def create_instance(cls, external_name: str, Model: type["WarningMessage"]) -> "WarningMessage":
-        return Model.objects.new_warning("_default", "__temp__", external_name)
+        # A registered placeholder: `from_model_data` sets the snapshot's calculator next, and saving
+        # checks that one.
+        return Model.objects.new_warning("_default", "_show", external_name)
 
 
 class WarningMessage(models.Model):
@@ -2035,6 +2047,18 @@ class WarningMessage(models.Model):
     objects = WarningMessageManager()
 
     TranslationExportBuilder = WarningMessageDataController
+
+    def clean(self) -> None:
+        super().clean()
+        if unknown_warning_calculator(self.calculator):
+            raise ValidationError({"calculator": f"'{self.calculator}' isn't a registered warning calculator"})
+
+    def save(self, *args, **kwargs) -> None:
+        # The registry lives in code and changes without a migration, so it is checked here rather
+        # than by a database constraint. A warning on an unknown calculator would never show.
+        if unknown_warning_calculator(self.calculator):
+            raise ValueError(f"'{self.calculator}' isn't a registered warning calculator")
+        super().save(*args, **kwargs)
 
     @property
     def county_names(self) -> list[str]:

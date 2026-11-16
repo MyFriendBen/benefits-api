@@ -7,6 +7,7 @@ join-table lookup will need, then write CurrentBenefit rows directly (or via the
 
 from django.conf import settings
 
+from programs.allowed_values import unknown_warning_calculator
 from programs.models import (
     County,
     Document,
@@ -91,9 +92,15 @@ def seed_warning(
     and links them, which is how `WarningCalculator.county_eligible` is gated — an
     empty tuple means "all counties", matching the model's `county_names` property.
     """
+    registered = not unknown_warning_calculator(calculator)
     warning = WarningMessage.objects.new_warning(
-        program.white_label.code, calculator, external_name=external_name or calculator
+        program.white_label.code, calculator if registered else "_show", external_name=external_name or calculator
     )
+    if not registered:
+        # A warning whose calculator was renamed or removed in code after the row was saved. Saving
+        # refuses an unknown name now, so the row is put in that state directly.
+        WarningMessage.objects.filter(pk=warning.pk).update(calculator=calculator)
+        warning.refresh_from_db()
     _set_default_text(warning.message, message)
     for county_name in county_names:
         county, _ = County.objects.get_or_create(white_label=program.white_label, name=county_name)
