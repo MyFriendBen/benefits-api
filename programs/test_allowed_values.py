@@ -30,6 +30,72 @@ from programs.models import (
 )
 from screener.models import WhiteLabel
 
+# The screener's copies of these lists. benefits-calculator keeps its own because it holds the logic
+# behind each value, and its `src/Components/Results/apiAllowedValues.test.ts` pins its copies to
+# this repo's lists. This test is the mirror: a value added here but not in the screener fails here,
+# and one added there but not here fails there. Update both repos together.
+#
+# benefits-calculator: `citizenshipFilterConfig` keys (src/Components/Results/Filter/citizenshipFilterConfig.tsx)
+SCREENER_USER_SELECTED_LEGAL_STATUSES = {
+    "citizen",
+    "non_citizen",
+    "gc_5plus",
+    "gc_5less",
+    "refugee",
+    "otherWithWorkPermission",
+}
+# benefits-calculator: `calculatedCitizenshipFilters` keys (same file)
+SCREENER_CALCULATED_LEGAL_STATUSES = {
+    "gc_18plus_no5",
+    "gc_under18_no5",
+    "otherHealthCareUnder19",
+    "otherHealthCarePregnant",
+    "notPregnantOrUnder19ForOmniSalud",
+    "notPregnantOrUnder19ForEmergencyMedicaid",
+    "notPregnantForMassHealthLimited",
+    "notPregnantOrChildForMassHealthLimited",
+    "otherHealthCareUnder21",
+    "lawfulHealthCarePregnant",
+    "lawfulHealthCareUnder19",
+}
+# benefits-calculator: `allNavigatorLanguages` keys (src/Components/Results/ProgramPage/NavigatorLanguages.tsx)
+SCREENER_NAVIGATOR_LANGUAGE_CODES = {
+    "en-us",
+    "es",
+    "vi",
+    "fr",
+    "am",
+    "so",
+    "ru",
+    "ne",
+    "my",
+    "zh",
+    "ar",
+    "sw",
+    "pl",
+    "tl",
+    "ko",
+    "ur",
+    "pt-br",
+    "ht",
+    "ALL",
+}
+
+
+class ScreenerParityTests(SimpleTestCase):
+    """This repo's lists match the screener's, so a value the screener has no logic or badge for
+    can't be added here alone."""
+
+    def test_user_selected_legal_statuses_match_the_screener(self) -> None:
+        self.assertEqual({str(label) for label in USER_SELECTED_LEGAL_STATUSES}, SCREENER_USER_SELECTED_LEGAL_STATUSES)
+
+    def test_calculated_legal_statuses_match_the_screener(self) -> None:
+        calculated = set(LegalStatusLabel.values) - {str(label) for label in USER_SELECTED_LEGAL_STATUSES}
+        self.assertEqual(calculated, SCREENER_CALCULATED_LEGAL_STATUSES)
+
+    def test_navigator_language_codes_match_the_screener(self) -> None:
+        self.assertEqual(set(NavigatorLanguageCode.values), SCREENER_NAVIGATOR_LANGUAGE_CODES)
+
 
 class ListTests(SimpleTestCase):
     def test_user_selected_statuses_are_known_labels(self) -> None:

@@ -5,7 +5,9 @@ a value is adding it here (no migration). The check lives in code, not in a data
 so a bulk `.update()` or raw SQL can bypass it; nothing writes these tables that way.
 
 Each list mirrors the screener, which holds the logic that gives a value meaning. Adding a value
-takes a change in both repos, and a test on each side pins the two lists together:
+takes a change in both repos, and a test on each side pins the two lists together
+(`ScreenerParityTests` in programs/test_allowed_values.py here, and
+src/Components/Results/apiAllowedValues.test.ts there), so a value added on one side only fails CI:
 
 - legal status labels: `CitizenLabels` in
   benefits-calculator/src/Components/Results/Filter/citizenshipFilterConfig.tsx
