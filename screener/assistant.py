@@ -34,6 +34,7 @@ from rest_framework.response import Response
 from sentry_sdk import capture_message
 
 from configuration.models import Configuration
+from programs.allowed_values import NavigatorLanguageCode
 from programs.federal import filter_programs_by_name, visible_to
 from programs.framework.base import Eligibility
 from programs.models import (
@@ -157,38 +158,16 @@ MAX_ADDITIONAL_RESOURCES = 60
 MAX_NAVIGATORS_PER_PROGRAM = 8
 
 # The navigator languages the results page knows how to render, code -> the words the
-# card prints. Mirrors `allNavigatorLanguages` in the frontend
-# (Results/ProgramPage/NavigatorLanguages.tsx): the card draws a "Spanish Available"
-# badge for each code in that map and silently ignores the rest. Production rows carry
-# free-text junk alongside real codes ("Spanish", "english", "ALL"), and parity means
-# forwarding exactly what the card shows — so a code not in this map is dropped here.
+# card prints (`NavigatorLanguageCode`, which mirrors `allNavigatorLanguages` in the
+# frontend's Results/ProgramPage/NavigatorLanguages.tsx). The database only holds these
+# codes, so every language a navigator lists is one the card shows.
 #
 # The LABEL is what is forwarded, not the code: this is the one place that resolves card
-# content for the assistant, and sending codes would make ai-service keep a third copy of
+# content for the assistant, and sending codes would make ai-service keep another copy of
 # this table, where a language added here and in the frontend would silently render as
 # nothing. The label is English because the prompt is; the card's own badge is
 # translated by the frontend.
-NAVIGATOR_LANGUAGE_LABELS = {
-    "en-us": "English",
-    "es": "Spanish",
-    "vi": "Vietnamese",
-    "fr": "French",
-    "am": "Amharic",
-    "so": "Somali",
-    "ru": "Russian",
-    "ne": "Nepali",
-    "my": "Burmese",
-    "zh": "Chinese",
-    "ar": "Arabic",
-    "sw": "Swahili",
-    "pl": "Polish",
-    "tl": "Tagalog",
-    "ko": "Korean",
-    "ur": "Urdu",
-    "pt-br": "Portuguese",
-    "ht": "Haitian Creole",
-    "ALL": "all languages",
-}
+NAVIGATOR_LANGUAGE_LABELS = dict(NavigatorLanguageCode.choices)
 
 # A navigator email as the card renders it: one address, no display name, no scheme.
 # The card wraps the stored text in `mailto:` itself, so a row that already carries the

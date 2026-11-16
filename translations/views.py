@@ -19,6 +19,7 @@ from django.http import (
 from django.db.models import ProtectedError, Q
 from django.db import models
 from sentry_sdk import capture_exception
+from programs.allowed_values import warning_calculator_choices
 from programs.models import (
     County,
     Program,
@@ -579,7 +580,9 @@ class WarningMessageTranslationAdmin(TranslationAdminViews):
 
     class Form(WhiteLabelForm):
         external_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
-        calculator_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
+        calculator_name = forms.ChoiceField(
+            choices=warning_calculator_choices, widget=forms.Select(attrs={"class": "input"})
+        )
 
     Model = WarningMessage
 

@@ -1606,12 +1606,10 @@ class NavigatorsTests(TestCase):
         with mock.patch("screener.assistant.capture_message"):
             self.assertNotIn("link", self.navigators()[0])
 
-    def test_languages_are_forwarded_as_the_card_labels_and_unknown_codes_are_dropped(self):
-        """The card renders a badge only for codes in `allNavigatorLanguages`; the junk
-        production rows carry ("Spanish", "english") renders nothing there, so it
-        reaches Benji as nothing too. What is forwarded is the badge's words, not the
-        code, so ai-service needs no table of its own to drift from this one."""
-        seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("Spanish", "es", "english", "ALL"))
+    def test_languages_are_forwarded_as_the_card_labels(self):
+        """What is forwarded is the badge's words, not the code, so ai-service needs no
+        table of its own to drift from this one."""
+        seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("es", "ALL"))
 
         self.assertEqual(self.navigators()[0]["languages"], ["Spanish", "all languages"])
 

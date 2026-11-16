@@ -13,6 +13,7 @@ from django.utils.html import format_html
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
+from .allowed_values import warning_calculator_choices
 from .federal import FEDERAL_WHITE_LABEL, is_federal, linkable_with, navigators_linkable_to, visible_to_any
 from .models import (
     LegalStatus,
@@ -272,8 +273,22 @@ class ProgramAdmin(SecureAdmin):
         )
 
 
-class LegalStatusAdmin(SecureAdmin):
+class FixedListAdmin(SecureAdmin):
+    """A table whose rows come from a list in `programs/allowed_values.py`: viewable, never edited here."""
+
     always_can_view = True
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_change_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
+        return False
+
+
+class LegalStatusAdmin(FixedListAdmin):
     search_fields = ("status",)
 
 
@@ -281,8 +296,7 @@ class CountiesAdmin(SecureAdmin):
     search_fields = ("name",)
 
 
-class NavigatorLanguageAdmin(SecureAdmin):
-    always_can_view = True
+class NavigatorLanguageAdmin(FixedListAdmin):
     search_fields = ("code",)
 
 
@@ -383,7 +397,12 @@ class NavigatorAdmin(SecureAdmin):
     action_buttons.allow_tags = True
 
 
+class WarningMessageAdminForm(forms.ModelForm):
+    calculator = forms.ChoiceField(choices=warning_calculator_choices)
+
+
 class WarningMessageAdmin(SecureAdmin):
+    form = WarningMessageAdminForm
     search_fields = ("external_name",)
     list_display = ["get_str", "calculator", "action_buttons"]
     white_label_filter_horizontal = (

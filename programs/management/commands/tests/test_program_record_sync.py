@@ -23,6 +23,7 @@ from programs.models import (
     FederalPoveryLimit,
     LegalStatus,
     Navigator,
+    NavigatorLanguage,
     Program,
     ProgramCategory,
     ProgramRecordImport,
@@ -731,6 +732,23 @@ class RecordSyncTestCase(RecordSyncBase):
         output = self.import_record()
 
         self.assertIn("unknown program key 'has_calculcator'", output)
+
+    def test_an_unknown_navigator_language_fails_its_record_and_creates_no_row(self) -> None:
+        self.record["navigators"][0]["languages"] = ["en"]
+
+        output = self.import_record()
+
+        self.assertIn("navigator language 'en' isn't one the screener shows", output)
+        self.assertRegex(output, r"Failed:\s+1")
+        self.assertFalse(NavigatorLanguage.objects.filter(code="en").exists())
+
+    def test_a_known_navigator_language_imports(self) -> None:
+        self.record["navigators"][0]["languages"] = ["en-us", "es"]
+
+        self.import_record()
+
+        navigator = Navigator.objects.get(external_name=f"{PROGRAM}_nav_a")
+        self.assertEqual(sorted(navigator.languages.values_list("code", flat=True)), ["en-us", "es"])
 
     def test_two_records_owning_one_row_fail_the_run(self) -> None:
         self.write(self.record)
