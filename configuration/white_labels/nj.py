@@ -13,7 +13,7 @@ class NjConfigurationData(ConfigurationData):
 
     # Pre-launch: reachable by direct link and by any referrer that names "nj" in stateOptions,
     # but not yet offered in the public state dropdown. Flip to True at launch.
-    publicly_launched = False
+    publicly_launched = True
 
     state = {"name": "New Jersey"}
 
