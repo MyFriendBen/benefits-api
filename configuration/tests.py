@@ -231,7 +231,7 @@ class TestStateOptionsConfiguration(SimpleTestCase):
         "ma": True,
         "mo": True,
         "nc": True,
-        "nj": False,
+        "nj": True,
         "tx": True,
         "wa": True,
     }
