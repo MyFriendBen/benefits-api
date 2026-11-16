@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from django.apps import apps as global_apps
 from django.contrib.admin.sites import AdminSite
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, connection, transaction
+from django.db import connection
 from django.test import RequestFactory, SimpleTestCase, TestCase
 
 from authentication.models import User
@@ -42,9 +42,13 @@ class LegalStatusTests(TestCase):
 
         self.assertFalse(LegalStatus.objects.exists())
 
-    def test_the_database_refuses_an_unknown_label(self) -> None:
-        with self.assertRaises(IntegrityError), transaction.atomic():
+    def test_saving_an_unknown_label_is_refused(self) -> None:
+        with self.assertRaisesMessage(ValueError, "legal status 'other' isn't a label the screener knows"):
             LegalStatus.objects.create(status="other")
+        with self.assertRaises(ValidationError):
+            LegalStatus(status="other").full_clean()
+
+        self.assertFalse(LegalStatus.objects.exists())
 
     def test_user_selected_comes_from_the_list(self) -> None:
         self.assertTrue(LegalStatus(status="gc_5plus").is_user_selected)
@@ -64,9 +68,13 @@ class NavigatorLanguageTests(TestCase):
 
         self.assertFalse(NavigatorLanguage.objects.exists())
 
-    def test_the_database_refuses_an_unknown_code(self) -> None:
-        with self.assertRaises(IntegrityError), transaction.atomic():
+    def test_saving_an_unknown_code_is_refused(self) -> None:
+        with self.assertRaisesMessage(ValueError, "navigator language 'en' isn't one the screener shows"):
             NavigatorLanguage.objects.create(code="en")
+        with self.assertRaises(ValidationError):
+            NavigatorLanguage(code="en").full_clean()
+
+        self.assertFalse(NavigatorLanguage.objects.exists())
 
 
 class WarningCalculatorTests(TestCase):
@@ -146,19 +154,20 @@ class StandardizeNavigatorLanguagesMigrationTests(TestCase):
         self.migration = import_module("programs.migrations.0211_standardize_navigator_languages")
         self.schema_editor = SimpleNamespace(connection=connection)
         WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
-        # The rows this migration cleans up predate the constraint 0212 adds; drop it for this test's
-        # transaction so they can exist.
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "ALTER TABLE programs_navigatorlanguage DROP CONSTRAINT IF EXISTS navigator_language_known_code"
-            )
 
     def navigator(self, name: str, codes: list[str]) -> Navigator:
         navigator = Navigator.objects.new_navigator(white_label="co", name=name)
         navigator.external_name = name
         navigator.save()
-        navigator.languages.set([NavigatorLanguage.objects.get_or_create(code=code)[0] for code in codes])
+        navigator.languages.set([self.language(code) for code in codes])
         return navigator
+
+    @staticmethod
+    def language(code: str) -> NavigatorLanguage:
+        """A language row as it exists before this migration. Saving refuses an unknown code now, so
+        the row is inserted without it, the way rows saved before the check were."""
+        existing = NavigatorLanguage.objects.filter(code=code).first()
+        return existing or NavigatorLanguage.objects.bulk_create([NavigatorLanguage(code=code)])[0]
 
     def codes(self, navigator: Navigator) -> list[str]:
         return sorted(navigator.languages.values_list("code", flat=True))
@@ -182,7 +191,7 @@ class StandardizeNavigatorLanguagesMigrationTests(TestCase):
 
     def test_unused_unknown_codes_are_deleted(self) -> None:
         for code in ("uk", "ja", "de"):
-            NavigatorLanguage.objects.create(code=code)
+            self.language(code)
 
         self.migration.standardize(global_apps, self.schema_editor)
 

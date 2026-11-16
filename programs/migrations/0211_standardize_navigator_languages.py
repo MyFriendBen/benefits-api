@@ -1,5 +1,6 @@
 """
-Move navigator languages onto the codes the screener shows, before 0212 restricts the column to them.
+Move navigator languages onto the codes the screener shows. From here on, saving checks every code
+against `NavigatorLanguageCode`.
 
 The program page shows a label only for codes in `NavigatorLanguageCode`, so navigators listing
 `en`, `English`, `spanish` and the like showed no language. Each is moved to the code it meant,

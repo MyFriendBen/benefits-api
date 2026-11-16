@@ -11,9 +11,11 @@ from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 from programs.allowed_values import (
     USER_SELECTED_LEGAL_STATUSES,
-    LegalStatusLabel,
-    NavigatorLanguageCode,
+    check_legal_status_label,
+    check_navigator_language_code,
     unknown_warning_calculator,
+    validate_legal_status_label,
+    validate_navigator_language_code,
 )
 from programs.federal import FEDERAL_WHITE_LABEL, may_link_navigator
 from programs.util import Dependencies, UnregisteredCalculatorError
@@ -181,7 +183,7 @@ class FederalPovertyLimitValue(models.Model):
 
 
 class LegalStatus(models.Model):
-    status = models.CharField(max_length=256, choices=LegalStatusLabel.choices)
+    status = models.CharField(max_length=256, validators=[validate_legal_status_label])
     parent = models.ForeignKey(
         "self",
         related_name="children",
@@ -190,20 +192,15 @@ class LegalStatus(models.Model):
         on_delete=models.SET_NULL,
     )
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(check=Q(status__in=LegalStatusLabel.values), name="legal_status_known_label"),
-        ]
-
     @classmethod
     def for_label(cls, label: str) -> "LegalStatus":
         """The row for a known label, created if this environment doesn't have it yet."""
-        if label not in LegalStatusLabel.values:
-            raise ValueError(
-                f"legal status '{label}' isn't a label the screener knows. Use one of "
-                f"{', '.join(LegalStatusLabel.values)}."
-            )
+        check_legal_status_label(label)
         return cls.objects.filter(status=label).first() or cls.objects.create(status=label)
+
+    def save(self, *args, **kwargs) -> None:
+        check_legal_status_label(self.status)
+        super().save(*args, **kwargs)
 
     @property
     def is_user_selected(self) -> bool:
@@ -1512,14 +1509,7 @@ class UrgentNeed(models.Model):
 
 
 class NavigatorLanguage(models.Model):
-    code = models.CharField(max_length=8, unique=True, choices=NavigatorLanguageCode.choices)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=Q(code__in=NavigatorLanguageCode.values), name="navigator_language_known_code"
-            ),
-        ]
+    code = models.CharField(max_length=8, unique=True, validators=[validate_navigator_language_code])
 
     def __str__(self) -> str:
         return self.code
@@ -1527,12 +1517,12 @@ class NavigatorLanguage(models.Model):
     @classmethod
     def for_code(cls, code: str) -> "NavigatorLanguage":
         """The row for a known code, created if this environment doesn't have it yet."""
-        if code not in NavigatorLanguageCode.values:
-            raise ValueError(
-                f"navigator language '{code}' isn't one the screener shows. Use one of "
-                f"{', '.join(NavigatorLanguageCode.values)}."
-            )
+        check_navigator_language_code(code)
         return cls.objects.get_or_create(code=code)[0]
+
+    def save(self, *args, **kwargs) -> None:
+        check_navigator_language_code(self.code)
+        super().save(*args, **kwargs)
 
 
 class NavigatorManager(models.Manager):

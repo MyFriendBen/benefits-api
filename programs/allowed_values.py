@@ -1,7 +1,8 @@
 """
 The values benefits-api accepts for strings the screener interprets. Each list here is the one
-authoritative source on the API side; every write path, the database constraints and the tests
-read it.
+authoritative source on the API side: every write path and the tests check against it, and adding
+a value is adding it here (no migration). The check lives in code, not in a database constraint,
+so a bulk `.update()` or raw SQL can bypass it; nothing writes these tables that way.
 
 Each list mirrors the screener, which holds the logic that gives a value meaning. Adding a value
 takes a change in both repos, and a test on each side pins the two lists together:
@@ -14,6 +15,7 @@ takes a change in both repos, and a test on each side pins the two lists togethe
 Warning calculators aren't listed here: the registry in `programs.warnings` is their list.
 """
 
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -89,6 +91,40 @@ class NavigatorLanguageCode(models.TextChoices):
     PORTUGUESE = "pt-br", "Portuguese"
     HAITIAN_CREOLE = "ht", "Haitian Creole"
     ALL = "ALL", "all languages"
+
+
+def check_legal_status_label(label: str) -> None:
+    """Raise `ValueError` unless `label` is a known legal status label."""
+    if label not in LegalStatusLabel.values:
+        raise ValueError(
+            f"legal status '{label}' isn't a label the screener knows. Use one of "
+            f"{', '.join(LegalStatusLabel.values)}."
+        )
+
+
+def check_navigator_language_code(code: str) -> None:
+    """Raise `ValueError` unless `code` is a known navigator language code."""
+    if code not in NavigatorLanguageCode.values:
+        raise ValueError(
+            f"navigator language '{code}' isn't one the screener shows. Use one of "
+            f"{', '.join(NavigatorLanguageCode.values)}."
+        )
+
+
+def validate_legal_status_label(value: str) -> None:
+    """Field validator for forms and `full_clean`."""
+    try:
+        check_legal_status_label(value)
+    except ValueError as e:
+        raise ValidationError(str(e)) from None
+
+
+def validate_navigator_language_code(value: str) -> None:
+    """Field validator for forms and `full_clean`."""
+    try:
+        check_navigator_language_code(value)
+    except ValueError as e:
+        raise ValidationError(str(e)) from None
 
 
 def unknown_warning_calculator(name: str) -> bool:
