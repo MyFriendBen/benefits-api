@@ -5,6 +5,7 @@ values (`programs/allowed_values.py`, and the warning registry). Nothing outside
 
 from importlib import import_module
 from types import SimpleNamespace
+from typing import Any
 
 from django.apps import apps as global_apps
 from django.contrib.admin.sites import AdminSite
@@ -13,13 +14,20 @@ from django.db import connection
 from django.test import RequestFactory, SimpleTestCase, TestCase
 
 from authentication.models import User
-from programs.admin import LegalStatusAdmin, NavigatorLanguageAdmin, WarningMessageAdminForm
+from programs.admin import LegalStatusAdmin, NavigatorLanguageAdmin, WarningMessageAdmin, WarningMessageAdminForm
 from programs.allowed_values import (
     USER_SELECTED_LEGAL_STATUSES,
     LegalStatusLabel,
     NavigatorLanguageCode,
 )
-from programs.models import LegalStatus, Navigator, NavigatorLanguage, WarningMessage, WarningMessageDataController
+from programs.models import (
+    LegalStatus,
+    Navigator,
+    NavigatorLanguage,
+    Program,
+    WarningMessage,
+    WarningMessageDataController,
+)
 from screener.models import WhiteLabel
 
 
@@ -134,6 +142,43 @@ class WarningCalculatorTests(TestCase):
         self.assertNotIn("cesn", choices)
 
 
+class WarningAdminFormTests(TestCase):
+    """A warning whose calculator was renamed away keeps that name in the form until someone picks
+    a registered one, instead of the dropdown silently submitting its first option."""
+
+    def setUp(self) -> None:
+        self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        self.request = RequestFactory().get("/")
+        self.request.user = User.objects.create_superuser(email_or_cell="admin@example.org", password="x")
+        self.warning = WarningMessage.objects.new_warning(white_label="co", calculator="_show", external_name="w")
+        WarningMessage.objects.filter(pk=self.warning.pk).update(calculator="co_old_name")
+        self.warning.refresh_from_db()
+        self.admin = WarningMessageAdmin(WarningMessage, AdminSite())
+
+    def form(self, calculator: str) -> Any:
+        Form = self.admin.get_form(self.request, self.warning)
+        data = {"white_label": self.white_label.pk, "external_name": "w", "calculator": calculator}
+        return Form(data=data, instance=self.warning)
+
+    def test_the_stale_calculator_is_the_current_choice(self) -> None:
+        Form = self.admin.get_form(self.request, self.warning)
+        field = Form(instance=self.warning).fields["calculator"]
+
+        self.assertEqual(field.choices[0], ("co_old_name", "co_old_name (not registered: choose another)"))
+
+    def test_saving_it_unchanged_asks_for_a_registered_calculator(self) -> None:
+        form = self.form("co_old_name")
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("'co_old_name' isn't a registered warning calculator", form.errors["calculator"][0])
+
+    def test_choosing_a_registered_calculator_saves(self) -> None:
+        form = self.form("_tax_unit")
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.save().calculator, "_tax_unit")
+
+
 class FixedListAdminTests(TestCase):
     def test_superusers_can_view_but_not_add_change_or_delete(self) -> None:
         request = RequestFactory().get("/")
@@ -145,6 +190,29 @@ class FixedListAdminTests(TestCase):
                 self.assertFalse(admin.has_add_permission(request))
                 self.assertFalse(admin.has_change_permission(request))
                 self.assertFalse(admin.has_delete_permission(request))
+
+
+class RemoveUnknownLegalStatusesMigrationTests(TestCase):
+    """Covers migration 0213's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0213_remove_unknown_legal_statuses")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        # Rows as they existed before the check: inserted without `save()`, which refuses them now.
+        LegalStatus.objects.bulk_create([LegalStatus(status="other"), LegalStatus(status="citizen")])
+
+    def test_an_unused_unknown_label_is_deleted_and_known_ones_stay(self) -> None:
+        self.migration.remove_unknown(global_apps, self.schema_editor)
+
+        self.assertEqual(list(LegalStatus.objects.values_list("status", flat=True)), ["citizen"])
+
+    def test_an_unknown_label_in_use_stops_the_migration(self) -> None:
+        program = Program.objects.new_program(white_label="co", name_abbreviated="co_test")
+        program.legal_status_required.add(LegalStatus.objects.get(status="other"))
+
+        with self.assertRaisesMessage(RuntimeError, "'other' isn't known and is used by: program co_test"):
+            self.migration.remove_unknown(global_apps, self.schema_editor)
 
 
 class StandardizeNavigatorLanguagesMigrationTests(TestCase):

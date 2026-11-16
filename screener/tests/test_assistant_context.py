@@ -31,7 +31,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
-from programs.models import FederalPoveryLimit, LegalStatus, Program, Referrer, TranslationOverride
+from programs.models import FederalPoveryLimit, LegalStatus, NavigatorLanguage, Program, Referrer, TranslationOverride
 from configuration.models import Configuration
 from screener.assistant import (
     ACUTE_OPTION_FIELDS,
@@ -1612,6 +1612,16 @@ class NavigatorsTests(TestCase):
         seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("es", "ALL"))
 
         self.assertEqual(self.navigators()[0]["languages"], ["Spanish", "all languages"])
+
+    def test_an_unknown_language_code_is_dropped_rather_than_raising(self):
+        """Saving refuses an unknown code, but a bulk update or raw SQL bypasses that check.
+        A stray code renders nothing on the card, so it reaches Benji as nothing too, and
+        the context is still built."""
+        navigator = seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("es",))
+        stray = NavigatorLanguage.objects.bulk_create([NavigatorLanguage(code="english")])[0]
+        navigator.languages.add(stray)
+
+        self.assertEqual(self.navigators()[0]["languages"], ["Spanish"])
 
     def test_over_long_description_is_clipped_and_reported(self):
         seed_navigator(self.programs["snap"], "help", name="Help", description="x" * (MAX_PROMPT_TEXT_LEN + 50))

@@ -13,7 +13,7 @@ from django.utils.html import format_html
 from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
-from .allowed_values import warning_calculator_choices
+from .allowed_values import unknown_warning_calculator, warning_calculator_choices
 from .federal import FEDERAL_WHITE_LABEL, is_federal, linkable_with, navigators_linkable_to, visible_to_any
 from .models import (
     LegalStatus,
@@ -399,6 +399,18 @@ class NavigatorAdmin(SecureAdmin):
 
 class WarningMessageAdminForm(forms.ModelForm):
     calculator = forms.ChoiceField(choices=warning_calculator_choices)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # A warning saved before its calculator was renamed or removed keeps that name as its
+        # current choice, marked, so the dropdown can't silently fall back to the first option.
+        # Saving it unchanged fails the model's check, so someone has to pick a registered one.
+        current = self.instance.calculator if self.instance.pk else None
+        if current and unknown_warning_calculator(current):
+            self.fields["calculator"].choices = [
+                (current, f"{current} (not registered: choose another)"),
+                *warning_calculator_choices(),
+            ]
 
 
 class WarningMessageAdmin(SecureAdmin):
