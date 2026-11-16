@@ -16,7 +16,6 @@ from authentication.admin import SecureAdmin
 from .allowed_values import unknown_warning_calculator, warning_calculator_choices
 from .federal import FEDERAL_WHITE_LABEL, is_federal, linkable_with, navigators_linkable_to, visible_to_any
 from .models import (
-    LegalStatus,
     Program,
     ProgramCategory,
     ProgramNavigator,
@@ -33,7 +32,6 @@ from .models import (
     WebHookFunction,
     UrgentNeedCategory,
     County,
-    NavigatorLanguage,
     Document,
     TranslationOverride,
     ExpenseType,
@@ -273,31 +271,8 @@ class ProgramAdmin(SecureAdmin):
         )
 
 
-class FixedListAdmin(SecureAdmin):
-    """A table whose rows come from a list in `programs/allowed_values.py`: viewable, never edited here."""
-
-    always_can_view = True
-
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        return False
-
-    def has_change_permission(self, request: HttpRequest, obj: Any = None) -> bool:
-        return False
-
-    def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
-        return False
-
-
-class LegalStatusAdmin(FixedListAdmin):
-    search_fields = ("status",)
-
-
 class CountiesAdmin(SecureAdmin):
     search_fields = ("name",)
-
-
-class NavigatorLanguageAdmin(FixedListAdmin):
-    search_fields = ("code",)
 
 
 class NavigatorAdmin(SecureAdmin):
@@ -879,10 +854,8 @@ class FormOptionAdmin(SecureAdmin):
     autocomplete_fields = ["icon"]
 
 
-admin.site.register(LegalStatus, LegalStatusAdmin)
 admin.site.register(Program, ProgramAdmin)
 admin.site.register(County, CountiesAdmin)
-admin.site.register(NavigatorLanguage, NavigatorLanguageAdmin)
 admin.site.register(Navigator, NavigatorAdmin)
 admin.site.register(WarningMessage, WarningMessageAdmin)
 admin.site.register(UrgentNeed, UrgentNeedAdmin)

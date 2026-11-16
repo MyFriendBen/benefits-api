@@ -8,13 +8,14 @@ from types import SimpleNamespace
 from typing import Any
 
 from django.apps import apps as global_apps
+from django.contrib.admin import site as admin_site
 from django.contrib.admin.sites import AdminSite
 from django.core.exceptions import ValidationError
 from django.db import connection
 from django.test import RequestFactory, SimpleTestCase, TestCase
 
 from authentication.models import User
-from programs.admin import LegalStatusAdmin, NavigatorLanguageAdmin, WarningMessageAdmin, WarningMessageAdminForm
+from programs.admin import WarningMessageAdmin, WarningMessageAdminForm
 from programs.allowed_values import (
     USER_SELECTED_LEGAL_STATUSES,
     LegalStatusLabel,
@@ -245,17 +246,33 @@ class WarningAdminFormTests(TestCase):
         self.assertEqual(form.save().calculator, "_tax_unit")
 
 
-class FixedListAdminTests(TestCase):
-    def test_superusers_can_view_but_not_add_change_or_delete(self) -> None:
-        request = RequestFactory().get("/")
-        request.user = User.objects.create_superuser(email_or_cell="admin@example.org", password="x")
-        for admin_class, model in ((LegalStatusAdmin, LegalStatus), (NavigatorLanguageAdmin, NavigatorLanguage)):
-            admin = admin_class(model, AdminSite())
-            with self.subTest(model=model.__name__):
-                self.assertTrue(admin.has_view_permission(request))
-                self.assertFalse(admin.has_add_permission(request))
-                self.assertFalse(admin.has_change_permission(request))
-                self.assertFalse(admin.has_delete_permission(request))
+class AdminPickerTests(TestCase):
+    """Legal statuses and navigator languages have no admin pages of their own: the pickers on a
+    program and a navigator show the same lists, and the lists change only in code."""
+
+    def setUp(self) -> None:
+        self.request = RequestFactory().get("/")
+        self.request.user = User.objects.create_superuser(email_or_cell="admin@example.org", password="x")
+
+    def test_neither_list_has_an_admin_page(self) -> None:
+        self.assertFalse(admin_site.is_registered(LegalStatus))
+        self.assertFalse(admin_site.is_registered(NavigatorLanguage))
+
+    def test_a_programs_legal_status_picker_offers_the_stored_statuses(self) -> None:
+        LegalStatus.for_label("citizen")
+        LegalStatus.for_label("refugee")
+        Form = admin_site._registry[Program].get_form(self.request)
+
+        choices = Form.base_fields["legal_status_required"].queryset
+        self.assertEqual(sorted(choices.values_list("status", flat=True)), ["citizen", "refugee"])
+
+    def test_a_navigators_language_picker_offers_the_stored_codes(self) -> None:
+        NavigatorLanguage.for_code("es")
+        NavigatorLanguage.for_code("en-us")
+        Form = admin_site._registry[Navigator].get_form(self.request)
+
+        choices = Form.base_fields["languages"].queryset
+        self.assertEqual(sorted(choices.values_list("code", flat=True)), ["en-us", "es"])
 
 
 class RemoveUnknownLegalStatusesMigrationTests(TestCase):
