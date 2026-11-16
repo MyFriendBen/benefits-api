@@ -2019,7 +2019,9 @@ class WarningMessageDataController(ModelDataController["WarningMessage"]):
 
     @classmethod
     def create_instance(cls, external_name: str, Model: type["WarningMessage"]) -> "WarningMessage":
-        return Model.objects.new_warning("_default", "__temp__", external_name)
+        # A registered placeholder: `from_model_data` sets the snapshot's calculator next, and saving
+        # checks that one.
+        return Model.objects.new_warning("_default", "_show", external_name)
 
 
 class WarningMessage(models.Model):

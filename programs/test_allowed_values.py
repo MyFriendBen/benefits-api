@@ -20,7 +20,7 @@ from programs.allowed_values import (
     LegalStatusLabel,
     NavigatorLanguageCode,
 )
-from programs.models import LegalStatus, Navigator, NavigatorLanguage, WarningMessage
+from programs.models import LegalStatus, Navigator, NavigatorLanguage, WarningMessage, WarningMessageDataController
 from screener.models import WhiteLabel
 
 
@@ -101,6 +101,32 @@ class WarningCalculatorTests(TestCase):
             warning.save()
         with self.assertRaises(ValidationError):
             warning.clean()
+
+    def snapshot_data(self, calculator: str) -> dict:
+        return {
+            "calculator": calculator,
+            "legal_status_required": [{"status": "refugee"}],
+            "counties": [],
+            "programs": [],
+            "white_label": "co",
+        }
+
+    def test_a_snapshot_warning_absent_locally_is_created_with_its_calculator(self) -> None:
+        WhiteLabel.objects.create(name="Default", code="_default")
+
+        warning = WarningMessageDataController.initialize_instance("from_snapshot", WarningMessage)
+        WarningMessageDataController(warning).from_model_data(self.snapshot_data("_tax_unit"))
+
+        warning.refresh_from_db()
+        self.assertEqual((warning.calculator, warning.white_label.code), ("_tax_unit", "co"))
+        self.assertEqual(list(warning.legal_statuses.values_list("status", flat=True)), ["refugee"])
+
+    def test_a_snapshot_warning_with_an_unregistered_calculator_is_refused(self) -> None:
+        WhiteLabel.objects.create(name="Default", code="_default")
+        warning = WarningMessageDataController.initialize_instance("from_snapshot", WarningMessage)
+
+        with self.assertRaisesMessage(ValueError, "'renamed_away' isn't a registered warning calculator"):
+            WarningMessageDataController(warning).from_model_data(self.snapshot_data("renamed_away"))
 
     def test_the_admin_form_offers_only_registered_calculators(self) -> None:
         choices = [value for value, _ in WarningMessageAdminForm.base_fields["calculator"].choices]
