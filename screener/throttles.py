@@ -9,16 +9,24 @@ Rates live in `DEFAULT_THROTTLE_RATES` (benefits/settings.py), keyed by `scope`.
 """
 
 import hashlib
-import hmac
+from collections.abc import Mapping
+from typing import Any, Optional
 
-from django.conf import settings
+from django.utils.crypto import salted_hmac
 from rest_framework import throttling
+from rest_framework.request import Request
+from rest_framework.views import APIView
+
+from integrations.services.communications.benji_sms_hash import InvalidPhoneNumber
+from integrations.services.communications.benji_sms_hash import normalize as normalize_phone
+
+PHONE_KEY_SALT = "screener.throttles.message_phone"
 
 
 class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
     """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
 
-    def get_cache_key(self, request, view):
+    def get_cache_key(self, request: Request, view: APIView) -> Optional[str]:
         ident = self.get_ident(request)
         if ident is None:
             return None
@@ -89,8 +97,10 @@ class MessageIPRateThrottle(HashedIPAnonRateThrottle):
     applies to authenticated requests too: `HashedIPAnonRateThrottle` replaces
     `AnonRateThrottle.get_cache_key`, which is what would exempt them.
 
-    Budgeted for a navigator office or library sending results for many households
-    from one address, not for one household.
+    Budgeted far above any single household, because one public IP can be many:
+    a navigator office or library sending for the people it serves, or a mobile
+    carrier's NAT putting unrelated phones behind one address. The daily ceiling is
+    what bounds a script.
     """
 
     scope = "message_ip"
@@ -99,11 +109,31 @@ class MessageIPRateThrottle(HashedIPAnonRateThrottle):
 class MessageIPDailyRateThrottle(HashedIPAnonRateThrottle):
     """The daily ceiling behind `MessageIPRateThrottle`.
 
-    The hourly rate alone would allow a script on one address roughly 24x its
-    budget per day; this caps the total.
+    The hourly rate alone would let a script on one address send 24x that rate per
+    day; this caps the total.
     """
 
     scope = "message_ip_day"
+
+
+def save_results_phone(data: Any) -> Optional[str]:
+    """The E.164 number a Save My Results request asks to text, or None for no text.
+
+    The one place the request's `phone` becomes a number, so the phone throttles key
+    on exactly the number `MessageViewSet` sends to. Parsing reuses the Benji SMS
+    normalizer, which reads numbers without a `+` as US numbers: "+1 (303) 555-0100",
+    "3035550100" and "+13035550100" are one number to the throttle and to Twilio.
+
+    Raises `InvalidPhoneNumber` for a `phone` that is present but not a phone number,
+    including a non-string such as a JSON number; the view refuses those with a 400
+    rather than handing them to Twilio.
+    """
+    phone = data.get("phone") if isinstance(data, Mapping) else None
+    if phone is None:
+        return None
+    if not isinstance(phone, str):
+        raise InvalidPhoneNumber()
+    return normalize_phone(phone)
 
 
 class MessagePhoneRateThrottle(throttling.SimpleRateThrottle):
@@ -112,35 +142,26 @@ class MessagePhoneRateThrottle(throttling.SimpleRateThrottle):
     Fixing a mistyped number sends to a different number, so a household correcting
     a typo never spends this budget twice. What it bounds is repeated texts to the
     same number, from any IP. Requests without a phone (email-only sends) are not
-    counted.
+    counted, and neither are invalid ones, which the view refuses without sending.
 
-    The key is an HMAC of the number under SECRET_KEY rather than a plain hash: a
-    10-digit number is small enough to brute-force from an unkeyed sha256.
+    The key is a keyed HMAC of the E.164 number rather than a plain hash: a 10-digit
+    number is small enough to brute-force from an unkeyed sha256. It uses Django's
+    `salted_hmac` (SECRET_KEY) rather than Benji's `phone_hash`, whose
+    BENJI_SMS_HASH_KEY may be unset where Save My Results already runs; the cache
+    entry expires within a day, so it never needs to match a stored hash.
     """
 
     scope = "message_phone"
 
-    def get_cache_key(self, request, view):
-        phone = request.data.get("phone") if hasattr(request.data, "get") else None
-        if not isinstance(phone, str):
+    def get_cache_key(self, request: Request, view: APIView) -> Optional[str]:
+        try:
+            phone = save_results_phone(request.data)
+        except InvalidPhoneNumber:
             return None
-        ident = self.normalize_phone(phone)
-        if not ident:
+        if phone is None:
             return None
-        hashed = hmac.new(settings.SECRET_KEY.encode(), ident.encode(), hashlib.sha256).hexdigest()
+        hashed = salted_hmac(PHONE_KEY_SALT, phone, algorithm="sha256").hexdigest()
         return self.cache_format % {"scope": self.scope, "ident": hashed}
-
-    @staticmethod
-    def normalize_phone(phone: str) -> str:
-        """One key per US number however it was written.
-
-        The popup sends `+1` and ten digits, but the endpoint is reachable without
-        the popup, so "+1 (303) 555-0100", "3035550100" and "+13035550100" must not
-        be three separate budgets. Keeping the last ten digits does that; a
-        collision between two non-US inputs only makes the throttle stricter.
-        """
-        digits = "".join(c for c in phone if c.isdigit())
-        return digits[-10:] if digits else phone.strip()
 
 
 class MessagePhoneDailyRateThrottle(MessagePhoneRateThrottle):

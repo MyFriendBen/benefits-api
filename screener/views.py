@@ -25,7 +25,8 @@ from screener.models import (
     ProgramEligibilitySnapshot,
 )
 from rest_framework import viewsets, views, status, mixins, throttling
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.parsers import JSONParser
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -43,12 +44,20 @@ from screener.serializers import (
     RemImpactSerializer,
     CurrentBenefitToggleSerializer,
 )
+
+# Throttles live in screener/throttles.py so `assistant.py` can use them without
+# importing this module.
 from screener.throttles import (
     MessageIPDailyRateThrottle,
     MessageIPRateThrottle,
     MessagePhoneDailyRateThrottle,
     MessagePhoneRateThrottle,
+    NPSRateThrottle,
+    PlacesRateThrottle,
+    RemRateThrottle,
+    save_results_phone,
 )
+from integrations.services.communications.benji_sms_hash import InvalidPhoneNumber
 from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UnregisteredCalculatorError, UpstreamAbsentError
@@ -296,6 +305,18 @@ class EligibilityTranslationView(views.APIView):
         return Response(results)
 
 
+class AnyContentTypeJSONParser(JSONParser):
+    """Reads the body as JSON whatever Content-Type the caller declared.
+
+    The message endpoint parsed `request.body` as JSON regardless of Content-Type
+    before it was throttled. The phone throttles need the parsed body too, so the
+    endpoint now goes through DRF's parsing, and this keeps it accepting the same
+    requests it did.
+    """
+
+    media_type = "*/*"
+
+
 class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     API endpoint that logs messages sent.
@@ -308,6 +329,7 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Message.objects.all().order_by("-sent")
     serializer_class = MessageSerializer
     permission_classes = [permissions.DjangoModelPermissions]
+    parser_classes = [AnyContentTypeJSONParser]
     throttle_classes = [
         MessageIPRateThrottle,
         MessageIPDailyRateThrottle,
@@ -315,17 +337,23 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         MessagePhoneDailyRateThrottle,
     ]
 
-    def create(self, request):
-        # `request.data`, not `request.body`: the phone throttles parse the body
-        # first, and reading the raw body after DRF has parsed it raises.
+    def create(self, request: Request) -> Response:
+        # `request.data`, the same parse the phone throttles read, so the number a
+        # throttle counts is the number sent to.
         body = request.data
+        if not isinstance(body, Mapping):
+            raise ValidationError("Expected a JSON object.")
+        try:
+            phone = save_results_phone(body)
+        except InvalidPhoneNumber:
+            raise ValidationError({"phone": "Not a phone number."}) from None
         screen = Screen.objects.get(uuid=body["screen"])
 
         message = MessageUser(screen, self._message_language(body, screen))
         if "email" in body:
             message.email(body["email"], send_tests=True)
-        if "phone" in body:
-            message.text(body["phone"], send_tests=True)
+        if phone is not None:
+            message.text(phone, send_tests=True)
 
         return Response({}, status=status.HTTP_201_CREATED)
 
@@ -954,16 +982,6 @@ def urgent_need_results(screen: Screen, data):
         }
         for need in eligible
     ]
-
-
-# Throttles now live in screener/throttles.py so `assistant.py` can use the base class
-# without importing this module. Re-exported here for any existing references.
-from .throttles import (  # noqa: E402  (kept next to its former definition site)
-    HashedIPAnonRateThrottle,
-    NPSRateThrottle,
-    PlacesRateThrottle,
-    RemRateThrottle,
-)
 
 
 class NPSScoreView(views.APIView):

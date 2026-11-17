@@ -85,6 +85,13 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "EXCEPTION_HANDLER": "benefits.views.drf_exception_handler",
+    # The one proxy in front of the app is Heroku's router (api.myfriendben.org is a
+    # herokudns CNAME, no CDN), which appends the connecting IP to X-Forwarded-For.
+    # With this unset, throttles keyed on the whole header, so a client sending its
+    # own X-Forwarded-For got a fresh budget per request. 1 means "the last entry",
+    # the one the router wrote. For a client that sends no such header, this is the
+    # same IP as before. Revisit if a CDN or another proxy is put in front.
+    "NUM_PROXIES": 1,
     "DEFAULT_THROTTLE_RATES": {
         "nps": "3/hour",  # Limit NPS submissions to prevent abuse
         "rem": "30/hour",  # Limit REM impact proxy requests to protect the upstream API key
@@ -101,12 +108,13 @@ REST_FRAMEWORK = {
         # spends multiples of its message count here.
         "assistant_rating": "240/hour",
         # Save My Results (MessageViewSet) makes MyFriendBen send an email or a text
-        # to any address the caller supplies. Per IP: generous enough for a navigator
-        # office sending for many households from one address, tight enough that a
-        # script cannot make MyFriendBen text thousands of numbers. Per phone: a typo
-        # fix goes to a different number, so these only bound repeats to one number.
-        "message_ip": "20/hour",
-        "message_ip_day": "100/day",
+        # to any address the caller supplies. Per IP: far above any one household,
+        # since one public IP can be a navigator office, a library or a mobile
+        # carrier's NAT; the daily ceiling is what bounds a script on one address.
+        # Per phone: a typo fix goes to a different number, so these only bound
+        # repeats to one number.
+        "message_ip": "100/hour",
+        "message_ip_day": "500/day",
         "message_phone": "5/hour",
         "message_phone_day": "10/day",
     },
