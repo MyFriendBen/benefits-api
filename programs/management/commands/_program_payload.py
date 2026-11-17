@@ -363,5 +363,9 @@ def _is_text_list(value: Any) -> bool:
 
 
 def _is_url(value: str) -> bool:
-    parsed = urlparse(value)
+    try:
+        parsed = urlparse(value)
+    except ValueError:
+        # A malformed link (an unclosed IPv6 bracket, say) is a problem to report, not a crash.
+        return False
     return parsed.scheme in ("http", "https") and bool(parsed.netloc)

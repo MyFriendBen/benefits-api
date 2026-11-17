@@ -100,6 +100,16 @@ class PayloadValidationTests(SimpleTestCase):
             f"navigators[0] ({NAV}): assistance_link '[Help](https://example.org/help)' isn't an http(s) URL", problems
         )
 
+    def test_a_link_urlparse_cant_read_is_reported_with_the_others(self) -> None:
+        payload = example_payload()
+        payload["program"]["learn_more_link"] = "http://[invalid"
+        payload["program"]["has_calculator"] = "yes"
+
+        problems = self.problems(payload)
+
+        self.assertIn("program.learn_more_link 'http://[invalid' isn't an http(s) URL", problems)
+        self.assertIn("program.has_calculator must be true or false", problems)
+
     def test_an_empty_link_is_allowed(self) -> None:
         payload = example_payload()
         payload["program"]["learn_more_link"] = ""
