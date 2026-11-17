@@ -10,13 +10,18 @@ Rates live in `DEFAULT_THROTTLE_RATES` (benefits/settings.py), keyed by `scope`.
 
 import hashlib
 import logging
+import time
 from collections.abc import Mapping
 from typing import Any, Optional
 
+from django.core.cache import cache as default_cache
 from django.utils.crypto import salted_hmac
 from rest_framework import throttling
 from rest_framework.request import Request
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
+
+from benefits.throttle_config import parse_rate
 
 from integrations.services.communications.benji_sms_hash import InvalidPhoneNumber
 from integrations.services.communications.benji_sms_hash import normalize as normalize_phone
@@ -112,34 +117,68 @@ def save_results_phone(data: Any) -> Optional[str]:
     return normalize_phone(phone)
 
 
-class RateWindow(throttling.SimpleRateThrottle):
-    """One scope's history for one key: is it full, and record one more.
+class RateWindow:
+    """One limit (a scope's rate) for one key, counted atomically in the cache.
 
-    DRF's `SimpleRateThrottle.allow_request` checks and records in one step, and a
-    view runs every throttle on every request. Stacking an hourly and a daily
-    throttle therefore records an attempt against the daily limit even when the
-    hourly one rejects it. This splits the two steps so a caller can look at several
-    windows and only then decide whether to record.
+    A sliding-window counter: one integer per fixed window (an hour, a day), and a
+    request's count is this window's plus the previous window's, weighted by how
+    much of it still overlaps the last `duration` seconds. That is DRF's sliding
+    window to within a request or two, without DRF's timestamp list.
+
+    The list is why this isn't a `SimpleRateThrottle`. DRF reads the list, appends
+    and writes it back, so two workers recording against one key at once each write
+    a list holding only their own entry, and one record is lost. Here every change
+    is a single `incr` on the cache (Redis INCRBY), so concurrent requests cannot
+    overwrite each other: `reserve` takes a slot and sees the count including
+    everyone else's, and `release` gives one back.
+
+    If the cache is unreachable (it is configured to ignore Redis errors), `reserve`
+    allows the request: the throttle fails open rather than blocking everyone.
     """
+
+    cache = default_cache
+    timer = staticmethod(time.time)
+    THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES
 
     def __init__(self, scope: str, ident: str) -> None:
         self.scope = scope
-        super().__init__()
-        self.key = self.cache_format % {"scope": scope, "ident": ident}
-        self.now = self.timer()
-        self.history = self.cache.get(self.key, [])
-        while self.history and self.history[-1] <= self.now - self.duration:
-            self.history.pop()
+        self.limit, self.duration = parse_rate(self.THROTTLE_RATES[scope])
+        now = self.timer()
+        window = int(now // self.duration)
+        self.key = f"throttle_{scope}_{ident}_{window}"
+        self.previous_key = f"throttle_{scope}_{ident}_{window - 1}"
+        self.elapsed = now - window * self.duration
 
-    def get_cache_key(self, request: Request, view: APIView) -> Optional[str]:
-        return self.key
+    def reserve(self) -> bool:
+        """Take a slot if the limit allows it; leave the count unchanged if not."""
+        count = self._add(1)
+        if count is None:
+            return True
+        if count + self._previous_weight() > self.limit:
+            self._add(-1)
+            return False
+        return True
 
-    @property
-    def is_full(self) -> bool:
-        return len(self.history) >= self.num_requests
+    def release(self) -> None:
+        """Give back a slot taken by `reserve`."""
+        self._add(-1)
 
-    def record(self) -> None:
-        self.throttle_success()
+    def wait(self) -> float:
+        """Seconds until this window closes: when a blocked request can next pass."""
+        return self.duration - self.elapsed
+
+    def _previous_weight(self) -> float:
+        previous = self.cache.get(self.previous_key) or 0
+        return previous * (self.duration - self.elapsed) / self.duration
+
+    def _add(self, delta: int) -> Optional[int]:
+        # Kept through the next window too, where it is the previous window.
+        self.cache.add(self.key, 0, timeout=2 * self.duration)
+        try:
+            return self.cache.incr(self.key, delta)
+        except ValueError:
+            # The key expired between add and incr; count this request as allowed.
+            return None
 
 
 class SaveResultsRateThrottle(throttling.BaseThrottle):
@@ -149,7 +188,7 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
     the frontend's shared API token, which ships in the JS bundle. So being
     authenticated says nothing about who is calling, and every request is throttled.
 
-    Four windows, with rates from `DEFAULT_THROTTLE_RATES`:
+    Four limits, with rates from `DEFAULT_THROTTLE_RATES`:
 
     - `message_ip`, `message_ip_day`: requests from one client IP. Budgeted far above
       any single household, because one public IP can be many: a navigator office
@@ -157,64 +196,72 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
     - `message_phone`, `message_phone_day`: texts sent to one number, from any IP.
       Fixing a mistyped number sends to a different number, so a household
       correcting a typo never spends this budget twice. Requests without a phone
-      (email-only sends) have no phone windows.
+      (email-only sends) have no phone limits.
 
-    Two rules keep the limits from punishing the people they protect:
+    Every limit takes its slot before the request goes on (see `RateWindow`), so
+    concurrent requests are counted exactly and can't exceed a limit. Two rules keep
+    the limits from punishing the people they protect:
 
-    1. **A rejected request costs nothing.** All windows are checked before any is
-       recorded. Otherwise retrying while blocked for the hour would fill the day,
-       and "please try again" would turn a one-hour block into a 24-hour one.
-    2. **A number's budget counts texts sent, not attempts.** `allow_request` only
-       checks the phone windows; the view calls `record_text` after Twilio accepts
-       the message. A request for an unknown screen, or a send that fails, leaves
-       the number's budget alone, so nobody can use up a number's day without
-       texting it and an outage does not lock people out.
+    1. **A rejected request costs nothing.** If any limit refuses the request, every
+       slot it took is given back. Otherwise retrying while blocked for the hour
+       would fill the day, and "please try again" would turn a one-hour block into
+       a 24-hour one.
+    2. **A number's budget counts texts sent, not attempts.** The phone slots are
+       held while the request runs and given back by `release_text` unless Twilio
+       accepted the text. A request for an unknown screen, or a send Twilio
+       refuses, leaves the number's budget alone, so nobody can use up a number's
+       day without texting it and an outage does not lock people out.
 
-    The IP windows do count attempts, failed ones included: that is what bounds a
-    script. Because a text is recorded after it is sent, simultaneous requests for
-    one number can each pass the check; the overshoot is at most the number of
-    requests in flight at once.
+    The IP limits do count attempts, failed ones included: that is what bounds a
+    script.
 
     Keys: the IP is hashed as the other throttles hash it. The phone is a keyed HMAC
     of the E.164 number rather than a plain hash, because a 10-digit number is small
     enough to brute-force from an unkeyed sha256. It uses Django's `salted_hmac`
     (SECRET_KEY) rather than Benji's `phone_hash`, whose BENJI_SMS_HASH_KEY may be
-    unset where Save My Results already runs; the cache entry expires within a day,
-    so it never needs to match a stored hash.
+    unset where Save My Results already runs; the counters expire within two days,
+    so they never need to match a stored hash.
     """
 
     IP_SCOPES = ("message_ip", "message_ip_day")
     PHONE_SCOPES = ("message_phone", "message_phone_day")
+    # Where `allow_request` leaves the phone slots it took, for `release_text`.
+    PHONE_SLOTS = "save_results_phone_slots"
 
     def __init__(self) -> None:
         self.blocked: list[RateWindow] = []
 
     def allow_request(self, request: Request, view: APIView) -> bool:
-        ip_ident = self.ip_ident(request)
-        phone_ident = self.phone_ident(request)
-        ip_windows = self._windows(self.IP_SCOPES, ip_ident)
-        phone_windows = self._windows(self.PHONE_SCOPES, phone_ident)
+        ip_windows = self._windows(self.IP_SCOPES, self.ip_ident(request))
+        phone_windows = self._windows(self.PHONE_SCOPES, self.phone_ident(request))
 
-        self.blocked = [window for window in ip_windows + phone_windows if window.is_full]
+        reserved = []
+        for window in ip_windows + phone_windows:
+            if window.reserve():
+                reserved.append(window)
+            else:
+                self.blocked.append(window)
+
         if self.blocked:
+            for window in reserved:
+                window.release()
             # Which limit fired, and nothing about who hit it: the way to tell real
             # households being blocked from a script, and to tune the rates.
             logger.warning("Save My Results throttled by %s", ", ".join(window.scope for window in self.blocked))
             return False
 
-        for window in ip_windows:
-            window.record()
+        setattr(request, self.PHONE_SLOTS, phone_windows)
         return True
 
     def wait(self) -> Optional[float]:
-        waits = [wait for wait in (window.wait() for window in self.blocked) if wait is not None]
-        return max(waits, default=None)
+        return max((window.wait() for window in self.blocked), default=None)
 
     @classmethod
-    def record_text(cls, phone: str) -> None:
-        """Count one text sent to `phone`, the E.164 number from `save_results_phone`."""
-        for window in cls._windows(cls.PHONE_SCOPES, cls._phone_hash(phone)):
-            window.record()
+    def release_text(cls, request: Request) -> None:
+        """Give back the phone slots this request took: its text was not sent."""
+        for window in getattr(request, cls.PHONE_SLOTS, []):
+            window.release()
+        setattr(request, cls.PHONE_SLOTS, [])
 
     def ip_ident(self, request: Request) -> Optional[str]:
         ident = self.get_ident(request)
@@ -229,11 +276,7 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
             phone = save_results_phone(request.data)
         except InvalidPhoneNumber:
             return None
-        return None if phone is None else self._phone_hash(phone)
-
-    @staticmethod
-    def _phone_hash(phone: str) -> str:
-        return salted_hmac(PHONE_KEY_SALT, phone, algorithm="sha256").hexdigest()
+        return None if phone is None else salted_hmac(PHONE_KEY_SALT, phone, algorithm="sha256").hexdigest()
 
     @staticmethod
     def _windows(scopes: tuple[str, ...], ident: Optional[str]) -> list[RateWindow]:

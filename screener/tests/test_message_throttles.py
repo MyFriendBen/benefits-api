@@ -14,7 +14,6 @@ each test to a handful of requests.
 
 import hashlib
 import json
-import time
 from typing import Optional
 from unittest import mock
 
@@ -46,7 +45,13 @@ IP_HOUR, IP_DAY, PHONE_HOUR, PHONE_DAY = (int(rate.split("/")[0]) for rate in RA
 
 OK = status.HTTP_201_CREATED
 THROTTLED = status.HTTP_429_TOO_MANY_REQUESTS
-JUST_OVER_AN_HOUR = 61 * 60
+FAILED = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+# 01:00 UTC, so the tests' waits stay inside one daily window.
+ONE_AM_UTC = 20833 * 86400 + 3600
+# The hourly limits weigh in part of the previous hour's window, so it takes until
+# the window after next for an hour's sends to stop counting at all.
+HOUR_CLEARED = 2 * 3600
 
 
 @override_settings(CACHES=LOCAL_CACHE)
@@ -62,7 +67,7 @@ class MessageThrottleTests(APITestCase):
 
         # A clock the tests can move, so a daily ceiling can be reached without a
         # day's worth of requests.
-        self.now = time.time()
+        self.now = ONE_AM_UTC
         clock = mock.patch.object(RateWindow, "timer", staticmethod(lambda: self.now))
         clock.start()
         self.addCleanup(clock.stop)
@@ -111,7 +116,7 @@ class MessageThrottleTests(APITestCase):
         statuses = [self._post(phone=f"+1303555{i:04d}") for i in range(IP_HOUR + 1)]
 
         self.assertEqual(statuses[-1], THROTTLED)
-        self.assertEqual(message_user.return_value.text.call_count, IP_HOUR)
+        self.assertEqual(message_user.return_value.send_text.call_count, IP_HOUR)
 
     def test_ip_throttle_is_per_ip(self, message_user):
         self._emails(IP_HOUR)
@@ -131,9 +136,9 @@ class MessageThrottleTests(APITestCase):
 
     def test_ip_daily_ceiling_holds_once_the_hour_has_passed(self, message_user):
         self.assertEqual(self._emails(IP_HOUR), [OK] * IP_HOUR)
-        self._wait(JUST_OVER_AN_HOUR)
+        self._wait(HOUR_CLEARED)
         self.assertEqual(self._emails(IP_DAY - IP_HOUR), [OK] * (IP_DAY - IP_HOUR))
-        self._wait(JUST_OVER_AN_HOUR)
+        self._wait(HOUR_CLEARED)
 
         self.assertEqual(self._post(email="late@example.com"), THROTTLED)
 
@@ -142,7 +147,7 @@ class MessageThrottleTests(APITestCase):
         else's day in a single burst."""
         self._emails(IP_HOUR)
         self.assertEqual(self._emails(IP_DAY * 2), [THROTTLED] * (IP_DAY * 2))
-        self._wait(JUST_OVER_AN_HOUR)
+        self._wait(HOUR_CLEARED)
 
         self.assertEqual(self._post(email="next-hour@example.com"), OK)
 
@@ -152,7 +157,7 @@ class MessageThrottleTests(APITestCase):
 
         statuses = self._emails(IP_HOUR + 1)
 
-        self.assertEqual(statuses, [status.HTTP_500_INTERNAL_SERVER_ERROR] * IP_HOUR + [THROTTLED])
+        self.assertEqual(statuses, [FAILED] * IP_HOUR + [THROTTLED])
 
     def test_a_throttled_response_says_when_to_retry(self, message_user):
         self._emails(IP_HOUR)
@@ -171,9 +176,9 @@ class MessageThrottleTests(APITestCase):
 
     def test_phone_daily_ceiling_holds_once_the_hour_has_passed(self, message_user):
         self.assertEqual(self._texts(PHONE_HOUR), [OK] * PHONE_HOUR)
-        self._wait(JUST_OVER_AN_HOUR)
+        self._wait(HOUR_CLEARED)
         self.assertEqual(self._texts(PHONE_DAY - PHONE_HOUR), [OK] * (PHONE_DAY - PHONE_HOUR))
-        self._wait(JUST_OVER_AN_HOUR)
+        self._wait(HOUR_CLEARED)
 
         self.assertEqual(self._texts(1), [THROTTLED])
 
@@ -182,7 +187,7 @@ class MessageThrottleTests(APITestCase):
         block into a 24-hour one."""
         self._texts(PHONE_HOUR)
         self.assertEqual(self._texts(PHONE_DAY * 2), [THROTTLED] * (PHONE_DAY * 2))
-        self._wait(JUST_OVER_AN_HOUR)
+        self._wait(HOUR_CLEARED)
 
         self.assertEqual(self._texts(1), [OK])
 
@@ -198,18 +203,46 @@ class MessageThrottleTests(APITestCase):
     def test_a_failed_send_does_not_spend_the_phone_budget(self, message_user):
         """A Twilio outage, or a number Twilio rejects, must not lock the person out
         once sending works again."""
-        message_user.return_value.text.side_effect = RuntimeError("Twilio is down")
+        message_user.return_value.send_text.side_effect = RuntimeError("Twilio is down")
         failures = self._texts(PHONE_DAY * 2)
-        message_user.return_value.text.side_effect = None
+        message_user.return_value.send_text.side_effect = None
 
-        self.assertEqual(failures, [status.HTTP_500_INTERNAL_SERVER_ERROR] * (PHONE_DAY * 2))
+        self.assertEqual(failures, [FAILED] * (PHONE_DAY * 2))
         self.assertEqual(self._post(ip="198.51.100.200", phone=PHONE), OK)
+
+    def test_a_text_that_was_sent_counts_even_if_logging_it_fails(self, message_user):
+        """Twilio accepted it, so the person got it: a retry after the 500 must not
+        send another one outside the budget."""
+        message_user.return_value.log.side_effect = RuntimeError("database write failed")
+
+        statuses = self._texts(PHONE_HOUR + 1)
+
+        self.assertEqual(statuses, [FAILED] * PHONE_HOUR + [THROTTLED])
+        self.assertEqual(message_user.return_value.send_text.call_count, PHONE_HOUR)
+
+    def test_a_text_in_flight_already_holds_its_slot(self, message_user):
+        """The slot is taken before sending, so requests that arrive while a text is
+        still going out see it: concurrent requests can't each slip under the limit."""
+        nested = []
+        in_flight = []
+
+        def another_request_arrives_mid_send(phone):
+            if in_flight:
+                return
+            in_flight.append(phone)
+            nested.extend(self._texts(PHONE_HOUR, phone=phone))
+
+        message_user.return_value.send_text.side_effect = another_request_arrives_mid_send
+
+        self.assertEqual(self._post(ip="203.0.113.77", phone=PHONE), OK)
+        self.assertEqual(nested, [OK] * (PHONE_HOUR - 1) + [THROTTLED])
+        self.assertEqual(message_user.return_value.send_text.call_count, PHONE_HOUR)
 
     def test_requests_for_an_unknown_screen_do_not_spend_the_phone_budget(self, message_user):
         """Nobody can use up a number's day without texting it."""
         self._texts(PHONE_DAY * 2, screen=UNKNOWN_SCREEN)
 
-        message_user.return_value.text.assert_not_called()
+        message_user.return_value.send_text.assert_not_called()
         self.assertEqual(self._post(ip="198.51.100.200", phone=PHONE), OK)
 
     def test_a_typo_fix_is_a_different_budget(self, message_user):
@@ -248,17 +281,20 @@ class MessageThrottleTests(APITestCase):
         self.assertEqual(self._post(phone=PHONE, language="es"), OK)
 
         message_user.assert_called_once_with(self.screen, "es")
-        message_user.return_value.text.assert_called_once_with(PHONE, send_tests=True)
+        message_user.return_value.send_text.assert_called_once_with(PHONE)
 
     def test_sends_the_number_the_throttle_counted(self, message_user):
         """The throttle keys on the E.164 form, so that is the form sent to Twilio."""
         self.assertEqual(self._post(phone="(303) 555-0100"), OK)
 
-        message_user.return_value.text.assert_called_once_with(PHONE, send_tests=True)
+        message_user.return_value.send_text.assert_called_once_with(PHONE)
 
     def test_a_non_string_phone_is_refused_and_not_sent(self, message_user):
-        """A JSON number has no phone budget, so it must not reach Twilio either."""
-        self.assertEqual(self._post(phone=13035550100), status.HTTP_400_BAD_REQUEST)
+        """A JSON number or list has no phone budget, so it must not reach Twilio
+        either. Twilio's client would send a one-element list as that number."""
+        for phone in (13035550100, [PHONE]):
+            with self.subTest(phone=phone):
+                self.assertEqual(self._post(phone=phone), status.HTTP_400_BAD_REQUEST)
 
         message_user.assert_not_called()
 
@@ -278,13 +314,63 @@ class MessageThrottleTests(APITestCase):
         response = self.client.post(URL, body, content_type="text/plain", REMOTE_ADDR="203.0.113.1")
 
         self.assertEqual(response.status_code, OK)
-        message_user.return_value.text.assert_called_once_with(PHONE, send_tests=True)
+        message_user.return_value.send_text.assert_called_once_with(PHONE)
 
     def test_a_body_that_is_not_an_object_is_a_400(self, message_user):
         response = self.client.post(URL, [PHONE], format="json", REMOTE_ADDR="203.0.113.1")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         message_user.assert_not_called()
+
+
+@override_settings(CACHES=LOCAL_CACHE)
+class RateWindowTests(SimpleTestCase):
+    """The counter itself, without a request around it."""
+
+    def setUp(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+        rates = mock.patch.object(RateWindow, "THROTTLE_RATES", {"scope": "2/hour"})
+        rates.start()
+        self.addCleanup(rates.stop)
+        self.now = ONE_AM_UTC
+        clock = mock.patch.object(RateWindow, "timer", staticmethod(lambda: self.now))
+        clock.start()
+        self.addCleanup(clock.stop)
+
+    def _reserve(self) -> bool:
+        return RateWindow("scope", "ident").reserve()
+
+    def test_reserves_up_to_the_limit_and_no_further(self):
+        self.assertEqual([self._reserve() for _ in range(3)], [True, True, False])
+
+    def test_a_refused_reservation_takes_nothing(self):
+        self._reserve()
+        self._reserve()
+        for _ in range(5):
+            self._reserve()
+
+        RateWindow("scope", "ident").release()
+
+        self.assertTrue(self._reserve())
+        self.assertFalse(self._reserve())
+
+    def test_the_previous_window_counts_for_the_part_still_inside_the_last_hour(self):
+        self._reserve()
+        self._reserve()
+        # Half way through the next hour, half of the previous hour's two still count.
+        self.now += 3600 + 1800
+
+        self.assertEqual([self._reserve() for _ in range(2)], [True, False])
+
+    def test_fails_open_when_the_cache_does_not_answer(self):
+        """The cache is configured to ignore Redis errors; a dead Redis must not
+        block every household."""
+        with mock.patch.object(RateWindow, "cache") as dead_cache:
+            dead_cache.incr.return_value = None
+            dead_cache.get.return_value = None
+
+            self.assertEqual([self._reserve() for _ in range(5)], [True] * 5)
 
 
 @override_settings(CACHES=LOCAL_CACHE)

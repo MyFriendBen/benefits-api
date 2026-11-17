@@ -68,13 +68,20 @@ class MessageUser:
         if not self.should_send() and not send_tests:
             return
 
+        self.send_text(cell)
+        self.log("textScreen")
+
+    def send_text(self, cell: str) -> None:
+        """Send the results text through Twilio, without logging it.
+
+        Separate from `text` so a caller can act on Twilio's acceptance before the
+        database writes in `log`, which can fail after the text has already gone.
+        """
         self._cell_client().messages.create(
             from_=self.cell_from_phone_number,
             body=self._text_body(),
             to=cell,
         )
-
-        self.log("textScreen")
 
     def _text_body(self):
         words = self._get_text("body") or ""

@@ -14,13 +14,29 @@ from decouple import config
 logger = logging.getLogger(__name__)
 
 # The periods DRF's SimpleRateThrottle.parse_rate understands, by first letter.
-_PERIODS = ("s", "m", "h", "d")
+_PERIODS = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+
+
+def parse_rate(rate: str) -> tuple[int, int]:
+    """(requests, seconds) for a rate like "5/hour", read exactly as DRF reads it.
+
+    Raises ValueError for anything DRF's own parser would choke on: more or fewer
+    than one slash ("5/hour/x"), a count that isn't plain ASCII digits ("²/hour",
+    "-5/hour"), or an unknown period ("5/fortnight").
+    """
+    number, period = rate.split("/")
+    if not (number.isascii() and number.isdigit()) or period[:1] not in _PERIODS:
+        raise ValueError(f"Not a throttle rate: {rate!r}")
+    return int(number), _PERIODS[period[0]]
 
 
 def is_valid_rate(rate: str) -> bool:
-    """Whether DRF can parse `rate`: a whole number, a slash, and a period ("5/hour")."""
-    number, slash, period = rate.partition("/")
-    return number.isdigit() and slash == "/" and period[:1] in _PERIODS
+    """Whether `rate` is a throttle rate DRF can parse, like "5/hour"."""
+    try:
+        parse_rate(rate)
+    except ValueError:
+        return False
+    return True
 
 
 def throttle_rate(name: str, default: str) -> str:

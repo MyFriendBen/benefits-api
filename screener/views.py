@@ -338,16 +338,25 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             phone = save_results_phone(body)
         except InvalidPhoneNumber:
             raise ValidationError({"phone": "Not a phone number."}) from None
-        screen = Screen.objects.get(uuid=body["screen"])
 
-        message = MessageUser(screen, self._message_language(body, screen))
-        if "email" in body:
-            message.email(body["email"], send_tests=True)
-        if phone is not None:
-            message.text(phone, send_tests=True)
-            # Counted only now that the text has gone out: a request that failed
-            # before this line has not spent the number's budget.
-            SaveResultsRateThrottle.record_text(phone)
+        # The throttle took a slot from the number's budget. It is given back unless
+        # Twilio accepts the text, so a request that fails first (an unknown screen,
+        # a failed email, Twilio refusing) doesn't spend it, and one that fails after
+        # (logging) still does, because the text went out.
+        text_sent = False
+        try:
+            screen = Screen.objects.get(uuid=body["screen"])
+
+            message = MessageUser(screen, self._message_language(body, screen))
+            if "email" in body:
+                message.email(body["email"], send_tests=True)
+            if phone is not None:
+                message.send_text(phone)
+                text_sent = True
+                message.log("textScreen")
+        finally:
+            if not text_sent:
+                SaveResultsRateThrottle.release_text(request)
 
         return Response({}, status=status.HTTP_201_CREATED)
 

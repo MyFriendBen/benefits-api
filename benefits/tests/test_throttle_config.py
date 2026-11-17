@@ -36,7 +36,17 @@ class TestThrottleRate(SimpleTestCase):
         self.assertEqual(self._rate(""), "5/hour")
 
     def test_an_unreadable_value_falls_back_to_the_default_and_says_so(self):
-        for value in ("fifty/hour", "50", "50/fortnight", "/hour", "-5/hour", "50 per hour"):
+        for value in (
+            "fifty/hour",
+            "50",
+            "50/fortnight",
+            "/hour",
+            "-5/hour",
+            "50 per hour",
+            "5/hour/x",
+            "²/hour",
+            "5/",
+        ):
             with self.subTest(value=value):
                 with self.assertLogs("benefits.throttle_config", level="WARNING") as logs:
                     self.assertEqual(self._rate(value), "5/hour")

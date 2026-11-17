@@ -113,7 +113,7 @@ class TestMessageViewThreadsLanguage(TestCase):
         MessageViewSet().create(request)
 
         mock_message_user.assert_called_once_with(self.screen, "vi")
-        mock_message_user.return_value.text.assert_called_once_with("+13035551234", send_tests=True)
+        mock_message_user.return_value.send_text.assert_called_once_with("+13035551234")
 
     @patch("screener.views.MessageUser")
     def test_omitted_language_keeps_the_previous_behavior(self, mock_message_user):
