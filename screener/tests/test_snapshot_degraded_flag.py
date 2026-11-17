@@ -1,10 +1,5 @@
-"""A degraded run is identifiable after the fact.
-
-`had_error` is a crash marker: True at creation, flipped False once the run finishes. A run
-that finished but lost its PolicyEngine programs to a failed request finishes, so it used to
-be persisted as an ordinary snapshot — indistinguishable, in any later query, from one where
-nothing went wrong. `had_external_api_failure` records that difference.
-"""
+"""`had_external_api_failure` marks a run that finished but lost programs to a failed
+external API; `had_error` only marks a run that never finished."""
 
 from unittest.mock import patch
 

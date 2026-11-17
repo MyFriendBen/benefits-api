@@ -227,12 +227,9 @@ def _run_bucket(
 def _status_suffix(error: Exception) -> str:
     """The HTTP status PolicyEngine answered with, for the Sentry message.
 
-    PolicyEngineAPIError has carried `status_code` since it was written but nothing read it,
-    so every failure looked alike in the issue list. The status is what separates the kinds:
-    400 is our payload, 422 a version pin PolicyEngine no longer serves, 401 an expired token
-    (already cleared from the cache, so the next request recovers on its own), 5xx and a bare
-    None — timeout, DNS, connection reset — theirs. Empty for a failure with no response at
-    all, which is itself the signal that the request never landed.
+    The status separates failure kinds: 400 is our payload, 422 a version pin PolicyEngine
+    doesn't serve, 401 an expired token (cleared from the cache, so the next request
+    recovers), 5xx theirs. Empty when there was no response (timeout, DNS, connection reset).
     """
     status_code = getattr(error, "status_code", None)
     return f" (HTTP {status_code})" if status_code is not None else ""

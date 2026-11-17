@@ -154,11 +154,8 @@ class TestCalcPeEligibilityFailure(TestCase):
 
 
 class TestPayloadAssemblyFailure(TestCase):
-    """Payload assembly failing degrades like any other PolicyEngine failure.
-
-    It used to escape `calc_pe_eligibility` and 500 the whole response, so a screen lost even
-    the programs that never touch PolicyEngine.
-    """
+    """Payload assembly failing degrades like any other PolicyEngine failure: the
+    PolicyEngine programs drop out and the rest of the response is still returned."""
 
     @classmethod
     def setUpTestData(cls):
@@ -204,8 +201,7 @@ class TestPayloadAssemblyFailure(TestCase):
         self.assertEqual(failures, [POLICY_ENGINE])
 
     def test_dependency_conflict_is_reported_to_the_frontend(self):
-        # The conflict arm logged loudly but did not record the failure, so the user got a
-        # short results page with no banner explaining it.
+        # A conflict costs every PolicyEngine program, so the results page must show the banner.
         result, capture_message, failures = self._run(ConflictingDependencyError("age", 35, 36))
 
         self.assertEqual(result["eligibility"], {})
