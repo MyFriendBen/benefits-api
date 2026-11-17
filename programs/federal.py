@@ -58,12 +58,35 @@ def visible_to_any(white_labels: Iterable["WhiteLabel"]) -> Q:
     return Q(white_label__in=white_labels) | Q(white_label__code=FEDERAL_WHITE_LABEL)
 
 
+def serves_screen(owner: "WhiteLabel", program: "Program", screen_white_label: "WhiteLabel") -> bool:
+    """Whether a row owned by `owner` and attached to `program` applies to a screen on `screen_white_label`.
+
+    A federal program is one row every white label sees, so it carries every state's navigators and
+    warnings for it, and each state should see only its own. On a federal program a row applies when
+    its owner is `federal`, the screen's white label, or another white label in the screen's state
+    (same `state_code`, so a `cesn` screen sees `co`'s); a white label with no state matches only
+    itself. On any other program every row applies: navigators are global by `external_name`, so a
+    state program may use one another white label imported first.
+
+    County scoping can't do this: county names repeat across states (Jackson County is in CO, KS, MO
+    and NC), so a CO row listing every CO county would still match Jackson County, MO.
+
+    Reads `owner`, `program.white_label` and `screen_white_label` only, so callers must select them.
+    """
+    if not is_federal(program):
+        return True
+    if owner.id in (program.white_label_id, screen_white_label.id):
+        return True
+    state = screen_white_label.state_code
+    return bool(state) and owner.state_code == state
+
+
 def may_link(white_label_code: str, other_white_label_code: str) -> bool:
     """The navigator linking rule: a program and a navigator may be linked when either is on
     `federal` or both are on the same white label.
 
-    A federal program takes any white label's navigators, because
-    `screener.navigators.filter_by_white_label` shows each state's only to that state's screens.
+    A federal program takes any white label's navigators, because `serves_screen` shows each
+    state's only to that state's screens.
     A state program takes federal navigators (a national hotline) as well as its own. The rule is
     symmetric, so it also says which programs a navigator may require (`eligibility_programs`).
     `linkable_with` is the same rule as a query filter.

@@ -28,6 +28,7 @@ from programs.models import (
     ProgramCategory,
     ProgramRecordImport,
     ProgramNavigator,
+    WarningMessage,
 )
 from screener.models import WhiteLabel
 from translations.models import Translation
@@ -890,6 +891,44 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
         )
         self.federal_record["navigators"].append({"external_name": "shared_hotline"})
         self.write(self.federal_record, program=FEDERAL_PROGRAM)
+
+        output = self.run_import()
+
+        self.assertFalse(self.records_failed, output)
+        self.assertNotIn("so on this federal program only", output)
+
+    def reference_warning(self, owner: str) -> WarningMessage:
+        warning = WarningMessage.objects.new_warning(owner, "_show", "state_wic_warning")
+        self.federal_record["warning_messages"] = [
+            self.federal_record.pop("warning_message"),
+            {"external_name": "state_wic_warning"},
+        ]
+        self.write(self.federal_record, program=FEDERAL_PROGRAM)
+        return warning
+
+    def test_a_state_warning_the_federal_record_references_is_linked_with_a_note(self) -> None:
+        """A state's own warning on a federal program, e.g. a state's WIC notice once its WIC row retires."""
+        warning = self.reference_warning("co")
+
+        output = self.run_import()
+
+        self.assertFalse(self.records_failed, output)
+        warning.refresh_from_db()
+        self.assertEqual(warning.white_label.code, "co")
+        self.assertIn(self.federal_program(), warning.programs.all())
+        self.assertIn(
+            "warning 'state_wic_warning' is on the 'co' white label, so on this federal program only screens in the "
+            "same state as 'co' see it.",
+            output,
+        )
+        self.assertNotIn("own it in this record", output)
+        second = self.run_import()
+        self.assertIn("Matches the record", second)
+        self.assertIn("warning 'state_wic_warning' is on the 'co' white label", second)
+
+    def test_a_federal_warning_the_federal_record_references_gets_no_note(self) -> None:
+        WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        self.reference_warning("federal")
 
         output = self.run_import()
 

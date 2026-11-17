@@ -18,10 +18,12 @@ from unittest.mock import patch
 
 from django.contrib.admin import AdminSite, ModelAdmin
 from django.contrib.auth.models import Permission
+from django.db import connection
 from django.db.models import Model
 from django.forms import ModelForm
 from django.forms.models import model_to_dict
 from django.test import RequestFactory, TestCase
+from django.test.utils import CaptureQueriesContext
 from rest_framework.test import APIClient
 
 from authentication.models import User
@@ -29,7 +31,7 @@ from configuration.white_labels import state_options
 from programs.federal import FEDERAL_WHITE_LABEL
 from programs.framework.base import Eligibility
 from programs.admin import ProgramAdmin, ReferrerAdmin, WarningMessageAdmin
-from programs.models import FederalPoveryLimit, Program, ProgramCategory, Referrer, WarningMessage
+from programs.models import County, FederalPoveryLimit, Program, ProgramCategory, Referrer, WarningMessage
 from programs.programs.testing_fixtures.households import add_income, add_member
 from programs.serializers import ProgramCategorySerializer
 from screener.models import CurrentBenefit, EligibilitySnapshot, Screen, WhiteLabel
@@ -162,6 +164,62 @@ class TestResults(FederalProgramsTestCase):
         data, _ = self.results(self.screen(self.co, referrer_code="partner"))
 
         self.assertEqual([p["program_id"] for p in data], [kept.id])
+
+
+class TestWarningsOnFederalPrograms(FederalProgramsTestCase):
+    """A federal program carries every state's warnings for it; each state sees only its own."""
+
+    def warning(self, owner: WhiteLabel, program: Program) -> WarningMessage:
+        warning = WarningMessage.objects.new_warning(owner.code, "_show", f"{owner.code}_warning")
+        warning.programs.add(program)
+        return warning
+
+    def shown(self, screen: Screen) -> list[str]:
+        data, _ = self.results(screen)
+        return sorted(warning["message"]["label"] for program in data for warning in program["warning_messages"])
+
+    def label(self, warning: WarningMessage) -> str:
+        return warning.message.label
+
+    def test_each_state_sees_its_own_warning_and_the_federal_one(self) -> None:
+        federal_program = self.program(self.federal, "fed_wic")
+        national = self.warning(self.federal, federal_program)
+        co_warning = self.warning(self.co, federal_program)
+        wa_warning = self.warning(self.wa, federal_program)
+
+        self.assertEqual(self.shown(self.screen(self.co)), sorted([self.label(national), self.label(co_warning)]))
+        self.assertEqual(self.shown(self.screen(self.wa)), sorted([self.label(national), self.label(wa_warning)]))
+
+    def test_another_white_label_in_the_same_state_sees_the_states_warning(self) -> None:
+        """A `cesn` screen is in Colorado, so it sees `co`'s warning."""
+        federal_program = self.program(self.federal, "fed_wic")
+        co_warning = self.warning(self.co, federal_program)
+        cesn = WhiteLabel.objects.create(name="CESN", code="cesn", state_code="CO")
+
+        self.assertEqual(self.shown(self.screen(cesn)), [self.label(co_warning)])
+
+    def test_a_state_program_still_shows_a_warning_another_white_label_owns(self) -> None:
+        """Only federal programs are filtered: rows are shared by external_name across white labels."""
+        state_program = self.program(self.co, "co_only")
+        wa_warning = self.warning(self.wa, state_program)
+
+        self.assertEqual(self.shown(self.screen(self.co)), [self.label(wa_warning)])
+
+    def test_a_second_owners_warning_costs_no_query(self) -> None:
+        """Each warning's white label is loaded with the warnings, not read one by one."""
+        federal_program = self.program(self.federal, "fed_wic")
+        self.warning(self.co, federal_program)
+        screen = self.screen(self.co)
+        # A screen's first run has no earlier snapshot to compare with, so it makes fewer queries.
+        self.results(screen)
+
+        with CaptureQueriesContext(connection) as one:
+            self.results(screen)
+        self.warning(self.wa, federal_program)
+        with CaptureQueriesContext(connection) as two:
+            self.results(screen)
+
+        self.assertEqual(len(two), len(one))
 
 
 class TestCurrentBenefits(FederalProgramsTestCase):
@@ -474,17 +532,56 @@ class TestAdminPickers(FederalProgramsTestCase):
         self.assertEqual(choices, {federal, own})
         self.assertNotIn(other, choices)
 
-    def test_a_state_warning_cannot_be_attached_to_a_federal_program(self) -> None:
+    def warning_choices(self, warning: WarningMessage, field_name: str = "programs") -> set[Any]:
+        form = self.form(WarningMessageAdmin(WarningMessage, AdminSite()), warning)
+        return set(form.base_fields[field_name].queryset)
+
+    def test_a_state_warning_can_go_on_its_own_and_federal_programs(self) -> None:
+        """On a federal program a state warning shows only in its own state, so it may be attached."""
         federal = self.program(self.federal, "fed_account")
         own = self.program(self.co, "co_only")
+        other = self.program(self.wa, "wa_only")
         warning = WarningMessage.objects.new_warning("co", "_show")
 
-        choices = set(
-            self.form(WarningMessageAdmin(WarningMessage, AdminSite()), warning).base_fields["programs"].queryset
-        )
+        self.assertEqual(self.warning_choices(warning), {federal, own})
+        self.assertNotIn(other, self.warning_choices(warning))
+
+    def test_a_federal_warning_can_go_on_any_program(self) -> None:
+        programs = {self.program(self.federal, "fed_account"), self.program(self.co, "co_only")}
+        warning = WarningMessage.objects.new_warning(FEDERAL_WHITE_LABEL, "_show")
+
+        self.assertEqual(self.warning_choices(warning), programs)
+
+    def test_a_program_already_on_a_warning_stays_a_choice(self) -> None:
+        other = self.program(self.wa, "wa_only")
+        warning = WarningMessage.objects.new_warning("co", "_show")
+        warning.programs.add(other)
+
+        self.assertIn(other, self.warning_choices(warning))
+
+    def test_a_state_warning_offers_only_its_own_counties(self) -> None:
+        own = County.objects.create(name="Jackson County", white_label=self.co)
+        other = County.objects.create(name="Jackson County", white_label=self.wa)
+        warning = WarningMessage.objects.new_warning("co", "_show")
+
+        choices = self.warning_choices(warning, "counties")
 
         self.assertIn(own, choices)
-        self.assertNotIn(federal, choices)
+        self.assertNotIn(other, choices)
+
+    def test_a_partner_admin_gets_their_states_and_federal_programs(self) -> None:
+        federal = self.program(self.federal, "fed_account")
+        own = self.program(self.co, "co_only")
+        self.program(self.wa, "wa_only")
+        warning = WarningMessage.objects.new_warning("co", "_show")
+        user = User.objects.create_user(email_or_cell="partner@example.com", password="pw-123456")
+        user.white_labels.set([self.co])
+        request = RequestFactory().get("/admin/")
+        request.user = user
+
+        form = WarningMessageAdmin(WarningMessage, AdminSite()).get_form(request, obj=warning)
+
+        self.assertEqual(set(form.base_fields["programs"].queryset), {federal, own})
 
 
 class ProgramAdminTestCase(FederalProgramsTestCase):

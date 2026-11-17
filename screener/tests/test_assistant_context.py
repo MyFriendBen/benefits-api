@@ -552,6 +552,27 @@ class BuildContextTests(TestCase):
 
         self.assertEqual(two, one, f"{one} -> {two} queries for 1 -> 2 programs with the warning")
 
+    def test_federal_program_warnings_are_those_of_the_screens_state(self):
+        """On a federal program, each state sees its own warnings and the federal ones, as the page
+        does: another white label in the same state counts, another state doesn't."""
+        federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        WhiteLabel.objects.create(name="Test State Energy", code="test_energy", state_code="TS")
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        seed_program(federal, "federal_wic_test")
+        self.add_snapshot_row("federal_wic_test")
+        program = Program.objects.get(name_abbreviated="federal_wic_test")
+        for code in ("federal", "test", "test_energy", "other"):
+            warning = seed_warning(program, "_show", f"Warning from {code}.", external_name=f"warning_{code}")
+            warning.white_label = WhiteLabel.objects.get(code=code)
+            warning.save()
+
+        context = self.context()
+
+        self.assertEqual(
+            context["eligible_programs"][0]["warnings"],
+            ["Warning from federal.", "Warning from test.", "Warning from test_energy."],
+        )
+
     def test_warnings_key_is_omitted_when_the_program_has_none(self):
         self.add_snapshot_row("snap")
 
