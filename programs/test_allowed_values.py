@@ -103,6 +103,15 @@ class ServedOptionsTests(SimpleTestCase):
             },
         )
 
+    def test_the_filter_labels_benjis_guide_names_are_still_served(self) -> None:
+        """Benji's results-page guide (`_RESULTS_PAGE_GUIDE` in ai-service's `app/prompts.py`) names
+        these six options. If this fails, update the guide there and bump its `PROMPT_VERSION` too."""
+        labels = [option["label"]["_default_message"] for option in legal_status_options().values()]
+
+        self.assertEqual(
+            labels, ["U.S. Citizen", "Green Card 5+", "Green Card <5", "Refugee/Asylee", "Other Lawful", "Undocumented"]
+        )
+
     def test_every_navigator_language_has_a_badge(self) -> None:
         options = navigator_language_options()
 
