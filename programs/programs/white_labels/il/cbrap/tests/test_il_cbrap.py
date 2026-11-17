@@ -1,7 +1,6 @@
 from datetime import date
 from unittest.mock import patch
 
-
 from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.framework.base import ProgramCalculator
 from programs.programs.testing_fixtures.custom_calculator import (

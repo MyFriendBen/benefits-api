@@ -36,8 +36,6 @@ class Command(BaseCommand):
         lang_exists = Translation.objects.filter(pk=OuterRef("pk"), translations__language_code=lang)
 
         # Debug the filtering - check translations that have English text
-        from django.db.models import Exists
-
         # Find translations that have English text
         has_en_text = Translation.objects.filter(
             translations__language_code=settings.LANGUAGE_CODE,
