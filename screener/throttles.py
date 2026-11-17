@@ -117,23 +117,28 @@ def save_results_phone(data: Any) -> Optional[str]:
     return normalize_phone(phone)
 
 
+class CacheUnavailable(Exception):
+    """The cache didn't answer, so no limit can be checked."""
+
+
 class RateWindow:
     """One limit (a scope's rate) for one key, counted atomically in the cache.
 
     A sliding-window counter: one integer per fixed window (an hour, a day), and a
     request's count is this window's plus the previous window's, weighted by how
-    much of it still overlaps the last `duration` seconds. That is DRF's sliding
-    window to within a request or two, without DRF's timestamp list.
+    much of it still overlaps the last `duration` seconds. It assumes the previous
+    window's requests were spread evenly, so it can differ from an exact count of the
+    last `duration` seconds: a burst just before a boundary stays counted a little
+    past `duration`, and in the worst timing (a full window's worth at the very end
+    of one window, then another spread across the next) a span of `duration` can
+    hold up to twice the limit. That bound is what the limits guarantee.
 
-    The list is why this isn't a `SimpleRateThrottle`. DRF reads the list, appends
-    and writes it back, so two workers recording against one key at once each write
-    a list holding only their own entry, and one record is lost. Here every change
-    is a single `incr` on the cache (Redis INCRBY), so concurrent requests cannot
-    overwrite each other: `reserve` takes a slot and sees the count including
-    everyone else's, and `release` gives one back.
-
-    If the cache is unreachable (it is configured to ignore Redis errors), `reserve`
-    allows the request: the throttle fails open rather than blocking everyone.
+    It isn't a `SimpleRateThrottle` because DRF keeps a timestamp list that it reads,
+    appends to and writes back, so two workers recording against one key at once
+    each write a list holding only their own entry, and one record is lost. Here
+    every change is a single `incr` on the cache (Redis INCRBY), so concurrent
+    requests cannot overwrite each other: `reserve` takes a slot and sees the count
+    including everyone else's, and `release` gives one back.
     """
 
     cache = default_cache
@@ -148,37 +153,55 @@ class RateWindow:
         self.key = f"throttle_{scope}_{ident}_{window}"
         self.previous_key = f"throttle_{scope}_{ident}_{window - 1}"
         self.elapsed = now - window * self.duration
+        # What a refused `reserve` saw, for `wait`.
+        self.current = 0
+        self.previous = 0
 
     def reserve(self) -> bool:
-        """Take a slot if the limit allows it; leave the count unchanged if not."""
+        """Take a slot if the limit allows it; leave the count unchanged if not.
+
+        Raises `CacheUnavailable` if the cache doesn't answer.
+        """
         count = self._add(1)
-        if count is None:
+        self.previous = self.cache.get(self.previous_key) or 0
+        weight = self.previous * (self.duration - self.elapsed) / self.duration
+        if count + weight <= self.limit:
             return True
-        if count + self._previous_weight() > self.limit:
-            self._add(-1)
-            return False
-        return True
+        self._add(-1)
+        self.current = count - 1
+        return False
 
     def release(self) -> None:
         """Give back a slot taken by `reserve`."""
-        self._add(-1)
+        try:
+            self._add(-1)
+        except CacheUnavailable:
+            pass
 
     def wait(self) -> float:
-        """Seconds until this window closes: when a blocked request can next pass."""
-        return self.duration - self.elapsed
+        """Seconds until one more request fits, if nothing else is counted meanwhile."""
+        remaining = self.duration - self.elapsed
+        if self.limit < 1:
+            return remaining
+        room = self.limit - 1 - self.current
+        if room >= 0:
+            # It fits in this window once enough of the previous one has slid out.
+            return max(0.0, remaining - self.duration * room / self.previous) if self.previous else 0.0
+        # This window alone is full: wait for it to become the previous window,
+        # then for enough of it to slide out.
+        return remaining + self.duration * (1 - (self.limit - 1) / self.current)
 
-    def _previous_weight(self) -> float:
-        previous = self.cache.get(self.previous_key) or 0
-        return previous * (self.duration - self.elapsed) / self.duration
-
-    def _add(self, delta: int) -> Optional[int]:
+    def _add(self, delta: int) -> int:
         # Kept through the next window too, where it is the previous window.
         self.cache.add(self.key, 0, timeout=2 * self.duration)
         try:
-            return self.cache.incr(self.key, delta)
+            count = self.cache.incr(self.key, delta)
         except ValueError:
-            # The key expired between add and incr; count this request as allowed.
-            return None
+            # The key expired between add and incr.
+            count = None
+        if count is None:
+            raise CacheUnavailable()
+        return count
 
 
 class SaveResultsRateThrottle(throttling.BaseThrottle):
@@ -198,9 +221,15 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
       correcting a typo never spends this budget twice. Requests without a phone
       (email-only sends) have no phone limits.
 
+    Only POST is throttled: it is the only method that sends anything, and a GET or
+    OPTIONS from a shared address shouldn't use up that address's budget.
+
     Every limit takes its slot before the request goes on (see `RateWindow`), so
-    concurrent requests are counted exactly and can't exceed a limit. Two rules keep
-    the limits from punishing the people they protect:
+    concurrent requests are counted exactly. If the cache doesn't answer, the request
+    is allowed at the first unanswered call rather than waiting out a timeout on each
+    of the remaining ones: the throttle fails open, quickly, instead of blocking
+    everyone or holding a worker. Two rules keep the limits from punishing the people
+    they protect:
 
     1. **A rejected request costs nothing.** If any limit refuses the request, every
        slot it took is given back. Otherwise retrying while blocked for the hour
@@ -232,15 +261,24 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
         self.blocked: list[RateWindow] = []
 
     def allow_request(self, request: Request, view: APIView) -> bool:
+        if request.method != "POST":
+            return True
         ip_windows = self._windows(self.IP_SCOPES, self.ip_ident(request))
         phone_windows = self._windows(self.PHONE_SCOPES, self.phone_ident(request))
 
         reserved = []
-        for window in ip_windows + phone_windows:
-            if window.reserve():
-                reserved.append(window)
-            else:
-                self.blocked.append(window)
+        try:
+            for window in ip_windows + phone_windows:
+                if window.reserve():
+                    reserved.append(window)
+                else:
+                    self.blocked.append(window)
+        except CacheUnavailable:
+            logger.warning("Save My Results throttle skipped: the cache did not answer")
+            self.blocked = []
+            for window in reserved:
+                window.release()
+            return True
 
         if self.blocked:
             for window in reserved:

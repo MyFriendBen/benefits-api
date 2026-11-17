@@ -28,7 +28,7 @@ from authentication.models import User
 from benefits.tests.cache_override import LOCAL_CACHE
 from benefits.throttle_config import is_valid_rate
 from screener.models import Screen, WhiteLabel
-from screener.throttles import RateWindow, SaveResultsRateThrottle
+from screener.throttles import CacheUnavailable, RateWindow, SaveResultsRateThrottle
 
 URL = "/api/messages/"
 PHONE = "+13035550100"
@@ -159,6 +159,24 @@ class MessageThrottleTests(APITestCase):
 
         self.assertEqual(statuses, [FAILED] * IP_HOUR + [THROTTLED])
 
+    def test_other_methods_do_not_spend_the_ip_budget(self, message_user):
+        for _ in range(IP_HOUR * 2):
+            self.client.get(URL, REMOTE_ADDR="203.0.113.1")
+            self.client.options(URL, REMOTE_ADDR="203.0.113.1")
+
+        self.assertEqual(self._emails(IP_HOUR), [OK] * IP_HOUR)
+
+    def test_fails_open_at_the_first_call_the_cache_does_not_answer(self, message_user):
+        """A dead cache must not block every household, nor make each request wait
+        out a timeout on every limit before giving up."""
+        with mock.patch.object(RateWindow, "cache") as dead_cache:
+            dead_cache.incr.return_value = None
+
+            statuses = self._texts(PHONE_DAY * 2)
+
+        self.assertEqual(statuses, [OK] * (PHONE_DAY * 2))
+        self.assertEqual(dead_cache.incr.call_count, PHONE_DAY * 2)
+
     def test_a_throttled_response_says_when_to_retry(self, message_user):
         self._emails(IP_HOUR)
 
@@ -228,11 +246,14 @@ class MessageThrottleTests(APITestCase):
 
         def another_request_arrives_mid_send(phone):
             if in_flight:
-                return
+                return True
             in_flight.append(phone)
             nested.extend(self._texts(PHONE_HOUR, phone=phone))
+            return True
 
-        message_user.return_value.send_text.side_effect = another_request_arrives_mid_send
+        message_user.return_value.send_text.side_effect = lambda phone, send_tests: another_request_arrives_mid_send(
+            phone
+        )
 
         self.assertEqual(self._post(ip="203.0.113.77", phone=PHONE), OK)
         self.assertEqual(nested, [OK] * (PHONE_HOUR - 1) + [THROTTLED])
@@ -281,13 +302,13 @@ class MessageThrottleTests(APITestCase):
         self.assertEqual(self._post(phone=PHONE, language="es"), OK)
 
         message_user.assert_called_once_with(self.screen, "es")
-        message_user.return_value.send_text.assert_called_once_with(PHONE)
+        message_user.return_value.send_text.assert_called_once_with(PHONE, send_tests=True)
 
     def test_sends_the_number_the_throttle_counted(self, message_user):
         """The throttle keys on the E.164 form, so that is the form sent to Twilio."""
         self.assertEqual(self._post(phone="(303) 555-0100"), OK)
 
-        message_user.return_value.send_text.assert_called_once_with(PHONE)
+        message_user.return_value.send_text.assert_called_once_with(PHONE, send_tests=True)
 
     def test_a_non_string_phone_is_refused_and_not_sent(self, message_user):
         """A JSON number or list has no phone budget, so it must not reach Twilio
@@ -314,7 +335,7 @@ class MessageThrottleTests(APITestCase):
         response = self.client.post(URL, body, content_type="text/plain", REMOTE_ADDR="203.0.113.1")
 
         self.assertEqual(response.status_code, OK)
-        message_user.return_value.send_text.assert_called_once_with(PHONE)
+        message_user.return_value.send_text.assert_called_once_with(PHONE, send_tests=True)
 
     def test_a_body_that_is_not_an_object_is_a_400(self, message_user):
         response = self.client.post(URL, [PHONE], format="json", REMOTE_ADDR="203.0.113.1")
@@ -363,14 +384,44 @@ class RateWindowTests(SimpleTestCase):
 
         self.assertEqual([self._reserve() for _ in range(2)], [True, False])
 
-    def test_fails_open_when_the_cache_does_not_answer(self):
-        """The cache is configured to ignore Redis errors; a dead Redis must not
-        block every household."""
+    def test_says_when_the_cache_does_not_answer(self):
         with mock.patch.object(RateWindow, "cache") as dead_cache:
             dead_cache.incr.return_value = None
-            dead_cache.get.return_value = None
 
-            self.assertEqual([self._reserve() for _ in range(5)], [True] * 5)
+            with self.assertRaises(CacheUnavailable):
+                self._reserve()
+
+    def test_wait_is_when_one_more_fits(self):
+        # Two at 01:00 fill the hour; the third has to wait for the next window, and
+        # then for half of it, until the previous hour's two weigh in as one.
+        self._reserve()
+        self._reserve()
+        self.now += 600
+        window = RateWindow("scope", "ident")
+        self.assertFalse(window.reserve())
+
+        self.assertEqual(window.wait(), (3600 - 600) + 1800)
+
+        self.now += window.wait() - 1
+        self.assertFalse(self._reserve())
+        self.now += 1
+        self.assertTrue(self._reserve())
+
+    def test_wait_inside_the_window_when_only_the_previous_one_is_in_the_way(self):
+        self._reserve()
+        self._reserve()
+        # Ten minutes into the next hour, the previous hour's two still weigh about 1.7.
+        self.now += 3600 + 600
+        window = RateWindow("scope", "ident")
+        self.assertFalse(window.reserve())
+
+        # They weigh 1 at half past, leaving room for one more.
+        self.assertEqual(window.wait(), 1800 - 600)
+
+        self.now += window.wait() - 1
+        self.assertFalse(self._reserve())
+        self.now += 1
+        self.assertTrue(self._reserve())
 
 
 @override_settings(CACHES=LOCAL_CACHE)

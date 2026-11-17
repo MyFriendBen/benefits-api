@@ -351,8 +351,7 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             if "email" in body:
                 message.email(body["email"], send_tests=True)
             if phone is not None:
-                message.send_text(phone)
-                text_sent = True
+                text_sent = message.send_text(phone, send_tests=True)
                 message.log("textScreen")
         finally:
             if not text_sent:
