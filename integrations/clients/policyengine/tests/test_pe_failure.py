@@ -10,7 +10,6 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from programs.util import ProgramConfigurationError
 from screener.models import Screen, HouseholdMember, WhiteLabel
 from integrations.clients.policyengine import policy_engine as pe
 from integrations.clients.policyengine import engines as pe_engines_module
@@ -197,9 +196,9 @@ class TestPayloadAssemblyFailure(TestCase):
         self.assertEqual(failures, [POLICY_ENGINE])  # -> banner on the results page
 
     def test_misconfigured_program_degrades(self):
-        # The typed guard a program with no FederalPoveryLimit hits if it ever reaches
-        # payload assembly (the pre-filter should have dropped it first).
-        result, _, failures = self._run(ProgramConfigurationError("no period"))
+        # The guard a program with no FederalPoveryLimit hits if it ever reaches payload
+        # assembly (the pre-filter should have dropped it first).
+        result, _, failures = self._run(Exception("acp has no FederalPoveryLimit"))
 
         self.assertEqual(result["eligibility"], {})
         self.assertEqual(failures, [POLICY_ENGINE])

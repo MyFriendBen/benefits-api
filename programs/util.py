@@ -82,14 +82,3 @@ class UpstreamAbsentError(DependencyError):
     def __init__(self, program_code: str):
         self.program_code = program_code
         Exception.__init__(self, f"{program_code} has not been calculated")
-
-
-class ProgramConfigurationError(Exception):
-    """A program's database configuration cannot serve a calculation.
-
-    Distinct from `DependencyError`, which means the *screen* is missing a field the user
-    never answered. This one is about *us*: a row is configured in a way its calculator
-    cannot work with (today: no `FederalPoveryLimit`, so there is no period to ask
-    PolicyEngine about). Typed so the guard reads as the programmer error it is rather than
-    as a bare `Exception`, and so a misconfigured program is distinguishable from an
-    unexpected failure in Sentry."""

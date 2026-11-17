@@ -1,6 +1,6 @@
 from programs.models import Program
 from programs.framework.pe_dependencies.constants import ALL_TAX_UNITS
-from programs.util import Dependencies, ProgramConfigurationError
+from programs.util import Dependencies
 from screener.models import HouseholdMember, Screen
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from .pe_dependencies.base import PolicyEngineScreenInput
@@ -85,10 +85,10 @@ class PolicyEngineCalulator(ProgramCalculator):
     def pe_period(self) -> str:
         if self.program.year is None:
             # Should be unreachable: `calc_pe_eligibility` drops a program with no
-            # `FederalPoveryLimit` before building a payload. Kept as a typed guard so that
-            # if a row reaches here anyway (another caller, a direct DB write) the failure
-            # names its cause instead of surfacing as an AttributeError on None.
-            raise ProgramConfigurationError(
+            # `FederalPoveryLimit` before building a payload. Kept so that if a row reaches
+            # here anyway (another caller, a direct DB write) the failure names its cause
+            # instead of surfacing as an AttributeError on None.
+            raise Exception(
                 f"{self.program.name_abbreviated} has no FederalPoveryLimit, so there is no "
                 f"period to request {self.pe_name} at."
             )
