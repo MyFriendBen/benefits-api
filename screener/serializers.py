@@ -7,6 +7,7 @@ from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
 from configuration.models import Configuration
+from programs.framework.base import PaymentUnit
 from programs.federal import FEDERAL_WHITE_LABEL, filter_programs_by_name, visible_to
 from programs.models import Program, WarningMessage
 from screener.models import (
@@ -570,6 +571,7 @@ class EligibilitySerializer(serializers.Serializer):
     estimated_application_time = TranslationSerializer()
     legal_status_required = serializers.ListField()
     eligible = serializers.BooleanField()
+    payment_unit = serializers.ChoiceField(choices=[unit.value for unit in PaymentUnit])
     members = MemberEligibilitySerializer(many=True)
     failed_tests = serializers.ListField()
     passed_tests = serializers.ListField()

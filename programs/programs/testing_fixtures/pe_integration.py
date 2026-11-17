@@ -48,6 +48,7 @@ from conftest import PE_CAPTURE_DIR_ENV_VAR, pe_may_record, vcr_record_mode
 from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
+from programs.programs.testing_fixtures.payment_unit import assert_household_members_unpriced
 from programs.util import Dependencies
 from programs.vintage import PROGRAM_VINTAGE
 from programs.programs.testing_fixtures import households
@@ -235,6 +236,7 @@ def calc_pe_program(
         raise
 
     capture_result(eligible=bool(eligibility.eligible), value=math.trunc(eligibility.value))
+    assert_household_members_unpriced(eligibility, calculator_class.__name__)
 
     return eligibility
 

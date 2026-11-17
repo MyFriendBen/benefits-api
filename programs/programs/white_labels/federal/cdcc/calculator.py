@@ -11,7 +11,7 @@ from typing import Optional
 
 from sentry_sdk import capture_message
 
-from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, PaymentUnit, ProgramCalculator
 from programs.programs.white_labels.federal.tax import (
     FEDERAL_TAX_YEARS,
     HEAD_OF_HOUSEHOLD,
@@ -109,6 +109,8 @@ class FederalCdcc(ProgramCalculator):
     """
 
     program_code = "federal_cdcc"
+    # Spec section 7: one credit on the filers' return.
+    payment_unit = PaymentUnit.HOUSEHOLD
 
     qualifying_child_age_limit = 13
     care_expense_types = ("childCare", "dependentCare")
@@ -150,9 +152,6 @@ class FederalCdcc(ProgramCalculator):
         credit = min(Decimal(percentage) * base / 100, self._income_tax)
 
         return int(credit.quantize(Decimal(1), rounding=ROUND_HALF_UP))
-
-    def member_value(self, member: HouseholdMember) -> int:
-        return 0
 
     @cached_property
     def _params(self) -> CdccYear:

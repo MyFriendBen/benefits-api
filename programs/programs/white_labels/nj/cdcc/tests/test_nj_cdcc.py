@@ -14,7 +14,7 @@ from datetime import date
 from typing import Optional
 from unittest.mock import patch
 
-from programs.framework.base import Eligibility
+from programs.framework.base import Eligibility, PaymentUnit
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.federal.cdcc.calculator import FederalCdcc
 from programs.programs.white_labels.nj.cdcc.calculator import NjCdcc
@@ -78,6 +78,10 @@ class NjCdccTestCase(CustomCalculatorTestCase):
 class TestRegistration(NjCdccTestCase):
     def test_program_code(self):
         self.assertEqual(NjCdcc.program_code, "nj_cdcc")
+
+    def test_the_credit_is_paid_to_the_household(self):
+        """Inherited from FederalCdcc; the spec's section 7 says `household` too."""
+        self.assertEqual(NjCdcc.payment_unit, PaymentUnit.HOUSEHOLD)
 
     def test_constants(self):
         c = NjCdcc
