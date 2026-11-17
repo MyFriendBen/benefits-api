@@ -26,7 +26,7 @@ interactions:
       {"household": {"members": ["73011", "73012", "73013"], "state_code": {"2026":
       "MA"}}}, "spm_units": {"spm_unit": {"members": ["73011", "73012", "73013"],
       "spm_unit_assets": {"2026": 0}, "ma_ccfa_eligible": {"2026": null}}}, "marital_units":
-      {}}, "version": "2.72.5"}'
+      {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -39,7 +39,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -71,7 +71,7 @@ interactions:
         {"household": {"members": ["73011", "73012", "73013"], "state_code": {"2026":
         "MA"}}}, "spm_units": {"spm_unit": {"members": ["73011", "73012", "73013"],
         "spm_unit_assets": {"2026": 0}, "ma_ccfa_eligible": {"2026": true}}}, "marital_units":
-        {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version": null,
+        {}}, "policyengine_bundle": {"model_version": "2.94.7", "data_version": null,
         "dataset": null}}'
     headers:
       Alt-Svc:
@@ -83,15 +83,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:23:26 GMT
+      - Tue, 17 Nov 2026 21:13:19 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-728c03d7a724a861873a0ca431c649a2-fc908fa6d691548d-00
+      - 00-53820f675215a6ce6c01aed3ba270808-bee4e1190f0b4011-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 728c03d7a724a861873a0ca431c649a2
+      - 53820f675215a6ce6c01aed3ba270808/15621773183779181200
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -99,7 +99,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 3e7b6b86-cab3-456b-be35-9668103a91af
+      - 3739ea9f-9a87-484e-8199-1e522bcc4e1e
       x-policyengine-route-channel:
       - current
     status:
