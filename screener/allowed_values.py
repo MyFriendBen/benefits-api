@@ -51,6 +51,11 @@ ACUTE_OPTION_FIELDS: dict[str, str] = {
 # Set by the screener for the first member, never offered as a choice. Calculators read it.
 HEAD_OF_HOUSEHOLD = "headOfHousehold"
 
+# The utility expenses the energy calculator asks about (CESN's `cesn/util.py` reads them). The
+# screener keeps a copy (`EXPENSE_TYPES` in its EnergyCalculator/Steps/Expenses.tsx), because it
+# draws an icon for each, and `configuration/test_served_lists.py` pins the two together.
+ENERGY_CALCULATOR_EXPENSE_TYPES = ("heating", "cooling", "electricity")
+
 
 def _keys(options: Mapping[str, Any]) -> set[str]:
     return set(options)
@@ -69,14 +74,13 @@ def accepted_values() -> dict[str, frozenset[str]]:
     income_categories: set[str] = set()
     income_types: set[str] = set()
     frequencies: set[str] = set()
-    expense_types: set[str] = set()
+    expense_types: set[str] = set(ENERGY_CALCULATOR_EXPENSE_TYPES)
     for config in white_label_config.values():
         relationships |= _keys(config.relationship_options)
         income_categories |= _keys(config.income_categories)
         income_types |= _nested_keys(config.income_options_by_category)
         frequencies |= _keys(config.frequency_options)
         expense_types |= _nested_keys(config.expense_options_by_category)
-        expense_types |= _keys(config.energy_calculator_expense_options)
 
     return {
         "relationship": frozenset(relationships),

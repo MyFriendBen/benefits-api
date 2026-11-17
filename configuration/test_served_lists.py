@@ -18,7 +18,7 @@ from configuration.models import Configuration
 from configuration.white_labels import white_label_config
 from programs.allowed_values import NavigatorLanguageCode, USER_SELECTED_LEGAL_STATUSES
 from programs.models import Program
-from screener.allowed_values import ACUTE_OPTION_FIELDS
+from screener.allowed_values import ACUTE_OPTION_FIELDS, ENERGY_CALCULATOR_EXPENSE_TYPES
 from screener.models import Screen, WhiteLabel
 
 # benefits-calculator: `ALL_VALID_WHITE_LABELS` (src/Types/WhiteLabel.ts)
@@ -105,6 +105,8 @@ SCREENER_ICONS = {
 }
 # benefits-calculator: the `useValueFormats` keys other than `default` (src/Components/Results/FormattedValue.tsx)
 SCREENER_VALUE_FORMATS = {"lump_sum", "estimated_annual"}
+# benefits-calculator: `EXPENSE_TYPES` (src/Components/EnergyCalculator/Steps/Expenses.tsx)
+SCREENER_ENERGY_CALCULATOR_EXPENSE_TYPES = {"heating", "cooling", "electricity"}
 # benefits-calculator: `ACUTE_CONDITION_FIELDS` (src/Assets/acuteConditionFields.ts)
 SCREENER_ACUTE_CONDITION_FIELDS = {
     "food": "needs_food",
@@ -158,6 +160,9 @@ class ScreenerParityTests(SimpleTestCase):
             with self.subTest(white_label=code):
                 self.assertEqual(used - SCREENER_UI_OPTIONS, set())
 
+    def test_energy_calculator_expenses_match_the_screener(self) -> None:
+        self.assertEqual(set(ENERGY_CALCULATOR_EXPENSE_TYPES), SCREENER_ENERGY_CALCULATOR_EXPENSE_TYPES)
+
     def test_household_needs_save_to_the_same_fields_as_the_screener(self) -> None:
         self.assertEqual(ACUTE_OPTION_FIELDS, SCREENER_ACUTE_CONDITION_FIELDS)
 
@@ -203,10 +208,3 @@ class AddConfigServesListsTests(TestCase):
                 self.assertEqual(
                     list(self._served(white_label, "navigator_language_options")), NavigatorLanguageCode.values
                 )
-
-    def test_the_energy_calculator_gets_its_expense_types(self) -> None:
-        call_command("add_config", "cesn")
-
-        self.assertEqual(
-            list(self._served("cesn", "energy_calculator_expense_options")), ["heating", "cooling", "electricity"]
-        )

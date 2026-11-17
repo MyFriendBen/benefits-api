@@ -210,13 +210,6 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.expense_options_by_category, "active": True},
             )
 
-            # Save energy_calculator_expense_options to database
-            Configuration.objects.update_or_create(
-                name="energy_calculator_expense_options",
-                white_label=white_label,
-                defaults={"data": WhiteLabelData.energy_calculator_expense_options, "active": True},
-            )
-
             # Save condition_options to database
             Configuration.objects.update_or_create(
                 name="condition_options",
