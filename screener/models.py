@@ -1082,7 +1082,12 @@ class EligibilitySnapshot(models.Model):
     #: Deliberately not wired into the `had_error=False` filters that pick the latest usable
     #: snapshot (`views.py`, `serializers.py`, `assistant.py`): a degraded run is still the
     #: user's most recent real result, so the assistant and NPS should keep seeing it.
-    had_external_api_failure = models.BooleanField(default=False)
+    #:
+    #: Nullable for deploy safety, the same reason as `dropped_programs`: the release phase
+    #: migrates before the new dynos take over, and code that predates this field inserts no
+    #: value for it, so a NOT NULL column would fail every eligibility calculation for that
+    #: window and for any rollback. Null means "written by code that predates the field".
+    had_external_api_failure = models.BooleanField(default=False, null=True)
 
 
 class NPSScore(models.Model):
