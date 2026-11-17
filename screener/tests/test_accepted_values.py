@@ -1,6 +1,6 @@
 """
-`/api/screens/` refuses a relationship, income, expense, frequency or language value no white label
-offers, and still accepts any value a saved screen already holds when it is edited.
+`/api/screens/` refuses a relationship, income, expense or frequency value no white label offers,
+and still accepts any value a saved screen already holds when it is edited.
 """
 
 from typing import Any
@@ -32,7 +32,11 @@ class AcceptedValuesTests(SimpleTestCase):
 
         self.assertIn("headOfHousehold", accepted["relationship"])
         self.assertIn("electricity", accepted["expense_type"])
-        self.assertIn("zh-hans", accepted["request_language_code"])
+
+    def test_an_expense_is_never_hourly(self) -> None:
+        """Income may be hourly; `Expense.monthly()` can't convert an hourly expense."""
+        self.assertIn("hourly", accepted_values()["income_frequency"])
+        self.assertEqual(set(unaccepted_values({"expenses": [expense(frequency="hourly")]})), {"expenses[0].frequency"})
 
     def test_a_value_any_white_label_offers_is_accepted_everywhere(self) -> None:
         # Only Colorado offers these; the Get Ahead apps and test screens have no config of their own.
@@ -41,7 +45,6 @@ class AcceptedValuesTests(SimpleTestCase):
 
     def test_blank_answers_are_left_to_the_calculators(self) -> None:
         attrs = {
-            "request_language_code": None,
             "household_members": [member(relationship="", category=None, type="", frequency=None)],
             "expenses": [expense(type=None, frequency="")],
         }
@@ -50,7 +53,6 @@ class AcceptedValuesTests(SimpleTestCase):
 
     def test_each_unknown_answer_is_named_by_its_path(self) -> None:
         attrs = {
-            "request_language_code": "en",
             "household_members": [
                 member(),
                 member(relationship="sibling", category="hasIncome", type="other", frequency="fortnightly"),
@@ -63,7 +65,6 @@ class AcceptedValuesTests(SimpleTestCase):
         self.assertEqual(
             set(errors),
             {
-                "request_language_code",
                 "household_members[1].relationship",
                 "household_members[1].income_streams[0].category",
                 "household_members[1].income_streams[0].type",
@@ -117,11 +118,11 @@ class ScreenApiTests(APITestCase):
         self.assertIn("household_members[1].relationship", response.data)
         self.assertFalse(Screen.objects.exists())
 
-    def test_an_unknown_language_is_refused(self) -> None:
-        response = self._post([member()], [], request_language_code="en")
+    def test_the_language_is_not_checked(self) -> None:
+        """A returning user's browser can still hold `zh` (now `zh-hans`) and send it on a new screen."""
+        response = self._post([member()], [], request_language_code="zh")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.data)
-        self.assertIn("request_language_code", response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
 
     def _saved_screen_with_retired_answers(self) -> Screen:
         """A screen from before some options were retired, as tens of thousands are."""
