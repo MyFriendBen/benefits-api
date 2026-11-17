@@ -5,7 +5,6 @@ from configuration.models import (
     Configuration,
 )
 from configuration.white_labels import state_options, white_label_config
-from screener.models import NPSScore
 import argparse
 
 

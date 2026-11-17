@@ -1,5 +1,5 @@
 from tqdm import trange
-from integrations.services.hubspot.integration import Hubspot, upsert_user_hubspot
+from integrations.services.hubspot.integration import Hubspot
 from .models import (
     Screen,
     EligibilitySnapshot,

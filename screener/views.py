@@ -1,4 +1,3 @@
-import hashlib
 import requests
 from collections.abc import Mapping
 from typing import Any, Optional
@@ -24,7 +23,7 @@ from screener.models import (
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
-from rest_framework import viewsets, views, status, mixins, throttling
+from rest_framework import viewsets, views, status, mixins
 from rest_framework.exceptions import NotFound
 from rest_framework import permissions
 from rest_framework.request import Request
@@ -52,7 +51,6 @@ from programs.models import (
     Document,
     Navigator,
     ProgramCategory,
-    UrgentNeedType,
     Program,
     Referrer,
     WarningMessage,

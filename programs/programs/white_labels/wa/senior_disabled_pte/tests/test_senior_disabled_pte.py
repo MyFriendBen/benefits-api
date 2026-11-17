@@ -4,7 +4,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.wa.senior_disabled_pte.calculator import WaSeniorDisabledPte
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 from screener.models import HouseholdMember
 
 

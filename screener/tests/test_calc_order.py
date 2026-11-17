@@ -15,7 +15,6 @@ new gating program is covered by these tests the day it is written.
 
 import ast
 import inspect
-import re
 import subprocess
 import sys
 from pathlib import Path

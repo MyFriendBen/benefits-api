@@ -3,7 +3,7 @@ from decimal import Decimal
 from programs.framework.base import MemberEligibility
 from programs.programs.cross_white_label.nslp.wa import WaNslp
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
-from screener.models import HouseholdMember, Screen
+from screener.models import HouseholdMember
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
 

@@ -8,7 +8,6 @@ from django.utils.functional import cached_property
 from decimal import Decimal
 import uuid
 from authentication.models import User
-from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS

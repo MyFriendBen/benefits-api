@@ -2,7 +2,6 @@ from programs.programs.testing_fixtures.custom_calculator import CustomCalculato
 
 
 from programs.programs.white_labels.wa.wsos_grd.calculator import WaWsosGrd
-from programs.framework.pe_dependencies import member
 
 
 class TestWaWsosGrd(CustomCalculatorTestCase):
