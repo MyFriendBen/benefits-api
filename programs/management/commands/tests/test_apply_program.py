@@ -134,6 +134,39 @@ class PayloadValidationTests(SimpleTestCase):
             any(problem.startswith(f"navigators[0] ({NAV}) is missing name, email") for problem in problems)
         )
 
+    def test_an_unknown_legal_status_is_named(self) -> None:
+        payload = example_payload()
+        payload["program"]["legal_status_required"] = ["citizen", "gc_under5"]
+
+        problems = self.problems(payload)
+
+        self.assertTrue(
+            any(
+                p.startswith("program.legal_status_required has values the screener doesn't know: gc_under5")
+                for p in problems
+            )
+        )
+
+    def test_an_unknown_navigator_language_is_named(self) -> None:
+        payload = example_payload()
+        payload["navigators"][0]["languages"] = ["English"]
+
+        problems = self.problems(payload)
+
+        self.assertTrue(any("languages has values the screener doesn't know: English" in p for p in problems))
+
+    def test_an_unknown_warning_legal_status_and_calculator_are_named(self) -> None:
+        payload = example_payload()
+        payload["warning_messages"][0]["legal_statuses"] = ["other"]
+        payload["warning_messages"][0]["calculator"] = "co_old_name"
+
+        problems = self.problems(payload)
+
+        self.assertTrue(any("legal_statuses has values the screener doesn't know: other" in p for p in problems))
+        self.assertIn(
+            f"warning_messages[0] ({WARNING}): calculator 'co_old_name' isn't a registered warning calculator", problems
+        )
+
     def test_an_unknown_value_format_is_named(self) -> None:
         payload = example_payload()
         payload["program"]["value_format"] = "monthly"
@@ -248,9 +281,9 @@ class CreateTests(ApplyProgramBase):
         self.assertFalse(Navigator.objects.exists())
 
     def test_a_failed_write_rolls_back_the_whole_apply(self) -> None:
-        self.payload["program"]["legal_status_required"] = ["not_a_status"]
+        self.payload["program"]["required_programs"] = ["co_no_such_program"]
 
-        with self.assertRaisesMessage(CommandError, "legal status 'not_a_status' doesn't exist"):
+        with self.assertRaisesMessage(CommandError, "no program 'co_no_such_program' in 'co' or 'federal'"):
             self.apply(self.payload)
 
         self.assertFalse(Program.objects.exists())

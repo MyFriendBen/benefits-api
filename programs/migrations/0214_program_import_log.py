@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('programs', '0210_add_drug_alcohol_use_category'),
+        ('programs', '0213_remove_unknown_legal_statuses'),
     ]
 
     operations = [

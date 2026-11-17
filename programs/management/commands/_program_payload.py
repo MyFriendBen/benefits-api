@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 from urllib.parse import urlparse
 
+from programs.allowed_values import LegalStatusLabel, NavigatorLanguageCode, unknown_warning_calculator
 from programs.models import BaseProgram, Program
 
 TOP_LEVEL_KEYS = ("white_label", "program_category", "program", "documents", "navigators", "warning_messages")
@@ -250,6 +251,8 @@ def _parse_program(data: Any, problems: list[str]) -> Optional[ProgramFields]:
     for name in ("legal_status_required", "required_programs", "excludes_programs"):
         if name in data and not _is_text_list(data[name]):
             problems.append(f"program.{name} must be a list of strings")
+    if _is_text_list(data.get("legal_status_required")):
+        problems += _unknown_values("program.legal_status_required", data["legal_status_required"], LegalStatusLabel)
     if "year" in data and not (data["year"] is None or _is_text(data["year"])):
         problems.append('program.year must be a string, such as "2025", or null')
     if "external_name" in data and not _is_text(data["external_name"]):
@@ -322,12 +325,33 @@ def _parse_section(section: str, entries: Any, fields: SeedFields, model: type, 
         for key in fields.lists:
             if key in entry and not _is_text_list(entry[key]):
                 problems.append(f"{where}: {key} must be a list of strings")
+            elif key in entry and key in ALLOWED_LIST_VALUES:
+                problems += _unknown_values(f"{where}: {key}", entry[key], ALLOWED_LIST_VALUES[key])
+        calculator = entry.get("calculator")
+        if isinstance(calculator, str) and unknown_warning_calculator(calculator):
+            problems.append(f"{where}: calculator '{calculator}' isn't a registered warning calculator")
 
         if len(problems) == start:
             values = {key: entry[key] for key in (*fields.required, *fields.optional_text) if key in entry}
             values.update({key: tuple(entry[key]) for key in fields.lists if key in entry})
             seeds.append(model(external_name=name, **values))
     return tuple(seeds)
+
+
+# Lists inside shared-row entries whose values must come from `programs/allowed_values.py`.
+ALLOWED_LIST_VALUES: dict[str, type[LegalStatusLabel] | type[NavigatorLanguageCode]] = {
+    "legal_statuses": LegalStatusLabel,
+    "languages": NavigatorLanguageCode,
+}
+
+
+def _unknown_values(
+    where: str, values: list[str], allowed: type[LegalStatusLabel] | type[NavigatorLanguageCode]
+) -> list[str]:
+    unknown = [value for value in values if value not in allowed.values]
+    if not unknown:
+        return []
+    return [f"{where} has values the screener doesn't know: {', '.join(unknown)}. Use {', '.join(allowed.values)}."]
 
 
 def _is_text(value: Any) -> bool:

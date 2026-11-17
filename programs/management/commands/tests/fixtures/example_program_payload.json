@@ -34,7 +34,7 @@
       "assistance_link": "https://example.org/help",
       "phone_number": "+13035550100",
       "counties": [],
-      "languages": ["en"],
+      "languages": ["en-us"],
       "eligibility_programs": []
     }
   ],
