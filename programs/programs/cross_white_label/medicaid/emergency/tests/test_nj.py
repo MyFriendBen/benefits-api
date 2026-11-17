@@ -13,7 +13,7 @@ from programs.programs.cross_white_label.medicaid.emergency.base import Emergenc
 from programs.programs.cross_white_label.medicaid.emergency.nj import NjEmergencyMedicaid
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.util import UpstreamAbsentError
-from screener.models import HouseholdMember, Screen
+from screener.models import HouseholdMember
 
 EPISODE_COST = 8_265
 

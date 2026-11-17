@@ -3,7 +3,7 @@
 Transit Reduced Fare and Benefit Access both value the benefit per qualifying
 member rather than per household."""
 
-from programs.framework.base import Eligibility, MemberEligibility
+from programs.framework.base import MemberEligibility
 
 
 class IlTransportationMixin:

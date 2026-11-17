@@ -5,7 +5,6 @@ from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.tx.hcv.calculator import TxHcv
 from programs.framework.base import ProgramCalculator, Eligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_member(

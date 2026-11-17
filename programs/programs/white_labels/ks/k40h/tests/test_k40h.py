@@ -19,7 +19,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.ks.k40h.calculator import KsK40h
 from programs.framework.base import ProgramCalculator
-from programs.framework.pe_dependencies import member
 from screener.models import HouseholdMember
 
 

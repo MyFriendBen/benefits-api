@@ -30,7 +30,6 @@ from programs.framework.registry import (
     is_abstract,
     register,
 )
-from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.msp.base import Msp
 from programs.programs.cross_white_label.head_start.base import HeadStart

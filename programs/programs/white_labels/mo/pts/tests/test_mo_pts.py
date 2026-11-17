@@ -30,7 +30,6 @@ from programs.programs.testing_fixtures.pe_integration import (
 )
 from screener.models import Expense
 from programs.programs.white_labels.mo.pts.calculator import MoPts
-from programs.framework.pe_dependencies import member
 
 CLAIM_YEAR = 2025
 

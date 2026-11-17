@@ -25,7 +25,6 @@ from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.white_labels.ma.ssp.calculator import MaStateSupplementProgram
 from programs.programs.white_labels.federal.acp.calculator import Acp
-from programs.framework.pe_dependencies import household
 from programs.programs.cross_white_label.medicaid.chip.mo import MoChip
 from programs.models import FederalPoveryLimit, Program
 from programs.util import Dependencies

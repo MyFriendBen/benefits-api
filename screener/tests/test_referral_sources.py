@@ -2,7 +2,6 @@
 Tests for the ReferralSourcesView endpoint.
 """
 
-from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from authentication.models import User

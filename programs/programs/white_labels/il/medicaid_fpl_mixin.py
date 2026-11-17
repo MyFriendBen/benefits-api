@@ -4,7 +4,7 @@ All Kids, Moms and Babies, Family Care and ACA Adults apply the same percent-of-
 test against the same household income, so the check lives once here rather than in
 four calculators."""
 
-from programs.framework.base import Eligibility, MemberEligibility
+from programs.framework.base import Eligibility
 import programs.framework.eligibility_messages as messages
 
 

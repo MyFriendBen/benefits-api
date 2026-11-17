@@ -1,4 +1,3 @@
-import hashlib
 import requests
 from collections.abc import Mapping
 from typing import Any, Optional
@@ -9,7 +8,6 @@ from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from integrations.clients.policyengine import versions as pe_versions
-from programs.models import Referrer
 from integrations.clients.policyengine.registry import all_calculators
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
@@ -24,7 +22,7 @@ from screener.models import (
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
-from rest_framework import viewsets, views, status, mixins, throttling
+from rest_framework import viewsets, views, status, mixins
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework import permissions
@@ -46,8 +44,10 @@ from screener.serializers import (
 )
 
 # Throttles live in screener/throttles.py so `assistant.py` can use them without
-# importing this module.
-from screener.throttles import (
+# importing this module. HashedIPAnonRateThrottle is re-exported for existing
+# `screener.views` references.
+from screener.throttles import (  # noqa: F401
+    HashedIPAnonRateThrottle,
     NPSRateThrottle,
     PlacesRateThrottle,
     RemRateThrottle,
@@ -64,7 +64,6 @@ from programs.models import (
     Document,
     Navigator,
     ProgramCategory,
-    UrgentNeedType,
     Program,
     Referrer,
     WarningMessage,

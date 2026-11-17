@@ -18,7 +18,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.ma.cmsp.calculator import MaCmsp
 from programs.framework.base import ProgramCalculator
-from programs.framework.pe_dependencies import member
 
 
 class TestMaCmspCalculator(TestCase):
