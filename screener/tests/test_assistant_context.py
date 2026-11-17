@@ -33,8 +33,8 @@ from rest_framework.test import APITestCase
 from benefits.tests.cache_override import LOCAL_CACHE
 from programs.models import FederalPoveryLimit, LegalStatus, NavigatorLanguage, Program, Referrer, TranslationOverride
 from configuration.models import Configuration
+from screener.allowed_values import ACUTE_OPTION_FIELDS
 from screener.assistant import (
-    ACUTE_OPTION_FIELDS,
     CONTEXT_PREFETCH,
     AssistantMessageRateThrottle,
     AssistantStartRateThrottle,

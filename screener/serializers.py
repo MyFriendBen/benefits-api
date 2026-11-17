@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 from configuration.models import Configuration
 from programs.federal import FEDERAL_WHITE_LABEL, filter_programs_by_name, visible_to
 from programs.models import Program, WarningMessage
+from screener.allowed_values import unaccepted_values
 from screener.models import (
     CurrentBenefit,
     EnergyCalculatorMember,
@@ -356,8 +357,9 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop("force", False)
-        # Off only for replaying stored screens (`pull_screen`), which predate the check.
+        # Off only for replaying stored screens (`pull_screen`), which predate the checks.
         self.validate_location = kwargs.pop("validate_location", True)
+        self.validate_values = kwargs.pop("validate_values", True)
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -375,6 +377,12 @@ class ScreenSerializer(serializers.ModelSerializer):
         attrs["white_label"] = white_label
 
         self._validate_location(attrs, white_label)
+
+        # An unknown relationship, income or expense type saves fine but matches nothing a
+        # calculator looks for, so the household quietly loses programs. Refuse it instead.
+        unaccepted = unaccepted_values(attrs, self.instance) if self.validate_values else {}
+        if unaccepted:
+            raise serializers.ValidationError(unaccepted)
 
         return attrs
 

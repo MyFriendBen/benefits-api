@@ -394,6 +394,10 @@ class ConfigurationData:
         },
     }
 
+    # The energy calculator's utility expenses. Only a white label running the energy calculator sets
+    # these; they are accepted on any screen, like every other expense type.
+    energy_calculator_expense_options = {}
+
     # Household member condition options
     condition_options = {
         "you": {

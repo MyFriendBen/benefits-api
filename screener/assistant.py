@@ -56,6 +56,7 @@ from parler.models import TranslationDoesNotExist
 
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 
+from .allowed_values import ACUTE_OPTION_FIELDS
 from .models import AssistantChannel, AssistantMessage, EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
 from .navigators import navigators_for_program
 from .urgent_needs import eligible_urgent_needs
@@ -178,41 +179,10 @@ _EMAIL_SHAPED = re.compile(rf"^{EMAIL_BODY}$")
 # RFC 5321's path limit; nothing real is longer, and anything longer is a config problem.
 MAX_EMAIL_LEN = 254
 
-# `acute_condition_options` config key -> the `Screen` field it writes. This mirrors
-# `benefits-calculator/src/Assets/updateScreen.ts`, which is where the mapping has lived
-# alone until now — the browser translates the step's answers into these columns, and the
-# API only ever sees the columns.
-#
-# It is here because Benji may tell someone which category to ADD, and the categories a
-# white label actually offers are config, not code: CO offers 11 of these, TX 12, and
-# "funeral" is a category the resource table has but no white label offers at all. Naming
-# a category that isn't on their step is the same fabrication as naming a button that
-# isn't on their page, so the offered set has to be read from the same config the step
-# renders from.
-#
-# `test_assistant_context.py` asserts every key in every white label's live config
-# resolves to a real Screen field, so a new category added to the config without a column
-# fails a test instead of silently vanishing from Benji's suggestions.
-ACUTE_OPTION_FIELDS = {
-    "food": "needs_food",
-    "babySupplies": "needs_baby_supplies",
-    "housing": "needs_housing_help",
-    "support": "needs_mental_health_help",
-    "childDevelopment": "needs_child_dev_help",
-    "familyPlanning": "needs_family_planning_help",
-    "jobResources": "needs_job_resources",
-    "dentalCare": "needs_dental_care",
-    "legalServices": "needs_legal_services",
-    "savings": "needs_college_savings",
-    "veteranServices": "needs_veteran_services",
-    "disabilityResources": "needs_disability_resources",
-    "agingResources": "needs_aging_resources",
-    "homelessServices": "needs_homeless_services",
-    "freeLowCostMedicalCare": "needs_free_low_cost_medical_care",
-    "transportation": "needs_transportation",
-    "medicalExpensesAndDebt": "needs_medical_expenses_and_debt",
-    "drugAlcoholUse": "needs_drug_alcohol_use",
-}
+# Benji may tell someone which need to ADD, and the needs a white label offers are config, not
+# code: CO offers 11, TX 12. Naming one that isn't on their step is the same fabrication as naming
+# a button that isn't on their page, so the offered set is read from the config the step renders
+# from, and `ACUTE_OPTION_FIELDS` (`screener/allowed_values.py`) maps each to its `Screen` field.
 
 # Program names that look like member-level insurance, used only to report a config
 # gap loudly (see _insurance_program_names).

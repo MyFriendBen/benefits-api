@@ -1,6 +1,7 @@
 """
 Legal status labels, navigator languages and warning calculators each have one list of allowed
-values (`programs/allowed_values.py`, and the warning registry). Nothing outside a list can be saved.
+values (`programs/allowed_values.py`, and the warning registry). Nothing outside a list can be saved,
+and the screener is served what to show for each legal status and navigator language.
 """
 
 from importlib import import_module
@@ -20,6 +21,8 @@ from programs.allowed_values import (
     USER_SELECTED_LEGAL_STATUSES,
     LegalStatusLabel,
     NavigatorLanguageCode,
+    legal_status_options,
+    navigator_language_options,
 )
 from programs.models import (
     LegalStatus,
@@ -31,12 +34,12 @@ from programs.models import (
 )
 from screener.models import WhiteLabel
 
-# The screener's copies of these lists. benefits-calculator keeps its own because it holds the logic
-# behind each value, and its `src/Components/Results/apiAllowedValues.test.ts` pins its copies to
-# this repo's lists. This test is the mirror: a value added here but not in the screener fails here,
-# and one added there but not here fails there. Update both repos together.
+# The screener's copies of the legal statuses. benefits-calculator keeps its own because it holds the
+# logic behind each value, and its `src/Components/Results/apiAllowedValues.test.ts` pins its copies
+# to this repo's lists. This test is the mirror: a value added here but not in the screener fails
+# here, and one added there but not here fails there. Update both repos together.
 #
-# benefits-calculator: `citizenshipFilterConfig` keys (src/Components/Results/Filter/citizenshipFilterConfig.tsx)
+# benefits-calculator: `CitizenLabelOptions` (src/Components/Results/Filter/citizenshipFilterConfig.tsx)
 SCREENER_USER_SELECTED_LEGAL_STATUSES = {
     "citizen",
     "non_citizen",
@@ -59,28 +62,6 @@ SCREENER_CALCULATED_LEGAL_STATUSES = {
     "lawfulHealthCarePregnant",
     "lawfulHealthCareUnder19",
 }
-# benefits-calculator: `allNavigatorLanguages` keys (src/Components/Results/ProgramPage/NavigatorLanguages.tsx)
-SCREENER_NAVIGATOR_LANGUAGE_CODES = {
-    "en-us",
-    "es",
-    "vi",
-    "fr",
-    "am",
-    "so",
-    "ru",
-    "ne",
-    "my",
-    "zh",
-    "ar",
-    "sw",
-    "pl",
-    "tl",
-    "ko",
-    "ur",
-    "pt-br",
-    "ht",
-    "ALL",
-}
 
 
 class ScreenerParityTests(SimpleTestCase):
@@ -94,14 +75,40 @@ class ScreenerParityTests(SimpleTestCase):
         calculated = set(LegalStatusLabel.values) - {str(label) for label in USER_SELECTED_LEGAL_STATUSES}
         self.assertEqual(calculated, SCREENER_CALCULATED_LEGAL_STATUSES)
 
-    def test_navigator_language_codes_match_the_screener(self) -> None:
-        self.assertEqual(set(NavigatorLanguageCode.values), SCREENER_NAVIGATOR_LANGUAGE_CODES)
-
 
 class ListTests(SimpleTestCase):
     def test_user_selected_statuses_are_known_labels(self) -> None:
         self.assertEqual(len(USER_SELECTED_LEGAL_STATUSES), 6)
         self.assertLessEqual(set(USER_SELECTED_LEGAL_STATUSES), set(LegalStatusLabel.values))
+
+
+class ServedOptionsTests(SimpleTestCase):
+    """What `add_config` serves the screener for each value."""
+
+    def test_every_user_selected_status_has_a_button_in_order(self) -> None:
+        options = legal_status_options()
+
+        self.assertEqual(set(options), {str(label) for label in USER_SELECTED_LEGAL_STATUSES})
+        self.assertEqual(
+            list(options), ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"]
+        )
+        self.assertEqual(
+            options["refugee"],
+            {
+                "label": {"_label": "citizenshipButton-refugee", "_default_message": "Refugee/Asylee"},
+                "tooltip": {
+                    "_label": "citizenshipTooltip-refugee",
+                    "_default_message": "Individuals granted refugee or asylee status by the U.S. government.",
+                },
+            },
+        )
+
+    def test_every_navigator_language_has_a_badge(self) -> None:
+        options = navigator_language_options()
+
+        self.assertEqual(list(options), NavigatorLanguageCode.values)
+        self.assertEqual(options["es"], {"_label": "navLanguage.es", "_default_message": "Spanish Available"})
+        self.assertEqual(options["ALL"], {"_label": "navLanguage.ALL", "_default_message": "All Languages Available"})
 
 
 class LegalStatusTests(TestCase):
