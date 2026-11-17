@@ -105,6 +105,27 @@ SCREENER_ICONS = {
 }
 # benefits-calculator: the `useValueFormats` keys other than `default` (src/Components/Results/FormattedValue.tsx)
 SCREENER_VALUE_FORMATS = {"lump_sum", "estimated_annual"}
+# benefits-calculator: `ACUTE_CONDITION_FIELDS` (src/Assets/acuteConditionFields.ts)
+SCREENER_ACUTE_CONDITION_FIELDS = {
+    "food": "needs_food",
+    "babySupplies": "needs_baby_supplies",
+    "housing": "needs_housing_help",
+    "support": "needs_mental_health_help",
+    "childDevelopment": "needs_child_dev_help",
+    "familyPlanning": "needs_family_planning_help",
+    "jobResources": "needs_job_resources",
+    "dentalCare": "needs_dental_care",
+    "legalServices": "needs_legal_services",
+    "savings": "needs_college_savings",
+    "veteranServices": "needs_veteran_services",
+    "disabilityResources": "needs_disability_resources",
+    "agingResources": "needs_aging_resources",
+    "homelessServices": "needs_homeless_services",
+    "freeLowCostMedicalCare": "needs_free_low_cost_medical_care",
+    "transportation": "needs_transportation",
+    "medicalExpensesAndDebt": "needs_medical_expenses_and_debt",
+    "drugAlcoholUse": "needs_drug_alcohol_use",
+}
 
 
 def _icons(value: Any) -> set[str]:
@@ -136,6 +157,9 @@ class ScreenerParityTests(SimpleTestCase):
             used = {flag for flags in config.referrer_data.get("uiOptions", {}).values() for flag in flags}
             with self.subTest(white_label=code):
                 self.assertEqual(used - SCREENER_UI_OPTIONS, set())
+
+    def test_household_needs_save_to_the_same_fields_as_the_screener(self) -> None:
+        self.assertEqual(ACUTE_OPTION_FIELDS, SCREENER_ACUTE_CONDITION_FIELDS)
 
     def test_every_icon_is_one_the_screener_draws(self) -> None:
         for code, config in white_label_config.items():
@@ -179,7 +203,6 @@ class AddConfigServesListsTests(TestCase):
                 self.assertEqual(
                     list(self._served(white_label, "navigator_language_options")), NavigatorLanguageCode.values
                 )
-                self.assertEqual(self._served(white_label, "acute_condition_fields"), ACUTE_OPTION_FIELDS)
 
     def test_the_energy_calculator_gets_its_expense_types(self) -> None:
         call_command("add_config", "cesn")

@@ -23,9 +23,10 @@ from typing import Any
 
 from django.conf import settings
 
-# `acute_condition_options` config key -> the `Screen` field the answer is saved to. Served to the
-# screener as `acute_condition_fields`, which builds its payload from it. A white label can only
-# offer a need listed here: `configuration/test_served_lists.py` checks every config.
+# `acute_condition_options` config key -> the `Screen` field the answer is saved to. A white label
+# can only offer a need listed here: `configuration/test_served_lists.py` checks every config. The
+# screener keeps a copy (`ACUTE_CONDITION_FIELDS`), because it converts a reopened screen's answers
+# before its config has loaded; the same test pins the two together.
 ACUTE_OPTION_FIELDS: dict[str, str] = {
     "food": "needs_food",
     "babySupplies": "needs_baby_supplies",

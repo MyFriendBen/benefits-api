@@ -6,7 +6,6 @@ from configuration.models import (
 )
 from configuration.white_labels import state_options, white_label_config
 from programs.allowed_values import legal_status_options, navigator_language_options
-from screener.allowed_values import ACUTE_OPTION_FIELDS
 import argparse
 
 
@@ -110,7 +109,6 @@ class Command(BaseCommand):
             for name, data in (
                 ("legal_status_options", legal_status_options()),
                 ("navigator_language_options", navigator_language_options()),
-                ("acute_condition_fields", ACUTE_OPTION_FIELDS),
             ):
                 Configuration.objects.update_or_create(
                     name=name,
