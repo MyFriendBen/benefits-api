@@ -24,6 +24,7 @@ from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 from benefits.cache_config import redis_pool_kwargs
 from benefits.celery_config import BROKER_POOL_LIMIT, BROKER_SOCKET_TIMEOUT, broker_use_ssl
 from benefits.sentry_scrub import scrub_event
+from benefits.throttle_config import throttle_rate
 
 EXTRA_LANG_INFO = {
     "am": {
@@ -112,11 +113,17 @@ REST_FRAMEWORK = {
         # since one public IP can be a navigator office, a library or a mobile
         # carrier's NAT; the daily ceiling is what bounds a script on one address.
         # Per phone: a typo fix goes to a different number, so these only bound
-        # repeats to one number.
-        "message_ip": "100/hour",
-        "message_ip_day": "500/day",
-        "message_phone": "5/hour",
-        "message_phone_day": "10/day",
+        # repeats to one number. How the four work together is in
+        # screener.throttles.SaveResultsRateThrottle.
+        #
+        # Each can be changed per environment without a deploy, e.g. looser on
+        # staging where QA texts one phone repeatedly:
+        #   heroku config:set MESSAGE_PHONE_RATE=50/hour MESSAGE_PHONE_DAY_RATE=200/day
+        # A blank or unreadable value falls back to the default here.
+        "message_ip": throttle_rate("MESSAGE_IP_RATE", "100/hour"),
+        "message_ip_day": throttle_rate("MESSAGE_IP_DAY_RATE", "500/day"),
+        "message_phone": throttle_rate("MESSAGE_PHONE_RATE", "5/hour"),
+        "message_phone_day": throttle_rate("MESSAGE_PHONE_DAY_RATE", "10/day"),
     },
 }
 

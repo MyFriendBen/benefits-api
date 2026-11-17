@@ -7,8 +7,9 @@ config labels, so the language is chosen here rather than by the caller's copy.
 
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
+from benefits.tests.cache_override import LOCAL_CACHE
 from screener.models import Screen, WhiteLabel
 from screener.views import MessageViewSet
 
@@ -77,8 +78,13 @@ class TestMessageLanguage(TestCase):
         self.assertEqual(MessageViewSet._message_language({}, screen), "en-us")
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestMessageViewThreadsLanguage(TestCase):
-    """The resolved language has to actually reach MessageUser."""
+    """The resolved language has to actually reach MessageUser.
+
+    A sent text is recorded against the number's throttle budget, which is a cache
+    write, so the cache is pinned to this process.
+    """
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")

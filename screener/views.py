@@ -48,13 +48,10 @@ from screener.serializers import (
 # Throttles live in screener/throttles.py so `assistant.py` can use them without
 # importing this module.
 from screener.throttles import (
-    MessageIPDailyRateThrottle,
-    MessageIPRateThrottle,
-    MessagePhoneDailyRateThrottle,
-    MessagePhoneRateThrottle,
     NPSRateThrottle,
     PlacesRateThrottle,
     RemRateThrottle,
+    SaveResultsRateThrottle,
     save_results_phone,
 )
 from integrations.services.communications.benji_sms_hash import InvalidPhoneNumber
@@ -322,24 +319,19 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     API endpoint that logs messages sent.
 
     Throttled per IP and per phone number: it makes MyFriendBen send to any address
-    the caller supplies, behind a token that ships in the frontend bundle. Rates and
-    their reasoning are in `screener/throttles.py` and `DEFAULT_THROTTLE_RATES`.
+    the caller supplies, behind a token that ships in the frontend bundle. The rules
+    are in `SaveResultsRateThrottle`; the rates are in `DEFAULT_THROTTLE_RATES`.
     """
 
     queryset = Message.objects.all().order_by("-sent")
     serializer_class = MessageSerializer
     permission_classes = [permissions.DjangoModelPermissions]
     parser_classes = [AnyContentTypeJSONParser]
-    throttle_classes = [
-        MessageIPRateThrottle,
-        MessageIPDailyRateThrottle,
-        MessagePhoneRateThrottle,
-        MessagePhoneDailyRateThrottle,
-    ]
+    throttle_classes = [SaveResultsRateThrottle]
 
     def create(self, request: Request) -> Response:
-        # `request.data`, the same parse the phone throttles read, so the number a
-        # throttle counts is the number sent to.
+        # `request.data`, the same parse the throttle reads, so the number it checks
+        # is the number sent to.
         body = request.data
         if not isinstance(body, Mapping):
             raise ValidationError("Expected a JSON object.")
@@ -354,6 +346,9 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             message.email(body["email"], send_tests=True)
         if phone is not None:
             message.text(phone, send_tests=True)
+            # Counted only now that the text has gone out: a request that failed
+            # before this line has not spent the number's budget.
+            SaveResultsRateThrottle.record_text(phone)
 
         return Response({}, status=status.HTTP_201_CREATED)
 
