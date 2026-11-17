@@ -396,7 +396,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
             "integrations.clients.policyengine.policy_engine.build_pe_input",
             return_value=PayloadPlan(payload={}, buckets=[]),
         ) as build_payload, patch(
-            "integrations.clients.policyengine.policy_engine.pe_engines", []
+            "integrations.clients.policyengine.policy_engine.pe_engine", Mock()
         ):
             calc_pe_eligibility(self.screen, {"fake_program": calculator})
 

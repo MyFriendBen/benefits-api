@@ -5,6 +5,7 @@ failure is surfaced loudly (Sentry error), recorded for the frontend, and degrad
 an empty PE result so the caller still computes the non-PolicyEngine calculators.
 """
 
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
@@ -60,15 +61,15 @@ class TestCalcPeEligibilityFailure(TestCase):
         calc.can_calc.return_value = True
         self.calculators = {"prog": calc}
 
-    def _run(self, engines):
-        """Run calc_pe_eligibility with `engines` as the engine list, everything else
-        mocked. Returns (result, constructed, capture_message, failures)."""
+    def _run(self, raises: Optional[BaseException] = None) -> tuple:
+        """Run calc_pe_eligibility with a fake engine that optionally raises on construction,
+        everything else mocked. Returns (result, constructed, capture_message, failures)."""
         constructed = []
-        engine_classes = [_make_engine(name, constructed, raises=raises) for name, raises in engines]
+        engine_class = _make_engine("Private Policy Engine API", constructed, raises=raises)
 
         plan = PayloadPlan(payload={}, buckets=[Bucket(program_indexes=[0])])
 
-        with patch.object(pe, "pe_engines", engine_classes), patch.object(
+        with patch.object(pe, "pe_engine", engine_class), patch.object(
             pe, "build_pe_input", return_value=plan
         ), patch.object(pe, "all_eligibility", return_value={"prog": MagicMock()}), patch.object(
             pe, "capture_message"
@@ -85,7 +86,7 @@ class TestCalcPeEligibilityFailure(TestCase):
         return [c for c in capture_message.call_args_list if c.kwargs.get("level") == "error"]
 
     def test_success_serves_result_and_records_nothing(self):
-        result, constructed, capture_message, failures = self._run([("Private Policy Engine API", None)])
+        result, constructed, capture_message, failures = self._run()
 
         self.assertEqual(constructed, ["Private Policy Engine API"])
         self.assertIn("prog", result["eligibility"])
@@ -93,9 +94,7 @@ class TestCalcPeEligibilityFailure(TestCase):
         self.assertEqual(failures, [])
 
     def test_400_failure_is_loud_recorded_and_degrades(self):
-        result, _, capture_message, failures = self._run(
-            [("Private Policy Engine API", PolicyEngineAPIError("bad payload", status_code=400))]
-        )
+        result, _, capture_message, failures = self._run(PolicyEngineAPIError("bad payload", status_code=400))
 
         self.assertEqual(result["eligibility"], {})  # degraded -> caller runs custom calcs
         self.assertTrue(self._error_messages(capture_message))  # loud
@@ -105,9 +104,7 @@ class TestCalcPeEligibilityFailure(TestCase):
         # A timeout/5xx/auth failure is handled identically to a 400 — there's no fallback,
         # so every failure means PolicyEngine programs are unavailable.
         for status in (None, 503, 401):
-            result, _, capture_message, failures = self._run(
-                [("Private Policy Engine API", PolicyEngineAPIError("boom", status_code=status))]
-            )
+            result, _, capture_message, failures = self._run(PolicyEngineAPIError("boom", status_code=status))
             self.assertEqual(result["eligibility"], {}, status)
             self.assertTrue(self._error_messages(capture_message), status)
             self.assertEqual(failures, [POLICY_ENGINE], status)
@@ -115,7 +112,7 @@ class TestCalcPeEligibilityFailure(TestCase):
     def test_non_policyengine_exception_also_degrades(self):
         # A non-PolicyEngineAPIError (e.g. bad response shape) is caught by the generic
         # handler and treated the same: loud, recorded, degraded.
-        result, _, capture_message, failures = self._run([("Private Policy Engine API", ValueError("weird"))])
+        result, _, capture_message, failures = self._run(ValueError("weird"))
 
         self.assertEqual(result["eligibility"], {})
         self.assertTrue(self._error_messages(capture_message))
@@ -138,37 +135,21 @@ class TestCalcPeEligibilityFailure(TestCase):
         self.assertTrue(self._error_messages(capture_message))
         self.assertEqual(failures, [POLICY_ENGINE])
 
-    def test_no_fallback_second_engine_never_tried(self):
-        # Even if a second engine were present, a first-engine failure returns immediately
-        # (degraded) — we never silently try another endpoint.
-        result, constructed, _, failures = self._run(
-            [
-                ("Private Policy Engine API", PolicyEngineAPIError("down", status_code=500)),
-                ("Some Other Engine", None),  # would succeed, but must NOT be reached
-            ]
-        )
-
-        self.assertEqual(constructed, ["Private Policy Engine API"])
-        self.assertEqual(result["eligibility"], {})
-        self.assertEqual(failures, [POLICY_ENGINE])
-
-    def test_pe_engines_is_only_the_private_endpoint(self):
+    def test_the_engine_is_the_private_endpoint(self):
         # Lock the removal of the public fallback: the private household.api is the only
         # configured engine.
-        self.assertEqual(pe_engines_module.pe_engines, [PrivateApiSim])
+        self.assertIs(pe_engines_module.pe_engine, PrivateApiSim)
 
     def test_status_code_is_in_the_sentry_message(self):
         # PolicyEngineAPIError has always carried the status; it belongs in the message so a
         # 400 (our payload) is distinguishable from a 5xx (theirs) in the Sentry issue list.
-        _, _, capture_message, _ = self._run(
-            [("Private Policy Engine API", PolicyEngineAPIError("bad payload", status_code=400))]
-        )
+        _, _, capture_message, _ = self._run(PolicyEngineAPIError("bad payload", status_code=400))
 
         self.assertIn("(HTTP 400)", self._error_messages(capture_message)[0].args[0])
 
     def test_no_status_code_leaves_the_message_clean(self):
         # A timeout or DNS failure never got a response, so there is no status to report.
-        _, _, capture_message, _ = self._run([("Private Policy Engine API", PolicyEngineAPIError("timed out"))])
+        _, _, capture_message, _ = self._run(PolicyEngineAPIError("timed out"))
 
         self.assertNotIn("HTTP", self._error_messages(capture_message)[0].args[0])
 
@@ -293,7 +274,7 @@ class TestUnconfiguredProgramIsDropped(TestCase):
         plan = PayloadPlan(payload={}, buckets=[Bucket(program_indexes=[0])])
 
         with patch.object(pe, "build_pe_input", return_value=plan) as build, patch.object(
-            pe, "pe_engines", [_make_engine("Private Policy Engine API", [])]
+            pe, "pe_engine", _make_engine("Private Policy Engine API", [])
         ), patch.object(pe, "all_eligibility", return_value={"fine": MagicMock()}), patch.object(
             pe, "capture_message"
         ), track_external_api_failures():
