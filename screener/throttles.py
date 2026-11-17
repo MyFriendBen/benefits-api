@@ -1,4 +1,4 @@
-"""Rate throttles for the screener's AllowAny proxy endpoints.
+"""Rate throttles for the screener's public endpoints.
 
 Split out of `views.py` so `assistant.py` doesn't have to import it for one base class.
 That import pulled the PolicyEngine registry, urgent-need calculation, serializers and
@@ -9,7 +9,9 @@ Rates live in `DEFAULT_THROTTLE_RATES` (benefits/settings.py), keyed by `scope`.
 """
 
 import hashlib
+import hmac
 
+from django.conf import settings
 from rest_framework import throttling
 
 
@@ -77,3 +79,71 @@ class AssistantHistoryRateThrottle(HashedIPAnonRateThrottle):
     """
 
     scope = "assistant_history"
+
+
+class MessageIPRateThrottle(HashedIPAnonRateThrottle):
+    """Save My Results sends (the popup's email and text), per client IP, per hour.
+
+    The endpoint sits behind the frontend's shared API token, which ships in the JS
+    bundle, so being authenticated says nothing about who is calling. The IP key
+    applies to authenticated requests too: `HashedIPAnonRateThrottle` replaces
+    `AnonRateThrottle.get_cache_key`, which is what would exempt them.
+
+    Budgeted for a navigator office or library sending results for many households
+    from one address, not for one household.
+    """
+
+    scope = "message_ip"
+
+
+class MessageIPDailyRateThrottle(HashedIPAnonRateThrottle):
+    """The daily ceiling behind `MessageIPRateThrottle`.
+
+    The hourly rate alone would allow a script on one address roughly 24x its
+    budget per day; this caps the total.
+    """
+
+    scope = "message_ip_day"
+
+
+class MessagePhoneRateThrottle(throttling.SimpleRateThrottle):
+    """Save My Results texts to one phone number, per hour.
+
+    Fixing a mistyped number sends to a different number, so a household correcting
+    a typo never spends this budget twice. What it bounds is repeated texts to the
+    same number, from any IP. Requests without a phone (email-only sends) are not
+    counted.
+
+    The key is an HMAC of the number under SECRET_KEY rather than a plain hash: a
+    10-digit number is small enough to brute-force from an unkeyed sha256.
+    """
+
+    scope = "message_phone"
+
+    def get_cache_key(self, request, view):
+        phone = request.data.get("phone") if hasattr(request.data, "get") else None
+        if not isinstance(phone, str):
+            return None
+        ident = self.normalize_phone(phone)
+        if not ident:
+            return None
+        hashed = hmac.new(settings.SECRET_KEY.encode(), ident.encode(), hashlib.sha256).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+    @staticmethod
+    def normalize_phone(phone: str) -> str:
+        """One key per US number however it was written.
+
+        The popup sends `+1` and ten digits, but the endpoint is reachable without
+        the popup, so "+1 (303) 555-0100", "3035550100" and "+13035550100" must not
+        be three separate budgets. Keeping the last ten digits does that; a
+        collision between two non-US inputs only makes the throttle stricter.
+        """
+        digits = "".join(c for c in phone if c.isdigit())
+        return digits[-10:] if digits else phone.strip()
+
+
+class MessagePhoneDailyRateThrottle(MessagePhoneRateThrottle):
+    """The daily ceiling behind `MessagePhoneRateThrottle`."""
+
+    scope = "message_phone_day"

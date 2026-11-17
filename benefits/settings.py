@@ -100,6 +100,15 @@ REST_FRAMEWORK = {
         # and changing or clearing a rating is another call, so a normal conversation
         # spends multiples of its message count here.
         "assistant_rating": "240/hour",
+        # Save My Results (MessageViewSet) makes MyFriendBen send an email or a text
+        # to any address the caller supplies. Per IP: generous enough for a navigator
+        # office sending for many households from one address, tight enough that a
+        # script cannot make MyFriendBen text thousands of numbers. Per phone: a typo
+        # fix goes to a different number, so these only bound repeats to one number.
+        "message_ip": "20/hour",
+        "message_ip_day": "100/day",
+        "message_phone": "5/hour",
+        "message_phone_day": "10/day",
     },
 }
 

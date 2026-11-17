@@ -43,6 +43,12 @@ from screener.serializers import (
     RemImpactSerializer,
     CurrentBenefitToggleSerializer,
 )
+from screener.throttles import (
+    MessageIPDailyRateThrottle,
+    MessageIPRateThrottle,
+    MessagePhoneDailyRateThrottle,
+    MessagePhoneRateThrottle,
+)
 from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UnregisteredCalculatorError, UpstreamAbsentError
@@ -293,14 +299,26 @@ class EligibilityTranslationView(views.APIView):
 class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     API endpoint that logs messages sent.
+
+    Throttled per IP and per phone number: it makes MyFriendBen send to any address
+    the caller supplies, behind a token that ships in the frontend bundle. Rates and
+    their reasoning are in `screener/throttles.py` and `DEFAULT_THROTTLE_RATES`.
     """
 
     queryset = Message.objects.all().order_by("-sent")
     serializer_class = MessageSerializer
     permission_classes = [permissions.DjangoModelPermissions]
+    throttle_classes = [
+        MessageIPRateThrottle,
+        MessageIPDailyRateThrottle,
+        MessagePhoneRateThrottle,
+        MessagePhoneDailyRateThrottle,
+    ]
 
     def create(self, request):
-        body = json.loads(request.body.decode())
+        # `request.data`, not `request.body`: the phone throttles parse the body
+        # first, and reading the raw body after DRF has parsed it raises.
+        body = request.data
         screen = Screen.objects.get(uuid=body["screen"])
 
         message = MessageUser(screen, self._message_language(body, screen))

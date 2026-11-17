@@ -5,7 +5,6 @@ The subject and body are built server-side by MessageUser from white-label
 config labels, so the language is chosen here rather than by the caller's copy.
 """
 
-import json
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -15,10 +14,10 @@ from screener.views import MessageViewSet
 
 
 class FakeRequest:
-    """Minimal stand-in: MessageViewSet.create reads request.body directly."""
+    """Minimal stand-in: MessageViewSet.create reads only the parsed `request.data`."""
 
     def __init__(self, payload: dict):
-        self.body = json.dumps(payload).encode()
+        self.data = payload
 
 
 class TestMessageLanguage(TestCase):
