@@ -1,4 +1,3 @@
-import hashlib
 import requests
 from collections.abc import Mapping
 from typing import Any, Optional
@@ -9,7 +8,6 @@ from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from integrations.clients.policyengine import versions as pe_versions
-from programs.models import Referrer
 from integrations.clients.policyengine.registry import all_calculators
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
@@ -24,7 +22,7 @@ from screener.models import (
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
-from rest_framework import viewsets, views, status, mixins, throttling
+from rest_framework import viewsets, views, status, mixins
 from rest_framework.exceptions import NotFound
 from rest_framework import permissions
 from rest_framework.request import Request
@@ -52,7 +50,6 @@ from programs.models import (
     Document,
     Navigator,
     ProgramCategory,
-    UrgentNeedType,
     Program,
     Referrer,
     WarningMessage,
@@ -940,7 +937,7 @@ def urgent_need_results(screen: Screen, data):
 
 # Throttles now live in screener/throttles.py so `assistant.py` can use the base class
 # without importing this module. Re-exported here for any existing references.
-from .throttles import (  # noqa: E402  (kept next to its former definition site)
+from .throttles import (  # noqa: E402, F401  (re-exported; kept next to its former definition site)
     HashedIPAnonRateThrottle,
     NPSRateThrottle,
     PlacesRateThrottle,

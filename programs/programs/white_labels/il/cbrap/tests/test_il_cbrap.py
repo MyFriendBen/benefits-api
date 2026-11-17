@@ -1,11 +1,8 @@
 from datetime import date
 from unittest.mock import patch
 
-from django.test import TestCase
-
 from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.framework.base import ProgramCalculator
-from programs.models import FederalPoveryLimit, Program
 from programs.programs.testing_fixtures.custom_calculator import (
     CustomCalculatorTestCase,
     add_expense,
@@ -14,7 +11,6 @@ from programs.programs.testing_fixtures.custom_calculator import (
 )
 from programs.programs.white_labels.il.cbrap.calculator import IlCbrap
 from programs.util import Dependencies, DependencyError
-from screener.models import Expense, HouseholdMember, IncomeStream, Screen, WhiteLabel
 
 #: HUD FY2025 Standard Section 8 low-income (80%) limits for Illinois — the vintage IHDA
 #: used for the FY2026 CBRAP round. Keyed by (county, household_size) as the spec's stub

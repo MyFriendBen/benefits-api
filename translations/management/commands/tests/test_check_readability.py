@@ -5,7 +5,6 @@ These tests verify that the readability checker correctly analyzes
 English and Spanish text using various readability metrics.
 """
 
-import pytest
 from io import StringIO
 from unittest.mock import patch, MagicMock
 

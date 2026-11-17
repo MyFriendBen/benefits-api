@@ -10,7 +10,6 @@ the figure rounded half-up (8,378.57 -> 8,379).
 """
 
 from datetime import date
-from typing import Optional
 
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.nj.fli.calculator import NjFli

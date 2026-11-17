@@ -13,7 +13,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.tx.ccad.calculator import TxCcad
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_calculator(

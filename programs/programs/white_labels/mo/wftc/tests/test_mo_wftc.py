@@ -31,7 +31,6 @@ from programs.programs.testing_fixtures.pe_integration import (
 from programs.framework.base import Eligibility
 from screener.models import Expense, HouseholdMember, Screen
 from programs.programs.white_labels.mo.wftc.calculator import MoWftc
-from programs.framework.pe_dependencies import member
 
 PE_VERSION = "2.9.0"
 PE_VERSION_REASON = (

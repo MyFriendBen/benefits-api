@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.wa.udp.calculator import WaUdp
 from programs.framework.base import ProgramCalculator, Eligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_member(age, yearly_income=0, ssi_income=0):

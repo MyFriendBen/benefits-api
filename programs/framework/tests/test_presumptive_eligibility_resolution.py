@@ -11,7 +11,6 @@ from programs.programs.white_labels.co.dsr.calculator import DenverSidewalkRebat
 from programs.programs.white_labels.co.dtr.calculator import DenverTrashRebate
 from programs.programs.cross_white_label.weatherization.co import WeatherizationAssistance
 from programs.programs.cross_white_label.head_start.nc import NCHeadStart
-from programs.programs.white_labels.nc.sunbucks.calculator import SunBucks
 from programs.programs.cross_white_label.weatherization.tx import TxWap
 from programs.programs.testing_fixtures.current_benefit_fixtures import ReceivesBenefitTestCase
 

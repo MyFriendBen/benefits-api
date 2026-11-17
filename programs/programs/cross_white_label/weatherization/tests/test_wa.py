@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 from programs.programs.cross_white_label.weatherization.wa import WaWap
 from programs.framework.base import Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_member(insurance_medicaid=False, insurance_chp=False):
