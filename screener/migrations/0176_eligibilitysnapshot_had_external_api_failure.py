@@ -10,7 +10,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Added without a default so rows written before the field stay NULL ("not recorded")
+        # rather than being backfilled False ("no failure"), then given its Python-side default
+        # for new writes. The AlterField emits no SQL on Django 4.2.
         migrations.AddField(
+            model_name='eligibilitysnapshot',
+            name='had_external_api_failure',
+            field=models.BooleanField(null=True),
+        ),
+        migrations.AlterField(
             model_name='eligibilitysnapshot',
             name='had_external_api_failure',
             field=models.BooleanField(default=False, null=True),
