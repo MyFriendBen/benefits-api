@@ -110,6 +110,12 @@ class PayloadValidationTests(SimpleTestCase):
         self.assertIn("program.learn_more_link 'http://[invalid' isn't an http(s) URL", problems)
         self.assertIn("program.has_calculator must be true or false", problems)
 
+    def test_a_program_key_that_isnt_lowercase_is_refused(self) -> None:
+        payload = example_payload()
+        payload["program"]["name_abbreviated"] = "CO_Example_Program"
+
+        self.assertIn("program.name_abbreviated 'CO_Example_Program' must be lowercase", self.problems(payload))
+
     def test_an_empty_link_is_allowed(self) -> None:
         payload = example_payload()
         payload["program"]["learn_more_link"] = ""

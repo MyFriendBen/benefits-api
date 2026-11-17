@@ -239,6 +239,10 @@ def _parse_program(data: Any, problems: list[str]) -> Optional[ProgramFields]:
 
     if "name_abbreviated" in data and not _is_text(data["name_abbreviated"]):
         problems.append("program.name_abbreviated must be a non-empty string")
+    elif "name_abbreviated" in data and data["name_abbreviated"] != data["name_abbreviated"].lower():
+        # Program keys are stored lowercase (`Program.save()`, and a database constraint), so an
+        # uppercase key would never find its own program again.
+        problems.append(f"program.name_abbreviated '{data['name_abbreviated']}' must be lowercase")
     for name in PROGRAM_TEXT_FIELDS:
         if name in data and not isinstance(data[name], str):
             problems.append(f"program.{name} must be a string")
