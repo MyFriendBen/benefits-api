@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_connections_to_success",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Connections to Success",
+      "description": "Free career training, personal development classes, mentoring, and ongoing support to help you get and keep a stable job. Women in the program can also get free interview and work clothes and career coaching through Dress for Success Kansas City.",
+      "link": "https://connectionstosuccess.org/",
+      "warning": "Call or use the website's contact form to check program availability. Free work clothes through Dress for Success require a referral from Connections to Success or a partner agency.",
+      "website_description": "Free job training, mentoring, and work clothes to help you find stable work in the Kansas City area.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "+18165615115",
+    "counties": [
+      "Jackson County",
+      "Clay County",
+      "Platte County",
+      "Cass County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
