@@ -573,6 +573,19 @@ class BuildContextTests(TestCase):
             ["Warning from federal.", "Warning from test.", "Warning from test_energy."],
         )
 
+    def test_state_program_warning_owned_by_another_white_label_is_still_included(self):
+        """Only federal programs are filtered by white label: a state program keeps a warning
+        another white label owns, as the page does."""
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        self.add_snapshot_row("lifeline")
+        warning = seed_warning(self.programs["lifeline"], "_show", "Enroll in SNAP first.")
+        warning.white_label = WhiteLabel.objects.get(code="other")
+        warning.save()
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["warnings"], ["Enroll in SNAP first."])
+
     def test_warnings_key_is_omitted_when_the_program_has_none(self):
         self.add_snapshot_row("snap")
 
