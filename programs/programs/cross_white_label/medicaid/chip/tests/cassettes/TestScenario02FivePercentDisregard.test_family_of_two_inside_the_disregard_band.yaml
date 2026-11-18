@@ -21,7 +21,7 @@ interactions:
       {"spm_unit": {"members": ["201", "202"], "tanf": {"2026": null}, "receives_tanf":
       {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
       {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
-      {}}, "version": "2.72.5"}'
+      {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -34,7 +34,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -60,7 +60,7 @@ interactions:
         "MO"}}}, "spm_units": {"spm_unit": {"members": ["201", "202"], "tanf": {"2026":
         0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
         false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-        false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.72.5",
+        false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.94.7",
         "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
@@ -72,15 +72,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:25:01 GMT
+      - Tue, 17 Nov 2026 21:14:48 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-de73d6e8e48ae77a6acdd0874937b1ef-20e211570df00b3c-00
+      - 00-6823310d7e4454786bfef9b1ceaf94a0-2fd0116931218311-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - de73d6e8e48ae77a6acdd0874937b1ef
+      - 6823310d7e4454786bfef9b1ceaf94a0/16335496789989837642
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -88,7 +88,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 9b35e994-e313-4608-bf5d-8e73d5c86a79
+      - 3c38008e-7324-4d9a-a5e8-000be13f4865
       x-policyengine-route-channel:
       - current
     status:

@@ -36,7 +36,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -77,15 +77,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 11 Nov 2026 15:17:49 GMT
+      - Tue, 17 Nov 2026 21:21:09 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-0d630fd459103d4803d9a748dcda645c-00d7fe6be605c61a-01
+      - 00-1c50609f34c64bbf1243165669fc8b2f-7cd2d303b0c80834-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 0d630fd459103d4803d9a748dcda645c;o=1
+      - 1c50609f34c64bbf1243165669fc8b2f
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -93,9 +93,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - c3b76653-a3a6-4488-8ec4-3675abd82c4c
+      - 92fe6a33-d359-41cc-b5fd-25658b633d8a
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK

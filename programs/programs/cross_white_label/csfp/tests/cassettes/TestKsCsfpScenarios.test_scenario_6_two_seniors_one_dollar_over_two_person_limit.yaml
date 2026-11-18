@@ -18,7 +18,7 @@ interactions:
       32472.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": null}, "receives_tanf":
       {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
       {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
-      {"601-602": {"members": ["601", "602"]}}}, "version": "2.72.5"}'
+      {"601-602": {"members": ["601", "602"]}}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -31,7 +31,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -55,10 +55,10 @@ interactions:
         "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
         "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
         "marital_units": {"601-602": {"members": ["601", "602"]}}}, "policyengine_bundle":
-        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
+        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
       - '1645'
       access-control-allow-origin:
@@ -66,15 +66,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:24:16 GMT
+      - Tue, 17 Nov 2026 21:14:02 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-6c25e28271feb3e26afb5009630ff074-0adb2be8c9981e95-00
+      - 00-7d17b4e14fbabe4719b9e476abbd95b4-3e45c7180fdcaaf0-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 6c25e28271feb3e26afb5009630ff074
+      - 7d17b4e14fbabe4719b9e476abbd95b4;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -82,7 +82,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - c5068bab-260b-40b6-84ca-d47a3ec96127
+      - 11288106-4466-4fdb-8c54-aa9c7f63719a
       x-policyengine-route-channel:
       - current
     status:
