@@ -381,34 +381,6 @@ class CoTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
         return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
 
 
-class NcTanfCountableEarnedIncomeDependency(SpmUnit):
-    field = "nc_tanf_countable_earned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.screen.calc_gross_income("yearly", ["earned"]))
-
-
-class NcTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
-    field = "nc_tanf_countable_gross_unearned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(
-            self.screen.calc_gross_income(
-                "yearly", ["unearned"], exclude=["sSI", "gifts", "cashAssistance", "cOSDisability"]
-            )
-        )
-
-
 class IlTanfCountableEarnedIncomeDependency(SpmUnit):
     field = "il_tanf_countable_gross_earned_income"
     dependencies = (
