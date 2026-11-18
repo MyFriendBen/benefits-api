@@ -236,9 +236,9 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
     Every limit takes its slot before the request goes on (see `RateWindow`), so
     concurrent requests are counted exactly. If the cache doesn't answer, the request
     is allowed at the first unanswered call, keeping whatever slots it had taken,
-    rather than waiting out a timeout on each of the remaining ones: the throttle fails open, quickly, instead of blocking
-    everyone or holding a worker. Two rules keep the limits from punishing the people
-    they protect:
+    rather than waiting out a timeout on each of the remaining ones: the throttle
+    fails open, quickly, instead of blocking everyone or holding a worker. Two rules
+    keep the limits from punishing the people they protect:
 
     1. **A rejected request costs nothing.** If any limit refuses the request, every
        slot it took is given back. Otherwise retrying while blocked for the hour
