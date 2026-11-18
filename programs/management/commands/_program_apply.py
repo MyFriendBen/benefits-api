@@ -72,10 +72,11 @@ class ProgramApply(RecordSync):
             elif not is_reference(entry):
                 self._note_kept_row(plan, spec, entry, row)
 
-            if spec in (NAVIGATOR, WARNING) and is_reference(entry):
-                # Notes which state sees a state navigator or warning on a federal program. Nothing
-                # here moves a row to `federal`: an existing row is never changed by an apply.
-                # Documents aren't filtered by white label, so they get no note.
+            if spec in (NAVIGATOR, WARNING):
+                # Notes which state sees a state navigator or warning on a federal program, whether the
+                # payload references it or gives its fields: an apply never changes an existing row, so
+                # it keeps its white label either way. A row this apply creates is on the payload's
+                # white label, so it gets no note. Documents aren't filtered by white label.
                 self._note_state_row_on_federal(plan, spec, name, row)
 
             if name not in linked:

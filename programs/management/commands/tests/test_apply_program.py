@@ -353,6 +353,28 @@ class FederalReferenceTests(ApplyProgramBase):
             )
         self.assertNotIn("moves it to 'federal'", output)
 
+    def test_a_state_row_given_with_its_fields_is_kept_on_its_state_and_noted(self) -> None:
+        """A v2 spec lists every navigator and warning with its fields. An existing state row is left as it
+        is, so on the federal program it still reaches only its own state, and the note says so."""
+        self.payload["navigators"][-1] = {**self.payload["navigators"][0], "external_name": "co_clinics"}
+        self.payload["warning_messages"][-1] = {**self.payload["warning_messages"][0], "external_name": "co_notice"}
+
+        output = self.apply(self.payload)
+
+        self.state_nav.refresh_from_db()
+        self.state_warning.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "co")
+        self.assertEqual(self.state_warning.white_label.code, "co")
+        for kind, name in (("navigator", "co_clinics"), ("warning", "co_notice")):
+            self.assertIn(f"{kind} '{name}' is on the 'co' white label", output)
+        self.assertNotIn("moves it to 'federal'", output)
+
+    def test_a_row_the_apply_creates_gets_no_note(self) -> None:
+        output = self.apply(self.payload)
+
+        self.assertNotIn(f"'{NAV}' is on the", output)
+        self.assertNotIn(f"'{WARNING}' is on the", output)
+
     def test_a_state_document_is_linked_without_a_note(self) -> None:
         """Documents aren't filtered by white label on a federal program, so no state restriction is claimed."""
         document = Document.objects.new_document("co", "co_proof")
