@@ -1,11 +1,13 @@
 """Benji SMS background jobs (MFB-2436; MFB-1916 proposal v3, decision 5).
 
-ONE QUEUE, ONE TASK. Every job runs on the `benji_sms` queue, consumed by the
+ONE QUEUE, TWO JOBS. Every job runs on the `benji_sms` queue, consumed by the
 `worker` process type (Procfile) through the dedicated broker (benefits/celery_config.py).
-`benji_sms_turn` is the job: generate and send the reply to one inbound text. The
-inbound webhook (MFB-2439) enqueues it through `enqueue_turn`; its body is MFB-2440.
-`benji_sms_ping` is not a second job but a probe: it runs under the same policy, so
-`manage.py benji_sms_worker_check` proves the path a turn takes.
+`benji_sms_turn` generates and sends the reply to one inbound text. The inbound webhook
+(MFB-2439) enqueues it through `enqueue_turn`; its body is MFB-2440.
+`benji_sms_delete_media` deletes the pictures of one inbound MMS at Twilio (MFB-2439;
+proposal v3, decision 7), enqueued by the webhook through `enqueue_media_deletion`.
+`benji_sms_ping` is not a job but a probe: it runs under the same policy, so
+`manage.py benji_sms_worker_check` proves the path a job takes.
 
 PAYLOADS CARRY IDS ONLY: the conversation id and the inbound Twilio MessageSid. Never
 message text, the phone number or its hash (privacy companion §2). The worker reads
@@ -46,6 +48,7 @@ from celery.utils.saferepr import saferepr
 from django.conf import settings
 
 from benefits.celery_config import broker_client_kwargs
+from integrations.services.communications.benji_sms import BenjiSmsMediaError, delete_inbound_media
 
 from .models import BenjiSmsDeadLetter
 
@@ -258,7 +261,9 @@ def _mask_sid(value: Any) -> Any:
     return MASKED_SID if _sid_or_none(value) else value
 
 
-class BenjiSmsTurnTask(BenjiSmsTask):
+class SidMaskingTask(BenjiSmsTask):
+    """A job that takes a MessageSid, which must not reach Celery's log lines."""
+
     def apply_async(
         self, args: Optional[tuple] = None, kwargs: Optional[dict] = None, *rest: Any, **options: Any
     ) -> AsyncResult:
@@ -273,6 +278,8 @@ class BenjiSmsTurnTask(BenjiSmsTask):
         options.setdefault("kwargsrepr", saferepr({key: _mask_sid(value) for key, value in (kwargs or {}).items()}))
         return super().apply_async(args, kwargs, *rest, **options)
 
+
+class BenjiSmsTurnTask(SidMaskingTask):
     def dead_letter_ids(self, args: tuple, kwargs: dict) -> tuple[Optional[str], Optional[str]]:
         conversation_id = kwargs.get("conversation_id", args[0] if len(args) > 0 else None)
         message_sid = kwargs.get("message_sid", args[1] if len(args) > 1 else None)
@@ -300,6 +307,35 @@ def benji_sms_turn(conversation_id: str, message_sid: str) -> None:
     """
     _turn_payload(conversation_id, message_sid)
     raise NotImplementedError("The Benji SMS turn lands in MFB-2440.")
+
+
+class BenjiSmsMediaTask(SidMaskingTask):
+    def dead_letter_ids(self, args: tuple, kwargs: dict) -> tuple[Optional[str], Optional[str]]:
+        """The SID is kept only alongside a conversation (a stranger's picture has none):
+        `BenjiSmsDeadLetterManager.record` drops a SID that has nothing to cascade with."""
+        message_sid = kwargs.get("message_sid", args[0] if len(args) > 0 else None)
+        conversation_id = kwargs.get("conversation_id", args[1] if len(args) > 1 else None)
+        return _uuid_or_none(conversation_id), _sid_or_none(message_sid)
+
+
+@shared_task(base=BenjiSmsMediaTask, name="screener.benji_sms_delete_media", queue=BENJI_SMS_QUEUE)
+def benji_sms_delete_media(message_sid: str, conversation_id: Optional[str] = None) -> int:
+    """Delete the media Twilio holds for one inbound message. Returns how many files.
+
+    `conversation_id` is only for the dead-letter row, so a failure can be traced to a
+    conversation and is deleted with it. Safe to run twice: deleted media stays deleted.
+    A failure Twilio might not repeat is retried; one that fails every attempt is
+    dead-lettered, which is the alarm that pictures are still at Twilio.
+    """
+    sid = _sid_or_none(message_sid)
+    if sid is None:
+        raise ValueError("message_sid must be a Twilio message SID (SM or MM, then 32 hex digits).")
+    try:
+        return delete_inbound_media(sid)
+    except BenjiSmsMediaError as exc:
+        if exc.retryable:
+            raise TransientTurnError(f"Media deletion failed at Twilio (status={exc.status}).") from None
+        raise
 
 
 @shared_task(base=BenjiSmsTask, name="screener.benji_sms_ping", queue=BENJI_SMS_QUEUE, ignore_result=False)
@@ -330,3 +366,23 @@ def enqueue_turn(conversation_id: Any, message_sid: Any) -> AsyncResult:
     conversation, sid = _turn_payload(conversation_id, message_sid)
     require_broker()
     return benji_sms_turn.apply_async(args=(conversation, sid), queue=BENJI_SMS_QUEUE)
+
+
+def enqueue_media_deletion(message_sid: Any, conversation_id: Any = None) -> AsyncResult:
+    """Queue the deletion of one inbound message's media at Twilio.
+
+    `conversation_id` is optional: a picture from a number with no conversation is
+    deleted all the same. Raises ValueError on anything that is not a MessageSid (or
+    not a UUID, when a conversation is given), and BrokerNotConfigured when there is
+    nowhere to send it.
+    """
+    sid = _sid_or_none(message_sid)
+    if sid is None:
+        raise ValueError("message_sid must be a Twilio message SID (SM or MM, then 32 hex digits).")
+    conversation = None
+    if conversation_id is not None:
+        conversation = _uuid_or_none(conversation_id)
+        if conversation is None:
+            raise ValueError("conversation_id must be a UUID.")
+    require_broker()
+    return benji_sms_delete_media.apply_async(args=(sid, conversation), queue=BENJI_SMS_QUEUE)

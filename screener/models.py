@@ -1,7 +1,7 @@
 from collections.abc import Collection
 from typing import ClassVar, Optional
 from datetime import date, datetime, timedelta
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -1460,6 +1460,11 @@ class AssistantMessage(models.Model):
 # How long a stranger row, and a delivery row with no binding, are kept.
 BENJI_SMS_UNBOUND_RETENTION = timedelta(days=1)
 
+# How long an SMS conversation may go without an inbound text before it expires. A
+# working figure (proposal v3, decision 3); MFB-2442 settles it. The inbound webhook
+# applies it to the text in hand, and the nightly sweep to everything else.
+BENJI_SMS_QUIET_INTERVAL = timedelta(days=90)
+
 
 class BenjiSmsPhoneManager(models.Manager):
     def for_number(self, number: str) -> Optional["BenjiSmsPhone"]:
@@ -1510,6 +1515,56 @@ class BenjiSmsPhone(models.Model):
     def __str__(self) -> str:
         # No hash: __str__ ends up in admin breadcrumbs, logs and error pages.
         return f"Benji SMS phone {self.pk}"
+
+    def is_shared(self, now: Optional[datetime] = None) -> bool:
+        """Whether the shared-phone mark is still in force."""
+        return self.shared_until is not None and self.shared_until > (now or timezone.now())
+
+    def active_binding(self) -> Optional["BenjiSmsBinding"]:
+        """The binding inbound texts route to, or None. At most one exists (Meta)."""
+        return (
+            self.bindings.filter(status=AssistantConversationStatus.ACTIVE)
+            .select_related("conversation", "white_label")
+            .first()
+        )
+
+    def newest_binding(self) -> Optional["BenjiSmsBinding"]:
+        """The most recent binding in any status, or None."""
+        return self.bindings.select_related("conversation", "white_label").order_by("-created_at", "-pk").first()
+
+    def revoke(self, now: Optional[datetime] = None) -> bool:
+        """Record a STOP: revoke the number and close its active binding and conversation.
+
+        Returns True if this call revoked the number, False if it already was (a
+        replayed webhook, or a second STOP), so a caller confirms only once. The first
+        `revoked_at` is kept. Closes the binding either way: a revoked phone with an
+        active binding would keep routing texts to the model.
+        """
+        now = now or timezone.now()
+        with transaction.atomic():
+            revoked = BenjiSmsPhone.objects.filter(pk=self.pk, revoked_at__isnull=True).update(revoked_at=now)
+            for binding in self.bindings.filter(status=AssistantConversationStatus.ACTIVE):
+                binding.end(AssistantConversationStatus.CLOSED)
+        self.refresh_from_db(fields=["revoked_at"])
+        return bool(revoked)
+
+    def clear_revocation(self, now: Optional[datetime] = None) -> tuple[bool, bool]:
+        """Record a START. Returns (cleared, resumed).
+
+        Always clears the revocation: START is consent to be texted again, and the
+        on-ramp refuses a revoked number, so a number left revoked could never come
+        back. The conversation resumes only if the newest binding can be reactivated
+        (`BenjiSmsBinding.reactivate`); otherwise the next text gets the re-entry reply.
+        `cleared` is False when the number was not revoked, and nothing is resumed.
+        """
+        with transaction.atomic():
+            cleared = BenjiSmsPhone.objects.filter(pk=self.pk, revoked_at__isnull=False).update(revoked_at=None)
+            if not cleared:
+                return False, False
+            binding = self.newest_binding()
+            resumed = binding is not None and binding.reactivate(now)
+        self.revoked_at = None
+        return True, resumed
 
     def delete_with_conversations(self) -> int:
         """Serve a deletion request ("remove my texts") for this phone. Returns the
@@ -1636,6 +1691,44 @@ class BenjiSmsBinding(models.Model):
             AssistantConversation.objects.filter(pk=self.conversation_id).update(status=status)
         self.status = status
 
+    def is_quiet(self, now: Optional[datetime] = None) -> bool:
+        """Whether the last inbound text (or the on-ramp, if none) is older than the
+        quiet interval, so the conversation should expire."""
+        last = self.last_inbound_at or self.created_at
+        return (now or timezone.now()) - last > BENJI_SMS_QUIET_INTERVAL
+
+    def touch_inbound(self, now: Optional[datetime] = None) -> None:
+        """Record an inbound text: what expiry is measured from."""
+        now = now or timezone.now()
+        BenjiSmsBinding.objects.filter(pk=self.pk).update(last_inbound_at=now)
+        self.last_inbound_at = now
+
+    def reactivate(self, now: Optional[datetime] = None) -> bool:
+        """Resume a closed binding and its conversation after START. True if resumed.
+
+        Only a `closed` binding inside the quiet interval resumes: an expired one stays
+        expired, which is the point of expiry. Refused, too, when the database says no:
+        the screen already has another active SMS conversation (another phone on-ramped
+        it since), or the phone has another active binding. Nothing changes then.
+
+        The mirror of `end`: the two statuses move together or not at all.
+        """
+        if self.status != AssistantConversationStatus.CLOSED or self.is_quiet(now):
+            return False
+        active = AssistantConversationStatus.ACTIVE
+        closed = AssistantConversationStatus.CLOSED
+        try:
+            # Its own savepoint, so a refused constraint leaves the caller's
+            # transaction usable.
+            with transaction.atomic():
+                if not BenjiSmsBinding.objects.filter(pk=self.pk, status=closed).update(status=active):
+                    return False
+                AssistantConversation.objects.filter(pk=self.conversation_id, status=closed).update(status=active)
+        except IntegrityError:
+            return False
+        self.status = active
+        return True
+
 
 class BenjiSmsDeliveryKind(models.TextChoices):
     """What an outbound text was. Only model replies have an AssistantMessage."""
@@ -1677,6 +1770,26 @@ class BenjiSmsDeliveryStatus(models.TextChoices):
     CANCELED = "canceled", "Canceled"
     RECEIVING = "receiving", "Receiving"
     RECEIVED = "received", "Received"
+
+
+class BenjiSmsDeliveryManager(models.Manager):
+    def claim_fixed(
+        self, inbound_sid: str, binding: Optional["BenjiSmsBinding"] = None
+    ) -> Optional["BenjiSmsDelivery"]:
+        """Claim the one fixed reply an inbound text can get, before sending it.
+
+        Returns the new row, or None when the inbound already has one: a replayed
+        webhook, or two posts of one text racing. The database decides
+        (`benji_sms_delivery_one_fixed_per_inbound`), so exactly one caller sends. The
+        caller fills in `outbound_sid` and `sent_at` after the send, or deletes the row
+        if nothing went out.
+        """
+        try:
+            # Its own savepoint, so losing the claim leaves the caller's transaction usable.
+            with transaction.atomic():
+                return self.create(kind=BenjiSmsDeliveryKind.FIXED, inbound_sid=inbound_sid, binding=binding)
+        except IntegrityError:
+            return None
 
 
 class BenjiSmsDelivery(models.Model):
@@ -1732,12 +1845,23 @@ class BenjiSmsDelivery(models.Model):
     # When `delivery_status` last changed.
     status_at = models.DateTimeField(blank=True, null=True)
 
+    objects = BenjiSmsDeliveryManager()
+
     class Meta:
         # Indexes and uniqueness declared here, not on the fields: the field forms add a
         # varchar_pattern_ops index on Postgres that nothing runs a LIKE against.
         constraints = [
             # NULLs are distinct, so unsent rows do not collide.
             models.UniqueConstraint(fields=["outbound_sid"], name="benji_sms_delivery_outbound_sid_unique"),
+            # An inbound text gets at most one fixed reply (MFB-2439). This is what makes
+            # a replayed webhook send nothing: the reply's row is inserted before the
+            # send (`claim_fixed`), and a replay loses the insert. Other kinds are left
+            # out on purpose: one inbound can produce the disclosure and the reply.
+            models.UniqueConstraint(
+                fields=["inbound_sid"],
+                condition=models.Q(kind=BenjiSmsDeliveryKind.FIXED),
+                name="benji_sms_delivery_one_fixed_per_inbound",
+            ),
             models.CheckConstraint(
                 check=models.Q(kind__in=BenjiSmsDeliveryKind.values),
                 name="benji_sms_delivery_kind_valid",
@@ -1767,6 +1891,26 @@ class BenjiSmsStrangerReplyManager(models.Manager):
         """The number's stranger row, if any, as a queryset. Raises as `phone_hash` does."""
         return self.filter(phone_hash=_phone_hash(number))
 
+    def claim(self, phone_hash: str, now: Optional[datetime] = None) -> bool:
+        """Claim today's one no-conversation reply for a number. True if this call won.
+
+        Moves a row older than a day forward, or inserts one, and replies only if it
+        did either. Two webhooks racing for one number cannot both win: the update
+        re-checks `replied_at` under the row lock, and the unique constraint refuses
+        the second insert.
+        """
+        now = now or timezone.now()
+        cutoff = now - BENJI_SMS_UNBOUND_RETENTION
+        if self.filter(phone_hash=phone_hash, replied_at__lt=cutoff).update(replied_at=now):
+            return True
+        try:
+            # Its own savepoint, so losing the claim leaves the caller's transaction usable.
+            with transaction.atomic():
+                self.create(phone_hash=phone_hash, replied_at=now)
+        except IntegrityError:
+            return False
+        return True
+
     def purge_expired(self, now: Optional[datetime] = None) -> tuple[int, int]:
         """Delete stranger rows, and delivery rows with no binding, older than a day.
 
@@ -1783,7 +1927,12 @@ class BenjiSmsStrangerReplyManager(models.Manager):
 
 
 class BenjiSmsStrangerReply(models.Model):
-    """When a number with no binding last got the fixed stranger reply.
+    """When a number last got a fixed reply that belongs to no conversation.
+
+    That is the stranger reply (a number with no binding) and, since MFB-2439, the
+    shared-phone and re-entry replies too: a number in any of those states gets its
+    reply at most once a day, however often it texts. For a shared or expired number
+    this row repeats a hash `BenjiSmsPhone` already holds, for a day.
 
     Kept apart from `BenjiSmsPhone` on purpose: these rows are purged after a day, and
     a texter who never used the on-ramp should leave no lasting trace. That includes
@@ -1791,9 +1940,8 @@ class BenjiSmsStrangerReply(models.Model):
 
     At most one reply per number per day, remembered in Postgres so it holds under a
     Redis outage (privacy companion §9). One row per hash, so two webhooks racing for
-    one number cannot both claim the reply: the reply path inserts, or moves an
-    over-a-day-old `replied_at` forward, and replies only if it won. The nightly sweep
-    purges rows older than a day.
+    one number cannot both claim the reply (`claim`). The nightly sweep purges rows
+    older than a day.
     """
 
     phone_hash = models.CharField(max_length=64)

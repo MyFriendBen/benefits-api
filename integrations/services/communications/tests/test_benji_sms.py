@@ -223,3 +223,102 @@ class SendTest(TestCase):
                 self.assertNotIsInstance(err, benji_sms.BenjiSmsSendError)
                 self.assertIsInstance(err, benji_sms.BenjiSmsError)
                 WhiteLabel.objects.filter(code="test_sms").delete()
+
+
+class ChannelEnabledTest(TestCase):
+    def test_needs_the_switch_and_the_flag(self) -> None:
+        on, off = make_white_label(flag=True), WhiteLabel(name="Off", code="off_sms", state_code="TS")
+        with switch("true"):
+            self.assertTrue(benji_sms.channel_enabled(on))
+            self.assertFalse(benji_sms.channel_enabled(off))
+            self.assertFalse(benji_sms.channel_enabled(None))
+        with switch():
+            self.assertFalse(benji_sms.channel_enabled(on))
+
+    def test_debug_and_missing_credentials_do_not_matter(self) -> None:
+        """So local work can run a turn end to end; only the send itself is refused."""
+        with switch("true"), override_settings(DEBUG=True, TWILIO_SID="", TWILIO_TOKEN="", TWILIO_PHONE_NUMBER=""):
+            white_label = make_white_label(flag=True)
+            self.assertTrue(benji_sms.channel_enabled(white_label))
+            self.assertFalse(benji_sms.can_send_for_screen(white_label))
+
+
+MEDIA_SID = "MM" + "9" * 32
+
+
+@override_settings(DEBUG=False, **TWILIO)
+class DeleteInboundMediaTest(TestCase):
+    def setUp(self) -> None:
+        client_patch = patch.object(benji_sms, "twilio_client")
+        self.twilio = client_patch.start()
+        self.addCleanup(client_patch.stop)
+        self.messages = self.twilio.return_value.messages
+        self.media_list = self.messages.return_value.media.list
+
+    def test_deletes_every_media_file_of_the_message(self) -> None:
+        files = [MagicMock(), MagicMock()]
+        self.media_list.return_value = files
+
+        self.assertEqual(benji_sms.delete_inbound_media(MEDIA_SID), 2)
+
+        self.messages.assert_called_once_with(MEDIA_SID)
+        for media in files:
+            media.delete.assert_called_once_with()
+
+    def test_is_not_behind_the_kill_switch(self) -> None:
+        """Switching Benji off must not leave people's pictures at Twilio."""
+        self.media_list.return_value = [MagicMock()]
+        with switch():
+            self.assertEqual(benji_sms.delete_inbound_media(MEDIA_SID), 1)
+
+    def test_a_message_with_no_media_is_done(self) -> None:
+        self.media_list.return_value = []
+        self.assertEqual(benji_sms.delete_inbound_media(MEDIA_SID), 0)
+
+    def test_media_or_a_message_already_gone_counts_as_done(self) -> None:
+        gone = MagicMock()
+        gone.delete.side_effect = TwilioRestException(404, "/Media/ME1", msg="not found", code=20404)
+        self.media_list.return_value = [gone, MagicMock()]
+        self.assertEqual(benji_sms.delete_inbound_media(MEDIA_SID), 2)
+
+        self.media_list.side_effect = TwilioRestException(404, f"/Messages/{MEDIA_SID}/Media", msg="x", code=20404)
+        self.assertEqual(benji_sms.delete_inbound_media(MEDIA_SID), 0)
+
+    def test_does_nothing_in_debug(self) -> None:
+        with override_settings(DEBUG=True), self.assertLogs(benji_sms.logger, level="WARNING"):
+            self.assertEqual(benji_sms.delete_inbound_media(MEDIA_SID), 0)
+        self.twilio.assert_not_called()
+
+    def test_without_credentials_it_fails_loudly_rather_than_skip(self) -> None:
+        with override_settings(TWILIO_TOKEN=""), self.assertRaises(benji_sms.BenjiSmsMediaError) as ctx:
+            benji_sms.delete_inbound_media(MEDIA_SID)
+        self.assertEqual(ctx.exception.cause, "not_configured")
+        self.twilio.assert_not_called()
+
+    def test_a_twilio_refusal_carries_codes_but_never_the_sid(self) -> None:
+        self.media_list.side_effect = TwilioRestException(
+            401, f"/Messages/{MEDIA_SID}/Media.json", msg=f"Unable to fetch {MEDIA_SID}", code=20003
+        )
+        with self.assertRaises(benji_sms.BenjiSmsMediaError) as ctx:
+            benji_sms.delete_inbound_media(MEDIA_SID)
+        err = ctx.exception
+        self.assertEqual((err.status, err.code), (401, 20003))
+        self.assertFalse(err.retryable)
+        self.assertNotIn(MEDIA_SID, str(err))
+        self.assertTrue(err.__suppress_context__)
+
+    def test_which_failures_are_worth_another_attempt(self) -> None:
+        for status, retryable in [(500, True), (503, True), (429, True), (400, False), (403, False)]:
+            with self.subTest(status=status):
+                self.media_list.side_effect = TwilioRestException(status, "/Media", msg="x", code=1)
+                with self.assertRaises(benji_sms.BenjiSmsMediaError) as ctx:
+                    benji_sms.delete_inbound_media(MEDIA_SID)
+                self.assertIs(ctx.exception.retryable, retryable)
+
+    def test_a_network_failure_is_retryable_and_names_only_its_type(self) -> None:
+        self.media_list.side_effect = requests.ReadTimeout(f"https://api.twilio.com/Messages/{MEDIA_SID}")
+        with self.assertRaises(benji_sms.BenjiSmsMediaError) as ctx:
+            benji_sms.delete_inbound_media(MEDIA_SID)
+        self.assertTrue(ctx.exception.retryable)
+        self.assertEqual(ctx.exception.cause, "ReadTimeout")
+        self.assertNotIn(MEDIA_SID, str(ctx.exception))

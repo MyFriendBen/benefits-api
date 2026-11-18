@@ -29,6 +29,7 @@ from screener.admin import (
     SuperuserReadOnlyAdmin,
 )
 from screener.models import (
+    BENJI_SMS_QUIET_INTERVAL,
     AssistantChannel,
     AssistantConversation,
     AssistantConversationStatus,
@@ -723,3 +724,214 @@ class TestBindingChangelistQueries(TestCase):
         make_binding(self.white_label, make_phone("c" * 64))
 
         self.assertEqual(self._queries_for_changelist(), one)
+
+
+class TestOneFixedReplyPerInbound(TestCase):
+    """The constraint that makes a replayed inbound webhook send nothing (MFB-2439)."""
+
+    def test_an_inbound_takes_one_fixed_reply(self) -> None:
+        make_delivery(inbound_sid=SID)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            make_delivery(inbound_sid=SID)
+
+    def test_claim_fixed_returns_the_row_once_then_none(self) -> None:
+        first = BenjiSmsDelivery.objects.claim_fixed(SID)
+        assert first is not None
+        self.assertEqual((first.kind, first.inbound_sid, first.binding), (BenjiSmsDeliveryKind.FIXED, SID, None))
+        self.assertIsNone(BenjiSmsDelivery.objects.claim_fixed(SID))
+        # Losing the claim leaves the surrounding transaction usable.
+        self.assertEqual(BenjiSmsDelivery.objects.count(), 1)
+
+    def test_a_deleted_claim_can_be_taken_again(self) -> None:
+        """A reply that was refused or failed leaves no row, so a later post can retry it."""
+        claim = BenjiSmsDelivery.objects.claim_fixed(SID)
+        assert claim is not None
+        claim.delete()
+        self.assertIsNotNone(BenjiSmsDelivery.objects.claim_fixed(SID))
+
+    def test_fixed_replies_to_different_inbounds_do_not_collide(self) -> None:
+        self.assertIsNotNone(BenjiSmsDelivery.objects.claim_fixed(SID))
+        self.assertIsNotNone(BenjiSmsDelivery.objects.claim_fixed("SM" + "4" * 32))
+
+    def test_other_kinds_are_not_limited(self) -> None:
+        """One inbound can still produce the disclosure, the reply and a fixed text."""
+        white_label = make_white_label()
+        binding = make_binding(white_label, make_phone())
+        message = make_message(binding.conversation, 1, role="assistant")
+        for kind in (BenjiSmsDeliveryKind.DISCLOSURE, BenjiSmsDeliveryKind.REPLY, BenjiSmsDeliveryKind.REMAINDER):
+            make_delivery(kind=kind, binding=binding, message=message, inbound_sid=SID)
+        self.assertIsNotNone(BenjiSmsDelivery.objects.claim_fixed(SID, binding))
+
+    def test_fixed_texts_that_answer_no_inbound_do_not_collide(self) -> None:
+        make_delivery()
+        make_delivery()
+
+
+class TestStrangerClaim(TestCase):
+    def test_the_first_claim_wins_and_the_second_loses(self) -> None:
+        self.assertTrue(BenjiSmsStrangerReply.objects.claim(HASH))
+        self.assertFalse(BenjiSmsStrangerReply.objects.claim(HASH))
+        self.assertEqual(BenjiSmsStrangerReply.objects.count(), 1)
+
+    def test_a_claim_older_than_a_day_can_be_taken_again(self) -> None:
+        now = timezone.now()
+        BenjiSmsStrangerReply.objects.create(phone_hash=HASH, replied_at=now - timedelta(hours=25))
+
+        self.assertTrue(BenjiSmsStrangerReply.objects.claim(HASH, now))
+
+        self.assertEqual(BenjiSmsStrangerReply.objects.get().replied_at, now)
+        self.assertFalse(BenjiSmsStrangerReply.objects.claim(HASH, now + timedelta(hours=23)))
+
+    def test_a_claim_inside_the_day_is_kept(self) -> None:
+        now = timezone.now()
+        first = now - timedelta(hours=23)
+        BenjiSmsStrangerReply.objects.create(phone_hash=HASH, replied_at=first)
+
+        self.assertFalse(BenjiSmsStrangerReply.objects.claim(HASH, now))
+        self.assertEqual(BenjiSmsStrangerReply.objects.get().replied_at, first)
+
+    def test_numbers_do_not_share_a_claim(self) -> None:
+        self.assertTrue(BenjiSmsStrangerReply.objects.claim(HASH))
+        self.assertTrue(BenjiSmsStrangerReply.objects.claim(OTHER_HASH))
+
+
+class TestRevokeAndStart(TestCase):
+    def setUp(self) -> None:
+        self.white_label = make_white_label()
+        self.phone = make_phone()
+        self.binding = make_binding(self.white_label, self.phone)
+
+    def statuses(self) -> tuple[str, str]:
+        self.binding.refresh_from_db()
+        self.binding.conversation.refresh_from_db()
+        return self.binding.status, self.binding.conversation.status
+
+    def test_revoke_sets_the_time_and_closes_the_binding_and_conversation(self) -> None:
+        now = timezone.now()
+        self.assertTrue(self.phone.revoke(now))
+
+        self.assertEqual(self.phone.revoked_at, now)
+        self.assertEqual(BenjiSmsPhone.objects.get().revoked_at, now)
+        self.assertEqual(self.statuses(), ("closed", "closed"))
+
+    def test_a_second_revoke_reports_false_and_keeps_the_first_time(self) -> None:
+        first = timezone.now() - timedelta(hours=1)
+        self.phone.revoke(first)
+
+        self.assertFalse(self.phone.revoke())
+        self.assertEqual(self.phone.revoked_at, first)
+
+    def test_revoke_leaves_an_expired_binding_expired(self) -> None:
+        self.binding.end(AssistantConversationStatus.EXPIRED)
+        self.phone.revoke()
+        self.assertEqual(self.statuses(), ("expired", "expired"))
+
+    def test_start_clears_and_resumes_the_conversation_the_stop_closed(self) -> None:
+        self.phone.revoke()
+
+        self.assertEqual(self.phone.clear_revocation(), (True, True))
+
+        self.assertIsNone(BenjiSmsPhone.objects.get().revoked_at)
+        self.assertEqual(self.statuses(), ("active", "active"))
+
+    def test_start_on_a_number_that_is_not_revoked_does_nothing(self) -> None:
+        self.binding.end(AssistantConversationStatus.CLOSED)
+
+        self.assertEqual(self.phone.clear_revocation(), (False, False))
+        self.assertEqual(self.statuses(), ("closed", "closed"))
+
+    def test_start_clears_but_does_not_resume_an_expired_conversation(self) -> None:
+        self.binding.end(AssistantConversationStatus.EXPIRED)
+        self.phone.revoke()
+
+        self.assertEqual(self.phone.clear_revocation(), (True, False))
+        self.assertEqual(self.statuses(), ("expired", "expired"))
+
+    def test_start_clears_but_does_not_resume_past_the_quiet_interval(self) -> None:
+        self.phone.revoke()
+        old = timezone.now() - BENJI_SMS_QUIET_INTERVAL - timedelta(days=1)
+        BenjiSmsBinding.objects.update(created_at=old)
+
+        self.assertEqual(self.phone.clear_revocation(), (True, False))
+        self.assertEqual(self.statuses(), ("closed", "closed"))
+
+    def test_start_does_not_resume_when_the_screen_has_another_active_sms_conversation(self) -> None:
+        self.phone.revoke()
+        taken = make_conversation(
+            screen_uuid=self.binding.conversation.screen_uuid,
+            white_label=self.white_label.code,
+            channel=AssistantChannel.SMS,
+        )
+        make_binding(self.white_label, make_phone(OTHER_HASH), conversation=taken)
+
+        self.assertEqual(self.phone.clear_revocation(), (True, False))
+
+        self.assertEqual(self.statuses(), ("closed", "closed"))
+        # Refusing the resume left the transaction usable and the revocation cleared.
+        self.assertIsNone(BenjiSmsPhone.objects.get(pk=self.phone.pk).revoked_at)
+
+    def test_a_number_with_no_binding_can_be_revoked_and_cleared(self) -> None:
+        phone = make_phone(OTHER_HASH)
+        self.assertTrue(phone.revoke())
+        self.assertEqual(phone.clear_revocation(), (True, False))
+
+
+class TestBindingQuietAndRouting(TestCase):
+    def setUp(self) -> None:
+        self.white_label = make_white_label()
+        self.phone = make_phone()
+
+    def test_quiet_is_measured_from_the_last_inbound(self) -> None:
+        now = timezone.now()
+        binding = make_binding(
+            self.white_label,
+            self.phone,
+            created_at=now - BENJI_SMS_QUIET_INTERVAL - timedelta(days=30),
+            last_inbound_at=now - BENJI_SMS_QUIET_INTERVAL + timedelta(minutes=1),
+        )
+        self.assertFalse(binding.is_quiet(now))
+        self.assertTrue(binding.is_quiet(now + timedelta(minutes=2)))
+
+    def test_quiet_falls_back_to_the_on_ramp_when_nothing_was_texted(self) -> None:
+        now = timezone.now()
+        binding = make_binding(
+            self.white_label, self.phone, created_at=now - BENJI_SMS_QUIET_INTERVAL - timedelta(minutes=1)
+        )
+        self.assertTrue(binding.is_quiet(now))
+
+    def test_touch_inbound_records_the_time(self) -> None:
+        binding = make_binding(self.white_label, self.phone)
+        now = timezone.now()
+
+        binding.touch_inbound(now)
+
+        self.assertEqual(binding.last_inbound_at, now)
+        self.assertEqual(BenjiSmsBinding.objects.get().last_inbound_at, now)
+
+    def test_active_and_newest_binding(self) -> None:
+        now = timezone.now()
+        old = make_binding(self.white_label, self.phone, created_at=now - timedelta(days=10))
+        old.end(AssistantConversationStatus.CLOSED)
+        self.assertIsNone(self.phone.active_binding())
+        self.assertEqual(self.phone.newest_binding(), old)
+
+        new = make_binding(self.white_label, self.phone, created_at=now)
+        self.assertEqual(self.phone.active_binding(), new)
+        self.assertEqual(self.phone.newest_binding(), new)
+
+    def test_a_phone_with_no_bindings_has_neither(self) -> None:
+        self.assertIsNone(self.phone.active_binding())
+        self.assertIsNone(self.phone.newest_binding())
+
+    def test_is_shared_only_while_the_mark_is_in_the_future(self) -> None:
+        now = timezone.now()
+        self.assertFalse(self.phone.is_shared(now))
+        self.phone.shared_until = now + timedelta(seconds=1)
+        self.assertTrue(self.phone.is_shared(now))
+        self.phone.shared_until = now
+        self.assertFalse(self.phone.is_shared(now))
+
+    def test_reactivate_refuses_an_active_binding(self) -> None:
+        binding = make_binding(self.white_label, self.phone)
+        self.assertFalse(binding.reactivate())
+        self.assertEqual(binding.status, AssistantConversationStatus.ACTIVE)

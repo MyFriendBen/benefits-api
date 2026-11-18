@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from io import BytesIO
 from typing import Any
 from unittest.mock import patch
+from urllib.parse import urlencode
 from wsgiref.util import setup_testing_defaults
 
 import sentry_sdk
@@ -37,6 +38,8 @@ PLACES_URL = "https://api.example/api/places/autocomplete/"
 REM_URL = "https://api.example/api/screener-options/cesn/rem-impact/"
 MESSAGES_URL = "https://api.example/api/messages/"
 FAKE_PHONE = "+13035550142"
+SMS_INBOUND_URL = "https://api.example/api/assistant/sms/inbound/"
+FAKE_TEXT = "my case number is 4417"
 
 
 def _event(url: str) -> dict[str, Any]:
@@ -99,6 +102,30 @@ class ScrubEventTest(TestCase):
         value = scrub_event(event, {})["exception"]["values"][0]["value"]
 
         self.assertEqual(value, "HTTP 400 error: The 'To' number [contact] is not valid (21211); bounced [contact]")
+
+    def test_drops_the_number_and_the_text_on_the_sms_webhooks(self) -> None:
+        for url in (SMS_INBOUND_URL, SMS_INBOUND_URL + "fallback/", "https://api.example/api/assistant/sms/status/"):
+            event = _event(url)
+            event["request"]["data"] = {"From": FAKE_PHONE, "Body": FAKE_TEXT, "MessageSid": "SM" + "0" * 32}
+            event["request"]["query_string"] = "x=1"
+            event["exception"]["values"][0]["stacktrace"]["frames"][0]["vars"] = {"inbound": FAKE_PHONE + FAKE_TEXT}
+            event["exception"]["values"][0]["value"] = f"could not text {FAKE_PHONE}"
+
+            scrubbed = scrub_event(event, {})
+
+            self.assertNotIn("data", scrubbed["request"], url)
+            self.assertNotIn("query_string", scrubbed["request"], url)
+            self.assertNotIn("vars", scrubbed["exception"]["values"][0]["stacktrace"]["frames"][0], url)
+            blob = json.dumps(scrubbed)
+            self.assertNotIn("3035550142", blob, url)
+            self.assertNotIn(FAKE_TEXT, blob, url)
+            self.assertEqual(scrubbed["request"]["url"], url)
+
+    def test_the_web_assistant_endpoints_are_not_sms_webhooks(self) -> None:
+        url = "https://api.example/api/screens/1/assistant/conversations/"
+        event = _event(url)
+        expected = json.loads(json.dumps(event))
+        self.assertEqual(scrub_event(event, {}), expected)
 
     def test_leaves_other_endpoints_alone(self) -> None:
         for url in (
@@ -367,3 +394,55 @@ class MessageEndpointEventTest(TestCase):
 
         self.assertTrue(status.startswith("429"), status)
         self.assertEqual(events, [])
+
+
+@override_settings(
+    DEBUG=False,
+    TWILIO_TOKEN="a-token-twilio-would-know",
+    BACKEND_DOMAIN="https://api.example",
+    ALLOWED_HOSTS=["*"],
+)
+class SmsWebhookEventTest(TestCase):
+    """A text posted to the Benji SMS webhook that is refused puts no number or text in Sentry.
+
+    The refusal is a 403, which `drf_exception_handler` reports. It may be a real text
+    from Twilio, posted while our token is wrong. Goes through the WSGI app, as the
+    classes above do, so Sentry attaches the request body the way it does in production.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.app = get_wsgi_application()
+
+    def setUp(self) -> None:
+        for signal in (request_started, request_finished):
+            signal.disconnect(close_old_connections)
+            self.addCleanup(signal.connect, close_old_connections)
+
+    def _post(self, path: str) -> str:
+        raw = urlencode({"From": FAKE_PHONE, "Body": FAKE_TEXT, "MessageSid": "SM" + "0" * 32}).encode()
+        environ: dict[str, Any] = {
+            "REQUEST_METHOD": "POST",
+            "PATH_INFO": path,
+            "CONTENT_TYPE": "application/x-www-form-urlencoded",
+            "CONTENT_LENGTH": str(len(raw)),
+            "HTTP_X_TWILIO_SIGNATURE": "not-twilios",
+            "wsgi.input": BytesIO(raw),
+        }
+        setup_testing_defaults(environ)
+        statuses: list[str] = []
+        b"".join(self.app(environ, lambda s, _h, *_a: statuses.append(s)))
+        return statuses[0]
+
+    def test_a_rejected_text_reports_without_its_number_or_text(self) -> None:
+        for path in ("/api/assistant/sms/inbound/", "/api/assistant/sms/inbound/fallback/"):
+            with self.subTest(path=path), _recording_sentry() as events:
+                status = self._post(path)
+
+                self.assertTrue(status.startswith("403"), status)
+                self.assertTrue(events, "expected the 403 to reach Sentry")
+                blob = json.dumps(events)
+                self.assertNotIn("3035550142", blob)
+                self.assertNotIn(FAKE_TEXT, blob)
+                self.assertNotIn("case+number", blob)
