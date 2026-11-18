@@ -49,7 +49,18 @@ class NcConfigurationData(ConfigurationData):
                     "_default_message": "Dial 2-1-1 or 1-888-892-1162",
                     "_label": "moreHelp.nc_resource_phone1",
                 },
-            }
+            },
+            {
+                "name": {
+                    "_default_message": "988 Suicide & Crisis Lifeline",
+                    "_label": "moreHelp.nc_988_name",
+                },
+                "link": "https://988lifeline.org",
+                "phone": {
+                    "_default_message": "Call or text 988",
+                    "_label": "moreHelp.nc_988_phone",
+                },
+            },
         ]
     }
 
