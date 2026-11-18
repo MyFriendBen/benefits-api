@@ -7,6 +7,7 @@ import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility
 from programs.programs.cross_white_label.tanf.mfb_base import MONTHS_PER_YEAR, MfbTanf, money
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 # Relationships to the head that NJ places in the unit as a child, through age 18.
 CHILD = "child"
@@ -137,7 +138,7 @@ class NjTanf(MfbTanf):
 
     def _build_assistance_unit(self) -> AssistanceUnit:
         members = list(self.screen.household_members.all())
-        head = next((member for member in members if member.relationship == "headOfHousehold"), None)
+        head = next((member for member in members if member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP), None)
         unit = AssistanceUnit()
 
         unit.children = [
@@ -157,7 +158,7 @@ class NjTanf(MfbTanf):
                 unit.child_support_payees = list(unit.children)
             return unit
 
-        adults = [member for member in members if member.relationship in ("headOfHousehold", "spouse")]
+        adults = [member for member in members if member.relationship in (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse")]
         unit.members = [adult for adult in adults if not self._receives_ssi(adult)] + unit.children
         unit.child_support_payees = list(unit.members)
 
@@ -171,7 +172,7 @@ class NjTanf(MfbTanf):
             if not self._receives_ssi(adult):
                 continue
 
-            if adult.relationship == "headOfHousehold":
+            if adult.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
                 is_parent = has_child_under_18
                 if is_parent:
                     unit.child_support_payees.append(adult)

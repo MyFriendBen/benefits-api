@@ -10,7 +10,6 @@ value added on one side only fails CI on that side. Update both repos together.
 import json
 from typing import Any
 
-from django.conf import settings
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
 
@@ -18,32 +17,11 @@ from configuration.models import Configuration
 from configuration.white_labels import white_label_config
 from programs.allowed_values import NavigatorLanguageCode, USER_SELECTED_LEGAL_STATUSES
 from programs.models import Program
-from screener.allowed_values import ACUTE_OPTION_FIELDS, ENERGY_CALCULATOR_EXPENSE_TYPES
+from screener.allowed_values import ACUTE_OPTION_FIELDS
 from screener.models import Screen, WhiteLabel
 
 # benefits-calculator: `ALL_VALID_WHITE_LABELS` (src/Types/WhiteLabel.ts)
 SCREENER_WHITE_LABELS = {"co", "nc", "cesn", "ma", "il", "ks", "mo", "nj", "tx", "wa"}
-# benefits-calculator: `Language` (src/Assets/languageOptions.tsx)
-SCREENER_LANGUAGES = {
-    "en-us",
-    "es",
-    "vi",
-    "fr",
-    "am",
-    "so",
-    "ru",
-    "ne",
-    "my",
-    "zh-hans",
-    "ar",
-    "sw",
-    "pl",
-    "tl",
-    "ko",
-    "ur",
-    "pt-br",
-    "ht",
-}
 # benefits-calculator: `UI_OPTIONS` (src/Components/Referrer/uiOptions.ts)
 SCREENER_UI_OPTIONS = {
     "211co",
@@ -102,32 +80,12 @@ SCREENER_ICONS = {
     "SurvivingSpouse",
     "Wheelchair",
     "HeartRate",
+    "Heating",
+    "Cooling",
+    "Electricity",
 }
 # benefits-calculator: the `useValueFormats` keys other than `default` (src/Components/Results/FormattedValue.tsx)
 SCREENER_VALUE_FORMATS = {"lump_sum", "estimated_annual"}
-# benefits-calculator: `EXPENSE_TYPES` (src/Components/EnergyCalculator/Steps/Expenses.tsx)
-SCREENER_ENERGY_CALCULATOR_EXPENSE_TYPES = {"heating", "cooling", "electricity"}
-# benefits-calculator: `ACUTE_CONDITION_FIELDS` (src/Assets/acuteConditionFields.ts)
-SCREENER_ACUTE_CONDITION_FIELDS = {
-    "food": "needs_food",
-    "babySupplies": "needs_baby_supplies",
-    "housing": "needs_housing_help",
-    "support": "needs_mental_health_help",
-    "childDevelopment": "needs_child_dev_help",
-    "familyPlanning": "needs_family_planning_help",
-    "jobResources": "needs_job_resources",
-    "dentalCare": "needs_dental_care",
-    "legalServices": "needs_legal_services",
-    "savings": "needs_college_savings",
-    "veteranServices": "needs_veteran_services",
-    "disabilityResources": "needs_disability_resources",
-    "agingResources": "needs_aging_resources",
-    "homelessServices": "needs_homeless_services",
-    "freeLowCostMedicalCare": "needs_free_low_cost_medical_care",
-    "transportation": "needs_transportation",
-    "medicalExpensesAndDebt": "needs_medical_expenses_and_debt",
-    "drugAlcoholUse": "needs_drug_alcohol_use",
-}
 
 
 def _icons(value: Any) -> set[str]:
@@ -148,9 +106,6 @@ class ScreenerParityTests(SimpleTestCase):
     def test_white_labels_match_the_screener(self) -> None:
         self.assertEqual(set(white_label_config) - {"_default"}, SCREENER_WHITE_LABELS)
 
-    def test_site_languages_match_the_screener(self) -> None:
-        self.assertEqual({code for code, _ in settings.LANGUAGES}, SCREENER_LANGUAGES)
-
     def test_value_formats_match_the_screener(self) -> None:
         self.assertEqual({value for value, _ in Program.VALUE_FORMAT_CHOICES if value}, SCREENER_VALUE_FORMATS)
 
@@ -159,12 +114,6 @@ class ScreenerParityTests(SimpleTestCase):
             used = {flag for flags in config.referrer_data.get("uiOptions", {}).values() for flag in flags}
             with self.subTest(white_label=code):
                 self.assertEqual(used - SCREENER_UI_OPTIONS, set())
-
-    def test_energy_calculator_expenses_match_the_screener(self) -> None:
-        self.assertEqual(set(ENERGY_CALCULATOR_EXPENSE_TYPES), SCREENER_ENERGY_CALCULATOR_EXPENSE_TYPES)
-
-    def test_household_needs_save_to_the_same_fields_as_the_screener(self) -> None:
-        self.assertEqual(ACUTE_OPTION_FIELDS, SCREENER_ACUTE_CONDITION_FIELDS)
 
     def test_every_icon_is_one_the_screener_draws(self) -> None:
         for code, config in white_label_config.items():
@@ -208,3 +157,10 @@ class AddConfigServesListsTests(TestCase):
                 self.assertEqual(
                     list(self._served(white_label, "navigator_language_options")), NavigatorLanguageCode.values
                 )
+
+    def test_the_energy_calculator_gets_its_expense_options(self) -> None:
+        call_command("add_config", "cesn")
+
+        options = self._served("cesn", "energy_calculator_expense_options")
+        self.assertEqual(list(options), ["heating", "cooling", "electricity"])
+        self.assertEqual(options["electricity"]["text"]["_label"], "energyCalculator.expenses.electricity")

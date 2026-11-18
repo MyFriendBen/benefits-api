@@ -197,6 +197,9 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     },
     # }
 
+    # energy_calculator_expense_options: the utility expenses the energy calculator asks about, as
+    # option cards. Only a white label that runs the energy calculator sets it (see cesn.py).
+
     # ==========================================================================================
     # CONDITION OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================

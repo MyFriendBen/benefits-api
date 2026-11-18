@@ -24,10 +24,10 @@ break that screen without fixing anything.
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-# `acute_condition_options` config key -> the `Screen` field the answer is saved to. A white label
-# can only offer a need listed here: `configuration/test_served_lists.py` checks every config. The
-# screener keeps a copy (`ACUTE_CONDITION_FIELDS`), because it converts a reopened screen's answers
-# before its config has loaded; the same test pins the two together.
+# `acute_condition_options` config key -> the `Screen` field the answer is saved to. The one
+# definition: the screen API takes and returns needs as these keys (`acute_needs`), and Benji reads
+# it too. A white label can only offer a need listed here: `configuration/test_served_lists.py`
+# checks every config.
 ACUTE_OPTION_FIELDS: dict[str, str] = {
     "food": "needs_food",
     "babySupplies": "needs_baby_supplies",
@@ -50,12 +50,21 @@ ACUTE_OPTION_FIELDS: dict[str, str] = {
 }
 
 # Set by the screener for the first member, never offered as a choice. Calculators read it.
-HEAD_OF_HOUSEHOLD = "headOfHousehold"
+HEAD_OF_HOUSEHOLD_RELATIONSHIP = "headOfHousehold"
 
-# The utility expenses the energy calculator asks about (CESN's `cesn/util.py` reads them). The
-# screener keeps a copy (`EXPENSE_TYPES` in its EnergyCalculator/Steps/Expenses.tsx), because it
-# draws an icon for each, and `configuration/test_served_lists.py` pins the two together.
-ENERGY_CALCULATOR_EXPENSE_TYPES = ("heating", "cooling", "electricity")
+
+def needs_fields(selected: Iterable[str] | None) -> dict[str, bool]:
+    """The `needs_*` column values for the selected needs: each listed one set, the rest cleared.
+    None leaves the columns alone."""
+    if selected is None:
+        return {}
+    chosen = set(selected)
+    return {field: key in chosen for key, field in ACUTE_OPTION_FIELDS.items()}
+
+
+def needs_selected(screen: Any) -> list[str]:
+    """The needs a saved screen has, as option keys."""
+    return [key for key, field in ACUTE_OPTION_FIELDS.items() if getattr(screen, field)]
 
 
 def _nested_keys(options_by_category: Mapping[str, Mapping[str, Any]]) -> set[str]:
@@ -67,17 +76,18 @@ def accepted_values() -> dict[str, frozenset[str]]:
     from configuration.white_labels import white_label_config
     from screener.models import Expense
 
-    relationships: set[str] = {HEAD_OF_HOUSEHOLD}
+    relationships: set[str] = {HEAD_OF_HOUSEHOLD_RELATIONSHIP}
     income_categories: set[str] = set()
     income_types: set[str] = set()
     frequencies: set[str] = set()
-    expense_types: set[str] = set(ENERGY_CALCULATOR_EXPENSE_TYPES)
+    expense_types: set[str] = set()
     for config in white_label_config.values():
         relationships |= set(config.relationship_options)
         income_categories |= set(config.income_categories)
         income_types |= _nested_keys(config.income_options_by_category)
         frequencies |= set(config.frequency_options)
         expense_types |= _nested_keys(config.expense_options_by_category)
+        expense_types |= set(config.energy_calculator_expense_options)
 
     return {
         "relationship": frozenset(relationships),

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 from configuration.models import Configuration
 from programs.federal import FEDERAL_WHITE_LABEL, filter_programs_by_name, visible_to
 from programs.models import Program, WarningMessage
-from screener.allowed_values import unaccepted_values
+from screener.allowed_values import ACUTE_OPTION_FIELDS, needs_fields, needs_selected, unaccepted_values
 from screener.models import (
     CurrentBenefit,
     EnergyCalculatorMember,
@@ -276,6 +276,17 @@ class ScreenSerializer(serializers.ModelSerializer):
         write_only=True,
         max_length=256,
     )
+    # The household needs, as the option keys the step offers (`acute_condition_options`), so the
+    # screener never needs to know the `needs_*` columns they're saved to. A list sets each listed
+    # need and clears the rest; an absent or null value leaves the columns alone. Read the same way.
+    # The `needs_*` fields stay writable for screeners released before this field existed.
+    acute_needs = serializers.ListField(
+        child=serializers.ChoiceField(choices=sorted(ACUTE_OPTION_FIELDS)),
+        required=False,
+        allow_null=True,
+        write_only=True,
+        max_length=len(ACUTE_OPTION_FIELDS),
+    )
 
     class Meta:
         model = Screen
@@ -306,6 +317,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "external_id",
             "request_language_code",
             "current_benefits",
+            "acute_needs",
             "has_benefits",
             "needs_food",
             "needs_baby_supplies",
@@ -443,6 +455,7 @@ class ScreenSerializer(serializers.ModelSerializer):
         # instance's current-benefits caches after writing, so this reflects the
         # committed rows even on a write request.
         data["current_benefits"] = sorted(cb.program.name_abbreviated for cb in instance.current_benefits.all())
+        data["acute_needs"] = needs_selected(instance)
         return data
 
     def create(self, validated_data):
@@ -452,6 +465,7 @@ class ScreenSerializer(serializers.ModelSerializer):
         # Not a Screen column — pop before the create() and write separately.
         # Absent (non-frontend clients) is treated as no current benefits.
         current_benefits = validated_data.pop("current_benefits", [])
+        validated_data.update(needs_fields(validated_data.pop("acute_needs", None)))
         screen = Screen.objects.create(**validated_data, completed=False)
         screen.set_screen_is_test()
         for member in household_members:
@@ -482,6 +496,7 @@ class ScreenSerializer(serializers.ModelSerializer):
         # Not a Screen column — pop before the bulk .update() and write separately.
         # Absent (non-frontend clients) is treated as no current benefits.
         current_benefits = validated_data.pop("current_benefits", [])
+        validated_data.update(needs_fields(validated_data.pop("acute_needs", None)))
 
         # don't update create only fields
         for field in self.Meta.create_only_fields:

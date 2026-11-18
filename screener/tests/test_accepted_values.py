@@ -165,3 +165,57 @@ class ScreenApiTests(APITestCase):
         serializer = ScreenSerializer(data=body, validate_location=False, validate_values=False)
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+
+class AcuteNeedsTests(APITestCase):
+    """The screen API takes and returns household needs as option keys, and saves them to the
+    `needs_*` columns."""
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        cls.user = User.objects.create_user(email_or_cell="needs@example.com", password="password")
+        cls.user.user_permissions.add(
+            Permission.objects.get(codename="add_screen"), Permission.objects.get(codename="change_screen")
+        )
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def _post(self, **fields: Any) -> Response:
+        body = {"white_label": "co", "household_members": [member()], "expenses": [], "current_benefits": []}
+        return self.client.post("/api/screens/", {**body, **fields}, format="json")
+
+    def test_listed_needs_are_set_and_the_rest_cleared(self) -> None:
+        response = self._post(acute_needs=["food", "support"])
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        screen = Screen.objects.get(uuid=response.data["uuid"])
+        self.assertTrue(screen.needs_food)
+        self.assertTrue(screen.needs_mental_health_help)
+        self.assertFalse(screen.needs_housing_help)
+        self.assertEqual(response.data["acute_needs"], ["food", "support"])
+
+    def test_no_list_leaves_the_saved_needs_alone(self) -> None:
+        screen_uuid = self._post(acute_needs=["food"]).data["uuid"]
+        body = {"white_label": "co", "household_members": [member()], "expenses": [], "current_benefits": []}
+
+        for fields in ({}, {"acute_needs": None}):
+            with self.subTest(fields=fields):
+                response = self.client.put(f"/api/screens/{screen_uuid}/", {**body, **fields}, format="json")
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+                self.assertEqual(response.data["acute_needs"], ["food"])
+
+    def test_an_unknown_need_is_refused(self) -> None:
+        response = self._post(acute_needs=["food", "funeral"])
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.data)
+        self.assertIn("acute_needs", response.data)
+
+    def test_the_columns_are_still_writable_for_older_screeners(self) -> None:
+        response = self._post(needs_food=True, needs_housing_help=False)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(response.data["acute_needs"], ["food"])

@@ -6,7 +6,8 @@ so a bulk `.update()` or raw SQL can bypass it; nothing writes these tables that
 
 `add_config` serves the screener what it shows for each value: the six legal statuses a household
 picks (`legal_status_options`, in button order) and the navigator language badges
-(`navigator_language_options`). Adding a navigator language is a change here only.
+(`navigator_language_options`). Navigator languages are the site's locales plus `ALL`, and a
+test keeps them so.
 
 The screener still holds logic per legal status: `CitizenLabels` in
 benefits-calculator/src/Components/Results/Filter/citizenshipFilterConfig.tsx works out the
@@ -70,8 +71,9 @@ USER_SELECTED_LEGAL_STATUSES = frozenset(
 
 class NavigatorLanguageCode(models.TextChoices):
     """
-    Languages a navigator can list. The program page draws a badge for each, and hides any other
-    code. Each label is the badge's English words, which the assistant forwards as card content.
+    Languages a navigator can list: every site locale (`settings.LANGUAGES`) plus `ALL`, for a
+    navigator who serves any language. The program page draws a badge for each, and hides any other
+    code. Each label is the spoken language's English name, which the badge and the assistant use.
     """
 
     ENGLISH = "en-us", "English"
@@ -83,7 +85,7 @@ class NavigatorLanguageCode(models.TextChoices):
     RUSSIAN = "ru", "Russian"
     NEPALI = "ne", "Nepali"
     BURMESE = "my", "Burmese"
-    CHINESE = "zh", "Chinese"
+    CHINESE = "zh-hans", "Chinese"
     ARABIC = "ar", "Arabic"
     SWAHILI = "sw", "Swahili"
     POLISH = "pl", "Polish"

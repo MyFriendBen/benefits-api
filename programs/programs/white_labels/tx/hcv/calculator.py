@@ -4,6 +4,7 @@ from types import MappingProxyType
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class TxHcv(ProgramCalculator):
     # Immutable (MappingProxyType) to prevent accidental shared-state mutation.
     BEDROOM_MAP = MappingProxyType({1: 0, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4})
 
-    _elderly_family_relationships = ("headOfHousehold", "spouse", "domesticPartner")
+    _elderly_family_relationships = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner")
 
     dependencies = (
         "income_amount",

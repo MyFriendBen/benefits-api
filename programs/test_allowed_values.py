@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from django.apps import apps as global_apps
+from django.conf import settings
 from django.contrib.admin import site as admin_site
 from django.contrib.admin.sites import AdminSite
 from django.core.exceptions import ValidationError
@@ -33,6 +34,7 @@ from programs.models import (
     WarningMessageDataController,
 )
 from screener.models import WhiteLabel
+from translations.models import Translation
 
 # The screener's copies of the legal statuses. benefits-calculator keeps its own because it holds the
 # logic behind each value, and its `src/Components/Results/apiAllowedValues.test.ts` pins its copies
@@ -111,6 +113,9 @@ class ServedOptionsTests(SimpleTestCase):
         self.assertEqual(
             labels, ["U.S. Citizen", "Green Card 5+", "Green Card <5", "Refugee/Asylee", "Other Lawful", "Undocumented"]
         )
+
+    def test_navigator_languages_are_the_site_locales_plus_all(self) -> None:
+        self.assertEqual(set(NavigatorLanguageCode.values), {code for code, _ in settings.LANGUAGES} | {"ALL"})
 
     def test_every_navigator_language_has_a_badge(self) -> None:
         options = navigator_language_options()
@@ -369,3 +374,46 @@ class StandardizeNavigatorLanguagesMigrationTests(TestCase):
 
         with self.assertRaisesMessage(RuntimeError, "'uk' isn't known and is used by: ukrainian_help"):
             self.migration.standardize(global_apps, self.schema_editor)
+
+
+class NavigatorChineseMigrationTests(TestCase):
+    """Covers migration 0214's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0214_navigator_chinese_is_zh_hans")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+
+    def navigator(self, name: str, codes: list[str]) -> Navigator:
+        navigator = Navigator.objects.new_navigator(white_label="co", name=name)
+        navigator.external_name = name
+        navigator.save()
+        navigator.languages.set([StandardizeNavigatorLanguagesMigrationTests.language(code) for code in codes])
+        return navigator
+
+    def codes(self, navigator: Navigator) -> list[str]:
+        return sorted(navigator.languages.values_list("code", flat=True))
+
+    def test_chinese_navigators_move_to_zh_hans(self) -> None:
+        chinese = self.navigator("chinese", ["zh", "en-us"])
+
+        self.migration.move_to_zh_hans(global_apps, self.schema_editor)
+
+        self.assertEqual(self.codes(chinese), ["en-us", "zh-hans"])
+        self.assertFalse(NavigatorLanguage.objects.filter(code="zh").exists())
+
+    def test_a_navigator_on_both_codes_isnt_linked_twice(self) -> None:
+        both = self.navigator("both", ["zh", "zh-hans"])
+
+        self.migration.move_to_zh_hans(global_apps, self.schema_editor)
+
+        self.assertEqual(self.codes(both), ["zh-hans"])
+
+    def test_the_badge_translation_moves_with_its_text(self) -> None:
+        Translation.objects.add_translation("navLanguage.zh", "Chinese Available")
+
+        self.migration.move_to_zh_hans(global_apps, self.schema_editor)
+
+        self.assertFalse(Translation.objects.filter(label="navLanguage.zh").exists())
+        moved = Translation.objects.get(label="navLanguage.zh-hans")
+        self.assertEqual(moved.safe_translation_getter("text", language_code="en-us"), "Chinese Available")
