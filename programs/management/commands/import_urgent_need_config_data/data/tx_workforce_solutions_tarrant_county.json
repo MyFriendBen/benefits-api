@@ -1,0 +1,25 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_workforce_solutions_tarrant_county",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": ["job resources"],
+    "translations": {
+      "name": "Workforce Solutions for Tarrant County",
+      "description": "Workforce Solutions for Tarrant County offers no-cost job search help, career training and workshops for Tarrant County residents. Visit a workforce center in person or use their virtual services.",
+      "link": "https://workforcesolutions.net/",
+      "warning": "",
+      "website_description": "No-cost job search and career training help for Tarrant County residents.",
+      "notification_message": ""
+    },
+    "phone_number": "+18174134000",
+    "functions": [],
+    "counties": ["Tarrant"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
