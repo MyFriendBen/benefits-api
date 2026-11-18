@@ -1,0 +1,29 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "need": {
+    "external_name": "wa_988_suicide_crisis_lifeline",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "988 Suicide & Crisis Lifeline (WA)",
+      "description": "Free, confidential support for anyone in Washington having an emotional crisis. This includes thoughts of suicide or self-harm, depression, anxiety, trauma, or substance use concerns. Call or text 988, or chat online at chat.988lifeline.org. Help is available 24/7 in over 240 languages.",
+      "link": "https://wa988.org/",
+      "warning": "",
+      "website_description": "Call or text 988, or chat online, any time.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "988",
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
