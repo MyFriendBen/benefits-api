@@ -53,6 +53,13 @@ class WaConfigurationData(ConfigurationData):
                 "_default_message": "Aging Community Resources",
             },
         },
+        "veteranServices": {
+            "icon": {"_icon": "Military", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.veteranServices",
+                "_default_message": "Resources for veterans and their families",
+            },
+        },
     }
 
     # ==========================================================================================
