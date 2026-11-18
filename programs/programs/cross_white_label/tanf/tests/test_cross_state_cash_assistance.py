@@ -139,10 +139,17 @@ class TestNonTanfCashAssistanceReachesEveryState(TanfCashAssistanceSplitTestCase
                     if after[field] - before.get(field, 0) >= ANNUAL_AMOUNT
                 }
                 if slug in NOT_COUNTED:
+                    # Any increase at all, not just a full-amount one: a state counting only part
+                    # of the income would otherwise slip past the threshold above.
+                    increased = {
+                        field: after[field] - before.get(field, 0)
+                        for field in after
+                        if after[field] - before.get(field, 0) > 0
+                    }
                     self.assertFalse(
-                        moved,
-                        f"{slug} is exempt ({NOT_COUNTED[slug]}) but now sends cashAssistanceOther as {moved}; "
-                        "remove it from NOT_COUNTED",
+                        increased,
+                        f"{slug} is exempt ({NOT_COUNTED[slug]}) but now sends cashAssistanceOther as "
+                        f"{increased}; remove it from NOT_COUNTED",
                     )
                     continue
                 self.assertTrue(
