@@ -12,7 +12,7 @@ from django.contrib.admin.sites import AdminSite
 from django.test import RequestFactory, TestCase
 
 from authentication.models import User
-from programs.admin import NavigatorAdmin, ProgramNavigatorInline
+from programs.admin import NavigatorAdmin
 from programs.federal import linkable_with, may_link, may_link_navigator
 from programs.models import County, Navigator, NavigatorDataController, Program, ProgramNavigator
 from screener.models import WhiteLabel
@@ -60,38 +60,43 @@ class TestMayLinkNavigator(_Fixtures):
                 )
 
 
-class TestProgramNavigatorInlineChoices(_Fixtures):
-    """The navigator choices on a program's admin page, which are also what saving validates."""
+class TestNavigatorProgramPickerChoices(_Fixtures):
+    """The programs a navigator's page offers to link, which are also what saving validates.
 
-    def _choices(self, program: Program, user: User) -> set[Navigator]:
+    The same linking rule the Program page's navigator picker applied, from the navigator's side.
+    """
+
+    def _choices(self, navigator: Navigator, user: User) -> set[Program]:
         request = RequestFactory().get("/")
         request.user = user
-        request.resolver_match = SimpleNamespace(kwargs={"object_id": str(program.pk)})
-        inline = ProgramNavigatorInline(Program, AdminSite())
-        field = inline.formfield_for_foreignkey(ProgramNavigator._meta.get_field("navigator"), request)
-        return set(field.queryset)
+        admin = NavigatorAdmin(Navigator, AdminSite())
+        form = admin.get_form(request, navigator)(instance=navigator)
+        return set(form.fields["linked_programs"].queryset)
 
-    def test_superuser_on_federal_program_gets_every_navigator(self) -> None:
-        choices = self._choices(self.federal_program, self._user(superuser=True))
-        self.assertTrue({self.federal_nav, self.co_nav, self.ks_nav} <= choices)
+    def setUp(self) -> None:
+        self.ks_program = Program.objects.new_program(white_label="ks_link", name_abbreviated="ks_link_program")
 
-    def test_superuser_on_state_program_gets_its_own_and_federal(self) -> None:
-        choices = self._choices(self.co_program, self._user(superuser=True))
-        self.assertIn(self.federal_nav, choices)
-        self.assertIn(self.co_nav, choices)
-        self.assertNotIn(self.ks_nav, choices)
+    def test_superuser_on_federal_navigator_gets_every_program(self) -> None:
+        choices = self._choices(self.federal_nav, self._user(superuser=True))
+        self.assertTrue({self.federal_program, self.co_program, self.ks_program} <= choices)
 
-    def test_partner_admin_on_federal_program_gets_their_states_and_federal(self) -> None:
-        choices = self._choices(self.federal_program, self._user("co_link", "federal"))
-        self.assertIn(self.federal_nav, choices)
-        self.assertIn(self.co_nav, choices)
-        self.assertNotIn(self.ks_nav, choices)
+    def test_superuser_on_state_navigator_gets_its_own_and_federal(self) -> None:
+        choices = self._choices(self.co_nav, self._user(superuser=True))
+        self.assertIn(self.federal_program, choices)
+        self.assertIn(self.co_program, choices)
+        self.assertNotIn(self.ks_program, choices)
 
-    def test_navigator_already_linked_stays_a_valid_choice(self) -> None:
-        """A state program linked to another state's navigator before these rules can still be saved."""
-        ProgramNavigator.objects.create(program=self.co_program, navigator=self.ks_nav, order=0)
-        choices = self._choices(self.co_program, self._user(superuser=True))
-        self.assertIn(self.ks_nav, choices)
+    def test_partner_admin_on_federal_navigator_gets_their_states_and_federal(self) -> None:
+        choices = self._choices(self.federal_nav, self._user("co_link", "federal"))
+        self.assertIn(self.federal_program, choices)
+        self.assertIn(self.co_program, choices)
+        self.assertNotIn(self.ks_program, choices)
+
+    def test_program_already_linked_stays_a_valid_choice(self) -> None:
+        """A navigator linked to another state's program before these rules can still be saved."""
+        ProgramNavigator.objects.create(program=self.ks_program, navigator=self.co_nav, order=0)
+        choices = self._choices(self.co_nav, self._user(superuser=True))
+        self.assertIn(self.ks_program, choices)
 
 
 class TestNavigatorAutocomplete(_Fixtures):

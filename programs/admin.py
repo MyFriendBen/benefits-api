@@ -1,20 +1,18 @@
+import copy
 from typing import Any, Optional
 
 from django.contrib import admin, messages
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.db.models import Max, Q, QuerySet
-from django.db.models import Field as ModelField
 from django import forms
-from django.forms import Field as FormField
-from django.forms.models import BaseInlineFormSet
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.utils.html import format_html
-from unfold.admin import TabularInline
 from unfold.widgets import UnfoldBooleanWidget
 from authentication.admin import SecureAdmin
 from .allowed_values import unknown_warning_calculator, warning_calculator_choices
-from .federal import FEDERAL_WHITE_LABEL, is_federal, linkable_with, navigators_linkable_to, visible_to_any
+from .federal import FEDERAL_WHITE_LABEL, is_federal, linkable_with, visible_to_any
 from .models import (
     Program,
     ProgramCategory,
@@ -36,77 +34,6 @@ from .models import (
     TranslationOverride,
     ExpenseType,
 )
-
-
-class ProgramNavigatorInline(TabularInline):
-    """
-    Sortable inline for managing Navigator ordering within a Program.
-    Uses Unfold's drag-and-drop sortable functionality.
-    """
-
-    model = ProgramNavigator
-    extra = 0
-    ordering_field = "order"
-    hide_ordering_field = False
-    fields = ["navigator", "order"]
-    autocomplete_fields = ["navigator"]
-
-    def get_queryset(self, request: HttpRequest) -> QuerySet[ProgramNavigator]:
-        """Optimize queries with select_related"""
-        qs = super().get_queryset(request)
-        return qs.select_related("navigator", "program")
-
-    def get_formset(self, request: HttpRequest, obj: Program | None = None, **kwargs) -> type[BaseInlineFormSet]:
-        """
-        Auto-assign next sequential order to new navigators.
-        Ensures consistent sequential numbering (0, 1, 2, 3...) instead of gaps.
-
-        Edge cases handled:
-        - New program with no navigators: starts at 0
-        - Empty queryset: safely defaults to 0
-        - Multiple concurrent adds: each gets incremented initial value
-        - After drag-and-drop renumbering: continues from max
-        """
-        formset = super().get_formset(request, obj, **kwargs)
-
-        if obj:  # Only for existing programs (not new program creation)
-            try:
-                # Get the highest current order value from existing navigators
-                max_order_result = obj.program_navigators.aggregate(Max("order"))
-                max_order = max_order_result.get("order__max")
-
-                # Set initial value for new items
-                if max_order is not None:
-                    # Continue sequence from highest existing order
-                    formset.form.base_fields["order"].initial = max_order + 1
-                else:
-                    # First navigator for this program
-                    formset.form.base_fields["order"].initial = 0
-            except (AttributeError, KeyError):
-                # Fallback to 0 if anything goes wrong
-                formset.form.base_fields["order"].initial = 0
-
-        return formset
-
-    def formfield_for_foreignkey(self, db_field: ModelField, request: HttpRequest, **kwargs) -> FormField | None:
-        """Navigators this program may link (`navigators_linkable_to`), within the admin's white labels.
-
-        Navigators already linked stay valid, so links made before these rules (a state program
-        using another state's navigator) don't block saving the page.
-        """
-        if db_field.name == "navigator":
-            obj_id = request.resolver_match.kwargs.get("object_id")
-            if obj_id:
-                try:
-                    program = Program.objects.select_related("white_label").get(pk=obj_id)
-                    allowed = navigators_linkable_to(program)
-                    if not request.user.is_superuser:
-                        allowed &= visible_to_any(request.user.white_labels.all())
-                    linked = Q(pk__in=program.program_navigators.values("navigator"))
-                    kwargs["queryset"] = Navigator.objects.filter(allowed | linked)
-                except Program.DoesNotExist:
-                    pass
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 def deactivates_federal_program(form: forms.ModelForm) -> bool:
@@ -178,14 +105,12 @@ class ProgramAdmin(SecureAdmin):
     ]
 
     white_label_filter_horizontal = [
-        "documents",
         "required_programs",
         "excludes_programs",
         "category",
     ]
     filter_horizontal = (
         "legal_status_required",
-        "documents",
         "required_programs",
         "excludes_programs",
     )
@@ -204,11 +129,14 @@ class ProgramAdmin(SecureAdmin):
         "has_calculator",
         "base_program",
         "legal_status_required",
-        "documents",
         "required_programs",
         "excludes_programs",
     ]
-    inlines = [ProgramNavigatorInline]
+    # Navigator and document links are edited from the Navigator and Document pages, so a
+    # program imported from its spec can lock this page without locking who it links to.
+    # Fields a spec-imported program keeps editable here: switching it on or off is a release
+    # decision made per environment, never something the import sets.
+    UNLOCKED_FIELDS = ("active", "confirm_federal_deactivation")
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
@@ -218,6 +146,26 @@ class ProgramAdmin(SecureAdmin):
         if obj is not None and is_federal(obj) and obj.active:
             fields.insert(fields.index("active") + 1, "confirm_federal_deactivation")
         return fields
+
+    def get_readonly_fields(self, request: HttpRequest, obj: Optional[Program] = None) -> list[str]:
+        """A program imported from its v2 spec takes every field from the spec, except Active."""
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj is not None and obj.imported_from_spec:
+            readonly += [name for name in self.get_fields(request, obj) if name not in self.UNLOCKED_FIELDS]
+        return readonly
+
+    def change_view(
+        self, request: HttpRequest, object_id: str, form_url: str = "", extra_context: Optional[dict] = None
+    ) -> HttpResponse:
+        program = self.get_queryset(request).filter(pk=object_id).first()
+        if program is not None and program.imported_from_spec:
+            messages.info(
+                request,
+                f"'{program.name_abbreviated}' is imported from its spec in program-ops, so only Active can be "
+                "changed here. Other changes go in the spec and are imported. Navigators and documents are linked "
+                "from their own pages.",
+            )
+        return super().change_view(request, object_id, form_url, extra_context)
 
     def get_changelist_form(self, request: HttpRequest, **kwargs: Any) -> type[forms.ModelForm]:
         return super().get_changelist_form(request, form=ProgramChangelistForm, **kwargs)
@@ -275,7 +223,76 @@ class CountiesAdmin(SecureAdmin):
     search_fields = ("name",)
 
 
-class NavigatorAdmin(SecureAdmin):
+class ProgramLinksForm(forms.ModelForm):
+    """Adds the "Programs" picker. `ProgramLinksAdmin.get_form` fills its choices per row."""
+
+    linked_programs = forms.ModelMultipleChoiceField(
+        queryset=Program.objects.none(),
+        required=False,
+        label="Programs",
+        widget=FilteredSelectMultiple("programs", is_stacked=False),
+        help_text="The programs that show this on their program page.",
+    )
+
+
+class ProgramLinksAdmin(SecureAdmin):
+    """A "Programs" picker on a shared row's page: which programs show this navigator or document.
+
+    The Program page no longer edits these links, so a program imported from its spec can lock
+    that page while its links stay maintained here. The picker offers the programs this row may
+    link (`linkable_programs`), narrowed to a partner admin's white labels, plus every program
+    already linked, so links made before these rules don't block saving.
+    """
+
+    form = ProgramLinksForm
+    PROGRAMS_FIELD = "linked_programs"
+
+    def linkable_programs(self, obj: Any) -> Q:
+        raise NotImplementedError
+
+    def linked_program_ids(self, obj: Any) -> list[int]:
+        raise NotImplementedError
+
+    def set_program_links(self, obj: Any, programs: list[Program]) -> None:
+        raise NotImplementedError
+
+    def _set_select_queryset(
+        self, field_name: str, field: forms.ModelMultipleChoiceField, obj: Any, request: HttpRequest
+    ) -> None:
+        # `get_form` sets the picker's choices on this form's own copy of the field.
+        if field_name == self.PROGRAMS_FIELD:
+            return
+        super()._set_select_queryset(field_name, field, obj, request)
+
+    def get_form(self, request: HttpRequest, obj: Any = None, **kwargs: Any) -> type[forms.ModelForm]:
+        form = super().get_form(request, obj, **kwargs)
+        if self.PROGRAMS_FIELD not in form.base_fields:
+            return form
+        # The declared field is shared by every form this admin builds; this form gets its own copy.
+        field = copy.deepcopy(form.base_fields[self.PROGRAMS_FIELD])
+        form.base_fields[self.PROGRAMS_FIELD] = field
+        if obj is None or obj.pk is None:
+            return form
+        linked = self.linked_program_ids(obj)
+        allowed = self.linkable_programs(obj)
+        if not request.user.is_superuser:
+            allowed &= visible_to_any(request.user.white_labels.all())
+        field.queryset = (
+            Program.objects.filter(allowed | Q(pk__in=linked))
+            .select_related("white_label")
+            .order_by("white_label__code", "name_abbreviated")
+        )
+        field.label_from_instance = lambda program: f"{program.white_label.code}/{program.name_abbreviated}"
+        field.initial = linked
+        return form
+
+    def save_related(self, request: HttpRequest, form: forms.ModelForm, formsets: Any, change: bool) -> None:
+        super().save_related(request, form, formsets, change)
+        if self.PROGRAMS_FIELD in form.cleaned_data and form.instance.pk is not None:
+            self.set_program_links(form.instance, list(form.cleaned_data[self.PROGRAMS_FIELD]))
+
+
+class NavigatorAdmin(ProgramLinksAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "external_name", "action_buttons"]
     white_label_filter_horizontal = ("counties", "eligibility_programs")
@@ -328,6 +345,24 @@ class NavigatorAdmin(SecureAdmin):
             allowed &= visible_to_any(request.user.white_labels.all())
         chosen = Q(pk__in=getattr(obj, field_name).values("pk"))
         field.queryset = field.queryset.filter(allowed | chosen)
+
+    def linkable_programs(self, obj: Navigator) -> Q:
+        """The navigator linking rule (`linkable_with`): its own white label's programs, or any
+        program for a federal navigator, and federal programs for a state one."""
+        return linkable_with(obj.white_label)
+
+    def linked_program_ids(self, obj: Navigator) -> list[int]:
+        return list(obj.program_navigators.values_list("program_id", flat=True))
+
+    def set_program_links(self, obj: Navigator, programs: list[Program]) -> None:
+        """Add and remove `ProgramNavigator` links. A new link goes last in that program's order;
+        links that stay keep their order."""
+        wanted = {program.pk for program in programs}
+        current = set(self.linked_program_ids(obj))
+        ProgramNavigator.objects.filter(navigator=obj, program_id__in=current - wanted).delete()
+        for program_id in sorted(wanted - current):
+            last = ProgramNavigator.objects.filter(program_id=program_id).aggregate(Max("order"))["order__max"]
+            ProgramNavigator.objects.create(program_id=program_id, navigator=obj, order=0 if last is None else last + 1)
 
     def get_str(self, obj: Navigator) -> str:
         return str(obj) if str(obj).strip() else "unnamed"
@@ -584,13 +619,23 @@ class FederalPovertyLimitAdmin(SecureAdmin):
     search_fields = ("year",)
 
 
-class DocumentAdmin(SecureAdmin):
+class DocumentAdmin(ProgramLinksAdmin):
     search_fields = ("external_name",)
     list_display = ["get_str", "action_buttons"]
     exclude = ["text", "link_url", "link_text"]
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
+
+    def linkable_programs(self, obj: Document) -> Q:
+        """Programs on the document's own white label, as the Program page's documents picker offered."""
+        return Q(white_label_id=obj.white_label_id)
+
+    def linked_program_ids(self, obj: Document) -> list[int]:
+        return list(obj.program_documents.values_list("pk", flat=True))
+
+    def set_program_links(self, obj: Document, programs: list[Program]) -> None:
+        obj.program_documents.set(programs)
 
     def get_str(self, obj: Document) -> str:
         return str(obj)
