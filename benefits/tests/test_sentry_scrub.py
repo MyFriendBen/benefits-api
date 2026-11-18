@@ -346,7 +346,8 @@ class MessageEndpointEventTest(TestCase):
     def test_a_failed_send_reports_without_the_number(self, message_user: Any) -> None:
         # Twilio's own wording for a rejected number, which quotes the number.
         message_user.return_value.send_text.side_effect = RuntimeError(
-            f"HTTP 400 error: Unable to create record: The 'To' number {FAKE_PHONE} is not a valid phone number. (21211)"
+            "HTTP 400 error: Unable to create record: "
+            f"The 'To' number {FAKE_PHONE} is not a valid phone number. (21211)"
         )
 
         with _recording_sentry() as events:
