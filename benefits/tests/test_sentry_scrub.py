@@ -90,6 +90,16 @@ class ScrubEventTest(TestCase):
             self.assertNotIn("vars", scrubbed["exception"]["values"][0]["stacktrace"]["frames"][0], url)
             self.assertNotIn("3035550142", json.dumps(scrubbed), url)
 
+    def test_redacts_contacts_from_exception_text_on_the_message_endpoint(self) -> None:
+        event = _event(MESSAGES_URL)
+        event["exception"]["values"][0][
+            "value"
+        ] = "HTTP 400 error: The 'To' number +1 (303) 555-0142 is not valid (21211); bounced a.person@example.com"
+
+        value = scrub_event(event, {})["exception"]["values"][0]["value"]
+
+        self.assertEqual(value, "HTTP 400 error: The 'To' number [contact] is not valid (21211); bounced [contact]")
+
     def test_leaves_other_endpoints_alone(self) -> None:
         for url in (
             "https://api.example/api/eligibility/1",
@@ -334,14 +344,19 @@ class MessageEndpointEventTest(TestCase):
 
     @patch("screener.views.MessageUser")
     def test_a_failed_send_reports_without_the_number(self, message_user: Any) -> None:
-        message_user.return_value.send_text.side_effect = RuntimeError("Twilio is down")
+        # Twilio's own wording for a rejected number, which quotes the number.
+        message_user.return_value.send_text.side_effect = RuntimeError(
+            f"HTTP 400 error: Unable to create record: The 'To' number {FAKE_PHONE} is not a valid phone number. (21211)"
+        )
 
         with _recording_sentry() as events:
             status = self._post(FAKE_PHONE)
 
         self.assertTrue(status.startswith("500"), status)
         self.assertTrue(events, "expected the unhandled exception to reach Sentry")
-        self.assertNotIn("3035550142", json.dumps(events))
+        blob = json.dumps(events)
+        self.assertNotIn("3035550142", blob)
+        self.assertIn("21211", blob)
 
     def test_a_throttled_request_reports_nothing(self) -> None:
         self.assertTrue(self._post(FAKE_PHONE).startswith("201"))

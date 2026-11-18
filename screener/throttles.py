@@ -167,16 +167,22 @@ class RateWindow:
         weight = self.previous * (self.duration - self.elapsed) / self.duration
         if count + weight <= self.limit:
             return True
-        self._add(-1)
+        if not self.release():
+            raise CacheUnavailable()
         self.current = count - 1
         return False
 
-    def release(self) -> None:
-        """Give back a slot taken by `reserve`."""
+    def release(self) -> bool:
+        """Give back a slot taken by `reserve`; False if the cache didn't answer.
+
+        Only decrements a counter that still exists. If it is gone (a Redis restart
+        or an eviction since `reserve`), there is nothing to give back, and
+        recreating it would leave it at -1: one slot more than the limit.
+        """
         try:
-            self._add(-1)
-        except CacheUnavailable:
-            pass
+            return self.cache.incr(self.key, -1) is not None
+        except ValueError:
+            return True
 
     def wait(self) -> float:
         """Seconds until one more request fits, if nothing else is counted meanwhile."""
@@ -192,12 +198,15 @@ class RateWindow:
         return remaining + self.duration * (1 - (self.limit - 1) / self.current)
 
     def _add(self, delta: int) -> int:
-        # Kept through the next window too, where it is the previous window.
-        self.cache.add(self.key, 0, timeout=2 * self.duration)
+        # Kept through the next window too, where it is the previous window. `add`
+        # answers False when the counter already exists and None when the cache
+        # didn't answer at all; stop there rather than wait out a second timeout.
+        if self.cache.add(self.key, 0, timeout=2 * self.duration) is None:
+            raise CacheUnavailable()
         try:
             count = self.cache.incr(self.key, delta)
         except ValueError:
-            # The key expired between add and incr.
+            # The key was evicted between add and incr.
             count = None
         if count is None:
             raise CacheUnavailable()
@@ -226,8 +235,8 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
 
     Every limit takes its slot before the request goes on (see `RateWindow`), so
     concurrent requests are counted exactly. If the cache doesn't answer, the request
-    is allowed at the first unanswered call rather than waiting out a timeout on each
-    of the remaining ones: the throttle fails open, quickly, instead of blocking
+    is allowed at the first unanswered call, keeping whatever slots it had taken,
+    rather than waiting out a timeout on each of the remaining ones: the throttle fails open, quickly, instead of blocking
     everyone or holding a worker. Two rules keep the limits from punishing the people
     they protect:
 
@@ -274,15 +283,16 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
                 else:
                     self.blocked.append(window)
         except CacheUnavailable:
+            # Allowed, with no further cache calls. Slots already taken stay taken:
+            # the request goes on to send, so they are what happened, and giving
+            # them back would mean more calls to a cache that just failed.
             logger.warning("Save My Results throttle skipped: the cache did not answer")
             self.blocked = []
-            for window in reserved:
-                window.release()
+            setattr(request, self.PHONE_SLOTS, [window for window in reserved if window in phone_windows])
             return True
 
         if self.blocked:
-            for window in reserved:
-                window.release()
+            self._release(reserved)
             # Which limit fired, and nothing about who hit it: the way to tell real
             # households being blocked from a script, and to tune the rates.
             logger.warning("Save My Results throttled by %s", ", ".join(window.scope for window in self.blocked))
@@ -297,9 +307,15 @@ class SaveResultsRateThrottle(throttling.BaseThrottle):
     @classmethod
     def release_text(cls, request: Request) -> None:
         """Give back the phone slots this request took: its text was not sent."""
-        for window in getattr(request, cls.PHONE_SLOTS, []):
-            window.release()
+        cls._release(getattr(request, cls.PHONE_SLOTS, []))
         setattr(request, cls.PHONE_SLOTS, [])
+
+    @staticmethod
+    def _release(windows: list[RateWindow]) -> None:
+        """Give slots back, stopping at the first call the cache doesn't answer."""
+        for window in windows:
+            if not window.release():
+                break
 
     def ip_ident(self, request: Request) -> Optional[str]:
         ident = self.get_ident(request)

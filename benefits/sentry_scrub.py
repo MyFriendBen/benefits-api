@@ -15,7 +15,10 @@ Save My Results: the message endpoint's body is the phone number or email to sen
 results to, and the view's locals hold it too. Every error response from it becomes a
 Sentry event (`benefits.views.drf_exception_handler`), so a refused number or a failed
 send would otherwise put the raw number in Sentry. Those events get the same treatment
-as the address endpoints.
+as the address endpoints, and their exception messages have anything shaped like a
+phone number or an email address replaced: Twilio's error for a rejected number quotes
+the number, and a mail provider's can quote the address. Error codes are short enough
+to survive.
 
 Celery jobs: Sentry's Celery integration switches itself on once Celery is installed, and
 every event raised inside a job carries the job's arguments (`extra["celery-job"]`) and the
@@ -38,6 +41,11 @@ from typing import Any
 
 ADDRESS_ENDPOINT_RE = re.compile(r"/api/(places/autocomplete|screener-options/[^/]+/rem-impact)/?$")
 CONTACT_ENDPOINT_RE = re.compile(r"/api/messages/?$")
+# Nine or more digits, allowing the usual punctuation between them: long enough to
+# leave Twilio error codes (five digits) and HTTP statuses alone.
+PHONE_LIKE_RE = re.compile(r"\+?\d(?:[\s().-]*\d){8,}")
+EMAIL_LIKE_RE = re.compile(r"[^\s@<>\"']+@[^\s@<>\"']+")
+REDACTED_CONTACT = "[contact]"
 
 # A Twilio message SID (screener.tasks.MESSAGE_SID_RE), anywhere inside a string.
 MESSAGE_SID_RE = re.compile(r"(SM|MM)[0-9a-f]{32}")
@@ -80,6 +88,26 @@ def _strip_httplib_queries(event: dict[str, Any]) -> None:
             data["url"] = _strip_query(data["url"])
 
 
+def _redact_contacts(text: Any) -> Any:
+    if not isinstance(text, str):
+        return text
+    return PHONE_LIKE_RE.sub(REDACTED_CONTACT, EMAIL_LIKE_RE.sub(REDACTED_CONTACT, text))
+
+
+def _redact_contact_messages(event: dict[str, Any]) -> None:
+    for value in (event.get("exception") or {}).get("values") or []:
+        if "value" in value:
+            value["value"] = _redact_contacts(value["value"])
+    logentry = event.get("logentry")
+    if isinstance(logentry, dict):
+        for key in ("message", "formatted"):
+            if key in logentry:
+                logentry[key] = _redact_contacts(logentry[key])
+        logentry.pop("params", None)
+    if "message" in event:
+        event["message"] = _redact_contacts(event["message"])
+
+
 def _is_celery_job_event(event: dict[str, Any]) -> bool:
     tags = event.get("tags")
     if isinstance(tags, dict) and "celery_task_id" in tags:
@@ -116,4 +144,6 @@ def scrub_event(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]:
     request.pop("data", None)
     _drop_frame_vars(event)
     _strip_httplib_queries(event)
+    if CONTACT_ENDPOINT_RE.search(url):
+        _redact_contact_messages(event)
     return event

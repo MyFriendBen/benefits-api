@@ -170,12 +170,33 @@ class MessageThrottleTests(APITestCase):
         """A dead cache must not block every household, nor make each request wait
         out a timeout on every limit before giving up."""
         with mock.patch.object(RateWindow, "cache") as dead_cache:
-            dead_cache.incr.return_value = None
+            dead_cache.add.return_value = None
 
             statuses = self._texts(PHONE_DAY * 2)
 
         self.assertEqual(statuses, [OK] * (PHONE_DAY * 2))
-        self.assertEqual(dead_cache.incr.call_count, PHONE_DAY * 2)
+        self.assertEqual(dead_cache.add.call_count, PHONE_DAY * 2)
+        dead_cache.incr.assert_not_called()
+
+    def test_a_cache_that_dies_part_way_is_not_called_again(self, message_user):
+        """Slots already taken stay taken (the request goes on to send), so nothing
+        is given back through a cache that just stopped answering."""
+        real_cache = RateWindow.cache
+        calls = []
+
+        def add(key, *args, **kwargs):
+            calls.append(key)
+            return None if len(calls) == 4 else real_cache.add(key, *args, **kwargs)
+
+        with mock.patch.object(RateWindow, "cache") as dying_cache:
+            dying_cache.add.side_effect = add
+            dying_cache.incr.side_effect = real_cache.incr
+            dying_cache.get.side_effect = real_cache.get
+
+            self.assertEqual(self._post(phone=PHONE), OK)
+
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(dying_cache.incr.call_count, 3)
 
     def test_a_throttled_response_says_when_to_retry(self, message_user):
         self._emails(IP_HOUR)
@@ -385,11 +406,23 @@ class RateWindowTests(SimpleTestCase):
         self.assertEqual([self._reserve() for _ in range(2)], [True, False])
 
     def test_says_when_the_cache_does_not_answer(self):
-        with mock.patch.object(RateWindow, "cache") as dead_cache:
-            dead_cache.incr.return_value = None
+        for dead_call in ("add", "incr"):
+            with self.subTest(dead_call=dead_call), mock.patch.object(RateWindow, "cache") as dead_cache:
+                getattr(dead_cache, dead_call).return_value = None
 
-            with self.assertRaises(CacheUnavailable):
-                self._reserve()
+                with self.assertRaises(CacheUnavailable):
+                    self._reserve()
+
+    def test_release_does_not_recreate_a_counter_that_is_gone(self):
+        """After a Redis restart or eviction there is nothing to give back; a
+        recreated counter would sit at -1 and allow one send over the limit."""
+        window = RateWindow("scope", "ident")
+        window.reserve()
+        cache.clear()
+
+        self.assertTrue(window.release())
+
+        self.assertEqual([self._reserve() for _ in range(3)], [True, True, False])
 
     def test_wait_is_when_one_more_fits(self):
         # Two at 01:00 fill the hour; the third has to wait for the next window, and
