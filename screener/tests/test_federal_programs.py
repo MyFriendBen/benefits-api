@@ -570,12 +570,13 @@ class TestAdminPickers(FederalProgramsTestCase):
         self.assertNotIn(other, choices)
 
     def test_a_partner_admin_gets_their_states_and_federal_programs(self) -> None:
+        """A federal warning may go on any program, so only the partner's white labels keep WA out."""
         federal = self.program(self.federal, "fed_account")
         own = self.program(self.co, "co_only")
         self.program(self.wa, "wa_only")
-        warning = WarningMessage.objects.new_warning("co", "_show")
+        warning = WarningMessage.objects.new_warning(FEDERAL_WHITE_LABEL, "_show")
         user = User.objects.create_user(email_or_cell="partner@example.com", password="pw-123456")
-        user.white_labels.set([self.co])
+        user.white_labels.set([self.co, self.federal])
         request = RequestFactory().get("/admin/")
         request.user = user
 

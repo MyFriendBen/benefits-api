@@ -928,11 +928,14 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
 
     def test_a_federal_warning_the_federal_record_references_gets_no_note(self) -> None:
         WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
-        self.reference_warning("federal")
+        warning = self.reference_warning("federal")
 
         output = self.run_import()
 
         self.assertFalse(self.records_failed, output)
+        warning.refresh_from_db()
+        self.assertEqual(warning.white_label.code, "federal")
+        self.assertIn(self.federal_program(), warning.programs.all())
         self.assertNotIn("so on this federal program only", output)
 
     def export(self, white_label: str, program: str, path: Path) -> dict[str, Any]:

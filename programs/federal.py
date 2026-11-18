@@ -75,7 +75,7 @@ def serves_screen(owner: "WhiteLabel", program: "Program", screen_white_label: "
     """
     if not is_federal(program):
         return True
-    if owner.id in (program.white_label_id, screen_white_label.id):
+    if owner.code == FEDERAL_WHITE_LABEL or owner.id == screen_white_label.id:
         return True
     state = screen_white_label.state_code
     return bool(state) and owner.state_code == state

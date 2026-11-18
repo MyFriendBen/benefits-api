@@ -353,6 +353,16 @@ class FederalReferenceTests(ApplyProgramBase):
             )
         self.assertNotIn("moves it to 'federal'", output)
 
+    def test_a_state_document_is_linked_without_a_note(self) -> None:
+        """Documents aren't filtered by white label on a federal program, so no state restriction is claimed."""
+        document = Document.objects.new_document("co", "co_proof")
+        self.payload["documents"].append({"external_name": "co_proof"})
+
+        output = self.apply(self.payload)
+
+        self.assertIn(document, self.federal_program().documents.all())
+        self.assertNotIn("document 'co_proof' is on the 'co' white label", output)
+
     def test_a_federal_row_gets_no_note(self) -> None:
         federal = WhiteLabel.objects.get(code="federal")
         Navigator.objects.filter(pk=self.state_nav.pk).update(white_label=federal)
