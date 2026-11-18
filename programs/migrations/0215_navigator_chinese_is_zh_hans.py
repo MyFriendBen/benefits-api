@@ -40,7 +40,7 @@ def move_to_zh_hans(apps, schema_editor) -> None:
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0213_remove_unknown_legal_statuses"),
+        ("programs", "0214_program_import_log"),
         ("translations", "0006_move_zh_data"),
     ]
 

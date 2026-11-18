@@ -377,10 +377,10 @@ class StandardizeNavigatorLanguagesMigrationTests(TestCase):
 
 
 class NavigatorChineseMigrationTests(TestCase):
-    """Covers migration 0214's RunPython, which --nomigrations skips."""
+    """Covers migration 0215's RunPython, which --nomigrations skips."""
 
     def setUp(self) -> None:
-        self.migration = import_module("programs.migrations.0214_navigator_chinese_is_zh_hans")
+        self.migration = import_module("programs.migrations.0215_navigator_chinese_is_zh_hans")
         self.schema_editor = SimpleNamespace(connection=connection)
         WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
 
