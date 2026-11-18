@@ -478,6 +478,7 @@ def eligibility_results(
             Prefetch("documents", queryset=Document.objects.order_by("id")),
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
             "warning_messages",
+            "warning_messages__white_label",
             "warning_messages__counties",
             "warning_messages__legal_statuses",
             *translations_prefetch_name("warning_messages__", WarningMessage.objects.translated_fields),

@@ -26,6 +26,7 @@ from programs.management.commands._program_record_sync import (
     EntitySpec,
     RecordPlan,
     RecordSync,
+    WARNING,
     _describe,
     _print_notes,
     is_reference,
@@ -71,10 +72,12 @@ class ProgramApply(RecordSync):
             elif not is_reference(entry):
                 self._note_kept_row(plan, spec, entry, row)
 
-            if spec is NAVIGATOR and is_reference(entry):
-                # Only notes which state sees a state navigator on a federal program; a reference
-                # never moves a navigator.
-                self._plan_federal_navigator_owner(plan, entry, row, None)
+            if spec in (NAVIGATOR, WARNING):
+                # Notes which state sees a state navigator or warning on a federal program, whether the
+                # payload references it or gives its fields: an apply never changes an existing row, so
+                # it keeps its white label either way. A row this apply creates is on the payload's
+                # white label, so it gets no note. Documents aren't filtered by white label.
+                self._note_state_row_on_federal(plan, spec, name, row)
 
             if name not in linked:
                 plan.changes.append(

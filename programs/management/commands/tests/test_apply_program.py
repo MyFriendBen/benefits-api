@@ -315,6 +315,86 @@ class CreateTests(ApplyProgramBase):
         self.assertFalse(Program.objects.exists())
 
 
+class FederalReferenceTests(ApplyProgramBase):
+    """A federal payload referencing a state's navigator or warning links it and notes which state sees it."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.payload["white_label"]["code"] = "federal"
+        self.state_nav = Navigator.objects.new_navigator(white_label="co", name="co_clinics")
+        self.state_nav.external_name = "co_clinics"
+        self.state_nav.save()
+        self.state_warning = WarningMessage.objects.new_warning("co", "_show", "co_notice")
+        self.payload["navigators"].append({"external_name": "co_clinics"})
+        self.payload["warning_messages"].append({"external_name": "co_notice"})
+
+    def federal_program(self) -> Program:
+        return Program.objects.get(white_label__code="federal", name_abbreviated=PROGRAM)
+
+    def test_state_rows_are_linked_and_stay_on_their_state(self) -> None:
+        self.apply(self.payload)
+
+        program = self.federal_program()
+        self.assertTrue(ProgramNavigator.objects.filter(program=program, navigator=self.state_nav).exists())
+        self.assertIn(program, self.state_warning.programs.all())
+        self.state_nav.refresh_from_db()
+        self.state_warning.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "co")
+        self.assertEqual(self.state_warning.white_label.code, "co")
+
+    def test_each_state_row_gets_a_note_without_advice_to_move_it(self) -> None:
+        output = self.apply(self.payload)
+
+        for kind, name in (("navigator", "co_clinics"), ("warning", "co_notice")):
+            self.assertIn(
+                f"{kind} '{name}' is on the 'co' white label, so on this federal program only screens in the same "
+                "state as 'co' see it.",
+                output,
+            )
+        self.assertNotIn("moves it to 'federal'", output)
+
+    def test_a_state_row_given_with_its_fields_is_kept_on_its_state_and_noted(self) -> None:
+        """A v2 spec lists every navigator and warning with its fields. An existing state row is left as it
+        is, so on the federal program it still reaches only its own state, and the note says so."""
+        self.payload["navigators"][-1] = {**self.payload["navigators"][0], "external_name": "co_clinics"}
+        self.payload["warning_messages"][-1] = {**self.payload["warning_messages"][0], "external_name": "co_notice"}
+
+        output = self.apply(self.payload)
+
+        self.state_nav.refresh_from_db()
+        self.state_warning.refresh_from_db()
+        self.assertEqual(self.state_nav.white_label.code, "co")
+        self.assertEqual(self.state_warning.white_label.code, "co")
+        for kind, name in (("navigator", "co_clinics"), ("warning", "co_notice")):
+            self.assertIn(f"{kind} '{name}' is on the 'co' white label", output)
+        self.assertNotIn("moves it to 'federal'", output)
+
+    def test_a_row_the_apply_creates_gets_no_note(self) -> None:
+        output = self.apply(self.payload)
+
+        self.assertNotIn(f"'{NAV}' is on the", output)
+        self.assertNotIn(f"'{WARNING}' is on the", output)
+
+    def test_a_state_document_is_linked_without_a_note(self) -> None:
+        """Documents aren't filtered by white label on a federal program, so no state restriction is claimed."""
+        document = Document.objects.new_document("co", "co_proof")
+        self.payload["documents"].append({"external_name": "co_proof"})
+
+        output = self.apply(self.payload)
+
+        self.assertIn(document, self.federal_program().documents.all())
+        self.assertNotIn("document 'co_proof' is on the 'co' white label", output)
+
+    def test_a_federal_row_gets_no_note(self) -> None:
+        federal = WhiteLabel.objects.get(code="federal")
+        Navigator.objects.filter(pk=self.state_nav.pk).update(white_label=federal)
+        WarningMessage.objects.filter(pk=self.state_warning.pk).update(white_label=federal)
+
+        output = self.apply(self.payload)
+
+        self.assertNotIn("so on this federal program only", output)
+
+
 class UpdateTests(ApplyProgramBase):
     def setUp(self) -> None:
         super().setUp()
