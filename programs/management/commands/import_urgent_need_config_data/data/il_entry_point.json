@@ -1,0 +1,31 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_entry_point",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Entry Point (Suburban Cook County)",
+      "description": "Entry Point is how people in suburban Cook County get help with homelessness. If you have housing but might lose it, call the Entry Point Call Center to see if you can be referred for help staying housed. If you are homeless, or will be within 48 hours, call for a referral to a shelter diversion provider, or visit an in-person access point near you. Call center hours are 8:30am-4:30pm, Monday to Friday.",
+      "link": "https://myentrypoint.org/",
+      "warning": "Shelter space is limited, so access to shelter is not guaranteed.",
+      "website_description": "Call or visit an access point for help with homelessness in suburban Cook County.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "+18774266515",
+    "counties": [
+      "Cook"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
