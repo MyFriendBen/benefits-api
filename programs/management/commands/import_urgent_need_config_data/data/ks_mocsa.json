@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_mocsa",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health",
+      "legal services"
+    ],
+    "translations": {
+      "name": "MOCSA (Metropolitan Organization to Counter Sexual Assault)",
+      "description": "Free, 24/7 support for survivors of sexual abuse or assault and their families in the Kansas City area. MOCSA offers a crisis line, advocates who can go with you to the hospital, police, or court, free counseling and support groups, and legal help such as protection orders.",
+      "link": "https://mocsa.org/",
+      "warning": "If you are in immediate danger, call 911. No application is needed. You can call the crisis line any time.",
+      "website_description": "24/7 crisis line, advocacy, counseling, and legal help for survivors of sexual assault in the Kansas City area.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "+19136420233",
+    "counties": [
+      "Johnson County",
+      "Wyandotte County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

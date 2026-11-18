@@ -42,12 +42,14 @@ class KsConfigurationData(ConfigurationData):
 
     # ==========================================================================================
     # IMMEDIATE NEED OPTIONS
-    # Base options plus three tiles the base set doesn't offer:
+    # Base options plus four tiles the base set doesn't offer:
     #   freeLowCostMedicalCare - base only has dental care, leaving community health centers
     #                            with nowhere to surface
     #   savings                - reuses Screen.needs_college_savings (as CO does), but labelled
     #                            broadly rather than CO's college-specific wording
     #   transportation         - new Screen.needs_transportation field
+    #   homelessServices       - reuses Screen.needs_homeless_services (as NC does), so the
+    #                            Kansas City coordinated entry resource has a tile to surface on
     # ==========================================================================================
 
     acute_condition_options = {
@@ -71,6 +73,13 @@ class KsConfigurationData(ConfigurationData):
             "text": {
                 "_label": "acuteConditionOptions.transportation",
                 "_default_message": "Transportation",
+            },
+        },
+        "homelessServices": {
+            "icon": {"_icon": "Homeless_services", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.homelessServices",
+                "_default_message": "Help finding shelter",
             },
         },
     }
