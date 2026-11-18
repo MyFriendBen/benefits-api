@@ -386,7 +386,7 @@ def _context_programs(screen: Screen, name_abbreviations: list[str]) -> dict[str
             Prefetch(
                 "warning_messages",
                 queryset=(
-                    WarningMessage.objects.select_related("message")
+                    WarningMessage.objects.select_related("message", "white_label")
                     .prefetch_related("message__translations")
                     .order_by("id")
                 ),

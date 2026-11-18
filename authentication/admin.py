@@ -96,9 +96,10 @@ class SecureAdmin(ModelAdmin):
             shared = Q(white_label__isnull=True)
             # Federal programs are shown to every white label, so a white label's rows may point
             # at one where the link only *references* it: a referrer hiding it, or a program
-            # requiring or excluding it. Fields that attach state content to a program (a
-            # warning's `programs`, a translation override's `program`) stay scoped, or that
-            # content would follow the federal program into every other white label.
+            # requiring or excluding it. Fields that attach state content to a program stay
+            # scoped here, or that content would follow the federal program into every other
+            # white label (a translation override's `program`). Navigators and warnings show only
+            # in their own state on a federal program, so their admins widen their pickers.
             if field_name in FEDERAL_REFERENCE_FIELDS:
                 shared |= Q(white_label__code=FEDERAL_WHITE_LABEL)
 

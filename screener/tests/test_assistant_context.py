@@ -552,6 +552,40 @@ class BuildContextTests(TestCase):
 
         self.assertEqual(two, one, f"{one} -> {two} queries for 1 -> 2 programs with the warning")
 
+    def test_federal_program_warnings_are_those_of_the_screens_state(self):
+        """On a federal program, each state sees its own warnings and the federal ones, as the page
+        does: another white label in the same state counts, another state doesn't."""
+        federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        WhiteLabel.objects.create(name="Test State Energy", code="test_energy", state_code="TS")
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        seed_program(federal, "federal_wic_test")
+        self.add_snapshot_row("federal_wic_test")
+        program = Program.objects.get(name_abbreviated="federal_wic_test")
+        for code in ("federal", "test", "test_energy", "other"):
+            warning = seed_warning(program, "_show", f"Warning from {code}.", external_name=f"warning_{code}")
+            warning.white_label = WhiteLabel.objects.get(code=code)
+            warning.save()
+
+        context = self.context()
+
+        self.assertEqual(
+            context["eligible_programs"][0]["warnings"],
+            ["Warning from federal.", "Warning from test.", "Warning from test_energy."],
+        )
+
+    def test_state_program_warning_owned_by_another_white_label_is_still_included(self):
+        """Only federal programs are filtered by white label: a state program keeps a warning
+        another white label owns, as the page does."""
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        self.add_snapshot_row("lifeline")
+        warning = seed_warning(self.programs["lifeline"], "_show", "Enroll in SNAP first.")
+        warning.white_label = WhiteLabel.objects.get(code="other")
+        warning.save()
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["warnings"], ["Enroll in SNAP first."])
+
     def test_warnings_key_is_omitted_when_the_program_has_none(self):
         self.add_snapshot_row("snap")
 
