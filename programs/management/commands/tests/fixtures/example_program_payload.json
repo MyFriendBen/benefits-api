@@ -1,0 +1,52 @@
+{
+  "white_label": {"code": "co"},
+  "program_category": {"external_name": "food"},
+  "program": {
+    "name_abbreviated": "co_example_program",
+    "legal_status_required": ["citizen"],
+    "value_format": null,
+    "year": "2025",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "low_confidence": false,
+    "name": "Example Food Program",
+    "description_short": "Help buying groceries",
+    "description": "Monthly help buying groceries.\n\nApply online or by phone.",
+    "website_description": "Help buying groceries",
+    "learn_more_link": "https://example.org/learn",
+    "apply_button_link": "https://example.org/apply",
+    "apply_button_description": "",
+    "estimated_application_time": "30 minutes",
+    "estimated_decision_time": "30 days",
+    "estimated_delivery_time": "",
+    "estimated_value": ""
+  },
+  "documents": [
+    {"external_name": "co_example_program_id", "text": "A photo ID", "link_url": "", "link_text": ""}
+  ],
+  "navigators": [
+    {
+      "external_name": "co_example_program_nav",
+      "name": "Example Help Desk",
+      "email": "help@example.org",
+      "description": "Helps with applications",
+      "assistance_link": "https://example.org/help",
+      "phone_number": "+13035550100",
+      "counties": [],
+      "languages": ["en-us"],
+      "eligibility_programs": []
+    }
+  ],
+  "warning_messages": [
+    {
+      "external_name": "co_example_program_waitlist",
+      "message": "There is a waitlist.",
+      "calculator": "_show",
+      "link_url": "",
+      "link_text": "",
+      "counties": [],
+      "legal_statuses": []
+    }
+  ]
+}
