@@ -1,5 +1,6 @@
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class KsWorkingHealthy(ProgramCalculator):
@@ -140,7 +141,7 @@ class KsWorkingHealthy(ProgramCalculator):
 
         if member.relationship in self.child_relationships:
             # Minor is the head's child; a head-of-household or spouse adult is the parent.
-            return any(m.relationship in ("headOfHousehold", "spouse", "domesticPartner") for m in others)
+            return any(m.relationship in (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner") for m in others)
 
         # Minor is the head (or otherwise); an adult explicitly coded as their parent.
         return any(m.relationship in self.parent_relationships for m in others)

@@ -1,6 +1,7 @@
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
 from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIncomeCheckMixin
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
@@ -14,7 +15,7 @@ class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     max_child_age = 18
     fpl_percent = 1.38
     qualifying_child_relationships = ["child", "fosterChild", "stepChild", "grandChild"]
-    caretaker_relationships = ["headOfHousehold", "spouse", "domesticPartner", "parent", "fosterParent"]
+    caretaker_relationships = [HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner", "parent", "fosterParent"]
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
     def household_eligible(self, e: Eligibility):

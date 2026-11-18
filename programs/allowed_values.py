@@ -4,15 +4,16 @@ authoritative source on the API side: every write path and the tests check again
 a value is adding it here (no migration). The check lives in code, not in a database constraint,
 so a bulk `.update()` or raw SQL can bypass it; nothing writes these tables that way.
 
-Each list mirrors the screener, which holds the logic that gives a value meaning. Adding a value
-takes a change in both repos, and a test on each side pins the two lists together
-(`ScreenerParityTests` in programs/test_allowed_values.py here, and
-src/Components/Results/apiAllowedValues.test.ts there), so a value added on one side only fails CI:
+`add_config` serves the screener what it shows for each value: the six legal statuses a household
+picks (`legal_status_options`, in button order) and the navigator language badges
+(`navigator_language_options`). Navigator languages are the site's locales plus `ALL`, and a
+test keeps them so.
 
-- legal status labels: `CitizenLabels` in
-  benefits-calculator/src/Components/Results/Filter/citizenshipFilterConfig.tsx
-- navigator language codes: `allNavigatorLanguages` in
-  benefits-calculator/src/Components/Results/ProgramPage/NavigatorLanguages.tsx
+The screener still holds logic per legal status: `CitizenLabels` in
+benefits-calculator/src/Components/Results/Filter/citizenshipFilterConfig.tsx works out the
+calculated statuses and which choices they follow. So a legal status takes a change in both repos,
+and a test on each side pins the two lists together (`ScreenerParityTests` in
+programs/test_allowed_values.py here, and src/Components/Results/apiAllowedValues.test.ts there).
 
 Warning calculators aren't listed here: the registry in `programs.warnings` is their list.
 """
@@ -70,8 +71,9 @@ USER_SELECTED_LEGAL_STATUSES = frozenset(
 
 class NavigatorLanguageCode(models.TextChoices):
     """
-    Languages a navigator can list. The program page draws a badge for each, and hides any other
-    code. Each label is the badge's English words, which the assistant forwards as card content.
+    Languages a navigator can list: every site locale (`settings.LANGUAGES`) plus `ALL`, for a
+    navigator who serves any language. The program page draws a badge for each, and hides any other
+    code. Each label is the spoken language's English name, which the badge and the assistant use.
     """
 
     ENGLISH = "en-us", "English"
@@ -83,7 +85,7 @@ class NavigatorLanguageCode(models.TextChoices):
     RUSSIAN = "ru", "Russian"
     NEPALI = "ne", "Nepali"
     BURMESE = "my", "Burmese"
-    CHINESE = "zh", "Chinese"
+    CHINESE = "zh-hans", "Chinese"
     ARABIC = "ar", "Arabic"
     SWAHILI = "sw", "Swahili"
     POLISH = "pl", "Polish"
@@ -93,6 +95,71 @@ class NavigatorLanguageCode(models.TextChoices):
     PORTUGUESE = "pt-br", "Portuguese"
     HAITIAN_CREOLE = "ht", "Haitian Creole"
     ALL = "ALL", "all languages"
+
+
+# What the results page filter shows for each legal status a household picks, in button order.
+_LEGAL_STATUS_TEXT: dict[str, tuple[str, str, str, str]] = {
+    LegalStatusLabel.CITIZEN: (
+        "citizenshipButton-citizen",
+        "U.S. Citizen",
+        "citizenshipTooltip-citizen",
+        "U.S. citizens by birth or naturalization.",
+    ),
+    LegalStatusLabel.GC_5PLUS: (
+        "citizenshipButton-gc_5plus",
+        "Green Card 5+",
+        "citizenshipTooltip-gc_5plus",
+        "Lawful permanent residents who have had their green card for 5 or more years.",
+    ),
+    LegalStatusLabel.GC_5LESS: (
+        "citizenshipButton-gc_5less",
+        "Green Card <5",
+        "citizenshipTooltip-gc_5less",
+        "Lawful permanent residents who have had their green card for less than 5 years.",
+    ),
+    LegalStatusLabel.REFUGEE: (
+        "citizenshipButton-refugee",
+        "Refugee/Asylee",
+        "citizenshipTooltip-refugee",
+        "Individuals granted refugee or asylee status by the U.S. government.",
+    ),
+    LegalStatusLabel.OTHER_WITH_WORK_PERMISSION: (
+        "citizenshipButton-otherLawful",
+        "Other Lawful",
+        "citizenshipTooltip-otherLawful",
+        "Other lawfully present noncitizens with authorization to live or work in the U.S.",
+    ),
+    LegalStatusLabel.NON_CITIZEN: (
+        "citizenshipButton-undocumented",
+        "Undocumented",
+        "citizenshipTooltip-undocumented",
+        "Individuals without lawful immigration status (includes DACA recipients).",
+    ),
+}
+
+
+def legal_status_options() -> dict[str, dict[str, dict[str, str]]]:
+    """The legal statuses a household picks on the results page, with each button's label and tooltip."""
+    return {
+        str(status): {
+            "label": {"_label": label_id, "_default_message": label},
+            "tooltip": {"_label": tooltip_id, "_default_message": tooltip},
+        }
+        for status, (label_id, label, tooltip_id, tooltip) in _LEGAL_STATUS_TEXT.items()
+    }
+
+
+def navigator_language_options() -> dict[str, dict[str, str]]:
+    """The badge the program page draws for each navigator language."""
+    return {
+        code: {
+            "_label": f"navLanguage.{code}",
+            "_default_message": (
+                "All Languages Available" if code == NavigatorLanguageCode.ALL else f"{label} Available"
+            ),
+        }
+        for code, label in NavigatorLanguageCode.choices
+    }
 
 
 def check_legal_status_label(label: str) -> None:

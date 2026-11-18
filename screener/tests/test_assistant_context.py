@@ -33,8 +33,8 @@ from rest_framework.test import APITestCase
 from benefits.tests.cache_override import LOCAL_CACHE
 from programs.models import FederalPoveryLimit, LegalStatus, NavigatorLanguage, Program, Referrer, TranslationOverride
 from configuration.models import Configuration
+from screener.allowed_values import ACUTE_OPTION_FIELDS
 from screener.assistant import (
-    ACUTE_OPTION_FIELDS,
     CONTEXT_PREFETCH,
     AssistantMessageRateThrottle,
     AssistantStartRateThrottle,
@@ -2052,10 +2052,10 @@ class UnselectedNeedCategoriesTests(TestCase):
         self.assertNotIn("funeral", " ".join(self.categories()).lower())
 
     def test_every_live_config_key_maps_to_a_screen_field(self):
-        """The mapping this asserts lives twice — here and in benefits-calculator's
-        `updateScreen.ts`, which is what actually writes these columns. A category added
-        to the config without a column here would silently never be offered, so the drift
-        fails a test instead."""
+        """The live config's categories all map to a Screen field through
+        `ACUTE_OPTION_FIELDS` (screener/allowed_values.py). A category added to the config
+        without a column there would silently never be offered, so the drift fails a test
+        instead."""
         unmapped = [key for key in self.OPTIONS if key not in ACUTE_OPTION_FIELDS]
 
         self.assertEqual(unmapped, [])

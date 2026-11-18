@@ -22,6 +22,7 @@ from programs.programs.white_labels.federal.tax import (
     tax_owed,
 )
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 @dataclass(frozen=True)
@@ -178,7 +179,7 @@ class FederalCdcc(ProgramCalculator):
     @cached_property
     def _filers(self) -> list[HouseholdMember]:
         members = self.screen.household_members.all()
-        filers = [m for m in members if m.relationship == "headOfHousehold"]
+        filers = [m for m in members if m.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP]
         if self._is_joint:
             filers += [m for m in members if m.relationship == "spouse"]
 
@@ -220,7 +221,9 @@ class FederalCdcc(ProgramCalculator):
         if member.born_after(self.tax_year):
             return False
 
-        if member.relationship == "spouse" or (member.relationship == "headOfHousehold" and self._is_joint):
+        if member.relationship == "spouse" or (
+            member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP and self._is_joint
+        ):
             return bool(member.has_disability())
 
         if member.relationship not in DEPENDENT_ELIGIBLE_RELATIONSHIPS:

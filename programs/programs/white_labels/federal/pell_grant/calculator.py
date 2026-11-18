@@ -5,6 +5,7 @@ from typing import Iterable, Optional
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 #: The award year's first calendar year. A student is independent at 24 by December 31 of it.
 AWARD_YEAR = 2026
@@ -261,14 +262,14 @@ class PellGrant(ProgramCalculator):
         )
 
     def _spouses(self, student: HouseholdMember) -> list[HouseholdMember]:
-        if student.relationship == "headOfHousehold":
+        if student.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
             return [m for m in self._others(student) if m.relationship in SPOUSE_RELATIONSHIPS]
         if student.relationship in SPOUSE_RELATIONSHIPS:
-            return [m for m in self._others(student) if m.relationship == "headOfHousehold"]
+            return [m for m in self._others(student) if m.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP]
         return []
 
     def _children(self, student: HouseholdMember) -> list[HouseholdMember]:
-        if student.relationship not in ("headOfHousehold", "spouse"):
+        if student.relationship not in (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse"):
             return []
         return [m for m in self._others(student) if m.relationship in CHILD_RELATIONSHIPS]
 
@@ -276,9 +277,9 @@ class PellGrant(ProgramCalculator):
         """The head and their `spouse` for the head's child; `parent`s, and a `stepParent` beside one, for the head."""
         others = self._others(student)
         if student.relationship == "child":
-            return [m for m in others if m.relationship in ("headOfHousehold", "spouse")]
+            return [m for m in others if m.relationship in (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse")]
 
-        if student.relationship == "headOfHousehold":
+        if student.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
             parents = [m for m in others if m.relationship == "parent"]
             if parents:
                 parents += [m for m in others if m.relationship == "stepParent"]
