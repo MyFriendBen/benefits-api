@@ -24,7 +24,6 @@ from programs.programs.cross_white_label.nslp.base import SchoolLunch
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.white_labels.ma.ssp.calculator import MaStateSupplementProgram
-from programs.programs.white_labels.federal.acp.calculator import Acp
 from programs.programs.cross_white_label.medicaid.chip.mo import MoChip
 from programs.models import FederalPoveryLimit, Program
 from programs.util import Dependencies
@@ -337,9 +336,9 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         the request, whose gated *inputs* degrade harmlessly to PolicyEngine modelling
         the value itself."""
 
-        kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, (1, 750, 0))
+        kept = self._drop({"coeitc": Coeitc, "nslp": SchoolLunch}, (1, 750, 0))
 
-        self.assertEqual(set(kept), {"acp", "nslp"})
+        self.assertEqual(set(kept), {"coeitc", "nslp"})
 
     def test_reports_the_drop(self):
         """Serving a screen quietly missing SNAP is the failure this guard exists to avoid
