@@ -19,7 +19,6 @@ from typing import Any
 from django.core.management.base import CommandError, OutputWrapper
 
 from programs.management.commands._program_record_sync import (
-    NAVIGATOR,
     RECORD_CHANGE,
     SECTIONS,
     Change,
@@ -71,10 +70,10 @@ class ProgramApply(RecordSync):
             elif not is_reference(entry):
                 self._note_kept_row(plan, spec, entry, row)
 
-            if spec is NAVIGATOR and is_reference(entry):
-                # Only notes which state sees a state navigator on a federal program; a reference
-                # never moves a navigator.
-                self._plan_federal_navigator_owner(plan, entry, row, None)
+            if is_reference(entry):
+                # Notes which state sees a state navigator or warning on a federal program. Nothing
+                # here moves a row to `federal`: an existing row is never changed by an apply.
+                self._note_state_row_on_federal(plan, spec, name, row)
 
             if name not in linked:
                 plan.changes.append(
