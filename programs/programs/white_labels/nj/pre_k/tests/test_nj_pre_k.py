@@ -70,7 +70,7 @@ class NjPreKTestCase(CustomCalculatorTestCase):
 
 
 class TestNjPreKScenarios(NjPreKTestCase):
-    def test_scenario_1_four_year_old_in_essex(self):
+    def test_scenario_1_four_year_old_in_essex(self) -> None:
         screen = self.household(date(2022, 3, 1))
 
         e = self.calculate(screen)
@@ -78,7 +78,7 @@ class TestNjPreKScenarios(NjPreKTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 17_386)
 
-    def test_scenario_2_four_year_old_turning_five_in_november(self):
+    def test_scenario_2_four_year_old_turning_five_in_november(self) -> None:
         # 4 on October 1, 2026, and already 5 on the screening date.
         screen = self.household(date(2021, 11, 1), county="Camden County", zipcode="08102", adult_age=35, wages=4_100)
 
@@ -87,14 +87,14 @@ class TestNjPreKScenarios(NjPreKTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 16_587)
 
-    def test_scenario_3_five_year_old_who_turned_five_in_september(self):
+    def test_scenario_3_five_year_old_who_turned_five_in_september(self) -> None:
         screen = self.household(date(2021, 9, 1), county="Mercer County", zipcode="08608", adult_age=33, wages=3_600)
 
         e = self.calculate(screen)
 
         self.assertFalse(e.eligible)
 
-    def test_scenario_4_two_year_old_turning_three_next_september(self):
+    def test_scenario_4_two_year_old_turning_three_next_september(self) -> None:
         # 2 on October 1, 2026; 3 on October 1, 2027.
         screen = self.household(date(2024, 9, 1), county="Hudson County", zipcode="07302", adult_age=29, wages=2_900)
 
@@ -103,7 +103,7 @@ class TestNjPreKScenarios(NjPreKTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 17_562)
 
-    def test_scenario_5_child_who_is_two_on_october_1_next_school_year(self):
+    def test_scenario_5_child_who_is_two_on_october_1_next_school_year(self) -> None:
         # 1 on October 1, 2026; 2 on October 1, 2027.
         screen = self.household(date(2024, 11, 1), adult_age=30, wages=3_000)
 
@@ -111,7 +111,7 @@ class TestNjPreKScenarios(NjPreKTestCase):
 
         self.assertFalse(e.eligible)
 
-    def test_scenario_6_october_birthday_turning_three_next_october(self):
+    def test_scenario_6_october_birthday_turning_three_next_october(self) -> None:
         # Born October 2024: counted as 3 on October 1, 2027, whatever the day of birth.
         screen = self.household(date(2024, 10, 1), county="Bergen County", zipcode="07601", adult_age=32, wages=3_800)
 
@@ -120,7 +120,7 @@ class TestNjPreKScenarios(NjPreKTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 17_070)
 
-    def test_scenario_7_october_birthday_turning_five_this_october(self):
+    def test_scenario_7_october_birthday_turning_five_this_october(self) -> None:
         # Born October 2021: counted as 5 on October 1, 2026, whatever the day of birth.
         screen = self.household(date(2021, 10, 1), adult_age=34, wages=3_400)
 
@@ -128,7 +128,7 @@ class TestNjPreKScenarios(NjPreKTestCase):
 
         self.assertFalse(e.eligible)
 
-    def test_scenario_8_two_eligible_children(self):
+    def test_scenario_8_two_eligible_children(self) -> None:
         screen = self.household(date(2022, 5, 1), date(2023, 2, 1), adult_age=36, wages=5_000)
 
         e = self.calculate(screen)
@@ -140,7 +140,7 @@ class TestNjPreKScenarios(NjPreKTestCase):
 class TestNjPreKLastDayOfSchoolYear(NjPreKTestCase):
     reference_date = date(2027, 6, 30)
 
-    def test_scenario_9_one_year_old_screened_june_30(self):
+    def test_scenario_9_one_year_old_screened_june_30(self) -> None:
         # The school year under way began in 2026: 1 on October 1, 2026, and 2 on October 1, 2027.
         screen = self.household(date(2025, 8, 1), adult_age=30, wages=3_000)
 
@@ -152,7 +152,7 @@ class TestNjPreKLastDayOfSchoolYear(NjPreKTestCase):
 class TestNjPreKFirstDayOfSchoolYear(NjPreKTestCase):
     reference_date = date(2027, 7, 1)
 
-    def test_scenario_10_same_child_screened_july_1(self):
+    def test_scenario_10_same_child_screened_july_1(self) -> None:
         # The school year under way began in 2027: 2 on October 1, 2027, and 3 on October 1, 2028.
         screen = self.household(date(2025, 8, 1), adult_age=30, wages=3_000)
 
@@ -163,17 +163,17 @@ class TestNjPreKFirstDayOfSchoolYear(NjPreKTestCase):
 
 
 class TestNjPreKRules(NjPreKTestCase):
-    def test_program_code_matches_the_record(self):
+    def test_program_code_matches_the_record(self) -> None:
         self.assertEqual(NjPreK.program_code, "nj_pre_k")
 
-    def test_household_without_a_preschooler_is_ineligible(self):
+    def test_household_without_a_preschooler_is_ineligible(self) -> None:
         screen = self.household(date(2018, 4, 1))
 
         e = self.calculate(screen)
 
         self.assertFalse(e.eligible)
 
-    def test_only_the_preschooler_is_valued(self):
+    def test_only_the_preschooler_is_valued(self) -> None:
         screen = self.household(date(2022, 3, 1), date(2018, 4, 1))
 
         e = self.calculate(screen)
@@ -183,39 +183,39 @@ class TestNjPreKRules(NjPreKTestCase):
         self.assertFalse(values[date(2018, 4, 1)][0])
         self.assertEqual(e.value, 17_386)
 
-    def test_no_income_test(self):
+    def test_no_income_test(self) -> None:
         screen = self.household(date(2022, 3, 1), wages=25_000)
 
         e = self.calculate(screen)
 
         self.assertTrue(e.eligible)
 
-    def test_child_without_a_birth_month_gets_no_result(self):
+    def test_child_without_a_birth_month_gets_no_result(self) -> None:
         screen = self.household(None)
 
         with self.assertRaises(DependencyError):
             self.calculate(screen)
 
-    def test_any_member_without_a_birth_month_gets_no_result(self):
+    def test_any_member_without_a_birth_month_gets_no_result(self) -> None:
         screen = self.household(date(2022, 3, 1))
         self.add_member(screen, "spouse", age=None, birth_year_month=None)
 
         with self.assertRaises(DependencyError):
             self.calculate(screen)
 
-    def test_missing_county_gets_no_result(self):
+    def test_missing_county_gets_no_result(self) -> None:
         screen = self.household(date(2022, 3, 1))
 
         with self.assertRaises(DependencyError):
             self.calculate(screen, missing=("county",))
 
-    def test_county_outside_the_table_raises(self):
+    def test_county_outside_the_table_raises(self) -> None:
         screen = self.household(date(2022, 3, 1), county="Kings County")
 
         with self.assertRaises(KeyError):
             self.calculate(screen)
 
-    def test_every_county_matches_the_spec(self):
+    def test_every_county_matches_the_spec(self) -> None:
         self.assertEqual(set(NjPreK.county_rates), set(SPEC_COUNTY_VALUES))
 
         for county, expected in SPEC_COUNTY_VALUES.items():
