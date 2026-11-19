@@ -33,6 +33,10 @@ class NjStayNjTestCase(CustomCalculatorTestCase):
     default_zipcode = "08608"
     default_county = "Mercer County"
     needs_program_row = False
+    # Ages given as numbers become birth dates from this date. Pinned so the scenarios keep their
+    # side of the end-of-2025 age check as the calendar moves (Scenario 17's 66-year-old spouse is
+    # 65 at the end of 2025 only while the reference date is in 2026).
+    reference_date = date(2026, 11, 15)
 
     def senior(
         self,
