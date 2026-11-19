@@ -273,23 +273,36 @@ class ProgramLinksAdmin(SecureAdmin):
         form.base_fields[self.PROGRAMS_FIELD] = field
         if obj is None or obj.pk is None:
             return form
-        linked = self.linked_program_ids(obj)
+        linked = Q(pk__in=self.linked_program_ids(obj))
         allowed = self.linkable_programs(obj)
         if not request.user.is_superuser:
-            allowed &= visible_to_any(request.user.white_labels.all())
+            # A partner admin works within their white labels: other states' links are neither
+            # shown nor changed (`save_related` keeps them).
+            scope = visible_to_any(request.user.white_labels.all())
+            allowed &= scope
+            linked &= scope
         field.queryset = (
-            Program.objects.filter(allowed | Q(pk__in=linked))
+            Program.objects.filter(allowed | linked)
             .select_related("white_label")
             .order_by("white_label__code", "name_abbreviated")
         )
         field.label_from_instance = lambda program: f"{program.white_label.code}/{program.name_abbreviated}"
-        field.initial = linked
+        field.initial = list(Program.objects.filter(linked).values_list("pk", flat=True))
         return form
 
     def save_related(self, request: HttpRequest, form: forms.ModelForm, formsets: Any, change: bool) -> None:
         super().save_related(request, form, formsets, change)
-        if self.PROGRAMS_FIELD in form.cleaned_data and form.instance.pk is not None:
-            self.set_program_links(form.instance, list(form.cleaned_data[self.PROGRAMS_FIELD]))
+        if self.PROGRAMS_FIELD not in form.cleaned_data or form.instance.pk is None:
+            return
+        programs = list(form.cleaned_data[self.PROGRAMS_FIELD])
+        if not request.user.is_superuser:
+            # Links to programs outside the partner's white labels weren't offered, so they stay.
+            in_scope = set(
+                Program.objects.filter(visible_to_any(request.user.white_labels.all())).values_list("pk", flat=True)
+            )
+            kept = [pk for pk in self.linked_program_ids(form.instance) if pk not in in_scope]
+            programs += list(Program.objects.filter(pk__in=kept))
+        self.set_program_links(form.instance, programs)
 
 
 class NavigatorAdmin(ProgramLinksAdmin):
@@ -326,6 +339,29 @@ class NavigatorAdmin(ProgramLinksAdmin):
         if obj is not None and obj.white_label.code == FEDERAL_WHITE_LABEL:
             return True
         return super().has_view_permission(request, obj)
+
+    def _links_only(self, request: HttpRequest, obj: Optional[Navigator]) -> bool:
+        """A partner admin on a federal navigator: they may link it to their programs, but its shared
+        fields change it for every white label, so those stay with superusers."""
+        return (
+            obj is not None
+            and obj.white_label.code == FEDERAL_WHITE_LABEL
+            and not request.user.is_superuser
+            and request.user.white_labels.exists()
+        )
+
+    def has_change_permission(self, request: HttpRequest, obj: Optional[Navigator] = None) -> bool:
+        return self._links_only(request, obj) or super().has_change_permission(request, obj)
+
+    def get_readonly_fields(self, request: HttpRequest, obj: Optional[Navigator] = None) -> list[str]:
+        readonly = list(super().get_readonly_fields(request, obj))
+        if self._links_only(request, obj):
+            readonly += [
+                field.name
+                for field in [*Navigator._meta.fields, *Navigator._meta.many_to_many]
+                if field.editable and not field.auto_created and field.name not in self.exclude
+            ]
+        return readonly
 
     def _set_select_queryset(
         self, field_name: str, field: forms.ModelMultipleChoiceField, obj: Optional[Navigator], request: HttpRequest

@@ -115,7 +115,8 @@ class TestNavigatorAutocomplete(_Fixtures):
 
 
 class TestFederalNavigatorAccess(_Fixtures):
-    """Partner admins may view federal navigators, which their programs show, but not change them."""
+    """Partner admins may view federal navigators and link them to their programs, but not change
+    a federal navigator's shared fields, which every white label sees."""
 
     def setUp(self) -> None:
         self.admin = NavigatorAdmin(Navigator, AdminSite())
@@ -126,10 +127,16 @@ class TestFederalNavigatorAccess(_Fixtures):
         listed = set(self.admin.get_queryset(self.request))
         self.assertEqual(listed & {self.federal_nav, self.co_nav, self.ks_nav}, {self.federal_nav, self.co_nav})
 
-    def test_partner_admin_may_view_but_not_change_a_federal_navigator(self) -> None:
+    def test_partner_admin_may_link_but_not_edit_or_delete_a_federal_navigator(self) -> None:
+        """They can save the page to link it to their programs; its shared fields stay read-only."""
         self.assertTrue(self.admin.has_view_permission(self.request, self.federal_nav))
-        self.assertFalse(self.admin.has_change_permission(self.request, self.federal_nav))
+        self.assertTrue(self.admin.has_change_permission(self.request, self.federal_nav))
         self.assertFalse(self.admin.has_delete_permission(self.request, self.federal_nav))
+        readonly = self.admin.get_readonly_fields(self.request, self.federal_nav)
+        for field in ("white_label", "external_name", "phone_number", "counties", "languages", "eligibility_programs"):
+            with self.subTest(field=field):
+                self.assertIn(field, readonly)
+        self.assertNotIn("linked_programs", readonly)
 
     def test_partner_admin_still_cannot_view_another_states_navigator(self) -> None:
         self.assertFalse(self.admin.has_view_permission(self.request, self.ks_nav))

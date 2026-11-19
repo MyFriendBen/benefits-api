@@ -221,3 +221,60 @@ class PickerPageTests(LockdownBase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'name="linked_programs"')
                 self.assertContains(response, "co/co_locked")
+
+
+@override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")
+class FederalNavigatorLinkOnlyTests(LockdownBase):
+    """A partner admin links a federal navigator to their state's programs from its page, without
+    changing its shared fields or another state's links."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.navigator = Navigator.objects.new_navigator(white_label="federal", name="National hotline")
+        self.navigator.phone_number = "+13035550100"
+        self.navigator.save()
+        ProgramNavigator.objects.create(program=self.nj_program, navigator=self.navigator, order=0)
+        self.partner = User.objects.create_user(email_or_cell="partner@example.org", password="x")
+        self.partner.is_staff = True
+        self.partner.save()
+        self.partner.white_labels.add(self.co)
+        self.client.force_login(self.partner)
+        self.url = reverse("admin:programs_navigator_change", args=[self.navigator.pk])
+
+    def test_the_picker_shows_only_the_partners_programs(self) -> None:
+        field = (
+            NavigatorAdmin(Navigator, AdminSite())
+            .get_form(self.request(self.partner), self.navigator)()
+            .fields["linked_programs"]
+        )
+
+        offered = set(field.queryset.values_list("name_abbreviated", flat=True))
+        self.assertEqual(offered, {"co_locked", "co_unlocked", "federal_shared"})
+        self.assertEqual(field.initial, [])
+
+    def test_a_partner_links_their_program_and_keeps_other_states_links(self) -> None:
+        response = self.client.post(
+            self.url, {"linked_programs": [self.unlocked.pk], "phone_number": "+13035559999", "_save": "Save"}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        linked = set(
+            ProgramNavigator.objects.filter(navigator=self.navigator).values_list(
+                "program__name_abbreviated", flat=True
+            )
+        )
+        self.assertEqual(linked, {"co_unlocked", "nj_other"})
+        self.navigator.refresh_from_db()
+        self.assertEqual(str(self.navigator.phone_number), "+13035550100")
+
+    def test_a_partner_unlinks_only_their_own_program(self) -> None:
+        ProgramNavigator.objects.create(program=self.unlocked, navigator=self.navigator, order=0)
+
+        self.client.post(self.url, {"_save": "Save"})
+
+        linked = set(
+            ProgramNavigator.objects.filter(navigator=self.navigator).values_list(
+                "program__name_abbreviated", flat=True
+            )
+        )
+        self.assertEqual(linked, {"nj_other"})
