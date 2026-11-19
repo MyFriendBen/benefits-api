@@ -51,10 +51,9 @@ answer in time, and through the fallback URL after that.
 - Every STOP and START, including one that changed nothing, leaves a receipt with its
   MessageSid in the same locked transaction (`BenjiSmsKeywordReceipt`), and a text with
   a receipt is not applied again: a replay of an older one cannot undo a newer one.
-- Each change of consent in our wording gets exactly one confirmation
-  (`BenjiSmsPhone.confirmation_owed`): owed while it is the latest change and nothing
-  has been claimed for it, sent by whichever STOP or START text comes next (a replay,
-  or the person repeating it because they heard nothing), never twice.
+- A STOP or START made in our wording is confirmed by the text that made the change,
+  on its first post only. A replay or a repeat never sends a confirmation; if the one
+  send fails at Twilio, it is lost, and the change itself still stands.
 - A replayed turn is queued again and absorbed by the worker, which sends the SID to
   ai-service as `client_message_id` (MFB-2440).
 
@@ -74,14 +73,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from django.db import transaction
 from django.utils import timezone
 
 from screener.models import (
     AssistantConversationStatus,
     BenjiSmsBinding,
     BenjiSmsDelivery,
-    BenjiSmsKeyword,
     BenjiSmsKeywordReceipt,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
@@ -225,36 +222,6 @@ def _send_fixed(
     return sent
 
 
-def _send_confirmation(
-    inbound: Inbound,
-    phone: BenjiSmsPhone,
-    keyword: str,
-    binding: Optional[BenjiSmsBinding],
-    now: datetime,
-) -> bool:
-    """Send the STOP or START confirmation if it is still owed. True if it went.
-
-    Owed is decided and the delivery row claimed under the phone's row lock
-    (`BenjiSmsPhone.confirmation_owed`), so a replay, a repeated keyword and a
-    concurrent one cannot both send it. The send itself happens after the lock.
-    """
-    with transaction.atomic():
-        locked = BenjiSmsPhone.objects.select_for_update().get(pk=phone.pk)
-        owed = locked.confirmation_owed(keyword)
-        if owed is None:
-            return False
-        if keyword == BenjiSmsKeyword.STOP:
-            reply = replies.STOP
-        else:
-            reply = replies.START_RESUMED if owed.resumed else replies.START_REENTRY
-        body = replies.reply_text(reply, _locale(binding))
-        delivery = BenjiSmsDelivery.objects.claim_fixed(inbound.sid, binding)
-        if delivery is None:
-            return False
-    sent, _ = _deliver(inbound, delivery, body, reply, binding, now, for_screen=True)
-    return sent
-
-
 def _send_daily(
     inbound: Inbound,
     number_hash: str,
@@ -308,16 +275,17 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
 
     if keyword is not None and keyword.keyword is Keyword.STOP:
         # Decided under the phone's row lock, not on the snapshot above.
-        phone.revoke(now, inbound.sid, carrier=keyword.carrier)
+        revoked = phone.revoke(now, inbound.sid)
         replied = False
-        if not keyword.carrier:
-            # The one send to a revoked number: the confirmation, if still owed.
-            replied = _send_confirmation(inbound, phone, BenjiSmsKeyword.STOP, newest, now)
+        if revoked and not keyword.carrier:
+            # The one send to a revoked number: the confirmation, by the text that made
+            # the change, on its first post only. Best effort: if it fails, it is lost.
+            replied = _send_fixed(inbound, replies.STOP, newest, now, for_screen=True)
         return Result(Outcome.STOPPED, replied)
 
     if keyword is not None and keyword.keyword is Keyword.START:
         # Decided under the phone's row lock, not on the snapshot above.
-        cleared, _ = phone.clear_revocation(now, inbound.sid, carrier=keyword.carrier)
+        cleared, resumed = phone.clear_revocation(now, inbound.sid)
         if phone.revoked_at is not None:
             # A replay of an older START, after a newer STOP.
             return Result(Outcome.REVOKED)
@@ -328,8 +296,13 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
             # that is never a question. "yes" from a number that was not revoked is the
             # one START that carries on as an ordinary answer.
             replied = False
-            if not keyword.carrier:
-                replied = _send_confirmation(inbound, phone, BenjiSmsKeyword.START, newest, now)
+            if cleared and not keyword.carrier:
+                if phone.is_revoked_now():
+                    # A STOP landed since: no "Benji is back".
+                    return Result(Outcome.REVOKED)
+                # As for STOP: by the text that made the change, first post only.
+                reply = replies.START_RESUMED if resumed else replies.START_REENTRY
+                replied = _send_fixed(inbound, reply, newest, now, for_screen=True)
             return Result(Outcome.STARTED if restarted else Outcome.START_IGNORED, replied)
 
     if phone.revoked_at is not None:

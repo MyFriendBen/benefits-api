@@ -572,18 +572,6 @@ class StopTest(InboundMixin, TestCase):
         self.assert_revoked(binding)
         self.assertEqual(self.enqueue_turn.call_count, 1)
 
-    def test_a_confirmation_lost_after_the_stop_is_sent_on_the_replay(self) -> None:
-        binding = self.bind()
-        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
-                self.assertEqual(self.post("alto").status_code, 503)
-        self.assert_revoked(binding)
-
-        self.assert_acknowledged(self.post("alto"))
-        self.assert_acknowledged(self.post("alto"))
-
-        self.assertEqual(self.sent_bodies(), [replies.STOP.default])
-
     def test_a_lost_stop_confirmation_is_not_sent_after_a_newer_start(self) -> None:
         binding = self.bind()
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
@@ -597,20 +585,6 @@ class StopTest(InboundMixin, TestCase):
         self.assertIsNone(binding.phone.revoked_at)
         self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
 
-    def test_a_lost_stop_confirmation_goes_out_on_the_next_stop(self) -> None:
-        binding = self.bind()
-        self.create.side_effect = TwilioRestException(503, "uri", "unavailable", 20503)
-        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
-            self.assert_acknowledged(self.post("alto", sid=SID))
-        self.assert_revoked(binding)
-        self.create.side_effect = self._accept
-
-        self.post("alto", sid=OTHER_SID)
-        self.post("parar", sid="SM" + "e5" * 16)
-
-        self.assertEqual(self.create.call_count, 2)
-        self.assertEqual(self.sent_bodies()[-1], replies.STOP.default)
-
     def test_an_unknown_stop_confirmation_is_not_sent_again_by_the_next_stop(self) -> None:
         """Twilio may have accepted it: unknown counts as sent."""
         self.bind()
@@ -623,20 +597,20 @@ class StopTest(InboundMixin, TestCase):
 
         self.assertEqual(self.create.call_count, 1)
 
-    def test_a_replay_after_a_later_stop_confirmed_sends_nothing(self) -> None:
-        """alto (send fails), alto again (confirms), then Twilio replays the first."""
-        self.bind()
+    def test_a_lost_stop_confirmation_is_not_resent(self) -> None:
+        """Best effort: the replay and the next STOP change nothing and send nothing."""
+        binding = self.bind()
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.assertEqual(self.post("alto", sid=SID).status_code, 503)
+        self.assert_revoked(binding)
+
+        self.assert_acknowledged(self.post("alto", sid=SID))
         self.create.side_effect = TwilioRestException(503, "uri", "unavailable", 20503)
-        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
-            self.post("alto", sid=SID)
-        self.create.side_effect = self._accept
         self.post("alto", sid=OTHER_SID)
 
-        self.post("alto", sid=SID)
-        self.post("alto", sid="SM" + "e5" * 16)
-
-        self.assertEqual(self.create.call_count, 2)
-        self.assertEqual(self.sent_bodies()[-1], replies.STOP.default)
+        self.create.assert_not_called()
+        self.assert_revoked(binding)
 
     def test_a_confirmed_stop_is_not_confirmed_again(self) -> None:
         self.bind()
@@ -811,18 +785,6 @@ class RevokedTest(InboundMixin, TestCase):
         self.assertEqual(self.binding.status, AssistantConversationStatus.CLOSED)
         self.assertEqual(self.create.call_count, 4)
 
-    def test_a_confirmation_lost_after_the_start_is_sent_on_the_replay(self) -> None:
-        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
-                self.assertEqual(self.post("iniciar").status_code, 503)
-        self.reload()
-        self.assertIsNone(self.phone.revoked_at)
-
-        self.assert_acknowledged(self.post("iniciar"))
-        self.assert_acknowledged(self.post("iniciar"))
-
-        self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
-
     def test_a_lost_start_confirmation_is_not_sent_after_a_newer_stop(self) -> None:
         start, stop = SID, OTHER_SID
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
@@ -878,20 +840,17 @@ class RevokedTest(InboundMixin, TestCase):
         self.reload()
         self.assertIsNotNone(self.phone.revoked_at)
 
-    def test_a_lost_start_confirmation_goes_out_on_the_next_start(self) -> None:
-        self.create.side_effect = TwilioRestException(503, "uri", "unavailable", 20503)
-        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
-            self.post("iniciar", sid=SID)
+    def test_a_lost_start_confirmation_is_not_resent(self) -> None:
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.assertEqual(self.post("iniciar", sid=SID).status_code, 503)
         self.reload()
         self.assertIsNone(self.phone.revoked_at)
-        self.create.side_effect = self._accept
 
-        self.post("iniciar", sid=OTHER_SID)
-        self.post("reanudar", sid="SM" + "e5" * 16)
+        self.post("iniciar", sid=SID)
+        self.post("reanudar", sid=OTHER_SID)
 
-        self.assertEqual(self.create.call_count, 2)
-        self.assertEqual(self.sent_bodies()[-1], replies.START_RESUMED.default)
-        self.enqueue_turn.assert_not_called()
+        self.assert_nothing_sent_or_queued()
 
     def test_a_start_that_races_a_stop_is_applied_after_it(self) -> None:
         """The snapshot says not revoked; the STOP lands before the START is decided."""
@@ -1404,10 +1363,8 @@ class ConcurrentReplayTest(InboundMixin, TransactionTestCase):
         self.assertEqual(BenjiSmsDelivery.objects.count(), 1)
 
     def test_two_stops_at_once_send_one_confirmation(self) -> None:
-        """The owed check and the claim are made under the phone's row lock."""
+        """Only the STOP that makes the change confirms it; the phone row lock decides which."""
         binding = self.bind()
-        # Revoked by a STOP whose confirmation was never sent: it is owed.
-        binding.phone.revoke(inbound_sid=SID)
         sids = iter(["SM" + "c1" * 16, "SM" + "c2" * 16])
         sids_lock = threading.Lock()
 

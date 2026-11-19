@@ -934,17 +934,6 @@ class TestRevokeAndStart(TestCase):
         self.assertIsNotNone(BenjiSmsPhone.objects.get().revoked_at)
         self.assertEqual(self.statuses(), ("closed", "closed"))
 
-    def test_a_replay_reports_its_change_while_it_is_still_the_latest(self) -> None:
-        """So a confirmation the first post never sent can be retried."""
-        self.assertTrue(self.phone.revoke(inbound_sid=sid(5)))
-        self.assertTrue(self.phone.revoke(inbound_sid=sid(5)))
-        # A STOP that changed nothing since does not make the first one stale.
-        self.assertFalse(self.phone.revoke(inbound_sid=sid(6)))
-        self.assertTrue(self.phone.revoke(inbound_sid=sid(5)))
-
-        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
-        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
-
     def test_a_replayed_stop_is_not_reported_after_a_newer_stop(self) -> None:
         """Revoked again by a newer STOP, so the first one's confirmation is stale."""
         self.phone.revoke(inbound_sid=sid(5))
@@ -953,64 +942,6 @@ class TestRevokeAndStart(TestCase):
 
         self.assertFalse(self.phone.revoke(inbound_sid=sid(5)))
 
-    def owed(self, keyword: str) -> bool:
-        self.phone.refresh_from_db()
-        return self.phone.confirmation_owed(keyword) is not None
-
-    def test_a_stop_confirmation_is_owed_until_one_is_claimed(self) -> None:
-        self.assertFalse(self.owed("stop"))
-        self.phone.revoke(inbound_sid=sid(5))
-        self.assertTrue(self.owed("stop"))
-        self.assertFalse(self.owed("start"))
-
-        # A second STOP's confirmation counts for the first: one per change.
-        self.phone.revoke(inbound_sid=sid(6))
-        make_delivery(inbound_sid=sid(6), outbound_sid="SM" + "8" * 32)
-        self.assertFalse(self.owed("stop"))
-
-    def test_an_unknown_or_in_flight_confirmation_counts_as_sent(self) -> None:
-        self.phone.revoke(inbound_sid=sid(5))
-        make_delivery(inbound_sid=sid(5))  # claimed, no outbound SID yet
-        self.assertFalse(self.owed("stop"))
-
-    def test_a_confirmation_claimed_under_an_older_stops_sid_counts(self) -> None:
-        """A replay of an earlier STOP can be the text that sends it."""
-        self.phone.revoke(inbound_sid=sid(5))
-        self.phone.clear_revocation(inbound_sid=sid(6))
-        self.phone.revoke(inbound_sid=sid(7))
-        make_delivery(inbound_sid=sid(5), outbound_sid="SM" + "8" * 32)
-        self.assertFalse(self.owed("stop"))
-
-    def test_a_confirmation_from_before_the_latest_change_does_not_count(self) -> None:
-        self.phone.revoke(inbound_sid=sid(5))
-        make_delivery(inbound_sid=sid(5), outbound_sid="SM" + "8" * 32)
-        BenjiSmsDelivery.objects.update(created_at=timezone.now() - timedelta(minutes=5))
-        self.phone.clear_revocation(inbound_sid=sid(6))
-        self.phone.revoke(inbound_sid=sid(7))
-        self.assertTrue(self.owed("stop"))
-
-    def test_a_start_confirmation_is_owed_until_one_is_claimed(self) -> None:
-        self.phone.revoke(inbound_sid=sid(5))
-        self.phone.clear_revocation(inbound_sid=sid(6))
-        self.assertTrue(self.owed("start"))
-        self.assertFalse(self.owed("stop"))
-        self.assertTrue(self.phone.confirmation_owed("start").resumed)
-
-        make_delivery(inbound_sid=sid(6), outbound_sid="SM" + "8" * 32)
-        self.assertFalse(self.owed("start"))
-
-    def test_no_confirmation_is_owed_for_twilios_own_keywords(self) -> None:
-        """Twilio confirmed them."""
-        self.phone.revoke(inbound_sid=sid(5), carrier=True)
-        self.assertFalse(self.owed("stop"))
-        self.phone.clear_revocation(inbound_sid=sid(6), carrier=True)
-        self.assertFalse(self.owed("start"))
-
-    def test_no_confirmation_is_owed_once_the_receipts_are_purged(self) -> None:
-        self.phone.revoke(inbound_sid=sid(5))
-        BenjiSmsKeywordReceipt.objects.all().delete()
-        self.assertFalse(self.owed("stop"))
-
     def test_a_replayed_start_is_not_reported_after_a_newer_start(self) -> None:
         self.phone.revoke(inbound_sid=sid(5))
         self.phone.clear_revocation(inbound_sid=sid(6))
@@ -1018,6 +949,14 @@ class TestRevokeAndStart(TestCase):
         self.phone.clear_revocation(inbound_sid=sid(8))
 
         self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(6)), (False, False))
+
+    def test_a_replay_reports_no_change(self) -> None:
+        """So the caller never sends a confirmation for it."""
+        self.assertTrue(self.phone.revoke(inbound_sid=sid(5)))
+        self.assertFalse(self.phone.revoke(inbound_sid=sid(5)))
+        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(6)), (True, True))
+        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(6)), (False, False))
+        self.assertIsNone(BenjiSmsPhone.objects.get().revoked_at)
 
     def test_a_replay_from_any_depth_of_history_changes_nothing(self) -> None:
         """Every STOP and START is remembered, not just the latest of each."""
@@ -1058,11 +997,6 @@ class TestRevokeAndStart(TestCase):
 
         self.assertIsNone(BenjiSmsPhone.objects.get().revoked_at)
         self.assertEqual(self.statuses(), ("active", "active"))
-
-    def test_a_replayed_start_reports_whether_it_resumed(self) -> None:
-        self.phone.revoke(inbound_sid=SID)
-        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
-        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
 
     def test_a_no_op_start_leaves_this_instance_fresh(self) -> None:
         """A stale copy that thinks the number is revoked is corrected by the locked read."""

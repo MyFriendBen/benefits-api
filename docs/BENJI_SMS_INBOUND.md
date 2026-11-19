@@ -142,15 +142,12 @@ fallback URL after that.
   was not revoked, a second STOP), leaves a `BenjiSmsKeywordReceipt` with its
   `MessageSid`, in the same locked transaction as any change. A text with a receipt is
   not applied again, so a replay of an older STOP or START can never undo a newer one.
-- Each change of consent made in our wording gets exactly one confirmation ("You won't
-  get more texts", "Benji is back"); Twilio confirms its own keywords. The confirmation
-  is owed while that change is the latest one in force and nothing has been claimed for
-  it: a send that is on its way, or whose outcome is unknown, counts as sent, and one
-  that definitely failed does not. Whichever text comes next sends it if it is still
-  owed: Twilio's replay, or the person repeating STOP or START because they heard
-  nothing. The check and the claim happen under the phone's row lock, so two texts can
-  never both send it. This holds for a day, while the receipt is kept; after that,
-  nothing is owed.
+- Confirmations are best effort. A STOP or START made in our wording is confirmed
+  ("You won't get more texts", "Benji is back") by the text that made the change, on
+  its first post only; Twilio confirms its own keywords. A replay or a repeated keyword
+  never sends a confirmation, so nobody gets a stale or second one. If that one send
+  fails at Twilio, or the request fails before it, the confirmation is lost; the change
+  itself is already applied.
 - A replayed turn is queued again and the worker absorbs it (MFB-2440).
 
 ## Fixed reply text

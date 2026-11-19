@@ -251,11 +251,11 @@ class BenjiSmsKeywordReceiptAdmin(SuperuserReadOnlyAdmin):
     """STOP and START texts handled in the last day (MFB-2439). The SID is shown on the
     detail page only."""
 
-    list_display = ("id", "phone", "keyword", "carrier", "applied", "resumed", "created_at")
-    list_filter = ("keyword", "carrier", "applied")
+    list_display = ("id", "phone", "keyword", "applied", "resumed", "created_at")
+    list_filter = ("keyword", "applied")
     list_select_related = ("phone",)
     ordering = ("-created_at",)
-    readonly_fields = ("phone", "inbound_sid", "keyword", "carrier", "applied", "resumed", "created_at")
+    readonly_fields = ("phone", "inbound_sid", "keyword", "applied", "resumed", "created_at")
 
 
 class BenjiSmsBindingAdmin(SuperuserReadOnlyAdmin):
