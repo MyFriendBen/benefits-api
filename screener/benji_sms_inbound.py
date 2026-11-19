@@ -23,7 +23,12 @@ from django.http import HttpResponse
 from rest_framework import parsers, views
 from rest_framework.request import Request
 
-from integrations.services.communications.benji_sms_inbound import Inbound, handle_inbound
+from integrations.services.communications.benji_sms_inbound import (
+    Inbound,
+    MediaDeletionNotQueued,
+    Result,
+    handle_inbound,
+)
 from integrations.services.communications.twilio_signature import SignedByTwilio
 
 from .tasks import MESSAGE_SID_RE
@@ -86,13 +91,23 @@ class BenjiSmsInboundView(views.APIView):
         )
         try:
             result = handle_inbound(inbound)
+        except MediaDeletionNotQueued as exc:
+            # The text was handled; only its media deletion is outstanding. Log what was
+            # decided, since the replay will find it done and report nothing.
+            _log_outcome(exc.result)
+            logger.error("Benji SMS inbound webhook failed: media deletion not queued (%s)", exc.cause)
+            return _twiml(503)
         except Exception as exc:
             # The class only: an exception's text can quote a key, and this view's
             # locals hold the number and the message. 503 has Twilio post it again.
             logger.error("Benji SMS inbound webhook failed: %s", f"{type(exc).__module__}.{type(exc).__qualname__}")
             return _twiml(503)
 
-        # The one trace of a decision that sends nothing (revoked, channel off, a second
-        # text that day). INFO: this logger has its own handler (settings.LOGGING).
-        logger.info("Benji SMS inbound: outcome=%s replied=%s", result.outcome.value, result.replied)
+        _log_outcome(result)
         return _twiml()
+
+
+def _log_outcome(result: Result) -> None:
+    # The one trace of a decision that sends nothing (revoked, channel off, a second text
+    # that day). INFO: this logger has its own handler (settings.LOGGING).
+    logger.info("Benji SMS inbound: outcome=%s replied=%s", result.outcome.value, result.replied)

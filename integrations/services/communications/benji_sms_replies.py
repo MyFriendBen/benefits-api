@@ -77,14 +77,15 @@ def _label_text(label: str, locale: Optional[str]) -> str:
 
     The same lookup Benji's web context uses (`screener.assistant._translated`): rows
     for other languages start blank or as a placeholder until translated, and neither
-    is something to text a person. Not truncated; whitespace runs become one space.
+    is something to text a person. Not truncated, and line breaks are kept: the copy
+    is sent as written.
     """
     # Imported here: screener.assistant pulls in the programs stack, which this module
     # does not otherwise need at import time.
     from screener.assistant import _translated
 
     translation = Translation.objects.filter(label=label).first()
-    return _translated(translation, str(locale or "").lower() or None, max_len=None)
+    return _translated(translation, str(locale or "").lower() or None, max_len=None, flatten=False)
 
 
 def reply_text(reply: FixedReply, locale: Optional[str] = None) -> str:

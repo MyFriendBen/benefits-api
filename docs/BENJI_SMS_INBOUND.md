@@ -39,8 +39,9 @@ environment. Nothing points at production until launch (MFB-2447).
   cover an outage of the broker. The webhook answers 503 when it cannot queue a turn or a
   media deletion; once Twilio has given up, that text is not answered and, if it carried
   a picture, its media stays at Twilio. Each case leaves a `Benji SMS inbound webhook
-  failed` ERROR log. Anything the text changed (a STOP, a START) is applied before the
-  queueing, so consent is never lost this way. A sweep of recent inbound media at Twilio
+  failed` ERROR log; when the text itself was handled and only its media deletion could
+  not be queued, the outcome line is logged too. Anything the text changed (a STOP, a
+  START) is applied before the queueing, so consent is never lost this way. A sweep of recent inbound media at Twilio
   would close the media half; it belongs with the nightly sweep (MFB-2442).
 - **`BACKEND_DOMAIN` must be the public https origin written in those URLs**, exactly.
   The signature is checked against `BACKEND_DOMAIN` plus the request path, not against
@@ -62,9 +63,9 @@ In order, first match wins.
 | 4 | From an unknown number | | Stranger reply (English and Spanish), once a day |
 | 5 | STOP | Revoke the number, close its conversation | Ours, if the wording is ours |
 | 6 | START, from a revoked number | Clear the revocation; resume the conversation the STOP closed, if it can | Ours, if the wording is ours |
-| 7 | Anything else from a revoked number | Nothing | none |
-| 8 | HELP | Nothing | Ours, if the wording is ours |
-| 9 | START, from a number that is not revoked | Nothing ("yes" is an ordinary answer and carries on) | none |
+| 7 | START, from a number that is not revoked | Nothing ("yes" is an ordinary answer and carries on) | none |
+| 8 | Anything else from a revoked number | Nothing | none |
+| 9 | HELP | Nothing | Ours, if the wording is ours |
 | 10 | From a phone marked shared | | Shared-phone reply, once a day |
 | 11 | The first after 90 quiet days | Expire the conversation, then as 12 | |
 | 12 | From a number with no active conversation | | Re-entry reply, once a day |
@@ -79,8 +80,14 @@ Every text is answered with `200` and empty TwiML, except a `403` for row 0, a `
 a signed request with no `MessageSid`, and a `503` when a turn or a media deletion could
 not be queued, which makes Twilio post the text again (see the known gap above).
 
-Rows 11 to 15 run with the conversation's binding row locked, so two texts arriving
-together cannot expire a conversation the other one has just kept alive.
+STOP and START (rows 5 to 7) are decided with the phone's row locked, on a fresh read of
+the revocation, so a STOP and a START sent together are applied in order. The quiet check
+and the inbound-time write (rows 11, 14 and 15) run with the binding's row locked, so two
+texts arriving together cannot expire a conversation the other one has just kept alive.
+Every other branch that sends or queues something re-reads the revocation first, so a
+STOP that lands while a text is being handled stops its reply. The send itself is not
+under a lock, so a STOP landing in the last moment before it can still be beaten; the
+worker (MFB-2440) has to check again before it replies.
 
 ### Who answers STOP, HELP and START
 
@@ -131,10 +138,13 @@ fallback URL after that.
   fixed reply per inbound `MessageSid` (`benji_sms_delivery_one_fixed_per_inbound`), so a
   replay loses the insert and sends nothing. It is claimed before the day's limit, so a
   replay never spends the number's allowance.
-- A STOP or START records its `MessageSid` on the phone row (`revoked_by_sid`,
-  `cleared_by_sid`) in the same locked transaction as the change. A replay of an older
-  STOP or START therefore cannot undo a newer one, and a replay of the "yes" that cleared
-  a revocation is not then treated as a question.
+- Every STOP and START, including one that changed nothing (a START from a number that
+  was not revoked, a second STOP), leaves a `BenjiSmsKeywordReceipt` with its
+  `MessageSid`, in the same locked transaction as any change. A text with a receipt is
+  not applied again, so a replay of an older STOP or START can never undo a newer one.
+  The receipt records what the first post did, so a replay still sends a STOP or START
+  confirmation the first post failed before sending; the fixed-reply claim stops a
+  second one.
 - A replayed turn is queued again and the worker absorbs it (MFB-2440).
 
 ## Fixed reply text
@@ -143,6 +153,7 @@ Each reply has a translation label (`benji.sms.stranger`, `.shared`, `.reentry`,
 `.help`, `.start_resumed`, `.start_reentry`, `.picture`). The text is that label's
 translation in the conversation's language, else English, else a default in the code,
 with a warning logged when the default is used. `{link}` becomes `FRONTEND_DOMAIN`.
+Line breaks in a translation are sent as written.
 
 **The in-code defaults are provisional**, there so staging works before the rows exist.
 MFB-2444 adds the rows in all 18 languages. Before launch, no reply should be logging
@@ -157,9 +168,11 @@ MFB-2444 adds the rows in all 18 languages. Before launch, no reply should be lo
   which is what the signature-failure alarm (MFB-2441) will count.
 - Media is deleted at Twilio for every text that carries any, whoever sent it.
 - Delivery rows for replies to a number with no binding are purged after a day.
-- The phone row keeps the `MessageSid` of its last STOP and last START, and the id of
-  the conversation the STOP closed. Like the delivery rows' SIDs, they resolve to the
-  number at Twilio; they go with the phone row in a deletion request.
+- STOP and START receipts keep the text's `MessageSid` for a day, then the nightly sweep
+  (MFB-2442) purges them (`BenjiSmsKeywordReceipt.objects.purge_expired`). Like the
+  delivery rows' SIDs, they resolve to the number at Twilio; they go with the phone row
+  in a deletion request. The phone row also keeps the id of the conversation its STOP
+  closed, which is not personal data.
 - Fixed replies ask Twilio for delivery status once the status callback route exists
   (MFB-2441, `benji_sms.status_callback_url`). Until then they are sent without one, so
   Twilio is never told to post to a URL that does not exist.

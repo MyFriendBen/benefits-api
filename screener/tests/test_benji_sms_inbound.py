@@ -546,6 +546,57 @@ class StopTest(InboundMixin, TestCase):
         self.enqueue_media_deletion.assert_called_with(SID, binding.conversation_id)
         self.assertEqual(self.create.call_count, 1)
 
+    def test_a_replayed_start_that_changed_nothing_does_not_undo_a_stop(self) -> None:
+        """iniciar while not revoked (ignored), alto, then the iniciar posted again."""
+        binding = self.bind()
+        self.post("iniciar", sid=SID)
+        self.post("alto", sid=OTHER_SID)
+
+        self.post("iniciar", sid=SID)
+
+        self.assert_revoked(binding)
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default])
+
+    def test_a_replayed_yes_from_before_a_stop_is_not_a_turn(self) -> None:
+        """A "yes" whose turn could not be queued, an alto, then Twilio posts the yes again."""
+        binding = self.bind()
+        self.enqueue_turn.side_effect = BrokerNotConfigured("no broker")
+        with self.assertLogs(LOGGER, level="ERROR"):
+            self.assertEqual(self.post("yes", sid=SID).status_code, 503)
+        self.enqueue_turn.side_effect = None
+        self.post("alto", sid=OTHER_SID)
+
+        self.assert_acknowledged(self.post("yes", sid=SID))
+
+        self.assert_revoked(binding)
+        self.assertEqual(self.enqueue_turn.call_count, 1)
+
+    def test_a_confirmation_lost_after_the_stop_is_sent_on_the_replay(self) -> None:
+        binding = self.bind()
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.assertEqual(self.post("alto").status_code, 503)
+        self.assert_revoked(binding)
+
+        self.assert_acknowledged(self.post("alto"))
+        self.assert_acknowledged(self.post("alto"))
+
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default])
+
+    def test_a_replayed_second_stop_does_not_revoke_after_a_start(self) -> None:
+        binding = self.bind()
+        self.post("alto", sid=SID)
+        self.post("alto", sid=OTHER_SID)
+        self.post("iniciar", sid="SM" + "e5" * 16)
+
+        self.post("alto", sid=OTHER_SID)
+
+        binding.phone.refresh_from_db()
+        binding.refresh_from_db()
+        self.assertIsNone(binding.phone.revoked_at)
+        self.assertEqual(binding.status, AssistantConversationStatus.ACTIVE)
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default, replies.START_RESUMED.default])
+
     def test_a_replayed_stop_does_not_undo_a_newer_start(self) -> None:
         binding = self.bind()
         stop_sid, start_sid = SID, OTHER_SID
@@ -671,6 +722,49 @@ class RevokedTest(InboundMixin, TestCase):
         self.assertEqual(self.binding.status, AssistantConversationStatus.CLOSED)
         self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default, replies.STOP.default])
 
+    def test_a_replay_from_further_back_does_not_undo_the_latest_stop(self) -> None:
+        start1, stop2, replayed = SID, OTHER_SID, SID
+        self.post("iniciar", sid=start1)
+        self.post("alto", sid=stop2)
+        self.post("iniciar", sid="SM" + "e5" * 16)
+        self.post("alto", sid="SM" + "f6" * 16)
+
+        self.post("iniciar", sid=replayed)
+
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+        self.assertEqual(self.binding.status, AssistantConversationStatus.CLOSED)
+        self.assertEqual(self.create.call_count, 4)
+
+    def test_a_confirmation_lost_after_the_start_is_sent_on_the_replay(self) -> None:
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.assertEqual(self.post("iniciar").status_code, 503)
+        self.reload()
+        self.assertIsNone(self.phone.revoked_at)
+
+        self.assert_acknowledged(self.post("iniciar"))
+        self.assert_acknowledged(self.post("iniciar"))
+
+        self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
+
+    def test_a_start_that_races_a_stop_is_applied_after_it(self) -> None:
+        """The snapshot says not revoked; the STOP lands before the START is decided."""
+        self.phone.clear_revocation()
+        original = BenjiSmsPhone.newest_binding
+
+        def stop_lands(self_phone: BenjiSmsPhone) -> Any:
+            found = original(self_phone)
+            BenjiSmsPhone.objects.get(pk=self_phone.pk).revoke()
+            return found
+
+        with patch.object(BenjiSmsPhone, "newest_binding", stop_lands):
+            self.post("iniciar")
+
+        self.reload()
+        self.assertIsNone(self.phone.revoked_at)
+        self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
+
     def test_a_replayed_carrier_start_does_not_undo_a_newer_stop(self) -> None:
         """Carrier keywords send nothing, so no delivery row could have caught this."""
         self.post("START", sid=SID)
@@ -753,6 +847,21 @@ class SharedTest(InboundMixin, TestCase):
         self.assertEqual(BenjiSmsDelivery.objects.get().binding, binding)
         self.enqueue_turn.assert_not_called()
 
+    def test_a_stop_landing_mid_request_stops_the_shared_reply(self) -> None:
+        self.bind()
+        BenjiSmsPhone.objects.update(shared_until=timezone.now() + timedelta(days=5))
+        original = BenjiSmsPhone.is_shared
+
+        def stop_lands(self_phone: BenjiSmsPhone, *args: Any) -> bool:
+            BenjiSmsPhone.objects.get(pk=self_phone.pk).revoke()
+            return original(self_phone, *args)
+
+        with patch.object(BenjiSmsPhone, "is_shared", stop_lands):
+            self.assert_acknowledged(self.post())
+
+        self.assert_nothing_sent_or_queued()
+        self.assertFalse(BenjiSmsStrangerReply.objects.exists())
+
     def test_a_lapsed_mark_no_longer_applies(self) -> None:
         binding = self.bind()
         BenjiSmsPhone.objects.update(shared_until=timezone.now() - timedelta(minutes=1))
@@ -808,6 +917,20 @@ class ExpiryTest(InboundMixin, TestCase):
                 self.post()
 
                 self.assert_reentry(binding, status)
+
+    def test_a_stop_landing_mid_request_stops_the_reentry_reply(self) -> None:
+        self.bind().end(AssistantConversationStatus.EXPIRED)
+        original = BenjiSmsPhone.newest_binding
+
+        def stop_lands(self_phone: BenjiSmsPhone) -> Any:
+            found = original(self_phone)
+            BenjiSmsPhone.objects.get(pk=self_phone.pk).revoke()
+            return found
+
+        with patch.object(BenjiSmsPhone, "newest_binding", stop_lands):
+            self.assert_acknowledged(self.post())
+
+        self.assert_nothing_sent_or_queued()
 
     def test_the_reentry_reply_goes_out_once_a_day(self) -> None:
         self.bind().end(AssistantConversationStatus.EXPIRED)
@@ -932,6 +1055,43 @@ class PictureTest(InboundMixin, TestCase):
         binding.refresh_from_db()
         self.assertIsNotNone(binding.last_inbound_at)
 
+    def test_a_stop_landing_after_the_text_is_recorded_stops_the_picture_reply(self) -> None:
+        binding = self.bind()
+        original = BenjiSmsBinding.record_inbound
+
+        def then_stop(self_binding: BenjiSmsBinding, *args: Any, **kwargs: Any) -> bool:
+            kept = original(self_binding, *args, **kwargs)
+            binding.phone.revoke()
+            return kept
+
+        with patch.object(BenjiSmsBinding, "record_inbound", then_stop):
+            self.assert_acknowledged(self.post("", media=1))
+
+        self.create.assert_not_called()
+        self.enqueue_media_deletion.assert_called_once()
+
+    def test_a_handled_text_whose_media_cannot_be_queued_still_logs_its_outcome(self) -> None:
+        self.bind()
+        self.enqueue_media_deletion.side_effect = BrokerNotConfigured("no broker")
+
+        with self.assertLogs(LOGGER, level="INFO") as logs:
+            response = self.post("", media=1)
+
+        self.assertEqual(response.status_code, 503)
+        output = "\n".join(logs.output)
+        self.assertIn("outcome=picture replied=True", output)
+        self.assertIn("media deletion not queued", output)
+        self.assertIn("BrokerNotConfigured", output)
+
+    def test_media_is_queued_for_deletion_even_when_the_number_cannot_be_hashed(self) -> None:
+        with override_settings(BENJI_SMS_HASH_KEY=""):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                response = self.post("", media=1)
+
+        self.assertEqual(response.status_code, 503)
+        self.enqueue_media_deletion.assert_called_once_with(SID, None)
+        self.create.assert_not_called()
+
     def test_a_replayed_picture_gets_one_reply(self) -> None:
         self.bind()
         self.post("", media=1)
@@ -1014,6 +1174,16 @@ class LocaleAndLogTest(InboundMixin, TestCase):
         self.post("", media=1)
 
         self.assertEqual(self.sent_bodies(), ["Benji todavía no puede leer fotos."])
+
+    def test_the_outcome_line_reaches_the_logs_at_info(self) -> None:
+        """settings.LOGGING names this module's logger; without it, INFO goes nowhere."""
+        import logging
+
+        from screener import benji_sms_inbound as view_module
+
+        configured = logging.getLogger(view_module.__name__)
+        self.assertTrue(configured.handlers)
+        self.assertEqual(configured.level, logging.INFO)
 
     def test_nothing_logged_carries_the_number_its_hash_or_the_text(self) -> None:
         self.bind()

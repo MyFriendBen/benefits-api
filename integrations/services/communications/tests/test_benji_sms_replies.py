@@ -63,6 +63,12 @@ class ReplyTextTest(TestCase):
         with self.assertLogs(LOGGER, level="WARNING"):
             self.assertEqual(replies.reply_text(replies.STOP), replies.STOP.default)
 
+    def test_line_breaks_in_a_translation_are_kept(self) -> None:
+        add_translation(replies.STRANGER.label, "This is MyFriendBen. Reply STOP to end.\n\nEste es MyFriendBen.")
+        self.assertEqual(
+            replies.reply_text(replies.STRANGER), "This is MyFriendBen. Reply STOP to end.\n\nEste es MyFriendBen."
+        )
+
     def test_the_link_is_filled_in_for_defaults_and_translations(self) -> None:
         with self.assertLogs(LOGGER, level="WARNING"):
             default = replies.reply_text(replies.HELP)

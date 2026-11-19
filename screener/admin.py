@@ -12,6 +12,7 @@ from .models import (
     BenjiSmsBinding,
     BenjiSmsDeadLetter,
     BenjiSmsDelivery,
+    BenjiSmsKeywordReceipt,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
     WhiteLabel,
@@ -243,7 +244,18 @@ class BenjiSmsPhoneAdmin(SuperuserReadOnlyAdmin):
     list_display = ("id", "revoked_at", "shared_until", "created_at")
     ordering = ("-created_at",)
     # phone_hash is shown on the detail page as an opaque value, never in the list.
-    readonly_fields = ("phone_hash", "revoked_at", "shared_until", "created_at")
+    readonly_fields = ("phone_hash", "revoked_at", "revoked_conversation_id", "shared_until", "created_at")
+
+
+class BenjiSmsKeywordReceiptAdmin(SuperuserReadOnlyAdmin):
+    """STOP and START texts handled in the last day (MFB-2439). The SID is shown on the
+    detail page only."""
+
+    list_display = ("id", "phone", "keyword", "applied", "resumed", "created_at")
+    list_filter = ("keyword", "applied")
+    list_select_related = ("phone",)
+    ordering = ("-created_at",)
+    readonly_fields = ("phone", "inbound_sid", "keyword", "applied", "resumed", "created_at")
 
 
 class BenjiSmsBindingAdmin(SuperuserReadOnlyAdmin):
@@ -344,3 +356,4 @@ admin.site.register(BenjiSmsBinding, BenjiSmsBindingAdmin)
 admin.site.register(BenjiSmsDelivery, BenjiSmsDeliveryAdmin)
 admin.site.register(BenjiSmsStrangerReply, BenjiSmsStrangerReplyAdmin)
 admin.site.register(BenjiSmsDeadLetter, BenjiSmsDeadLetterAdmin)
+admin.site.register(BenjiSmsKeywordReceipt, BenjiSmsKeywordReceiptAdmin)
