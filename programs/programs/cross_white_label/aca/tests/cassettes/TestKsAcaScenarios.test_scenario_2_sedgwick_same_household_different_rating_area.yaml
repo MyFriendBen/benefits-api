@@ -15,7 +15,7 @@ interactions:
       "SEDGWICK_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf":
       {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.94.7"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -24,7 +24,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1258'
+      - '1260'
       Content-Type:
       - application/json
       User-Agent:
@@ -49,26 +49,26 @@ interactions:
         {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
         "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
         "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
+        {"model_version": "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1362'
+      - '1364'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 21:13:03 GMT
+      - Thu, 19 Nov 2026 18:39:20 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-a1633a61e9ff20b81c0e54ba531329f2-8ed3b9cab27a30dc-00
+      - 00-a980e088a60f3773c15a3cba394681d9-e90b53c7e942bc0d-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - a1633a61e9ff20b81c0e54ba531329f2/14450596018749407100
+      - a980e088a60f3773c15a3cba394681d9
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -76,7 +76,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - bd1b51c4-ba67-4872-9eba-a992d7fdfad6
+      - 310d3b2f-87fa-4aa1-89a9-cab5cbfb3cf8
       x-policyengine-route-channel:
       - current
     status:

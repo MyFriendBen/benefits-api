@@ -68,7 +68,7 @@ interactions:
         "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
       - '2005'
       access-control-allow-origin:
@@ -76,15 +76,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 14:54:38 GMT
+      - Thu, 19 Nov 2026 18:39:33 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-614cf5df8aa7580bc9022496d0d937c6-e436b3060d5267f8-00
+      - 00-6cdd4732e32ea54360af964e290c82b5-2a87f099c24b6ee7-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 614cf5df8aa7580bc9022496d0d937c6/1866914946748831754
+      - 6cdd4732e32ea54360af964e290c82b5;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -92,9 +92,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 8108bdba-6529-4195-a6ca-bc3dcc499686
+      - 4658b81a-7ddc-41f9-865a-0508ff60dfe6
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK

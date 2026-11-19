@@ -63,15 +63,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 14:54:36 GMT
+      - Thu, 19 Nov 2026 18:39:32 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-03d4e32f4f400195f5b2ded36d34fa88-c7e87472f236ef45-00
+      - 00-d1aa69bbd3a7bb73bf998a1a16a13b0b-dd28bbdd9920cbc0-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 03d4e32f4f400195f5b2ded36d34fa88
+      - d1aa69bbd3a7bb73bf998a1a16a13b0b
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -79,9 +79,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 6ddc579b-f22a-4522-abe4-7cc823e29d47
+      - 003baaea-cede-43e8-ab79-df3cd6e1b02f
       x-policyengine-route-channel:
-      - frontier
+      - current
     status:
       code: 200
       message: OK

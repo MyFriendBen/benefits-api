@@ -28,13 +28,6 @@ from programs.programs.testing_fixtures.pe_integration import (
 )
 from programs.programs.testing_fixtures.households import birth_year_month_for_age
 
-PE_VERSION = "2.116.16"
-PE_VERSION_REASON = (
-    "Recorded at PolicyEngine frontier when Social Security, SSI and child support were dropped from "
-    "the inputs, since frontier is the version PolicyEngine promotes to current next. Remove "
-    "PE_VERSION and this reason once PE_TEST_VERSION reaches 2.116.16."
-)
-
 #: The period ``ma_ccdf`` is configured for. It decides which CCFA income limit applies:
 #: PolicyEngine holds the new-applicant limit at 50% of SMI before 2026-01-01 and 85%
 #: from it, and screening asks the new-applicant question.
@@ -43,9 +36,6 @@ YEAR = "2026"
 
 class MaCcfaTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is Suffolk County, ZIP 02108."""
-
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0
