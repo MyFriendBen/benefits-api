@@ -1,6 +1,7 @@
 """
 Legal status labels, navigator languages and warning calculators each have one list of allowed
-values (`programs/allowed_values.py`, and the warning registry). Nothing outside a list can be saved.
+values (`programs/allowed_values.py`, and the warning registry). Nothing outside a list can be saved,
+and the screener is served what to show for each legal status and navigator language.
 """
 
 from importlib import import_module
@@ -8,6 +9,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from django.apps import apps as global_apps
+from django.conf import settings
 from django.contrib.admin import site as admin_site
 from django.contrib.admin.sites import AdminSite
 from django.core.exceptions import ValidationError
@@ -20,6 +22,8 @@ from programs.allowed_values import (
     USER_SELECTED_LEGAL_STATUSES,
     LegalStatusLabel,
     NavigatorLanguageCode,
+    legal_status_options,
+    navigator_language_options,
 )
 from programs.models import (
     LegalStatus,
@@ -30,13 +34,14 @@ from programs.models import (
     WarningMessageDataController,
 )
 from screener.models import WhiteLabel
+from translations.models import Translation
 
-# The screener's copies of these lists. benefits-calculator keeps its own because it holds the logic
-# behind each value, and its `src/Components/Results/apiAllowedValues.test.ts` pins its copies to
-# this repo's lists. This test is the mirror: a value added here but not in the screener fails here,
-# and one added there but not here fails there. Update both repos together.
+# The screener's copies of the legal statuses. benefits-calculator keeps its own because it holds the
+# logic behind each value, and its `src/Components/Results/apiAllowedValues.test.ts` pins its copies
+# to this repo's lists. This test is the mirror: a value added here but not in the screener fails
+# here, and one added there but not here fails there. Update both repos together.
 #
-# benefits-calculator: `citizenshipFilterConfig` keys (src/Components/Results/Filter/citizenshipFilterConfig.tsx)
+# benefits-calculator: `CitizenLabelOptions` (src/Components/Results/Filter/citizenshipFilterConfig.tsx)
 SCREENER_USER_SELECTED_LEGAL_STATUSES = {
     "citizen",
     "non_citizen",
@@ -59,28 +64,6 @@ SCREENER_CALCULATED_LEGAL_STATUSES = {
     "lawfulHealthCarePregnant",
     "lawfulHealthCareUnder19",
 }
-# benefits-calculator: `allNavigatorLanguages` keys (src/Components/Results/ProgramPage/NavigatorLanguages.tsx)
-SCREENER_NAVIGATOR_LANGUAGE_CODES = {
-    "en-us",
-    "es",
-    "vi",
-    "fr",
-    "am",
-    "so",
-    "ru",
-    "ne",
-    "my",
-    "zh",
-    "ar",
-    "sw",
-    "pl",
-    "tl",
-    "ko",
-    "ur",
-    "pt-br",
-    "ht",
-    "ALL",
-}
 
 
 class ScreenerParityTests(SimpleTestCase):
@@ -94,14 +77,52 @@ class ScreenerParityTests(SimpleTestCase):
         calculated = set(LegalStatusLabel.values) - {str(label) for label in USER_SELECTED_LEGAL_STATUSES}
         self.assertEqual(calculated, SCREENER_CALCULATED_LEGAL_STATUSES)
 
-    def test_navigator_language_codes_match_the_screener(self) -> None:
-        self.assertEqual(set(NavigatorLanguageCode.values), SCREENER_NAVIGATOR_LANGUAGE_CODES)
-
 
 class ListTests(SimpleTestCase):
     def test_user_selected_statuses_are_known_labels(self) -> None:
         self.assertEqual(len(USER_SELECTED_LEGAL_STATUSES), 6)
         self.assertLessEqual(set(USER_SELECTED_LEGAL_STATUSES), set(LegalStatusLabel.values))
+
+
+class ServedOptionsTests(SimpleTestCase):
+    """What `add_config` serves the screener for each value."""
+
+    def test_every_user_selected_status_has_a_button_in_order(self) -> None:
+        options = legal_status_options()
+
+        self.assertEqual(set(options), {str(label) for label in USER_SELECTED_LEGAL_STATUSES})
+        self.assertEqual(
+            list(options), ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"]
+        )
+        self.assertEqual(
+            options["refugee"],
+            {
+                "label": {"_label": "citizenshipButton-refugee", "_default_message": "Refugee/Asylee"},
+                "tooltip": {
+                    "_label": "citizenshipTooltip-refugee",
+                    "_default_message": "Individuals granted refugee or asylee status by the U.S. government.",
+                },
+            },
+        )
+
+    def test_the_filter_labels_benjis_guide_names_are_still_served(self) -> None:
+        """Benji's results-page guide (`_RESULTS_PAGE_GUIDE` in ai-service's `app/prompts.py`) names
+        these six options. If this fails, update the guide there and bump its `PROMPT_VERSION` too."""
+        labels = [option["label"]["_default_message"] for option in legal_status_options().values()]
+
+        self.assertEqual(
+            labels, ["U.S. Citizen", "Green Card 5+", "Green Card <5", "Refugee/Asylee", "Other Lawful", "Undocumented"]
+        )
+
+    def test_navigator_languages_are_the_site_locales_plus_all(self) -> None:
+        self.assertEqual(set(NavigatorLanguageCode.values), {code for code, _ in settings.LANGUAGES} | {"ALL"})
+
+    def test_every_navigator_language_has_a_badge(self) -> None:
+        options = navigator_language_options()
+
+        self.assertEqual(list(options), NavigatorLanguageCode.values)
+        self.assertEqual(options["es"], {"_label": "navLanguage.es", "_default_message": "Spanish Available"})
+        self.assertEqual(options["ALL"], {"_label": "navLanguage.ALL", "_default_message": "All Languages Available"})
 
 
 class LegalStatusTests(TestCase):
@@ -353,3 +374,46 @@ class StandardizeNavigatorLanguagesMigrationTests(TestCase):
 
         with self.assertRaisesMessage(RuntimeError, "'uk' isn't known and is used by: ukrainian_help"):
             self.migration.standardize(global_apps, self.schema_editor)
+
+
+class NavigatorChineseMigrationTests(TestCase):
+    """Covers migration 0215's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0215_navigator_chinese_is_zh_hans")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+
+    def navigator(self, name: str, codes: list[str]) -> Navigator:
+        navigator = Navigator.objects.new_navigator(white_label="co", name=name)
+        navigator.external_name = name
+        navigator.save()
+        navigator.languages.set([StandardizeNavigatorLanguagesMigrationTests.language(code) for code in codes])
+        return navigator
+
+    def codes(self, navigator: Navigator) -> list[str]:
+        return sorted(navigator.languages.values_list("code", flat=True))
+
+    def test_chinese_navigators_move_to_zh_hans(self) -> None:
+        chinese = self.navigator("chinese", ["zh", "en-us"])
+
+        self.migration.move_to_zh_hans(global_apps, self.schema_editor)
+
+        self.assertEqual(self.codes(chinese), ["en-us", "zh-hans"])
+        self.assertFalse(NavigatorLanguage.objects.filter(code="zh").exists())
+
+    def test_a_navigator_on_both_codes_isnt_linked_twice(self) -> None:
+        both = self.navigator("both", ["zh", "zh-hans"])
+
+        self.migration.move_to_zh_hans(global_apps, self.schema_editor)
+
+        self.assertEqual(self.codes(both), ["zh-hans"])
+
+    def test_the_badge_translation_moves_with_its_text(self) -> None:
+        Translation.objects.add_translation("navLanguage.zh", "Chinese Available")
+
+        self.migration.move_to_zh_hans(global_apps, self.schema_editor)
+
+        self.assertFalse(Translation.objects.filter(label="navLanguage.zh").exists())
+        moved = Translation.objects.get(label="navLanguage.zh-hans")
+        self.assertEqual(moved.safe_translation_getter("text", language_code="en-us"), "Chinese Available")

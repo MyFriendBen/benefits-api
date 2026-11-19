@@ -1,6 +1,6 @@
 """Tests for GoogleSheetsCache.get_data() — the shared fetch/cache/fallback logic
-used by roughly 10 program-specific Sheets-backed caches (CccapFplCache,
-RAGCache, ACACache, NcHeadStartMarketRatesCache, CoHeadStartCountyEligibleCache,
+used by roughly 8 program-specific Sheets-backed caches (CccapFplCache,
+NcHeadStartMarketRatesCache, CoHeadStartCountyEligibleCache,
 LeapValueCache, CfhCountyValuesCache, Ami, Smi, IncomeLimitsCache). Exercised
 here directly against a minimal fake subclass rather than through any one of
 the real callers, since the logic under test

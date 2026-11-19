@@ -7,6 +7,7 @@ from typing import ClassVar, Literal, Optional
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 Route = Literal["qmb", "slmb", "qi", "qdwi"]
 FamilySizeMethod = Literal["individual_or_couple", "extra_help"]
@@ -119,7 +120,7 @@ class MspFederalBase(ProgramCalculator, abstract=True):
 
         partner = next(m for m in self.screen.household_members.all() if m.id == partner_id)
         pair = {member.relationship, partner.relationship}
-        if pair == {"headOfHousehold", "spouse"}:
+        if pair == {HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse"}:
             return partner
         if member.relationship == partner.relationship and member.relationship in PARENT_TYPE_RELATIONSHIPS:
             return partner

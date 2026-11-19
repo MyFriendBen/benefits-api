@@ -27,7 +27,7 @@ interactions:
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
       {"2026": false}, "spm_unit_cash_assets": {"2026": 0}, "childcare_expenses":
       {"2026": 0.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version":
-      "2.72.5"}'
+      "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -40,7 +40,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -73,7 +73,7 @@ interactions:
         {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
         {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}, "spm_unit_cash_assets":
         {"2026": 0}, "childcare_expenses": {"2026": 0.0}, "mo_tanf": {"2026": 409.03528}}},
-        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version":
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.94.7", "data_version":
         null, "dataset": null}}'
     headers:
       Alt-Svc:
@@ -85,15 +85,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:26:47 GMT
+      - Tue, 17 Nov 2026 21:22:01 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-6729a2d3c0c7de5b9178437a6e6bf690-b8e6f127bf3fb18f-01
+      - 00-f1f872317ffc5c2d24d55345dff2ce7f-b4a55441a28ac94e-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 6729a2d3c0c7de5b9178437a6e6bf690;o=1
+      - f1f872317ffc5c2d24d55345dff2ce7f/3141271179557713199
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -101,7 +101,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 8e98b6f3-777a-4b97-87f3-9c2134dfb13f
+      - 07aca5d2-62e2-42d8-9ea1-2547092b1559
       x-policyengine-route-channel:
       - current
     status:

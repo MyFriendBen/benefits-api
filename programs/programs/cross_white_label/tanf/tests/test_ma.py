@@ -15,7 +15,6 @@ from programs.framework.pe_dependencies.member import (
     PregnancyDependency,
 )
 from programs.programs.cross_white_label.tanf.ma import MaTafdc
-from programs.framework.pe_dependencies import member
 
 
 class TestMaTafdcPregnancyEligibleDependency(TestCase):

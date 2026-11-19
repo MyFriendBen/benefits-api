@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_gkcceh_coordinated_entry",
+    "category_type": {
+      "external_name": "homeless_services"
+    },
+    "type_short": [
+      "homeless services"
+    ],
+    "translations": {
+      "name": "Greater Kansas City Coalition to End Homelessness (GKCCEH) - Coordinated Entry",
+      "description": "Coordinated Entry is the front door to housing programs for people experiencing homelessness in the Kansas City area. A trained assessor at a partner agency completes one standard assessment and connects you to housing and support services on both sides of the state line.",
+      "link": "https://www.gkcceh.org/coordinated-entry",
+      "warning": "This is not emergency shelter. Housing openings are limited, so there may be a wait after your assessment. If you need a place to stay tonight, call 211.",
+      "website_description": "Get assessed for housing programs if you are experiencing homelessness in the Kansas City area.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "+18169247997",
+    "counties": [
+      "Jackson County",
+      "Clay County",
+      "Platte County",
+      "Cass County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

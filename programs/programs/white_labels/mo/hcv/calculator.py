@@ -5,6 +5,7 @@ from types import MappingProxyType
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class MoHcv(ProgramCalculator):
 
     #: Head, co-head (domesticPartner), or spouse — never dependents, and
     #: whose age/disability sets the elderly-or-disabled flag.
-    HEAD_RELATIONSHIPS = ("headOfHousehold", "spouse", "domesticPartner")
+    HEAD_RELATIONSHIPS = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner")
 
     #: Excluded from annual income for every member.
     EXCLUDED_INCOME_TYPES = ("workersComp",)
@@ -55,7 +56,7 @@ class MoHcv(ProgramCalculator):
             "parent": 1,
             "fosterParent": 1,
             "stepParent": 1,
-            "headOfHousehold": 0,
+            HEAD_OF_HOUSEHOLD_RELATIONSHIP: 0,
             "spouse": 0,
             "domesticPartner": 0,
             "sisterOrBrother": 0,

@@ -18,7 +18,6 @@ from django.test import TestCase
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.white_labels.co.dpp.calculator import DenverPreschoolProgram
 from programs.util import Dependencies, DependencyError
-from programs.framework.pe_dependencies import member
 
 
 def make_member(age=3):

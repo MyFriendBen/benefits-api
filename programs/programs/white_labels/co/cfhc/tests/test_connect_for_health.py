@@ -29,7 +29,6 @@ from programs.framework.base import Eligibility, MemberEligibility, ProgramCalcu
 from programs.programs.white_labels.co.cfhc.calculator import CfhCountyValuesCache, ConnectForHealth
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
-from programs.framework.pe_dependencies import member
 
 FPL_2025 = _FPL_DEFAULTS["2025"]
 

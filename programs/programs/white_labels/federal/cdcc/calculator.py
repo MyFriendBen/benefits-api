@@ -11,7 +11,7 @@ from typing import Optional
 
 from sentry_sdk import capture_message
 
-from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, PaymentUnit, ProgramCalculator
 from programs.programs.white_labels.federal.tax import (
     FEDERAL_TAX_YEARS,
     HEAD_OF_HOUSEHOLD,
@@ -22,6 +22,7 @@ from programs.programs.white_labels.federal.tax import (
     tax_owed,
 )
 from screener.models import DEPENDENT_ELIGIBLE_RELATIONSHIPS, HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,8 @@ class FederalCdcc(ProgramCalculator):
     """
 
     program_code = "federal_cdcc"
+    # Spec section 7: one credit on the filers' return.
+    payment_unit = PaymentUnit.HOUSEHOLD
 
     qualifying_child_age_limit = 13
     care_expense_types = ("childCare", "dependentCare")
@@ -151,9 +154,6 @@ class FederalCdcc(ProgramCalculator):
 
         return int(credit.quantize(Decimal(1), rounding=ROUND_HALF_UP))
 
-    def member_value(self, member: HouseholdMember) -> int:
-        return 0
-
     @cached_property
     def _params(self) -> CdccYear:
         """
@@ -179,7 +179,7 @@ class FederalCdcc(ProgramCalculator):
     @cached_property
     def _filers(self) -> list[HouseholdMember]:
         members = self.screen.household_members.all()
-        filers = [m for m in members if m.relationship == "headOfHousehold"]
+        filers = [m for m in members if m.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP]
         if self._is_joint:
             filers += [m for m in members if m.relationship == "spouse"]
 
@@ -221,7 +221,9 @@ class FederalCdcc(ProgramCalculator):
         if member.born_after(self.tax_year):
             return False
 
-        if member.relationship == "spouse" or (member.relationship == "headOfHousehold" and self._is_joint):
+        if member.relationship == "spouse" or (
+            member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP and self._is_joint
+        ):
             return bool(member.has_disability())
 
         if member.relationship not in DEPENDENT_ELIGIBLE_RELATIONSHIPS:

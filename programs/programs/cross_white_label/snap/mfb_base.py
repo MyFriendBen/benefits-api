@@ -11,6 +11,7 @@ from programs.framework.pe_dependencies.member import SSDI_INCOME_TYPE
 from programs.framework.pe_dependencies.receipt import SSI_INCOME_TYPE, screen_reports_tanf
 from programs.programs.shared.income import table_income_limit
 from screener.models import HouseholdMember, IncomeStream
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 MONTHS_PER_YEAR = 12
 # The screener's weeks-per-month factor, as an exact Decimal.
@@ -26,7 +27,7 @@ SINGLE_PARENT_CHILD_AGE = 12
 # Income streams that make a member "elderly or disabled" besides age and the disability flags.
 DISABILITY_INCOME_TYPES = [SSI_INCOME_TYPE, SSDI_INCOME_TYPE]
 PARTNER_RELATIONSHIPS = ("spouse", "domesticPartner")
-HOUSEHOLD_ADULT_RELATIONSHIPS = ("headOfHousehold", *PARTNER_RELATIONSHIPS)
+HOUSEHOLD_ADULT_RELATIONSHIPS = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, *PARTNER_RELATIONSHIPS)
 
 # Everything below is the 48 contiguous states and DC, 2026-10-01 through 2027-09-30.
 GROSS_INCOME_LIMITS = {1: 1729, 2: 2345, 3: 2960, 4: 3575, 5: 4191, 6: 4806, 7: 5421, 8: 6037}
@@ -269,7 +270,7 @@ class MfbSnap(ProgramCalculator, abstract=True):
         has_partner = any(other.relationship in PARTNER_RELATIONSHIPS for other in self.members)
 
         return (
-            member.relationship == "headOfHousehold"
+            member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP
             and not has_partner
             and self.has_child_under(SINGLE_PARENT_CHILD_AGE)
         )

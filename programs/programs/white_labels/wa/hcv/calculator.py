@@ -3,6 +3,7 @@ import logging
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class WaHcv(ProgramCalculator):
         """Under 18, student, or disabled — excluding head and spouse (24 CFR § 5.611)."""
         count = 0
         for member in self.screen.household_members.all():
-            if member.relationship in ("headOfHousehold", "spouse"):
+            if member.relationship in (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse"):
                 continue
             age = member.calc_age()
             is_dependent = (age is not None and age < 18) or member.student or member.has_disability()
@@ -64,7 +65,7 @@ class WaHcv(ProgramCalculator):
     def _is_elderly_or_disabled_family(self) -> bool:
         """True if head, spouse, or sole member is 62+ or has a disability."""
         for member in self.screen.household_members.all():
-            if member.relationship in ("headOfHousehold", "spouse"):
+            if member.relationship in (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse"):
                 age = member.calc_age()
                 if (age is not None and age >= 62) or member.has_disability():
                     return True

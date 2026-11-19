@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ma"
+  },
+  "need": {
+    "external_name": "ma_ceoc_health_insurance_assistance",
+    "category_type": {
+      "external_name": "medical_expenses_and_debt"
+    },
+    "type_short": [
+      "medical expenses and debt"
+    ],
+    "translations": {
+      "name": "CEOC Health Insurance Assistance",
+      "description": "The Cambridge Economic Opportunity Committee (CEOC) gives one-on-one help signing up for MassHealth, ConnectorCare, or other health insurance. This help is for people who live in Cambridge. Bring your ID, proof of income, and any insurance letters.",
+      "link": "https://www.ceoccambridge.org/",
+      "warning": "",
+      "website_description": "Get free help enrolling in health insurance in Cambridge.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Middlesex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

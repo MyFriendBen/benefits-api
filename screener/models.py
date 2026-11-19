@@ -8,11 +8,11 @@ from django.utils.functional import cached_property
 from decimal import Decimal
 import uuid
 from authentication.models import User
-from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 from .irs_parameters import get_qualifying_relative_threshold
+from .allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 # Built once: settings.LANGUAGES is fixed for the life of the process.
 SUPPORTED_LANGUAGE_CODES = frozenset(code for code, _ in settings.LANGUAGES)
@@ -231,7 +231,7 @@ class Screen(models.Model):
         for household_member in household_members:
             if household_member.relationship in child_relationship:
                 hoh_child_exists = True
-            elif household_member.relationship == "headOfHousehold":
+            elif household_member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
                 if household_member.pregnant:
                     hoh_child_exists = True
             elif household_member.pregnant:
@@ -242,7 +242,7 @@ class Screen(models.Model):
         for household_member in household_members:
             if hoh_child_exists and household_member.relationship == "spouse":
                 parents += 1
-            elif hoh_child_exists and household_member.relationship == "headOfHousehold":
+            elif hoh_child_exists and household_member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
                 parents += 1
 
         return parents
@@ -275,7 +275,7 @@ class Screen(models.Model):
             relationship = member.relationship
             probable_spouse = None
 
-            if relationship == "headOfHousehold":
+            if relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
                 for other_member in all_members:
                     if (
                         other_member.relationship in ("spouse", "domesticPartner")
@@ -285,7 +285,10 @@ class Screen(models.Model):
                         break
             elif relationship in ("spouse", "domesticPartner"):
                 for other_member in all_members:
-                    if other_member.relationship == "headOfHousehold" and other_member.id not in relationship_map:
+                    if (
+                        other_member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP
+                        and other_member.id not in relationship_map
+                    ):
                         probable_spouse = other_member.id
                         break
             elif relationship in (
@@ -459,7 +462,7 @@ class Screen(models.Model):
 
     def get_head(self):
         for member in self.household_members.all():
-            if member.relationship == "headOfHousehold":
+            if member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
                 return member
 
         raise Exception("No head of household")
@@ -622,7 +625,7 @@ class HouseholdMember(models.Model):
         all_household_members = self.screen.household_members.all()
         if self.relationship in ("spouse", "domesticPartner"):
             return {"is_married": True, "married_to": self.screen.get_head()}
-        if self.relationship == "headOfHousehold":
+        if self.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
             for member in all_household_members:
                 if member.relationship in ("spouse", "domesticPartner"):
                     return {"is_married": True, "married_to": member}
@@ -632,7 +635,7 @@ class HouseholdMember(models.Model):
         return self.disabled or self.visually_impaired or self.long_term_disability
 
     def is_head(self) -> bool:
-        return self.relationship == "headOfHousehold"
+        return self.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
     def is_spouse(self) -> bool:
         return self.screen.relationship_map()[self.screen.get_head().id] == self.id

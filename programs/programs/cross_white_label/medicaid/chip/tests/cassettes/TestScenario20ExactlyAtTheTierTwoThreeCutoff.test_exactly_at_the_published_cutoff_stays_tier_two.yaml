@@ -21,7 +21,7 @@ interactions:
       "MO"}}}, "spm_units": {"spm_unit": {"members": ["2001", "2002"], "tanf": {"2026":
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-      false}}}, "marital_units": {}}, "version": "2.72.5"}'
+      false}}}, "marital_units": {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -34,7 +34,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -61,7 +61,7 @@ interactions:
         "2002"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
         {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
         {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.72.5", "data_version": null, "dataset": null}}'
+        "2.94.7", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
@@ -72,15 +72,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:25:47 GMT
+      - Tue, 17 Nov 2026 21:15:32 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-3013490d6f81f528b733e12faeaa5380-d502829bfbd3c76f-00
+      - 00-072f9531a92663fb9e40edbfb8ec953b-e4ac81776ebb58c6-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 3013490d6f81f528b733e12faeaa5380
+      - 072f9531a92663fb9e40edbfb8ec953b
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -88,7 +88,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 185b5824-4717-4545-8f49-02778a806a07
+      - da571a40-3500-4662-9f54-8e5821c6a923
       x-policyengine-route-channel:
       - current
     status:

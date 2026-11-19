@@ -1,5 +1,6 @@
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility, HouseholdMember
 from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIncomeCheckMixin
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
@@ -8,7 +9,7 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     newborn_member_amount = 284 * 12  # $284/month for newborns
     fpl_percent = 2.13  # 213% FPL
     min_adult_age = 19  # Adults must be 19+
-    parent_relationships = ["headOfHousehold", "spouse", "domesticPartner", "parent", "fosterParent"]
+    parent_relationships = [HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner", "parent", "fosterParent"]
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
     def _is_eligible_newborn(self, member: HouseholdMember) -> bool:

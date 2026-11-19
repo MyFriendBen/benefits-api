@@ -88,8 +88,8 @@ class TestNjValues(NjHeadStartTestCase):
         self.assertEqual(NjHeadStart.weekly_price, 292.30)
         self.assertEqual(NjHeadStart.program_weeks, 1_020 // 30)
 
-    def test_gates_on_federal_ssi_and_nj_tanf(self):
-        self.assertEqual(NjHeadStart.gates_on_any, ("federal_ssi", "nj_tanf"))
+    def test_gates_on_federal_ssi_nj_snap_and_nj_tanf(self):
+        self.assertEqual(NjHeadStart.gates_on_any, ("federal_ssi", "nj_snap", "nj_tanf"))
         self.assertEqual(NjHeadStart.gates_on, ())
 
 
@@ -210,6 +210,19 @@ class TestPublicAssistance(NjHeadStartTestCase):
         screen = self.over_income_household()
 
         self.assert_ineligible(self.calculate(screen, data={"federal_ssi": ineligible_result()}))
+
+    def test_eligible_for_nj_snap_qualifies(self):
+        screen = self.over_income_household()
+
+        eligibility = self.calculate(screen, data={"nj_snap": eligible_result()})
+
+        self.assert_eligible(eligibility)
+        self.assertEqual(eligibility.pass_messages, [messages.presumed_eligibility()])
+
+    def test_ineligible_for_nj_snap_does_not_qualify(self):
+        screen = self.over_income_household()
+
+        self.assert_ineligible(self.calculate(screen, data={"nj_snap": ineligible_result()}))
 
     def test_eligible_for_nj_tanf_qualifies(self):
         screen = self.over_income_household()

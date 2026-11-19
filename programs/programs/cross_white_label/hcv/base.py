@@ -9,12 +9,13 @@ from integrations.clients.hud_income_limits.client import Section8AmiPercent
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 logger = logging.getLogger(__name__)
 
 #: The head and their spouse. A domestic partner is not a spouse: they count as any other
 #: adult does, and can be a dependent.
-HEAD_OR_SPOUSE = frozenset({"headOfHousehold", "spouse"})
+HEAD_OR_SPOUSE = frozenset({HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse"})
 
 #: Members who are never dependents besides the head and spouse (24 CFR 5.603, "Dependent").
 NOT_DEPENDENT = HEAD_OR_SPOUSE | {"fosterChild"}
@@ -175,7 +176,7 @@ class HousingChoiceVoucher(ProgramCalculator, abstract=True):
         if age is None or age >= self.student_bar_age:
             return False
 
-        is_head = member.relationship == "headOfHousehold"
+        is_head = member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP
         others = [other.relationship for other in members if other is not member]
 
         married = member.relationship == "spouse" or (is_head and "spouse" in others)

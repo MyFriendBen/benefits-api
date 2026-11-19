@@ -15,7 +15,6 @@ from unittest.mock import Mock
 
 from programs.programs.cross_white_label.head_start.wa import WaHeadStart
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_calculator(

@@ -1,6 +1,7 @@
 """Who files a federal tax return, and how other members relate to the filers."""
 
 from screener.models import HouseholdMember, Screen
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 def tax_filers(screen: Screen, joint: bool) -> list[HouseholdMember]:
@@ -11,7 +12,7 @@ def tax_filers(screen: Screen, joint: bool) -> list[HouseholdMember]:
     filer nor a dependent for federal tax.
     """
     members = screen.household_members.all()
-    filers = [m for m in members if m.relationship == "headOfHousehold"]
+    filers = [m for m in members if m.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP]
     if joint:
         filers += [m for m in members if m.relationship == "spouse"]
 
