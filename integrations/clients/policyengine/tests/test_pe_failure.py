@@ -135,13 +135,12 @@ class TestCalcPeEligibilityFailure(TestCase):
         self.assertEqual(failures, [POLICY_ENGINE])
 
     def test_the_engine_is_the_private_endpoint(self):
-        # Lock the removal of the public fallback: the private household.api is the only
-        # configured engine.
+        # The private household.api is the only engine; there is no public fallback.
         self.assertIs(pe_engines_module.pe_engine, PrivateApiSim)
 
     def test_status_code_is_in_the_sentry_message(self):
-        # PolicyEngineAPIError has always carried the status; it belongs in the message so a
-        # 400 (our payload) is distinguishable from a 5xx (theirs) in the Sentry issue list.
+        # The status belongs in the message so a 400 (our payload) is distinguishable from a
+        # 5xx (theirs) in the Sentry issue list.
         _, _, capture_message, _ = self._run(PolicyEngineAPIError("bad payload", status_code=400))
 
         self.assertIn("(HTTP 400)", self._error_messages(capture_message)[0].args[0])

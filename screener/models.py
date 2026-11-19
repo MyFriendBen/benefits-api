@@ -1072,11 +1072,10 @@ class EligibilitySnapshot(models.Model):
     #: A displayed program's calculator raised something other than `DependencyError`: a
     #: bug, or screen data it could not handle. Reported to Sentry.
     DROPPED_CALCULATOR_ERROR = "calculator_error"
-    #: True when an external API (PolicyEngine, HUD) failed during a run that otherwise
-    #: finished, so the results are incomplete. `had_error` marks a run that never finished.
-    #: The `had_error=False` filters ignore this flag: a degraded run is still the user's
-    #: latest result. Nullable, like `dropped_programs`, so code without the field can insert
-    #: during a deploy or rollback; null means not recorded.
+
+    #: True when an external API (PolicyEngine, HUD) failed but the run still finished, so
+    #: the results are incomplete. The `had_error=False` filters ignore it: a degraded run
+    #: is still the user's latest result. Nullable for deploy safety, like `dropped_programs`.
     had_external_api_failure = models.BooleanField(default=False, null=True)
 
 
