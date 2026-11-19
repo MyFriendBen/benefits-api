@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('programs', '0213_remove_unknown_legal_statuses'),
+        ('programs', '0215_navigator_chinese_is_zh_hans'),
     ]
 
     operations = [
