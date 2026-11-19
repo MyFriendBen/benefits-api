@@ -186,13 +186,6 @@ class TestNjMedicaidScenarios(PeIntegrationTestCase):
     pe_version = PE_VERSION
     pe_version_reason = PE_VERSION_REASON
 
-    pe_version = "2.94.7"
-    pe_version_reason = (
-        "Recorded at PolicyEngine current (2.94.7) on 2026-11-11, ahead of the suite pin, so NJ Medicaid "
-        "ships against the version production runs (MFB-1798). Moves back to PE_TEST_VERSION when the "
-        "suite pin reaches it."
-    )
-
     def member_values(self, number: int) -> dict[int, float]:
         """Each eligible member's annual value for one scenario's household."""
         scenario = next(s for s in SCENARIOS if s["number"] == number)
