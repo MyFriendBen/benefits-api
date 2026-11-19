@@ -6,6 +6,7 @@ from sentry_sdk import capture_message
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 @dataclass(frozen=True)
@@ -162,7 +163,7 @@ class FederalSsi(ProgramCalculator):
 
     @cached_property
     def head(self) -> Optional[HouseholdMember]:
-        return next((m for m in self.members if m.relationship == "headOfHousehold"), None)
+        return next((m for m in self.members if m.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP), None)
 
     @cached_property
     def spouse(self) -> Optional[HouseholdMember]:
@@ -170,7 +171,7 @@ class FederalSsi(ProgramCalculator):
 
     def _partner(self, member: HouseholdMember) -> Optional[HouseholdMember]:
         """The other half of the head-and-spouse pair, when `member` is one of them."""
-        if member.relationship == "headOfHousehold":
+        if member.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP:
             return self.spouse
         if member.relationship == "spouse":
             return self.head

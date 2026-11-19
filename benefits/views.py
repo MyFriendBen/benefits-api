@@ -1,5 +1,6 @@
 from django.http import HttpResponseForbidden, HttpResponseBadRequest
 from sentry_sdk import capture_message
+from rest_framework.exceptions import Throttled
 from rest_framework.views import exception_handler
 
 
@@ -20,6 +21,13 @@ def drf_exception_handler(exc, context):
 
     if response is None:
         return None
+
+    # A throttle refusing a request is the throttle working, and the volume it
+    # absorbs would use up Sentry's event quota and bury real errors. Django's
+    # request log still records each 429, and the Save My Results throttle logs
+    # which limit fired.
+    if isinstance(exc, Throttled):
+        return response
 
     capture_message(
         response.reason_phrase,

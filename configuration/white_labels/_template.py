@@ -197,6 +197,9 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     },
     # }
 
+    # energy_calculator_expense_options: the utility expenses the energy calculator asks about, as
+    # option cards. Only a white label that runs the energy calculator sets it (see cesn.py).
+
     # ==========================================================================================
     # CONDITION OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================
@@ -298,7 +301,6 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     * "211nc" - Enable 2-1-1 North Carolina specific branding
     #     * "lanc" - Enable LANC specific branding
     #     * "nc_show_211_link" - Show 2-1-1 link in NC
-    #     * "white_multi_select_tile_icon" - White icons on multi-select tiles
     #     * "dont_show_category_values" - Hide dollar amounts on category headings
     #
     # stateOptions: State codes this referrer's "What is your state?" dropdown offers

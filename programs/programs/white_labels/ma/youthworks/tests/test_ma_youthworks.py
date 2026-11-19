@@ -24,7 +24,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.ma.youthworks.calculator import MaYouthworks
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 
 # Real 2025 Federal Poverty Guideline base (100%) amounts by household size.
 FPL_2025_BASE = {1: 15650, 2: 21150, 3: 26650, 4: 32150}

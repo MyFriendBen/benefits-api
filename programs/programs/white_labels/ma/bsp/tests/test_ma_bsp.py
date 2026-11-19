@@ -13,13 +13,12 @@ out of the branches they are meant to exercise.
 """
 
 from datetime import date
-from unittest.mock import patch
 
 from programs.models import Program
 from programs.framework.base import ProgramCalculator
-from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.ma.bsp.calculator import MaBabySteps
-from screener.models import CurrentBenefit, HouseholdMember, Screen
+from screener.models import CurrentBenefit
 
 FROZEN_DATE = date(2026, 7, 22)
 

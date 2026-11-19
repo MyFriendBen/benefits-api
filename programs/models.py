@@ -2304,3 +2304,36 @@ class ProgramRecordImport(models.Model):
 
     def __str__(self):
         return f"{self.filename} ({self.program_name}) - {self.imported_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class ProgramImportLog(models.Model):
+    """
+    One row per `apply_program` run that applied a payload, kept forever.
+
+    The audit trail for spec-driven imports: what each environment received, from which spec,
+    and when, so an apply can be checked or rolled back to. A program with a row here has been
+    imported from a program-ops v2 spec.
+    """
+
+    program = models.ForeignKey(
+        Program,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="import_logs",
+        help_text="The program the payload was applied to. Kept as a name below if the program is deleted.",
+    )
+    white_label_code = models.CharField(max_length=64)
+    program_name = models.CharField(max_length=255, help_text="The program's name_abbreviated when applied")
+    payload = models.JSONField(help_text="The payload exactly as it was applied")
+    changes = models.JSONField(default=list, help_text="What the apply changed, one line per change")
+    source = models.CharField(max_length=255, blank=True, default="", help_text="The spec the payload came from")
+    spec_commit = models.CharField(max_length=64, blank=True, default="", help_text="program-ops commit of the spec")
+    applied_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-applied_at"]
+        indexes = [models.Index(fields=["white_label_code", "program_name"])]
+
+    def __str__(self) -> str:
+        return f"{self.white_label_code}/{self.program_name} - {self.applied_at.strftime('%Y-%m-%d %H:%M')}"

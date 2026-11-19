@@ -3,7 +3,6 @@ Unit tests for Screen, HouseholdMember, and WhiteLabel model methods.
 """
 
 from datetime import date
-from decimal import Decimal
 from unittest.mock import patch
 from django.test import SimpleTestCase, TestCase
 from programs.models import Program

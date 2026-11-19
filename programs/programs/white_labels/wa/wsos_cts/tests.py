@@ -3,7 +3,6 @@ from decimal import Decimal
 
 
 from programs.programs.white_labels.wa.wsos_cts.calculator import WaWsosCts
-from programs.framework.pe_dependencies import member
 
 
 class TestWaWsosCts(CustomCalculatorTestCase):

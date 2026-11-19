@@ -3,6 +3,7 @@ from functools import cached_property
 
 from programs.framework.base import Eligibility
 from programs.programs.white_labels.federal.eitc.calculator import FederalEitc
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class NjEitc(FederalEitc):
@@ -76,7 +77,7 @@ class NjEitc(FederalEitc):
         return federal.eligible and self._federal_credit() > 0
 
     def _head_is_old_enough(self) -> bool:
-        heads = [m for m in self.screen.household_members.all() if m.relationship == "headOfHousehold"]
+        heads = [m for m in self.screen.household_members.all() if m.relationship == HEAD_OF_HOUSEHOLD_RELATIONSHIP]
         return any(
             age is not None and age >= self.age_expansion_min_age
             for age in (head.age_at_end_of_year(self.tax_year) for head in heads)

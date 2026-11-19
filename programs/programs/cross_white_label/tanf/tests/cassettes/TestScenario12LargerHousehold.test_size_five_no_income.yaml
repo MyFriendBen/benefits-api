@@ -57,7 +57,7 @@ interactions:
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
       {"2026": false}, "spm_unit_cash_assets": {"2026": 0}, "childcare_expenses":
       {"2026": 0.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version":
-      "2.72.5"}'
+      "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -70,7 +70,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -135,7 +135,7 @@ interactions:
         {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
         {"2026": false}, "spm_unit_cash_assets": {"2026": 0}, "childcare_expenses":
         {"2026": 0.0}, "mo_tanf": {"2026": 4652.724}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
+        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
@@ -146,15 +146,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:26:29 GMT
+      - Tue, 17 Nov 2026 21:21:48 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-fd5eb8627fbdaf36e8ff37b8357ce815-912ee0faa99b60df-00
+      - 00-0318dc6afab065586fc416adad4dcf2c-0b47b0cf14bd387f-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - fd5eb8627fbdaf36e8ff37b8357ce815
+      - 0318dc6afab065586fc416adad4dcf2c/6745782036711016544
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -162,7 +162,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - e3bdc49a-33a9-4af9-8208-3bed3f45933c
+      - 7c890fc4-6b05-452a-86cb-d8af28993e8b
       x-policyengine-route-channel:
       - current
     status:

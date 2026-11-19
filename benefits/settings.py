@@ -24,6 +24,7 @@ from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 from benefits.cache_config import redis_pool_kwargs
 from benefits.celery_config import BROKER_POOL_LIMIT, BROKER_SOCKET_TIMEOUT, broker_use_ssl
 from benefits.sentry_scrub import scrub_event
+from benefits.throttle_config import throttle_rate
 
 EXTRA_LANG_INFO = {
     "am": {
@@ -85,6 +86,13 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "EXCEPTION_HANDLER": "benefits.views.drf_exception_handler",
+    # The one proxy in front of the app is Heroku's router (api.myfriendben.org is a
+    # herokudns CNAME, no CDN), which appends the connecting IP to X-Forwarded-For.
+    # With this unset, throttles keyed on the whole header, so a client sending its
+    # own X-Forwarded-For got a fresh budget per request. 1 means "the last entry",
+    # the one the router wrote. For a client that sends no such header, this is the
+    # same IP as before. Revisit if a CDN or another proxy is put in front.
+    "NUM_PROXIES": 1,
     "DEFAULT_THROTTLE_RATES": {
         "nps": "3/hour",  # Limit NPS submissions to prevent abuse
         "rem": "30/hour",  # Limit REM impact proxy requests to protect the upstream API key
@@ -100,6 +108,22 @@ REST_FRAMEWORK = {
         # and changing or clearing a rating is another call, so a normal conversation
         # spends multiples of its message count here.
         "assistant_rating": "240/hour",
+        # Save My Results (MessageViewSet) makes MyFriendBen send an email or a text
+        # to any address the caller supplies. Per IP: far above any one household,
+        # since one public IP can be a navigator office, a library or a mobile
+        # carrier's NAT; the daily ceiling is what bounds a script on one address.
+        # Per phone: a typo fix goes to a different number, so these only bound
+        # repeats to one number. How the four work together is in
+        # screener.throttles.SaveResultsRateThrottle.
+        #
+        # Each can be changed per environment without a deploy, e.g. looser on
+        # staging where QA texts one phone repeatedly:
+        #   heroku config:set MESSAGE_PHONE_RATE=50/hour MESSAGE_PHONE_DAY_RATE=200/day
+        # A blank or unreadable value falls back to the default here.
+        "message_ip": throttle_rate("MESSAGE_IP_RATE", "100/hour"),
+        "message_ip_day": throttle_rate("MESSAGE_IP_DAY_RATE", "500/day"),
+        "message_phone": throttle_rate("MESSAGE_PHONE_RATE", "5/hour"),
+        "message_phone_day": throttle_rate("MESSAGE_PHONE_DAY_RATE", "10/day"),
     },
 }
 

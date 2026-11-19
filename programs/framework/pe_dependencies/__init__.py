@@ -1,7 +1,7 @@
 import programs.framework.pe_dependencies.member as member
 import programs.framework.pe_dependencies.spm as spm
-import programs.framework.pe_dependencies.tax as tax
-import programs.framework.pe_dependencies.household as household
+import programs.framework.pe_dependencies.tax as tax  # noqa: F401  (re-exported submodule)
+import programs.framework.pe_dependencies.household as household  # noqa: F401  (re-exported submodule)
 
 irs_gross_income = [
     member.EmploymentIncomeDependency,

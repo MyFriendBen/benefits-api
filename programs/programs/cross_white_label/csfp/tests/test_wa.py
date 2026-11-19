@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 from programs.programs.cross_white_label.csfp.wa import WaCsfp
 from programs.framework.base import Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_member(age=65):

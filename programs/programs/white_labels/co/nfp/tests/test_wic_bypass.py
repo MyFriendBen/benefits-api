@@ -4,7 +4,6 @@ A household on WIC has already been income-screened, so NFP accepts that in plac
 of its own test. Pins that the federal WIC program satisfies the check.
 """
 
-from programs.framework.base import Eligibility
 from programs.programs.testing_fixtures.current_benefit_fixtures import (
     ReceivesBenefitTestCase,
     receive_federal_benefit,

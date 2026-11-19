@@ -15,7 +15,7 @@ from programs.framework.base import Eligibility
 from programs.programs.cross_white_label.tanf.mfb_base import MfbTanf
 from programs.programs.cross_white_label.tanf.nj import NjTanf
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
-from screener.models import HouseholdMember, Screen
+from screener.models import Screen
 
 Income = dict[str, Union[int, str]]
 

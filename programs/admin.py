@@ -406,6 +406,29 @@ class WarningMessageAdmin(SecureAdmin):
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
+    def _set_select_queryset(
+        self,
+        field_name: str,
+        field: forms.ModelMultipleChoiceField,
+        obj: Optional[WarningMessage],
+        request: HttpRequest,
+    ) -> None:
+        """Programs follow the linking rule (`linkable_with`), as a navigator's do.
+
+        A state warning may go on a federal program, where it shows only to screens in its own state
+        (`programs.federal.serves_screen`), and a federal warning may go on any program. Programs
+        already chosen stay valid. Counties stay on the warning's white label: county names repeat
+        across states, so another state's counties would match the wrong screens.
+        """
+        if field_name != "programs" or obj is None:
+            super()._set_select_queryset(field_name, field, obj, request)
+            return
+        allowed = linkable_with(obj.white_label)
+        if not request.user.is_superuser:
+            allowed &= visible_to_any(request.user.white_labels.all())
+        chosen = Q(pk__in=obj.programs.values("pk"))
+        field.queryset = field.queryset.filter(allowed | chosen)
+
     def get_str(self, obj: WarningMessage) -> str:
         return str(obj)
 

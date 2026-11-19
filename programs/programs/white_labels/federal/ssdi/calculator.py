@@ -2,6 +2,7 @@ from datetime import date
 
 from programs.framework.base import MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class FederalSsdi(ProgramCalculator):
@@ -41,7 +42,7 @@ class FederalSsdi(ProgramCalculator):
     child_amount = 748 * 12
 
     child_relationships = ("child", "stepChild", "grandChild")
-    insured_parent_relationships = ("headOfHousehold", "spouse")
+    insured_parent_relationships = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse")
     insured_parent_income_types = ("sSDisability", "sSRetirement")
 
     survivor_min_age = 50

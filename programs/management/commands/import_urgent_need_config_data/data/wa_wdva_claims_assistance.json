@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "need": {
+    "external_name": "wa_wdva_claims_assistance",
+    "category_type": {
+      "external_name": "veterans_resources"
+    },
+    "type_short": [
+      "veteran services"
+    ],
+    "translations": {
+      "name": "WDVA Claims Assistance (Veteran Service Officers)",
+      "description": "Free, accredited help from a County Veteran Service Officer or a WDVA regional office to file federal VA disability, pension, and other claims. An accredited representative helps you build and file the claim correctly. Any Washington veteran or eligible dependent can use it. Contact a WDVA regional office or your county Veteran Service Officer to make an appointment. Bring your DD-214, medical records, and any VA letters.",
+      "link": "https://dva.wa.gov/veterans-service-members-and-their-families/veterans-benefits/claims-assistance",
+      "warning": "",
+      "website_description": "Free help filing VA benefit claims.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

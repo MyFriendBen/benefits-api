@@ -16,7 +16,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.tx.hse.calculator import TxHse
 from programs.framework.base import ProgramCalculator, Eligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_member(age: int | None = 40, disabled=False, visually_impaired=False, long_term_disability=False):

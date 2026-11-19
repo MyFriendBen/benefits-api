@@ -27,7 +27,6 @@ from programs.framework.base import Eligibility, MemberEligibility, ProgramCalcu
 from programs.programs.cross_white_label.cpcr.co import CoPropertyCreditRebate
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember
-from programs.framework.pe_dependencies import member
 
 
 def make_member(age=70, disabled=False, visually_impaired=False, long_term_disability=False, birth_year_month=None):

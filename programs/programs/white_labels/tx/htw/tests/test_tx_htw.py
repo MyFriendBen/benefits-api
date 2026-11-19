@@ -14,7 +14,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.tx.htw.calculator import TxHtw
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_member(
