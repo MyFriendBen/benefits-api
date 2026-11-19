@@ -457,3 +457,54 @@ class TestPublicChargeRuleConfiguration(SimpleTestCase):
                     "into a FormattedMessage; an empty _label renders as a FormattedMessage "
                     "with an empty id.",
                 )
+
+
+class TestMoreHelpOptionsConfiguration(SimpleTestCase):
+    """
+    Asserts every Immediate Help resource has a translatable name, no repeated labels, and an https link
+    when it has one.
+    """
+
+    def test_more_help_options_are_well_formed(self) -> None:
+        """Each resource needs a translatable name; phone and description are optional but must be translatable too."""
+        for code, white_label_data in white_label_config.items():
+            options = white_label_data.more_help_options.get("moreHelpOptions", [])
+            seen_labels: set[str] = set()
+
+            for index, option in enumerate(options):
+                with self.subTest(white_label=code, index=index):
+                    for key in ("name", "phone", "description"):
+                        field = option.get(key)
+                        # Only the name is required; the card skips a missing phone or description.
+                        if field is None and key != "name":
+                            continue
+
+                        self.assertIsInstance(
+                            field,
+                            dict,
+                            f'White label "{code}" has an Immediate Help resource whose {key} is not a dict '
+                            "with _label and _default_message.",
+                        )
+                        self.assertTrue(
+                            field.get("_label") and field.get("_default_message"),
+                            f'White label "{code}" has an Immediate Help resource {key} missing "_label" or '
+                            '"_default_message". The frontend would render the raw object instead of text.',
+                        )
+
+                        label = field["_label"]
+                        self.assertNotIn(
+                            label,
+                            seen_labels,
+                            f'White label "{code}" repeats the Immediate Help label {label!r}. Both entries '
+                            "would show the same translated text.",
+                        )
+                        seen_labels.add(label)
+
+                    link = option.get("link")
+                    if link is not None:
+                        parsed = urlparse(link)
+                        self.assertTrue(
+                            parsed.scheme == "https" and bool(parsed.netloc),
+                            f'White label "{code}" has an Immediate Help link that is not an absolute https URL: '
+                            f"{link!r}.",
+                        )
