@@ -99,7 +99,7 @@ class NjStayNj(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         e.condition(any(self._is_senior(m) for m in filers(self.screen)), messages.older_than(self.min_age))
-        e.condition(self._is_homeowner())
+        e.condition(self._is_homeowner(), messages.is_home_owner())
 
         income = self._income()
         e.condition(income <= self.income_limit, messages.income(income, self.income_limit))

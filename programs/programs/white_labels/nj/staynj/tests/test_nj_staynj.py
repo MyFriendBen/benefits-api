@@ -13,6 +13,7 @@ drops them. The calculator never reads `self.program`, so no Program row is buil
 from datetime import date
 from typing import Optional
 
+import programs.framework.eligibility_messages as messages
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.nj.anchor.calculator import NjAnchor
 from programs.programs.white_labels.nj.staynj.calculator import SOCIAL_SECURITY_TYPES, NjStayNj
@@ -135,6 +136,12 @@ class TestSpecScenarios(NjStayNjTestCase):
 
     def test_14_senior_with_no_housing_expense(self):
         self.assert_ineligible(self.senior(property_tax=None)[0])
+
+    def test_failed_ownership_records_its_reason(self):
+        screen, head = self.senior(property_tax=None)
+        self.add_expense(head, 18_000, "rent", "yearly")
+
+        self.assertIn(messages.is_home_owner(), self.calculate(screen).fail_messages)
 
     def test_15_head_exactly_65_at_the_end_of_2025(self):
         screen = self.make_screen()
