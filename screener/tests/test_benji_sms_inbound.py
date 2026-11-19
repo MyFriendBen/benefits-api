@@ -12,6 +12,7 @@ and the view cannot drift apart.
 """
 
 import threading
+import time
 from datetime import timedelta
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
@@ -610,6 +611,33 @@ class StopTest(InboundMixin, TestCase):
         self.assertEqual(self.create.call_count, 2)
         self.assertEqual(self.sent_bodies()[-1], replies.STOP.default)
 
+    def test_an_unknown_stop_confirmation_is_not_sent_again_by_the_next_stop(self) -> None:
+        """Twilio may have accepted it: unknown counts as sent."""
+        self.bind()
+        self.create.side_effect = requests.ReadTimeout("twilio")
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.post("alto", sid=SID)
+        self.create.side_effect = self._accept
+
+        self.post("alto", sid=OTHER_SID)
+
+        self.assertEqual(self.create.call_count, 1)
+
+    def test_a_replay_after_a_later_stop_confirmed_sends_nothing(self) -> None:
+        """alto (send fails), alto again (confirms), then Twilio replays the first."""
+        self.bind()
+        self.create.side_effect = TwilioRestException(503, "uri", "unavailable", 20503)
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.post("alto", sid=SID)
+        self.create.side_effect = self._accept
+        self.post("alto", sid=OTHER_SID)
+
+        self.post("alto", sid=SID)
+        self.post("alto", sid="SM" + "e5" * 16)
+
+        self.assertEqual(self.create.call_count, 2)
+        self.assertEqual(self.sent_bodies()[-1], replies.STOP.default)
+
     def test_a_confirmed_stop_is_not_confirmed_again(self) -> None:
         self.bind()
         self.post("alto", sid=SID)
@@ -844,8 +872,26 @@ class RevokedTest(InboundMixin, TestCase):
             with self.assertLogs(LOGGER, level="INFO") as logs:
                 self.assert_acknowledged(self.post("iniciar"))
 
+        # The START was applied, then the STOP: no "Benji is back" to a revoked number.
         self.assert_nothing_sent_or_queued()
-        self.assertIn("outcome=revoked", "\n".join(logs.output))
+        self.assertIn("replied=False", "\n".join(logs.output))
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+
+    def test_a_lost_start_confirmation_goes_out_on_the_next_start(self) -> None:
+        self.create.side_effect = TwilioRestException(503, "uri", "unavailable", 20503)
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.post("iniciar", sid=SID)
+        self.reload()
+        self.assertIsNone(self.phone.revoked_at)
+        self.create.side_effect = self._accept
+
+        self.post("iniciar", sid=OTHER_SID)
+        self.post("reanudar", sid="SM" + "e5" * 16)
+
+        self.assertEqual(self.create.call_count, 2)
+        self.assertEqual(self.sent_bodies()[-1], replies.START_RESUMED.default)
+        self.enqueue_turn.assert_not_called()
 
     def test_a_start_that_races_a_stop_is_applied_after_it(self) -> None:
         """The snapshot says not revoked; the STOP lands before the START is decided."""
@@ -1356,6 +1402,35 @@ class ConcurrentReplayTest(InboundMixin, TransactionTestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(sum(result is not None for result in results), 1)
         self.assertEqual(BenjiSmsDelivery.objects.count(), 1)
+
+    def test_two_stops_at_once_send_one_confirmation(self) -> None:
+        """The owed check and the claim are made under the phone's row lock."""
+        binding = self.bind()
+        # Revoked by a STOP whose confirmation was never sent: it is owed.
+        binding.phone.revoke(inbound_sid=SID)
+        sids = iter(["SM" + "c1" * 16, "SM" + "c2" * 16])
+        sids_lock = threading.Lock()
+
+        def confirm() -> bool:
+            with sids_lock:
+                inbound_sid = next(sids)
+            inbound = inbound_service.Inbound(sid=inbound_sid, sender=PHONE, body="alto", num_media=0)
+            return inbound_service.handle_inbound(inbound).replied
+
+        # Widen the window between the owed check and the claim, so without the lock
+        # both texts would find the confirmation owed.
+        manager_class = type(BenjiSmsDelivery.objects)
+        original_claim = manager_class.claim_fixed
+
+        def slow_claim(manager: Any, *args: Any, **kwargs: Any) -> Any:
+            time.sleep(0.3)
+            return original_claim(manager, *args, **kwargs)
+
+        with patch.object(manager_class, "claim_fixed", slow_claim):
+            results = self._race(confirm)
+
+        self.assertEqual(sorted(results), [False, True])
+        self.assertEqual(self.create.call_count, 1)
 
     def test_one_number_claims_one_reply_a_day(self) -> None:
         number_hash = phone_hash(PHONE)

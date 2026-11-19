@@ -1538,28 +1538,31 @@ class BenjiSmsPhone(models.Model):
         """
         return self.bindings.select_related("conversation", "white_label").order_by("-created_at", "-pk").first()
 
-    def stop_confirmation_owed(self) -> bool:
-        """Whether the number is revoked and no STOP confirmation has gone out since the
-        STOP that revoked it (MFB-2439).
+    def confirmation_owed(self, keyword: str) -> Optional["BenjiSmsKeywordReceipt"]:
+        """The STOP or START whose confirmation is still owed, or None (MFB-2439).
 
-        A confirmation can fail at Twilio, and the webhook still answers 200, so Twilio
-        never posts that STOP again. Without this, a person who texts STOP again
-        because they heard nothing would never get it: a second STOP changes nothing.
-        Only our wordings get our confirmation, so callers check that too.
+        Each change of consent gets exactly one confirmation from us, if it was made in
+        our wording (Twilio confirms its own keywords). It is owed while that change is
+        the latest one in force and no confirmation for this kind of keyword has been
+        claimed since it: sent, still on its way, or with an unknown outcome all count,
+        and a send that definitely failed leaves no row. So whichever text comes next
+        (a replay, or the person repeating STOP or START because they heard nothing)
+        sends it once, and nothing sends a second.
+
+        Known for a day: past that the receipt is purged and nothing is owed. The caller
+        holds the phone's row lock from this check to the claim, so two texts cannot
+        both find it owed.
         """
-        if self.revoked_at is None:
-            return False
         latest = self.keyword_receipts.filter(applied=True).order_by("-pk").first()
-        if latest is None or latest.keyword != BenjiSmsKeyword.STOP or latest.carrier:
-            # Unknown (its receipt was purged after a day), not revoked by a STOP, or
-            # revoked by Twilio's own keyword, which Twilio confirmed itself.
-            return False
-        stops_since = self.keyword_receipts.filter(keyword=BenjiSmsKeyword.STOP, pk__gte=latest.pk).values(
-            "inbound_sid"
-        )
-        return not BenjiSmsDelivery.objects.filter(
-            kind=BenjiSmsDeliveryKind.FIXED, inbound_sid__in=stops_since, outbound_sid__isnull=False
+        if latest is None or latest.keyword != keyword or latest.carrier:
+            return None
+        if (self.revoked_at is not None) != (keyword == BenjiSmsKeyword.STOP):
+            return None
+        same_kind = self.keyword_receipts.filter(keyword=keyword).values("inbound_sid")
+        confirmed = BenjiSmsDelivery.objects.filter(
+            kind=BenjiSmsDeliveryKind.FIXED, inbound_sid__in=same_kind, created_at__gte=latest.created_at
         ).exists()
+        return None if confirmed else latest
 
     def is_revoked_now(self) -> bool:
         """Re-read the revocation from the database, for a decision about to send or
@@ -1614,7 +1617,9 @@ class BenjiSmsPhone(models.Model):
         self.refresh_from_db(fields=["revoked_at", "revoked_conversation_id"])
         return applied
 
-    def clear_revocation(self, now: Optional[datetime] = None, inbound_sid: Optional[str] = None) -> tuple[bool, bool]:
+    def clear_revocation(
+        self, now: Optional[datetime] = None, inbound_sid: Optional[str] = None, *, carrier: bool = False
+    ) -> tuple[bool, bool]:
         """Record a START. Returns (cleared, resumed).
 
         Always clears a revocation: START is consent to be texted again, and the
@@ -1642,7 +1647,9 @@ class BenjiSmsPhone(models.Model):
                 resumed = seen.resumed and cleared
             elif phone.revoked_at is None:
                 cleared, resumed = False, False
-                BenjiSmsKeywordReceipt.objects.record(phone, inbound_sid, BenjiSmsKeyword.START, applied=False)
+                BenjiSmsKeywordReceipt.objects.record(
+                    phone, inbound_sid, BenjiSmsKeyword.START, applied=False, carrier=carrier
+                )
             else:
                 binding = phone.newest_binding()
                 resumed = (
@@ -1654,7 +1661,7 @@ class BenjiSmsPhone(models.Model):
                 cleared = True
                 BenjiSmsPhone.objects.filter(pk=self.pk).update(revoked_at=None, revoked_conversation_id=None)
                 BenjiSmsKeywordReceipt.objects.record(
-                    phone, inbound_sid, BenjiSmsKeyword.START, applied=True, resumed=resumed
+                    phone, inbound_sid, BenjiSmsKeyword.START, applied=True, resumed=resumed, carrier=carrier
                 )
         self.refresh_from_db(fields=["revoked_at", "revoked_conversation_id"])
         return cleared, resumed
