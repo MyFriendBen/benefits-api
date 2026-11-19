@@ -26,6 +26,7 @@ from screener.admin import (
     AssistantConversationAdmin,
     BenjiSmsBindingAdmin,
     BenjiSmsDeadLetterAdmin,
+    BenjiSmsKeywordReceiptAdmin,
     BenjiSmsDeliveryAdmin,
     BenjiSmsPhoneAdmin,
     BenjiSmsStrangerReplyAdmin,
@@ -394,6 +395,7 @@ class TestSmsAdminAccess(TestCase):
         (BenjiSmsDeliveryAdmin, BenjiSmsDelivery),
         (BenjiSmsStrangerReplyAdmin, BenjiSmsStrangerReply),
         (BenjiSmsDeadLetterAdmin, BenjiSmsDeadLetter),
+        (BenjiSmsKeywordReceiptAdmin, BenjiSmsKeywordReceipt),
     )
 
     def setUp(self) -> None:
@@ -406,12 +408,15 @@ class TestSmsAdminAccess(TestCase):
         )
         self.stranger = BenjiSmsStrangerReply.objects.create(phone_hash=OTHER_HASH)
         self.dead_letter = make_dead_letter(self.binding.conversation)
+        self.phone.revoke(inbound_sid=sid(9))
+        self.receipt = BenjiSmsKeywordReceipt.objects.get()
         self.rows = {
             BenjiSmsPhone: self.phone,
             BenjiSmsBinding: self.binding,
             BenjiSmsDelivery: self.delivery,
             BenjiSmsStrangerReply: self.stranger,
             BenjiSmsDeadLetter: self.dead_letter,
+            BenjiSmsKeywordReceipt: self.receipt,
         }
 
         self.staff = User.objects.create_user(email_or_cell="tenant-staff@example.com", password="pw")
@@ -501,6 +506,8 @@ class TestSmsAdminPagesRender(TestCase):
         )
         self.stranger = BenjiSmsStrangerReply.objects.create(phone_hash=OTHER_HASH)
         self.dead_letter = make_dead_letter(self.binding.conversation)
+        self.binding.phone.revoke(inbound_sid=sid(9))
+        self.receipt = BenjiSmsKeywordReceipt.objects.get()
         superuser = User.objects.create_user(email_or_cell="root@example.com", password="pw")
         superuser.is_staff = True
         superuser.is_superuser = True
@@ -514,6 +521,7 @@ class TestSmsAdminPagesRender(TestCase):
             "benjismsdelivery": self.delivery,
             "benjismsstrangerreply": self.stranger,
             "benjismsdeadletter": self.dead_letter,
+            "benjismskeywordreceipt": self.receipt,
         }
         for name, row in rows.items():
             base = f"/admin/screener/{name}/"
@@ -909,9 +917,9 @@ class TestRevokeAndStart(TestCase):
         self.phone.revoke(inbound_sid=stop)
         self.phone.clear_revocation(inbound_sid=start)
 
-        # Reports what the first post did, so a lost confirmation can be retried...
-        self.assertTrue(self.phone.revoke(inbound_sid=stop))
-        # ...but changes nothing.
+        # Changes nothing, and does not report the STOP as in force: a newer START
+        # turned texts back on, so its confirmation must not be retried.
+        self.assertFalse(self.phone.revoke(inbound_sid=stop))
         self.assertIsNone(BenjiSmsPhone.objects.get().revoked_at)
         self.assertEqual(self.statuses(), ("active", "active"))
 
@@ -921,10 +929,29 @@ class TestRevokeAndStart(TestCase):
         self.phone.clear_revocation(inbound_sid=start)
         self.phone.revoke(inbound_sid=stop)
 
-        self.assertEqual(self.phone.clear_revocation(inbound_sid=start), (True, True))
+        self.assertEqual(self.phone.clear_revocation(inbound_sid=start), (False, False))
 
         self.assertIsNotNone(BenjiSmsPhone.objects.get().revoked_at)
         self.assertEqual(self.statuses(), ("closed", "closed"))
+
+    def test_a_replay_reports_its_change_while_it_is_still_the_latest(self) -> None:
+        """So a confirmation the first post never sent can be retried."""
+        self.assertTrue(self.phone.revoke(inbound_sid=sid(5)))
+        self.assertTrue(self.phone.revoke(inbound_sid=sid(5)))
+        # A STOP that changed nothing since does not make the first one stale.
+        self.assertFalse(self.phone.revoke(inbound_sid=sid(6)))
+        self.assertTrue(self.phone.revoke(inbound_sid=sid(5)))
+
+        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
+        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
+
+    def test_a_replayed_start_is_not_reported_after_a_newer_start(self) -> None:
+        self.phone.revoke(inbound_sid=sid(5))
+        self.phone.clear_revocation(inbound_sid=sid(6))
+        self.phone.revoke(inbound_sid=sid(7))
+        self.phone.clear_revocation(inbound_sid=sid(8))
+
+        self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(6)), (False, False))
 
     def test_a_replay_from_any_depth_of_history_changes_nothing(self) -> None:
         """Every STOP and START is remembered, not just the latest of each."""
@@ -1170,6 +1197,52 @@ class TestRowLocks(TransactionTestCase):
 
         self.assertTrue(kept_alive)
         self.assertEqual(BenjiSmsBinding.objects.get().status, AssistantConversationStatus.ACTIVE)
+
+    def test_a_deletion_waits_for_a_keyword_being_recorded(self) -> None:
+        """Without the lock, the receipt lands after the cascade and the phone delete fails."""
+        make_binding(self.white_label, self.phone)
+
+        def receipt_in_flight() -> None:
+            BenjiSmsKeywordReceipt.objects.create(
+                phone_id=self.phone.pk, inbound_sid=sid(21), keyword="start", applied=False
+            )
+
+        deleted = self._hold_lock_then_run(
+            self.phone.pk, receipt_in_flight, lambda: self.phone.delete_with_conversations()
+        )
+
+        self.assertEqual(deleted, 1)
+        self.assertFalse(BenjiSmsPhone.objects.exists())
+        self.assertFalse(BenjiSmsKeywordReceipt.objects.exists())
+
+    def _hold_lock_then_run(self, phone_pk: object, in_lock: Callable[[], None], act: Callable[[], object]) -> object:
+        """Like _hold_lock_then, for a change that is not a plain update of the row."""
+        locked = threading.Event()
+        errors: list[BaseException] = []
+
+        def holder() -> None:
+            try:
+                with transaction.atomic():
+                    BenjiSmsPhone.objects.select_for_update().filter(pk=phone_pk).first()
+                    in_lock()
+                    locked.set()
+                    time.sleep(0.5)
+            except BaseException as exc:
+                errors.append(exc)
+                locked.set()
+            finally:
+                connection.close()
+
+        thread = threading.Thread(target=holder)
+        thread.start()
+        self.assertTrue(locked.wait(timeout=5))
+        try:
+            return act()
+        finally:
+            thread.join(timeout=10)
+            self.assertFalse(thread.is_alive())
+            if errors:
+                raise errors[0]
 
     def test_a_start_waits_for_a_stop_that_is_being_applied(self) -> None:
         make_binding(self.white_label, self.phone)

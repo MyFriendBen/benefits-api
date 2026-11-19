@@ -583,6 +583,19 @@ class StopTest(InboundMixin, TestCase):
 
         self.assertEqual(self.sent_bodies(), [replies.STOP.default])
 
+    def test_a_lost_stop_confirmation_is_not_sent_after_a_newer_start(self) -> None:
+        binding = self.bind()
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.post("alto", sid=SID)
+        self.post("iniciar", sid=OTHER_SID)
+
+        self.assert_acknowledged(self.post("alto", sid=SID))
+
+        binding.phone.refresh_from_db()
+        self.assertIsNone(binding.phone.revoked_at)
+        self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
+
     def test_a_replayed_second_stop_does_not_revoke_after_a_start(self) -> None:
         binding = self.bind()
         self.post("alto", sid=SID)
@@ -748,6 +761,31 @@ class RevokedTest(InboundMixin, TestCase):
 
         self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
 
+    def test_a_lost_start_confirmation_is_not_sent_after_a_newer_stop(self) -> None:
+        start, stop = SID, OTHER_SID
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.post("iniciar", sid=start)
+        self.post("alto", sid=stop)
+
+        self.assert_acknowledged(self.post("iniciar", sid=start))
+
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default])
+
+    def test_a_lost_start_confirmation_is_not_sent_after_a_newer_start(self) -> None:
+        start, stop, restart = SID, OTHER_SID, "SM" + "e5" * 16
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.post("iniciar", sid=start)
+        self.post("alto", sid=stop)
+        self.post("reanudar", sid=restart)
+
+        self.post("iniciar", sid=start)
+
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default, replies.START_RESUMED.default])
+
     def test_a_start_that_races_a_stop_is_applied_after_it(self) -> None:
         """The snapshot says not revoked; the STOP lands before the START is decided."""
         self.phone.clear_revocation()
@@ -819,6 +857,22 @@ class KeywordFromAnActiveNumberTest(InboundMixin, TestCase):
         self.assertIn(FRONTEND, self.sent_bodies()[0])
         self.assertEqual(BenjiSmsDelivery.objects.get().binding, binding)
         self.enqueue_turn.assert_not_called()
+
+    def test_a_stop_landing_mid_request_stops_the_help_reply(self) -> None:
+        self.bind()
+        original = BenjiSmsPhone.newest_binding
+
+        def stop_lands(self_phone: BenjiSmsPhone) -> Any:
+            found = original(self_phone)
+            BenjiSmsPhone.objects.get(pk=self_phone.pk).revoke()
+            return found
+
+        with patch.object(BenjiSmsPhone, "newest_binding", stop_lands):
+            with self.assertLogs(LOGGER, level="INFO") as logs:
+                self.assert_acknowledged(self.post("ayuda"))
+
+        self.assert_nothing_sent_or_queued()
+        self.assertIn("outcome=revoked", "\n".join(logs.output))
 
     def test_start_with_nothing_to_clear_is_ignored(self) -> None:
         self.bind()

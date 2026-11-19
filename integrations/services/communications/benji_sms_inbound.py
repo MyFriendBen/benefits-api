@@ -52,7 +52,8 @@ answer in time, and through the fallback URL after that.
   MessageSid in the same locked transaction (`BenjiSmsKeywordReceipt`), and a text with
   a receipt is not applied again: a replay of an older one cannot undo a newer one. The
   receipt says what the first post did, so a replay can still send a confirmation the
-  first post never got to; the fixed-reply claim stops a second one.
+  first post never got to, but only while that change is still the latest in force;
+  the fixed-reply claim stops a second one.
 - A replayed turn is queued again and absorbed by the worker, which sends the SID to
   ai-service as `client_message_id` (MFB-2440).
 
@@ -287,6 +288,9 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
         if cleared:
             replied = False
             if not keyword.carrier:
+                if phone.is_revoked_now():
+                    # A STOP landed since: no "Benji is back".
+                    return Result(Outcome.REVOKED)
                 reply = replies.START_RESUMED if resumed else replies.START_REENTRY
                 replied = _send_fixed(inbound, reply, newest, now, for_screen=True)
             return Result(Outcome.STARTED, replied)

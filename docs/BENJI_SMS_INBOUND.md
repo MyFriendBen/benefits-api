@@ -143,7 +143,9 @@ fallback URL after that.
   `MessageSid`, in the same locked transaction as any change. A text with a receipt is
   not applied again, so a replay of an older STOP or START can never undo a newer one.
   The receipt records what the first post did, so a replay still sends a STOP or START
-  confirmation the first post failed before sending; the fixed-reply claim stops a
+  confirmation the first post failed before sending, as long as that STOP or START is
+  still the latest change in force (never a "Benji is back" after a newer STOP, or a
+  stale "You won't get more texts" after a newer START); the fixed-reply claim stops a
   second one.
 - A replayed turn is queued again and the worker absorbs it (MFB-2440).
 
