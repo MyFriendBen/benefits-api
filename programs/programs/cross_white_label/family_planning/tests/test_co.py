@@ -8,11 +8,9 @@ Eligibility requirements:
   4. Member is not pregnant, is 12 or older, and is the head of household or their spouse
 
 Notes:
-  - The income limit is sized with `household_size + len(e.eligible_members)`, and
-    `eligible_members` holds EVERY member rather than only the eligible ones, so the
-    FPL lookup lands at roughly double the true household size. That is a known bug
-    tracked separately; the tests below deliberately pin the current behaviour so the
-    suite stays green, and are flagged where they do so.
+  - The income limit is sized with `household_size` alone. It was once sized with
+    `household_size + len(e.eligible_members)`, which counts every member and so
+    looked up the FPL at roughly double the true household size (MFB-1586).
   - The income limit is derived by the real `FederalPoveryLimit.get_limit`, not by a
     copy of it. `get_limit` is pure arithmetic over `as_dict()`, which reads the offline
     `_FPL_DEFAULTS` literal, so it needs neither the database nor the network — an
@@ -160,10 +158,8 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
     """
     Yearly income must be strictly below 265% FPL, excluding cash assistance.
 
-    The FPL size used is `household_size + len(e.eligible_members)`. `eligible_members`
-    contains every member, not just the eligible ones, so these boundaries are wider
-    than the program's real limits. That is a known bug tracked separately; the
-    assertions below pin current behaviour and must be updated when it is fixed.
+    The FPL size used is `household_size`, so a 1-person household is measured against
+    int(2.65 * 15,650) == 41,472.
     """
 
     def _run(self, household_size, household_income, member_count=1):
@@ -176,12 +172,11 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
         self.assertTrue(self._run(1, 10_000))
 
     def test_income_one_dollar_below_the_limit_is_eligible(self):
-        # known bug: size is 1 + 1 = 2, so int(2.65 * 21,150) == 56,047
-        self.assertTrue(self._run(1, 56_046))
+        self.assertTrue(self._run(1, 41_471))
 
     def test_income_exactly_at_the_limit_is_ineligible(self):
         # the comparison is strict `<`
-        self.assertFalse(self._run(1, 56_047))
+        self.assertFalse(self._run(1, 41_472))
 
     def test_zero_income_is_eligible(self):
         self.assertTrue(self._run(1, 0))
@@ -197,16 +192,16 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
             "yearly", ["all"], exclude=["cashAssistance", "cashAssistanceOther", "nurturingFutures"]
         )
 
-    def test_income_limit_is_sized_using_every_member_not_just_eligible_ones(self):
-        # Known bug. All three members are counted even though none of the
-        # MemberEligibility objects have been evaluated, so a 3-person household is
-        # measured against the 6-person FPL: int(2.65 * 43,150) == 114,347.
+    def test_income_limit_is_sized_by_household_size_not_member_count(self):
+        # a 3-person household is measured against the 3-person FPL:
+        # int(2.65 * 26,650) == 70,622, not the 6-person limit
         calc = make_calculator(household_size=3, household_income=100_000)
-        calc.household_eligible(eligibility_with_members(3))
-        calc.program.year.get_limit.assert_called_once_with(6)
+        e = eligibility_with_members(3)
+        calc.household_eligible(e)
+        calc.program.year.get_limit.assert_called_once_with(3)
+        self.assertFalse(e.eligible)
 
-    def test_ineligible_member_still_widens_the_income_limit(self):
-        # Known bug. Once fixed, only genuinely eligible members should count.
+    def test_member_eligibility_does_not_change_the_income_limit(self):
         calc = make_calculator(household_size=2, household_income=0)
         e = Eligibility()
         for _ in range(2):
@@ -214,7 +209,7 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
             me.eligible = False
             e.add_member_eligibility(me)
         calc.household_eligible(e)
-        calc.program.year.get_limit.assert_called_once_with(4)
+        calc.program.year.get_limit.assert_called_once_with(2)
 
 
 class TestFamilyPlanningServicesMemberEligibility(TestCase):
