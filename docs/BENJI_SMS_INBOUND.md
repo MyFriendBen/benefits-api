@@ -9,7 +9,8 @@ worker ([BENJI_SMS_WORKER.md](BENJI_SMS_WORKER.md)). It never calls the model.
 
 | Piece | Where |
 | --- | --- |
-| The view and the decision table | `screener/benji_sms_inbound.py` |
+| The view (signature, form fields, status code) | `screener/benji_sms_inbound.py` |
+| The decision table | `integrations/services/communications/benji_sms_inbound.py` |
 | Signature check | `integrations/services/communications/twilio_signature.py` |
 | STOP / HELP / START word lists | `integrations/services/communications/benji_sms_keywords.py` |
 | Fixed reply text | `integrations/services/communications/benji_sms_replies.py` |
@@ -24,12 +25,23 @@ environment. Nothing points at production until launch (MFB-2447).
 
 | Twilio setting | URL |
 | --- | --- |
-| A message comes in (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/#rc=2&rp=all` |
-| Primary handler fails (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/fallback/` |
+| A message comes in (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/#rc=2&rp=ct,rt,5xx` |
+| Primary handler fails (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/fallback/#rc=2&rp=ct,rt,5xx` |
 
-- `#rc=2&rp=all` is Twilio's connection override: retry twice, on any failure. Twilio's
-  default is one retry and only when it cannot connect. The fragment is not sent to us
-  and is not part of the signature.
+- `#rc=2&rp=ct,rt,5xx` is Twilio's connection override: retry twice when Twilio cannot
+  connect, times out, or gets a 5xx. Without it Twilio retries only a failed connection,
+  and goes straight to the fallback URL on a 5xx. A 4xx is left out on purpose: a 403
+  (bad signature) or 400 will not change on a retry. The fragment is not sent to us and
+  is not part of the signature. Twilio does not say whether it honours a fragment on the
+  fallback URL; it is harmless if it does not.
+- **Known gap: a queue outage longer than Twilio's retry window loses the text.** Twilio
+  caps all attempts at 15 seconds in total (`tt`, at most 15000 ms), so retries cannot
+  cover an outage of the broker. The webhook answers 503 when it cannot queue a turn or a
+  media deletion; once Twilio has given up, that text is not answered and, if it carried
+  a picture, its media stays at Twilio. Each case leaves a `Benji SMS inbound webhook
+  failed` ERROR log. Anything the text changed (a STOP, a START) is applied before the
+  queueing, so consent is never lost this way. A sweep of recent inbound media at Twilio
+  would close the media half; it belongs with the nightly sweep (MFB-2442).
 - **`BACKEND_DOMAIN` must be the public https origin written in those URLs**, exactly.
   The signature is checked against `BACKEND_DOMAIN` plus the request path, not against
   the `Host` header. If the two differ, every text is refused with a 403.
@@ -44,12 +56,12 @@ In order, first match wins.
 | # | The text is | What we do | Reply |
 | --- | --- | --- | --- |
 | 0 | Not signed by Twilio | 403, before any database read | none |
-| 1 | Carrying media, in any state | Queue deletion of the media at Twilio, then carry on | |
-| 2 | From something that is not a phone number | Nothing | none |
-| 3 | From an unknown number, and a keyword | Nothing | none |
+| 1 | From something that is not a phone number | Nothing | none |
+| 2 | From an unknown number, and our HELP word (`ayuda`) | | Stranger reply, once a day |
+| 3 | From an unknown number, and any other keyword | Nothing | none |
 | 4 | From an unknown number | | Stranger reply (English and Spanish), once a day |
 | 5 | STOP | Revoke the number, close its conversation | Ours, if the wording is ours |
-| 6 | START, from a revoked number | Clear the revocation; resume the conversation if it can | Ours, if the wording is ours |
+| 6 | START, from a revoked number | Clear the revocation; resume the conversation the STOP closed, if it can | Ours, if the wording is ours |
 | 7 | Anything else from a revoked number | Nothing | none |
 | 8 | HELP | Nothing | Ours, if the wording is ours |
 | 9 | START, from a number that is not revoked | Nothing ("yes" is an ordinary answer and carries on) | none |
@@ -60,9 +72,15 @@ In order, first match wins.
 | 14 | Carrying media | Record the inbound time | "Can't read pictures yet" |
 | 15 | Anything else | Record the inbound time, queue the turn | none (the worker replies) |
 
+Then, for every text carrying media, whatever happened above: queue the deletion of the
+media at Twilio. It comes last so that a broker outage cannot hold up a STOP.
+
 Every text is answered with `200` and empty TwiML, except a `403` for row 0, a `400` for
 a signed request with no `MessageSid`, and a `503` when a turn or a media deletion could
-not be queued, which makes Twilio post the text again.
+not be queued, which makes Twilio post the text again (see the known gap above).
+
+Rows 11 to 15 run with the conversation's binding row locked, so two texts arriving
+together cannot expire a conversation the other one has just kept alive.
 
 ### Who answers STOP, HELP and START
 
@@ -79,11 +97,18 @@ it, our confirmation fails with 21610 and is dropped, which is logged as a warni
 If the number's Messaging Service has Advanced Opt-Out on, Twilio sends `OptOutType`,
 and that settles it: Twilio handled the message.
 
-Only a whole message matches. "stop sending me to that website" goes to the model.
+Only a whole message matches. "stop sending me to that website" goes to the model, and
+so does a keyword followed by words in any other script ("stop 我的福利").
 
-START always clears the revocation. The conversation resumes only if its binding was
-closed (not expired), is inside the 90-day interval, and no other phone has since taken
-the screen. Otherwise the next text gets the re-entry reply.
+START always clears the revocation. The conversation resumes only if it is the one the
+STOP closed, is inside the 90-day interval, and no other phone has since taken the screen.
+Otherwise the next text gets the re-entry reply. A START that resumes the conversation
+counts as an inbound text, so the 90 days restart from it.
+
+A stranger (a number that never used the on-ramp) who texts our HELP word gets the
+stranger reply, which says who we are and how to stop; Twilio does not answer that
+wording. Our STOP and START words from a stranger get nothing: we never text a stranger
+unprompted, and there is nothing to restart.
 
 ### Once a day
 
@@ -91,17 +116,26 @@ The stranger, shared-phone and re-entry replies share one limit: a number gets o
 them a day, however often it texts. The memory is a `BenjiSmsStrangerReply` row, purged
 after a day. In Postgres, not the cache, so the limit holds when Redis is down.
 
-### A replayed webhook sends nothing new
+If the reply definitely did not go out for a reason that may pass (a gate refused it, or
+Twilio was unreachable, rate limiting or failing), the day's claim is given back, so the
+number's next text tries again. A refusal about the number itself (an invalid number, an
+opted-out one) keeps the claim: it would be refused again. An unknown outcome (Twilio
+may have accepted it) keeps it too.
+
+### A replayed webhook changes nothing new
 
 Twilio posts a text again when our answer does not reach it in time, and through the
-fallback URL after that. Each fixed reply first inserts its `BenjiSmsDelivery` row, and
-the database allows one fixed reply per inbound `MessageSid`
-(`benji_sms_delivery_one_fixed_per_inbound`), so a replay loses the insert and sends
-nothing. The state changes are all safe to repeat. A replayed turn is queued again and
-the worker absorbs it (MFB-2440).
+fallback URL after that.
 
-Known gap: a revoked number's "yes" clears the revocation, so a replay of that one text
-finds the number no longer revoked and queues "yes" as a turn.
+- Each fixed reply first inserts its `BenjiSmsDelivery` row, and the database allows one
+  fixed reply per inbound `MessageSid` (`benji_sms_delivery_one_fixed_per_inbound`), so a
+  replay loses the insert and sends nothing. It is claimed before the day's limit, so a
+  replay never spends the number's allowance.
+- A STOP or START records its `MessageSid` on the phone row (`revoked_by_sid`,
+  `cleared_by_sid`) in the same locked transaction as the change. A replay of an older
+  STOP or START therefore cannot undo a newer one, and a replay of the "yes" that cleared
+  a revocation is not then treated as a question.
+- A replayed turn is queued again and the worker absorbs it (MFB-2440).
 
 ## Fixed reply text
 
@@ -123,6 +157,12 @@ MFB-2444 adds the rows in all 18 languages. Before launch, no reply should be lo
   which is what the signature-failure alarm (MFB-2441) will count.
 - Media is deleted at Twilio for every text that carries any, whoever sent it.
 - Delivery rows for replies to a number with no binding are purged after a day.
+- The phone row keeps the `MessageSid` of its last STOP and last START, and the id of
+  the conversation the STOP closed. Like the delivery rows' SIDs, they resolve to the
+  number at Twilio; they go with the phone row in a deletion request.
+- Fixed replies ask Twilio for delivery status once the status callback route exists
+  (MFB-2441, `benji_sms.status_callback_url`). Until then they are sent without one, so
+  Twilio is never told to post to a URL that does not exist.
 
 ## Trying it locally
 
@@ -148,6 +188,7 @@ python manage.py fake_benji_sms_inbound hi --url http://localhost:8000/api/assis
 
 With `DEBUG` on, no text reaches Twilio: each send is refused and logged
 (`Benji SMS send refused: reason=debug`), and rows that depend on a send are not kept.
+Each text logs one `Benji SMS inbound: outcome=...` line at INFO.
 To see a turn queued, set `BENJI_SMS_OUTBOUND_ENABLED=true`, turn `benji_sms` on for the
 white label, and text from a number that has a binding. Until MFB-2440 lands, the queued
 turn is dead-lettered on purpose.

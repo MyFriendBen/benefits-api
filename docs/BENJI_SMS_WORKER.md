@@ -22,8 +22,10 @@ lands in MFB-2440.
 `screener.benji_sms_turn` answers one inbound text. `screener.benji_sms_delete_media`
 deletes the pictures of one inbound MMS at Twilio (MFB-2439): images are never kept, so
 the inbound webhook queues it for every text that carries media, whoever sent it. It is
-not behind the kill switch or the flag, it is safe to run twice, and a dead letter from it
-means pictures are still at Twilio. `screener.benji_sms_ping` is a probe that runs under
+not behind the kill switch or the flag, and it is safe to run twice. A dead letter from it
+means that job could not confirm the deletion: check the message's media at Twilio and
+delete any that remains. A replayed webhook queues a second deletion, which may already
+have done it. `screener.benji_sms_ping` is a probe that runs under
 the same policy so the check proves the path a job takes. The webhook that queues both
 jobs is described in [BENJI_SMS_INBOUND.md](BENJI_SMS_INBOUND.md).
 

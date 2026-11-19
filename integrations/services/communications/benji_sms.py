@@ -41,6 +41,7 @@ from typing import Optional
 
 import requests
 from django.conf import settings
+from django.urls import NoReverseMatch, reverse
 from twilio.base.exceptions import TwilioRestException
 
 from screener.models import WhiteLabel
@@ -51,6 +52,12 @@ logger = logging.getLogger(__name__)
 
 FLAG = "benji_sms"
 SWITCH = "BENJI_SMS_OUTBOUND_ENABLED"
+# The URL name of the status callback webhook (MFB-2441). Sends ask Twilio to report
+# delivery to it once the route exists (`status_callback_url`).
+STATUS_CALLBACK_URL_NAME = "benji-sms-status"
+# `BenjiSmsMediaError.cause` when Twilio credentials are missing: a setup fault that a
+# retry cannot fix.
+MEDIA_NOT_CONFIGURED = "not_configured"
 _TRUE_VALUES = frozenset({"true", "1", "yes", "on"})
 
 
@@ -86,7 +93,10 @@ class BenjiSmsMediaError(BenjiSmsError):
     @property
     def retryable(self) -> bool:
         """Twilio never answered, is overloaded or is failing: worth another attempt.
-        Any other answer (bad credentials, a refused request) will not change."""
+        Any other answer (bad credentials, a refused request) will not change, and
+        neither will missing credentials on our side."""
+        if self.cause == MEDIA_NOT_CONFIGURED:
+            return False
         return self.status is None or self.status == 429 or self.status >= 500
 
 
@@ -137,6 +147,21 @@ def channel_enabled(white_label: Optional[WhiteLabel]) -> bool:
     end to end and stops only at the send.
     """
     return outbound_enabled() and white_label is not None and white_label.has_feature(FLAG)
+
+
+def status_callback_url() -> Optional[str]:
+    """Where Twilio should report a Benji text's delivery status, or None.
+
+    None until the status callback route (MFB-2441) is registered under
+    STATUS_CALLBACK_URL_NAME, so Twilio is never told to post to a URL that does not
+    exist (each failed post would count as a webhook error). Once the route exists,
+    every send that passes this gets delivery status with no further change.
+    """
+    try:
+        path = reverse(STATUS_CALLBACK_URL_NAME)
+    except NoReverseMatch:
+        return None
+    return str(settings.BACKEND_DOMAIN).rstrip("/") + path
 
 
 def can_send_fixed_reply() -> bool:
@@ -224,7 +249,7 @@ def delete_inbound_media(message_sid: str) -> int:
         logger.warning("Benji SMS media deletion skipped: reason=debug")
         return 0
     if not (settings.TWILIO_SID and settings.TWILIO_TOKEN):
-        raise BenjiSmsMediaError(None, None, "not_configured")
+        raise BenjiSmsMediaError(None, None, MEDIA_NOT_CONFIGURED)
 
     deleted = 0
     try:

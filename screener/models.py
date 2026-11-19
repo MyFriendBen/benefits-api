@@ -1495,9 +1495,21 @@ class BenjiSmsPhone(models.Model):
 
     phone_hash = models.CharField(max_length=64)
     # Set by STOP, or by a revocation in any wording. Every send checks it, and the
-    # on-ramp refuses the phone while it is set. START clears it if the newest
-    # binding's conversation has not expired.
+    # on-ramp refuses the phone while it is set. START clears it (`clear_revocation`).
     revoked_at = models.DateTimeField(blank=True, null=True)
+    # --- consent changes, by the inbound text that made them (MFB-2439) ---
+    # The MessageSid of the STOP that set `revoked_at`, and of the START that last
+    # cleared it. Twilio posts a text again when our answer is slow or fails, so a
+    # replay of an older STOP or START must not undo a newer one: a consent change
+    # whose SID is already recorded here is not applied again. Twilio ids, like the
+    # delivery rows' SIDs: they resolve to the number at Twilio, and go with this row.
+    revoked_by_sid = models.CharField(max_length=34, blank=True, null=True)
+    cleared_by_sid = models.CharField(max_length=34, blank=True, null=True)
+    # The SMS conversation the STOP closed, if any. START resumes that one and no
+    # other, so it cannot reopen a conversation something else ended (an on-ramp from
+    # another screen or another phone). Not a foreign key: a deletion request deletes
+    # conversations with raw SQL (migration 0172), and a stale id here is harmless.
+    revoked_conversation_id = models.UUIDField(blank=True, null=True)
     # Shared-phone guard: while in the future, inbound texts get the fixed "linked to
     # more than one set of results" reply and no model turn, and the on-ramp opens no
     # binding. The nightly sweep clears marks past the window.
@@ -1520,50 +1532,76 @@ class BenjiSmsPhone(models.Model):
         """Whether the shared-phone mark is still in force."""
         return self.shared_until is not None and self.shared_until > (now or timezone.now())
 
-    def active_binding(self) -> Optional["BenjiSmsBinding"]:
-        """The binding inbound texts route to, or None. At most one exists (Meta)."""
-        return (
-            self.bindings.filter(status=AssistantConversationStatus.ACTIVE)
-            .select_related("conversation", "white_label")
-            .first()
-        )
-
     def newest_binding(self) -> Optional["BenjiSmsBinding"]:
-        """The most recent binding in any status, or None."""
+        """The most recent binding in any status, or None.
+
+        Also the only binding that can be active: a new on-ramp closes the previous
+        binding before opening its own, and START resumes only the binding its STOP
+        closed, which no newer one can follow while the number is revoked.
+        """
         return self.bindings.select_related("conversation", "white_label").order_by("-created_at", "-pk").first()
 
-    def revoke(self, now: Optional[datetime] = None) -> bool:
+    def revoke(self, now: Optional[datetime] = None, inbound_sid: Optional[str] = None) -> bool:
         """Record a STOP: revoke the number and close its active binding and conversation.
 
-        Returns True if this call revoked the number, False if it already was (a
-        replayed webhook, or a second STOP), so a caller confirms only once. The first
-        `revoked_at` is kept. Closes the binding either way: a revoked phone with an
-        active binding would keep routing texts to the model.
+        Returns True if this call revoked the number, False if nothing changed: the
+        number was already revoked (a second STOP), or `inbound_sid` is the STOP that
+        set the current revocation (a replayed webhook). A caller confirms only on
+        True. The first `revoked_at` is kept.
+
+        The phone row is locked for the change, so a STOP and a START from one number
+        that arrive together are applied one after the other.
         """
         now = now or timezone.now()
         with transaction.atomic():
-            revoked = BenjiSmsPhone.objects.filter(pk=self.pk, revoked_at__isnull=True).update(revoked_at=now)
-            for binding in self.bindings.filter(status=AssistantConversationStatus.ACTIVE):
+            phone = BenjiSmsPhone.objects.select_for_update().get(pk=self.pk)
+            if inbound_sid is not None and inbound_sid == phone.revoked_by_sid:
+                return False
+            active = list(phone.bindings.filter(status=AssistantConversationStatus.ACTIVE))
+            # A revoked phone with an active binding would keep routing texts to the
+            # model, so any active binding closes whether or not this call revoked.
+            for binding in active:
                 binding.end(AssistantConversationStatus.CLOSED)
-        self.refresh_from_db(fields=["revoked_at"])
-        return bool(revoked)
+            if phone.revoked_at is not None:
+                return False
+            BenjiSmsPhone.objects.filter(pk=self.pk).update(
+                revoked_at=now,
+                revoked_by_sid=inbound_sid,
+                revoked_conversation_id=active[0].conversation_id if active else None,
+            )
+        self.refresh_from_db(fields=["revoked_at", "revoked_by_sid", "revoked_conversation_id"])
+        return True
 
-    def clear_revocation(self, now: Optional[datetime] = None) -> tuple[bool, bool]:
+    def clear_revocation(self, now: Optional[datetime] = None, inbound_sid: Optional[str] = None) -> tuple[bool, bool]:
         """Record a START. Returns (cleared, resumed).
 
         Always clears the revocation: START is consent to be texted again, and the
         on-ramp refuses a revoked number, so a number left revoked could never come
-        back. The conversation resumes only if the newest binding can be reactivated
-        (`BenjiSmsBinding.reactivate`); otherwise the next text gets the re-entry reply.
-        `cleared` is False when the number was not revoked, and nothing is resumed.
+        back. The conversation resumes only if it is the one the STOP closed and that
+        binding can be reactivated (`BenjiSmsBinding.reactivate`); otherwise the next
+        text gets the re-entry reply.
+
+        `cleared` is False, and nothing changes, when the number was not revoked or
+        `inbound_sid` is the START that last cleared it (a replayed webhook, which must
+        not undo a newer STOP). The phone row is locked for the change, as in `revoke`.
         """
         with transaction.atomic():
-            cleared = BenjiSmsPhone.objects.filter(pk=self.pk, revoked_at__isnull=False).update(revoked_at=None)
-            if not cleared:
+            phone = BenjiSmsPhone.objects.select_for_update().get(pk=self.pk)
+            if inbound_sid is not None and inbound_sid == phone.cleared_by_sid:
                 return False, False
-            binding = self.newest_binding()
-            resumed = binding is not None and binding.reactivate(now)
-        self.revoked_at = None
+            if phone.revoked_at is None:
+                return False, False
+            binding = phone.newest_binding()
+            resumed = (
+                binding is not None
+                and phone.revoked_conversation_id is not None
+                and binding.conversation_id == phone.revoked_conversation_id
+                and binding.reactivate(now)
+            )
+            BenjiSmsPhone.objects.filter(pk=self.pk).update(
+                revoked_at=None, cleared_by_sid=inbound_sid, revoked_conversation_id=None
+            )
+        self.refresh_from_db(fields=["revoked_at", "cleared_by_sid", "revoked_conversation_id"])
         return True, resumed
 
     def delete_with_conversations(self) -> int:
@@ -1635,7 +1673,7 @@ class BenjiSmsBinding(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now)
     # What expiry is measured from, falling back to created_at. NULL until the first
-    # reply after the on-ramp text.
+    # reply after the on-ramp text. A START that resumes the conversation counts.
     last_inbound_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -1697,11 +1735,31 @@ class BenjiSmsBinding(models.Model):
         last = self.last_inbound_at or self.created_at
         return (now or timezone.now()) - last > BENJI_SMS_QUIET_INTERVAL
 
-    def touch_inbound(self, now: Optional[datetime] = None) -> None:
-        """Record an inbound text: what expiry is measured from."""
+    def record_inbound(self, now: Optional[datetime] = None, *, touch: bool = True) -> bool:
+        """Route one inbound text through this binding. True if it is still active.
+
+        Expires the binding and its conversation if the quiet interval has passed
+        (returns False), and otherwise records the text as what expiry is measured
+        from, when `touch`. Returns False, changing nothing, if the binding has already
+        ended (a STOP or an expiry that landed first).
+
+        The row is locked from the quiet check to the write, so two texts arriving
+        together cannot expire a conversation the other one has just kept alive.
+        """
         now = now or timezone.now()
-        BenjiSmsBinding.objects.filter(pk=self.pk).update(last_inbound_at=now)
-        self.last_inbound_at = now
+        with transaction.atomic():
+            locked = BenjiSmsBinding.objects.select_for_update().filter(pk=self.pk).first()
+            if locked is None or locked.status != AssistantConversationStatus.ACTIVE:
+                self.status = locked.status if locked is not None else self.status
+                return False
+            if locked.is_quiet(now):
+                locked.end(AssistantConversationStatus.EXPIRED)
+                self.status = AssistantConversationStatus.EXPIRED
+                return False
+            if touch:
+                BenjiSmsBinding.objects.filter(pk=self.pk).update(last_inbound_at=now)
+                self.last_inbound_at = now
+        return True
 
     def reactivate(self, now: Optional[datetime] = None) -> bool:
         """Resume a closed binding and its conversation after START. True if resumed.
@@ -1711,8 +1769,13 @@ class BenjiSmsBinding(models.Model):
         the screen already has another active SMS conversation (another phone on-ramped
         it since), or the phone has another active binding. Nothing changes then.
 
+        The START that resumes it counts as an inbound text, so the quiet interval
+        restarts from it: a conversation resumed on its 89th quiet day does not expire
+        on the next text.
+
         The mirror of `end`: the two statuses move together or not at all.
         """
+        now = now or timezone.now()
         if self.status != AssistantConversationStatus.CLOSED or self.is_quiet(now):
             return False
         active = AssistantConversationStatus.ACTIVE
@@ -1721,12 +1784,16 @@ class BenjiSmsBinding(models.Model):
             # Its own savepoint, so a refused constraint leaves the caller's
             # transaction usable.
             with transaction.atomic():
-                if not BenjiSmsBinding.objects.filter(pk=self.pk, status=closed).update(status=active):
+                resumed = BenjiSmsBinding.objects.filter(pk=self.pk, status=closed).update(
+                    status=active, last_inbound_at=now
+                )
+                if not resumed:
                     return False
                 AssistantConversation.objects.filter(pk=self.conversation_id, status=closed).update(status=active)
         except IntegrityError:
             return False
         self.status = active
+        self.last_inbound_at = now
         return True
 
 
@@ -1910,6 +1977,17 @@ class BenjiSmsStrangerReplyManager(models.Manager):
         except IntegrityError:
             return False
         return True
+
+    def release(self, phone_hash: str, claimed_at: datetime) -> None:
+        """Give back the claim `claim(phone_hash, claimed_at)` won, when its reply
+        definitely did not go out for a reason that may pass, so the number's next text
+        can try again today.
+
+        Matches the exact `replied_at`, so it never removes a claim another text made
+        since. Deletes rather than restoring the old time: a row moved forward was
+        already more than a day old, which is the same as no row.
+        """
+        self.filter(phone_hash=phone_hash, replied_at=claimed_at).delete()
 
     def purge_expired(self, now: Optional[datetime] = None) -> tuple[int, int]:
         """Delete stranger rows, and delivery rows with no binding, older than a day.

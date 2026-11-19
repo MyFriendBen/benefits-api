@@ -799,6 +799,18 @@ class TestMediaDeletionJob(TestCase):
             "integrations.services.communications.benji_sms.BenjiSmsMediaError",
         )
 
+    def test_missing_credentials_fail_at_once_without_a_retry(self) -> None:
+        self.delete.side_effect = BenjiSmsMediaError(None, None, "not_configured")
+
+        with self.assertLogs(TASKS_LOGGER, level="ERROR"):
+            result = enqueue_media_deletion(MMS_SID)
+
+        self.assertTrue(result.failed())
+        self.assertEqual(self.delete.call_count, 1)
+        dead_letter = BenjiSmsDeadLetter.objects.get()
+        self.assertEqual(dead_letter.attempts, 1)
+        self.assertEqual(dead_letter.error_type, "integrations.services.communications.benji_sms.BenjiSmsMediaError")
+
     def test_a_strangers_picture_leaves_no_sid_in_the_dead_letter(self) -> None:
         """No conversation to cascade with, so the SID is not kept."""
         self.delete.side_effect = BenjiSmsMediaError(401, 20003)

@@ -12,6 +12,7 @@ import requests
 from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from django.urls import path
 from twilio.base.exceptions import TwilioRestException
 
 from integrations.services.communications import benji_sms
@@ -292,7 +293,9 @@ class DeleteInboundMediaTest(TestCase):
     def test_without_credentials_it_fails_loudly_rather_than_skip(self) -> None:
         with override_settings(TWILIO_TOKEN=""), self.assertRaises(benji_sms.BenjiSmsMediaError) as ctx:
             benji_sms.delete_inbound_media(MEDIA_SID)
-        self.assertEqual(ctx.exception.cause, "not_configured")
+        self.assertEqual(ctx.exception.cause, benji_sms.MEDIA_NOT_CONFIGURED)
+        # A retry cannot fix missing credentials.
+        self.assertFalse(ctx.exception.retryable)
         self.twilio.assert_not_called()
 
     def test_a_twilio_refusal_carries_codes_but_never_the_sid(self) -> None:
@@ -322,3 +325,19 @@ class DeleteInboundMediaTest(TestCase):
         self.assertTrue(ctx.exception.retryable)
         self.assertEqual(ctx.exception.cause, "ReadTimeout")
         self.assertNotIn(MEDIA_SID, str(ctx.exception))
+
+
+def _status_stub(request: object) -> None:
+    return None
+
+
+urlpatterns = [path("sms/status/", _status_stub, name=benji_sms.STATUS_CALLBACK_URL_NAME)]
+
+
+class StatusCallbackUrlTest(TestCase):
+    def test_none_until_the_route_exists(self) -> None:
+        self.assertIsNone(benji_sms.status_callback_url())
+
+    @override_settings(ROOT_URLCONF=__name__, BACKEND_DOMAIN="https://api.example.test/")
+    def test_the_public_url_once_it_does(self) -> None:
+        self.assertEqual(benji_sms.status_callback_url(), "https://api.example.test/sms/status/")

@@ -64,6 +64,11 @@ class ClassifyTest(SimpleTestCase):
             "I need help",
             "when does it start",
             "alto ahi",
+            "help 申请福利",
+            "stop 我的福利",
+            "Stop отправлять",
+            "yes 谢谢",
+            "ayuda 도와주세요",
             "what is snap",
             "",
             "   ",
@@ -71,6 +76,18 @@ class ClassifyTest(SimpleTestCase):
         ]:
             with self.subTest(body=body):
                 self.assertIsNone(classify(body))
+
+    def test_emoji_and_symbols_around_a_keyword_still_match(self) -> None:
+        for body in ["stop 🙏", "alto 🙏🙏", "ＳＴＯＰ", "stop_", "--alto--"]:
+            with self.subTest(body=body):
+                match = classify(body)
+                assert match is not None
+                self.assertEqual((match.keyword, match.carrier), (Keyword.STOP, False))
+
+    def test_letters_in_every_script_are_kept(self) -> None:
+        self.assertEqual(_normalize("Stop отправлять!"), "stop отправлять")
+        self.assertEqual(_normalize("help 申请福利"), "help 申请福利")
+        self.assertEqual(_normalize("¿Información?"), "informacion")
 
     def test_none_is_not_a_keyword(self) -> None:
         self.assertIsNone(classify(None))

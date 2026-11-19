@@ -21,7 +21,7 @@ from typing import Optional
 
 from django.conf import settings
 
-from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
+from translations.models import Translation
 
 logger = logging.getLogger(__name__)
 
@@ -72,26 +72,24 @@ PICTURE = FixedReply(
 )
 
 
-def _translated(label: str, locale: Optional[str]) -> str:
-    """The label's text in `locale`, else in English, else ""."""
+def _label_text(label: str, locale: Optional[str]) -> str:
+    """The label's text in `locale`, else in English, else "".
+
+    The same lookup Benji's web context uses (`screener.assistant._translated`): rows
+    for other languages start blank or as a placeholder until translated, and neither
+    is something to text a person. Not truncated; whitespace runs become one space.
+    """
+    # Imported here: screener.assistant pulls in the programs stack, which this module
+    # does not otherwise need at import time.
+    from screener.assistant import _translated
+
     translation = Translation.objects.filter(label=label).first()
-    if translation is None:
-        return ""
-    for language_code in (str(locale or "").lower(), settings.LANGUAGE_CODE):
-        if not language_code:
-            continue
-        row = translation.get_lang(language_code)
-        text = (getattr(row, "text", "") or "").strip()
-        # Rows for other languages are created blank or as a placeholder until they are
-        # translated; neither is something to text a person.
-        if text and text != BLANK_TRANSLATION_PLACEHOLDER:
-            return text
-    return ""
+    return _translated(translation, str(locale or "").lower() or None, max_len=None)
 
 
 def reply_text(reply: FixedReply, locale: Optional[str] = None) -> str:
     """The text to send for a fixed reply, in `locale` when a translation exists."""
-    text = _translated(reply.label, locale)
+    text = _label_text(reply.label, locale)
     if not text:
         # The label only: no number, body or hash is in reach here.
         logger.warning("Benji SMS fixed reply %s has no translation; using the in-code default.", reply.label)

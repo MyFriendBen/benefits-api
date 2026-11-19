@@ -361,6 +361,11 @@ if config("SENTRY_DSN", None) is not None:
 
 django_heroku.settings(locals())
 
+# Benji SMS inbound webhook outcomes (MFB-2439): one INFO line per text, the only trace
+# of a decision that sends nothing. The root logger has no handler, so without this only
+# WARNING and above would reach the logs (through Python's last-resort handler).
+LOGGING["loggers"]["screener.benji_sms_inbound"] = {"handlers": ["console"], "level": "INFO"}
+
 # Cache Configuration
 # Uses Redis in production (REDIS_URL is set automatically by the Heroku Redis add-on).
 # Falls back to in-memory cache for local development when REDIS_URL is not set.

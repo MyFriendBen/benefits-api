@@ -1,10 +1,11 @@
 """The Benji SMS inbound webhook (MFB-2439).
 
 What these pin: a request Twilio did not sign is refused before anything is read from
-the database; every row of the decision table in screener/benji_sms_inbound.py does
-what it says; a replayed webhook sends nothing new; a text that cannot be queued gets a
-503 so Twilio posts it again; and nothing logged carries the number, its hash or the
-message.
+the database; every row of the decision table in
+integrations/services/communications/benji_sms_inbound.py does what it says; a replayed
+webhook changes nothing new, consent included; a text that cannot be queued gets a 503
+so Twilio posts it again, after any STOP in it has been applied; and nothing logged
+carries the number, its hash or the message.
 
 Requests are built and signed by the fake-inbound command's own helpers, so the command
 and the view cannot drift apart.
@@ -19,12 +20,15 @@ from urllib.parse import urlencode
 import requests
 from twilio.base.exceptions import TwilioRestException
 from django.db import connection
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.test import TestCase, TransactionTestCase, override_settings
+from django.urls import path
 from django.utils import timezone
 
 from integrations.management.commands.fake_benji_sms_inbound import build_params, sign
+from benefits.urls import urlpatterns as project_urlpatterns
 from integrations.services.communications import benji_sms
+from integrations.services.communications import benji_sms_inbound as inbound_service
 from integrations.services.communications import benji_sms_replies as replies
 from integrations.services.communications.benji_sms_hash import phone_hash
 from screener import benji_sms_inbound
@@ -53,6 +57,17 @@ OUR_NUMBER = "+15555550199"
 SID = "SM" + "a1" * 16
 OTHER_SID = "SM" + "b2" * 16
 LOGGER = "screener.benji_sms_inbound"
+SERVICE_LOGGER = "integrations.services.communications.benji_sms_inbound"
+STATUS_PATH = "/api/assistant/sms/status/"
+
+
+def _status_callback_stub(request: HttpRequest) -> HttpResponse:
+    return HttpResponse()
+
+
+# The project's routes plus a stand-in for the status callback route (MFB-2441), for
+# the test that shows sends ask for delivery status once that route exists.
+urlpatterns = [*project_urlpatterns, path(STATUS_PATH.lstrip("/"), _status_callback_stub, name="benji-sms-status")]
 
 SETTINGS: dict[str, Any] = {
     "DEBUG": False,
@@ -78,7 +93,7 @@ class InboundMixin:
         self.create.side_effect = self._accept
 
         for name in ("enqueue_turn", "enqueue_media_deletion"):
-            queue_patch = patch.object(benji_sms_inbound, name)
+            queue_patch = patch.object(inbound_service, name)
             setattr(self, name, queue_patch.start())
             self.addCleanup(queue_patch.stop)  # type: ignore[attr-defined]
 
@@ -257,13 +272,44 @@ class StrangerTest(InboundMixin, TestCase):
         self.assertEqual(BenjiSmsStrangerReply.objects.count(), 1)
 
     def test_a_keyword_from_a_stranger_gets_nothing(self) -> None:
-        """Twilio answered its own keywords, and there is no row to revoke."""
-        for index, body in enumerate(["STOP", "help", "START", "alto", "ayuda"]):
+        """Twilio answered its own keywords, and our STOP and START words have no row to change."""
+        for index, body in enumerate(["STOP", "help", "START", "alto", "iniciar", "yes"]):
             with self.subTest(body=body):
                 self.assert_acknowledged(self.post(body, sid=f"SM{index:032x}"))
         self.assert_nothing_sent_or_queued()
         self.assertFalse(BenjiSmsStrangerReply.objects.exists())
         self.assertFalse(BenjiSmsPhone.objects.exists())
+
+    def test_our_help_word_from_a_stranger_gets_the_stranger_reply(self) -> None:
+        """Twilio does not answer "ayuda", and the stranger reply is the help we have."""
+        self.assert_acknowledged(self.post("¡Ayuda!"))
+        self.assert_acknowledged(self.post("ayuda", sid=OTHER_SID))
+
+        self.assertEqual(self.create.call_count, 1)
+        self.assertIn("Responda STOP", self.sent_bodies()[0])
+        self.assertFalse(BenjiSmsPhone.objects.exists())
+
+    def test_a_replay_a_day_later_does_not_spend_the_new_days_reply(self) -> None:
+        """The inbound's fixed reply is claimed before the day's."""
+        self.post()
+        BenjiSmsStrangerReply.objects.update(replied_at=timezone.now() - timedelta(hours=25))
+
+        self.post()
+        self.assertEqual(self.create.call_count, 1)
+
+        self.post("hello again", sid=OTHER_SID)
+        self.assertEqual(self.create.call_count, 2)
+
+    def test_a_failed_text_lookup_leaves_no_claim_so_the_replay_replies(self) -> None:
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                response = self.post()
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(BenjiSmsDelivery.objects.exists())
+        self.assertFalse(BenjiSmsStrangerReply.objects.exists())
+
+        self.assert_acknowledged(self.post())
+        self.create.assert_called_once()
 
     def test_with_the_kill_switch_off_nothing_is_sent_and_the_day_is_not_spent(self) -> None:
         with override_settings(BENJI_SMS_OUTBOUND_ENABLED=""):
@@ -286,7 +332,7 @@ class SendFailureTest(InboundMixin, TestCase):
     def test_a_refused_send_is_logged_by_code_and_still_acknowledged(self) -> None:
         self.create.side_effect = TwilioRestException(400, "uri", f"The number {PHONE} is invalid", 21211)
 
-        with self.assertLogs(LOGGER, level="ERROR") as logs:
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR") as logs:
             self.assert_acknowledged(self.post())
 
         self.assertIn("code=21211", logs.output[0])
@@ -296,23 +342,78 @@ class SendFailureTest(InboundMixin, TestCase):
     def test_a_send_to_an_opted_out_number_is_a_warning_not_an_alarm(self) -> None:
         self.create.side_effect = TwilioRestException(400, "uri", "unsubscribed", 21610)
 
-        with self.assertLogs(LOGGER, level="WARNING") as logs:
+        with self.assertLogs(SERVICE_LOGGER, level="WARNING") as logs:
             self.assert_acknowledged(self.post())
 
         self.assertEqual({record.levelname for record in logs.records}, {"WARNING"})
         self.assertIn("code=21610", logs.output[0])
 
-    def test_an_unknown_delivery_keeps_its_row_so_a_replay_does_not_resend(self) -> None:
-        self.create.side_effect = requests.ReadTimeout("twilio")
-
-        with self.assertLogs(LOGGER, level="ERROR"):
-            self.assert_acknowledged(self.post())
-        delivery = BenjiSmsDelivery.objects.get()
-        self.assertIsNone(delivery.outbound_sid)
+    def test_a_refusal_that_will_not_pass_keeps_the_days_claim(self) -> None:
+        """The same number would be refused again: one attempt a day."""
+        self.create.side_effect = TwilioRestException(400, "uri", "invalid", 21211)
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.post()
 
         self.create.side_effect = self._accept
-        self.post()
+        self.post("hello?", sid=OTHER_SID)
+
         self.assertEqual(self.create.call_count, 1)
+        self.assertEqual(BenjiSmsStrangerReply.objects.count(), 1)
+
+    def test_a_refusal_that_may_pass_gives_the_days_claim_back(self) -> None:
+        for index, failure in enumerate(
+            [
+                TwilioRestException(500, "uri", "internal", 20500),
+                TwilioRestException(429, "uri", "too many", 20429),
+                requests.ConnectTimeout("twilio"),
+            ]
+        ):
+            with self.subTest(failure=type(failure).__name__):
+                self.create.reset_mock()
+                self.create.side_effect = failure
+                with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+                    self.post(sid=f"SM{index:031x}a")
+                self.assertFalse(BenjiSmsStrangerReply.objects.exists())
+
+                self.create.side_effect = self._accept
+                self.post("hello?", sid=f"SM{index:031x}b")
+                self.assertEqual(self.create.call_count, 2)
+                BenjiSmsStrangerReply.objects.all().delete()
+
+    def test_an_unknown_delivery_keeps_its_row_so_a_replay_does_not_resend(self) -> None:
+        """A bound number's HELP, so no daily claim stands between the replay and the row."""
+        binding = self.bind()
+        self.create.side_effect = requests.ReadTimeout("twilio")
+
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.assert_acknowledged(self.post("¡Ayuda!"))
+        delivery = BenjiSmsDelivery.objects.get()
+        self.assertIsNone(delivery.outbound_sid)
+        self.assertEqual(delivery.binding, binding)
+        self.assertFalse(BenjiSmsStrangerReply.objects.exists())
+
+        self.create.side_effect = self._accept
+        self.post("¡Ayuda!")
+        self.assertEqual(self.create.call_count, 1)
+        self.assertEqual(BenjiSmsDelivery.objects.count(), 1)
+
+    def test_an_unknown_daily_delivery_keeps_the_days_claim(self) -> None:
+        self.create.side_effect = requests.ReadTimeout("twilio")
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.post()
+
+        self.create.side_effect = self._accept
+        self.post("hello?", sid=OTHER_SID)
+        self.assertEqual(self.create.call_count, 1)
+
+    def test_no_status_callback_until_its_route_exists(self) -> None:
+        self.post()
+        self.assertNotIn("status_callback", self.create.call_args.kwargs)
+
+    @override_settings(ROOT_URLCONF=__name__)
+    def test_sends_ask_for_delivery_status_once_the_callback_route_exists(self) -> None:
+        self.post()
+        self.assertEqual(self.create.call_args.kwargs["status_callback"], ORIGIN + STATUS_PATH)
 
 
 @override_settings(**SETTINGS)
@@ -420,11 +521,43 @@ class StopTest(InboundMixin, TestCase):
     def test_a_sentence_containing_stop_is_a_question(self) -> None:
         binding = self.bind()
 
-        self.post("stop sending me to that website")
+        for index, body in enumerate(["stop sending me to that website", "stop 我的福利", "Stop отправлять"]):
+            with self.subTest(body=body):
+                self.post(body, sid=f"SM{index:032x}")
 
         binding.phone.refresh_from_db()
         self.assertIsNone(binding.phone.revoked_at)
-        self.enqueue_turn.assert_called_once()
+        self.assertEqual(self.enqueue_turn.call_count, 3)
+
+    def test_a_stop_with_a_picture_revokes_even_when_the_deletion_cannot_be_queued(self) -> None:
+        """The state change comes first; the 503 still has Twilio post again for the deletion."""
+        binding = self.bind()
+        self.enqueue_media_deletion.side_effect = BrokerNotConfigured("no broker")
+
+        with self.assertLogs(LOGGER, level="ERROR"):
+            response = self.post("alto", media=1)
+
+        self.assertEqual(response.status_code, 503)
+        self.assert_revoked(binding)
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default])
+
+        self.enqueue_media_deletion.side_effect = None
+        self.assert_acknowledged(self.post("alto", media=1))
+        self.enqueue_media_deletion.assert_called_with(SID, binding.conversation_id)
+        self.assertEqual(self.create.call_count, 1)
+
+    def test_a_replayed_stop_does_not_undo_a_newer_start(self) -> None:
+        binding = self.bind()
+        stop_sid, start_sid = SID, OTHER_SID
+        self.post("STOP", sid=stop_sid)
+        self.post("START", sid=start_sid)
+
+        self.post("STOP", sid=stop_sid)
+
+        binding.phone.refresh_from_db()
+        binding.refresh_from_db()
+        self.assertIsNone(binding.phone.revoked_at)
+        self.assertEqual(binding.status, AssistantConversationStatus.ACTIVE)
 
 
 @override_settings(**SETTINGS)
@@ -477,6 +610,21 @@ class RevokedTest(InboundMixin, TestCase):
         self.assertIsNone(self.phone.revoked_at)
         self.assert_nothing_sent_or_queued()
 
+    def test_a_replayed_yes_is_not_then_a_question(self) -> None:
+        """Once the yes has cleared the revocation, its replay is not queued as a turn."""
+        self.post("yes")
+        self.post("yes")
+
+        self.reload()
+        self.assertIsNone(self.phone.revoked_at)
+        self.assert_nothing_sent_or_queued()
+
+    def test_a_fresh_yes_after_start_is_an_ordinary_answer(self) -> None:
+        self.post("START")
+        self.post("yes", sid=OTHER_SID)
+
+        self.enqueue_turn.assert_called_once_with(self.binding.conversation_id, OTHER_SID)
+
     def test_start_always_clears_but_an_expired_conversation_stays_expired(self) -> None:
         """Left revoked, the number could never on-ramp again."""
         BenjiSmsBinding.objects.update(created_at=timezone.now() - BENJI_SMS_QUIET_INTERVAL - timedelta(days=1))
@@ -509,6 +657,55 @@ class RevokedTest(InboundMixin, TestCase):
 
         self.assertEqual(self.create.call_count, 1)
         self.enqueue_turn.assert_not_called()
+
+    def test_a_replayed_start_does_not_undo_a_newer_stop(self) -> None:
+        """iniciar, then alto, then Twilio posts the iniciar again: the alto stands."""
+        start_sid, stop_sid = SID, OTHER_SID
+        self.post("iniciar", sid=start_sid)
+        self.post("alto", sid=stop_sid)
+
+        self.post("iniciar", sid=start_sid)
+
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+        self.assertEqual(self.binding.status, AssistantConversationStatus.CLOSED)
+        self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default, replies.STOP.default])
+
+    def test_a_replayed_carrier_start_does_not_undo_a_newer_stop(self) -> None:
+        """Carrier keywords send nothing, so no delivery row could have caught this."""
+        self.post("START", sid=SID)
+        self.post("STOP", sid=OTHER_SID)
+
+        self.post("START", sid=SID)
+
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+        self.assert_nothing_sent_or_queued()
+
+    def test_a_resuming_start_restarts_the_quiet_interval(self) -> None:
+        """Resumed on its last quiet day, the conversation does not expire on the next text."""
+        almost = timezone.now() - BENJI_SMS_QUIET_INTERVAL + timedelta(hours=1)
+        BenjiSmsBinding.objects.update(last_inbound_at=almost)
+
+        self.post("START")
+        with patch.object(inbound_service.timezone, "now", return_value=timezone.now() + timedelta(hours=2)):
+            self.post("what is snap", sid=OTHER_SID)
+
+        self.enqueue_turn.assert_called_once_with(self.binding.conversation_id, OTHER_SID)
+        self.reload()
+        self.assertEqual(self.binding.status, AssistantConversationStatus.ACTIVE)
+
+    def test_start_does_not_resume_a_conversation_the_stop_did_not_close(self) -> None:
+        """Only the conversation the STOP ended comes back: not one an on-ramp superseded."""
+        self.phone.clear_revocation()
+        self.binding.end(AssistantConversationStatus.CLOSED)
+        self.phone.revoke()
+
+        self.post("START")
+
+        self.reload()
+        self.assertIsNone(self.phone.revoked_at)
+        self.assertEqual(self.binding.status, AssistantConversationStatus.CLOSED)
 
 
 @override_settings(**SETTINGS)
@@ -687,6 +884,21 @@ class TurnTest(InboundMixin, TestCase):
 
         self.enqueue_turn.assert_called_once_with(binding.conversation_id, SID)
 
+    def test_a_text_racing_a_stop_from_the_same_number_is_not_answered(self) -> None:
+        """The STOP closed the binding between the routing read and the locked write."""
+        binding = self.bind()
+        original = BenjiSmsBinding.record_inbound
+
+        def stop_lands_first(self_binding: BenjiSmsBinding, *args: Any, **kwargs: Any) -> bool:
+            binding.phone.revoke()
+            return original(self_binding, *args, **kwargs)
+
+        with patch.object(BenjiSmsBinding, "record_inbound", stop_lands_first):
+            self.assert_acknowledged(self.post())
+
+        self.assert_nothing_sent_or_queued()
+        self.assertFalse(BenjiSmsStrangerReply.objects.exists())
+
     def test_an_empty_text_is_not_a_turn(self) -> None:
         self.bind()
 
@@ -750,14 +962,20 @@ class PictureTest(InboundMixin, TestCase):
 
         self.enqueue_media_deletion.assert_called_once_with(SID, None)
 
-    def test_a_deletion_that_cannot_be_queued_is_a_503(self) -> None:
+    def test_a_deletion_that_cannot_be_queued_is_a_503_and_the_replay_only_retries_it(self) -> None:
         self.enqueue_media_deletion.side_effect = BrokerNotConfigured("no broker")
 
         with self.assertLogs(LOGGER, level="ERROR"):
             response = self.post("", media=1)
 
         self.assertEqual(response.status_code, 503)
-        self.create.assert_not_called()
+        # The text was handled before the deletion failed: the stranger got the reply.
+        self.create.assert_called_once()
+
+        self.enqueue_media_deletion.side_effect = None
+        self.assert_acknowledged(self.post("", media=1))
+        self.create.assert_called_once()
+        self.assertEqual(self.enqueue_media_deletion.call_count, 2)
 
 
 @override_settings(**SETTINGS)
@@ -818,13 +1036,22 @@ class ConcurrentReplayTest(InboundMixin, TransactionTestCase):
     """Two posts of one text at once: the database lets exactly one reply out."""
 
     def _race(self, claim: Any) -> list[Any]:
+        """Run `claim` in two threads released together. Fails the test, rather than
+        returning partial results, if either thread raised or has not finished."""
         barrier = threading.Barrier(2)
         results: list[Any] = []
+        errors: list[BaseException] = []
 
         def run() -> None:
             try:
+                # Bound any lock wait, so a stuck claim fails here instead of outliving
+                # the test while holding a connection.
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '5s'")
                 barrier.wait(timeout=5)
                 results.append(claim())
+            except BaseException as exc:
+                errors.append(exc)
             finally:
                 connection.close()
 
@@ -832,7 +1059,10 @@ class ConcurrentReplayTest(InboundMixin, TransactionTestCase):
         for thread in threads:
             thread.start()
         for thread in threads:
-            thread.join(timeout=10)
+            thread.join(timeout=15)
+        self.assertFalse([thread for thread in threads if thread.is_alive()], "a claim thread did not finish")
+        if errors:
+            raise errors[0]
         return results
 
     def test_one_inbound_sid_claims_one_fixed_reply(self) -> None:

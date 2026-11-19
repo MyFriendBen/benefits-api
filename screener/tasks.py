@@ -324,8 +324,10 @@ def benji_sms_delete_media(message_sid: str, conversation_id: Optional[str] = No
 
     `conversation_id` is only for the dead-letter row, so a failure can be traced to a
     conversation and is deleted with it. Safe to run twice: deleted media stays deleted.
-    A failure Twilio might not repeat is retried; one that fails every attempt is
-    dead-lettered, which is the alarm that pictures are still at Twilio.
+    A failure Twilio might not repeat is retried; one that fails every attempt, or that
+    a retry cannot fix (no Twilio credentials), is dead-lettered. The dead letter is the
+    alarm that this job could not confirm the deletion: check the message's media at
+    Twilio, since a replayed webhook queues a second job that may already have done it.
     """
     sid = _sid_or_none(message_sid)
     if sid is None:

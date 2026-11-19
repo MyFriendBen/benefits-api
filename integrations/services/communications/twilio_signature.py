@@ -12,7 +12,7 @@ rebuilt from ``BACKEND_DOMAIN`` and the request's path and query string, never f
 must therefore be the public https origin configured on the Twilio number, in every
 environment (docs/BENJI_SMS_INBOUND.md).
 
-The connection-override fragment on the configured URL (``#rc=2&rp=all``) is not part of
+The connection-override fragment on the configured URL (``#rc=2&rp=ct,rt,5xx``) is not part of
 the signature, and never reaches the server, so nothing here handles it.
 
 WITHOUT A TOKEN, NOTHING IS SIGNED. An unset ``TWILIO_TOKEN`` refuses every request

@@ -55,6 +55,8 @@ CARRIER_KEYWORDS: dict[Keyword, frozenset[str]] = {
 }
 
 # Compared after `_normalize`: lowercase, no accents, no punctuation, single spaces.
+# Letters in every script survive normalizing, so a keyword followed by words in any
+# language ("stop 我的福利") is a sentence, not a keyword.
 OUR_KEYWORDS: dict[Keyword, frozenset[str]] = {
     Keyword.STOP: frozenset(
         {
@@ -87,11 +89,14 @@ OUR_KEYWORDS: dict[Keyword, frozenset[str]] = {
 # Keywords that are also things people say in a conversation (see KeywordMatch).
 PLAIN_TEXT_WORDS = frozenset({"yes"})
 
-_NOT_A_WORD = re.compile(r"[^a-z0-9]+")
+# Anything that is not a letter or a digit, in any script. `\W` is Unicode-aware for
+# str patterns; `_` counts as a word character there, so it is listed too.
+_NOT_A_WORD = re.compile(r"[\W_]+")
 
 
 def _normalize(body: str) -> str:
-    """Lowercase, accents and punctuation removed, runs of anything else as one space."""
+    """Lowercase, accents removed, and every run of punctuation, symbols, emoji and
+    space turned into one space. Letters and digits in any script are kept."""
     decomposed = unicodedata.normalize("NFKD", body.casefold())
     without_accents = "".join(char for char in decomposed if not unicodedata.combining(char))
     return _NOT_A_WORD.sub(" ", without_accents).strip()
