@@ -945,6 +945,38 @@ class TestRevokeAndStart(TestCase):
         self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
         self.assertEqual(self.phone.clear_revocation(inbound_sid=sid(7)), (True, True))
 
+    def test_a_replayed_stop_is_not_reported_after_a_newer_stop(self) -> None:
+        """Revoked again by a newer STOP, so the first one's confirmation is stale."""
+        self.phone.revoke(inbound_sid=sid(5))
+        self.phone.clear_revocation(inbound_sid=sid(6))
+        self.phone.revoke(inbound_sid=sid(7))
+
+        self.assertFalse(self.phone.revoke(inbound_sid=sid(5)))
+
+    def test_a_stop_confirmation_is_owed_until_one_goes_out(self) -> None:
+        self.assertFalse(self.phone.stop_confirmation_owed())
+        self.phone.revoke(inbound_sid=sid(5))
+        self.assertTrue(self.phone.stop_confirmation_owed())
+
+        self.phone.revoke(inbound_sid=sid(6))
+        make_delivery(inbound_sid=sid(6), outbound_sid="SM" + "8" * 32)
+        self.assertFalse(self.phone.stop_confirmation_owed())
+
+        self.phone.clear_revocation(inbound_sid=sid(7))
+        self.assertFalse(self.phone.stop_confirmation_owed())
+        self.phone.revoke(inbound_sid=sid(8))
+        self.assertTrue(self.phone.stop_confirmation_owed())
+
+    def test_no_confirmation_is_owed_for_twilios_own_stop(self) -> None:
+        """Twilio confirmed it."""
+        self.phone.revoke(inbound_sid=sid(5), carrier=True)
+        self.assertFalse(self.phone.stop_confirmation_owed())
+
+    def test_no_confirmation_is_owed_once_the_receipts_are_purged(self) -> None:
+        self.phone.revoke(inbound_sid=sid(5))
+        BenjiSmsKeywordReceipt.objects.all().delete()
+        self.assertFalse(self.phone.stop_confirmation_owed())
+
     def test_a_replayed_start_is_not_reported_after_a_newer_start(self) -> None:
         self.phone.revoke(inbound_sid=sid(5))
         self.phone.clear_revocation(inbound_sid=sid(6))

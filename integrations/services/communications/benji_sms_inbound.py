@@ -79,6 +79,7 @@ from screener.models import (
     AssistantConversationStatus,
     BenjiSmsBinding,
     BenjiSmsDelivery,
+    BenjiSmsKeywordReceipt,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
 )
@@ -273,12 +274,13 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
     newest = phone.newest_binding()
 
     if keyword is not None and keyword.keyword is Keyword.STOP:
-        revoked = phone.revoke(now, inbound.sid)
+        revoked = phone.revoke(now, inbound.sid, carrier=keyword.carrier)
         replied = False
-        if revoked and not keyword.carrier:
+        if not keyword.carrier and (revoked or phone.stop_confirmation_owed()):
             # The one send to a revoked number: the confirmation of the revocation.
             # Also tried on a replay of this STOP, in case the first post never got to
-            # send it; the fixed-reply claim keeps it to one.
+            # send it, and on a later STOP if no confirmation has gone out since the
+            # number was revoked; the fixed-reply claim keeps it to one per text.
             replied = _send_fixed(inbound, replies.STOP, newest, now, for_screen=True)
         return Result(Outcome.STOPPED, replied)
 
@@ -297,6 +299,11 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
         if phone.revoked_at is not None:
             # A replay of a START that changed nothing, after a newer STOP.
             return Result(Outcome.REVOKED)
+        receipt = BenjiSmsKeywordReceipt.objects.seen(inbound.sid)
+        if receipt is not None and receipt.applied:
+            # A replay of a START that did clear a revocation, overtaken since by newer
+            # keywords. It was a re-subscribe, never a question, even if it was "yes".
+            return Result(Outcome.START_IGNORED)
         if not keyword.also_plain_text:
             # Nothing to clear. Not a question for the model either.
             return Result(Outcome.START_IGNORED)

@@ -1538,13 +1538,38 @@ class BenjiSmsPhone(models.Model):
         """
         return self.bindings.select_related("conversation", "white_label").order_by("-created_at", "-pk").first()
 
+    def stop_confirmation_owed(self) -> bool:
+        """Whether the number is revoked and no STOP confirmation has gone out since the
+        STOP that revoked it (MFB-2439).
+
+        A confirmation can fail at Twilio, and the webhook still answers 200, so Twilio
+        never posts that STOP again. Without this, a person who texts STOP again
+        because they heard nothing would never get it: a second STOP changes nothing.
+        Only our wordings get our confirmation, so callers check that too.
+        """
+        if self.revoked_at is None:
+            return False
+        latest = self.keyword_receipts.filter(applied=True).order_by("-pk").first()
+        if latest is None or latest.keyword != BenjiSmsKeyword.STOP or latest.carrier:
+            # Unknown (its receipt was purged after a day), not revoked by a STOP, or
+            # revoked by Twilio's own keyword, which Twilio confirmed itself.
+            return False
+        stops_since = self.keyword_receipts.filter(keyword=BenjiSmsKeyword.STOP, pk__gte=latest.pk).values(
+            "inbound_sid"
+        )
+        return not BenjiSmsDelivery.objects.filter(
+            kind=BenjiSmsDeliveryKind.FIXED, inbound_sid__in=stops_since, outbound_sid__isnull=False
+        ).exists()
+
     def is_revoked_now(self) -> bool:
         """Re-read the revocation from the database, for a decision about to send or
         queue something on a snapshot that may predate a STOP from the same number."""
         self.refresh_from_db(fields=["revoked_at"])
         return self.revoked_at is not None
 
-    def revoke(self, now: Optional[datetime] = None, inbound_sid: Optional[str] = None) -> bool:
+    def revoke(
+        self, now: Optional[datetime] = None, inbound_sid: Optional[str] = None, *, carrier: bool = False
+    ) -> bool:
         """Record a STOP: revoke the number and close its active binding and conversation.
 
         Returns True if this STOP revoked the number, False if it found the number
@@ -1583,7 +1608,9 @@ class BenjiSmsPhone(models.Model):
                         revoked_at=now,
                         revoked_conversation_id=active[0].conversation_id if active else None,
                     )
-                BenjiSmsKeywordReceipt.objects.record(phone, inbound_sid, BenjiSmsKeyword.STOP, applied=applied)
+                BenjiSmsKeywordReceipt.objects.record(
+                    phone, inbound_sid, BenjiSmsKeyword.STOP, applied=applied, carrier=carrier
+                )
         self.refresh_from_db(fields=["revoked_at", "revoked_conversation_id"])
         return applied
 
@@ -1680,12 +1707,15 @@ class BenjiSmsKeywordReceiptManager(models.Manager):
         *,
         applied: bool,
         resumed: bool = False,
+        carrier: bool = False,
     ) -> None:
         """Record what a STOP or START did. Called under the phone's row lock, in the
         same transaction as the change, so the receipt and the change land together."""
         if inbound_sid is None:
             return
-        self.create(phone=phone, inbound_sid=inbound_sid, keyword=keyword, applied=applied, resumed=resumed)
+        self.create(
+            phone=phone, inbound_sid=inbound_sid, keyword=keyword, applied=applied, resumed=resumed, carrier=carrier
+        )
 
     def purge_expired(self, now: Optional[datetime] = None) -> int:
         """Delete receipts older than a day. For the nightly sweep (MFB-2442). Returns
@@ -1717,6 +1747,8 @@ class BenjiSmsKeywordReceipt(models.Model):
     applied = models.BooleanField()
     # For an applied START: whether the conversation the STOP closed resumed.
     resumed = models.BooleanField(default=False)
+    # Twilio's own keyword, which Twilio answered itself; ours get our confirmation.
+    carrier = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     objects = BenjiSmsKeywordReceiptManager()

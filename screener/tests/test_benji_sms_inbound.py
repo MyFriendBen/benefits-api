@@ -596,6 +596,40 @@ class StopTest(InboundMixin, TestCase):
         self.assertIsNone(binding.phone.revoked_at)
         self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
 
+    def test_a_lost_stop_confirmation_goes_out_on_the_next_stop(self) -> None:
+        binding = self.bind()
+        self.create.side_effect = TwilioRestException(503, "uri", "unavailable", 20503)
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.assert_acknowledged(self.post("alto", sid=SID))
+        self.assert_revoked(binding)
+        self.create.side_effect = self._accept
+
+        self.post("alto", sid=OTHER_SID)
+        self.post("parar", sid="SM" + "e5" * 16)
+
+        self.assertEqual(self.create.call_count, 2)
+        self.assertEqual(self.sent_bodies()[-1], replies.STOP.default)
+
+    def test_a_confirmed_stop_is_not_confirmed_again(self) -> None:
+        self.bind()
+        self.post("alto", sid=SID)
+        self.post("alto", sid=OTHER_SID)
+
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default])
+
+    def test_an_overtaken_stop_replayed_later_sends_nothing(self) -> None:
+        """alto (confirmation lost), iniciar, alto, then the first alto again."""
+        self.bind()
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.post("alto", sid=SID)
+        self.post("iniciar", sid=OTHER_SID)
+        self.post("alto", sid="SM" + "e5" * 16)
+
+        self.post("alto", sid=SID)
+
+        self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default, replies.STOP.default])
+
     def test_a_replayed_second_stop_does_not_revoke_after_a_start(self) -> None:
         binding = self.bind()
         self.post("alto", sid=SID)
@@ -785,6 +819,33 @@ class RevokedTest(InboundMixin, TestCase):
         self.post("iniciar", sid=start)
 
         self.assertEqual(self.sent_bodies(), [replies.STOP.default, replies.START_RESUMED.default])
+
+    def test_an_overtaken_yes_replayed_later_is_not_a_question(self) -> None:
+        """yes clears, alto, iniciar, then Twilio posts the yes again."""
+        self.post("yes", sid=SID)
+        self.post("alto", sid=OTHER_SID)
+        self.post("iniciar", sid="SM" + "e5" * 16)
+
+        self.assert_acknowledged(self.post("yes", sid=SID))
+
+        self.enqueue_turn.assert_not_called()
+        self.reload()
+        self.assertIsNone(self.phone.revoked_at)
+
+    def test_a_stop_landing_after_the_start_stops_its_reply(self) -> None:
+        original = BenjiSmsPhone.clear_revocation
+
+        def then_stop(self_phone: BenjiSmsPhone, *args: Any, **kwargs: Any) -> Any:
+            outcome = original(self_phone, *args, **kwargs)
+            BenjiSmsPhone.objects.get(pk=self_phone.pk).revoke()
+            return outcome
+
+        with patch.object(BenjiSmsPhone, "clear_revocation", then_stop):
+            with self.assertLogs(LOGGER, level="INFO") as logs:
+                self.assert_acknowledged(self.post("iniciar"))
+
+        self.assert_nothing_sent_or_queued()
+        self.assertIn("outcome=revoked", "\n".join(logs.output))
 
     def test_a_start_that_races_a_stop_is_applied_after_it(self) -> None:
         """The snapshot says not revoked; the STOP lands before the START is decided."""

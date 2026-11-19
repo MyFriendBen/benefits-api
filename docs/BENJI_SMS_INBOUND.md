@@ -146,7 +146,9 @@ fallback URL after that.
   confirmation the first post failed before sending, as long as that STOP or START is
   still the latest change in force (never a "Benji is back" after a newer STOP, or a
   stale "You won't get more texts" after a newer START); the fixed-reply claim stops a
-  second one.
+  second one. If a STOP confirmation fails at Twilio, the next STOP in our wording
+  sends it (`BenjiSmsPhone.stop_confirmation_owed`): a person who heard nothing and
+  texts STOP again gets it.
 - A replayed turn is queued again and the worker absorbs it (MFB-2440).
 
 ## Fixed reply text
