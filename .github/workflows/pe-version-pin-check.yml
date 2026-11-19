@@ -1,8 +1,9 @@
 name: PolicyEngine Version Pin Check
 
 # The PolicyEngine pin is a prod DB row, editable in the admin without a deploy, and PE
-# moves `current` on its own schedule. A pin that falls below `current` makes PE return
-# 400 on every screen, so check daily instead of waiting for the next deploy.
+# moves `current` on its own schedule. PE serves only `current` and `frontier`, so a pin
+# that PE has since moved past gets a 422 unsupported_version on every screen. Check daily
+# instead of waiting for the next deploy.
 # Runs the check_pe_version_pin management command against prod (MFB-1319).
 
 on:

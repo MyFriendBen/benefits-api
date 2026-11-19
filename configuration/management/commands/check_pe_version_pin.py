@@ -1,17 +1,16 @@
-import sys
-
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from configuration.models import PolicyEngineConfig
-from integrations.clients.policyengine.versions import CURRENT, _fetch_pe_versions, to_comparable_pe_version
+from integrations.clients.policyengine.versions import CURRENT, FRONTIER, _fetch_pe_versions
 
 
 class Command(BaseCommand):
     help = (
-        "Exit non-zero if the pinned PolicyEngineConfig version is below PolicyEngine's `current`. "
-        "PE retires versions older than `current` and 400s requests that pin one. An empty pin rides "
-        "`current` and passes; an unreachable /versions/us warns and passes, so PE being down never "
-        "blocks a deploy."
+        "Exit non-zero if the pinned PolicyEngineConfig version is not one PolicyEngine serves. PE serves "
+        "exactly two versions, `current` and `frontier`; anything else (including an older `current` that PE "
+        "has since moved past) gets a 422 unsupported_version. A pin at `frontier` passes with a warning, an "
+        "empty pin rides `current` and passes, and an unreachable or malformed /versions/us warns and passes, "
+        "so PE being down never blocks a deploy."
     )
 
     def handle(self, *args, **options):
@@ -26,23 +25,29 @@ class Command(BaseCommand):
             self.stderr.write(self.style.WARNING("Could not reach PolicyEngine /versions/us; skipping pin check."))
             return
 
-        current = data[CURRENT]
-        pin_version = to_comparable_pe_version(pin)
-        current_version = to_comparable_pe_version(current)
-        if pin_version is None or current_version is None:
+        current = data.get(CURRENT)
+        frontier = data.get(FRONTIER)
+        if not isinstance(current, str) or not current:
             self.stderr.write(
-                self.style.WARNING(f"Could not compare pin {pin!r} with PE current {current!r}; skipping pin check.")
+                self.style.WARNING(f"Unexpected PolicyEngine /versions/us payload ({data!r}); skipping pin check.")
             )
             return
 
-        if pin_version < current_version:
+        if pin == current:
+            self.stdout.write(f"Pinned PolicyEngine version {pin} matches PE current: OK")
+            return
+
+        if pin == frontier:
             self.stderr.write(
-                self.style.ERROR(
-                    f"Pinned PolicyEngine version {pin} is below PE current {current}. PolicyEngine may stop "
-                    "serving it and return 400s on every screen. Bump the pin (Django admin > PolicyEngine "
-                    "Version) or clear it to ride current."
+                self.style.WARNING(
+                    f"Pinned PolicyEngine version {pin} is PE frontier, not current ({current}). "
+                    "PolicyEngine serves it, but prod should stay on current."
                 )
             )
-            sys.exit(1)
+            return
 
-        self.stdout.write(f"Pinned PolicyEngine version {pin} is at or above PE current {current}: OK")
+        raise CommandError(
+            f"Pinned PolicyEngine version {pin} is not served by PolicyEngine "
+            f"(current {current}, frontier {frontier}); every screen will get 422 unsupported_version. "
+            "Set the pin to current (Django admin > PolicyEngine Version) or clear it."
+        )
