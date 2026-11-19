@@ -12,7 +12,7 @@ interactions:
       "school_meal_countable_income": {"2026": 16800.0}, "spm_unit_cash_assets": {"2026":
       0}, "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -25,7 +25,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -43,7 +43,7 @@ interactions:
         16800.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": 0.0}, "receives_tanf":
         {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
         {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
-        {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version": null,
+        {}}, "policyengine_bundle": {"model_version": "2.94.7", "data_version": null,
         "dataset": null}}'
     headers:
       Alt-Svc:
@@ -55,15 +55,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:23:53 GMT
+      - Tue, 17 Nov 2026 21:13:45 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-568cada32daf7aa4b3aed64df19dee43-2de427d4e22ad42b-00
+      - 00-61d6d3b470a11de68fedd87efdf92cbf-3b206105fc33c551-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 568cada32daf7aa4b3aed64df19dee43
+      - 61d6d3b470a11de68fedd87efdf92cbf/10355890437066276106
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -71,7 +71,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 003007d5-e41b-4249-8023-44c2d8bd537d
+      - 5aaf7ea3-4e35-4229-abf0-8a5acea29b64
       x-policyengine-route-channel:
       - current
     status:

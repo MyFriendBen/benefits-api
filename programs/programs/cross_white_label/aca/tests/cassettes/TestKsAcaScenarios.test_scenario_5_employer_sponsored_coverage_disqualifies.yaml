@@ -15,7 +15,7 @@ interactions:
       "WYANDOTTE_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf":
       {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -28,7 +28,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -49,10 +49,10 @@ interactions:
         {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
         "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
         "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
+        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '1356'
       access-control-allow-origin:
@@ -60,15 +60,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:23:19 GMT
+      - Tue, 17 Nov 2026 21:13:11 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-56057edd9a14b44bfc3f86fda605276f-ce3dcbfa9d506f1f-00
+      - 00-67f27c5e301a0ac74cd02bdad389fc66-2bb93e41e0f7c5a7-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 56057edd9a14b44bfc3f86fda605276f
+      - 67f27c5e301a0ac74cd02bdad389fc66
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -76,7 +76,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - b623693a-fa8a-4f4f-a1b7-a185abd20e55
+      - ace00332-2c48-4401-9eb7-e25de5f8d011
       x-policyengine-route-channel:
       - current
     status:

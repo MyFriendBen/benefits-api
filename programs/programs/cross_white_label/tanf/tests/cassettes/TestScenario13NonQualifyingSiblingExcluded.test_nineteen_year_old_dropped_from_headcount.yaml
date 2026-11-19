@@ -36,7 +36,7 @@ interactions:
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
       false}, "spm_unit_cash_assets": {"2026": 0}, "childcare_expenses": {"2026":
-      0.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.72.5"}'
+      0.0}, "mo_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -49,7 +49,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -93,11 +93,11 @@ interactions:
         {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
         {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}, "spm_unit_cash_assets":
         {"2026": 0}, "childcare_expenses": {"2026": 0.0}, "mo_tanf": {"2026": 2809.0352}}},
-        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.72.5", "data_version":
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "2.94.7", "data_version":
         null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '3199'
       access-control-allow-origin:
@@ -105,15 +105,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:26:31 GMT
+      - Tue, 17 Nov 2026 21:21:49 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-29d017c39a9e951c54e9a7869ad25465-a4d218341270aedd-00
+      - 00-a2a8aa733505fa06bbc165ead7b9addf-f78ced9b92e84e0c-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 29d017c39a9e951c54e9a7869ad25465
+      - a2a8aa733505fa06bbc165ead7b9addf/8011518992123746931;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -121,7 +121,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - e1b549b5-ce6d-4545-9552-67805dc91d7a
+      - 981c0d5d-f771-4f31-84ae-974c1fc153cc
       x-policyengine-route-channel:
       - current
     status:

@@ -1073,6 +1073,11 @@ class EligibilitySnapshot(models.Model):
     #: bug, or screen data it could not handle. Reported to Sentry.
     DROPPED_CALCULATOR_ERROR = "calculator_error"
 
+    #: True when an external API (PolicyEngine, HUD) failed but the run still finished, so
+    #: the results are incomplete. The `had_error=False` filters ignore it: a degraded run
+    #: is still the user's latest result. Nullable for deploy safety, like `dropped_programs`.
+    had_external_api_failure = models.BooleanField(default=False, null=True)
+
 
 class NPSScore(models.Model):
     eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)

@@ -66,7 +66,7 @@ interactions:
       "1705", "1706", "1707", "1708"], "tanf": {"2026": null}, "receives_tanf": {"2026":
       false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026":
       false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {"1701-1702":
-      {"members": ["1701", "1702"]}}}, "version": "2.72.5"}'
+      {"members": ["1701", "1702"]}}}, "version": "2.94.7"}'
     headers:
       Accept:
       - '*/*'
@@ -79,7 +79,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -152,7 +152,7 @@ interactions:
         false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026":
         false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {"1701-1702":
         {"members": ["1701", "1702"]}}}, "policyengine_bundle": {"model_version":
-        "2.72.5", "data_version": null, "dataset": null}}'
+        "2.94.7", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
@@ -163,15 +163,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:25:38 GMT
+      - Tue, 17 Nov 2026 21:15:24 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-e892cb3acb127ffec57768345727a6e3-a562292be91db268-00
+      - 00-3ce045eca381ec211a2a0e12fd9fac4e-476ffd06e3f4ad7a-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - e892cb3acb127ffec57768345727a6e3
+      - 3ce045eca381ec211a2a0e12fd9fac4e/355562745536584020
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -179,7 +179,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - b73e43ee-328e-42ff-9e37-b684c8662d85
+      - 6b1bcfdf-c6b7-4835-b6e1-76ed7ca63654
       x-policyengine-route-channel:
       - current
     status:

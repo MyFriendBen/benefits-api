@@ -477,8 +477,9 @@ CALC_ORDER = (
     # ks_rca is defined as the program for refugees TANF cannot reach, so it gates on
     # ks_tanf strictly and needs it resolved first.
     "ks_tanf",
-    # NJ Head Start and Early Head Start read SSI and TANF eligibility as public assistance.
+    # NJ Head Start and Early Head Start read SSI, SNAP and TANF eligibility as public assistance.
     "federal_ssi",
+    "nj_snap",
     "nj_tanf",
     # NJ's ACA Premium Tax Credit reads who NJ FamilyCare's Medicaid and CHIP would cover.
     # NJ Medicaid is on the federal Medicaid base, not `Medicaid`, so the derived block above
@@ -853,6 +854,9 @@ def eligibility_results(
     ProgramEligibilitySnapshot.objects.bulk_create(program_snapshots)
     snapshot.had_error = False
     snapshot.dropped_programs = dropped_programs
+    # Persists the `external_api_failures` signal the response sends the frontend. Callers
+    # that don't open a tracking context (the validation harness) always record False.
+    snapshot.had_external_api_failure = bool(get_external_api_failures())
     snapshot.save()
 
     eligible_programs = []
