@@ -6,7 +6,7 @@ from programs.framework.pe_base import PolicyEngineCalulator
 from programs.framework.base import Eligibility
 from typing import Any, Dict, List, Optional, Tuple, TypedDict
 from sentry_sdk import capture_exception, capture_message
-from .engines import Sim, pe_engines
+from .engines import Sim, pe_engine
 from programs.framework.pe_dependencies.base import ConflictingDependencyError
 from programs.framework.pe_dependencies.payload import (
     PayloadPlan,
@@ -60,6 +60,8 @@ def calc_pe_eligibility(
         if not calculator.can_calc():
             continue
         valid_programs[name_abbr] = calculator
+
+    valid_programs = _drop_unconfigured_programs(valid_programs)
 
     # Resolve the model version ONCE and thread it through both consumers: independent
     # resolutions can disagree (PolicyEngine promotes a new `current`, or our cached lookup
@@ -178,60 +180,59 @@ def _run_bucket(
     A screen with one bucket behaves exactly as it did before splitting existed — empty
     eligibility, and the payload preserved for admins to debug.
     """
-    # A single engine: the authenticated private household.api. There is deliberately no
-    # fallback to the public api.policyengine.org — it ignores the request `version` field
-    # (verified against its source) and would silently compute against a different model
-    # version than the one we resolve and pin. So any failure here means PolicyEngine
-    # programs are unavailable for this screen.
-    for Method in pe_engines:
-        try:
-            method_instance = Method(input_data)
-            eligibility = all_eligibility(method_instance, valid_programs)
-            result = (
-                eligibility,
-                {
-                    "request": getattr(method_instance, "request_payload", None),
-                    "response": getattr(method_instance, "response_json", None),
-                },
-            )
-        except (SystemExit, KeyboardInterrupt) as e:
-            # Worker is being torn down: gunicorn's SIGABRT handler (fired when a request
-            # exceeds the worker --timeout, e.g. while a PE HTTP call hangs on DNS) calls
-            # sys.exit(), raising SystemExit. That is a BaseException, so the `except
-            # Exception` below never sees it and the death is invisible in Sentry. Capture
-            # it here for visibility, then re-raise so the shutdown proceeds normally.
-            capture_exception(e, level="error")
-            capture_message(
-                f"Worker exited mid-request while calculating eligibility with the " f"{Method.method_name} method",
-                level="error",
-            )
-            raise
-        except Exception as e:
-            # Any PolicyEngine failure (malformed payload/400, timeout, 5xx, auth, non-JSON):
-            # with no fallback endpoint, these programs can't be computed for this screen.
-            # Surface it loudly (Sentry error), record it so the frontend can warn the user,
-            # and return no eligibility so the caller still computes the non-PolicyEngine
-            # (custom) calculators.
-            if settings.DEBUG:
-                print(repr(e))
-            capture_exception(e, level="error")
-            capture_message(
-                f"Failed to calculate eligibility with the {Method.method_name} method; "
-                f"PolicyEngine programs are unavailable for this screen.",
-                level="error",
-            )
-            # The results-page banner is no longer signalled here. `calc_pe_eligibility`
-            # derives it from which programs came back, so this bucket's programs going
-            # missing reports itself — along with the four paths that used to be silent
-            # because they never reached this handler.
-            # Preserve the payload that triggered the failure so admins can debug it
-            # (the exact request is the most useful thing for diagnosing a 400).
-            # _pe_data.request is admin-only — already popped for non-admins downstream.
-            return {}, {"request": input_data, "response": None}
-        else:
-            return result
+    # The authenticated private household.api, with no fallback (see `engines.pe_engine`),
+    # so any failure here means PolicyEngine programs are unavailable for this screen.
+    try:
+        method_instance = pe_engine(input_data)
+        eligibility = all_eligibility(method_instance, valid_programs)
+    except (SystemExit, KeyboardInterrupt) as e:
+        # Worker is being torn down: gunicorn's SIGABRT handler (fired when a request
+        # exceeds the worker --timeout, e.g. while a PE HTTP call hangs on DNS) calls
+        # sys.exit(), raising SystemExit. That is a BaseException, so the `except
+        # Exception` below never sees it and the death is invisible in Sentry. Capture
+        # it here for visibility, then re-raise so the shutdown proceeds normally.
+        capture_exception(e, level="error")
+        capture_message(
+            f"Worker exited mid-request while calculating eligibility with the {pe_engine.method_name} method",
+            level="error",
+        )
+        raise
+    except Exception as e:
+        # Any PolicyEngine failure (malformed payload/400, timeout, 5xx, auth, non-JSON):
+        # with no fallback endpoint, these programs can't be computed for this screen.
+        # Surface it loudly (Sentry error) and return no eligibility so the caller still
+        # computes the non-PolicyEngine (custom) calculators.
+        if settings.DEBUG:
+            print(repr(e))
+        capture_exception(e, level="error")
+        capture_message(
+            f"Failed to calculate eligibility with the {pe_engine.method_name} method"
+            f"{_status_suffix(e)}; PolicyEngine programs are unavailable for this screen.",
+            level="error",
+        )
+        # The results-page banner is not signalled here: `calc_pe_eligibility` derives it
+        # from which programs came back, so this bucket's programs going missing reports
+        # itself.
+        # Preserve the payload that triggered the failure so admins can debug it
+        # (the exact request is the most useful thing for diagnosing a 400).
+        # _pe_data.request is admin-only — already popped for non-admins downstream.
+        return {}, {"request": input_data, "response": None}
 
-    return {}, {"request": None, "response": None}
+    return eligibility, {
+        "request": getattr(method_instance, "request_payload", None),
+        "response": getattr(method_instance, "response_json", None),
+    }
+
+
+def _status_suffix(error: Exception) -> str:
+    """The HTTP status PolicyEngine answered with, for the Sentry message.
+
+    The status separates failure kinds: 400 is our payload, 422 a version pin PolicyEngine
+    doesn't serve, 401 an expired token (cleared from the cache, so the next request
+    recovers), 5xx theirs. Empty when there was no response (timeout, DNS, connection reset).
+    """
+    status_code = getattr(error, "status_code", None)
+    return f" (HTTP {status_code})" if status_code is not None else ""
 
 
 def _combine_pe_data(requests_made: List[Dict[str, Any]]) -> PEData:
@@ -311,6 +312,40 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
         all_eligibility[name_abbr] = e
 
     return all_eligibility
+
+
+def _drop_unconfigured_programs(
+    valid_programs: dict[str, PolicyEngineCalulator],
+) -> dict[str, PolicyEngineCalulator]:
+    """Drop programs with no `FederalPoveryLimit`, which have no period to be requested at.
+
+    `Program.year` is nullable and most programs legitimately have none, but a PolicyEngine
+    program without one cannot be asked for: every dependency and output is keyed by period.
+    Reaching `pe_period` in that state raises, and because the first touch happens while the
+    payload is being built — before any request — the raise would cost *every* PolicyEngine
+    program on the screen its result, over one row's missing foreign key.
+
+    So the check moves ahead of payload assembly, where it costs only the program it is about
+    (the caller reports it as missing, exactly like a version-gated one). It should not fire:
+    `PROTECT` on the FK stops an FPL deletion from nulling the column. A hit means a row was
+    imported or edited into that state, so it is reported rather than passed over.
+    """
+    configured: dict[str, PolicyEngineCalulator] = {}
+    dropped: list[str] = []
+    for name_abbr, calculator in valid_programs.items():
+        if calculator.program.year is None:
+            dropped.append(name_abbr)
+            continue
+        configured[name_abbr] = calculator
+
+    if dropped:
+        capture_message(
+            f"PolicyEngine: dropped {len(dropped)} program(s) with no FederalPoveryLimit "
+            f"configured, so there is no period to request them at: {sorted(dropped)}",
+            level="error",
+        )
+
+    return configured
 
 
 def _drop_unreadable_programs(

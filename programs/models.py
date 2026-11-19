@@ -783,12 +783,15 @@ class Program(models.Model):
         null=True,
         help_text="Cross-white-label program grouping for analytics (e.g. co_snap, il_snap → snap)",
     )
+    #: PROTECT, not SET_NULL: deleting a FederalPoveryLimit must not silently null `year` on
+    #: the programs pointing at it, because a PolicyEngine program with no year can't be
+    #: calculated. Nullable because most programs have no FPL.
     year = models.ForeignKey(
         FederalPoveryLimit,
         related_name="fpl",
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
     )
     YEAR_TYPE_CHOICES = [
         ("hardcoded", "Hardcoded"),

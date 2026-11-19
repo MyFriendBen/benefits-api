@@ -854,6 +854,9 @@ def eligibility_results(
     ProgramEligibilitySnapshot.objects.bulk_create(program_snapshots)
     snapshot.had_error = False
     snapshot.dropped_programs = dropped_programs
+    # Persists the `external_api_failures` signal the response sends the frontend. Callers
+    # that don't open a tracking context (the validation harness) always record False.
+    snapshot.had_external_api_failure = bool(get_external_api_failures())
     snapshot.save()
 
     eligible_programs = []
