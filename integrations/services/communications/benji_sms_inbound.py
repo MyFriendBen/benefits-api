@@ -302,7 +302,7 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
         if phone.revoked_at is not None:
             # A replay of an older START, after a newer STOP. Final: an unfinished "yes"
             # blocked here must not become a turn if a later START lifts the STOP.
-            return _decided(phone, inbound, Outcome.REVOKED)
+            return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
         restarted = cleared
         if restarted or not keyword.also_plain_text:
             # A re-subscribe, or a START word that is never a question. "yes" from a
@@ -319,17 +319,17 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
             return Result(Outcome.STARTED if restarted else Outcome.START_IGNORED, replied)
 
     if phone.revoked_at is not None:
-        return _decided(phone, inbound, Outcome.REVOKED)
+        return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
 
     if keyword is not None and keyword.keyword is Keyword.HELP:
         if phone.is_revoked_now():
-            return _decided(phone, inbound, Outcome.REVOKED)
+            return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
         followed = _decide_or_follow(phone, inbound, Outcome.HELP, None, keyword, now)
         return followed or _help(inbound, keyword, newest, now)
 
     if phone.is_shared(now):
         if phone.is_revoked_now():
-            return _decided(phone, inbound, Outcome.REVOKED)
+            return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
         followed = _decide_or_follow(phone, inbound, Outcome.SHARED, None, keyword, now)
         return followed or Result(Outcome.SHARED, _send_daily(inbound, number_hash, replies.SHARED, newest, now))
 
@@ -343,21 +343,21 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
     # Before anything goes out: a STOP from the same number may have landed since the
     # snapshot (and closed the binding record_inbound just found ended).
     if phone.is_revoked_now():
-        return _decided(phone, inbound, Outcome.REVOKED)
+        return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
     if binding is None:
         followed = _decide_or_follow(phone, inbound, Outcome.REENTRY, None, keyword, now)
         return followed or Result(Outcome.REENTRY, _send_daily(inbound, number_hash, replies.REENTRY, newest, now))
 
     if not channel_on:
         # A turn would pay for a reply that no gate would let out.
-        return _decided(phone, inbound, Outcome.CHANNEL_OFF)
+        return _decided(phone, inbound, Outcome.CHANNEL_OFF, keyword=keyword)
 
     if inbound.num_media > 0:
         followed = _decide_or_follow(phone, inbound, Outcome.PICTURE, binding.conversation_id, keyword, now)
         return followed or Result(Outcome.PICTURE, _send_fixed(inbound, replies.PICTURE, binding, now, for_screen=True))
 
     if not inbound.body.strip():
-        return _decided(phone, inbound, Outcome.EMPTY)
+        return _decided(phone, inbound, Outcome.EMPTY, keyword=keyword)
 
     # Recorded before it is queued, so a replay after a failed queueing queues it again,
     # in this conversation, whatever has changed since. If another post of this text
@@ -370,14 +370,18 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
 
 
 def _decided(
-    phone: BenjiSmsPhone, inbound: Inbound, outcome: Outcome, conversation_id: Optional[uuid.UUID] = None
+    phone: BenjiSmsPhone,
+    inbound: Inbound,
+    outcome: Outcome,
+    conversation_id: Optional[uuid.UUID] = None,
+    keyword: Optional[KeywordMatch] = None,
 ) -> Result:
     """Record a decision that needs no work (revoked, channel off, empty), so a replay
     follows it (BenjiSmsInboundReceipt). If another post of this text decided first,
-    follow that decision instead."""
+    follow that decision instead, with this text's keyword (a HELP decision needs it)."""
     receipt = BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, outcome.value, conversation_id)
     if receipt.outcome != outcome or receipt.conversation_id != conversation_id:
-        return _replay(inbound, phone, receipt, None, timezone.now())
+        return _replay(inbound, phone, receipt, keyword, timezone.now())
     return Result(outcome)
 
 

@@ -1614,7 +1614,11 @@ class BenjiSmsPhone(models.Model):
                 ):
                     # An unfinished "yes" overtaken by a later STOP (and any START since):
                     # finalized, so it is never answered out of its time.
-                    BenjiSmsInboundReceipt.objects.filter(pk=seen.pk).update(outcome=BenjiSmsOutcome.REVOKED.value)
+                    # Only the placeholder: a decision another post recorded and acted
+                    # on in the meantime is final and stays.
+                    BenjiSmsInboundReceipt.objects.filter(pk=seen.pk, outcome=BENJI_SMS_START_IGNORED).update(
+                        outcome=BenjiSmsOutcome.REVOKED.value
+                    )
             elif phone.revoked_at is None:
                 cleared, resumed = False, False
                 later_stop = (

@@ -11,6 +11,7 @@ import importlib
 import threading
 import time
 import uuid
+from unittest.mock import patch
 from collections.abc import Callable
 from datetime import timedelta
 
@@ -974,6 +975,21 @@ class TestRevokeAndStart(TestCase):
         self.phone.revoke(inbound_sid=stop1)
         self.assertIsNone(BenjiSmsPhone.objects.get().revoked_at)
         self.assertEqual(self.statuses(), ("active", "active"))
+
+    def test_finalizing_an_overtaken_yes_leaves_a_decision_another_post_recorded(self) -> None:
+        """A plain "yes" left at the placeholder, then a STOP. If a racing post of the yes
+        records a turn after this one read the placeholder, the turn stands."""
+        yes, stop = sid(5), sid(6)
+        arrived = BenjiSmsInboundReceipt.objects.arrive(self.phone, yes)
+        BenjiSmsInboundReceipt.objects.record(self.phone, yes, "start_ignored")
+        self.phone.revoke(inbound_sid=stop)
+        stale = BenjiSmsInboundReceipt.objects.seen(yes)
+        BenjiSmsInboundReceipt.objects.filter(inbound_sid=yes).update(outcome="queued")
+
+        with patch.object(type(BenjiSmsInboundReceipt.objects), "seen", return_value=stale):
+            self.phone.clear_revocation(inbound_sid=yes, arrived_at=arrived.created_at)
+
+        self.assertEqual(BenjiSmsInboundReceipt.objects.get(inbound_sid=yes).outcome, "queued")
 
     def test_a_replayed_start_that_changed_nothing_cannot_clear_a_newer_stop(self) -> None:
         """START from a number that was not revoked, then STOP, then the START again."""

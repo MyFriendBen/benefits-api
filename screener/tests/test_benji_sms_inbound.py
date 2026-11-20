@@ -1113,6 +1113,26 @@ class KeywordFromAnActiveNumberTest(InboundMixin, TestCase):
 
         self.assertEqual(self.create.call_count, 1)
 
+    def test_a_post_that_loses_to_a_help_decision_sends_the_help_reply(self) -> None:
+        """Another post of the same "ayuda" recorded HELP first but hasn't sent its reply.
+        This post saw a STOP that a START has since undone, so it reached a no-work
+        decision; it follows HELP and sends the reply, which needs this text's keyword."""
+        self.bind()
+        original_arrive = type(BenjiSmsInboundReceipt.objects).arrive
+
+        def winner_decides_help_meanwhile(manager: Any, phone: BenjiSmsPhone, inbound_sid: str) -> Any:
+            mine = original_arrive(manager, phone, inbound_sid)
+            BenjiSmsInboundReceipt.objects.filter(pk=mine.pk).update(outcome="help")
+            return mine
+
+        with (
+            patch.object(type(BenjiSmsInboundReceipt.objects), "arrive", winner_decides_help_meanwhile),
+            patch.object(BenjiSmsPhone, "is_revoked_now", side_effect=[True, False]),
+        ):
+            self.assert_acknowledged(self.post("ayuda"))
+
+        self.assertEqual(len(self.sent_bodies()), 1)
+
     def test_start_with_nothing_to_clear_is_ignored(self) -> None:
         self.bind()
         for index, body in enumerate(["START", "unstop", "iniciar"]):
@@ -1326,9 +1346,9 @@ class TurnTest(InboundMixin, TestCase):
         self.assertIsNotNone(binding.phone.revoked_at)
 
     def test_a_replayed_turn_is_queued_again_for_the_worker_to_absorb(self) -> None:
-        """The worker dedupes on the SID within a conversation (client_message_id, MFB-2440),
-        and a replay always queues for the conversation the text was first queued for;
-        nothing is sent here."""
+        """The worker dedupes on the SID within a conversation (client_message_id, MFB-2440).
+        If a replay is queued, it uses the conversation recorded by the first decision.
+        Nothing is sent here."""
         self.bind()
         self.post()
         self.post()
