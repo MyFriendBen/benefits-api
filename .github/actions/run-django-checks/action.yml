@@ -11,9 +11,15 @@ runs:
     # Fails when a model change has no migration, or when two migrations share a parent
     # (the same check migrate makes, but this one names both files and the fix). Run
     # before migrate so a conflict reports here, not as a migrate error.
+    #
+    # Every installed app is named explicitly: without labels, makemigrations skips an app
+    # that has models but no migrations package, so a new app would pass while migrate
+    # never creates its tables.
     - name: Check for missing or conflicting migrations
       shell: bash
-      run: python manage.py makemigrations --check --dry-run
+      run: |
+        APP_LABELS=$(python -c "import os, django; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'benefits.settings'); django.setup(); from django.apps import apps; print(' '.join(a.label for a in apps.get_app_configs()))")
+        python manage.py makemigrations --check --dry-run $APP_LABELS
 
     - name: Run migrations
       shell: bash
