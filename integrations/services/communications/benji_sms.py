@@ -219,6 +219,11 @@ def _send(
 
     try:
         message = twilio_client().messages.create(**kwargs)
+    except ValueError as e:
+        # The SDK decodes the 2xx body itself; an unreadable one (json.JSONDecodeError is
+        # a ValueError) means Twilio answered and may have queued the text. The body is
+        # never quoted.
+        raise BenjiSmsDeliveryUnknown(type(e).__name__) from None
     except TwilioRestException as e:
         # Twilio's message can name the number ("The 'To' number +1... is not valid").
         # `from None` suppresses the chained original, which Sentry honours.

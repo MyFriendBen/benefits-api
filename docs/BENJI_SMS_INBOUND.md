@@ -44,7 +44,9 @@ environment. Nothing points at production until launch (MFB-2447).
   cover an outage of the broker. The webhook answers 503 when it cannot queue a turn or a
   media deletion; once Twilio has given up, that text is not answered and, if it carried
   a picture, its media stays at Twilio. Each case leaves a `Benji SMS inbound webhook
-  failed` ERROR log; when the text itself was handled and only its media deletion could
+  failed` log line: a WARNING when the text itself could not be handled (Sentry gets
+  the traceback as one event), an ERROR when the text was handled and only its media
+  deletion could
   not be queued, the outcome line is logged too. Anything the text changed (a STOP, a
   START) is applied before the queueing, so consent is never lost this way. A sweep of recent inbound media at Twilio
   would close the media half; it belongs with the nightly sweep (MFB-2442).
@@ -159,7 +161,12 @@ fallback URL after that.
   queues the turn again for the conversation it was first queued for (even after a new
   on-ramp), or retries the same fixed reply, whose claim lets one out per text. So an
   older STOP or START cannot undo a newer one, and a text answered as shared does not
-  become a turn when the mark lapses. A turn or a picture reply is redone only in the
+  become a turn when the mark lapses. The one receipt that is not final is the
+  placeholder a plain "yes" leaves while it is still on its way to being an answer
+  (`start_ignored` for a number that was not revoked): a replay of it decides again, and
+  becomes a turn unless a newer STOP revoked the number in between, in which case it is
+  finalized as `revoked`. A START command that cleared nothing (`iniciar`, `start`) is
+  final as `start_ignored` and never becomes a turn. A turn or a picture reply is redone only in the
   conversation it was first meant for, and only if that white label's channel is still
   on; if that conversation has been deleted, nothing is redone. When two posts of one
   text race, the first decision recorded is the one both follow. One gap: if the first post failed before its

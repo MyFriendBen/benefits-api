@@ -417,6 +417,17 @@ class SendFailureTest(InboundMixin, TestCase):
         self.post()
         self.assertEqual(self.create.call_count, 1)
 
+    def test_an_unreadable_2xx_body_counts_as_unknown(self) -> None:
+        import json
+
+        self.create.side_effect = json.JSONDecodeError("Expecting value", "", 0)
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.assert_acknowledged(self.post())
+
+        self.assertEqual(BenjiSmsDelivery.objects.count(), 1)
+        self.post()
+        self.assertEqual(self.create.call_count, 1)
+
     def test_an_unknown_daily_delivery_keeps_the_days_claim(self) -> None:
         self.create.side_effect = requests.ReadTimeout("twilio")
         with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
@@ -770,6 +781,27 @@ class RevokedTest(InboundMixin, TestCase):
         self.enqueue_turn.assert_not_called()
         self.reload()
         self.assertIsNotNone(self.phone.revoked_at)
+
+    def test_an_unfinished_yes_blocked_by_a_stop_stays_blocked_after_a_start(self) -> None:
+        """Finalized as revoked: a later START does not turn the old yes into a turn."""
+        self.post("START")
+        with patch.object(inbound_service, "channel_enabled", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="WARNING"):
+                self.post("yes", sid=OTHER_SID)
+        self.post("alto", sid="SM" + "e5" * 16)
+        self.post("yes", sid=OTHER_SID)
+        self.post("iniciar", sid="SM" + "f6" * 16)
+
+        self.post("yes", sid=OTHER_SID)
+
+        self.enqueue_turn.assert_not_called()
+
+    def test_a_yes_flagged_by_twilio_as_start_is_still_an_answer(self) -> None:
+        """Advanced Opt-Out sends OptOutType=START for a plain yes too."""
+        self.post("START")
+        self.post("yes", sid=OTHER_SID, extra={"OptOutType": "START"})
+
+        self.enqueue_turn.assert_called_once_with(self.binding.conversation_id, OTHER_SID)
 
     def test_a_fresh_yes_after_start_is_an_ordinary_answer(self) -> None:
         self.post("START")
@@ -1292,7 +1324,9 @@ class TurnTest(InboundMixin, TestCase):
             response = self.post("my case number is 12345")
 
         self.assertEqual(response.status_code, 503)
-        self.assertIn("BrokerNotConfigured", logs.output[0])
+        failure = [record for record in logs.records if "BrokerNotConfigured" in record.getMessage()]
+        # A WARNING, so only capture_exception makes a Sentry event of it.
+        self.assertEqual([record.levelname for record in failure], ["WARNING"])
         self.assertNotIn("12345", "".join(logs.output))
 
 

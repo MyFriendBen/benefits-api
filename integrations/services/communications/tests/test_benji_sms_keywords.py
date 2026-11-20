@@ -105,6 +105,10 @@ class ClassifyTest(SimpleTestCase):
         self.assertEqual(classify("anything at all", "HELP"), KeywordMatch(Keyword.HELP, carrier=True))
         self.assertEqual(classify("", "start"), KeywordMatch(Keyword.START, carrier=True))
 
+    def test_a_declared_start_for_yes_is_also_plain_text(self) -> None:
+        self.assertEqual(classify("Yes", "START"), KeywordMatch(Keyword.START, carrier=True, also_plain_text=True))
+        self.assertEqual(classify("start", "START"), KeywordMatch(Keyword.START, carrier=True))
+
     def test_an_unknown_opt_out_type_falls_back_to_the_wording(self) -> None:
         self.assertEqual(classify("alto", "SOMETHING"), KeywordMatch(Keyword.STOP, carrier=False))
         self.assertIsNone(classify("what is snap", ""))

@@ -111,7 +111,8 @@ def classify(body: Optional[str], opt_out_type: Optional[str] = None) -> Optiona
     declared = (opt_out_type or "").strip().lower()
     for keyword in Keyword:
         if declared == keyword.value:
-            return KeywordMatch(keyword, carrier=True)
+            plain = keyword is Keyword.START and (body or "").strip().casefold() in PLAIN_TEXT_WORDS
+            return KeywordMatch(keyword, carrier=True, also_plain_text=plain)
 
     text = body or ""
     exact = text.strip().casefold()

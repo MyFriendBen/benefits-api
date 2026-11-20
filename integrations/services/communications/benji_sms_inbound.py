@@ -299,8 +299,9 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
                 # Another post of this same text got there first and decided it.
                 return Result(Outcome(seen.outcome))
         if phone.revoked_at is not None:
-            # A replay of an older START, after a newer STOP.
-            return Result(Outcome.REVOKED)
+            # A replay of an older START, after a newer STOP. Final: an unfinished "yes"
+            # blocked here must not become a turn if a later START lifts the STOP.
+            return _decided(phone, inbound, Outcome.REVOKED)
         restarted = cleared
         if restarted or not keyword.also_plain_text:
             # A re-subscribe, or a START word that is never a question. "yes" from a
@@ -351,7 +352,12 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
         return _decided(phone, inbound, Outcome.CHANNEL_OFF)
 
     if inbound.num_media > 0:
-        _decided(phone, inbound, Outcome.PICTURE, binding.conversation_id)
+        receipt = BenjiSmsInboundReceipt.objects.decide(
+            phone, inbound.sid, Outcome.PICTURE.value, binding.conversation_id
+        )
+        if receipt.outcome != Outcome.PICTURE or receipt.conversation_id != binding.conversation_id:
+            # Another post of this text decided first: follow it, in its conversation.
+            return _replay(inbound, phone, receipt, keyword, now)
         return Result(Outcome.PICTURE, _send_fixed(inbound, replies.PICTURE, binding, now, for_screen=True))
 
     if not inbound.body.strip():
