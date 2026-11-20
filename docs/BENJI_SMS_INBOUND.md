@@ -25,11 +25,16 @@ environment. Nothing points at production until launch (MFB-2447).
 
 | Twilio setting | URL |
 | --- | --- |
-| A message comes in (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/#rc=2&rp=ct,rt,5xx` |
-| Primary handler fails (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/fallback/#rc=2&rp=ct,rt,5xx` |
+| A message comes in (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/#rc=2&rp=ct,rt,5xx&ct=3000&rt=5000` |
+| Primary handler fails (HTTP POST) | `<BACKEND_DOMAIN>/api/assistant/sms/inbound/fallback/#rc=2&rp=ct,rt,5xx&ct=3000&rt=5000` |
 
-- `#rc=2&rp=ct,rt,5xx` is Twilio's connection override: retry twice when Twilio cannot
-  connect, times out, or gets a 5xx. Without it Twilio retries only a failed connection,
+- `#rc=2&rp=ct,rt,5xx&ct=3000&rt=5000` is Twilio's connection override: retry twice when
+  Twilio cannot connect, times out, or gets a 5xx. All attempts share Twilio's 15-second
+  total (`tt`), so the read timeout is cut to 5 s (`rt`) and the connect timeout to 3 s
+  (`ct`): with the defaults, one slow attempt would use the whole 15 s and leave no time
+  for a retry. A normal answer takes well under a second; the slowest path (a fixed
+  reply sent through Twilio inside the request) is bounded by the 10 s Twilio client
+  timeout, and a replay of it is safe. Without it Twilio retries only a failed connection,
   and goes straight to the fallback URL on a 5xx. A 4xx is left out on purpose: a 403
   (bad signature) or 400 will not change on a retry. The fragment is not sent to us and
   is not part of the signature. Twilio does not say whether it honours a fragment on the
@@ -138,10 +143,15 @@ fallback URL after that.
   fixed reply per inbound `MessageSid` (`benji_sms_delivery_one_fixed_per_inbound`), so a
   replay loses the insert and sends nothing. It is claimed before the day's limit, so a
   replay never spends the number's allowance.
-- Every STOP and START, including one that changed nothing (a START from a number that
-  was not revoked, a second STOP), leaves a `BenjiSmsKeywordReceipt` with its
-  `MessageSid`, in the same locked transaction as any change. A text with a receipt is
-  not applied again, so a replay of an older STOP or START can never undo a newer one.
+- Every decision for a text from a known number is recorded with its `MessageSid` in a
+  `BenjiSmsInboundReceipt`: STOP and START in the same locked transaction as their
+  change (even when they changed nothing), every other decision before its work is
+  done. A replay follows that first decision and redoes only its unfinished work: it
+  queues the turn again for the conversation it was first queued for (even after a new
+  on-ramp), or retries the same fixed reply, whose claim lets one out per text. So an
+  older STOP or START cannot undo a newer one, and a text answered as shared does not
+  become a turn when the mark lapses. One gap: if the first post failed before its
+  decision was recorded (a crash mid-request), the replay decides afresh.
 - Confirmations are best effort. A STOP or START made in our wording is confirmed
   ("You won't get more texts", "Benji is back") by the text that made the change, on
   its first post only; Twilio confirms its own keywords. A replay or a repeated keyword
@@ -170,12 +180,16 @@ MFB-2444 adds the rows in all 18 languages. Before launch, no reply should be lo
   stack locals (`benefits/sentry_scrub.py`). A refused request still produces an event,
   which is what the signature-failure alarm (MFB-2441) will count.
 - Media is deleted at Twilio for every text that carries any, whoever sent it.
-- Delivery rows for replies to a number with no binding are purged after a day.
-- STOP and START receipts keep the text's `MessageSid` for a day, then the nightly sweep
-  (MFB-2442) purges them (`BenjiSmsKeywordReceipt.objects.purge_expired`). Like the
-  delivery rows' SIDs, they resolve to the number at Twilio; they go with the phone row
-  in a deletion request. The phone row also keeps the id of the conversation its STOP
-  closed, which is not personal data.
+- Delivery rows for replies to a number with no binding are purged after a day once the
+  nightly sweep (MFB-2442) runs it; until that sweep exists, they are kept.
+- Inbound receipts (`BenjiSmsInboundReceipt`) keep the `MessageSid` of every text from a
+  known number, with what was decided for it, so a replay follows its first decision.
+  They are meant to live a day: the nightly sweep (MFB-2442) purges them with
+  `BenjiSmsInboundReceipt.objects.purge_expired`, and until that sweep exists they are
+  kept. Like the delivery rows' SIDs, they resolve to the number at Twilio; they go with
+  the phone row in a deletion request. The phone row also keeps the id of the
+  conversation its STOP closed, which is not personal data. Texts from strangers leave
+  no receipt.
 - Fixed replies ask Twilio for delivery status once the status callback route exists
   (MFB-2441, `benji_sms.status_callback_url`). Until then they are sent without one, so
   Twilio is never told to post to a URL that does not exist.
@@ -183,8 +197,15 @@ MFB-2444 adds the rows in all 18 languages. Before launch, no reply should be lo
 ## Trying it locally
 
 `fake_benji_sms_inbound` signs a request the way Twilio does and posts it to the local
-server. `BACKEND_DOMAIN` must match the server's address (the default,
-`http://localhost:8000`, does), and `TWILIO_TOKEN` can be any string.
+server. Set these in both the server's environment and the command's:
+
+- `BACKEND_DOMAIN`: the server's address (the default, `http://localhost:8000`, matches
+  `runserver`).
+- `TWILIO_TOKEN`: any string, the same in both.
+- `BENJI_SMS_HASH_KEY`: at least 32 characters, the same in both
+  (`python -c "import secrets; print(secrets.token_hex(32))"`). Without it every known
+  number fails to hash and the webhook answers 503. It identifies every stored phone, so
+  never change it on a database that has bindings you want to keep.
 
 ```bash
 python manage.py fake_benji_sms_inbound "what is snap"

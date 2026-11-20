@@ -25,7 +25,13 @@ the inbound webhook queues it for every text that carries media, whoever sent it
 not behind the kill switch or the flag, and it is safe to run twice. A dead letter from it
 means that job could not confirm the deletion: check the message's media at Twilio and
 delete any that remains. A replayed webhook queues a second deletion, which may already
-have done it. `screener.benji_sms_ping` is a probe that runs under
+have done it.
+
+For a stranger's picture (a number with no conversation) the dead letter keeps no SID,
+by design: nothing ties it to a phone. To find the message, filter Twilio's Messaging
+logs for inbound messages with media to our number around the dead letter's
+`created_at`, delete any media that remains, and record what was done on the incident
+ticket rather than in the dead letter. `screener.benji_sms_ping` is a probe that runs under
 the same policy so the check proves the path a job takes. The webhook that queues both
 jobs is described in [BENJI_SMS_INBOUND.md](BENJI_SMS_INBOUND.md).
 

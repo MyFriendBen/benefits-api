@@ -26,7 +26,7 @@ from screener.admin import (
     AssistantConversationAdmin,
     BenjiSmsBindingAdmin,
     BenjiSmsDeadLetterAdmin,
-    BenjiSmsKeywordReceiptAdmin,
+    BenjiSmsInboundReceiptAdmin,
     BenjiSmsDeliveryAdmin,
     BenjiSmsPhoneAdmin,
     BenjiSmsStrangerReplyAdmin,
@@ -43,7 +43,7 @@ from screener.models import (
     BenjiSmsDelivery,
     BenjiSmsDeliveryKind,
     BenjiSmsDeliveryStatus,
-    BenjiSmsKeywordReceipt,
+    BenjiSmsInboundReceipt,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
     WhiteLabel,
@@ -395,7 +395,7 @@ class TestSmsAdminAccess(TestCase):
         (BenjiSmsDeliveryAdmin, BenjiSmsDelivery),
         (BenjiSmsStrangerReplyAdmin, BenjiSmsStrangerReply),
         (BenjiSmsDeadLetterAdmin, BenjiSmsDeadLetter),
-        (BenjiSmsKeywordReceiptAdmin, BenjiSmsKeywordReceipt),
+        (BenjiSmsInboundReceiptAdmin, BenjiSmsInboundReceipt),
     )
 
     def setUp(self) -> None:
@@ -409,14 +409,14 @@ class TestSmsAdminAccess(TestCase):
         self.stranger = BenjiSmsStrangerReply.objects.create(phone_hash=OTHER_HASH)
         self.dead_letter = make_dead_letter(self.binding.conversation)
         self.phone.revoke(inbound_sid=sid(9))
-        self.receipt = BenjiSmsKeywordReceipt.objects.get()
+        self.receipt = BenjiSmsInboundReceipt.objects.get()
         self.rows = {
             BenjiSmsPhone: self.phone,
             BenjiSmsBinding: self.binding,
             BenjiSmsDelivery: self.delivery,
             BenjiSmsStrangerReply: self.stranger,
             BenjiSmsDeadLetter: self.dead_letter,
-            BenjiSmsKeywordReceipt: self.receipt,
+            BenjiSmsInboundReceipt: self.receipt,
         }
 
         self.staff = User.objects.create_user(email_or_cell="tenant-staff@example.com", password="pw")
@@ -507,7 +507,7 @@ class TestSmsAdminPagesRender(TestCase):
         self.stranger = BenjiSmsStrangerReply.objects.create(phone_hash=OTHER_HASH)
         self.dead_letter = make_dead_letter(self.binding.conversation)
         self.binding.phone.revoke(inbound_sid=sid(9))
-        self.receipt = BenjiSmsKeywordReceipt.objects.get()
+        self.receipt = BenjiSmsInboundReceipt.objects.get()
         superuser = User.objects.create_user(email_or_cell="root@example.com", password="pw")
         superuser.is_staff = True
         superuser.is_superuser = True
@@ -521,7 +521,7 @@ class TestSmsAdminPagesRender(TestCase):
             "benjismsdelivery": self.delivery,
             "benjismsstrangerreply": self.stranger,
             "benjismsdeadletter": self.dead_letter,
-            "benjismskeywordreceipt": self.receipt,
+            "benjismsinboundreceipt": self.receipt,
         }
         for name, row in rows.items():
             base = f"/admin/screener/{name}/"
@@ -909,8 +909,8 @@ class TestRevokeAndStart(TestCase):
         self.phone.revoke(inbound_sid=SID)
 
         self.assertEqual(BenjiSmsPhone.objects.get().revoked_conversation_id, self.binding.conversation_id)
-        receipt = BenjiSmsKeywordReceipt.objects.get()
-        self.assertEqual((receipt.inbound_sid, receipt.keyword, receipt.applied), (SID, "stop", True))
+        receipt = BenjiSmsInboundReceipt.objects.get()
+        self.assertEqual((receipt.inbound_sid, receipt.outcome, receipt.applied), (SID, "stopped", True))
 
     def test_a_replayed_stop_after_a_newer_start_changes_nothing(self) -> None:
         stop, start = SID, sid(5)
@@ -1008,14 +1008,14 @@ class TestRevokeAndStart(TestCase):
     def test_receipts_purge_after_a_day_and_go_with_the_phone(self) -> None:
         now = timezone.now()
         self.phone.revoke(inbound_sid=sid(5))
-        BenjiSmsKeywordReceipt.objects.update(created_at=now - timedelta(hours=25))
+        BenjiSmsInboundReceipt.objects.update(created_at=now - timedelta(hours=25))
         self.phone.clear_revocation(inbound_sid=sid(6))
 
-        self.assertEqual(BenjiSmsKeywordReceipt.objects.purge_expired(now), 1)
-        self.assertEqual(list(BenjiSmsKeywordReceipt.objects.values_list("inbound_sid", flat=True)), [sid(6)])
+        self.assertEqual(BenjiSmsInboundReceipt.objects.purge_expired(now), 1)
+        self.assertEqual(list(BenjiSmsInboundReceipt.objects.values_list("inbound_sid", flat=True)), [sid(6)])
 
         self.phone.delete_with_conversations()
-        self.assertFalse(BenjiSmsKeywordReceipt.objects.exists())
+        self.assertFalse(BenjiSmsInboundReceipt.objects.exists())
 
     def test_start_resumes_only_the_conversation_the_stop_closed(self) -> None:
         """A binding something else closed (an on-ramp from another screen) stays closed."""
@@ -1082,6 +1082,16 @@ class TestBindingQuietAndRouting(TestCase):
 
         self.assertEqual(binding.last_inbound_at, now)
         self.assertEqual(BenjiSmsBinding.objects.get().last_inbound_at, now)
+
+    def test_record_inbound_never_moves_the_time_backwards(self) -> None:
+        """A text that waited for the lock can carry an earlier `now`."""
+        binding = make_binding(self.white_label, self.phone)
+        later = timezone.now()
+        binding.record_inbound(later)
+
+        BenjiSmsBinding.objects.get(pk=binding.pk).record_inbound(later - timedelta(seconds=5))
+
+        self.assertEqual(BenjiSmsBinding.objects.get().last_inbound_at, later)
 
     def test_record_inbound_without_touch_leaves_the_time(self) -> None:
         binding = make_binding(self.white_label, self.phone)
@@ -1203,9 +1213,7 @@ class TestRowLocks(TransactionTestCase):
         make_binding(self.white_label, self.phone)
 
         def receipt_in_flight() -> None:
-            BenjiSmsKeywordReceipt.objects.create(
-                phone_id=self.phone.pk, inbound_sid=sid(21), keyword="start", applied=False
-            )
+            BenjiSmsInboundReceipt.objects.create(phone_id=self.phone.pk, inbound_sid=sid(21), outcome="start_ignored")
 
         deleted = self._hold_lock_then_run(
             self.phone.pk, receipt_in_flight, lambda: self.phone.delete_with_conversations()
@@ -1213,7 +1221,7 @@ class TestRowLocks(TransactionTestCase):
 
         self.assertEqual(deleted, 1)
         self.assertFalse(BenjiSmsPhone.objects.exists())
-        self.assertFalse(BenjiSmsKeywordReceipt.objects.exists())
+        self.assertFalse(BenjiSmsInboundReceipt.objects.exists())
 
     def _hold_lock_then_run(self, phone_pk: object, in_lock: Callable[[], None], act: Callable[[], object]) -> object:
         """Like _hold_lock_then, for a change that is not a plain update of the row."""

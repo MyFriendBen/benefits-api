@@ -12,7 +12,7 @@ from .models import (
     BenjiSmsBinding,
     BenjiSmsDeadLetter,
     BenjiSmsDelivery,
-    BenjiSmsKeywordReceipt,
+    BenjiSmsInboundReceipt,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
     WhiteLabel,
@@ -247,15 +247,15 @@ class BenjiSmsPhoneAdmin(SuperuserReadOnlyAdmin):
     readonly_fields = ("phone_hash", "revoked_at", "revoked_conversation_id", "shared_until", "created_at")
 
 
-class BenjiSmsKeywordReceiptAdmin(SuperuserReadOnlyAdmin):
-    """STOP and START texts handled in the last day (MFB-2439). The SID is shown on the
-    detail page only."""
+class BenjiSmsInboundReceiptAdmin(SuperuserReadOnlyAdmin):
+    """What the webhook decided for each text from a known number in the last day
+    (MFB-2439). The SID is shown on the detail page only."""
 
-    list_display = ("id", "phone", "keyword", "applied", "resumed", "created_at")
-    list_filter = ("keyword", "applied")
+    list_display = ("id", "phone", "outcome", "applied", "resumed", "created_at")
+    list_filter = ("outcome", "applied")
     list_select_related = ("phone",)
     ordering = ("-created_at",)
-    readonly_fields = ("phone", "inbound_sid", "keyword", "applied", "resumed", "created_at")
+    readonly_fields = ("phone", "inbound_sid", "outcome", "applied", "resumed", "conversation_id", "created_at")
 
 
 class BenjiSmsBindingAdmin(SuperuserReadOnlyAdmin):
@@ -356,4 +356,4 @@ admin.site.register(BenjiSmsBinding, BenjiSmsBindingAdmin)
 admin.site.register(BenjiSmsDelivery, BenjiSmsDeliveryAdmin)
 admin.site.register(BenjiSmsStrangerReply, BenjiSmsStrangerReplyAdmin)
 admin.site.register(BenjiSmsDeadLetter, BenjiSmsDeadLetterAdmin)
-admin.site.register(BenjiSmsKeywordReceipt, BenjiSmsKeywordReceiptAdmin)
+admin.site.register(BenjiSmsInboundReceipt, BenjiSmsInboundReceiptAdmin)

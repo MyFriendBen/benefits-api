@@ -365,6 +365,10 @@ django_heroku.settings(locals())
 # of a decision that sends nothing. The root logger has no handler, so without this only
 # WARNING and above would reach the logs (through Python's last-resort handler).
 LOGGING["loggers"]["screener.benji_sms_inbound"] = {"handlers": ["console"], "level": "INFO"}
+# The Twilio SDK logs every request URL at INFO, and its media and message URLs carry the
+# MessageSid, which resolves to the phone number at Twilio. The Celery worker logs INFO
+# (Procfile), so keep the SDK at WARNING (MFB-2439).
+LOGGING["loggers"]["twilio.http_client"] = {"level": "WARNING"}
 
 # Cache Configuration
 # Uses Redis in production (REDIS_URL is set automatically by the Heroku Redis add-on).

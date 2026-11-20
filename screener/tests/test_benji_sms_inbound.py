@@ -170,6 +170,15 @@ class SignatureTest(InboundMixin, TestCase):
             )
         self.assert_rejected(response)
 
+    def test_a_rejected_picture_queues_no_media_deletion(self) -> None:
+        params = build_params("", PHONE, OUR_NUMBER, SID, 1)
+        with self.assertNumQueries(0):
+            response = self.client.post(
+                INBOUND_PATH, data=urlencode(params), content_type="application/x-www-form-urlencoded"
+            )
+        self.assert_rejected(response)
+        self.enqueue_media_deletion.assert_not_called()
+
     def test_a_wrong_signature_is_rejected_before_any_lookup(self) -> None:
         with self.assertNumQueries(0):
             response = self.post(token="someone-elses-token")
@@ -719,6 +728,16 @@ class RevokedTest(InboundMixin, TestCase):
         self.assertIsNone(self.phone.revoked_at)
         self.assert_nothing_sent_or_queued()
 
+    def test_a_replayed_yes_that_was_an_answer_is_queued_in_its_conversation(self) -> None:
+        self.post("START")
+        self.post("yes", sid=OTHER_SID)
+        self.post("yes", sid=OTHER_SID)
+
+        self.assertEqual(
+            [call.args for call in self.enqueue_turn.call_args_list],
+            [(self.binding.conversation_id, OTHER_SID)] * 2,
+        )
+
     def test_a_fresh_yes_after_start_is_an_ordinary_answer(self) -> None:
         self.post("START")
         self.post("yes", sid=OTHER_SID)
@@ -982,6 +1001,18 @@ class SharedTest(InboundMixin, TestCase):
         self.assert_nothing_sent_or_queued()
         self.assertFalse(BenjiSmsStrangerReply.objects.exists())
 
+    def test_a_replay_after_the_mark_lapses_is_still_a_shared_reply(self) -> None:
+        """Not a turn: the replay follows the first decision."""
+        self.bind()
+        BenjiSmsPhone.objects.update(shared_until=timezone.now() + timedelta(minutes=1))
+        self.post()
+        BenjiSmsPhone.objects.update(shared_until=timezone.now() - timedelta(minutes=1))
+
+        self.post()
+
+        self.enqueue_turn.assert_not_called()
+        self.assertEqual(self.sent_bodies(), [replies.SHARED.default])
+
     def test_a_lapsed_mark_no_longer_applies(self) -> None:
         binding = self.bind()
         BenjiSmsPhone.objects.update(shared_until=timezone.now() - timedelta(minutes=1))
@@ -1089,6 +1120,42 @@ class TurnTest(InboundMixin, TestCase):
 
         binding.refresh_from_db()
         self.assertIsNotNone(binding.last_inbound_at)
+
+    def test_a_replay_after_a_new_on_ramp_queues_in_the_first_conversation(self) -> None:
+        """The worker deduplicates by SID within a conversation, so the turn stays there."""
+        first = self.bind()
+        self.post()
+        first.end(AssistantConversationStatus.CLOSED)
+        self.bind()
+
+        self.post()
+
+        self.assertEqual(
+            [call.args for call in self.enqueue_turn.call_args_list],
+            [(first.conversation_id, SID), (first.conversation_id, SID)],
+        )
+
+    def test_a_turn_that_could_not_be_queued_is_queued_on_the_replay(self) -> None:
+        binding = self.bind()
+        self.enqueue_turn.side_effect = BrokerNotConfigured("no broker")
+        with self.assertLogs(LOGGER, level="ERROR"):
+            self.assertEqual(self.post().status_code, 503)
+        self.enqueue_turn.side_effect = None
+
+        self.assert_acknowledged(self.post())
+
+        self.enqueue_turn.assert_called_with(binding.conversation_id, SID)
+
+    def test_a_replayed_turn_is_not_queued_after_a_stop(self) -> None:
+        binding = self.bind()
+        self.post()
+        self.post("alto", sid=OTHER_SID)
+
+        self.post()
+
+        self.assertEqual(self.enqueue_turn.call_count, 1)
+        binding.phone.refresh_from_db()
+        self.assertIsNotNone(binding.phone.revoked_at)
 
     def test_a_replayed_turn_is_queued_again_for_the_worker_to_absorb(self) -> None:
         """The worker dedupes on the SID (client_message_id, MFB-2440); nothing is sent here."""
@@ -1203,6 +1270,14 @@ class PictureTest(InboundMixin, TestCase):
         self.assertIn("media deletion not queued", output)
         self.assertIn("BrokerNotConfigured", output)
 
+    def test_media_is_queued_for_deletion_even_when_the_binding_cannot_be_read(self) -> None:
+        self.bind()
+        with patch.object(BenjiSmsPhone, "newest_binding", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.assertEqual(self.post("", media=1).status_code, 503)
+
+        self.enqueue_media_deletion.assert_called_once_with(SID, None)
+
     def test_media_is_queued_for_deletion_even_when_the_number_cannot_be_hashed(self) -> None:
         with override_settings(BENJI_SMS_HASH_KEY=""):
             with self.assertLogs(LOGGER, level="ERROR"):
@@ -1294,6 +1369,12 @@ class LocaleAndLogTest(InboundMixin, TestCase):
         self.post("", media=1)
 
         self.assertEqual(self.sent_bodies(), ["Benji todavía no puede leer fotos."])
+
+    def test_the_twilio_sdk_does_not_log_request_urls(self) -> None:
+        """Its URLs carry the MessageSid, and the worker logs INFO."""
+        import logging
+
+        self.assertFalse(logging.getLogger("twilio.http_client").isEnabledFor(logging.INFO))
 
     def test_the_outcome_line_reaches_the_logs_at_info(self) -> None:
         """settings.LOGGING names this module's logger; without it, INFO goes nowhere."""

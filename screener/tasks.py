@@ -42,7 +42,7 @@ from typing import Any, Optional
 import redis
 import requests
 from celery import Task, shared_task
-from celery.exceptions import Reject
+from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.result import AsyncResult
 from celery.utils.saferepr import saferepr
 from django.conf import settings
@@ -334,6 +334,10 @@ def benji_sms_delete_media(message_sid: str, conversation_id: Optional[str] = No
         raise ValueError("message_sid must be a Twilio message SID (SM or MM, then 32 hex digits).")
     try:
         return delete_inbound_media(sid)
+    except SoftTimeLimitExceeded:
+        # Up to ten files at up to 10s each can outlast one attempt. The next attempt
+        # lists and deletes what is left.
+        raise TransientTurnError("Media deletion ran out of time.") from None
     except BenjiSmsMediaError as exc:
         if exc.retryable:
             raise TransientTurnError(f"Media deletion failed at Twilio (status={exc.status}).") from None

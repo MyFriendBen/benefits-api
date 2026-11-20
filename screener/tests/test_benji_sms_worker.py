@@ -799,6 +799,17 @@ class TestMediaDeletionJob(TestCase):
             "integrations.services.communications.benji_sms.BenjiSmsMediaError",
         )
 
+    def test_running_out_of_time_is_retried(self) -> None:
+        """The next attempt lists and deletes what is left."""
+        from celery.exceptions import SoftTimeLimitExceeded
+
+        self.delete.side_effect = [SoftTimeLimitExceeded(), 1]
+
+        result = enqueue_media_deletion(MMS_SID)
+
+        self.assertEqual(self.delete.call_count, 2)
+        self.assertFalse(result.failed())
+
     def test_missing_credentials_fail_at_once_without_a_retry(self) -> None:
         self.delete.side_effect = BenjiSmsMediaError(None, None, "not_configured")
 

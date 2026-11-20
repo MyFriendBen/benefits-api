@@ -1549,7 +1549,7 @@ class BenjiSmsPhone(models.Model):
 
         Returns True only if this call revoked the number: False if it found the number
         already revoked, or if `inbound_sid` is a STOP this phone has already handled (a
-        replayed webhook, see `BenjiSmsKeywordReceipt`), which changes nothing. The
+        replayed webhook, see `BenjiSmsInboundReceipt`), which changes nothing. The
         caller confirms only on True, so a replay never sends anything. The first
         `revoked_at` is kept.
 
@@ -1559,10 +1559,11 @@ class BenjiSmsPhone(models.Model):
         now = now or timezone.now()
         with transaction.atomic():
             phone = BenjiSmsPhone.objects.select_for_update().get(pk=self.pk)
-            if BenjiSmsKeywordReceipt.objects.seen(inbound_sid) is not None:
+            if BenjiSmsInboundReceipt.objects.seen(inbound_sid) is not None:
                 applied = False
             else:
-                active = list(phone.bindings.filter(status=AssistantConversationStatus.ACTIVE))
+                # Locked, so an expiry committed by a concurrent text is seen, not overwritten.
+                active = list(phone.bindings.select_for_update().filter(status=AssistantConversationStatus.ACTIVE))
                 # A revoked phone with an active binding would keep routing texts to
                 # the model, so any active binding closes whether or not this revokes.
                 for binding in active:
@@ -1573,7 +1574,7 @@ class BenjiSmsPhone(models.Model):
                         revoked_at=now,
                         revoked_conversation_id=active[0].conversation_id if active else None,
                     )
-                BenjiSmsKeywordReceipt.objects.record(phone, inbound_sid, BenjiSmsKeyword.STOP, applied=applied)
+                BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, BENJI_SMS_STOPPED, applied=applied)
         self.refresh_from_db(fields=["revoked_at", "revoked_conversation_id"])
         return applied
 
@@ -1594,11 +1595,11 @@ class BenjiSmsPhone(models.Model):
         """
         with transaction.atomic():
             phone = BenjiSmsPhone.objects.select_for_update().get(pk=self.pk)
-            if BenjiSmsKeywordReceipt.objects.seen(inbound_sid) is not None:
+            if BenjiSmsInboundReceipt.objects.seen(inbound_sid) is not None:
                 cleared, resumed = False, False
             elif phone.revoked_at is None:
                 cleared, resumed = False, False
-                BenjiSmsKeywordReceipt.objects.record(phone, inbound_sid, BenjiSmsKeyword.START, applied=False)
+                BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, BENJI_SMS_START_IGNORED)
             else:
                 binding = phone.newest_binding()
                 resumed = (
@@ -1609,8 +1610,8 @@ class BenjiSmsPhone(models.Model):
                 )
                 cleared = True
                 BenjiSmsPhone.objects.filter(pk=self.pk).update(revoked_at=None, revoked_conversation_id=None)
-                BenjiSmsKeywordReceipt.objects.record(
-                    phone, inbound_sid, BenjiSmsKeyword.START, applied=True, resumed=resumed
+                BenjiSmsInboundReceipt.objects.record(
+                    phone, inbound_sid, BENJI_SMS_STARTED, applied=True, resumed=resumed
                 )
         self.refresh_from_db(fields=["revoked_at", "revoked_conversation_id"])
         return cleared, resumed
@@ -1640,14 +1641,17 @@ class BenjiSmsPhone(models.Model):
         return len(conversation_ids)
 
 
-class BenjiSmsKeyword(models.TextChoices):
-    STOP = "stop", "STOP"
-    START = "start", "START"
+# What the inbound webhook decided for one text from a known number (MFB-2439). The
+# values are the webhook's outcome names (integrations.services.communications.
+# benji_sms_inbound.Outcome); these three are the ones the models write themselves.
+BENJI_SMS_STOPPED = "stopped"
+BENJI_SMS_STARTED = "started"
+BENJI_SMS_START_IGNORED = "start_ignored"
 
 
-class BenjiSmsKeywordReceiptManager(models.Manager):
-    def seen(self, inbound_sid: Optional[str]) -> Optional["BenjiSmsKeywordReceipt"]:
-        """The receipt for an inbound text already handled as STOP or START, or None."""
+class BenjiSmsInboundReceiptManager(models.Manager):
+    def seen(self, inbound_sid: Optional[str]) -> Optional["BenjiSmsInboundReceipt"]:
+        """The receipt for an inbound text already handled, or None."""
         if inbound_sid is None:
             return None
         return self.filter(inbound_sid=inbound_sid).first()
@@ -1656,16 +1660,47 @@ class BenjiSmsKeywordReceiptManager(models.Manager):
         self,
         phone: "BenjiSmsPhone",
         inbound_sid: Optional[str],
-        keyword: str,
+        outcome: str,
         *,
-        applied: bool,
+        applied: bool = False,
         resumed: bool = False,
+        conversation_id: Optional[uuid.UUID] = None,
     ) -> None:
-        """Record what a STOP or START did. Called under the phone's row lock, in the
-        same transaction as the change, so the receipt and the change land together."""
+        """Record what the webhook decided for a text, unless it is already recorded.
+
+        STOP and START are recorded under the phone's row lock, in the same transaction
+        as the change. Every other decision is recorded before its work is done (a turn
+        before it is queued), so a replay of a text whose work failed can redo that
+        work, and only that.
+        """
         if inbound_sid is None:
             return
-        self.create(phone=phone, inbound_sid=inbound_sid, keyword=keyword, applied=applied, resumed=resumed)
+        try:
+            # Its own savepoint, so a concurrent post of the same text leaves the
+            # caller's transaction usable; the first record stands.
+            with transaction.atomic():
+                self.create(
+                    phone=phone,
+                    inbound_sid=inbound_sid,
+                    outcome=outcome,
+                    applied=applied,
+                    resumed=resumed,
+                    conversation_id=conversation_id,
+                )
+        except IntegrityError:
+            pass
+
+    def decide(
+        self, phone: "BenjiSmsPhone", inbound_sid: str, outcome: str, conversation_id: Optional[uuid.UUID] = None
+    ) -> None:
+        """Record the webhook's final decision for a text on its first post.
+
+        Overwrites the receipt `clear_revocation` wrote for a "yes" that changed nothing
+        and then carried on as an ordinary answer; creates one for any other text.
+        """
+        updated = self.filter(inbound_sid=inbound_sid).update(outcome=outcome, conversation_id=conversation_id)
+        if not updated:
+            self.record(phone, inbound_sid, outcome, conversation_id=conversation_id)
 
     def purge_expired(self, now: Optional[datetime] = None) -> int:
         """Delete receipts older than a day. For the nightly sweep (MFB-2442). Returns
@@ -1675,39 +1710,45 @@ class BenjiSmsKeywordReceiptManager(models.Manager):
         return deleted
 
 
-class BenjiSmsKeywordReceipt(models.Model):
-    """One inbound STOP or START this phone has handled, and what it did (MFB-2439).
+class BenjiSmsInboundReceipt(models.Model):
+    """What the webhook decided for one inbound text from a known number (MFB-2439).
 
     Twilio posts a text again when our answer is slow or fails, and through the fallback
-    URL after that, so a STOP or START can arrive twice, after a newer one. Every one is
-    recorded here, including those that changed nothing (a START from a number that was
-    not revoked, a second STOP), and a text whose SID is already here is not applied
-    again: a replay of an older START can never undo a newer STOP, or the other way
-    round. `applied` also tells a replayed START that once cleared a revocation apart
-    from a "yes" that was an ordinary answer.
+    URL after that, sometimes after newer texts. A replay must follow the decision its
+    first post made, never decide again on the state as it is now: an older START must
+    not undo a newer STOP, a text answered as shared must not become a turn once the
+    shared mark lapses, and a turn must not move to a conversation a new on-ramp opened
+    since. So every decision for a known number is recorded here, STOP and START
+    included even when they changed nothing, and a text whose SID is already here is
+    replayed from its receipt: its unfinished work (queueing its turn in its own
+    conversation) is retried and nothing else changes.
+
+    Texts from numbers with no phone row (strangers) get no receipt: their replies are
+    deduplicated by the fixed-reply claim, and nothing about them is kept.
 
     The SID resolves to the number at Twilio, like a delivery row's. Kept a day (the
     nightly sweep), and deleted with the phone row in a deletion request.
     """
 
-    phone = models.ForeignKey("BenjiSmsPhone", related_name="keyword_receipts", on_delete=models.CASCADE)
+    phone = models.ForeignKey("BenjiSmsPhone", related_name="inbound_receipts", on_delete=models.CASCADE)
     inbound_sid = models.CharField(max_length=34)
-    keyword = models.CharField(max_length=8, choices=BenjiSmsKeyword.choices)
-    # Whether this text changed the state: revoked the number, or cleared a revocation.
-    applied = models.BooleanField()
+    # The webhook's outcome name, e.g. "stopped", "started", "queued", "shared".
+    outcome = models.CharField(max_length=16)
+    # For STOP and START: whether this text changed the state (revoked the number, or
+    # cleared a revocation).
+    applied = models.BooleanField(default=False)
     # For an applied START: whether the conversation the STOP closed resumed.
     resumed = models.BooleanField(default=False)
+    # For a turn: the conversation it was queued for. Not a foreign key, for the same
+    # reason as BenjiSmsPhone.revoked_conversation_id.
+    conversation_id = models.UUIDField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    objects = BenjiSmsKeywordReceiptManager()
+    objects = BenjiSmsInboundReceiptManager()
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["inbound_sid"], name="benji_sms_keyword_receipt_sid_unique"),
-            models.CheckConstraint(
-                check=models.Q(keyword__in=BenjiSmsKeyword.values),
-                name="benji_sms_keyword_receipt_keyword_valid",
-            ),
+            models.UniqueConstraint(fields=["inbound_sid"], name="benji_sms_inbound_receipt_sid_unique"),
         ]
         indexes = [
             # The nightly purge.
@@ -1715,7 +1756,7 @@ class BenjiSmsKeywordReceipt(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"Benji SMS {self.keyword} receipt {self.pk}"
+        return f"Benji SMS {self.outcome} receipt {self.pk}"
 
 
 class BenjiSmsBinding(models.Model):
@@ -1852,8 +1893,11 @@ class BenjiSmsBinding(models.Model):
                 self.status = AssistantConversationStatus.EXPIRED
                 return False
             if touch:
-                BenjiSmsBinding.objects.filter(pk=self.pk).update(last_inbound_at=now)
-                self.last_inbound_at = now
+                # Never backwards: a text that waited for the lock can carry an earlier
+                # `now` than one that wrote first.
+                latest = max(now, locked.last_inbound_at) if locked.last_inbound_at else now
+                BenjiSmsBinding.objects.filter(pk=self.pk).update(last_inbound_at=latest)
+                self.last_inbound_at = latest
         return True
 
     def reactivate(self, now: Optional[datetime] = None) -> bool:
