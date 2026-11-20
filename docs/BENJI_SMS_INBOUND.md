@@ -172,7 +172,8 @@ fallback URL after that.
   text race, the first decision recorded is the one both follow. If the first post failed before its
   decision was recorded (a crash mid-request), the replay decides afresh, knowing when
   the text first arrived (each text's arrival is noted first, as a `pending` receipt):
-  a START retried after a crash never undoes a STOP that arrived after it.
+  a START retried after a crash never undoes a STOP that arrived after it, even one
+  that changed nothing because the number was already revoked.
 - Confirmations are best effort. A STOP or START made in our wording is confirmed
   ("You won't get more texts", "Benji is back") by the text that made the change, on
   its first post only; Twilio confirms its own keywords. A replay or a repeated keyword

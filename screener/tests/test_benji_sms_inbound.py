@@ -938,6 +938,19 @@ class RevokedTest(InboundMixin, TestCase):
         self.assertIsNotNone(self.phone.revoked_at)
         self.assertEqual(self.sent_bodies(), [replies.STOP.default])
 
+    def test_a_start_retried_after_a_crash_does_not_undo_a_later_stop_that_changed_nothing(self) -> None:
+        """Already revoked: iniciar crashes, alto (changes nothing), then the retry. STOP stands."""
+        with patch.object(BenjiSmsPhone, "clear_revocation", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="WARNING"):
+                self.post("iniciar", sid=SID)
+        self.post("alto", sid=OTHER_SID)
+
+        self.post("iniciar", sid=SID)
+
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+        self.create.assert_not_called()
+
     def test_a_start_retried_after_a_crash_still_clears_an_earlier_stop(self) -> None:
         with patch.object(BenjiSmsPhone, "clear_revocation", side_effect=RuntimeError("db gone")):
             with self.assertLogs(LOGGER, level="WARNING"):

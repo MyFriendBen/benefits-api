@@ -2,6 +2,7 @@ from collections.abc import Collection
 from typing import ClassVar, Optional
 from datetime import date, datetime, timedelta
 from django.db import IntegrityError, models, transaction
+from django.db.models.functions import Now
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -1595,11 +1596,11 @@ class BenjiSmsPhone(models.Model):
         Returns (False, False), changing nothing, when the number was not revoked, or
         when `inbound_sid` is a START this phone has already handled (a replayed
         webhook), so an older START can never undo a newer STOP, even one that changed
-        nothing the first time. Nor does it clear a revocation made by a STOP that arrived
-        after this START (`arrived_at`, from `BenjiSmsInboundReceipt.objects.arrive`): a
-        START retried after its first post crashed comes second, as it was sent. The
-        phone row is locked for the change, as in `revoke`, and this instance's
-        `revoked_at` is fresh afterwards.
+        nothing the first time. Nor does it clear anything if a STOP arrived after this
+        START (`arrived_at`, from `BenjiSmsInboundReceipt.objects.arrive`), even one that
+        changed nothing: a START retried after its first post crashed comes second, as it
+        was sent. The phone row is locked for the change, as in `revoke`, and this
+        instance's `revoked_at` is fresh afterwards.
         """
         with transaction.atomic():
             phone = BenjiSmsPhone.objects.select_for_update().get(pk=self.pk)
@@ -1610,11 +1611,10 @@ class BenjiSmsPhone(models.Model):
                 BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, BENJI_SMS_START_IGNORED)
             elif (
                 arrived_at is not None
-                and phone.inbound_receipts.filter(
-                    outcome=BENJI_SMS_STOPPED, applied=True, created_at__gt=arrived_at
-                ).exists()
+                and phone.inbound_receipts.filter(outcome=BENJI_SMS_STOPPED, created_at__gt=arrived_at).exists()
             ):
-                # Revoked by a STOP that arrived after this START: it stands.
+                # A STOP arrived after this START, whether or not it changed anything
+                # (the number may already have been revoked): the later word stands.
                 cleared, resumed = False, False
                 BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, BenjiSmsOutcome.REVOKED.value)
             else:
@@ -1706,7 +1706,9 @@ class BenjiSmsInboundReceiptManager(models.Manager):
         """
         try:
             with transaction.atomic():
-                self.create(phone=phone, inbound_sid=inbound_sid, outcome=BENJI_SMS_PENDING)
+                # The database's clock, not this dyno's: arrivals handled on different
+                # dynos are compared with each other.
+                self.create(phone=phone, inbound_sid=inbound_sid, outcome=BENJI_SMS_PENDING, created_at=Now())
         except IntegrityError:
             pass
         return self.get(inbound_sid=inbound_sid)
