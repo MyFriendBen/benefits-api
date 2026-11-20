@@ -80,7 +80,12 @@ In order, first match wins.
 | 12 | From a number with no active conversation | | Re-entry reply, once a day |
 | 13 | For a white label with the flag or kill switch off | Nothing | none |
 | 14 | Carrying media | Record the inbound time | "Can't read pictures yet" |
-| 15 | Anything else | Record the inbound time, queue the turn | none (the worker replies) |
+| 15 | Empty | Record the inbound time | none |
+| 16 | Anything else | Record the inbound time, queue the turn | none (the worker replies) |
+
+The stranger, shared and re-entry replies belong to no conversation, so like every fixed
+reply with no white label (MFB-2433) only the kill switch gates them, not a white label's
+flag.
 
 Then, for every text carrying media, whatever happened above: queue the deletion of the
 media at Twilio. It comes last so that a broker outage cannot hold up a STOP.
@@ -91,7 +96,7 @@ not be queued, which makes Twilio post the text again (see the known gap above).
 
 STOP and START (rows 5 to 7) are decided with the phone's row locked, on a fresh read of
 the revocation, so a STOP and a START sent together are applied in order. The quiet check
-and the inbound-time write (rows 11, 14 and 15) run with the binding's row locked, so two
+and the inbound-time write (rows 11 and 14 to 16) run with the binding's row locked, so two
 texts arriving together cannot expire a conversation the other one has just kept alive.
 Every other branch that sends or queues something re-reads the revocation first, so a
 STOP that lands while a text is being handled stops its reply. The send itself is not
@@ -146,7 +151,7 @@ fallback URL after that.
 - Each fixed reply first inserts its `BenjiSmsDelivery` row, and the database allows one
   fixed reply per inbound `MessageSid` (`benji_sms_delivery_one_fixed_per_inbound`), so a
   replay loses the insert and sends nothing. It is claimed before the day's limit, so a
-  replay never spends the number's allowance.
+  replay of a reply that was sent, or may have been, never spends the number's allowance.
 - Every decision for a text from a known number is recorded with its `MessageSid` in a
   `BenjiSmsInboundReceipt`: STOP and START in the same locked transaction as their
   change (even when they changed nothing), every other decision before its work is

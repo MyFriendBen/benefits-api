@@ -737,6 +737,29 @@ class RevokedTest(InboundMixin, TestCase):
             [(self.binding.conversation_id, OTHER_SID)] * 2,
         )
 
+    def test_a_yes_whose_first_post_failed_is_answered_on_the_replay(self) -> None:
+        self.post("START")
+        with patch.object(inbound_service, "channel_enabled", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.assertEqual(self.post("yes", sid=OTHER_SID).status_code, 503)
+
+        self.assert_acknowledged(self.post("yes", sid=OTHER_SID))
+
+        self.enqueue_turn.assert_called_once_with(self.binding.conversation_id, OTHER_SID)
+
+    def test_an_unfinished_yes_replayed_after_a_stop_is_not_a_turn(self) -> None:
+        self.post("START")
+        with patch.object(inbound_service, "channel_enabled", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="ERROR"):
+                self.post("yes", sid=OTHER_SID)
+        self.post("alto", sid="SM" + "e5" * 16)
+
+        self.post("yes", sid=OTHER_SID)
+
+        self.enqueue_turn.assert_not_called()
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+
     def test_a_fresh_yes_after_start_is_an_ordinary_answer(self) -> None:
         self.post("START")
         self.post("yes", sid=OTHER_SID)
@@ -958,6 +981,13 @@ class KeywordFromAnActiveNumberTest(InboundMixin, TestCase):
         self.assert_nothing_sent_or_queued()
         self.assertIn("outcome=revoked", "\n".join(logs.output))
 
+    def test_a_replayed_help_gets_one_reply(self) -> None:
+        self.bind()
+        self.post("ayuda")
+        self.post("ayuda")
+
+        self.assertEqual(self.create.call_count, 1)
+
     def test_start_with_nothing_to_clear_is_ignored(self) -> None:
         self.bind()
         for index, body in enumerate(["START", "unstop", "iniciar"]):
@@ -1171,6 +1201,20 @@ class TurnTest(InboundMixin, TestCase):
         self.white_label.save()
 
         self.assert_acknowledged(self.post())
+
+        self.assert_nothing_sent_or_queued()
+        binding.refresh_from_db()
+        self.assertIsNone(binding.last_inbound_at)
+
+    def test_a_replayed_text_from_while_the_flag_was_off_stays_unanswered(self) -> None:
+        binding = self.bind()
+        self.white_label.feature_flags = {benji_sms.FLAG: False}
+        self.white_label.save()
+        self.post()
+        self.white_label.feature_flags = {benji_sms.FLAG: True}
+        self.white_label.save()
+
+        self.post()
 
         self.assert_nothing_sent_or_queued()
         binding.refresh_from_db()
@@ -1403,7 +1447,7 @@ class LocaleAndLogTest(InboundMixin, TestCase):
 
 @override_settings(**SETTINGS)
 class ConcurrentReplayTest(InboundMixin, TransactionTestCase):
-    """Two posts of one text at once: the database lets exactly one reply out."""
+    """Texts posted at the same moment: the database lets exactly one reply or change out."""
 
     def _race(self, claim: Any) -> list[Any]:
         """Run `claim` in two threads released together. Fails the test, rather than
@@ -1458,6 +1502,22 @@ class ConcurrentReplayTest(InboundMixin, TransactionTestCase):
 
         self.assertEqual(sorted(results), [False, True])
         self.assertEqual(self.create.call_count, 1)
+
+    def test_two_posts_of_one_yes_at_once_queue_no_turn(self) -> None:
+        """A revoked number's "yes", posted twice together: one clears, neither is a turn."""
+        binding = self.bind()
+        binding.phone.revoke()
+
+        def post_yes() -> str:
+            inbound = inbound_service.Inbound(sid=SID, sender=PHONE, body="yes", num_media=0)
+            return inbound_service.handle_inbound(inbound).outcome.value
+
+        results = self._race(post_yes)
+
+        self.assertEqual(sorted(results), ["started", "started"])
+        self.enqueue_turn.assert_not_called()
+        binding.phone.refresh_from_db()
+        self.assertIsNone(binding.phone.revoked_at)
 
     def test_one_number_claims_one_reply_a_day(self) -> None:
         number_hash = phone_hash(PHONE)

@@ -1718,7 +1718,9 @@ class BenjiSmsInboundReceiptManager(models.Manager):
         Overwrites the receipt `clear_revocation` wrote for a "yes" that changed nothing
         and then carried on as an ordinary answer; creates one for any other text.
         """
-        updated = self.filter(inbound_sid=inbound_sid).update(outcome=outcome, conversation_id=conversation_id)
+        updated = self.filter(inbound_sid=inbound_sid, outcome=BENJI_SMS_START_IGNORED).update(
+            outcome=outcome, conversation_id=conversation_id
+        )
         if not updated:
             self.record(phone, inbound_sid, outcome, conversation_id=conversation_id)
 

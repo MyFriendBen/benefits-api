@@ -23,7 +23,12 @@ WHAT HAPPENS TO A TEXT. In order, first match wins:
 12. No active conversation           the re-entry reply, once a day
 13. Channel off for the white label  nothing
 14. Has media                        the "can't read pictures" reply
-15. Otherwise                        queue the turn
+15. Empty text                       nothing (the inbound time is still recorded)
+16. Otherwise                        queue the turn
+
+The stranger, shared and re-entry replies belong to no conversation, so like every fixed
+reply with no white label (MFB-2433) only the kill switch gates them, not a white
+label's flag.
 
 Then, for any text that carries media, whatever happened above: queue the deletion of the
 media at Twilio. It comes last so that a broker outage cannot block a STOP: the state
@@ -46,8 +51,9 @@ for the wordings Twilio does not handle (benji_sms_keywords.py).
 A REPLAYED WEBHOOK CHANGES NOTHING NEW. Twilio posts a text again when it does not get our
 answer in time, and through the fallback URL after that.
 - Every fixed reply first inserts its delivery row, which the database allows once per
-  inbound MessageSid (`BenjiSmsDelivery.objects.claim_fixed`), and a replay claims
-  nothing else: not the day's no-conversation reply either.
+  inbound MessageSid (`BenjiSmsDelivery.objects.claim_fixed`), before the day's
+  no-conversation claim, so a replay of a reply that was sent (or may have been) never
+  spends the day's allowance.
 - Every decision for a text from a known number is recorded with its MessageSid
   (`BenjiSmsInboundReceipt`): STOP and START in the same locked transaction as their
   change, even when they changed nothing, and every other decision before its work is
@@ -263,7 +269,13 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
         return _from_a_stranger(inbound, number_hash, keyword, now)
 
     prior = BenjiSmsInboundReceipt.objects.seen(inbound.sid)
-    if prior is not None:
+    # A "yes" whose receipt still says it cleared nothing never reached its final
+    # decision (the first post failed on the way): decide it again, from the START
+    # branch, which re-checks the revocation under the lock first.
+    unfinished_yes = (
+        prior is not None and prior.outcome == Outcome.START_IGNORED and keyword is not None and keyword.also_plain_text
+    )
+    if prior is not None and not unfinished_yes:
         return _replay(inbound, phone, prior, keyword, now)
 
     newest = phone.newest_binding()
@@ -281,13 +293,19 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
     if keyword is not None and keyword.keyword is Keyword.START:
         # Decided under the phone's row lock, not on the snapshot above.
         cleared, resumed = phone.clear_revocation(now, inbound.sid)
+        if not cleared:
+            seen = BenjiSmsInboundReceipt.objects.seen(inbound.sid)
+            if seen is not None and seen.outcome != Outcome.START_IGNORED:
+                # Another post of this same text got there first and decided it.
+                return Result(Outcome(seen.outcome))
         if phone.revoked_at is not None:
             # A replay of an older START, after a newer STOP.
             return Result(Outcome.REVOKED)
         restarted = cleared
         if restarted or not keyword.also_plain_text:
-            # A re-subscribe, or a START word that is never a question. "yes" from a number that was not revoked is the
-            # one START that carries on as an ordinary answer.
+            # A re-subscribe, or a START word that is never a question. "yes" from a
+            # number that was not revoked is the one START that carries on as an
+            # ordinary answer.
             replied = False
             if cleared and not keyword.carrier:
                 if phone.is_revoked_now():
