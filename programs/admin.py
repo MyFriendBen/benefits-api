@@ -145,6 +145,11 @@ class ProgramAdmin(SecureAdmin):
         fields = list(super().get_fields(request, obj))
         if obj is not None and is_federal(obj) and obj.active:
             fields.insert(fields.index("active") + 1, "confirm_federal_deactivation")
+        if obj is not None and obj.imported_from_spec:
+            # Active is the one setting left to change, so it goes first on an otherwise read-only page.
+            fields = [f for f in fields if f in self.UNLOCKED_FIELDS] + [
+                f for f in fields if f not in self.UNLOCKED_FIELDS
+            ]
         return fields
 
     def get_readonly_fields(self, request: HttpRequest, obj: Optional[Program] = None) -> list[str]:
