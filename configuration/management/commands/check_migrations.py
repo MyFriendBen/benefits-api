@@ -41,7 +41,8 @@ class Command(BaseCommand):
             if exit_.code in (1, 3):
                 raise CommandError(
                     "Model changes have no migration (see above). Run `python manage.py makemigrations` "
-                    "and commit the new files."
+                    "and commit the new files. For an app with no migrations folder yet, name it: "
+                    "`python manage.py makemigrations <app_label>`."
                 ) from None
             raise
         self.stdout.write("Migrations: none missing, none conflicting.")
