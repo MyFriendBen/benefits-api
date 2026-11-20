@@ -8,7 +8,7 @@ class Command(BaseCommand):
     help = "Assign year_type to programs"
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("year_type", choices=["calendar_year", "fiscal_year", "hardcoded"])
+        parser.add_argument("year_type", choices=["calendar_year", "fiscal_year", "hardcoded", "prior_tax_year"])
         target = parser.add_mutually_exclusive_group(required=True)
         target.add_argument("--programs", nargs="+", help="External names to target (e.g. co_snap il_medicaid)")
         target.add_argument("--all", action="store_true", help="Apply to all programs")
