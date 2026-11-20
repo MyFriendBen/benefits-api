@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from django.core.paginator import Paginator
 from django.shortcuts import render
@@ -207,6 +207,30 @@ def has_translation_access(translation: Translation, user: User) -> bool:
     return True
 
 
+def spec_locked_program(translation: Translation) -> Optional[Program]:
+    """The program this translation belongs to, if it was imported from its v2 spec.
+
+    Its English text comes from the spec, so the editor refuses to change it there; other
+    languages stay editable, since the spec holds English only.
+    """
+    for reverse_instance in translation.get_reverse_instances():
+        instance = reverse_instance.instance
+        if isinstance(instance, Program) and instance.imported_from_spec:
+            return instance
+    return None
+
+
+def spec_locked_response(request, program: Program):
+    return render(
+        request,
+        "error.html",
+        {
+            "error_message": f"'{program.name_abbreviated}' is imported from its spec in program-ops, so its English "
+            "text is changed in the spec and imported. Other languages can still be edited here."
+        },
+    )
+
+
 @login_required(login_url="/admin/login")
 @staff_member_required
 def translation_view(request, id=0):
@@ -262,6 +286,9 @@ def translation_view(request, id=0):
             }
             return render(request, "edit/label_form.html", context)
     elif request.method == "DELETE":
+        locked = spec_locked_program(translation)
+        if locked is not None:
+            return spec_locked_response(request, locked)
         try:
             translation.delete()
         except ProtectedError:
@@ -291,6 +318,11 @@ def edit_translation(request, id=0, lang="en-us"):
         excluded_langs = request.POST.getlist("excluded_languages", [])
 
         languages = [l for l in Translate.languages if l not in excluded_langs]
+
+        if lang == settings.LANGUAGE_CODE:
+            locked = spec_locked_program(translation)
+            if locked is not None:
+                return spec_locked_response(request, locked)
 
         if form.is_valid():
             text = form["text"].value()

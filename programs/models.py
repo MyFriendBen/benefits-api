@@ -1016,6 +1016,14 @@ class Program(models.Model):
     def __unicode__(self):
         return self.__str__()
 
+    @property
+    def imported_from_spec(self) -> bool:
+        """Whether `apply_program` has imported this program from its program-ops v2 spec.
+
+        Such a program takes every field but `active` from the spec, so the admin locks the rest.
+        """
+        return self.pk is not None and self.import_logs.exists()
+
     def get_translation(self, screen, missing_dependencies: Dependencies, field: str):
         if field not in Program.objects.translated_fields:
             raise ValueError(f"translation with name {field} does not exist")
