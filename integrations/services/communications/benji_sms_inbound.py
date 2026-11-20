@@ -323,14 +323,14 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
     if keyword is not None and keyword.keyword is Keyword.HELP:
         if phone.is_revoked_now():
             return _decided(phone, inbound, Outcome.REVOKED)
-        _decided(phone, inbound, Outcome.HELP)
-        return _help(inbound, keyword, newest, now)
+        followed = _decide_or_follow(phone, inbound, Outcome.HELP, None, keyword, now)
+        return followed or _help(inbound, keyword, newest, now)
 
     if phone.is_shared(now):
         if phone.is_revoked_now():
             return _decided(phone, inbound, Outcome.REVOKED)
-        _decided(phone, inbound, Outcome.SHARED)
-        return Result(Outcome.SHARED, _send_daily(inbound, number_hash, replies.SHARED, newest, now))
+        followed = _decide_or_follow(phone, inbound, Outcome.SHARED, None, keyword, now)
+        return followed or Result(Outcome.SHARED, _send_daily(inbound, number_hash, replies.SHARED, newest, now))
 
     # The newest binding is the only one that can be active (BenjiSmsPhone.newest_binding).
     binding = newest if newest is not None and newest.status == AssistantConversationStatus.ACTIVE else None
@@ -344,21 +344,16 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
     if phone.is_revoked_now():
         return _decided(phone, inbound, Outcome.REVOKED)
     if binding is None:
-        _decided(phone, inbound, Outcome.REENTRY)
-        return Result(Outcome.REENTRY, _send_daily(inbound, number_hash, replies.REENTRY, newest, now))
+        followed = _decide_or_follow(phone, inbound, Outcome.REENTRY, None, keyword, now)
+        return followed or Result(Outcome.REENTRY, _send_daily(inbound, number_hash, replies.REENTRY, newest, now))
 
     if not channel_on:
         # A turn would pay for a reply that no gate would let out.
         return _decided(phone, inbound, Outcome.CHANNEL_OFF)
 
     if inbound.num_media > 0:
-        receipt = BenjiSmsInboundReceipt.objects.decide(
-            phone, inbound.sid, Outcome.PICTURE.value, binding.conversation_id
-        )
-        if receipt.outcome != Outcome.PICTURE or receipt.conversation_id != binding.conversation_id:
-            # Another post of this text decided first: follow it, in its conversation.
-            return _replay(inbound, phone, receipt, keyword, now)
-        return Result(Outcome.PICTURE, _send_fixed(inbound, replies.PICTURE, binding, now, for_screen=True))
+        followed = _decide_or_follow(phone, inbound, Outcome.PICTURE, binding.conversation_id, keyword, now)
+        return followed or Result(Outcome.PICTURE, _send_fixed(inbound, replies.PICTURE, binding, now, for_screen=True))
 
     if not inbound.body.strip():
         return _decided(phone, inbound, Outcome.EMPTY)
@@ -366,9 +361,9 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
     # Recorded before it is queued, so a replay after a failed queueing queues it again,
     # in this conversation, whatever has changed since. If another post of this text
     # recorded first, follow its decision instead: a text is queued for one conversation.
-    receipt = BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, Outcome.QUEUED.value, binding.conversation_id)
-    if receipt.outcome != Outcome.QUEUED or receipt.conversation_id != binding.conversation_id:
-        return _replay(inbound, phone, receipt, keyword, now)
+    followed = _decide_or_follow(phone, inbound, Outcome.QUEUED, binding.conversation_id, keyword, now)
+    if followed is not None:
+        return followed
     enqueue_turn(binding.conversation_id, inbound.sid)
     return Result(Outcome.QUEUED)
 
@@ -379,6 +374,23 @@ def _decided(
     """Record the decision for this text, so a replay follows it (BenjiSmsInboundReceipt)."""
     BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, outcome.value, conversation_id)
     return Result(outcome)
+
+
+def _decide_or_follow(
+    phone: BenjiSmsPhone,
+    inbound: Inbound,
+    outcome: Outcome,
+    conversation_id: Optional[uuid.UUID],
+    keyword: Optional[KeywordMatch],
+    now: datetime,
+) -> Optional[Result]:
+    """Record this decision before acting on it. Returns None to go ahead, or the result
+    of following another post of the same text that recorded a different decision first:
+    the first decision recorded for a text is the one acted on."""
+    receipt = BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, outcome.value, conversation_id)
+    if receipt.outcome == outcome and receipt.conversation_id == conversation_id:
+        return None
+    return _replay(inbound, phone, receipt, keyword, now)
 
 
 def _help(inbound: Inbound, keyword: KeywordMatch, binding: Optional[BenjiSmsBinding], now: datetime) -> Result:
