@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_veteran_readiness_and_employment",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Veteran Readiness and Employment (VR&E)",
+      "description": "Veteran Readiness and Employment, also called Chapter 31 or VR&E, is a VA program for service members and Veterans whose service-connected disability limits their ability to work. It can help you learn new skills, find a job, go back to your old job, start a business, or live more independently. Apply online with VA Form 28-1900. VA decides if you qualify.",
+      "link": "https://www.va.gov/careers-employment/vocational-rehabilitation/",
+      "warning": "",
+      "website_description": "Job training and employment help for Veterans with a service-connected disability.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
