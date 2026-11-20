@@ -19,20 +19,28 @@ class Command(BaseCommand):
         try:
             # A conflict raises CommandError, which propagates with makemigrations' own message
             # (both file names and the --merge fix).
+            #
+            # Not interactive: CI has no one to answer, and a renamed field or model makes
+            # makemigrations ask "Was x renamed to y? [y/N]" even in a dry run, which crashes
+            # with EOFError (or waits forever on a laptop). Without asking, a rename is
+            # reported as a remove plus an add.
             call_command(
                 "makemigrations",
                 *labels,
                 check=True,
                 dry_run=True,
+                interactive=False,
                 verbosity=options["verbosity"],
                 stdout=self.stdout,
                 stderr=self.stderr,
             )
         except SystemExit as exit_:
-            # makemigrations --check exits 1 after listing the migrations it would create.
-            if exit_.code == 1:
+            # Both codes mean a model change has no migration. 1: --check listed the migrations
+            # it would create. 3: a new non-nullable or auto_now_add field (renamed or not) has
+            # no default to fill existing rows, and makemigrations printed which one.
+            if exit_.code in (1, 3):
                 raise CommandError(
-                    "Model changes have no migration (listed above). Run `python manage.py makemigrations` "
+                    "Model changes have no migration (see above). Run `python manage.py makemigrations` "
                     "and commit the new files."
                 ) from None
             raise
