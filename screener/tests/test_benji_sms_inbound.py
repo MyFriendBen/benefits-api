@@ -951,6 +951,17 @@ class RevokedTest(InboundMixin, TestCase):
         self.assertIsNotNone(self.phone.revoked_at)
         self.create.assert_not_called()
 
+    def test_a_yes_retried_after_a_crash_is_not_answered_after_a_later_stop_and_start(self) -> None:
+        with patch.object(BenjiSmsPhone, "clear_revocation", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="WARNING"):
+                self.post("yes", sid=SID)
+        self.post("alto", sid=OTHER_SID)
+        self.post("iniciar", sid="SM" + "e5" * 16)
+
+        self.post("yes", sid=SID)
+
+        self.enqueue_turn.assert_not_called()
+
     def test_a_start_retried_after_a_crash_still_clears_an_earlier_stop(self) -> None:
         with patch.object(BenjiSmsPhone, "clear_revocation", side_effect=RuntimeError("db gone")):
             with self.assertLogs(LOGGER, level="WARNING"):

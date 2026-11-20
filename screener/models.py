@@ -1608,7 +1608,14 @@ class BenjiSmsPhone(models.Model):
                 cleared, resumed = False, False
             elif phone.revoked_at is None:
                 cleared, resumed = False, False
-                BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, BENJI_SMS_START_IGNORED)
+                later_stop = (
+                    arrived_at is not None
+                    and phone.inbound_receipts.filter(outcome=BENJI_SMS_STOPPED, created_at__gt=arrived_at).exists()
+                )
+                # Overtaken by a later STOP (and the START after it): final, so a "yes"
+                # retried after a crash is not answered out of its time.
+                outcome = BenjiSmsOutcome.REVOKED.value if later_stop else BENJI_SMS_START_IGNORED
+                BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, outcome)
             elif (
                 arrived_at is not None
                 and phone.inbound_receipts.filter(outcome=BENJI_SMS_STOPPED, created_at__gt=arrived_at).exists()
