@@ -169,8 +169,10 @@ fallback URL after that.
   final as `start_ignored` and never becomes a turn. A turn or a picture reply is redone only in the
   conversation it was first meant for, and only if that white label's channel is still
   on; if that conversation has been deleted, nothing is redone. When two posts of one
-  text race, the first decision recorded is the one both follow. One gap: if the first post failed before its
-  decision was recorded (a crash mid-request), the replay decides afresh.
+  text race, the first decision recorded is the one both follow. If the first post failed before its
+  decision was recorded (a crash mid-request), the replay decides afresh, knowing when
+  the text first arrived (each text's arrival is noted first, as a `pending` receipt):
+  a START retried after a crash never undoes a STOP that arrived after it.
 - Confirmations are best effort. A STOP or START made in our wording is confirmed
   ("You won't get more texts", "Benji is back") by the text that made the change, on
   its first post only; Twilio confirms its own keywords. A replay or a repeated keyword

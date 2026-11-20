@@ -924,6 +924,31 @@ class RevokedTest(InboundMixin, TestCase):
         self.reload()
         self.assertIsNotNone(self.phone.revoked_at)
 
+    def test_a_start_retried_after_a_crash_does_not_undo_a_later_stop(self) -> None:
+        """iniciar crashes before deciding, alto arrives, then Twilio retries the iniciar."""
+        with patch.object(BenjiSmsPhone, "clear_revocation", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="WARNING"):
+                self.assertEqual(self.post("iniciar", sid=SID).status_code, 503)
+        self.phone.clear_revocation()  # an earlier START, so the alto below is a fresh STOP
+        self.post("alto", sid=OTHER_SID)
+
+        self.assert_acknowledged(self.post("iniciar", sid=SID))
+
+        self.reload()
+        self.assertIsNotNone(self.phone.revoked_at)
+        self.assertEqual(self.sent_bodies(), [replies.STOP.default])
+
+    def test_a_start_retried_after_a_crash_still_clears_an_earlier_stop(self) -> None:
+        with patch.object(BenjiSmsPhone, "clear_revocation", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="WARNING"):
+                self.post("iniciar", sid=SID)
+
+        self.post("iniciar", sid=SID)
+
+        self.reload()
+        self.assertIsNone(self.phone.revoked_at)
+        self.assertEqual(self.sent_bodies(), [replies.START_RESUMED.default])
+
     def test_a_lost_start_confirmation_is_not_resent(self) -> None:
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
             with self.assertLogs(LOGGER, level="WARNING"):

@@ -1578,7 +1578,12 @@ class BenjiSmsPhone(models.Model):
         self.refresh_from_db(fields=["revoked_at", "revoked_conversation_id"])
         return applied
 
-    def clear_revocation(self, now: Optional[datetime] = None, inbound_sid: Optional[str] = None) -> tuple[bool, bool]:
+    def clear_revocation(
+        self,
+        now: Optional[datetime] = None,
+        inbound_sid: Optional[str] = None,
+        arrived_at: Optional[datetime] = None,
+    ) -> tuple[bool, bool]:
         """Record a START. Returns (cleared, resumed).
 
         Always clears a revocation: START is consent to be texted again, and the
@@ -1590,8 +1595,11 @@ class BenjiSmsPhone(models.Model):
         Returns (False, False), changing nothing, when the number was not revoked, or
         when `inbound_sid` is a START this phone has already handled (a replayed
         webhook), so an older START can never undo a newer STOP, even one that changed
-        nothing the first time. The phone row is locked for the change, as in `revoke`,
-        and this instance's `revoked_at` is fresh afterwards.
+        nothing the first time. Nor does it clear a revocation made by a STOP that arrived
+        after this START (`arrived_at`, from `BenjiSmsInboundReceipt.objects.arrive`): a
+        START retried after its first post crashed comes second, as it was sent. The
+        phone row is locked for the change, as in `revoke`, and this instance's
+        `revoked_at` is fresh afterwards.
         """
         with transaction.atomic():
             phone = BenjiSmsPhone.objects.select_for_update().get(pk=self.pk)
@@ -1600,6 +1608,15 @@ class BenjiSmsPhone(models.Model):
             elif phone.revoked_at is None:
                 cleared, resumed = False, False
                 BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, BENJI_SMS_START_IGNORED)
+            elif (
+                arrived_at is not None
+                and phone.inbound_receipts.filter(
+                    outcome=BENJI_SMS_STOPPED, applied=True, created_at__gt=arrived_at
+                ).exists()
+            ):
+                # Revoked by a STOP that arrived after this START: it stands.
+                cleared, resumed = False, False
+                BenjiSmsInboundReceipt.objects.record(phone, inbound_sid, BenjiSmsOutcome.REVOKED.value)
             else:
                 binding = phone.newest_binding()
                 resumed = (
@@ -1648,6 +1665,8 @@ class BenjiSmsOutcome(models.TextChoices):
     this enum, so the receipt's check constraint and the webhook cannot drift apart.
     """
 
+    # Arrived, not yet decided: the first post failed before it reached a decision.
+    PENDING = "pending", "Arrived, not yet decided"
     NOT_A_PHONE = "not_a_phone", "Not a phone number"
     STRANGER_KEYWORD = "stranger_keyword", "Keyword from a stranger"
     STRANGER = "stranger", "Stranger reply"
@@ -1667,14 +1686,30 @@ class BenjiSmsOutcome(models.TextChoices):
 BENJI_SMS_STOPPED = BenjiSmsOutcome.STOPPED.value
 BENJI_SMS_STARTED = BenjiSmsOutcome.STARTED.value
 BENJI_SMS_START_IGNORED = BenjiSmsOutcome.START_IGNORED.value
+BENJI_SMS_PENDING = BenjiSmsOutcome.PENDING.value
 
 
 class BenjiSmsInboundReceiptManager(models.Manager):
     def seen(self, inbound_sid: Optional[str]) -> Optional["BenjiSmsInboundReceipt"]:
-        """The receipt for an inbound text already handled, or None."""
+        """The receipt for an inbound text already decided, or None (an arrival that
+        never reached a decision is not one)."""
         if inbound_sid is None:
             return None
-        return self.filter(inbound_sid=inbound_sid).first()
+        return self.filter(inbound_sid=inbound_sid).exclude(outcome=BENJI_SMS_PENDING).first()
+
+    def arrive(self, phone: "BenjiSmsPhone", inbound_sid: str) -> "BenjiSmsInboundReceipt":
+        """Note a text's first arrival before anything is decided, and return its receipt.
+
+        Its `created_at` is when the text first reached us, which a retry after a crash
+        cannot know otherwise: a START that is retried must not undo a STOP that arrived
+        after it (`clear_revocation`). Committed on its own, so it survives the crash.
+        """
+        try:
+            with transaction.atomic():
+                self.create(phone=phone, inbound_sid=inbound_sid, outcome=BENJI_SMS_PENDING)
+        except IntegrityError:
+            pass
+        return self.get(inbound_sid=inbound_sid)
 
     def record(
         self,
@@ -1694,6 +1729,9 @@ class BenjiSmsInboundReceiptManager(models.Manager):
         work, and only that.
         """
         if inbound_sid is None:
+            return
+        fields = {"outcome": outcome, "applied": applied, "resumed": resumed, "conversation_id": conversation_id}
+        if self.filter(inbound_sid=inbound_sid, outcome=BENJI_SMS_PENDING).update(**fields):
             return
         try:
             # Its own savepoint, so a concurrent post of the same text leaves the
@@ -1721,7 +1759,7 @@ class BenjiSmsInboundReceiptManager(models.Manager):
         nothing and then carried on as an ordinary answer; creates one for any other
         text, and the first record of a SID is final.
         """
-        updated = self.filter(inbound_sid=inbound_sid, outcome=BENJI_SMS_START_IGNORED).update(
+        updated = self.filter(inbound_sid=inbound_sid, outcome__in=[BENJI_SMS_START_IGNORED, BENJI_SMS_PENDING]).update(
             outcome=outcome, conversation_id=conversation_id
         )
         if not updated:
@@ -1759,7 +1797,8 @@ class BenjiSmsInboundReceipt(models.Model):
 
     phone = models.ForeignKey("BenjiSmsPhone", related_name="inbound_receipts", on_delete=models.CASCADE)
     inbound_sid = models.CharField(max_length=34)
-    # The webhook's outcome name, e.g. "stopped", "started", "queued", "shared".
+    # The webhook's outcome name, e.g. "stopped", "started", "queued", "shared"; "pending"
+    # from a text's arrival until its decision.
     outcome = models.CharField(max_length=20, choices=BenjiSmsOutcome.choices)
     # For STOP and START: whether this text changed the state (revoked the number, or
     # cleared a revocation).

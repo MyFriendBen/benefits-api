@@ -268,14 +268,14 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
     if phone is None:
         return _from_a_stranger(inbound, number_hash, keyword, now)
 
-    prior = BenjiSmsInboundReceipt.objects.seen(inbound.sid)
+    # Noted before anything is decided, so a retry after a crash knows when this text
+    # first arrived. A text with a decision is a replay and follows it.
+    prior = BenjiSmsInboundReceipt.objects.arrive(phone, inbound.sid)
     # A "yes" whose receipt still says it cleared nothing never reached its final
     # decision (the first post failed on the way): decide it again, from the START
     # branch, which re-checks the revocation under the lock first.
-    unfinished_yes = (
-        prior is not None and prior.outcome == Outcome.START_IGNORED and keyword is not None and keyword.also_plain_text
-    )
-    if prior is not None and not unfinished_yes:
+    unfinished_yes = prior.outcome == Outcome.START_IGNORED and keyword is not None and keyword.also_plain_text
+    if prior.outcome != Outcome.PENDING and not unfinished_yes:
         return _replay(inbound, phone, prior, keyword, now)
 
     newest = phone.newest_binding()
@@ -292,7 +292,7 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
 
     if keyword is not None and keyword.keyword is Keyword.START:
         # Decided under the phone's row lock, not on the snapshot above.
-        cleared, resumed = phone.clear_revocation(now, inbound.sid)
+        cleared, resumed = phone.clear_revocation(now, inbound.sid, arrived_at=prior.created_at)
         if not cleared:
             seen = BenjiSmsInboundReceipt.objects.seen(inbound.sid)
             if seen is not None and seen.outcome != Outcome.START_IGNORED:
