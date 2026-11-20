@@ -214,7 +214,7 @@ class SignatureTest(InboundMixin, TestCase):
         self.assert_nothing_sent_or_queued()
 
     def test_a_signed_request_without_a_message_sid_is_a_400(self) -> None:
-        with self.assertLogs(LOGGER, level="ERROR"):
+        with self.assertLogs(LOGGER, level="WARNING"):
             response = self.post(sid="not-a-sid")
         self.assertEqual(response.status_code, 400)
         self.assert_nothing_sent_or_queued()
@@ -311,7 +311,7 @@ class StrangerTest(InboundMixin, TestCase):
 
     def test_a_failed_text_lookup_leaves_no_claim_so_the_replay_replies(self) -> None:
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 response = self.post()
         self.assertEqual(response.status_code, 503)
         self.assertFalse(BenjiSmsDelivery.objects.exists())
@@ -405,6 +405,17 @@ class SendFailureTest(InboundMixin, TestCase):
         self.post("¡Ayuda!")
         self.assertEqual(self.create.call_count, 1)
         self.assertEqual(BenjiSmsDelivery.objects.count(), 1)
+
+    def test_a_2xx_without_a_sid_counts_as_unknown_not_refused(self) -> None:
+        """Twilio may have queued it: keep the claims, send nothing more."""
+        self.create.side_effect = lambda **_kwargs: MagicMock(sid=None)
+        with self.assertLogs(SERVICE_LOGGER, level="ERROR"):
+            self.post()
+
+        self.assertEqual(BenjiSmsDelivery.objects.count(), 1)
+        self.assertTrue(BenjiSmsStrangerReply.objects.exists())
+        self.post()
+        self.assertEqual(self.create.call_count, 1)
 
     def test_an_unknown_daily_delivery_keeps_the_days_claim(self) -> None:
         self.create.side_effect = requests.ReadTimeout("twilio")
@@ -543,7 +554,7 @@ class StopTest(InboundMixin, TestCase):
         binding = self.bind()
         self.enqueue_media_deletion.side_effect = BrokerNotConfigured("no broker")
 
-        with self.assertLogs(LOGGER, level="ERROR"):
+        with self.assertLogs(LOGGER, level="WARNING"):
             response = self.post("alto", media=1)
 
         self.assertEqual(response.status_code, 503)
@@ -570,7 +581,7 @@ class StopTest(InboundMixin, TestCase):
         """A "yes" whose turn could not be queued, an alto, then Twilio posts the yes again."""
         binding = self.bind()
         self.enqueue_turn.side_effect = BrokerNotConfigured("no broker")
-        with self.assertLogs(LOGGER, level="ERROR"):
+        with self.assertLogs(LOGGER, level="WARNING"):
             self.assertEqual(self.post("yes", sid=SID).status_code, 503)
         self.enqueue_turn.side_effect = None
         self.post("alto", sid=OTHER_SID)
@@ -583,7 +594,7 @@ class StopTest(InboundMixin, TestCase):
     def test_a_lost_stop_confirmation_is_not_sent_after_a_newer_start(self) -> None:
         binding = self.bind()
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.post("alto", sid=SID)
         self.post("iniciar", sid=OTHER_SID)
 
@@ -609,7 +620,7 @@ class StopTest(InboundMixin, TestCase):
         """Best effort: the replay and the next STOP change nothing and send nothing."""
         binding = self.bind()
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.assertEqual(self.post("alto", sid=SID).status_code, 503)
         self.assert_revoked(binding)
 
@@ -631,7 +642,7 @@ class StopTest(InboundMixin, TestCase):
         """alto (confirmation lost), iniciar, alto, then the first alto again."""
         self.bind()
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.post("alto", sid=SID)
         self.post("iniciar", sid=OTHER_SID)
         self.post("alto", sid="SM" + "e5" * 16)
@@ -740,7 +751,7 @@ class RevokedTest(InboundMixin, TestCase):
     def test_a_yes_whose_first_post_failed_is_answered_on_the_replay(self) -> None:
         self.post("START")
         with patch.object(inbound_service, "channel_enabled", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.assertEqual(self.post("yes", sid=OTHER_SID).status_code, 503)
 
         self.assert_acknowledged(self.post("yes", sid=OTHER_SID))
@@ -750,7 +761,7 @@ class RevokedTest(InboundMixin, TestCase):
     def test_an_unfinished_yes_replayed_after_a_stop_is_not_a_turn(self) -> None:
         self.post("START")
         with patch.object(inbound_service, "channel_enabled", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.post("yes", sid=OTHER_SID)
         self.post("alto", sid="SM" + "e5" * 16)
 
@@ -829,7 +840,7 @@ class RevokedTest(InboundMixin, TestCase):
     def test_a_lost_start_confirmation_is_not_sent_after_a_newer_stop(self) -> None:
         start, stop = SID, OTHER_SID
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.post("iniciar", sid=start)
         self.post("alto", sid=stop)
 
@@ -842,7 +853,7 @@ class RevokedTest(InboundMixin, TestCase):
     def test_a_lost_start_confirmation_is_not_sent_after_a_newer_start(self) -> None:
         start, stop, restart = SID, OTHER_SID, "SM" + "e5" * 16
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.post("iniciar", sid=start)
         self.post("alto", sid=stop)
         self.post("reanudar", sid=restart)
@@ -883,7 +894,7 @@ class RevokedTest(InboundMixin, TestCase):
 
     def test_a_lost_start_confirmation_is_not_resent(self) -> None:
         with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.assertEqual(self.post("iniciar", sid=SID).status_code, 503)
         self.reload()
         self.assertIsNone(self.phone.revoked_at)
@@ -1167,13 +1178,27 @@ class TurnTest(InboundMixin, TestCase):
     def test_a_turn_that_could_not_be_queued_is_queued_on_the_replay(self) -> None:
         binding = self.bind()
         self.enqueue_turn.side_effect = BrokerNotConfigured("no broker")
-        with self.assertLogs(LOGGER, level="ERROR"):
+        with self.assertLogs(LOGGER, level="WARNING"):
             self.assertEqual(self.post().status_code, 503)
+        self.assertEqual(self.enqueue_turn.call_count, 1)
         self.enqueue_turn.side_effect = None
 
         self.assert_acknowledged(self.post())
 
-        self.enqueue_turn.assert_called_with(binding.conversation_id, SID)
+        self.assertEqual([call.args for call in self.enqueue_turn.call_args_list], [(binding.conversation_id, SID)] * 2)
+
+    def test_a_replayed_turn_is_not_queued_once_its_white_label_is_switched_off(self) -> None:
+        self.bind()
+        self.enqueue_turn.side_effect = BrokerNotConfigured("no broker")
+        with self.assertLogs(LOGGER, level="WARNING"):
+            self.post()
+        self.enqueue_turn.side_effect = None
+        self.white_label.feature_flags = {benji_sms.FLAG: False}
+        self.white_label.save()
+
+        self.post()
+
+        self.assertEqual(self.enqueue_turn.call_count, 1)
 
     def test_a_replayed_turn_is_not_queued_after_a_stop(self) -> None:
         binding = self.bind()
@@ -1263,7 +1288,7 @@ class TurnTest(InboundMixin, TestCase):
         self.bind()
         self.enqueue_turn.side_effect = BrokerNotConfigured("no broker")
 
-        with self.assertLogs(LOGGER, level="ERROR") as logs:
+        with self.assertLogs(LOGGER, level="WARNING") as logs:
             response = self.post("my case number is 12345")
 
         self.assertEqual(response.status_code, 503)
@@ -1316,19 +1341,32 @@ class PictureTest(InboundMixin, TestCase):
     def test_media_is_queued_for_deletion_even_when_the_binding_cannot_be_read(self) -> None:
         self.bind()
         with patch.object(BenjiSmsPhone, "newest_binding", side_effect=RuntimeError("db gone")):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 self.assertEqual(self.post("", media=1).status_code, 503)
 
         self.enqueue_media_deletion.assert_called_once_with(SID, None)
 
     def test_media_is_queued_for_deletion_even_when_the_number_cannot_be_hashed(self) -> None:
         with override_settings(BENJI_SMS_HASH_KEY=""):
-            with self.assertLogs(LOGGER, level="ERROR"):
+            with self.assertLogs(LOGGER, level="WARNING"):
                 response = self.post("", media=1)
 
         self.assertEqual(response.status_code, 503)
         self.enqueue_media_deletion.assert_called_once_with(SID, None)
         self.create.assert_not_called()
+
+    def test_a_picture_reply_retried_on_replay_stays_with_its_conversation(self) -> None:
+        first = self.bind()
+        with patch.object(inbound_service.replies, "reply_text", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="WARNING"):
+                self.post("", media=1)
+        first.end(AssistantConversationStatus.CLOSED)
+        self.bind()
+
+        self.post("", media=1)
+
+        self.assertEqual(self.sent_bodies(), [replies.PICTURE.default])
+        self.assertEqual(BenjiSmsDelivery.objects.get().binding, first)
 
     def test_a_replayed_picture_gets_one_reply(self) -> None:
         self.bind()
@@ -1363,7 +1401,7 @@ class PictureTest(InboundMixin, TestCase):
     def test_a_deletion_that_cannot_be_queued_is_a_503_and_the_replay_only_retries_it(self) -> None:
         self.enqueue_media_deletion.side_effect = BrokerNotConfigured("no broker")
 
-        with self.assertLogs(LOGGER, level="ERROR"):
+        with self.assertLogs(LOGGER, level="WARNING"):
             response = self.post("", media=1)
 
         self.assertEqual(response.status_code, 503)

@@ -231,6 +231,10 @@ def _send(
         # Read timeout, or the connection dropped after the request went out: Twilio
         # may have queued the message.
         raise BenjiSmsDeliveryUnknown(type(e).__name__) from None
+    if not message.sid:
+        # Twilio answered 2xx but the SDK found no SID in the body: it may well have
+        # queued the text, so this is not a refusal (which None means here).
+        raise BenjiSmsDeliveryUnknown("no_sid")
     return message.sid
 
 

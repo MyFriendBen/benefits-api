@@ -1712,17 +1712,21 @@ class BenjiSmsInboundReceiptManager(models.Manager):
 
     def decide(
         self, phone: "BenjiSmsPhone", inbound_sid: str, outcome: str, conversation_id: Optional[uuid.UUID] = None
-    ) -> None:
-        """Record the webhook's final decision for a text on its first post.
+    ) -> "BenjiSmsInboundReceipt":
+        """Record the webhook's final decision for a text on its first post. Returns the
+        receipt that stands, which is someone else's if another post of the same text
+        recorded its decision first: the caller follows that one, never its own.
 
-        Overwrites the receipt `clear_revocation` wrote for a "yes" that changed nothing
-        and then carried on as an ordinary answer; creates one for any other text.
+        Overwrites only the placeholder `clear_revocation` wrote for a "yes" that changed
+        nothing and then carried on as an ordinary answer; creates one for any other
+        text, and the first record of a SID is final.
         """
         updated = self.filter(inbound_sid=inbound_sid, outcome=BENJI_SMS_START_IGNORED).update(
             outcome=outcome, conversation_id=conversation_id
         )
         if not updated:
             self.record(phone, inbound_sid, outcome, conversation_id=conversation_id)
+        return self.get(inbound_sid=inbound_sid)
 
     def purge_expired(self, now: Optional[datetime] = None) -> int:
         """Delete receipts older than a day. For the nightly sweep (MFB-2442). Returns

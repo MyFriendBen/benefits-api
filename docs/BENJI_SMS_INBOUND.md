@@ -159,7 +159,10 @@ fallback URL after that.
   queues the turn again for the conversation it was first queued for (even after a new
   on-ramp), or retries the same fixed reply, whose claim lets one out per text. So an
   older STOP or START cannot undo a newer one, and a text answered as shared does not
-  become a turn when the mark lapses. One gap: if the first post failed before its
+  become a turn when the mark lapses. A turn or a picture reply is redone only in the
+  conversation it was first meant for, and only if that white label's channel is still
+  on; if that conversation has been deleted, nothing is redone. When two posts of one
+  text race, the first decision recorded is the one both follow. One gap: if the first post failed before its
   decision was recorded (a crash mid-request), the replay decides afresh.
 - Confirmations are best effort. A STOP or START made in our wording is confirmed
   ("You won't get more texts", "Benji is back") by the text that made the change, on

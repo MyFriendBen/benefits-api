@@ -351,15 +351,18 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
         return _decided(phone, inbound, Outcome.CHANNEL_OFF)
 
     if inbound.num_media > 0:
-        _decided(phone, inbound, Outcome.PICTURE)
+        _decided(phone, inbound, Outcome.PICTURE, binding.conversation_id)
         return Result(Outcome.PICTURE, _send_fixed(inbound, replies.PICTURE, binding, now, for_screen=True))
 
     if not inbound.body.strip():
         return _decided(phone, inbound, Outcome.EMPTY)
 
     # Recorded before it is queued, so a replay after a failed queueing queues it again,
-    # in this conversation, whatever has changed since.
-    _decided(phone, inbound, Outcome.QUEUED, binding.conversation_id)
+    # in this conversation, whatever has changed since. If another post of this text
+    # recorded first, follow its decision instead: a text is queued for one conversation.
+    receipt = BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, Outcome.QUEUED.value, binding.conversation_id)
+    if receipt.outcome != Outcome.QUEUED or receipt.conversation_id != binding.conversation_id:
+        return _replay(inbound, phone, receipt, keyword, now)
     enqueue_turn(binding.conversation_id, inbound.sid)
     return Result(Outcome.QUEUED)
 
@@ -401,14 +404,28 @@ def _replay(
         return Result(outcome)
     if phone.is_revoked_now():
         return Result(Outcome.REVOKED)
-    if outcome is Outcome.QUEUED and prior.conversation_id is not None:
-        enqueue_turn(prior.conversation_id, inbound.sid)
-        return Result(outcome)
+    # The binding the first post acted on, for a turn or a picture: never a newer one.
+    original = (
+        BenjiSmsBinding.objects.select_related("conversation", "white_label")
+        .filter(conversation_id=prior.conversation_id)
+        .first()
+        if prior.conversation_id is not None
+        else None
+    )
+    if outcome in (Outcome.QUEUED, Outcome.PICTURE):
+        if original is None:
+            # Its conversation is gone (a deletion request): nothing to redo.
+            return Result(outcome)
+        if not channel_enabled(original.white_label):
+            # Switched off since: the same gate the first post passed.
+            return Result(Outcome.CHANNEL_OFF)
+        if outcome is Outcome.QUEUED:
+            enqueue_turn(original.conversation_id, inbound.sid)
+            return Result(outcome)
+        return Result(outcome, _send_fixed(inbound, replies.PICTURE, original, now, for_screen=True))
     newest = phone.newest_binding()
     if outcome is Outcome.HELP and keyword is not None:
         return _help(inbound, keyword, newest, now)
-    if outcome is Outcome.PICTURE:
-        return Result(outcome, _send_fixed(inbound, replies.PICTURE, newest, now, for_screen=True))
     if outcome in (Outcome.SHARED, Outcome.REENTRY) and phone.phone_hash:
         reply = replies.SHARED if outcome is Outcome.SHARED else replies.REENTRY
         return Result(outcome, _send_daily(inbound, phone.phone_hash, reply, newest, now))

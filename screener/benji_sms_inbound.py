@@ -99,11 +99,13 @@ class BenjiSmsInboundView(views.APIView):
             logger.error("Benji SMS inbound webhook failed: media deletion not queued (%s)", exc.cause)
             return _twiml(503)
         except Exception as exc:
-            # The log line names the class only: an exception's text can quote a key.
-            # Sentry gets the traceback, without this view's locals (the number and the
-            # message) or anything shaped like a number or SID (benefits/sentry_scrub.py).
-            # 503 has Twilio post it again.
-            logger.error("Benji SMS inbound webhook failed: %s", f"{type(exc).__module__}.{type(exc).__qualname__}")
+            # One Sentry event, with the traceback, without this view's locals (the
+            # number and the message) or anything shaped like a number or SID
+            # (benefits/sentry_scrub.py). The log line, for staging (no Sentry DSN),
+            # names the class only, since an exception's text can quote a key, and is a
+            # WARNING so Sentry does not make it a second event. 503 has Twilio post it
+            # again.
+            logger.warning("Benji SMS inbound webhook failed: %s", f"{type(exc).__module__}.{type(exc).__qualname__}")
             capture_exception(exc)
             return _twiml(503)
 
