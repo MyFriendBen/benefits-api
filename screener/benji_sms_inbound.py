@@ -20,6 +20,7 @@ import logging
 from typing import Any
 
 from django.http import HttpResponse
+from sentry_sdk import capture_exception
 from rest_framework import parsers, views
 from rest_framework.request import Request
 
@@ -98,9 +99,12 @@ class BenjiSmsInboundView(views.APIView):
             logger.error("Benji SMS inbound webhook failed: media deletion not queued (%s)", exc.cause)
             return _twiml(503)
         except Exception as exc:
-            # The class only: an exception's text can quote a key, and this view's
-            # locals hold the number and the message. 503 has Twilio post it again.
+            # The log line names the class only: an exception's text can quote a key.
+            # Sentry gets the traceback, without this view's locals (the number and the
+            # message) or anything shaped like a number or SID (benefits/sentry_scrub.py).
+            # 503 has Twilio post it again.
             logger.error("Benji SMS inbound webhook failed: %s", f"{type(exc).__module__}.{type(exc).__qualname__}")
+            capture_exception(exc)
             return _twiml(503)
 
         _log_outcome(result)

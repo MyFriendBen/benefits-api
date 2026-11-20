@@ -53,6 +53,10 @@ environment. Nothing points at production until launch (MFB-2447).
   the `Host` header. If the two differ, every text is refused with a 403.
 - `TWILIO_TOKEN` must be the auth token of the account that owns the number. With no
   token, every request is refused.
+- The Celery broker (`CELERY_BROKER_URL`, [BENJI_SMS_WORKER.md](BENJI_SMS_WORKER.md))
+  must be attached before a number points here. Without it every text that needs a
+  queue (any picture, any turn) is answered 503, and Twilio counts each as a webhook
+  error.
 - Keep the trailing slash. Twilio signs the URL as written.
 
 ## What happens to a text
@@ -125,8 +129,8 @@ unprompted, and there is nothing to restart.
 ### Once a day
 
 The stranger, shared-phone and re-entry replies share one limit: a number gets one of
-them a day, however often it texts. The memory is a `BenjiSmsStrangerReply` row, purged
-after a day. In Postgres, not the cache, so the limit holds when Redis is down.
+them a day, however often it texts. The memory is a `BenjiSmsStrangerReply` row, meant to
+be purged after a day by the nightly sweep (MFB-2442). In Postgres, not the cache, so the limit holds when Redis is down.
 
 If the reply definitely did not go out for a reason that may pass (a gate refused it, or
 Twilio was unreachable, rate limiting or failing), the day's claim is given back, so the

@@ -248,8 +248,9 @@ class BenjiSmsPhoneAdmin(SuperuserReadOnlyAdmin):
 
 
 class BenjiSmsInboundReceiptAdmin(SuperuserReadOnlyAdmin):
-    """What the webhook decided for each text from a known number in the last day
-    (MFB-2439). The SID is shown on the detail page only."""
+    """What the webhook decided for each text from a known number (MFB-2439). Meant to
+    live a day, once the nightly sweep (MFB-2442) purges them. The SID is shown on the
+    detail page only."""
 
     list_display = ("id", "phone", "outcome", "applied", "resumed", "created_at")
     list_filter = ("outcome", "applied")

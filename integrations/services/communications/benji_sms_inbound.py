@@ -75,7 +75,6 @@ import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
 from django.utils import timezone
@@ -85,6 +84,7 @@ from screener.models import (
     BenjiSmsBinding,
     BenjiSmsDelivery,
     BenjiSmsInboundReceipt,
+    BenjiSmsOutcome,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
 )
@@ -112,23 +112,9 @@ TWILIO_OPTED_OUT = 21610
 TOO_MANY_REQUESTS = 429
 
 
-class Outcome(str, Enum):
-    """What the webhook decided. Logged, and what the tests read."""
-
-    NOT_A_PHONE = "not_a_phone"
-    STRANGER_KEYWORD = "stranger_keyword"
-    STRANGER = "stranger"
-    STOPPED = "stopped"
-    STARTED = "started"
-    REVOKED = "revoked"
-    HELP = "help"
-    START_IGNORED = "start_ignored"
-    SHARED = "shared"
-    REENTRY = "reentry"
-    CHANNEL_OFF = "channel_off"
-    PICTURE = "picture"
-    EMPTY = "empty"
-    QUEUED = "queued"
+# What the webhook decided. Logged, read by the tests, and stored on the receipt, so it is
+# the model's enum (BenjiSmsOutcome).
+Outcome = BenjiSmsOutcome
 
 
 @dataclass(frozen=True)
@@ -390,10 +376,7 @@ def _replay(
     START changed what they were going to change on the first post, and send nothing.
     Nothing goes out to a number revoked since.
     """
-    try:
-        outcome = Outcome(prior.outcome)
-    except ValueError:
-        return Result(Outcome.REVOKED if phone.revoked_at is not None else Outcome.EMPTY)
+    outcome = Outcome(prior.outcome)
     if outcome in (Outcome.STOPPED, Outcome.STARTED, Outcome.START_IGNORED, Outcome.REVOKED):
         return Result(outcome)
     if outcome in (Outcome.CHANNEL_OFF, Outcome.EMPTY):

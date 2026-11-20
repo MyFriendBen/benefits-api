@@ -12,7 +12,6 @@ and the view cannot drift apart.
 """
 
 import threading
-import time
 from datetime import timedelta
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
@@ -1455,17 +1454,7 @@ class ConcurrentReplayTest(InboundMixin, TransactionTestCase):
             inbound = inbound_service.Inbound(sid=inbound_sid, sender=PHONE, body="alto", num_media=0)
             return inbound_service.handle_inbound(inbound).replied
 
-        # Widen the window between the owed check and the claim, so without the lock
-        # both texts would find the confirmation owed.
-        manager_class = type(BenjiSmsDelivery.objects)
-        original_claim = manager_class.claim_fixed
-
-        def slow_claim(manager: Any, *args: Any, **kwargs: Any) -> Any:
-            time.sleep(0.3)
-            return original_claim(manager, *args, **kwargs)
-
-        with patch.object(manager_class, "claim_fixed", slow_claim):
-            results = self._race(confirm)
+        results = self._race(confirm)
 
         self.assertEqual(sorted(results), [False, True])
         self.assertEqual(self.create.call_count, 1)

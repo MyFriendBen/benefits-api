@@ -48,7 +48,7 @@ class Command(BaseCommand):
         if phone is None:
             self.stdout.write("No Benji SMS phone row for that number.")
             if stranger.exists():
-                self.stdout.write("It has a stranger-reply row (purged after a day).")
+                self.stdout.write("It has a stranger-reply row (meant to live a day; purged by the nightly sweep).")
                 if options["delete"] and self._confirmed("the stranger-reply row"):
                     stranger.delete()
                     self.stdout.write("Deleted the stranger-reply row.")
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                 f"screen {binding.conversation.screen_uuid}, created_at={binding.created_at}"
             )
         if stranger.exists():
-            self.stdout.write("It also has a stranger-reply row (purged after a day).")
+            self.stdout.write("It also has a stranger-reply row (meant to live a day; purged by the nightly sweep).")
 
         if not options["delete"]:
             return

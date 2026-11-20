@@ -1641,12 +1641,32 @@ class BenjiSmsPhone(models.Model):
         return len(conversation_ids)
 
 
-# What the inbound webhook decided for one text from a known number (MFB-2439). The
-# values are the webhook's outcome names (integrations.services.communications.
-# benji_sms_inbound.Outcome); these three are the ones the models write themselves.
-BENJI_SMS_STOPPED = "stopped"
-BENJI_SMS_STARTED = "started"
-BENJI_SMS_START_IGNORED = "start_ignored"
+class BenjiSmsOutcome(models.TextChoices):
+    """What the inbound webhook decided for one text (MFB-2439).
+
+    The webhook's `Outcome` (integrations.services.communications.benji_sms_inbound) is
+    this enum, so the receipt's check constraint and the webhook cannot drift apart.
+    """
+
+    NOT_A_PHONE = "not_a_phone", "Not a phone number"
+    STRANGER_KEYWORD = "stranger_keyword", "Keyword from a stranger"
+    STRANGER = "stranger", "Stranger reply"
+    STOPPED = "stopped", "STOP"
+    STARTED = "started", "START"
+    REVOKED = "revoked", "Revoked number"
+    HELP = "help", "HELP"
+    START_IGNORED = "start_ignored", "START with nothing to clear"
+    SHARED = "shared", "Shared-phone reply"
+    REENTRY = "reentry", "Re-entry reply"
+    CHANNEL_OFF = "channel_off", "Channel off"
+    PICTURE = "picture", "Picture reply"
+    EMPTY = "empty", "Empty text"
+    QUEUED = "queued", "Turn queued"
+
+
+BENJI_SMS_STOPPED = BenjiSmsOutcome.STOPPED.value
+BENJI_SMS_STARTED = BenjiSmsOutcome.STARTED.value
+BENJI_SMS_START_IGNORED = BenjiSmsOutcome.START_IGNORED.value
 
 
 class BenjiSmsInboundReceiptManager(models.Manager):
@@ -1726,14 +1746,15 @@ class BenjiSmsInboundReceipt(models.Model):
     Texts from numbers with no phone row (strangers) get no receipt: their replies are
     deduplicated by the fixed-reply claim, and nothing about them is kept.
 
-    The SID resolves to the number at Twilio, like a delivery row's. Kept a day (the
-    nightly sweep), and deleted with the phone row in a deletion request.
+    The SID resolves to the number at Twilio, like a delivery row's. Meant to live a day:
+    the nightly sweep (MFB-2442) purges them, and until it exists they are kept. Deleted
+    with the phone row in a deletion request.
     """
 
     phone = models.ForeignKey("BenjiSmsPhone", related_name="inbound_receipts", on_delete=models.CASCADE)
     inbound_sid = models.CharField(max_length=34)
     # The webhook's outcome name, e.g. "stopped", "started", "queued", "shared".
-    outcome = models.CharField(max_length=16)
+    outcome = models.CharField(max_length=20, choices=BenjiSmsOutcome.choices)
     # For STOP and START: whether this text changed the state (revoked the number, or
     # cleared a revocation).
     applied = models.BooleanField(default=False)
@@ -1749,6 +1770,10 @@ class BenjiSmsInboundReceipt(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["inbound_sid"], name="benji_sms_inbound_receipt_sid_unique"),
+            models.CheckConstraint(
+                check=models.Q(outcome__in=BenjiSmsOutcome.values),
+                name="benji_sms_inbound_receipt_outcome_valid",
+            ),
         ]
         indexes = [
             # The nightly purge.
@@ -2151,7 +2176,8 @@ class BenjiSmsStrangerReply(models.Model):
     reply at most once a day, however often it texts. For a shared or expired number
     this row repeats a hash `BenjiSmsPhone` already holds, for a day.
 
-    Kept apart from `BenjiSmsPhone` on purpose: these rows are purged after a day, and
+    Kept apart from `BenjiSmsPhone` on purpose: these rows are meant to be purged after a
+    day by the nightly sweep (MFB-2442; until it exists they are kept), and
     a texter who never used the on-ramp should leave no lasting trace. That includes
     the reply's delivery row, which `purge_expired` removes with it.
 
