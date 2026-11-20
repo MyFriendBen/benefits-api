@@ -87,12 +87,6 @@ KNOWN_DISCREPANCIES: dict[int, str] = {}
 class TestNjEmergencyMedicaidScenarios(PeIntegrationTestCase):
     """The NJ spec's Test Scenarios, with NJ Medicaid at PolicyEngine ``pe_version``."""
 
-    pe_version = "2.94.7"
-    pe_version_reason = (
-        "Recorded at PolicyEngine current (2.94.7) on 2026-11-11 alongside NJ Medicaid's own scenarios, "
-        "ahead of the suite pin. Moves back to PE_TEST_VERSION when the suite pin reaches it."
-    )
-
     def run_scenario(self, number: int) -> Eligibility:
         (zipcode, county), members = SCENARIOS[number]
         screen = make_screen(
