@@ -268,6 +268,7 @@ def _translated(
     translation: Optional[Translation],
     language_code: Optional[str] = None,
     max_len: Optional[int] = MAX_PROMPT_FIELD_LEN,
+    flatten: bool = True,
 ) -> str:
     """Resolve a parler Translation to text, or "" if there isn't any usable text.
 
@@ -285,6 +286,9 @@ def _translated(
     into ai-service's *system* prompt and `Translation` rows are admin-editable, so a
     name carrying newlines plus instruction-shaped text could forge a prompt block. URLs
     must NOT be capped — see `_apply_url`.
+
+    `flatten=False` keeps the text's line breaks, for copy that is sent as it is written
+    (Benji's fixed SMS replies) rather than interpolated into a prompt.
     """
     if translation is None:
         return ""
@@ -306,7 +310,7 @@ def _translated(
             # every name in the payload.
             return ""
         if text and text != BLANK_TRANSLATION_PLACEHOLDER:
-            flattened = " ".join(text.split())
+            flattened = " ".join(text.split()) if flatten else text
             return flattened[:max_len] if max_len else flattened
     return ""
 

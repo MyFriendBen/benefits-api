@@ -38,6 +38,7 @@ from screener import assistant
 from screener.models import AssistantConversation, AssistantMessage, BenjiSmsDeadLetter
 from benefits.tests.test_sentry_scrub import _recording_sentry
 from integrations.services.communications import twilio_client
+from integrations.services.communications.benji_sms import BenjiSmsMediaError
 from screener import tasks
 from screener.tasks import (
     BENJI_SMS_QUEUE,
@@ -49,8 +50,10 @@ from screener.tasks import (
     BrokerNotConfigured,
     TooManyDeliveries,
     TransientTurnError,
+    benji_sms_delete_media,
     benji_sms_ping,
     benji_sms_turn,
+    enqueue_media_deletion,
     enqueue_turn,
 )
 from screener.tests.assistant_helpers import make_conversation, make_message
@@ -717,3 +720,124 @@ class TestAiServiceTimeout(SimpleTestCase):
         """A turn reads the inbound's From, may send the disclosure, and sends the reply."""
         budget = assistant.AI_SERVICE_WORKER_TIMEOUT + 3 * twilio_client.TIMEOUT_SECONDS
         self.assertLess(budget, benji_sms_turn.soft_time_limit)
+
+
+class TestMediaDeletionJob(TestCase):
+    """`benji_sms_delete_media` (MFB-2439): the pictures of an inbound MMS, deleted at Twilio."""
+
+    def setUp(self) -> None:
+        delete = mock.patch.object(tasks, "delete_inbound_media", return_value=2)
+        self.delete = delete.start()
+        self.addCleanup(delete.stop)
+
+    def test_it_runs_on_the_same_queue_and_policy_as_the_turn(self) -> None:
+        for attribute in ("max_retries", "retry_backoff", "retry_jitter", "soft_time_limit", "time_limit"):
+            with self.subTest(attribute=attribute):
+                self.assertEqual(getattr(benji_sms_delete_media, attribute), getattr(benji_sms_turn, attribute))
+        self.assertEqual(benji_sms_delete_media.queue, BENJI_SMS_QUEUE)
+        self.assertIsInstance(benji_sms_delete_media, BenjiSmsTask)
+
+    def test_enqueue_deletes_the_messages_media(self) -> None:
+        enqueue_media_deletion(MMS_SID)
+
+        self.delete.assert_called_once_with(MMS_SID)
+        self.assertFalse(BenjiSmsDeadLetter.objects.exists())
+
+    def test_enqueue_takes_a_conversation_for_the_dead_letter_row_only(self) -> None:
+        conversation = make_conversation(channel="sms")
+        enqueue_media_deletion(MMS_SID, conversation.pk)
+
+        self.delete.assert_called_once_with(MMS_SID)
+
+    def test_enqueue_refuses_anything_but_a_sid_and_a_uuid(self) -> None:
+        for args in [("+13035550100",), ("not-a-sid",), (None,), (MMS_SID, "not-a-uuid")]:
+            with self.subTest(args=args), self.assertRaises(ValueError) as ctx:
+                enqueue_media_deletion(*args)
+            self.assertNotIn("3035550100", str(ctx.exception))
+        self.delete.assert_not_called()
+
+    def test_enqueue_needs_a_broker_when_not_eager(self) -> None:
+        with override_settings(CELERY_TASK_ALWAYS_EAGER=False, CELERY_BROKER_URL=""):
+            with self.assertRaises(BrokerNotConfigured):
+                enqueue_media_deletion(MMS_SID)
+
+    def test_a_failure_twilio_might_not_repeat_is_retried(self) -> None:
+        self.delete.side_effect = [BenjiSmsMediaError(503, 20500), 1]
+
+        result = enqueue_media_deletion(MMS_SID)
+
+        self.assertEqual(self.delete.call_count, 2)
+        self.assertFalse(result.failed())
+        self.assertFalse(BenjiSmsDeadLetter.objects.exists())
+
+    def test_failing_every_attempt_dead_letters_with_the_conversation(self) -> None:
+        conversation = make_conversation(channel="sms")
+        self.delete.side_effect = BenjiSmsMediaError(None, None, "ReadTimeout")
+
+        with self.assertLogs(TASKS_LOGGER, level="ERROR") as logs:
+            result = enqueue_media_deletion(MMS_SID, conversation.pk)
+
+        self.assertTrue(result.failed())
+        self.assertEqual(self.delete.call_count, MAX_RETRIES + 1)
+        dead_letter = BenjiSmsDeadLetter.objects.get()
+        self.assertEqual(dead_letter.task_name, "screener.benji_sms_delete_media")
+        self.assertEqual(dead_letter.attempts, MAX_RETRIES + 1)
+        self.assertEqual(dead_letter.conversation_id, conversation.pk)
+        self.assertEqual(dead_letter.inbound_sid, MMS_SID)
+        self.assertNotIn(MMS_SID, logs.output[0])
+
+    def test_a_refusal_that_will_not_change_fails_at_once(self) -> None:
+        self.delete.side_effect = BenjiSmsMediaError(401, 20003)
+
+        with self.assertLogs(TASKS_LOGGER, level="ERROR"):
+            result = enqueue_media_deletion(MMS_SID)
+
+        self.assertTrue(result.failed())
+        self.assertEqual(self.delete.call_count, 1)
+        self.assertEqual(
+            BenjiSmsDeadLetter.objects.get().error_type,
+            "integrations.services.communications.benji_sms.BenjiSmsMediaError",
+        )
+
+    def test_running_out_of_time_is_retried(self) -> None:
+        """The next attempt lists and deletes what is left."""
+        from celery.exceptions import SoftTimeLimitExceeded
+
+        self.delete.side_effect = [SoftTimeLimitExceeded(), 1]
+
+        result = enqueue_media_deletion(MMS_SID)
+
+        self.assertEqual(self.delete.call_count, 2)
+        self.assertFalse(result.failed())
+
+    def test_missing_credentials_fail_at_once_without_a_retry(self) -> None:
+        self.delete.side_effect = BenjiSmsMediaError(None, None, "not_configured")
+
+        with self.assertLogs(TASKS_LOGGER, level="ERROR"):
+            result = enqueue_media_deletion(MMS_SID)
+
+        self.assertTrue(result.failed())
+        self.assertEqual(self.delete.call_count, 1)
+        dead_letter = BenjiSmsDeadLetter.objects.get()
+        self.assertEqual(dead_letter.attempts, 1)
+        self.assertEqual(dead_letter.error_type, "integrations.services.communications.benji_sms.BenjiSmsMediaError")
+
+    def test_a_strangers_picture_leaves_no_sid_in_the_dead_letter(self) -> None:
+        """No conversation to cascade with, so the SID is not kept."""
+        self.delete.side_effect = BenjiSmsMediaError(401, 20003)
+
+        with self.assertLogs(TASKS_LOGGER, level="ERROR"):
+            enqueue_media_deletion(MMS_SID)
+
+        dead_letter = BenjiSmsDeadLetter.objects.get()
+        self.assertIsNone(dead_letter.conversation_id)
+        self.assertIsNone(dead_letter.inbound_sid)
+
+    def test_it_publishes_with_the_sid_masked(self) -> None:
+        with mock.patch("celery.app.task.Task.apply_async") as publish:
+            enqueue_media_deletion(MMS_SID)
+
+        options = publish.call_args.kwargs
+        self.assertEqual(publish.call_args.args[0], (MMS_SID, None))
+        self.assertNotIn(MMS_SID, options["argsrepr"])
+        self.assertIn(tasks.MASKED_SID, options["argsrepr"])

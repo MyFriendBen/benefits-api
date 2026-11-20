@@ -17,6 +17,11 @@ expired, shared). Same gates minus the flag.
 Nothing else should send Benji texts or call ``twilio_client()``. The Save My Results
 text in ``message.py`` is a separate path with its own client and is not gated here.
 
+``delete_inbound_media`` is the one call here that sends nothing: it deletes the
+pictures of an inbound MMS at Twilio (MFB-2439; proposal v3, decision 7). It is not
+behind the kill switch or the flag, because turning Benji off must not leave people's
+pictures at Twilio.
+
 Failures raise one of two errors, both ``BenjiSmsError``, so a caller can tell
 whether retrying is safe:
 
@@ -36,6 +41,7 @@ from typing import Optional
 
 import requests
 from django.conf import settings
+from django.urls import NoReverseMatch, reverse
 from twilio.base.exceptions import TwilioRestException
 
 from screener.models import WhiteLabel
@@ -46,6 +52,12 @@ logger = logging.getLogger(__name__)
 
 FLAG = "benji_sms"
 SWITCH = "BENJI_SMS_OUTBOUND_ENABLED"
+# The URL name of the status callback webhook (MFB-2441). Sends ask Twilio to report
+# delivery to it once the route exists (`status_callback_url`).
+STATUS_CALLBACK_URL_NAME = "benji-sms-status"
+# `BenjiSmsMediaError.cause` when Twilio credentials are missing: a setup fault that a
+# retry cannot fix.
+MEDIA_NOT_CONFIGURED = "not_configured"
 _TRUE_VALUES = frozenset({"true", "1", "yes", "on"})
 
 
@@ -60,6 +72,32 @@ class BenjiSmsSendError(BenjiSmsError):
         self.status = status
         self.code = code
         super().__init__(f"Benji SMS not sent: status={status} code={code}")
+
+
+class BenjiSmsMediaError(BenjiSmsError):
+    """An inbound message's media could not be deleted at Twilio. Carries Twilio's
+    status and error code when Twilio answered, or the exception type when it did not."""
+
+    def __init__(self, status: Optional[int], code: Optional[int], cause: Optional[str] = None) -> None:
+        self.status = status
+        self.code = code
+        self.cause = cause
+        super().__init__(f"Benji SMS media not deleted: status={status} code={code} cause={cause}")
+
+    def __reduce__(self) -> tuple:
+        # Celery rebuilds a failed job's exception from its `args`, which here is the
+        # one formatted message and does not fit `__init__`. Without this it falls back
+        # to the nearest class it can rebuild, and the dead letter names `BenjiSmsError`.
+        return (type(self), (self.status, self.code, self.cause))
+
+    @property
+    def retryable(self) -> bool:
+        """Twilio never answered, is overloaded or is failing: worth another attempt.
+        Any other answer (bad credentials, a refused request) will not change, and
+        neither will missing credentials on our side."""
+        if self.cause == MEDIA_NOT_CONFIGURED:
+            return False
+        return self.status is None or self.status == 429 or self.status >= 500
 
 
 class BenjiSmsDeliveryUnknown(BenjiSmsError):
@@ -98,6 +136,32 @@ def can_send_for_screen(white_label: Optional[WhiteLabel]) -> bool:
     and a conversation) and should skip it when the send would be refused anyway.
     """
     return _refusal_reason(white_label, screen_send=True) is None
+
+
+def channel_enabled(white_label: Optional[WhiteLabel]) -> bool:
+    """Whether Benji SMS is switched on for this white label: the kill switch and the flag.
+
+    For deciding whether to start work that ends in a send, such as queueing a turn,
+    which would pay for a model reply nobody can be sent. Unlike `can_send_for_screen`
+    it ignores DEBUG and missing Twilio credentials, so local work still runs a turn
+    end to end and stops only at the send.
+    """
+    return outbound_enabled() and white_label is not None and white_label.has_feature(FLAG)
+
+
+def status_callback_url() -> Optional[str]:
+    """Where Twilio should report a Benji text's delivery status, or None.
+
+    None until the status callback route (MFB-2441) is registered under
+    STATUS_CALLBACK_URL_NAME, so Twilio is never told to post to a URL that does not
+    exist (each failed post would count as a webhook error). Once the route exists,
+    every send that passes this gets delivery status with no further change.
+    """
+    try:
+        path = reverse(STATUS_CALLBACK_URL_NAME)
+    except NoReverseMatch:
+        return None
+    return str(settings.BACKEND_DOMAIN).rstrip("/") + path
 
 
 def can_send_fixed_reply() -> bool:
@@ -155,6 +219,11 @@ def _send(
 
     try:
         message = twilio_client().messages.create(**kwargs)
+    except ValueError as e:
+        # The SDK decodes the 2xx body itself; an unreadable one (json.JSONDecodeError is
+        # a ValueError) means Twilio answered and may have queued the text. The body is
+        # never quoted.
+        raise BenjiSmsDeliveryUnknown(type(e).__name__) from None
     except TwilioRestException as e:
         # Twilio's message can name the number ("The 'To' number +1... is not valid").
         # `from None` suppresses the chained original, which Sentry honours.
@@ -167,4 +236,44 @@ def _send(
         # Read timeout, or the connection dropped after the request went out: Twilio
         # may have queued the message.
         raise BenjiSmsDeliveryUnknown(type(e).__name__) from None
+    if not message.sid:
+        # Twilio answered 2xx but the SDK found no SID in the body: it may well have
+        # queued the text, so this is not a refusal (which None means here).
+        raise BenjiSmsDeliveryUnknown("no_sid")
     return message.sid
+
+
+def delete_inbound_media(message_sid: str) -> int:
+    """Delete every media file Twilio holds for one inbound message. Returns how many.
+
+    Images are never stored (proposal v3, decision 7): Twilio keeps an inbound MMS's
+    media until the account deletes it, so every inbound with media gets this, whoever
+    sent it. Safe to repeat: media already gone, or a message that no longer exists,
+    counts as done.
+
+    Does nothing in DEBUG, where no real message exists. Raises `BenjiSmsMediaError`,
+    which never carries the SID, when Twilio is not configured or refuses.
+    """
+    if settings.DEBUG:
+        logger.warning("Benji SMS media deletion skipped: reason=debug")
+        return 0
+    if not (settings.TWILIO_SID and settings.TWILIO_TOKEN):
+        raise BenjiSmsMediaError(None, None, MEDIA_NOT_CONFIGURED)
+
+    deleted = 0
+    try:
+        for media in twilio_client().messages(message_sid).media.list():
+            try:
+                media.delete()
+            except TwilioRestException as e:
+                if e.status != 404:
+                    raise
+            deleted += 1
+    except TwilioRestException as e:
+        if e.status == 404:
+            return deleted
+        # Twilio's message can quote the request URL, which holds the SID.
+        raise BenjiSmsMediaError(e.status, e.code) from None
+    except requests.RequestException as e:
+        raise BenjiSmsMediaError(None, None, type(e).__name__) from None
+    return deleted

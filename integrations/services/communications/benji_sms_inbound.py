@@ -1,0 +1,520 @@
+"""What the Benji SMS inbound webhook does with one text (MFB-2439).
+
+Design: MFB-1916 proposal v3, decisions 3, 4, 5, 7 and 10. Runbook: docs/BENJI_SMS_INBOUND.md.
+The view that receives Twilio's post is `screener.benji_sms_inbound`; this module decides
+what state the sending number is in, and either answers with a fixed reply or queues a
+turn for the worker. It never calls the model.
+
+WHAT HAPPENS TO A TEXT. In order, first match wins:
+
+ 1. Sender is not a phone number     nothing (a short code or an alphanumeric sender)
+ 2. Unknown number, our HELP word    the stranger reply, once a day (it says who we are)
+ 3. Unknown number, other keyword    nothing: Twilio answered its own, and there is no
+                                     row to revoke or restart
+ 4. Unknown number                   the stranger reply, once a day
+ 5. STOP                             revoke the number, close its conversation
+ 6. START, revoked                   clear the revocation; resume the conversation the
+                                     STOP closed, if it can
+ 7. START, not revoked               nothing ("yes" is an ordinary answer and carries on)
+ 8. Revoked, anything else           nothing
+ 9. HELP                             the HELP reply
+10. Marked shared                    the shared-phone reply, once a day
+11. Quiet past the interval          expire the conversation, then as 12
+12. No active conversation           the re-entry reply, once a day
+13. Channel off for the white label  nothing
+14. Has media                        the "can't read pictures" reply
+15. Empty text                       nothing (the inbound time is still recorded)
+16. Otherwise                        queue the turn
+
+The stranger, shared and re-entry replies belong to no conversation, so like every fixed
+reply with no white label (MFB-2433) only the kill switch gates them, not a white
+label's flag.
+
+Then, for any text that carries media, whatever happened above: queue the deletion of the
+media at Twilio. It comes last so that a broker outage cannot block a STOP: the state
+change is made first, and the failed queueing still answers 503, so Twilio posts again
+and the deletion is queued on the replay.
+
+STOP comes before every other state on purpose: a shared or expired number that texts
+STOP must still be revoked. STOP and START are decided under the phone's row lock
+(`BenjiSmsPhone.revoke`, `clear_revocation`), never on the snapshot read at the start,
+so a STOP and a START sent together are applied in order. Every other branch re-reads
+the revocation just before it sends or queues anything (`is_revoked_now`), so a STOP
+that lands while a text is being handled stops its reply. The send itself is not under
+the lock, so a STOP landing in the last milliseconds before it can still be beaten; the
+worker (MFB-2440) checks again before every reply.
+
+WHO ANSWERS A KEYWORD. Twilio answers its own keywords itself and blocks our sends after
+a STOP, so for those we only change state. Our fixed STOP, HELP and START replies go out
+for the wordings Twilio does not handle (benji_sms_keywords.py).
+
+A REPLAYED WEBHOOK CHANGES NOTHING NEW. Twilio posts a text again when it does not get our
+answer in time, and through the fallback URL after that.
+- Every fixed reply first inserts its delivery row, which the database allows once per
+  inbound MessageSid (`BenjiSmsDelivery.objects.claim_fixed`), before the day's
+  no-conversation claim, so a replay of a reply that was sent (or may have been) never
+  spends the day's allowance.
+- Every decision for a text from a known number is recorded with its MessageSid
+  (`BenjiSmsInboundReceipt`): STOP and START in the same locked transaction as their
+  change, even when they changed nothing, and every other decision before its work is
+  done. A replay follows its first decision and redoes only that decision's unfinished
+  work (`_replay`): an older STOP or START cannot undo a newer one, a text answered as
+  shared does not become a turn when the mark lapses, and a turn is queued only ever
+  for the conversation it was first queued for, even after a new on-ramp.
+- A STOP or START made in our wording is confirmed by the text that made the change,
+  on its first post only. A replay or a repeat never sends a confirmation; if the one
+  send fails at Twilio, it is lost, and the change itself still stands.
+- A replayed turn is queued again and absorbed by the worker, which sends the SID to
+  ai-service as `client_message_id` (MFB-2440).
+
+SENDS ARE BEST EFFORT, THE QUEUE IS NOT. A fixed reply Twilio refuses is logged and
+dropped: the webhook still answers 200, because the state change is what matters and a
+retry would not send it either. When the refusal may pass (Twilio unreachable, 429, 5xx),
+the day's no-conversation claim is given back, so the number's next text can try again.
+A turn or a media deletion that cannot be queued raises, and the view answers 503.
+
+NOTHING HERE LOGS THE NUMBER, ITS HASH OR THE TEXT. Log lines carry the reply's label
+and Twilio's error code.
+"""
+
+import logging
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
+
+from django.utils import timezone
+
+from screener.models import (
+    AssistantConversationStatus,
+    BenjiSmsBinding,
+    BenjiSmsDelivery,
+    BenjiSmsInboundReceipt,
+    BenjiSmsOutcome,
+    BenjiSmsPhone,
+    BenjiSmsStrangerReply,
+)
+from screener.tasks import enqueue_media_deletion, enqueue_turn
+
+from . import benji_sms_replies as replies
+from .benji_sms import (
+    BenjiSmsDeliveryUnknown,
+    BenjiSmsSendError,
+    can_send_fixed_reply,
+    channel_enabled,
+    send_fixed_reply,
+    send_screen_sms,
+    status_callback_url,
+)
+from .benji_sms_hash import InvalidPhoneNumber, phone_hash
+from .benji_sms_keywords import Keyword, KeywordMatch, classify
+
+logger = logging.getLogger(__name__)
+
+# Twilio's error for a send to a number that opted out with a carrier keyword. Expected
+# whenever our keyword list and Twilio's disagree about a wording, so not an alarm.
+TWILIO_OPTED_OUT = 21610
+# Twilio's "too many requests". Like a 5xx or no answer at all, it may pass.
+TOO_MANY_REQUESTS = 429
+
+
+# What the webhook decided. Logged, read by the tests, and stored on the receipt, so it is
+# the model's enum (BenjiSmsOutcome).
+Outcome = BenjiSmsOutcome
+
+
+@dataclass(frozen=True)
+class Inbound:
+    """One inbound text, as Twilio posted it. Lives for the request only."""
+
+    sid: str
+    sender: str
+    body: str
+    num_media: int
+    opt_out_type: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class Result:
+    outcome: Outcome
+    # Whether a fixed reply went to Twilio for this request.
+    replied: bool = False
+
+
+def _locale(binding: Optional[BenjiSmsBinding]) -> Optional[str]:
+    return binding.conversation.locale if binding is not None else None
+
+
+def _may_pass(exc: BenjiSmsSendError) -> bool:
+    """Whether a refused send failed for a reason that may pass: Twilio never answered,
+    is rate limiting, or is failing. A 4xx about the number itself will not change."""
+    return exc.status is None or exc.status == TOO_MANY_REQUESTS or exc.status >= 500
+
+
+def _deliver(
+    inbound: Inbound,
+    delivery: BenjiSmsDelivery,
+    body: str,
+    reply: replies.FixedReply,
+    binding: Optional[BenjiSmsBinding],
+    now: datetime,
+    *,
+    for_screen: bool,
+) -> tuple[bool, bool]:
+    """Send a fixed reply whose delivery row is already claimed. Returns (sent, may_retry).
+
+    `may_retry` is True only when the text definitely did not go out, for a reason that
+    may pass: a gate refused it, or Twilio was unreachable, rate limiting or failing.
+    The delivery row is deleted whenever nothing went out, and kept when the outcome is
+    unknown, so a replay never sends a second one.
+
+    `for_screen` replies belong to a conversation and are held to its white label's
+    flag; the others (stranger, shared, re-entry) answer a number that has none.
+    """
+    callback = status_callback_url()
+    try:
+        if for_screen and binding is not None:
+            outbound_sid = send_screen_sms(
+                inbound.sender, body, white_label=binding.white_label, status_callback=callback
+            )
+        else:
+            outbound_sid = send_fixed_reply(inbound.sender, body, status_callback=callback)
+    except BenjiSmsSendError as exc:
+        delivery.delete()
+        log = logger.warning if exc.code == TWILIO_OPTED_OUT else logger.error
+        log("Benji SMS fixed reply not sent: reply=%s status=%s code=%s", reply.label, exc.status, exc.code)
+        return False, _may_pass(exc)
+    except BenjiSmsDeliveryUnknown as exc:
+        # It may have gone out. The row stays, with no outbound SID, so a replay does
+        # not send a second one.
+        logger.error("Benji SMS fixed reply delivery unknown: reply=%s cause=%s", reply.label, exc.cause)
+        return False, False
+
+    if outbound_sid is None:
+        # Refused by a gate (kill switch, flag, DEBUG), which logged why.
+        delivery.delete()
+        return False, True
+
+    delivery.outbound_sid = outbound_sid
+    delivery.sent_at = now
+    delivery.save(update_fields=["outbound_sid", "sent_at"])
+    return True, False
+
+
+def _send_fixed(
+    inbound: Inbound,
+    reply: replies.FixedReply,
+    binding: Optional[BenjiSmsBinding],
+    now: datetime,
+    *,
+    for_screen: bool,
+) -> bool:
+    """Send one fixed reply to the sender, at most once per inbound. True if it went."""
+    # The text first: a failed lookup then leaves no claim behind, and a replay can send.
+    body = replies.reply_text(reply, _locale(binding))
+    delivery = BenjiSmsDelivery.objects.claim_fixed(inbound.sid, binding)
+    if delivery is None:
+        return False
+    sent, _ = _deliver(inbound, delivery, body, reply, binding, now, for_screen=for_screen)
+    return sent
+
+
+def _send_daily(
+    inbound: Inbound,
+    number_hash: str,
+    reply: replies.FixedReply,
+    binding: Optional[BenjiSmsBinding],
+    now: datetime,
+) -> bool:
+    """Send a no-conversation reply unless the number already had one today.
+
+    Claims the inbound's fixed reply before the day's: a replay of a text that was
+    already answered (or refused for the day) never spends the number's allowance.
+    """
+    # Checked first so that a day's claim is not spent on a reply no gate would let out.
+    if not can_send_fixed_reply():
+        return False
+    body = replies.reply_text(reply, _locale(binding))
+    delivery = BenjiSmsDelivery.objects.claim_fixed(inbound.sid, binding)
+    if delivery is None:
+        return False
+    if not BenjiSmsStrangerReply.objects.claim(number_hash, now):
+        delivery.delete()
+        return False
+    sent, may_retry = _deliver(inbound, delivery, body, reply, binding, now, for_screen=False)
+    if may_retry:
+        BenjiSmsStrangerReply.objects.release(number_hash, now)
+    return sent
+
+
+def _from_a_stranger(inbound: Inbound, number_hash: str, keyword: Optional[KeywordMatch], now: datetime) -> Result:
+    """A number with no phone row: it never used the on-ramp."""
+    if keyword is None or (keyword.keyword is Keyword.HELP and not keyword.carrier):
+        # Twilio does not answer our HELP words ("ayuda"), and the stranger reply is the
+        # help we have for a number we know nothing about: who we are, and STOP.
+        return Result(Outcome.STRANGER, _send_daily(inbound, number_hash, replies.STRANGER, None, now))
+    # Twilio answered its own keywords. Our STOP and START words have nothing to change:
+    # we never text a stranger unprompted, and there is no conversation to restart.
+    return Result(Outcome.STRANGER_KEYWORD)
+
+
+def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: Optional[BenjiSmsPhone]) -> Result:
+    """Rows 1 to 15 of the table in the module docstring."""
+    if number_hash is None:
+        return Result(Outcome.NOT_A_PHONE)
+
+    keyword = classify(inbound.body, inbound.opt_out_type)
+
+    if phone is None:
+        return _from_a_stranger(inbound, number_hash, keyword, now)
+
+    # Noted before anything is decided, so a retry after a crash knows when this text
+    # first arrived. A text with a decision is a replay and follows it.
+    prior = BenjiSmsInboundReceipt.objects.arrive(phone, inbound.sid)
+    # A "yes" whose receipt still says it cleared nothing never reached its final
+    # decision (the first post failed on the way): decide it again, from the START
+    # branch, which re-checks the revocation under the lock first.
+    unfinished_yes = prior.outcome == Outcome.START_IGNORED and keyword is not None and keyword.also_plain_text
+    if prior.outcome != Outcome.PENDING and not unfinished_yes:
+        return _replay(inbound, phone, prior, keyword, now)
+
+    newest = phone.newest_binding()
+
+    if keyword is not None and keyword.keyword is Keyword.STOP:
+        # Decided under the phone's row lock, not on the snapshot above.
+        revoked = phone.revoke(now, inbound.sid)
+        replied = False
+        if revoked and not keyword.carrier:
+            # The one send to a revoked number: the confirmation, by the text that made
+            # the change, on its first post only. Best effort: if it fails, it is lost.
+            replied = _send_fixed(inbound, replies.STOP, newest, now, for_screen=True)
+        return Result(Outcome.STOPPED, replied)
+
+    if keyword is not None and keyword.keyword is Keyword.START:
+        # Decided under the phone's row lock, not on the snapshot above.
+        cleared, resumed = phone.clear_revocation(now, inbound.sid, arrived_at=prior.created_at)
+        if not cleared:
+            seen = BenjiSmsInboundReceipt.objects.seen(inbound.sid)
+            if seen is not None and seen.outcome != Outcome.START_IGNORED:
+                # Another post of this same text got there first and decided it: follow
+                # that decision, redoing its unfinished work (its turn, say), as a replay.
+                return _replay(inbound, phone, seen, keyword, now)
+        if phone.revoked_at is not None:
+            # A replay of an older START, after a newer STOP. Final: an unfinished "yes"
+            # blocked here must not become a turn if a later START lifts the STOP.
+            return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
+        restarted = cleared
+        if restarted or not keyword.also_plain_text:
+            # A re-subscribe, or a START word that is never a question. "yes" from a
+            # number that was not revoked is the one START that carries on as an
+            # ordinary answer.
+            replied = False
+            if cleared and not keyword.carrier:
+                if phone.is_revoked_now():
+                    # A STOP landed since: no "Benji is back".
+                    return Result(Outcome.REVOKED)
+                # As for STOP: by the text that made the change, first post only.
+                reply = replies.START_RESUMED if resumed else replies.START_REENTRY
+                replied = _send_fixed(inbound, reply, newest, now, for_screen=True)
+            return Result(Outcome.STARTED if restarted else Outcome.START_IGNORED, replied)
+
+    if phone.revoked_at is not None:
+        return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
+
+    if keyword is not None and keyword.keyword is Keyword.HELP:
+        if phone.is_revoked_now():
+            return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
+        followed = _decide_or_follow(phone, inbound, Outcome.HELP, None, keyword, now)
+        return followed or _help(inbound, keyword, newest, now)
+
+    if phone.is_shared(now):
+        if phone.is_revoked_now():
+            return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
+        followed = _decide_or_follow(phone, inbound, Outcome.SHARED, None, keyword, now)
+        return followed or Result(Outcome.SHARED, _send_daily(inbound, number_hash, replies.SHARED, newest, now))
+
+    # The newest binding is the only one that can be active (BenjiSmsPhone.newest_binding).
+    binding = newest if newest is not None and newest.status == AssistantConversationStatus.ACTIVE else None
+    channel_on = binding is not None and channel_enabled(binding.white_label)
+    # Expires a quiet conversation, and records the text otherwise, under a row lock. A
+    # text for a white label that is switched off is not recorded: nothing answers it.
+    if binding is not None and not binding.record_inbound(now, touch=channel_on):
+        binding = None
+    # Before anything goes out: a STOP from the same number may have landed since the
+    # snapshot (and closed the binding record_inbound just found ended).
+    if phone.is_revoked_now():
+        return _decided(phone, inbound, Outcome.REVOKED, keyword=keyword)
+    if binding is None:
+        followed = _decide_or_follow(phone, inbound, Outcome.REENTRY, None, keyword, now)
+        return followed or Result(Outcome.REENTRY, _send_daily(inbound, number_hash, replies.REENTRY, newest, now))
+
+    if not channel_on:
+        # A turn would pay for a reply that no gate would let out.
+        return _decided(phone, inbound, Outcome.CHANNEL_OFF, keyword=keyword)
+
+    if inbound.num_media > 0:
+        followed = _decide_or_follow(phone, inbound, Outcome.PICTURE, binding.conversation_id, keyword, now)
+        return followed or Result(Outcome.PICTURE, _send_fixed(inbound, replies.PICTURE, binding, now, for_screen=True))
+
+    if not inbound.body.strip():
+        return _decided(phone, inbound, Outcome.EMPTY, keyword=keyword)
+
+    # Recorded before it is queued, so a replay after a failed queueing queues it again,
+    # in this conversation, whatever has changed since. If another post of this text
+    # recorded first, follow its decision instead: a text is queued for one conversation.
+    followed = _decide_or_follow(phone, inbound, Outcome.QUEUED, binding.conversation_id, keyword, now)
+    if followed is not None:
+        return followed
+    enqueue_turn(binding.conversation_id, inbound.sid)
+    return Result(Outcome.QUEUED)
+
+
+def _decided(
+    phone: BenjiSmsPhone,
+    inbound: Inbound,
+    outcome: Outcome,
+    conversation_id: Optional[uuid.UUID] = None,
+    keyword: Optional[KeywordMatch] = None,
+) -> Result:
+    """Record a decision that needs no work (revoked, channel off, empty), so a replay
+    follows it (BenjiSmsInboundReceipt). If another post of this text decided first,
+    follow that decision instead, with this text's keyword (a HELP decision needs it)."""
+    receipt = BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, outcome.value, conversation_id)
+    if receipt.outcome != outcome or receipt.conversation_id != conversation_id:
+        return _replay(inbound, phone, receipt, keyword, timezone.now())
+    return Result(outcome)
+
+
+def _decide_or_follow(
+    phone: BenjiSmsPhone,
+    inbound: Inbound,
+    outcome: Outcome,
+    conversation_id: Optional[uuid.UUID],
+    keyword: Optional[KeywordMatch],
+    now: datetime,
+) -> Optional[Result]:
+    """Record this decision before acting on it. Returns None to go ahead, or the result
+    of following another post of the same text that recorded a different decision first:
+    the first decision recorded for a text is the one acted on."""
+    receipt = BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, outcome.value, conversation_id)
+    if receipt.outcome == outcome and receipt.conversation_id == conversation_id:
+        return None
+    return _replay(inbound, phone, receipt, keyword, now)
+
+
+def _help(inbound: Inbound, keyword: KeywordMatch, binding: Optional[BenjiSmsBinding], now: datetime) -> Result:
+    replied = False
+    if not keyword.carrier:
+        replied = _send_fixed(inbound, replies.HELP, binding, now, for_screen=True)
+    return Result(Outcome.HELP, replied)
+
+
+def _replay(
+    inbound: Inbound,
+    phone: BenjiSmsPhone,
+    prior: BenjiSmsInboundReceipt,
+    keyword: Optional[KeywordMatch],
+    now: datetime,
+) -> Result:
+    """A text this number already sent: follow its first decision, never decide again.
+
+    Redoes only that decision's own work, which is safe to repeat: the turn is queued
+    again for the conversation it was first queued for (the worker deduplicates by SID
+    there), and a fixed reply is tried again (its claim lets one out per text). STOP and
+    START changed what they were going to change on the first post, and send nothing.
+    Nothing goes out to a number revoked since.
+    """
+    outcome = Outcome(prior.outcome)
+    if outcome in (Outcome.STOPPED, Outcome.STARTED, Outcome.START_IGNORED, Outcome.REVOKED):
+        return Result(outcome)
+    if outcome in (Outcome.CHANNEL_OFF, Outcome.EMPTY):
+        return Result(outcome)
+    if phone.is_revoked_now():
+        return Result(Outcome.REVOKED)
+    # The binding the first post acted on, for a turn or a picture: never a newer one.
+    original = (
+        BenjiSmsBinding.objects.select_related("conversation", "white_label")
+        .filter(conversation_id=prior.conversation_id)
+        .first()
+        if prior.conversation_id is not None
+        else None
+    )
+    if outcome in (Outcome.QUEUED, Outcome.PICTURE):
+        if original is None:
+            # Its conversation is gone (a deletion request): nothing to redo.
+            return Result(outcome)
+        if not channel_enabled(original.white_label):
+            # Switched off since: the same gate the first post passed.
+            return Result(Outcome.CHANNEL_OFF)
+        if outcome is Outcome.QUEUED:
+            enqueue_turn(original.conversation_id, inbound.sid)
+            return Result(outcome)
+        return Result(outcome, _send_fixed(inbound, replies.PICTURE, original, now, for_screen=True))
+    newest = phone.newest_binding()
+    if outcome is Outcome.HELP and keyword is not None:
+        return _help(inbound, keyword, newest, now)
+    if outcome in (Outcome.SHARED, Outcome.REENTRY) and phone.phone_hash:
+        reply = replies.SHARED if outcome is Outcome.SHARED else replies.REENTRY
+        return Result(outcome, _send_daily(inbound, phone.phone_hash, reply, newest, now))
+    return Result(outcome)
+
+
+class MediaDeletionNotQueued(Exception):
+    """The text was handled, but deleting its media could not be queued.
+
+    Carries the decision so the view can still log it before answering 503. Never
+    carries the number, the text or the SID.
+    """
+
+    def __init__(self, result: Result, cause: str) -> None:
+        self.result = result
+        self.cause = cause
+        super().__init__(f"Media deletion not queued after outcome={result.outcome.value}: {cause}")
+
+
+def handle_inbound(inbound: Inbound, now: Optional[datetime] = None) -> Result:
+    """Decide what one inbound text gets, and do it. The table is in the module docstring.
+
+    Raises when a turn or a media deletion cannot be queued, and the view answers 503 so
+    Twilio posts the text again; everything done before the raise is safe to repeat on
+    that replay. A failed media deletion raises `MediaDeletionNotQueued`, carrying the
+    decision that was already carried out.
+    """
+    now = now or timezone.now()
+    phone: Optional[BenjiSmsPhone] = None
+    result: Optional[Result] = None
+    try:
+        try:
+            number_hash: Optional[str] = phone_hash(inbound.sender)
+        except InvalidPhoneNumber:
+            number_hash = None
+        phone = BenjiSmsPhone.objects.filter(phone_hash=number_hash).first() if number_hash else None
+        result = _decide(inbound, now, number_hash, phone)
+        return result
+    finally:
+        if inbound.num_media > 0:
+            _queue_media_deletion(inbound, phone, result)
+
+
+def _queue_media_deletion(inbound: Inbound, phone: Optional[BenjiSmsPhone], result: Optional[Result]) -> None:
+    """Whoever sent it and whatever was decided, even if deciding failed: images are
+    never kept. Runs after the decision, so a broker outage cannot block a STOP."""
+    try:
+        # The conversation id is only for the dead letter, so a failed lookup must not
+        # stop the deletion: queue it with none.
+        conversation_id = None
+        if phone is not None:
+            try:
+                newest = phone.newest_binding()
+                conversation_id = newest.conversation_id if newest is not None else None
+            except Exception:
+                conversation_id = None
+        enqueue_media_deletion(inbound.sid, conversation_id)
+    except Exception as exc:
+        cause = f"{type(exc).__module__}.{type(exc).__qualname__}"
+        if result is None:
+            # Deciding failed too, and its error is the one already on its way to the
+            # view (and to a 503). Keep it; record this one by class only.
+            logger.error("Benji SMS media deletion not queued: %s", cause)
+            return
+        raise MediaDeletionNotQueued(result, cause) from None

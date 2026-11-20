@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework import routers
 from . import views
 from . import assistant
+from . import benji_sms_inbound
 
 router = routers.DefaultRouter()
 router.register(r"screens", views.ScreenViewSet)
@@ -45,6 +46,19 @@ urlpatterns = [
         "<uuid:message_id>/rating/",
         assistant.AssistantMessageRatingView.as_view(),
         name="assistant-message-rating",
+    ),
+    # Benji over SMS (MFB-2439): where Twilio posts inbound texts. Authenticated by
+    # Twilio's request signature, nothing else. The fallback URL is the one Twilio
+    # tries after the first fails. Both are set on the number: docs/BENJI_SMS_INBOUND.md.
+    path(
+        "assistant/sms/inbound/",
+        benji_sms_inbound.BenjiSmsInboundView.as_view(),
+        name="benji-sms-inbound",
+    ),
+    path(
+        "assistant/sms/inbound/fallback/",
+        benji_sms_inbound.BenjiSmsInboundView.as_view(fallback=True),
+        name="benji-sms-inbound-fallback",
     ),
     path(
         "screener-options/<str:white_label>/has-benefits-programs/",
