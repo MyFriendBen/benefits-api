@@ -20,7 +20,7 @@ Our deployment workflows use **composite actions** to maintain DRY (Don't Repeat
 All composite actions are located in `.github/actions/`:
 
 1. **setup-python-django** - Sets up Python 3.12 with pip caching and installs dependencies from `requirements.txt`
-2. **run-django-checks** - Runs Django system checks and database migrations
+2. **run-django-checks** - Runs Django system checks, fails on missing or conflicting migrations (`makemigrations --check --dry-run`), and applies the migrations
 3. **deploy-to-heroku** - Installs Heroku CLI and deploys using `akhileshns/heroku-deploy@v3.14.15`
 4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config)
 5. **slack-notify** - Sends deployment notifications with status (success/failure/in-progress/completed-with-warnings)
@@ -438,7 +438,7 @@ If your deployment included database migrations:
 - Consider the data compatibility when rolling back code
 - Test rollback scenarios in staging first
 
-**Migration conflicts cannot be resolved on Heroku** (read-only slug). All migration issues must be fixed locally:
+**Migration conflicts cannot be resolved on Heroku** (read-only slug). PR validation fails on a missing or conflicting migration, so most are caught before merging; any that reach a deploy must be fixed locally:
 1. Pull the latest code
 2. Resolve conflicts with `python manage.py makemigrations --merge`
 3. Commit and push changes

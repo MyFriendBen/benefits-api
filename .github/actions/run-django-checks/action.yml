@@ -1,5 +1,5 @@
 name: 'Run Django System Checks and Migrations'
-description: 'Runs Django system checks and database migrations'
+description: 'Runs Django system checks, checks for missing or conflicting migrations, and applies the migrations'
 
 runs:
   using: 'composite'
@@ -7,6 +7,13 @@ runs:
     - name: Django system checks
       shell: bash
       run: python manage.py check --fail-level WARNING
+
+    # Fails when a model change has no migration, or when two migrations share a parent
+    # (the same check migrate makes, but this one names both files and the fix). Run
+    # before migrate so a conflict reports here, not as a migrate error.
+    - name: Check for missing or conflicting migrations
+      shell: bash
+      run: python manage.py makemigrations --check --dry-run
 
     - name: Run migrations
       shell: bash
