@@ -296,8 +296,9 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
         if not cleared:
             seen = BenjiSmsInboundReceipt.objects.seen(inbound.sid)
             if seen is not None and seen.outcome != Outcome.START_IGNORED:
-                # Another post of this same text got there first and decided it.
-                return Result(Outcome(seen.outcome))
+                # Another post of this same text got there first and decided it: follow
+                # that decision, redoing its unfinished work (its turn, say), as a replay.
+                return _replay(inbound, phone, seen, keyword, now)
         if phone.revoked_at is not None:
             # A replay of an older START, after a newer STOP. Final: an unfinished "yes"
             # blocked here must not become a turn if a later START lifts the STOP.
@@ -371,8 +372,12 @@ def _decide(inbound: Inbound, now: datetime, number_hash: Optional[str], phone: 
 def _decided(
     phone: BenjiSmsPhone, inbound: Inbound, outcome: Outcome, conversation_id: Optional[uuid.UUID] = None
 ) -> Result:
-    """Record the decision for this text, so a replay follows it (BenjiSmsInboundReceipt)."""
-    BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, outcome.value, conversation_id)
+    """Record a decision that needs no work (revoked, channel off, empty), so a replay
+    follows it (BenjiSmsInboundReceipt). If another post of this text decided first,
+    follow that decision instead."""
+    receipt = BenjiSmsInboundReceipt.objects.decide(phone, inbound.sid, outcome.value, conversation_id)
+    if receipt.outcome != outcome or receipt.conversation_id != conversation_id:
+        return _replay(inbound, phone, receipt, None, timezone.now())
     return Result(outcome)
 
 

@@ -39,6 +39,9 @@ environment. Nothing points at production until launch (MFB-2447).
   (bad signature) or 400 will not change on a retry. The fragment is not sent to us and
   is not part of the signature. Twilio does not say whether it honours a fragment on the
   fallback URL; it is harmless if it does not.
+- **Before launch, check on staging** that Twilio retries a 503 on the primary URL with
+  these overrides, and what it does on the fallback URL (Twilio does not document whether
+  the fragment applies there). The launch checklist (MFB-2447) should record the result.
 - **Known gap: a queue outage longer than Twilio's retry window loses the text.** Twilio
   caps all attempts at 15 seconds in total (`tt`, at most 15000 ms), so retries cannot
   cover an outage of the broker. The webhook answers 503 when it cannot queue a turn or a

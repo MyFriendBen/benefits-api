@@ -1604,8 +1604,17 @@ class BenjiSmsPhone(models.Model):
         """
         with transaction.atomic():
             phone = BenjiSmsPhone.objects.select_for_update().get(pk=self.pk)
-            if BenjiSmsInboundReceipt.objects.seen(inbound_sid) is not None:
+            seen = BenjiSmsInboundReceipt.objects.seen(inbound_sid)
+            if seen is not None:
                 cleared, resumed = False, False
+                if (
+                    seen.outcome == BENJI_SMS_START_IGNORED
+                    and arrived_at is not None
+                    and phone.inbound_receipts.filter(outcome=BENJI_SMS_STOPPED, created_at__gt=arrived_at).exists()
+                ):
+                    # An unfinished "yes" overtaken by a later STOP (and any START since):
+                    # finalized, so it is never answered out of its time.
+                    BenjiSmsInboundReceipt.objects.filter(pk=seen.pk).update(outcome=BenjiSmsOutcome.REVOKED.value)
             elif phone.revoked_at is None:
                 cleared, resumed = False, False
                 later_stop = (

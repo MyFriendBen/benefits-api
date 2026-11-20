@@ -39,6 +39,7 @@ from screener.models import (
     BenjiSmsBinding,
     BenjiSmsDelivery,
     BenjiSmsDeliveryKind,
+    BenjiSmsInboundReceipt,
     BenjiSmsPhone,
     BenjiSmsStrangerReply,
     WhiteLabel,
@@ -803,6 +804,38 @@ class RevokedTest(InboundMixin, TestCase):
 
         self.enqueue_turn.assert_called_once_with(self.binding.conversation_id, OTHER_SID)
 
+    def test_a_failed_yes_with_its_placeholder_is_not_answered_after_a_later_stop_and_start(self) -> None:
+        """The first yes recorded start_ignored, then failed; STOP and START came before the replay."""
+        self.post("START")
+        with patch.object(inbound_service, "channel_enabled", side_effect=RuntimeError("db gone")):
+            with self.assertLogs(LOGGER, level="WARNING"):
+                self.post("yes", sid=OTHER_SID)
+        self.post("alto", sid="SM" + "e5" * 16)
+        self.post("iniciar", sid="SM" + "f6" * 16)
+
+        self.post("yes", sid=OTHER_SID)
+        self.post("yes", sid=OTHER_SID)
+
+        self.enqueue_turn.assert_not_called()
+
+    def test_a_yes_that_loses_the_race_follows_the_winners_turn(self) -> None:
+        """Another post of the same yes queued it first; this one redoes that turn, in that
+        conversation, in case the winner's queueing failed."""
+        self.post("START")
+        original_arrive = type(BenjiSmsInboundReceipt.objects).arrive
+
+        def winner_decides_meanwhile(manager: Any, phone: BenjiSmsPhone, inbound_sid: str) -> Any:
+            mine = original_arrive(manager, phone, inbound_sid)
+            BenjiSmsInboundReceipt.objects.filter(pk=mine.pk).update(
+                outcome="queued", conversation_id=self.binding.conversation_id
+            )
+            return mine
+
+        with patch.object(type(BenjiSmsInboundReceipt.objects), "arrive", winner_decides_meanwhile):
+            self.assert_acknowledged(self.post("yes", sid=OTHER_SID))
+
+        self.enqueue_turn.assert_called_once_with(self.binding.conversation_id, OTHER_SID)
+
     def test_a_fresh_yes_after_start_is_an_ordinary_answer(self) -> None:
         self.post("START")
         self.post("yes", sid=OTHER_SID)
@@ -1293,7 +1326,9 @@ class TurnTest(InboundMixin, TestCase):
         self.assertIsNotNone(binding.phone.revoked_at)
 
     def test_a_replayed_turn_is_queued_again_for_the_worker_to_absorb(self) -> None:
-        """The worker dedupes on the SID (client_message_id, MFB-2440); nothing is sent here."""
+        """The worker dedupes on the SID within a conversation (client_message_id, MFB-2440),
+        and a replay always queues for the conversation the text was first queued for;
+        nothing is sent here."""
         self.bind()
         self.post()
         self.post()
