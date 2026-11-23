@@ -113,7 +113,7 @@ Each criterion states the Missouri rule that determines household or member elig
 | MFB `income_streams` type | Missouri treatment | Committed calculator behavior |
 |---|---|---|
 | `unemployment`, `pension`, `veteran`, OASDI variants, `alimony` | Included, unearned | Count in full, no disregard, at every gate |
-| `workersComp` | Included, unearned | ⚠️ **Not counted.** PolicyEngine's TANF income source list does not name workers' compensation, so no input reaches the gates and a reported amount is ignored. Accepted limitation, MFB-1700 |
+| `workersComp` | Included, unearned | Count in full, no disregard, at every gate (Scenario 35) |
 | `sSI` | Recipient excluded from the assistance unit entirely | See Criterion 4 |
 | `gifts` | Included, unearned, unless a small non-recurring cash gift under the Percentage-of-Need standard | Every stream is modeled as recurring (see "Income measurement basis") and MFB's income UI has no one-time option, so a `gifts` entry is definitionally recurring and can't represent the non-recurring exception. **Count every reported amount as included unearned income** — not representable under MFB's recurring-income input model.¹ |
 | `investment` — dividend/royalty | Included, unearned | — |
@@ -474,7 +474,7 @@ TA is paid at regular monthly intervals.
 - [ ] 27. The new-spouse income disregard is an accepted PE limitation (AC 23) — a new spouse's income is counted at every gate like any other member's; no data-gap default applies to it.
 - [ ] 28. A household passing the resource test under Criterion 7 isn't denied by a stricter flat resource check, when the new-spouse resource disregard (Step 7) or the SSI/SP/SAB aggregate-resource default (Criterion 4 / AC 24) is active. Committed inclusive default, no executable scenario — MFB cannot verify marriage timing or isolate the SSI member's share of the aggregate.
 - [ ] 29. No NPCR-specific branch exists in the shipped result (AC 20) — a qualifying caretaker's household returns PolicyEngine's single answer, whether or not Missouri's rule would have offered an election.
-- [ ] 30. Income-source treatment matches Criterion 8's table, except `rental`, which is counted as unearned rather than earned — a disclosed limitation, see Criterion 8 and MFB-1700 (no executable scenario
+- [ ] 30. Income-source treatment matches Criterion 8's table, except `rental`, which is counted as unearned rather than earned — a disclosed limitation, see Criterion 8 and MFB-1700 (no executable scenario for `rental`). `workersComp` is counted in full as unearned income (Scenario 35).
 
 **Accepted PolicyEngine divergences**
 
@@ -915,6 +915,18 @@ No scenario exercises NPCR neediness, mandatory exclusion or the election. Polic
 * `current_benefits` does not include `mo_tanf`
 
 **Why this matters**: An 18-year-old is the boundary the federal minor-child age limit turns on (19 for a secondary student, else 18). Without the enrollment assumption PolicyEngine treats the child as a non-dependent, which drops **both** the child and their caretaker from the assistance unit — unit size 0, no grant. This scenario is the only one that fails if that assumption is dropped.
+
+### Scenario 35: Workers' compensation included as unearned income
+
+**What we're checking**: Criterion 8's income-source table — `workersComp` is included unearned income (0210.015.05, *"workers compensation (WC-include)"*), counted in full with no disregard at every gate.
+**Expected**: Eligible — $34/month (Gate 1: `$200 < $1,254` size-2 Gross Max ✓. Gate 2: `$200 < $678` size-2 Standard of Need ✓. Gate 3: countable income `$200`; deficit `= $234 − $200 = $34`.)
+**Steps**:
+* Household size: `2`
+* Person 1: Birth month/year `January 1996` (age 30), `headOfHousehold`, income stream `workersComp`: $200/month
+* Person 2: Birth month/year `January 2020` (age 6), `child`, no income
+* `current_benefits` does not include `mo_tanf`
+
+**Why this matters**: Scenario 21's household with workers' compensation in place of unemployment, so the two must agree. An implementation that doesn't send workers' compensation to PolicyEngine ignores the $200 and overstates the grant at $234 instead of $34.
 
 ### Data gaps with no executable scenario
 
