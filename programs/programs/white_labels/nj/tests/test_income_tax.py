@@ -29,7 +29,7 @@ class TestTaxTable(SimpleTestCase):
     def test_rows_are_priced_at_their_midpoint(self):
         for start, table_a, table_b in self.rows:
             for amount in (start, start + Decimal("49.99")):
-                with self.subTest(amount=amount):
+                with self.subTest(amount=str(amount)):
                     self.assertEqual(income_tax(Decimal(amount), TABLE_A), table_a)
                     self.assertEqual(income_tax(Decimal(amount), TABLE_B), table_b)
 
@@ -52,7 +52,7 @@ class TestRateSchedules(SimpleTestCase):
         for table in (TABLE_A, TABLE_B):
             for lower, upper in zip(table, table[1:]):
                 top = Decimal(lower.top)
-                with self.subTest(top=top):
+                with self.subTest(top=str(top)):
                     self.assertEqual(top * lower.rate - lower.subtract, top * upper.rate - upper.subtract)
 
     def test_top_band_has_no_ceiling(self):

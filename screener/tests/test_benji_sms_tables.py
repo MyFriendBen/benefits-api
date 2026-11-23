@@ -182,13 +182,13 @@ class TestDeliveryConstraints(TestCase):
 
     def test_a_reply_needs_its_message(self) -> None:
         for kind in (BenjiSmsDeliveryKind.REPLY, BenjiSmsDeliveryKind.REMAINDER):
-            with self.subTest(kind=kind), self.assertRaises(IntegrityError), transaction.atomic():
+            with self.subTest(kind=str(kind)), self.assertRaises(IntegrityError), transaction.atomic():
                 make_delivery(kind=kind, binding=self.binding)
 
     def test_a_conversation_text_needs_its_binding(self) -> None:
         """Every send checks the phone's revocation through the binding."""
         for kind in (BenjiSmsDeliveryKind.REPLY, BenjiSmsDeliveryKind.REMAINDER, BenjiSmsDeliveryKind.DISCLOSURE):
-            with self.subTest(kind=kind), self.assertRaises(IntegrityError), transaction.atomic():
+            with self.subTest(kind=str(kind)), self.assertRaises(IntegrityError), transaction.atomic():
                 make_delivery(kind=kind, message=self.message)
 
     def test_a_reply_with_its_message_and_binding_is_accepted(self) -> None:
@@ -199,7 +199,7 @@ class TestDeliveryConstraints(TestCase):
     def test_onramp_and_fixed_texts_need_neither(self) -> None:
         """A shared-phone on-ramp opens no binding; a stranger has none."""
         for kind in (BenjiSmsDeliveryKind.ONRAMP, BenjiSmsDeliveryKind.FIXED):
-            with self.subTest(kind=kind):
+            with self.subTest(kind=str(kind)):
                 make_delivery(kind=kind)
 
     def test_kind_outside_the_vocabulary_is_rejected(self) -> None:
@@ -230,7 +230,7 @@ class TestDeliveryConstraints(TestCase):
         """`partially_delivered` is 19 characters; a status callback must never fail on width."""
         delivery = make_delivery()
         for status in BenjiSmsDeliveryStatus.values:
-            with self.subTest(status=status):
+            with self.subTest(status=str(status)):
                 BenjiSmsDelivery.objects.filter(pk=delivery.pk).update(delivery_status=status)
                 delivery.refresh_from_db()
                 self.assertEqual(delivery.delivery_status, status)
@@ -573,7 +573,7 @@ class TestBindingEnd(TestCase):
 
     def test_closing_moves_the_binding_and_its_conversation_together(self) -> None:
         for status in (AssistantConversationStatus.CLOSED, AssistantConversationStatus.EXPIRED):
-            with self.subTest(status=status):
+            with self.subTest(status=str(status)):
                 self.binding.end(status)
 
                 self.binding.refresh_from_db()
