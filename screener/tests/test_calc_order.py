@@ -578,7 +578,7 @@ class TestForceCalculatedUpstreams(SimpleTestCase):
 
         self.assertEqual(set(force_calculated_codes()) & set(pe_calculators), set())
 
-    def test_the_force_calculated_set_is_the_nine_custom_upstreams(self):
+    def test_the_force_calculated_set_is_the_ten_custom_upstreams(self):
         """Pinned by name so a new gate on a custom upstream is a visible diff here."""
         self.assertEqual(
             sorted(force_calculated_codes()),
@@ -591,6 +591,7 @@ class TestForceCalculatedUpstreams(SimpleTestCase):
                 "il_family_care",
                 "il_moms_and_babies",
                 "nj_chip",
+                "nj_snap",
                 "nj_tanf",
             ],
         )

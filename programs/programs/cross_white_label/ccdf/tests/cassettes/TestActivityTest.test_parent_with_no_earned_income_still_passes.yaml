@@ -2,23 +2,21 @@ interactions:
 - request:
     body: '{"household": {"people": {"73061": {"employment_income": {"2026": 0}, "self_employment_income":
       {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
-      0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026": 0},
-      "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "child_support_received":
-      {"2026": 0}, "ssi": {"2026": null}, "age": {"2026": 35}, "is_tax_unit_dependent":
+      0}, "unemployment_compensation": {"2026": 0}, "workers_compensation": {"2026":
+      0}, "alimony_income": {"2026": 0}, "age": {"2026": 35}, "is_tax_unit_dependent":
       {"2026": false}, "is_disabled": {"2026": null}, "weekly_hours_worked_before_lsr":
       {"2026": 40}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child": {"2026":
       null}}, "73062": {"employment_income": {"2026": 0}, "self_employment_income":
       {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
-      0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026": 0},
-      "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "child_support_received":
-      {"2026": 0}, "ssi": {"2026": null}, "age": {"2026": 4}, "is_tax_unit_dependent":
+      0}, "unemployment_compensation": {"2026": 0}, "workers_compensation": {"2026":
+      0}, "alimony_income": {"2026": 0}, "age": {"2026": 4}, "is_tax_unit_dependent":
       {"2026": true}, "is_disabled": {"2026": null}, "weekly_hours_worked_before_lsr":
       {"2026": 0}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child": {"2026":
       null}}}, "tax_units": {"main_tax_unit": {"members": ["73061", "73062"]}}, "families":
       {"family": {"members": ["73061", "73062"]}}, "households": {"household": {"members":
       ["73061", "73062"], "state_code": {"2026": "MA"}}}, "spm_units": {"spm_unit":
       {"members": ["73061", "73062"], "spm_unit_assets": {"2026": 0}, "ma_ccfa_eligible":
-      {"2026": null}}}, "marital_units": {}}, "version": "2.94.7"}'
+      {"2026": null}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -27,7 +25,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1554'
+      - '1368'
       Content-Type:
       - application/json
       User-Agent:
@@ -38,44 +36,42 @@ interactions:
     body:
       string: '{"status": "ok", "message": null, "result": {"people": {"73061": {"employment_income":
         {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
-        0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0},
-        "unemployment_compensation": {"2026": 0}, "workers_compensation": {"2026":
-        0}, "alimony_income": {"2026": 0}, "child_support_received": {"2026": 0},
-        "ssi": {"2026": 0.0}, "age": {"2026": 35}, "is_tax_unit_dependent": {"2026":
-        false}, "is_disabled": {"2026": false}, "weekly_hours_worked_before_lsr":
-        {"2026": 40}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child": {"2026":
-        false}}, "73062": {"employment_income": {"2026": 0}, "self_employment_income":
-        {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
-        0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
-        0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "child_support_received":
-        {"2026": 0}, "ssi": {"2026": 0.0}, "age": {"2026": 4}, "is_tax_unit_dependent":
-        {"2026": true}, "is_disabled": {"2026": false}, "weekly_hours_worked_before_lsr":
-        {"2026": 0}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child": {"2026":
-        true}}}, "tax_units": {"main_tax_unit": {"members": ["73061", "73062"]}},
-        "families": {"family": {"members": ["73061", "73062"]}}, "households": {"household":
-        {"members": ["73061", "73062"], "state_code": {"2026": "MA"}}}, "spm_units":
-        {"spm_unit": {"members": ["73061", "73062"], "spm_unit_assets": {"2026": 0},
-        "ma_ccfa_eligible": {"2026": true}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
+        0}, "taxable_pension_income": {"2026": 0}, "unemployment_compensation": {"2026":
+        0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "age":
+        {"2026": 35}, "is_tax_unit_dependent": {"2026": false}, "is_disabled": {"2026":
+        false}, "weekly_hours_worked_before_lsr": {"2026": 40}, "is_pregnant": {"2026":
+        false}, "ma_ccfa_eligible_child": {"2026": false}}, "73062": {"employment_income":
+        {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
+        0}, "taxable_pension_income": {"2026": 0}, "unemployment_compensation": {"2026":
+        0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "age":
+        {"2026": 4}, "is_tax_unit_dependent": {"2026": true}, "is_disabled": {"2026":
+        false}, "weekly_hours_worked_before_lsr": {"2026": 0}, "is_pregnant": {"2026":
+        false}, "ma_ccfa_eligible_child": {"2026": true}}}, "tax_units": {"main_tax_unit":
+        {"members": ["73061", "73062"]}}, "families": {"family": {"members": ["73061",
+        "73062"]}}, "households": {"household": {"members": ["73061", "73062"], "state_code":
+        {"2026": "MA"}}}, "spm_units": {"spm_unit": {"members": ["73061", "73062"],
+        "spm_unit_assets": {"2026": 0}, "ma_ccfa_eligible": {"2026": true}}}, "marital_units":
+        {}}, "policyengine_bundle": {"model_version": "2.116.16", "data_version":
+        null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1655'
+      - '1471'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 21:13:34 GMT
+      - Thu, 19 Nov 2026 18:39:45 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-42f8174fc79815eafc0aa147bf1472bf-db5f8c8eddddceff-00
+      - 00-4c5d89b6114ac5ec6523794866612b14-27941baeafb24daa-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 42f8174fc79815eafc0aa147bf1472bf
+      - 4c5d89b6114ac5ec6523794866612b14
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -83,7 +79,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - e88b6001-428e-4c01-801e-fab7d4cd9112
+      - bd96e56a-447a-4d1d-9a66-28bcf487121a
       x-policyengine-route-channel:
       - current
     status:

@@ -235,10 +235,6 @@ class SnapIfTakesUp(SpmUnit):
     min_pe_version = (1, 779, 3)
 
 
-class Acp(SpmUnit):
-    field = "acp"
-
-
 class SchoolMealDailySubsidy(SpmUnit):
     field = "school_meal_daily_subsidy"
 

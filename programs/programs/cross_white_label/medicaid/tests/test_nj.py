@@ -34,6 +34,9 @@ from programs.programs.testing_fixtures.pe_integration import (
 )
 from django.test import SimpleTestCase
 
+PE_VERSION = "2.94.7"
+PE_VERSION_REASON = "Values change at PolicyEngine 2.116.16. Held here until the change is reconciled with the spec; then remove PE_VERSION and this reason and re-record."
+
 YEAR = "2026"
 
 # The spec's §7 monthly figures (MACStats Exhibit 22, FY 2023 ÷ 12, rounded).
@@ -180,12 +183,8 @@ class TestNjMedicaidClass(SimpleTestCase):
 class TestNjMedicaidScenarios(PeIntegrationTestCase):
     """The NJ spec's Test Scenarios, at PolicyEngine ``pe_version``."""
 
-    pe_version = "2.94.7"
-    pe_version_reason = (
-        "Recorded at PolicyEngine current (2.94.7) on 2026-11-11, ahead of the suite pin, so NJ Medicaid "
-        "ships against the version production runs (MFB-1798). Moves back to PE_TEST_VERSION when the "
-        "suite pin reaches it."
-    )
+    pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     def member_values(self, number: int) -> dict[int, float]:
         """Each eligible member's annual value for one scenario's household."""

@@ -24,7 +24,7 @@ interactions:
       {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
       {"2026": false}}}, "marital_units": {"1-2": {"members": ["1", "2"]}}}, "version":
-      "2.94.7"}'
+      "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -33,7 +33,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1990'
+      - '1992'
       Content-Type:
       - application/json
       User-Agent:
@@ -67,26 +67,26 @@ interactions:
         "2"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
         {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
         {"2026": false}}}, "marital_units": {"1-2": {"members": ["1", "2"]}}}, "policyengine_bundle":
-        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
+        {"model_version": "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '2102'
+      - '2104'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 21:16:07 GMT
+      - Thu, 19 Nov 2026 18:42:01 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-149d7333e2602ff563e09803bc2f17cd-33957dcb76017d88-00
+      - 00-84783e472ccc50bdc3f91ab4ff7f3e17-61c322eb1d5bb7a9-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 149d7333e2602ff563e09803bc2f17cd
+      - 84783e472ccc50bdc3f91ab4ff7f3e17;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -94,7 +94,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 04f07204-7e96-48a1-931a-414036b05630
+      - abf8f85e-4709-4012-b111-f074a8c6a19c
       x-policyengine-route-channel:
       - current
     status:

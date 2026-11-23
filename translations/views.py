@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from django.core.paginator import Paginator
 from django.shortcuts import render
@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework import views
 from django import forms
 from django.http import (
+    HttpRequest,
     HttpResponseBadRequest,
     HttpResponse,
     HttpResponseNotFound,
@@ -207,6 +208,43 @@ def has_translation_access(translation: Translation, user: User) -> bool:
     return True
 
 
+def spec_locked_program(translation: Translation) -> Optional[Program]:
+    """The program this translation belongs to, if it was imported from its v2 spec.
+
+    Its English text comes from the spec, so the editor refuses to change it there; other
+    languages stay editable, since the spec holds English only.
+    """
+    for reverse_instance in translation.get_reverse_instances():
+        instance = reverse_instance.instance
+        if isinstance(instance, Program) and instance.imported_from_spec:
+            return instance
+    return None
+
+
+def spec_locked_message(program: Program) -> str:
+    return (
+        f"'{program.name_abbreviated}' is imported from its spec in program-ops, so its English "
+        "text is changed in the spec and imported. Other languages can still be edited here."
+    )
+
+
+def spec_locked_response(request: HttpRequest, program: Program) -> HttpResponse:
+    return render(request, "error.html", {"error_message": spec_locked_message(program)})
+
+
+def languages_context(translation: Translation) -> dict[str, Any]:
+    """What `edit/langs.html` needs: one form per language, in `settings.LANGUAGES` order, and when each
+    language was last changed."""
+    updated_dates = {}
+    for record in translation.history.all().order_by("history_date"):
+        if record.changed_text:
+            updated_dates[record.affected_language] = record.history_date
+
+    texts = {t.language_code: t.text for t in translation.translations.all()}
+    forms = {lang_code: TranslationForm({"text": texts.get(lang_code, "")}) for lang_code, _ in settings.LANGUAGES}
+    return {"translation": translation, "langs": forms, "updated_dates": updated_dates}
+
+
 @login_required(login_url="/admin/login")
 @staff_member_required
 def translation_view(request, id=0):
@@ -262,6 +300,9 @@ def translation_view(request, id=0):
             }
             return render(request, "edit/label_form.html", context)
     elif request.method == "DELETE":
+        locked = spec_locked_program(translation)
+        if locked is not None:
+            return spec_locked_response(request, locked)
         try:
             translation.delete()
         except ProtectedError:
@@ -291,6 +332,15 @@ def edit_translation(request, id=0, lang="en-us"):
         excluded_langs = request.POST.getlist("excluded_languages", [])
 
         languages = [l for l in Translate.languages if l not in excluded_langs]
+
+        if lang == settings.LANGUAGE_CODE:
+            locked = spec_locked_program(translation)
+            if locked is not None:
+                # The page swaps this into the language forms, so re-render them with the message on
+                # the English one; a bare error line would replace every form on the page.
+                context = languages_context(translation)
+                context.update(error_lang=lang, error_message=spec_locked_message(locked))
+                return render(request, "edit/langs.html", context)
 
         if form.is_valid():
             text = form["text"].value()
@@ -327,26 +377,7 @@ def edit_translation(request, id=0, lang="en-us"):
                                 continue
                             Translation.objects.edit_translation_by_id(id, language, translated_text, False)
 
-            parent = Translation.objects.get(pk=id)
-            all_history = parent.history.all().order_by("history_date")
-            updated_dates = {}
-            for record in all_history:
-                if record.changed_text:
-                    updated_dates[record.affected_language] = record.history_date
-
-            # sorted in the order of settings.LANGUAGES
-            forms = {
-                lang_code: TranslationForm(
-                    {"text": next((t.text for t in parent.translations.all() if t.language_code == lang_code), "")}
-                )
-                for lang_code, _ in settings.LANGUAGES
-            }
-            context = {
-                "translation": parent,
-                "langs": forms,
-                "updated_dates": updated_dates,
-            }
-            return render(request, "edit/langs.html", context)
+            return render(request, "edit/langs.html", languages_context(Translation.objects.get(pk=id)))
 
 
 def get_white_label_choices():

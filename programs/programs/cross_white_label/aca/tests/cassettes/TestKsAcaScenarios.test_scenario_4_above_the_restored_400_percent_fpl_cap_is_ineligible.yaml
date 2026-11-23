@@ -15,7 +15,7 @@ interactions:
       "WYANDOTTE_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf":
       {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.94.7"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -24,7 +24,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1259'
+      - '1261'
       Content-Type:
       - application/json
       User-Agent:
@@ -49,26 +49,26 @@ interactions:
         {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
         "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
         "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
+        {"model_version": "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1357'
+      - '1359'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 21:13:07 GMT
+      - Thu, 19 Nov 2026 18:39:24 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-9226a067ff3e66dcb1b63b61119b1487-c12aac6ebfb43b26-01
+      - 00-a74325b518fa54ca72bd9813932d809e-86247508462620c3-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 9226a067ff3e66dcb1b63b61119b1487;o=1
+      - a74325b518fa54ca72bd9813932d809e;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -76,7 +76,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - d8cc34ea-5344-42f2-b97a-89ab8942e538
+      - 0380243c-9257-493a-ad22-d03a34901fb7
       x-policyengine-route-channel:
       - current
     status:
