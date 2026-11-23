@@ -3,7 +3,7 @@
     "code": "wa"
   },
   "program_category": {
-    "external_name": "wa_transportation",
+    "external_name": "transportation",
     "name": "Transportation",
     "icon": "transportation",
     "description": "Programs that help with transit, transportation, and travel costs.",

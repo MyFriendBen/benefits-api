@@ -6,6 +6,7 @@ from .ks import KsConfigurationData
 from .ma import MaConfigurationData
 from .mo import MoConfigurationData
 from .nc import NcConfigurationData
+from .nj import NjConfigurationData
 from .tx import TxConfigurationData
 from .wa import WaConfigurationData
 from configuration.white_labels.cesn import (
@@ -21,6 +22,22 @@ white_label_config: dict[str, ConfigurationData] = {
     "ma": MaConfigurationData,
     "mo": MoConfigurationData,
     "nc": NcConfigurationData,
+    "nj": NjConfigurationData,
     "tx": TxConfigurationData,
     "wa": WaConfigurationData,
 }
+
+
+def state_options() -> list[dict]:
+    """Every state the state dropdown can offer, in display order, flagged by whether it is public."""
+    states = [
+        {
+            "code": code,
+            "name": data.state["name"],
+            "public": data.publicly_launched,
+        }
+        for code, data in white_label_config.items()
+        if data.is_state and not data.is_default
+    ]
+
+    return sorted(states, key=lambda state: state["name"])

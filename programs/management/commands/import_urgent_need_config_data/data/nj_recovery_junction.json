@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_recovery_junction",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "Recovery Junction Recovery Center",
+      "description": "Recovery Junction Recovery Center is free for adults 18 and older who are in or working toward recovery. Walk in Monday to Friday 9am-7pm and Saturday 10am-6pm. Call 551-220-1150.",
+      "link": "https://preventionlinks.org/location/recovery-junction-recovery-center/",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hudson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

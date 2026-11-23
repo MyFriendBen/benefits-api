@@ -1,0 +1,13 @@
+# Local git hooks. Install once per clone with `make setup` (see README).
+# CI (.github/workflows/format.yaml) runs the same black check on every PR;
+# this only catches it before you push.
+repos:
+  - repo: local
+    hooks:
+      # Runs the black pinned in requirements-dev.txt, so there is no second pin to sync.
+      - id: black
+        name: black
+        entry: venv/bin/python -m black
+        language: system
+        types_or: [python, pyi]
+        require_serial: true

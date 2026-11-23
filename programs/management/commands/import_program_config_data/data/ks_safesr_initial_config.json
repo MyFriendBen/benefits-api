@@ -1,0 +1,57 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "housing"
+  },
+  "program": {
+    "name_abbreviated": "ks_safesr",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Kansas Property Tax Relief for Low Income Seniors (SAFESR)",
+    "description": "SAFESR gives you money back on the property taxes you paid on your Kansas home. The refund is 75% of what you paid, so the amount depends on your tax bill.\n\nYou claim it once a year on its own state form, even if you do not file taxes. If Kansas approves your claim, your refund arrives in 20 to 24 weeks by check or direct deposit.\n\nKansas has three property tax refunds for homeowners, and you can claim only one each year. Which one pays you the most depends on your income and your tax bill. There is also a limit on how much your home can be worth. Your county property tax statement shows its value. If you bought or sold your home that year, your refund covers only the months you owned it. If you get veterans' benefits, Kansas counts some of them as income. Kansas checks all of this when you file.\n\nTo apply, file Form K-40PT with the Kansas Department of Revenue between January 1 and April 15. For help, call the Department at 785-368-8222 or see the \"Get Help Applying\" section.",
+    "description_short": "Property tax refund for Kansas seniors 65 and older",
+    "learn_more_link": "https://www.ksrevenue.gov/safesenior.html",
+    "apply_button_link": "https://www.ksrevenue.gov/forms-hs.html",
+    "apply_button_description": "File Now",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "20 - 24 weeks",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "website_description": "Property tax refund for Kansas seniors 65 and older",
+    "active": false,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_ssn_proof"
+    },
+    {
+      "external_name": "ks_property_tax_statement"
+    },
+    {
+      "external_name": "ks_benefit_statements"
+    },
+    {
+      "external_name": "ks_earned_income"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_aarp_tax_aide"
+    },
+    {
+      "external_name": "ks_vita_free_tax_prep"
+    }
+  ]
+}

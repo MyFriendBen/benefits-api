@@ -26,6 +26,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+# pytest-split's record of test durations. CI keeps it in the Actions cache (see
+# docs/TESTING.md); a local `pytest --store-durations` writes one here.
+.test_durations
 
 .vscode/**/*
 !.vscode/settings.json.default
@@ -49,3 +52,13 @@ programs/management/commands/import_urgent_need_config_data/import_new_resources
 
 # Old irrelevant files
 _archive/
+
+# Redis snapshot written into the repo root when redis-server runs locally
+dump.rdb
+
+# Agent scratch space
+.scout/
+
+# Local research artifacts and one-off reports (belong in Linear/Outline, not git)
+PE_LATENCY_REPORT.md
+*_scoping.csv

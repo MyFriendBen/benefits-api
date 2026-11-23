@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_mercer_food_finder",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Mercer County Food Finder",
+      "description": "The Mercer County Food Finder is a map of more than 100 food pantries in Mercer County. There are no eligibility rules. Use it online any time.",
+      "link": "https://mercerfoodfinder.herokuapp.com/",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

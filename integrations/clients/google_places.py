@@ -39,7 +39,8 @@ class GooglePlacesClient:
         data = response.json()
         api_status = data.get("status")
         if api_status not in ("OK", "ZERO_RESULTS"):
-            logger.warning("Google Places API returned status %s for input %r", api_status, input_text)
+            # No input in the message: it is a street address being typed.
+            logger.warning("Google Places API returned status %s", api_status)
             raise requests.RequestException(f"Google Places API error status: {api_status}")
         results: list[AddressPrediction] = [
             {

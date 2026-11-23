@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_birthright_toms_river",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Birthright of Toms River",
+      "description": "Birthright of Toms River offers baby supplies. No eligibility rules are published. Walk in Monday to Friday 10am-2pm. Call 732-349-0154.",
+      "link": "https://birthright.org/tomsriver",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Ocean County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

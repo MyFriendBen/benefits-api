@@ -1,0 +1,45 @@
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
+from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIncomeCheckMixin
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
+
+
+class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
+    program_code = "il_family_care"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    gates_on = ("il_medicaid",)
+    member_amount = 474 * 12
+    max_child_age = 18
+    fpl_percent = 1.38
+    qualifying_child_relationships = ["child", "fosterChild", "stepChild", "grandChild"]
+    caretaker_relationships = [HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner", "parent", "fosterParent"]
+    dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
+
+    def household_eligible(self, e: Eligibility):
+        # Must have base Medicaid eligibility
+        e.condition(self.program_eligible("il_medicaid"), messages.must_have_benefit("Medicaid"))
+
+        # Check income against 138% FPL (includes 5% disregard)
+        self.check_fpl_income(e, self.fpl_percent)
+
+    def member_eligible(self, e: MemberEligibility):
+        member = e.member
+
+        # Pregnant members are eligible
+        is_pregnant = member.pregnant
+
+        # Caretakers of qualifying children are eligible
+        has_qualifying_children = (
+            self.screen.num_children(age_max=self.max_child_age, child_relationship=self.qualifying_child_relationships)
+            > 0
+        )
+
+        is_caretaker = member.relationship in self.caretaker_relationships
+
+        e.condition(is_pregnant or (has_qualifying_children and is_caretaker))
+
+        # Must not have Medicaid
+        e.condition(not member.has_insurance("medicaid"))

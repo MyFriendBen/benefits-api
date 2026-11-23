@@ -1,0 +1,88 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"91171": {"is_tax_unit_spouse": {"2026": false},
+      "is_tax_unit_dependent": {"2026": false}, "employment_income": {"2026": 33000},
+      "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+      0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+      0}, "age": {"2026": 67}, "is_full_time_college_student": {"2026": false}, "real_estate_taxes":
+      {"2026": 0}, "rent": {"2026": 12000}}, "91172": {"is_tax_unit_spouse": {"2026":
+      false}, "is_tax_unit_dependent": {"2026": true}, "employment_income": {"2026":
+      0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
+      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+      0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+      0}, "age": {"2026": 11}, "is_full_time_college_student": {"2026": false}, "real_estate_taxes":
+      {"2026": 0}, "rent": {"2026": 0}}}, "tax_units": {"main_tax_unit": {"members":
+      ["91171", "91172"], "mo_wftc": {"2026": null}}}, "families": {"family": {"members":
+      ["91171", "91172"]}}, "households": {"household": {"members": ["91171", "91172"],
+      "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["91171",
+      "91172"]}}, "marital_units": {}}, "version": "2.9.0"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1406'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"91171": {"is_tax_unit_spouse":
+        {"2026": false}, "is_tax_unit_dependent": {"2026": false}, "employment_income":
+        {"2026": 33000}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
+        0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0},
+        "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
+        0}, "taxable_ira_distributions": {"2026": 0}, "age": {"2026": 67}, "is_full_time_college_student":
+        {"2026": false}, "real_estate_taxes": {"2026": 0}, "rent": {"2026": 12000}},
+        "91172": {"is_tax_unit_spouse": {"2026": false}, "is_tax_unit_dependent":
+        {"2026": true}, "employment_income": {"2026": 0}, "self_employment_income":
+        {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
+        0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
+        0}, "long_term_capital_gains": {"2026": 0}, "taxable_ira_distributions": {"2026":
+        0}, "age": {"2026": 11}, "is_full_time_college_student": {"2026": false},
+        "real_estate_taxes": {"2026": 0}, "rent": {"2026": 0}}}, "tax_units": {"main_tax_unit":
+        {"members": ["91171", "91172"], "mo_wftc": {"2026": 0.0}}}, "families": {"family":
+        {"members": ["91171", "91172"]}}, "households": {"household": {"members":
+        ["91171", "91172"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit":
+        {"members": ["91171", "91172"]}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "2.9.0", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '1505'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 05 Oct 2026 20:02:26 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-23dca522252a5d1e398b865473639fae-3b57c16cd809e2e6-01
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 23dca522252a5d1e398b865473639fae;o=1
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 6e1df2eb-ae73-48f4-b28c-25bbcec7c6be
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

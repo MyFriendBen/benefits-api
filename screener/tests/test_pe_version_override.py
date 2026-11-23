@@ -16,7 +16,7 @@ from django.test import TestCase
 from rest_framework.permissions import AllowAny
 from rest_framework.test import APIRequestFactory
 
-from programs.programs.policyengine import versions as pe_versions
+from integrations.clients.policyengine import versions as pe_versions
 from screener.models import Screen, WhiteLabel
 from screener.views import EligibilityTranslationView
 

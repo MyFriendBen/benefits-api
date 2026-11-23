@@ -1,0 +1,211 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "cash",
+    "name": "Cash Assistance",
+    "icon": "cash"
+  },
+  "program": {
+    "name_abbreviated": "mo_tanf",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "otherWithWorkPermission"
+    ],
+    "name": "Temporary Assistance (TANF)",
+    "description": "Temporary Assistance gives monthly cash help to Missouri families with children. Once approved, the money is put onto an EBT card, which works just like a debit card. You can use it to get cash at an ATM or to pay for things like food, clothing and household items at most stores.\n\nMost adults must also take part in Missouri Work Assistance, the state's job training and employment program, to keep getting benefits.\n\nYour final benefit may be different from this estimate. The Family Support Division, the state office that runs the program, may count income from some adults in your home even if they are not part of your case. Special rules also apply when someone in the household receives SSI. Temporary Assistance also has a limit on savings and other resources, and this estimate may not reflect it. You can usually get Temporary Assistance for up to 45 months. If you got TANF before, you may have less time left. Some people may qualify for more time.\n\nTo apply, select Apply Online. You will need to watch a short orientation video first, then complete and send in the application and required forms.",
+    "description_short": "Monthly cash help for families with children",
+    "learn_more_link": "https://mydss.mo.gov/temporary-assistance",
+    "apply_button_link": "https://mydss.mo.gov/temporary-assistance/apply",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "45 days",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Monthly cash help for families with children",
+    "base_program": "tanf",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "active": true,
+    "show_in_has_benefits_step": true
+  },
+  "navigators": [
+    {
+      "external_name": "mo_lsem",
+      "name": "Legal Services of Eastern Missouri",
+      "email": "",
+      "description": "Legal Services of Eastern Missouri can help with Temporary Assistance applications and appeals.",
+      "assistance_link": "https://lsem.org/get-help-now/",
+      "phone_number": "+18004440514",
+      "counties": [
+        "Adair County",
+        "Clark County",
+        "Franklin County",
+        "Jefferson County",
+        "Knox County",
+        "Lewis County",
+        "Lincoln County",
+        "Macon County",
+        "Marion County",
+        "Monroe County",
+        "Montgomery County",
+        "Pike County",
+        "Ralls County",
+        "St. Charles County",
+        "St. Louis County",
+        "St. Louis City",
+        "Schuyler County",
+        "Scotland County",
+        "Shelby County",
+        "Warren County",
+        "Washington County"
+      ],
+      "languages": []
+    },
+    {
+      "external_name": "mo_lawmo",
+      "name": "Legal Aid of Western Missouri",
+      "email": "",
+      "description": "Legal Aid of Western Missouri can help if you lose Temporary Assistance or need to appeal a decision.",
+      "assistance_link": "https://lawmo.org/get-legal-help/",
+      "phone_number": "",
+      "counties": [
+        "Andrew County",
+        "Atchison County",
+        "Barton County",
+        "Bates County",
+        "Benton County",
+        "Buchanan County",
+        "Caldwell County",
+        "Camden County",
+        "Carroll County",
+        "Cass County",
+        "Clay County",
+        "Clinton County",
+        "Daviess County",
+        "DeKalb County",
+        "Gentry County",
+        "Grundy County",
+        "Harrison County",
+        "Henry County",
+        "Hickory County",
+        "Holt County",
+        "Jackson County",
+        "Jasper County",
+        "Johnson County",
+        "Lafayette County",
+        "Linn County",
+        "Livingston County",
+        "McDonald County",
+        "Mercer County",
+        "Morgan County",
+        "Newton County",
+        "Nodaway County",
+        "Pettis County",
+        "Platte County",
+        "Putnam County",
+        "Ray County",
+        "Saline County",
+        "St. Clair County",
+        "Sullivan County",
+        "Vernon County",
+        "Worth County"
+      ],
+      "languages": []
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity (e.g., driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_child_birth_certificate",
+      "text": "Proof of the child's age or relationship to you (e.g., birth certificate or guardianship papers)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn_proof",
+      "text": "Social Security Number or proof you applied for one, if required",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_residency_proof",
+      "text": "Proof of Missouri residency, if requested (e.g., utility bill, lease agreement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_earned_income"
+    },
+    {
+      "external_name": "mo_self_employment_income",
+      "text": "Proof of self-employment income (e.g., tax return, business ledgers or receipts)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_unearned_income"
+    },
+    {
+      "external_name": "mo_us_status",
+      "text": "Proof of qualified immigration status, if required (e.g., green card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_assets",
+      "text": "Proof of resources, if applicable (e.g., bank statements or property records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_disability_proof"
+    },
+    {
+      "external_name": "mo_school_enrollment",
+      "text": "School enrollment letter for household members age 17 or older who are in high school",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_childcare_expense",
+      "text": "Child care cost proof, if applicable (e.g., provider letter showing the prior month's cost)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_jobs_registration",
+      "text": "Proof of registration or sign-in at jobs.mo.gov, if required",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_tanf_orientation_form",
+      "text": "Signed Temporary Assistance Orientation Acknowledgement",
+      "link_url": "https://dssmanuals.mo.gov/wp-content/uploads/2020/09/IM-3-orientation.pdf",
+      "link_text": "Orientation Acknowledgement form"
+    },
+    {
+      "external_name": "mo_personal_responsibility_plan",
+      "text": "Signed Personal Responsibility Plan for your work or training activities",
+      "link_url": "https://dssmanuals.mo.gov/wp-content/uploads/2020/09/im-3prp.pdf",
+      "link_text": "Personal Responsibility Plan form"
+    },
+    {
+      "external_name": "mo_child_support",
+      "text": "Child support forms, if a child's other living parent does not live with you",
+      "link_url": "https://dssmanuals.mo.gov/wp-content/uploads/2020/09/im-1ta.pdf",
+      "link_text": "TA application with child support forms"
+    }
+  ]
+}

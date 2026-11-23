@@ -1,0 +1,49 @@
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from integrations.services.income_limits import income_limits_cache
+from typing import ClassVar
+
+
+class WeatherizationAssistance(ProgramCalculator):
+    program_code = "cowap"
+    presumptive_eligibility = ("andcs", "ssi", "snap", "leap", "tanf")
+    amount = 350
+    dependencies: ClassVar[list[str]] = [
+        "household_size",
+        "income_amount",
+        "income_frequency",
+        "county",
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def household_eligible(self, e: Eligibility):
+        # Check presumptive eligibility first
+        presumed_eligibility = self.screen.has_benefit_from_list(WeatherizationAssistance.presumptive_eligibility)
+
+        # Must have EITHER income eligible OR presumed eligibility
+        if presumed_eligibility:
+            e.condition(presumed_eligibility, messages.presumed_eligibility())
+        else:
+            # check income limit, expenses, and utility provider
+            income_limit = income_limits_cache.get_income_limit(self.screen)
+            if income_limit:
+                user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+                income_eligible = user_income <= income_limit
+                e.condition(income_eligible, messages.income(user_income, income_limit))
+            else:
+                # no income limit data
+                e.condition(False, messages.income_limit_unknown())
+
+            # rent or mortgage expense
+            e.condition(self._has_expense())
+
+            # utility provider
+            e.condition(self._has_utility_provider())
+
+    def _has_expense(self):
+        return self.screen.has_expense(["rent", "mortgage"])
+
+    def _has_utility_provider(self):
+        return True

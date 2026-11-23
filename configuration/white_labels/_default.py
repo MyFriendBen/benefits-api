@@ -52,10 +52,13 @@ class DefaultConfigurationData(ConfigurationData):
             ]
         },
         "uiOptions": {"default": []},
+        # Empty means every publicly launched state. Referrers that narrow the dropdown declare it
+        # in the config for the state path they are handed out under, not here.
+        "stateOptions": {"default": []},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the “Near-Term Benefits” tab. For additional resources, please click the 'More Help' button below to get the resources you’re looking for.",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. You can find other support matched to your needs in the Additional Resources tab. If you need help right away, go to the Immediate Help tab",
             },
         },
         "defaultLanguage": {"default": "en-us"},

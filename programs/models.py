@@ -1,3 +1,7 @@
+import logging
+import re
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -5,135 +9,114 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
-from programs.programs import calculators
-from programs.util import Dependencies
-import requests
-from integrations.util.cache import Cache
+from programs.allowed_values import (
+    USER_SELECTED_LEGAL_STATUSES,
+    check_legal_status_label,
+    check_navigator_language_code,
+    unknown_warning_calculator,
+    validate_legal_status_label,
+    validate_navigator_language_code,
+)
+from programs.federal import FEDERAL_WHITE_LABEL, may_link_navigator
+from programs.util import Dependencies, UnregisteredCalculatorError
+from sentry_sdk import capture_message
 from typing import Optional, TypedDict, Union
-from programs.programs.translation_overrides import warning_calculators
+from programs.translation_overrides import warning_calculators
+
+logger = logging.getLogger(__name__)
+
+_FPL_DEFAULTS = {
+    "2023": {
+        1: 14_580,
+        2: 19_720,
+        3: 24_860,
+        4: 30_000,
+        5: 35_140,
+        6: 40_280,
+        7: 45_420,
+        8: 50_560,
+        "additional": 5_140,
+    },
+    "2024": {
+        1: 15_060,
+        2: 20_440,
+        3: 25_820,
+        4: 31_200,
+        5: 36_580,
+        6: 41_960,
+        7: 47_340,
+        8: 52_720,
+        "additional": 5_380,
+    },
+    "2025": {
+        1: 15_650,
+        2: 21_150,
+        3: 26_650,
+        4: 32_150,
+        5: 37_650,
+        6: 43_150,
+        7: 48_650,
+        8: 54_150,
+        "additional": 5_500,
+    },
+    "2026": {
+        1: 15_960,
+        2: 21_640,
+        3: 27_320,
+        4: 33_000,
+        5: 38_680,
+        6: 44_360,
+        7: 50_040,
+        8: 55_720,
+        "additional": 5_680,
+    },
+}
 
 
-class FplCache(Cache):
-    expire_time = 60 * 60 * 24  # 24 hours
-    default = {
-        "2023": {
-            1: 14_580,
-            2: 19_720,
-            3: 24_860,
-            4: 30_000,
-            5: 35_140,
-            6: 40_280,
-            7: 45_420,
-            8: 50_560,
-            "additional": 5_140,
-        },
-        "2024": {
-            1: 15_060,
-            2: 20_440,
-            3: 25_820,
-            4: 31_200,
-            5: 36_580,
-            6: 41_960,
-            7: 47_340,
-            8: 52_720,
-            "additional": 5_380,
-        },
-        "2025": {
-            1: 15_650,
-            2: 21_150,
-            3: 26_650,
-            4: 32_150,
-            5: 37_650,
-            6: 43_150,
-            7: 48_650,
-            8: 54_150,
-            "additional": 5_500,
-        },
-        "2026": {
-            1: 15_960,
-            2: 21_640,
-            3: 27_320,
-            4: 33_000,
-            5: 38_680,
-            6: 44_360,
-            7: 50_040,
-            8: 55_720,
-            "additional": 5_680,
-        },
-    }
-    api_url = "https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/api/"
-    max_household_size = 8
+def _get_fpl_data() -> dict:
+    """Return the FPL table.
 
-    class InvalidYear(Exception):
-        pass
+    Not cached: the values are a module-level constant, so a cache round-trip buys
+    nothing and costs a network hop. The pre-existing FplCache appeared to fetch
+    from the ASPE Poverty Guidelines API, but update() opened with
+    `return self.default`, leaving that request code unreachable -- the cached
+    value has only ever been this constant.
 
-    def update(self):
-        """
-        Get FPLs for all relevant years using the official ASPE Poverty Guidelines API
-        """
-        return self.default
-        fpls = FederalPoveryLimit.objects.filter(fpl__isnull=False).distinct()
-        fpl_dict = {}
-        for fpl in fpls:
-            household_sz_fpl = {}
-            # get the FPL for the household sizes 1-8
-            for i in range(1, self.max_household_size + 1):
-                try:
-                    data = self._fetch_income_limit(fpl.period, str(i))
-                except self.InvalidYear:
-                    household_sz_fpl = None
-                    break
+    Returning it directly also removes an identity hazard: a cache miss handed
+    back _FPL_DEFAULTS itself while a hit handed back a deserialized copy, so a
+    caller mutating the result corrupted the constant for the life of the process
+    but only on the miss path.
+    """
+    return _FPL_DEFAULTS
 
-                household_sz_fpl[i] = data
-                if i == self.max_household_size:
-                    income_limit_extra_member = self._fetch_income_limit(fpl.period, str(self.max_household_size + 1))
-                    household_sz_fpl["additional"] = income_limit_extra_member - data
-            fpl_dict[fpl.period] = household_sz_fpl
 
-        # replace invalid years with the most recent year's fpl
-        most_recent_year = 0
-        for year, values in fpl_dict.items():
-            if values is not None and int(year) > most_recent_year:
-                most_recent_year = int(year)
-
-        for year, values in fpl_dict.items():
-            if values is None:
-                fpl_dict[year] = fpl_dict[str(most_recent_year)].copy()
-
-        return fpl_dict
-
-    def _fetch_income_limit(self, year: str, household_size: str):
-        """
-        Request the FPL from the API for the indicated year and household size
-        """
-        response = requests.get(self._fpl_url(year, household_size), allow_redirects=False, timeout=(5, 30))
-        if "Location" in response.headers:
-            new_url = response.headers["Location"].replace("http", "https")
-            if "https://" not in new_url:
-                new_url = response.headers["Location"].replace("http", "https")
-            response = requests.get(new_url, timeout=(5, 30))
-
-        response.raise_for_status()
-        data = response.json()["data"]
-
-        if data is False:
-            raise self.InvalidYear(f"{year} FPL is not available")
-        return int(response.json()["data"]["income"])
-
-    def _fpl_url(self, year: str, household_size: str):
-        """
-        The URL to request the FPL for a year and household size
-        """
-        return self.api_url + year + "/us/" + household_size
+# Sentinel FederalPoveryLimit.year values shared by every calendar_year/fiscal_year
+# Program (and, potentially, UrgentNeed). Their `period` is rolled forward by
+# set_year_type/the yearly FPL update, not owned by any single program, so code
+# importing per-program data must never blindly overwrite `period` on these rows.
+DYNAMIC_FPL_YEARS = {"THIS_YEAR_CALENDAR", "THIS_YEAR_FISCAL"}
 
 
 class FederalPoveryLimit(models.Model):
     year = models.CharField(max_length=32, unique=True)
     period = models.CharField(max_length=32)
 
-    fpl_cache = FplCache()
-
     MAX_DEFINED_SIZE = 8
+
+    def clean(self):
+        if self.period not in _get_fpl_data():
+            raise ValidationError(
+                {"period": f"No FPL data defined for period '{self.period}'. Add it to _FPL_DEFAULTS first."}
+            )
+
+    def save(self, *args, **kwargs):
+        # Fail here, at write time, with a clear message instead of deep inside
+        # eligibility calculation: as_dict()/get_limit() do a bare
+        # _get_fpl_data()[self.period] lookup and raise a bare KeyError, which
+        # otherwise only surfaces later when some program using this row gets
+        # screened, crashing the results endpoint for every program on it.
+        self.clean()
+        super().save(*args, **kwargs)
 
     def get_limit(self, household_size: int):
         limits = self.as_dict()
@@ -145,19 +128,62 @@ class FederalPoveryLimit(models.Model):
         return limits[self.MAX_DEFINED_SIZE] + limits["additional"] * additional_member_count
 
     def as_dict(self):
-        try:
-            return self.fpl_cache.fetch()[self.period]
-        except KeyError:
-            # the year is not cached, so invalidate the cache
-            self.fpl_cache.invalid = True
-            return self.fpl_cache.fetch()[self.period]
+        return _get_fpl_data()[self.period]
 
     def __str__(self):
         return self.year
 
 
+class FederalPovertyLimitValue(models.Model):
+    """A database mirror of FederalPoveryLimit.get_limit(), one row per size.
+
+    The canonical explanation of this table lives here; other modules point back
+    rather than restate it.
+
+    WHY: FederalPoveryLimit stores a year and a period, while the dollar
+    thresholds live in the _FPL_DEFAULTS constant above. A consumer that can only
+    read the database -- the dbt/Metabase analytics pipeline -- therefore cannot
+    compute a percent-of-FPL band. This table is for those consumers.
+
+    NOT A SECOND SOURCE OF TRUTH: the constant stays authoritative and the
+    calculators keep reading it through get_limit(). sync_fpl_values() rewrites
+    this table from the constant and runs on every deploy, so adding a year to
+    the constant cannot leave the table behind. Unit tests verify sync produces a
+    table matching get_limit(); they cannot verify a given environment has been
+    synced, which is why the deploy hook rather than the tests is what keeps prod
+    honest.
+
+    CONTRACT WITH CONSUMERS:
+      * Sizes beyond MAX_DEFINED_SIZE are materialized with the
+        per-additional-person amount already applied, so a join does not have to
+        reimplement that arithmetic.
+      * Rows stop at fpl_values.MAX_MATERIALIZED_SIZE. get_limit() extrapolates
+        without limit, so a household larger than the cap has no row. Consumers
+        must clamp to the largest available size rather than joining loosely and
+        reading a NULL as "no band". The dbt bridge model does this.
+      * Keyed on `period`, deliberately not a FK. FederalPoveryLimit.period is
+        not unique (only `year` is), so there is no single row to point at, and
+        an analytics mirror should not gain a write-path constraint. The cost is
+        that a FederalPoveryLimit whose period has no rows here is possible;
+        as_dict() already raises KeyError for that case.
+    """
+
+    period = models.CharField(max_length=32, db_index=True)
+    household_size = models.PositiveSmallIntegerField()
+    annual_limit = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["period", "household_size"], name="unique_fpl_value_per_size"),
+        ]
+        ordering = ("period", "household_size")
+
+    def __str__(self):
+        return f"{self.period} / {self.household_size} person: ${self.annual_limit:,}"
+
+
 class LegalStatus(models.Model):
-    status = models.CharField(max_length=256)
+    status = models.CharField(max_length=256, validators=[validate_legal_status_label])
     parent = models.ForeignKey(
         "self",
         related_name="children",
@@ -166,23 +192,25 @@ class LegalStatus(models.Model):
         on_delete=models.SET_NULL,
     )
 
+    @classmethod
+    def for_label(cls, label: str) -> "LegalStatus":
+        """The row for a known label, created if this environment doesn't have it yet."""
+        check_legal_status_label(label)
+        return cls.objects.filter(status=label).first() or cls.objects.create(status=label)
+
+    def save(self, *args, **kwargs) -> None:
+        check_legal_status_label(self.status)
+        super().save(*args, **kwargs)
+
     @property
-    def is_user_selected(self):
+    def is_user_selected(self) -> bool:
         """
         Check if this is a basic user-selected status (not auto-calculated).
 
         User-selected statuses are the core citizenship categories that users
         directly choose from. All other statuses are auto-calculated filters.
         """
-        user_selected_statuses = [
-            "citizen",
-            "non_citizen",
-            "gc_5plus",
-            "gc_5less",
-            "refugee",
-            "otherWithWorkPermission",
-        ]
-        return self.status in user_selected_statuses
+        return self.status in USER_SELECTED_LEGAL_STATUSES
 
     def __str__(self):
         if self.is_user_selected:
@@ -240,7 +268,11 @@ class FormOption(models.Model):
 class ProgramCategoryManager(models.Manager):
     translated_fields = ("name", "description")
 
-    def new_program_category(self, white_label: str, external_name: str, icon: str):
+    def new_program_category(self, white_label: Optional[str], external_name: str, icon: str):
+        """
+        Create a program category. A falsy white_label creates a shared category,
+        usable by programs in every white label.
+        """
         translations = {}
         for field in self.translated_fields:
             translations[field] = Translation.objects.add_translation(
@@ -248,7 +280,7 @@ class ProgramCategoryManager(models.Manager):
             )
 
         # set white label
-        white_label = WhiteLabel.objects.get(code=white_label)
+        white_label = WhiteLabel.objects.get(code=white_label) if white_label else None
 
         # set icon
         icon_instance = None
@@ -288,7 +320,8 @@ class ProgramCategoryDataController(ModelDataController["ProgramCategory"]):
             "calculator": program_category.calculator,
             "icon": program_category.icon.name if program_category.icon else None,
             "tax_category": program_category.tax_category,
-            "white_label": program_category.white_label.code,
+            # None for a shared category, which has no white label
+            "white_label": program_category.white_label.code if program_category.white_label else None,
             "priority": program_category.priority,
         }
 
@@ -299,11 +332,15 @@ class ProgramCategoryDataController(ModelDataController["ProgramCategory"]):
         program_category.priority = data["priority"]
         program_category.tax_category = data["tax_category"]
 
-        try:
-            white_label = WhiteLabel.objects.get(code=data["white_label"])
-        except WhiteLabel.DoesNotExist:
-            white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
-        program_category.white_label = white_label
+        if data["white_label"] is None:
+            # Shared category, usable by every white label
+            program_category.white_label = None
+        else:
+            try:
+                white_label = WhiteLabel.objects.get(code=data["white_label"])
+            except WhiteLabel.DoesNotExist:
+                white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
+            program_category.white_label = white_label
 
         if data["icon"]:
             icon = CategoryIconName.objects.filter(name=data["icon"]).first()
@@ -324,11 +361,19 @@ class ProgramCategory(models.Model):
     class Meta:
         verbose_name_plural = "Program categories"
 
+    # A null white_label means the category is shared: programs in any white label
+    # point at the same row, so a category like "cash" exists exactly once and
+    # cannot drift between states. A set white_label scopes the category to that
+    # white label, for categories only it has (CESN's efficiency upgrades, the CO
+    # tax calculator).
+    #
+    # Editing a shared row changes it for every white label. The admin surfaces a
+    # warning to that effect; see ProgramCategoryAdmin.
     white_label = models.ForeignKey(
         WhiteLabel,
         related_name="program_categories",
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
     )
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
@@ -505,16 +550,20 @@ class ProgramManager(models.Manager):
         "apply_button_link",
         "apply_button_description",
         "estimated_delivery_time",
+        "estimated_decision_time",
         "estimated_application_time",
         "estimated_value",
         "website_description",
     )
     no_auto_fields = ("apply_button_link", "learn_more_link")
+    # Fields a new program starts empty on rather than with the placeholder: an empty decision time
+    # means the wait varies, and an empty button description renders the default label.
+    blank_by_default_fields = ("apply_button_description", "estimated_decision_time")
 
     def new_program(self, white_label: str, name_abbreviated: str, external_name: Optional[str] = None):
         translations = {}
         for field in self.translated_fields:
-            default_message = "" if field == "apply_button_description" else BLANK_TRANSLATION_PLACEHOLDER
+            default_message = "" if field in self.blank_by_default_fields else BLANK_TRANSLATION_PLACEHOLDER
             translations[field] = Translation.objects.add_translation(
                 f"program.{name_abbreviated}_temporary_key-{field}",
                 default_message=default_message,
@@ -578,6 +627,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "excludes_programs": list[str],
             "value_format": Optional[str],
             "white_label": str,
+            "year_type": str,
         },
     )
 
@@ -604,6 +654,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
             "white_label": program.white_label.code,
+            "year_type": program.year_type,
         }
 
     def from_model_data(self, data: DataType):
@@ -615,14 +666,20 @@ class ProgramDataController(ModelDataController["Program"]):
         program.low_confidence = data["low_confidence"]
         program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
+        program.year_type = data.get("year_type", "hardcoded")
 
         # get or create fpl
         fpl = data["fpl"]
         if fpl is not None:
             try:
                 fpl_instance = FederalPoveryLimit.objects.get(year=fpl["year"])
-                fpl_instance.period = fpl["period"]
-                fpl_instance.save()
+                # Dynamic rows are shared by every program/need pointing at them, so
+                # importing one program's (possibly stale) exported snapshot must
+                # not silently roll the shared period back for everyone else on it.
+                # Only a genuinely per-row hardcoded year is safe to overwrite here.
+                if fpl["year"] not in DYNAMIC_FPL_YEARS:
+                    fpl_instance.period = fpl["period"]
+                    fpl_instance.save()
             except FederalPoveryLimit.DoesNotExist:
                 fpl_instance = FederalPoveryLimit.objects.create(year=fpl["year"], period=fpl["period"])
             program.year = fpl_instance
@@ -633,11 +690,7 @@ class ProgramDataController(ModelDataController["Program"]):
         legal_status_required = data["legal_status_required"]
         statuses = []
         for status in legal_status_required:
-            try:
-                legal_status_instance = LegalStatus.objects.get(status=status["status"])
-            except LegalStatus.DoesNotExist:
-                legal_status_instance = LegalStatus.objects.create(status=status["status"])
-            statuses.append(legal_status_instance)
+            statuses.append(LegalStatus.for_label(status["status"]))
         program.legal_status_required.set(statuses)
 
         # add documents
@@ -650,7 +703,14 @@ class ProgramDataController(ModelDataController["Program"]):
         # get program category
         program_category = None
         if data["category"] is not None:
-            program_category = ProgramCategory.objects.get(external_name=data["category"])
+            # external_name is unique, so this needs no white label scoping: a
+            # shared category resolves for every white label.
+            try:
+                program_category = ProgramCategory.objects.get(external_name=data["category"])
+            except ProgramCategory.DoesNotExist:
+                raise ProgramCategory.DoesNotExist(
+                    f"No program category with external_name '{data['category']}'"
+                ) from None
         program.category = program_category
 
         # add required programs
@@ -723,12 +783,25 @@ class Program(models.Model):
         null=True,
         help_text="Cross-white-label program grouping for analytics (e.g. co_snap, il_snap → snap)",
     )
+    #: PROTECT, not SET_NULL: deleting a FederalPoveryLimit must not silently null `year` on
+    #: the programs pointing at it, because a PolicyEngine program with no year can't be
+    #: calculated. Nullable because most programs have no FPL.
     year = models.ForeignKey(
         FederalPoveryLimit,
         related_name="fpl",
         blank=True,
         null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
+    )
+    YEAR_TYPE_CHOICES = [
+        ("hardcoded", "Hardcoded"),
+        ("fiscal_year", "Fiscal Year"),
+        ("calendar_year", "Calendar Year"),
+    ]
+    year_type = models.CharField(
+        max_length=32,
+        default="hardcoded",
+        choices=YEAR_TYPE_CHOICES,
     )
     category = models.ForeignKey(
         ProgramCategory,
@@ -806,6 +879,13 @@ class Program(models.Model):
         null=False,
         on_delete=models.PROTECT,
     )
+    estimated_decision_time = models.ForeignKey(
+        Translation,
+        related_name="program_estimated_decision_time",
+        blank=False,
+        null=False,
+        on_delete=models.PROTECT,
+    )
     estimated_application_time = models.ForeignKey(
         Translation,
         related_name="program_estimated_application_time",
@@ -838,13 +918,47 @@ class Program(models.Model):
     # contains the eligibility information and values for all currently
     # calculated benefits in the chain.
     def eligibility(self, screen, data, missing_dependencies: Dependencies):
-        Calculator = calculators[self.name_abbreviated.lower()]
+        # Imported here rather than at module scope: the registry is built by
+        # walking every calculator, and the PolicyEngine base imports Program
+        # from this module. At import time that cycle is unresolvable.
+        from programs.programs import calculators
+
+        name = self.name_abbreviated.lower()
+        if name not in calculators:
+            # Reported and dropped rather than raised: an active row with no calculator
+            # would otherwise fail every program on the results page.
+            capture_message(
+                f"Program {self.white_label.code}/{name} has no registered calculator; left out of the results.",
+                level="error",
+            )
+            raise UnregisteredCalculatorError(self.white_label.code, name)
+
+        Calculator = calculators[name]
 
         calculator = Calculator(screen, self, data, missing_dependencies)
 
         eligibility = calculator.calc()
 
         return eligibility
+
+    def clean(self):
+        # Catches the admin case: year_type is still "hardcoded" but someone
+        # picked a dynamic row (THIS_YEAR_CALENDAR/THIS_YEAR_FISCAL) directly in
+        # the year dropdown. That combination is inherently inconsistent, reject
+        # it at form-submit time rather than letting save() silently correct it
+        # out from under the admin. Scripts/commands that go straight to .save()
+        # (e.g. set_year_type demoting a program) skip clean() entirely, that
+        # path is handled by save() itself, below.
+        if self.year_type == "hardcoded" and self.year_id and self.year.year in DYNAMIC_FPL_YEARS:
+            raise ValidationError(
+                {
+                    "year": (
+                        "A hardcoded program can't point at a dynamic row "
+                        f"({self.year.year}). Set Year type to Calendar Year or Fiscal "
+                        "Year instead, or pick a specific year."
+                    )
+                }
+            )
 
     def save(self, *args, **kwargs):
         # Normalize name_abbreviated to lowercase. It's used as a case-sensitive
@@ -856,6 +970,26 @@ class Program(models.Model):
         # convention.
         if self.name_abbreviated:
             self.name_abbreviated = self.name_abbreviated.lower()
+
+        # Keep `year` in sync with `year_type` so the two can never drift,
+        # regardless of whether this save comes from the admin, a script, or a
+        # management command. Dynamic year types always point at the shared
+        # sentinel FederalPoveryLimit row; "hardcoded" programs manage their own
+        # `year` FK by hand, so leave it untouched in that case. Note: this only
+        # fires on .save(), a bulk .update() bypasses it, same caveat as the
+        # name_abbreviated normalization above.
+        if self.year_type == "calendar_year":
+            self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_CALENDAR")
+        elif self.year_type == "fiscal_year":
+            self.year = FederalPoveryLimit.objects.get(year="THIS_YEAR_FISCAL")
+        elif self.year_type == "hardcoded" and self.year_id and self.year.year in DYNAMIC_FPL_YEARS:
+            # Demoted from a dynamic type back to hardcoded (e.g. via
+            # set_year_type, which saves directly and never goes through
+            # clean()). Freeze it at whatever period the shared row currently
+            # has rather than leaving `year` empty, an empty `year` 500s
+            # PolicyEngine calculators that do program.year.period.
+            period = self.year.period
+            self.year, _ = FederalPoveryLimit.objects.get_or_create(year=period, defaults={"period": period})
         super().save(*args, **kwargs)
 
     class Meta:
@@ -881,6 +1015,14 @@ class Program(models.Model):
 
     def __unicode__(self):
         return self.__str__()
+
+    @property
+    def imported_from_spec(self) -> bool:
+        """Whether `apply_program` has imported this program from its program-ops v2 spec.
+
+        Such a program takes every field but `active` from the spec, so the admin locks the rest.
+        """
+        return self.pk is not None and self.import_logs.exists()
 
     def get_translation(self, screen, missing_dependencies: Dependencies, field: str):
         if field not in Program.objects.translated_fields:
@@ -943,26 +1085,31 @@ class UrgentNeedTypeDataController(ModelDataController["UrgentNeedType"]):
     DataType = TypedDict(
         "DataType",
         {
-            "white_label": str,
+            "white_label": str | None,
             "icon": str | None,
         },
     )
 
     def to_model_data(self) -> DataType:
         return {
-            "white_label": self.instance.white_label.code,
+            # None for a shared type, which has no white label
+            "white_label": self.instance.white_label.code if self.instance.white_label else None,
             "icon": self.instance.icon.name if self.instance.icon else None,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         from screener.models import WhiteLabel
         from programs.models import CategoryIconName
 
-        try:
-            white_label = WhiteLabel.objects.get(code=data["white_label"])
-        except WhiteLabel.DoesNotExist:
-            white_label = WhiteLabel.objects.create(code=data["white_label"], name=data["white_label"])
-        self.instance.white_label = white_label
+        if data["white_label"] is None:
+            # Shared type, usable by every white label
+            self.instance.white_label = None
+        else:
+            try:
+                white_label = WhiteLabel.objects.get(code=data["white_label"])
+            except WhiteLabel.DoesNotExist:
+                white_label = WhiteLabel.objects.create(code=data["white_label"], name=data["white_label"])
+            self.instance.white_label = white_label
 
         if data["icon"]:
             icon = CategoryIconName.objects.filter(name=data["icon"]).first()
@@ -982,7 +1129,13 @@ class UrgentNeedTypeDataController(ModelDataController["UrgentNeedType"]):
 class UrgentNeedTypeManager(models.Manager):
     translated_fields = ("name",)
 
-    def new_urgent_need_type(self, white_label: str, external_name: str, icon: str):
+    def new_urgent_need_type(
+        self, white_label: Optional[str], external_name: str, icon: Optional[str]
+    ) -> "UrgentNeedType":
+        """
+        Create an urgent need type. A falsy white_label creates a shared type,
+        usable by urgent needs in every white label.
+        """
         translations = {}
         for field in self.translated_fields:
             translations[field] = Translation.objects.add_translation(
@@ -990,7 +1143,7 @@ class UrgentNeedTypeManager(models.Manager):
             )
 
         # set white label
-        white_label = WhiteLabel.objects.get(code=white_label)
+        white_label = WhiteLabel.objects.get(code=white_label) if white_label else None
 
         # set icon
         icon_instance = None
@@ -1011,11 +1164,12 @@ class UrgentNeedTypeManager(models.Manager):
 
 
 class UrgentNeedType(models.Model):
+    # Null means the type is shared: urgent needs in any white label can use it.
     white_label = models.ForeignKey(
         WhiteLabel,
         related_name="urgent_need_types",
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
     )
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
@@ -1163,8 +1317,13 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
         if fpl is not None:
             try:
                 fpl_instance = FederalPoveryLimit.objects.get(year=fpl["year"])
-                fpl_instance.period = fpl["period"]
-                fpl_instance.save()
+                # Dynamic rows are shared by every program/need pointing at them, so
+                # importing one program's (possibly stale) exported snapshot must
+                # not silently roll the shared period back for everyone else on it.
+                # Only a genuinely per-row hardcoded year is safe to overwrite here.
+                if fpl["year"] not in DYNAMIC_FPL_YEARS:
+                    fpl_instance.period = fpl["period"]
+                    fpl_instance.save()
             except FederalPoveryLimit.DoesNotExist:
                 fpl_instance = FederalPoveryLimit.objects.create(year=fpl["year"], period=fpl["period"])
             need.year = fpl_instance
@@ -1361,10 +1520,20 @@ class UrgentNeed(models.Model):
 
 
 class NavigatorLanguage(models.Model):
-    code = models.CharField(max_length=8, unique=True)
+    code = models.CharField(max_length=8, unique=True, validators=[validate_navigator_language_code])
 
     def __str__(self) -> str:
         return self.code
+
+    @classmethod
+    def for_code(cls, code: str) -> "NavigatorLanguage":
+        """The row for a known code, created if this environment doesn't have it yet."""
+        check_navigator_language_code(code)
+        return cls.objects.get_or_create(code=code)[0]
+
+    def save(self, *args, **kwargs) -> None:
+        check_navigator_language_code(self.code)
+        super().save(*args, **kwargs)
 
 
 class NavigatorManager(models.Manager):
@@ -1374,7 +1543,9 @@ class NavigatorManager(models.Manager):
         "assistance_link",
         "description",
     )
-    no_auto_fields = ("assistance_link",)
+    # An email is an address, not text: machine translation turns it into a lookalike
+    # that reaches the wrong inbox (MFB-2292).
+    no_auto_fields = ("assistance_link", "email")
 
     def new_navigator(self, white_label: str, name: str, phone_number: Optional[str] = None):
         translations = {}
@@ -1403,11 +1574,26 @@ class NavigatorManager(models.Manager):
         return navigator
 
 
+def _log_cross_state_link(navigator: "Navigator", program: "Program", relation: str) -> None:
+    """A snapshot copies links the environment it came from already holds, so it keeps a link the
+    linking rule (`programs.federal.may_link`) would refuse if someone made it today, such as a
+    state program on another state's navigator: refusing it failed the whole snapshot load.
+    Logged so the cross-state links that predate the rule can be found and cleaned up."""
+    logger.warning(
+        "Snapshot keeps navigator %s (%s) %s %s/%s, which the linking rule would refuse today.",
+        navigator.external_name,
+        navigator.white_label.code,
+        relation,
+        program.white_label.code,
+        program.name_abbreviated,
+    )
+
+
 class NavigatorDataController(ModelDataController["Navigator"]):
     _model_name = "Navigator"
     dependencies = ["Program"]
 
-    CountiesType = list[TypedDict("CountyType", {"name": str})]
+    CountiesType = list[TypedDict("CountyType", {"name": str, "white_label": str}, total=False)]
     LanugagesType = list[TypedDict("LanguageType", {"code": str})]
     DataType = TypedDict(
         "DataType",
@@ -1415,64 +1601,27 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "phone_number": Optional[str],
             "counties": CountiesType,
             "languages": LanugagesType,
-            "programs": list[str],
+            "programs": list[str],  # older snapshots only; no longer exported
+            "program_links": list[dict],
             "eligibility_programs": list[str],
             "white_label": str,
+            "assistant_notes": str,
         },
     )
 
     def _counties(self) -> CountiesType:
-        return [{"name": c.name} for c in self.instance.counties.all()]
+        # Each county with its own white label: a navigator moved to `federal` keeps its state's
+        # counties, and looking them up under the navigator's white label would make federal copies.
+        return [{"name": c.name, "white_label": c.white_label.code} for c in self.instance.counties.all()]
 
     def _languages(self) -> LanugagesType:
         return [{"code": l.code} for l in self.instance.languages.all()]
 
-    def to_model_data(self) -> DataType:
-        navigator = self.instance
-        return {
-            "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
-            "counties": self._counties(),
-            "languages": self._languages(),
-            "programs": [p.external_name for p in navigator.programs.all()],
-            "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
-            "white_label": navigator.white_label.code,
-        }
-
-    def from_model_data(self, data: DataType):
-        navigator = self.instance
-
-        navigator.phone_number = data["phone_number"]
-
-        try:
-            white_label = WhiteLabel.objects.get(code=data["white_label"])
-        except WhiteLabel.DoesNotExist:
-            white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
-        navigator.white_label = white_label
-
-        # get or create counties
-        counties = []
-        for county in data["counties"]:
-            try:
-                county_instance = County.objects.get(name=county["name"], white_label__code=data["white_label"])
-            except County.DoesNotExist:
-                county_instance = County.objects.create(name=county["name"], white_label=white_label)
-
-            counties.append(county_instance)
-        navigator.counties.set(counties)
-
-        # get or create languages
-        langs = []
-        for lang in data["languages"]:
-            try:
-                lang_instance = NavigatorLanguage.objects.get(code=lang["code"])
-            except NavigatorLanguage.DoesNotExist:
-                lang_instance = NavigatorLanguage.objects.create(code=lang["code"])
-            langs.append(lang_instance)
-        navigator.languages.set(langs)
-
+    def _set_program_links(self, navigator: "Navigator", items: list) -> None:
+        """Make the navigator's program links match a snapshot's `program_links`, keeping each order."""
         programs = []
         program_orders = {}
-        for item in data["programs"]:
+        for item in items:
             if isinstance(item, str):
                 external_name = item
                 order_value = None
@@ -1481,9 +1630,9 @@ class NavigatorDataController(ModelDataController["Navigator"]):
                 order_value = item.get("order") if isinstance(item, dict) else None
             if not external_name:
                 continue
-            program_instance = Program.objects.get(external_name=external_name)
-            if program_instance.white_label_id != navigator.white_label_id:
-                raise self.DeferCreation()
+            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
+            if not may_link_navigator(program_instance, navigator.white_label.code):
+                _log_cross_state_link(navigator, program_instance, "linked to")
             programs.append(program_instance)
             if order_value is not None:
                 program_orders[program_instance.id] = order_value
@@ -1508,14 +1657,93 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         if getattr(through, "__name__", str(through)) != "ProgramNavigator":
             navigator.programs.set(programs)
 
+    def _county(self, county: dict, navigator_white_label: str) -> "County":
+        """The County row a snapshot names. A snapshot that gives the county's white label is exact.
+        An older one gives only the name: a county the navigator already has is kept, so a navigator
+        moved to `federal` doesn't get federal copies of its state's counties; otherwise it's looked
+        up, or created, under the navigator's white label from the snapshot."""
+        name = county["name"]
+        white_label_code = county.get("white_label")
+        if white_label_code is None:
+            existing = self.instance.counties.filter(name=name).first() if self.instance.pk else None
+            if existing is not None:
+                return existing
+            white_label_code = navigator_white_label
+        found = County.objects.filter(name=name, white_label__code=white_label_code).first()
+        if found is not None:
+            return found
+        white_label, _ = WhiteLabel.objects.get_or_create(code=white_label_code, defaults={"name": white_label_code})
+        return County.objects.create(name=name, white_label=white_label)
+
+    def to_model_data(self) -> DataType:
+        navigator = self.instance
+        return {
+            "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
+            "counties": self._counties(),
+            "languages": self._languages(),
+            # Every link, from `ProgramNavigator`, which the admin inline and the record import write
+            # and the results page reads. The legacy `programs` list is no longer exported: it missed
+            # every link made since the ordering migration (0126), and a loader that predates
+            # `program_links` deleted the links it left out. Without it, such a loader fails on the
+            # missing key and the whole load rolls back.
+            "program_links": [
+                {"external_name": link.program.external_name, "order": link.order}
+                for link in navigator.program_navigators.select_related("program").order_by("order", "id")
+            ],
+            "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
+            "white_label": navigator.white_label.code,
+            "assistant_notes": navigator.assistant_notes,
+        }
+
+    def from_model_data(self, data: DataType) -> None:
+        navigator = self.instance
+
+        navigator.phone_number = data["phone_number"]
+        # Absent from snapshots exported before the field existed (MFB-2364). Left alone
+        # then, so importing an old snapshot doesn't wipe notes written since.
+        if "assistant_notes" in data:
+            navigator.assistant_notes = data["assistant_notes"]
+
+        try:
+            white_label = WhiteLabel.objects.get(code=data["white_label"])
+        except WhiteLabel.DoesNotExist:
+            white_label = WhiteLabel.objects.create(name=data["white_label"], code=data["white_label"])
+        # A navigator is moved to `federal` on purpose (a migration, or a federal program record
+        # that owns it), never back, and on a federal program a state navigator reaches only that
+        # state. A snapshot exported before the move would undo it, so it stays on `federal`.
+        if not (navigator.white_label_id and navigator.white_label.code == FEDERAL_WHITE_LABEL):
+            navigator.white_label = white_label
+
+        # get or create counties
+        counties = [self._county(county, data["white_label"]) for county in data["counties"]]
+        navigator.counties.set(counties)
+
+        # get or create languages
+        langs = []
+        for lang in data["languages"]:
+            langs.append(NavigatorLanguage.for_code(lang["code"]))
+        navigator.languages.set(langs)
+
+        # A snapshot with `program_links` lists every link, so the navigator's links are made to match
+        # it. An older one lists only the legacy table, which misses the links made since the
+        # ordering migration (0126) and still holds links removed in the admin since, so its links
+        # are left alone: neither added nor removed.
+        if "program_links" in data:
+            self._set_program_links(navigator, data["program_links"])
+        else:
+            logger.info(
+                "Snapshot predates program_links; left navigator %s's program links alone.",
+                navigator.external_name,
+            )
+
         eligibility_programs = []
         for item in data.get("eligibility_programs", []):
             external_name = item if isinstance(item, str) else (item.get("external_name") or item.get("name"))
             if not external_name:
                 continue
-            program_instance = Program.objects.get(external_name=external_name)
-            if program_instance.white_label_id != navigator.white_label_id:
-                raise self.DeferCreation()
+            program_instance = Program.objects.select_related("white_label").get(external_name=external_name)
+            if not may_link_navigator(program_instance, navigator.white_label.code):
+                _log_cross_state_link(navigator, program_instance, "requiring")
             eligibility_programs.append(program_instance)
         navigator.eligibility_programs.set(eligibility_programs)
 
@@ -1524,6 +1752,38 @@ class NavigatorDataController(ModelDataController["Navigator"]):
     @classmethod
     def create_instance(cls, external_name: str, Model: type["Navigator"]) -> "Navigator":
         return Model.objects.new_navigator("_default", external_name, None)
+
+
+# One address, no display name, no scheme. The assistant's card-email check anchors it
+# (`screener.assistant._EMAIL_SHAPED`); the note check below searches for it anywhere.
+EMAIL_BODY = r"[^@\s]+@[^@\s]+\.[^@\s]+"
+
+# Contact details in free text, matched anywhere in the string: a US phone number (10
+# digits, or 7 with or without a separator), an international number written with a
+# leading +, an email address, or a link, bare domains included. Kept in step with
+# ai-service's `_CONTACT_SHAPED`, which drops the same notes as a last line.
+NAVIGATOR_NOTE_CONTACT_SHAPED = re.compile(
+    r"(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|(?<!\d)\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|\+\d[\d\s().-]{6,}\d"
+    rf"|{EMAIL_BODY}"
+    r"|https?://|\bwww\.|\b[\w-]+\.(?:org|com|gov|net|us|edu|info)\b",
+    re.IGNORECASE,
+)
+
+
+def validate_no_contact_details(value: str) -> None:
+    """Keep phone numbers, emails and links out of a navigator's assistant notes.
+
+    Benji may only give contact details copied from the card's own fields, so a note is
+    never a place for them: a number typed here would reach the model with nothing on
+    the household's card to match it.
+    """
+    if NAVIGATOR_NOTE_CONTACT_SHAPED.search(value):
+        raise ValidationError(
+            "Notes can't contain phone numbers, email addresses or links. Put those in the "
+            "navigator's phone number, email or assistance link fields instead."
+        )
 
 
 class Navigator(models.Model):
@@ -1557,6 +1817,22 @@ class Navigator(models.Model):
         related_name="eligibility_navigators",
         blank=True,
         help_text="Navigator is only shown when the household qualifies for ALL of these programs.",
+    )
+    # What Benji should know about how this organization works that the card doesn't say
+    # (MFB-2364): "help is by phone, not email", "no longer offers tax help". Read only by
+    # the assistant, never rendered on the results page, so it is plain English text
+    # rather than a Translation. The form-level max_length matches the assistant's
+    # MAX_PROMPT_TEXT_LEN, so admins see the limit instead of having notes clipped.
+    assistant_notes = models.TextField(
+        blank=True,
+        default="",
+        max_length=800,
+        validators=[validate_no_contact_details],
+        help_text=(
+            "Notes for Benji only, never shown on the results page. Describe how this "
+            "organization works, e.g. 'Helps by phone only; does not take requests by email.' "
+            "Put phone numbers, emails and links in the card fields, not here."
+        ),
     )
 
     name = models.ForeignKey(
@@ -1635,6 +1911,8 @@ class WarningMessageManager(models.Manager):
     no_auto_fields = ("link_url",)
 
     def new_warning(self, white_label: str, calculator: str, external_name: Optional[str] = None):
+        if unknown_warning_calculator(calculator):
+            raise ValueError(f"'{calculator}' isn't a registered warning calculator")
         translations = {}
         for field in self.translated_fields:
             translations[field] = Translation.objects.add_translation(
@@ -1712,11 +1990,7 @@ class WarningMessageDataController(ModelDataController["WarningMessage"]):
         legal_status_required = data["legal_status_required"]
         statuses = []
         for status in legal_status_required:
-            try:
-                legal_status_instance = LegalStatus.objects.get(status=status["status"])
-            except LegalStatus.DoesNotExist:
-                legal_status_instance = LegalStatus.objects.create(status=status["status"])
-            statuses.append(legal_status_instance)
+            statuses.append(LegalStatus.for_label(status["status"]))
         warning.legal_statuses.set(statuses)
 
         # get or create counties
@@ -1740,7 +2014,9 @@ class WarningMessageDataController(ModelDataController["WarningMessage"]):
 
     @classmethod
     def create_instance(cls, external_name: str, Model: type["WarningMessage"]) -> "WarningMessage":
-        return Model.objects.new_warning("_default", "__temp__", external_name)
+        # A registered placeholder: `from_model_data` sets the snapshot's calculator next, and saving
+        # checks that one.
+        return Model.objects.new_warning("_default", "_show", external_name)
 
 
 class WarningMessage(models.Model):
@@ -1782,6 +2058,18 @@ class WarningMessage(models.Model):
     objects = WarningMessageManager()
 
     TranslationExportBuilder = WarningMessageDataController
+
+    def clean(self) -> None:
+        super().clean()
+        if unknown_warning_calculator(self.calculator):
+            raise ValidationError({"calculator": f"'{self.calculator}' isn't a registered warning calculator"})
+
+    def save(self, *args, **kwargs) -> None:
+        # The registry lives in code and changes without a migration, so it is checked here rather
+        # than by a database constraint. A warning on an unknown calculator would never show.
+        if unknown_warning_calculator(self.calculator):
+            raise ValueError(f"'{self.calculator}' isn't a registered warning calculator")
+        super().save(*args, **kwargs)
 
     @property
     def county_names(self) -> list[str]:
@@ -1978,13 +2266,12 @@ class TranslationOverride(models.Model):
         return f"{white_label_name}{name}"
 
 
-class ProgramConfigImport(models.Model):
+class ProgramRecordImport(models.Model):
     """
-    Tracks which program configuration JSON files have been imported.
+    One row per program-ops program record, written by `import_program_records`.
 
-    Similar to Django's migrations table, this model keeps track of which
-    program config files have been successfully imported to avoid re-importing
-    the same configuration.
+    `applied_record` holds what the record set when it was last applied, which is how the
+    next import tells a record change from an admin edit.
     """
 
     filename = models.CharField(
@@ -2004,6 +2291,19 @@ class ProgramConfigImport(models.Model):
         auto_now_add=True,
         help_text="When this configuration was imported",
     )
+    content_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="SHA-256 of the config file when it was applied. A file whose hash no longer matches "
+        "is treated as pending again, so edits to a config are picked up on the next run.",
+    )
+    applied_record = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="What a program-ops record set when it was last applied, field by field. Comparing it with "
+        "the record and the database tells a record edit from an admin edit.",
+    )
 
     class Meta:
         ordering = ["-imported_at"]
@@ -2012,3 +2312,36 @@ class ProgramConfigImport(models.Model):
 
     def __str__(self):
         return f"{self.filename} ({self.program_name}) - {self.imported_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class ProgramImportLog(models.Model):
+    """
+    One row per `apply_program` run that applied a payload, kept forever.
+
+    The audit trail for spec-driven imports: what each environment received, from which spec,
+    and when, so an apply can be checked or rolled back to. A program with a row here has been
+    imported from a program-ops v2 spec.
+    """
+
+    program = models.ForeignKey(
+        Program,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="import_logs",
+        help_text="The program the payload was applied to. Kept as a name below if the program is deleted.",
+    )
+    white_label_code = models.CharField(max_length=64)
+    program_name = models.CharField(max_length=255, help_text="The program's name_abbreviated when applied")
+    payload = models.JSONField(help_text="The payload exactly as it was applied")
+    changes = models.JSONField(default=list, help_text="What the apply changed, one line per change")
+    source = models.CharField(max_length=255, blank=True, default="", help_text="The spec the payload came from")
+    spec_commit = models.CharField(max_length=64, blank=True, default="", help_text="program-ops commit of the spec")
+    applied_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-applied_at"]
+        indexes = [models.Index(fields=["white_label_code", "program_name"])]
+
+    def __str__(self) -> str:
+        return f"{self.white_label_code}/{self.program_name} - {self.applied_at.strftime('%Y-%m-%d %H:%M')}"

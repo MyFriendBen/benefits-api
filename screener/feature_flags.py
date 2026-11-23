@@ -46,12 +46,23 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
         scope="frontend",
     ),
     "benbot": FeatureFlagConfig(
-        label="Benbot AI Assistant",
+        # The assistant was renamed Benji (MFB-1737); the flag KEY stays 'benbot'
+        # so existing white-label configs keep working.
+        label="Benji AI Assistant",
         description=(
-            "Show the Benbot AI assistant on the results page and enable the "
+            "Show the Benji AI assistant on the results page and enable the "
             "mfb-ai-service proxy endpoints for guided benefit applications."
         ),
         scope="both",  # frontend renders the widget; backend gates the proxy endpoints
+    ),
+    "benji_sms": FeatureFlagConfig(
+        label="Benji over SMS",
+        description=(
+            "Offer Benji by text message from the results page, and let benefits-api send "
+            "Benji SMS for this white label's screens. Dark-launch gate: off until launch. "
+            "Sends also need the BENJI_SMS_OUTBOUND_ENABLED config var."
+        ),
+        scope="both",  # frontend shows the on-ramp; backend checks it before every per-screen send
     ),
     "share_popup": FeatureFlagConfig(
         label="Share Popup",

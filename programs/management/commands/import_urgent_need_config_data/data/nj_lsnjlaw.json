@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_lsnjlaw",
+    "category_type": {
+      "external_name": "civil_legal_needs"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "LSNJLAW.org self-help site",
+      "description": "LSNJLAW.org is Legal Services of New Jersey's self-help website. The website is open to everyone, 24/7. The legal hotline is income-tested.",
+      "link": "https://www.lsnjlaw.org",
+      "warning": "",
+      "website_description": "Learn about free or low-cost legal help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

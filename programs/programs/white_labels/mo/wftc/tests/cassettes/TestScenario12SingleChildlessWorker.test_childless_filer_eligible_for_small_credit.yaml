@@ -1,0 +1,75 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"91121": {"is_tax_unit_spouse": {"2025": false},
+      "is_tax_unit_dependent": {"2025": false}, "employment_income": {"2025": 18000},
+      "self_employment_income": {"2025": 0}, "rental_income": {"2025": 0}, "taxable_pension_income":
+      {"2025": 0}, "social_security": {"2025": 0}, "unemployment_compensation": {"2025":
+      0}, "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions": {"2025":
+      0}, "age": {"2025": 30}, "is_full_time_college_student": {"2025": false}, "real_estate_taxes":
+      {"2025": 0}, "rent": {"2025": 0}}}, "tax_units": {"main_tax_unit": {"members":
+      ["91121"], "mo_wftc": {"2025": null}}}, "families": {"family": {"members": ["91121"]}},
+      "households": {"household": {"members": ["91121"], "state_code": {"2025": "MO"}}},
+      "spm_units": {"spm_unit": {"members": ["91121"]}}, "marital_units": {}}, "version":
+      "2.9.0"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '852'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"91121": {"is_tax_unit_spouse":
+        {"2025": false}, "is_tax_unit_dependent": {"2025": false}, "employment_income":
+        {"2025": 18000}, "self_employment_income": {"2025": 0}, "rental_income": {"2025":
+        0}, "taxable_pension_income": {"2025": 0}, "social_security": {"2025": 0},
+        "unemployment_compensation": {"2025": 0}, "long_term_capital_gains": {"2025":
+        0}, "taxable_ira_distributions": {"2025": 0}, "age": {"2025": 30}, "is_full_time_college_student":
+        {"2025": false}, "real_estate_taxes": {"2025": 0}, "rent": {"2025": 0}}},
+        "tax_units": {"main_tax_unit": {"members": ["91121"], "mo_wftc": {"2025":
+        16.886}}}, "families": {"family": {"members": ["91121"]}}, "households": {"household":
+        {"members": ["91121"], "state_code": {"2025": "MO"}}}, "spm_units": {"spm_unit":
+        {"members": ["91121"]}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
+        "2.9.0", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '954'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 05 Oct 2026 20:02:16 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-42d6cfbfa7b7f8c23fed2a366cb78e9a-c2515a94f1ceac0b-01
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 42d6cfbfa7b7f8c23fed2a366cb78e9a;o=1
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 031190e6-89c5-4556-949d-90d8dddf7e67
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

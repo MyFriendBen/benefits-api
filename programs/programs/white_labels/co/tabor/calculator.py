@@ -1,0 +1,40 @@
+from programs.framework.base import MemberEligibility, ProgramCalculator
+from screener.models import HouseholdMember
+import math
+
+
+class Tabor(ProgramCalculator):
+    program_code = "tabor"
+    min_age = 18
+    member_amount = 800
+    income_limits = {
+        53_000: 177,
+        105_000: 240,
+        166_000: 277,
+        233_000: 323,
+        302_000: 350,
+        math.inf: 565,
+    }
+    dependencies = ["age", "income_amount", "income_frequency"]
+
+    def member_eligible(self, e: MemberEligibility):
+        member = e.member
+
+        # age at the end of the tax year
+        age = member.age_at_end_of_year(self.tax_year)
+        e.condition(age is not None and age >= Tabor.min_age)
+
+    def member_value(self, member: HouseholdMember) -> int:
+        income = member.calc_gross_income("yearly", ["all"])
+
+        # Add spouses income
+        is_married = member.is_married()
+        if is_married["is_married"]:
+            spouse = is_married["married_to"]
+            income += spouse.calc_gross_income("yearly", ["all"])
+
+        for threshold, value in Tabor.income_limits.items():
+            if income <= threshold:
+                return value
+
+        return 0  # just in case

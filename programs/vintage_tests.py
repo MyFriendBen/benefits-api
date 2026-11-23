@@ -1,0 +1,141 @@
+"""Structural guards on the program vintage map.
+
+These check that the map is internally coherent and that every claim in it is resolvable.
+They deliberately do NOT check the map against the database or the config JSONs -- that is
+the environment audit's job, and asserting it here would go red until the correcting
+migration lands.
+
+Nothing here reads the calendar. Whether `_FPL_DEFAULTS` has caught up with the current year
+is a fact about today, not about the code, so the environment audit reports it; asserting it
+here would fail every build from 1 January until HHS publishes, with nothing to fix.
+"""
+
+import json
+from pathlib import Path
+
+from django.test import SimpleTestCase
+
+from programs.models import _get_fpl_data
+from programs.vintage import PROGRAM_VINTAGE, Basis, Status
+
+
+class TestProgramVintageMap(SimpleTestCase):
+    def test_every_entry_states_a_rule(self):
+        """A vintage with no stated reason is the thing this map exists to abolish."""
+        for key, vintage in PROGRAM_VINTAGE.items():
+            with self.subTest(program=key):
+                self.assertTrue(
+                    vintage.rule.strip(),
+                    f"{key} records an edition with no rule. An edition nobody can explain is "
+                    "indistinguishable from drift, which is the defect this map replaces.",
+                )
+
+    def test_confirmed_entries_cite_a_source(self):
+        """CONFIRMED asserts someone established this. That claim needs a citation."""
+        for key, vintage in PROGRAM_VINTAGE.items():
+            if vintage.status is not Status.CONFIRMED:
+                continue
+            with self.subTest(program=key):
+                self.assertTrue(
+                    vintage.source.strip(),
+                    f"{key} is marked CONFIRMED but cites no source. Downgrade it to "
+                    "UNVERIFIED or add the statute, notice or validated case it rests on.",
+                )
+
+    def test_unverified_entries_do_not_pose_as_researched(self):
+        """UNVERIFIED means nobody checked. A source there would overstate what is known."""
+        for key, vintage in PROGRAM_VINTAGE.items():
+            if vintage.status is not Status.UNVERIFIED:
+                continue
+            with self.subTest(program=key):
+                self.assertFalse(
+                    vintage.source.strip(),
+                    f"{key} is UNVERIFIED but cites {vintage.source!r}. If the source settles "
+                    "the edition, mark it CONFIRMED; if it does not, drop it.",
+                )
+
+    def test_every_edition_is_a_period_the_fpl_table_defines(self):
+        """`as_dict()` raises a bare KeyError for a period the constant does not define.
+
+        An edition here that the table cannot resolve would be a crash inside eligibility
+        calculation for every program pointed at it, not a wrong number.
+        """
+        defined = set(_get_fpl_data())
+        for key, vintage in PROGRAM_VINTAGE.items():
+            with self.subTest(program=key):
+                self.assertIn(
+                    vintage.edition,
+                    defined,
+                    f"{key} names edition {vintage.edition!r}, which _FPL_DEFAULTS does not "
+                    f"define (it has {sorted(defined)}). Add the year to the constant first.",
+                )
+
+    def test_editions_are_four_digit_years(self):
+        for key, vintage in PROGRAM_VINTAGE.items():
+            with self.subTest(program=key):
+                self.assertRegex(vintage.edition, r"^\d{4}$")
+
+    def test_keys_are_white_label_and_abbreviation_pairs(self):
+        for key in PROGRAM_VINTAGE:
+            with self.subTest(program=key):
+                self.assertIsInstance(key, tuple)
+                self.assertEqual(len(key), 2)
+                self.assertTrue(all(isinstance(part, str) and part for part in key))
+
+    def test_both_bases_are_represented(self):
+        """A map that had drifted to one basis would mean the distinction had been lost.
+
+        `COVERAGE_YEAR` and `TABLE_EDITION` look identical in the database and mean opposite
+        things -- reading one as the other is how a correct row gets "fixed" into a wrong
+        one. If either disappears, the reading has collapsed.
+        """
+        bases = {vintage.basis for vintage in PROGRAM_VINTAGE.values()}
+
+        self.assertEqual(bases, {Basis.COVERAGE_YEAR, Basis.TABLE_EDITION})
+
+
+class TestConfigJsonMatchesRecordedIntent(SimpleTestCase):
+    """A program config must not pin an edition the map disagrees with.
+
+    This is the half of the guard a unit test can cover. `import_program_config` writes
+    `year` straight from the JSON, so a config pinning a different edition silently reverts
+    whatever the database holds on the next import -- the same shape of regression as the
+    WA/MA public charge URLs, which were fixed in production and then overwritten from the
+    repo. Thirty-five configs currently pin 2025.
+
+    Programs absent from the map are skipped rather than failed: absence means nobody has
+    researched them, which is a gap for the environment audit to report and not a reason to
+    block a release.
+    """
+
+    CONFIG_DIR = Path(__file__).parent / "management" / "commands" / "import_program_config_data" / "data"
+
+    def test_no_config_pins_an_edition_the_map_disagrees_with(self):
+        mismatches = []
+
+        for config_path in sorted(self.CONFIG_DIR.glob("*_initial_config.json")):
+            config = json.loads(config_path.read_text())
+            program = config.get("program", {})
+            year = program.get("year")
+            if year is None:
+                continue
+
+            # Keyed the way the map is. The filename is not the abbreviation
+            # (co_care_worker_credit holds co_tax_credit_care_worker), and an abbreviation
+            # alone is shared across white labels (ssi, eitc, ctc).
+            white_label = config["white_label"]["code"]
+            abbr = program["name_abbreviated"]
+            intent = PROGRAM_VINTAGE.get((white_label, abbr))
+            if intent is not None and str(year) != intent.edition:
+                mismatches.append(
+                    f"{config_path.name} pins {year!r}, but {white_label}/{abbr} is "
+                    f"recorded as {intent.edition} ({intent.status.value}): {intent.rule}"
+                )
+
+        self.assertEqual(
+            mismatches,
+            [],
+            "Program configs disagree with programs/vintage.py. Either the config is stale "
+            "and should be repinned, or the edition genuinely changed and the map entry "
+            "needs updating:\n  " + "\n  ".join(mismatches),
+        )

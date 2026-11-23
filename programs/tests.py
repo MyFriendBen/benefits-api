@@ -1,7 +1,30 @@
-from django.test import TestCase
+from importlib import import_module
+from io import StringIO
+from types import SimpleNamespace
+from unittest.mock import patch
 
-from programs.models import Program
-from screener.models import WhiteLabel
+from django.apps import apps as global_apps
+from django.core.exceptions import ValidationError
+from django.core.management import call_command
+from django.db import connection
+from django.db.utils import IntegrityError
+from django.test import SimpleTestCase, TestCase
+
+from programs.fpl_values import MAX_MATERIALIZED_SIZE, limits_for_period, sync_fpl_values
+from programs.models import (
+    _FPL_DEFAULTS,
+    County,
+    FederalPoveryLimit,
+    FederalPovertyLimitValue,
+    Navigator,
+    Program,
+    ProgramNavigator,
+    Referrer,
+    _get_fpl_data,
+)
+from programs.serializers import NavigatorAPISerializer
+from screener.models import Screen, WhiteLabel
+from translations.models import Translation
 
 
 class ProgramNameAbbreviatedNormalizationTests(TestCase):
@@ -28,3 +51,744 @@ class ProgramNameAbbreviatedNormalizationTests(TestCase):
         program = Program.objects.new_program(self.white_label.code, "tx_snap")
         program.refresh_from_db()
         self.assertEqual(program.name_abbreviated, "tx_snap")
+
+
+class FederalPovertyLimitTests(SimpleTestCase):
+    """The FPL table is a module constant, so reading it must not touch the cache.
+
+    It used to sit behind a cache whose update() opened with `return self.default`,
+    leaving the ASPE API fetch below unreachable -- so the cached value was only ever
+    the constant. Once the cache moved to Redis that became a network round-trip per
+    read, and as_dict()/get_limit() are called ~56 times across the calculators.
+    """
+
+    def test_returns_the_table_without_touching_the_cache(self):
+        with patch("programs.models.cache", create=True) as cache_mock:
+            _get_fpl_data()
+
+        self.assertFalse(cache_mock.method_calls, f"unexpected cache use: {cache_mock.method_calls}")
+
+    def test_as_dict_makes_no_cache_calls(self):
+        fpl = FederalPoveryLimit(year="2026", period="2026")
+
+        with patch("programs.models.cache", create=True) as cache_mock:
+            for _ in range(10):
+                fpl.as_dict()
+
+        self.assertFalse(cache_mock.method_calls)
+
+    def test_identity_is_stable_across_calls(self):
+        """A miss used to return the constant while a hit returned a copy.
+
+        Callers mutating the result corrupted the constant, but only on the miss path,
+        so it would have surfaced intermittently.
+        """
+        self.assertIs(_get_fpl_data(), _get_fpl_data())
+        self.assertIs(_get_fpl_data(), _FPL_DEFAULTS)
+
+    def test_unknown_period_still_raises_key_error(self):
+        """Behaviour preserved: an unrecognised year must fail loudly, not return {}."""
+        with self.assertRaises(KeyError):
+            FederalPoveryLimit(year="1999", period="1999").as_dict()
+
+    def test_get_limit_within_defined_sizes(self):
+        fpl = FederalPoveryLimit(year="2026", period="2026")
+
+        self.assertEqual(fpl.get_limit(4), _FPL_DEFAULTS["2026"][4])
+
+    def test_get_limit_extrapolates_beyond_max_defined_size(self):
+        fpl = FederalPoveryLimit(year="2026", period="2026")
+        table = _FPL_DEFAULTS["2026"]
+        expected = table[8] + table["additional"] * 2
+
+        self.assertEqual(fpl.get_limit(10), expected)
+
+    def test_every_year_defines_all_household_sizes(self):
+        """Guards the constant itself -- a missing size would raise mid-screening."""
+        for year, table in _FPL_DEFAULTS.items():
+            with self.subTest(year=year):
+                self.assertEqual(
+                    sorted(k for k in table if isinstance(k, int)),
+                    list(range(1, FederalPoveryLimit.MAX_DEFINED_SIZE + 1)),
+                )
+                self.assertIn("additional", table)
+
+
+class FederalPovertyLimitValueTests(TestCase):
+    """The materialized FPL table must reproduce get_limit() exactly.
+
+    These verify that sync_fpl_values() produces a table matching get_limit().
+    They deliberately do NOT claim to catch a given environment drifting out of
+    sync -- CI builds a fresh database and syncs it here, so it can never observe
+    prod's state. Keeping prod current is the deploy hook's job (see the Sync FPL
+    values step in .github/actions/heroku-migrations), with
+    `sync_fpl_values --dry-run` available as a drift check that exits non-zero.
+
+    setUp syncs rather than relying on migration 0173: pytest.ini runs with
+    --nomigrations, so pytest-django builds the schema from the models and never
+    executes a RunPython. The migration's own populate() is covered separately.
+    """
+
+    def setUp(self):
+        sync_fpl_values()
+
+    def test_sync_populates_every_period_and_size(self):
+        expected = len(_FPL_DEFAULTS) * MAX_MATERIALIZED_SIZE
+
+        self.assertEqual(FederalPovertyLimitValue.objects.count(), expected)
+
+    def test_migration_populate_fills_the_table(self):
+        """Covers migration 0171's RunPython, which --nomigrations skips.
+
+        This is what fills the table on a real deploy, so it needs a test that
+        does not depend on the migration runner having run.
+        """
+        expected = len(_FPL_DEFAULTS) * MAX_MATERIALIZED_SIZE
+        FederalPovertyLimitValue.objects.all().delete()
+        migration = import_module("programs.migrations.0173_federal_poverty_limit_value")
+
+        migration.populate(global_apps, None)
+
+        self.assertEqual(FederalPovertyLimitValue.objects.count(), expected)
+
+    def test_every_row_matches_get_limit(self):
+        """The mirror agrees with the calculators' own lookup, size by size."""
+        for period in _FPL_DEFAULTS:
+            fpl = FederalPoveryLimit(year=period, period=period)
+            for size in range(1, MAX_MATERIALIZED_SIZE + 1):
+                with self.subTest(period=period, household_size=size):
+                    row = FederalPovertyLimitValue.objects.get(period=period, household_size=size)
+                    self.assertEqual(row.annual_limit, fpl.get_limit(size))
+
+    def test_sync_is_idempotent(self):
+        counts = sync_fpl_values()
+
+        self.assertEqual(counts, {"created": 0, "updated": 0, "deleted": 0})
+
+    def test_sync_repairs_a_drifted_row(self):
+        row = FederalPovertyLimitValue.objects.get(period="2026", household_size=4)
+        row.annual_limit = 1
+        row.save(update_fields=["annual_limit"])
+
+        counts = sync_fpl_values()
+        row.refresh_from_db()
+
+        self.assertEqual(counts["updated"], 1)
+        self.assertEqual(row.annual_limit, _FPL_DEFAULTS["2026"][4])
+
+    def test_sync_removes_a_period_no_longer_in_the_constant(self):
+        FederalPovertyLimitValue.objects.create(period="1999", household_size=1, annual_limit=1)
+
+        counts = sync_fpl_values()
+
+        self.assertEqual(counts["deleted"], 1)
+        self.assertFalse(FederalPovertyLimitValue.objects.filter(period="1999").exists())
+
+    def test_extrapolated_sizes_apply_the_additional_amount(self):
+        table = _FPL_DEFAULTS["2026"]
+        row = FederalPovertyLimitValue.objects.get(period="2026", household_size=10)
+
+        self.assertEqual(row.annual_limit, table[8] + table["additional"] * 2)
+
+    def test_duplicate_period_and_size_is_rejected(self):
+        """The uniqueness constraint is what lets analytics join without fanning out."""
+        with self.assertRaises(IntegrityError):
+            FederalPovertyLimitValue.objects.create(period="2026", household_size=4, annual_limit=1)
+
+    def test_expanding_a_table_with_no_sizes_raises(self):
+        """defined[-1] would otherwise be an IndexError on a malformed table."""
+        with self.assertRaises(ValueError):
+            limits_for_period({"additional": 5_000})
+
+    def test_command_reports_a_clean_sync(self):
+        out = StringIO()
+
+        call_command("sync_fpl_values", stdout=out)
+
+        self.assertIn("0 created, 0 updated, 0 deleted", out.getvalue())
+
+    def test_dry_run_reports_drift_and_exits_non_zero(self):
+        """--dry-run is usable as a drift alarm, so drift must fail the command."""
+        row = FederalPovertyLimitValue.objects.get(period="2026", household_size=4)
+        row.annual_limit = 1
+        row.save(update_fields=["annual_limit"])
+        err = StringIO()
+
+        with self.assertRaises(SystemExit) as raised:
+            call_command("sync_fpl_values", "--dry-run", stderr=err)
+        row.refresh_from_db()
+
+        self.assertEqual(raised.exception.code, 1)
+        self.assertIn("OUT OF DATE", err.getvalue())
+        self.assertEqual(row.annual_limit, 1, "dry run must not write")
+
+    def test_dry_run_is_quiet_and_succeeds_when_in_sync(self):
+        out = StringIO()
+
+        call_command("sync_fpl_values", "--dry-run", stdout=out)
+
+        self.assertIn("up to date", out.getvalue())
+
+    def test_dry_run_counts_match_a_real_sync(self):
+        """The preview and the write share one diff, so they cannot disagree.
+
+        A separate preview implementation would drift from the real one and start
+        lying about what a sync would do -- the point of threading dry_run through
+        sync_fpl_values rather than recomputing the diff in the command.
+        """
+        FederalPovertyLimitValue.objects.filter(period="2026", household_size__in=[4, 5]).delete()
+        row = FederalPovertyLimitValue.objects.get(period="2025", household_size=1)
+        row.annual_limit = 1
+        row.save(update_fields=["annual_limit"])
+        FederalPovertyLimitValue.objects.create(period="1999", household_size=1, annual_limit=1)
+
+        previewed = sync_fpl_values(dry_run=True)
+        actual = sync_fpl_values()
+
+        self.assertEqual(previewed, {"created": 2, "updated": 1, "deleted": 1})
+        self.assertEqual(previewed, actual)
+
+    def test_dry_run_writes_nothing(self):
+        FederalPovertyLimitValue.objects.filter(period="2026").delete()
+        before = FederalPovertyLimitValue.objects.count()
+
+        sync_fpl_values(dry_run=True)
+
+        self.assertEqual(FederalPovertyLimitValue.objects.count(), before)
+
+
+class SwitchKsMo211ReferrersMigrationTests(TestCase):
+    """Covers migration 0189's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0189_add_211ks_211mo_referrers")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        self.ks = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        self.mo = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        for white_label, codes in ((self.ks, ("uwgkc", "uwplains")), (self.mo, ("uwgkc", "uwgsl"))):
+            for code in codes:
+                Referrer.objects.create(
+                    white_label=white_label, referrer_code=code, name=code, show_in_dropdown=True, is_partner=True
+                )
+
+    def _referrer(self, white_label: WhiteLabel, code: str) -> Referrer:
+        return Referrer.objects.get(white_label=white_label, referrer_code=code)
+
+    def test_adds_a_visible_partner_referrer_per_state(self) -> None:
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        for white_label, code, name in ((self.ks, "211ks", "2-1-1 Kansas"), (self.mo, "211mo", "2-1-1 Missouri")):
+            with self.subTest(code=code):
+                referrer = self._referrer(white_label, code)
+                self.assertEqual(referrer.name, name)
+                self.assertTrue(referrer.show_in_dropdown)
+                self.assertTrue(referrer.is_partner)
+
+    def test_hides_the_retired_referrers_without_deleting_them(self) -> None:
+        """Dashboards name past screens' partner from these rows, so they must survive."""
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        for white_label, code in ((self.ks, "uwgkc"), (self.ks, "uwplains"), (self.mo, "uwgkc"), (self.mo, "uwgsl")):
+            with self.subTest(white_label=white_label.code, code=code):
+                self.assertFalse(self._referrer(white_label, code).show_in_dropdown)
+
+    def test_keeps_an_existing_row_untouched(self) -> None:
+        Referrer.objects.create(
+            white_label=self.ks, referrer_code="211ks", name="Admin name", show_in_dropdown=False, is_partner=True
+        )
+
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        referrer = self._referrer(self.ks, "211ks")
+        self.assertEqual(referrer.name, "Admin name")
+        self.assertFalse(referrer.show_in_dropdown)
+
+    def test_reverse_restores_the_previous_menu(self) -> None:
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        self.migration.restore_referrers(global_apps, self.schema_editor)
+
+        self.assertFalse(Referrer.objects.filter(referrer_code__in=["211ks", "211mo"]).exists())
+        self.assertTrue(self._referrer(self.ks, "uwgkc").show_in_dropdown)
+        self.assertTrue(self._referrer(self.mo, "uwgsl").show_in_dropdown)
+
+    def test_reverse_keeps_a_new_referrer_that_screens_carry(self) -> None:
+        """Deleting it would turn those screens' dashboard partner into "Other"."""
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+        Screen.objects.create(white_label=self.ks, referrer_code="211ks", completed=False)
+
+        self.migration.restore_referrers(global_apps, self.schema_editor)
+
+        self.assertTrue(Referrer.objects.filter(white_label=self.ks, referrer_code="211ks").exists())
+        self.assertFalse(Referrer.objects.filter(white_label=self.mo, referrer_code="211mo").exists())
+
+    def test_hides_retired_referrers_on_every_white_label_with_the_code(self) -> None:
+        """The referral-options endpoint reads every white label with the code, not just the oldest."""
+        duplicate = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        Referrer.objects.create(
+            white_label=duplicate, referrer_code="uwgkc", name="uwgkc", show_in_dropdown=True, is_partner=True
+        )
+
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        self.assertFalse(self._referrer(duplicate, "uwgkc").show_in_dropdown)
+
+    def test_skips_a_database_without_the_white_labels(self) -> None:
+        Referrer.objects.all().delete()
+        WhiteLabel.objects.filter(code__in=["ks", "mo"]).delete()
+
+        self.migration.switch_referrers(global_apps, self.schema_editor)
+
+        self.assertFalse(Referrer.objects.exists())
+
+
+class Add211njReferrerMigrationTests(TestCase):
+    """Covers migration 0208's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0208_add_211nj_referrer")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        self.nj, _ = WhiteLabel.objects.get_or_create(code="nj", defaults={"name": "New Jersey", "state_code": "NJ"})
+
+    def test_adds_a_hidden_partner_referrer(self) -> None:
+        """Hidden until launch so an unlaunched partner isn't offered to every NJ user."""
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        referrer = Referrer.objects.get(white_label=self.nj, referrer_code="211nj")
+        self.assertEqual(referrer.name, "2-1-1 New Jersey")
+        self.assertTrue(referrer.is_partner)
+        self.assertFalse(referrer.show_in_dropdown)
+
+    def test_is_idempotent(self) -> None:
+        self.migration.add_referrer(global_apps, self.schema_editor)
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        self.assertEqual(Referrer.objects.filter(white_label=self.nj, referrer_code="211nj").count(), 1)
+
+    def test_keeps_an_existing_row_untouched(self) -> None:
+        """An admin edit, such as flipping show_in_dropdown at launch, must survive a re-run."""
+        Referrer.objects.create(
+            white_label=self.nj, referrer_code="211nj", name="Admin name", show_in_dropdown=True, is_partner=True
+        )
+
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        referrer = Referrer.objects.get(white_label=self.nj, referrer_code="211nj")
+        self.assertEqual(referrer.name, "Admin name")
+        self.assertTrue(referrer.show_in_dropdown)
+
+    def test_skips_a_database_without_the_white_label(self) -> None:
+        Referrer.objects.all().delete()
+        WhiteLabel.objects.filter(code="nj").delete()
+
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        self.assertFalse(Referrer.objects.exists())
+
+
+class NavigatorEmailNoAutoMigrationTests(TestCase):
+    """Covers migration 0197's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0197_navigator_email_no_auto")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+
+    def _navigator_email(self, texts: dict[str, str]) -> Translation:
+        """A navigator email as it was before the fix: auto-translatable, with these rows."""
+        email = Navigator.objects.new_navigator("co", f"nav_{Navigator.objects.count()}").email
+        Translation.objects.filter(pk=email.pk).update(no_auto=False)
+        for lang, text in texts.items():
+            email.set_current_language(lang)
+            email.text = text
+            email.save()
+        return Translation.objects.get(pk=email.pk)
+
+    def _texts(self, translation: Translation) -> dict[str, str]:
+        return {row.language_code: row.text for row in translation.translations.all()}
+
+    def test_copies_english_over_machine_translations(self) -> None:
+        email = self._navigator_email(
+            {"en-us": "information@example.org", "es": "información@example.org", "ne": "information@example.org मा"}
+        )
+
+        self.migration.forwards(global_apps, self.schema_editor)
+
+        email.refresh_from_db()
+        self.assertTrue(email.no_auto)
+        self.assertEqual(set(self._texts(email).values()), {"information@example.org"})
+        self.assertFalse(email.translations.filter(edited=True).exclude(language_code="en-us").exists())
+
+    def test_blank_english_is_only_marked_no_auto(self) -> None:
+        """A placeholder English row has no address to copy, so the others are left alone."""
+        email = self._navigator_email({"es": "algo@example.org"})
+
+        self.migration.forwards(global_apps, self.schema_editor)
+
+        email.refresh_from_db()
+        self.assertTrue(email.no_auto)
+        self.assertEqual(self._texts(email)["es"], "algo@example.org")
+
+    def test_leaves_other_translations_alone(self) -> None:
+        other = Translation.objects.add_translation("unrelated.label", "Hello")
+        other.set_current_language("es")
+        other.text = "Hola"
+        other.save()
+
+        self.migration.forwards(global_apps, self.schema_editor)
+
+        other.refresh_from_db()
+        self.assertFalse(other.no_auto)
+        self.assertEqual(self._texts(other)["es"], "Hola")
+
+
+class ProgramYearTypeSaveTests(TestCase):
+    """Program.save() derives `year` from `year_type` (MFB-564) so the two fields
+    can't drift apart, whether the save comes from the admin, a script, or the
+    set_year_type command. Bulk .update() still bypasses this, same caveat as the
+    name_abbreviated normalization above."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        # 0171_seed_dynamic_fpl_rows already seeds these into every migrated DB
+        # (including the test DB), so get_or_create rather than assuming a clean
+        # slate -- same reason that migration itself uses get_or_create.
+        self.calendar_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
+        )
+        self.fiscal_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_FISCAL", defaults={"period": "2025"}
+        )
+
+    def test_calendar_year_points_at_this_year_calendar(self):
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "calendar_year"
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, self.calendar_fpl.id)
+
+    def test_fiscal_year_points_at_this_year_fiscal(self):
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "fiscal_year"
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, self.fiscal_fpl.id)
+
+    def test_hardcoded_leaves_year_untouched(self):
+        hardcoded_fpl = FederalPoveryLimit.objects.create(year="2024", period="2024")
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "hardcoded"
+        program.year = hardcoded_fpl
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, hardcoded_fpl.id)
+
+    def test_changing_year_type_repoints_year(self):
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        self.assertIsNone(program.year_id)
+
+        program.year_type = "calendar_year"
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, self.calendar_fpl.id)
+
+        program.year_type = "fiscal_year"
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, self.fiscal_fpl.id)
+
+    def test_demoting_to_hardcoded_freezes_at_the_current_period(self):
+        """A program demoted back to hardcoded must not keep riding whatever
+        shared dynamic row it was last synced to, or it silently keeps moving
+        every time an admin rolls that row's year forward while looking
+        "hardcoded" (and therefore fixed) in the admin. It also must not be
+        left with no year at all, that 500s PolicyEngine calculators that read
+        program.year.period, so it freezes at the row matching the dynamic
+        row's current period instead."""
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "calendar_year"
+        program.save()
+        program.refresh_from_db()
+        self.assertEqual(program.year_id, self.calendar_fpl.id)
+
+        program.year_type = "hardcoded"
+        program.save()
+        program.refresh_from_db()
+        self.assertIsNotNone(program.year_id)
+        self.assertEqual(program.year.year, self.calendar_fpl.period)
+        self.assertEqual(program.year.period, self.calendar_fpl.period)
+
+    def test_hardcoded_pointing_at_a_dynamic_row_fails_clean(self):
+        """The admin case: year_type is still "hardcoded" but the year dropdown
+        was set directly to a dynamic row. save() can't silently correct this
+        out from under the admin the way it does for a programmatic demotion
+        (set_year_type never calls clean()), so clean() must reject it."""
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "hardcoded"
+        program.year = self.calendar_fpl
+
+        with self.assertRaises(ValidationError):
+            program.clean()
+
+
+class FederalPovertyLimitPeriodValidationTests(TestCase):
+    """FederalPoveryLimit.save() validates `period` up front (MFB-564 finding #5).
+    Without this, an unrecognised period saves fine and only fails later, as a bare
+    KeyError, deep inside eligibility calculation for every program on that row."""
+
+    def test_known_period_saves(self):
+        fpl = FederalPoveryLimit(year="2099", period="2026")
+        fpl.save()
+        self.assertTrue(FederalPoveryLimit.objects.filter(year="2099").exists())
+
+    def test_unknown_period_is_rejected_at_save(self):
+        fpl = FederalPoveryLimit(year="2099", period="1899")
+        with self.assertRaises(ValidationError):
+            fpl.save()
+        self.assertFalse(FederalPoveryLimit.objects.filter(year="2099").exists())
+
+
+class ProgramDataControllerDynamicFplTests(TestCase):
+    """ProgramDataController.from_model_data must not let one program's
+    (possibly stale) exported snapshot roll back a shared dynamic FPL row's
+    period for every other program pointing at it (MFB-564 finding #6)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.calendar_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
+        )
+        self.program = Program.objects.new_program(self.white_label.code, "snap")
+        self.program.year_type = "calendar_year"
+        self.program.save()
+
+    def test_stale_snapshot_does_not_roll_back_shared_period(self):
+        builder = self.program.TranslationExportBuilder(self.program)
+        data = builder.to_model_data()
+        # Simulate re-importing a snapshot exported back when the shared row's
+        # period was still "2025".
+        data["fpl"]["period"] = "2025"
+
+        builder.from_model_data(data)
+
+        self.calendar_fpl.refresh_from_db()
+        self.assertEqual(self.calendar_fpl.period, "2026")
+        self.program.refresh_from_db()
+        self.assertEqual(self.program.year_id, self.calendar_fpl.id)
+
+    def test_hardcoded_row_period_can_still_be_corrected(self):
+        hardcoded_fpl = FederalPoveryLimit.objects.create(year="2024", period="2024")
+        self.program.year_type = "hardcoded"
+        self.program.year = hardcoded_fpl
+        self.program.save()
+
+        builder = self.program.TranslationExportBuilder(self.program)
+        data = builder.to_model_data()
+        data["fpl"]["period"] = "2023"
+
+        builder.from_model_data(data)
+
+        hardcoded_fpl.refresh_from_db()
+        self.assertEqual(hardcoded_fpl.period, "2023")
+
+
+class ProgramDataControllerYearTypeRoundTripTests(TestCase):
+    """to_model_data()/from_model_data() must round-trip year_type, not just
+    `year`. Without it, recreating a program from an exported snapshot (e.g.
+    restoring into an empty DB) silently defaults year_type to "hardcoded"
+    even though `year` gets correctly restored from `fpl`, the same
+    year_type/year mismatch findings #6/#9 were about, via a different path."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.calendar_fpl, _ = FederalPoveryLimit.objects.get_or_create(
+            year="THIS_YEAR_CALENDAR", defaults={"period": "2026"}
+        )
+
+    def test_export_then_import_preserves_year_type(self):
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        program.year_type = "calendar_year"
+        program.save()
+
+        builder = program.TranslationExportBuilder(program)
+        data = builder.to_model_data()
+        self.assertEqual(data["year_type"], "calendar_year")
+
+        # Simulate this program getting deleted, then recreated from its last
+        # exported snapshot, e.g. a restore into an empty DB. from_model_data
+        # also restores name_abbreviated from the snapshot, so the recreated
+        # instance must reuse the same name, not a different one, or it'd
+        # collide with the (still existing) original instead of testing this.
+        program.delete()
+        fresh = Program.objects.new_program(self.white_label.code, "snap")
+        builder = fresh.TranslationExportBuilder(fresh)
+        builder.from_model_data(data)
+
+        fresh.refresh_from_db()
+        self.assertEqual(fresh.year_type, "calendar_year")
+        self.assertEqual(fresh.year_id, self.calendar_fpl.id)
+
+    def test_snapshot_without_year_type_defaults_to_hardcoded(self):
+        """Backward compatibility: an older snapshot exported before this field
+        existed has no "year_type" key at all."""
+        program = Program.objects.new_program(self.white_label.code, "snap")
+        builder = program.TranslationExportBuilder(program)
+        data = builder.to_model_data()
+        del data["year_type"]
+
+        builder.from_model_data(data)
+
+        program.refresh_from_db()
+        self.assertEqual(program.year_type, "hardcoded")
+
+
+class NavigatorDataControllerAssistantNotesTests(TestCase):
+    """`assistant_notes` (MFB-2364) travels with the navigator's exported snapshot, so
+    notes written in prod reach staging and local through the usual import."""
+
+    def setUp(self) -> None:
+        WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        self.navigator = Navigator.objects.new_navigator("co", "phone_only")
+        self.navigator.assistant_notes = "Helps by phone only."
+        self.navigator.save()
+
+    def test_export_then_import_preserves_notes(self) -> None:
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        self.assertEqual(data["assistant_notes"], "Helps by phone only.")
+
+        fresh = Navigator.objects.new_navigator("co", "fresh")
+        fresh.TranslationExportBuilder(fresh).from_model_data(data)
+
+        fresh.refresh_from_db()
+        self.assertEqual(fresh.assistant_notes, "Helps by phone only.")
+
+    def test_a_round_trip_keeps_links_made_after_the_ordering_migration(self) -> None:
+        """The admin inline and the record import write only `ProgramNavigator`. A snapshot read
+        from the legacy `programs` table left those links out, and its import deleted them."""
+        program = Program.objects.new_program("co", "co_linked")
+        program.external_name = "co_linked"
+        program.save()
+        ProgramNavigator.objects.create(program=program, navigator=self.navigator, order=3)
+        self.assertFalse(self.navigator.programs.exists())
+
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.assertEqual(data["program_links"], [{"external_name": "co_linked", "order": 3}])
+        self.assertNotIn("programs", data)
+        link = ProgramNavigator.objects.get(program=program, navigator=self.navigator)
+        self.assertEqual(link.order, 3)
+
+    def link(self, name: str) -> Program:
+        program = Program.objects.new_program("co", name)
+        program.external_name = name
+        program.save()
+        ProgramNavigator.objects.create(program=program, navigator=self.navigator)
+        return program
+
+    def test_an_older_snapshot_leaves_links_alone(self) -> None:
+        """An older snapshot lists only the legacy table: it misses links made since the ordering
+        migration and still holds links removed in the admin since, so it neither adds nor removes."""
+        kept = self.link("co_kept")
+        removed_in_admin = Program.objects.new_program("co", "co_removed")
+        removed_in_admin.external_name = "co_removed"
+        removed_in_admin.save()
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        del data["program_links"]
+        data["programs"] = ["co_removed"]
+
+        with self.assertLogs("programs.models", level="INFO") as logs:
+            self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        linked = set(ProgramNavigator.objects.filter(navigator=self.navigator).values_list("program", flat=True))
+        self.assertEqual(linked, {kept.pk})
+        self.assertIn("predates program_links", logs.output[0])
+
+    def test_a_snapshot_with_program_links_removes_a_link_it_leaves_out(self) -> None:
+        dropped = self.link("co_dropped")
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        data["program_links"] = []
+
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.assertFalse(ProgramNavigator.objects.filter(navigator=self.navigator, program=dropped).exists())
+
+    def test_snapshot_without_notes_leaves_existing_notes_alone(self) -> None:
+        """An older snapshot, exported before the field existed, has no key at all.
+        Importing it must not wipe notes written since."""
+        data = self.navigator.TranslationExportBuilder(self.navigator).to_model_data()
+        del data["assistant_notes"]
+
+        self.navigator.TranslationExportBuilder(self.navigator).from_model_data(data)
+
+        self.navigator.refresh_from_db()
+        self.assertEqual(self.navigator.assistant_notes, "Helps by phone only.")
+
+    def test_notes_stay_off_the_navigator_api(self) -> None:
+        """The partner-facing navigator endpoint serializes every other field; staff
+        guidance for Benji is not API data."""
+        data = NavigatorAPISerializer(self.navigator).data
+
+        self.assertNotIn("assistant_notes", data)
+        self.assertIn("phone_number", data)
+
+    def test_admin_rejects_notes_with_contact_details(self) -> None:
+        for notes in (
+            "Call (303) 555-0100 instead.",
+            "Call 555-0100 instead.",
+            "Call 5550100 instead.",
+            "Call +44 20 7946 0958 instead.",
+            "Email intake@example.org for help.",
+            "Apply at benefitsinaction.org.",
+            "See https://example.org/help.",
+        ):
+            with self.assertRaises(ValidationError, msg=notes):
+                Navigator._meta.get_field("assistant_notes").clean(notes, self.navigator)
+
+    def test_admin_accepts_notes_without_contact_details(self) -> None:
+        notes = "Helps by phone only. Closed Dec 24 to Jan 3 for the 2025-2026 move. Dial 2-1-1."
+
+        Navigator._meta.get_field("assistant_notes").clean(notes, self.navigator)
+
+
+class NavigatorDataControllerCountyTests(TestCase):
+    """A navigator moved to `federal` keeps its state's counties through a snapshot round trip."""
+
+    def setUp(self) -> None:
+        self.ks = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        self.federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        self.clay = County.objects.create(name="Clay County", white_label=self.ks)
+        self.navigator = Navigator.objects.new_navigator("ks", "lifeline_copy")
+        self.navigator.counties.add(self.clay)
+        Navigator.objects.filter(pk=self.navigator.pk).update(white_label=self.federal)
+        self.navigator.refresh_from_db()
+
+    def builder(self) -> "Navigator.TranslationExportBuilder":
+        return self.navigator.TranslationExportBuilder(self.navigator)
+
+    def test_a_round_trip_keeps_the_state_county(self) -> None:
+        data = self.builder().to_model_data()
+        self.assertEqual(data["counties"], [{"name": "Clay County", "white_label": "ks"}])
+
+        self.builder().from_model_data(data)
+
+        self.assertEqual(list(self.navigator.counties.all()), [self.clay])
+        self.assertFalse(County.objects.filter(white_label=self.federal).exists())
+
+    def test_an_older_snapshot_reuses_a_county_the_navigator_has(self) -> None:
+        data = self.builder().to_model_data()
+        data["counties"] = [{"name": "Clay County"}]
+
+        self.builder().from_model_data(data)
+
+        self.assertEqual(list(self.navigator.counties.all()), [self.clay])
+        self.assertFalse(County.objects.filter(white_label=self.federal).exists())
+
+    def test_a_county_named_under_a_white_label_it_lacks_is_created_there(self) -> None:
+        data = self.builder().to_model_data()
+        data["counties"] = [{"name": "Platte County", "white_label": "ks"}]
+
+        self.builder().from_model_data(data)
+
+        created = self.navigator.counties.get()
+        self.assertEqual((created.name, created.white_label.code), ("Platte County", "ks"))

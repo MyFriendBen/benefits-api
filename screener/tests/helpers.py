@@ -5,13 +5,214 @@ join-table lookup will need, then write CurrentBenefit rows directly (or via the
 `current_benefits: [...]` serializer payload) for the screen under test.
 """
 
-from programs.models import Program
+from django.conf import settings
+
+from programs.allowed_values import unknown_warning_calculator
+from programs.models import (
+    County,
+    Document,
+    Navigator,
+    NavigatorLanguage,
+    ProgramNavigator,
+    ExpenseType,
+    Program,
+    UrgentNeed,
+    UrgentNeedCategory,
+    UrgentNeedFunction,
+    UrgentNeedType,
+    WarningMessage,
+)
 from screener.models import WhiteLabel
+from translations.models import Translation
 
 
-def seed_program(white_label: WhiteLabel, *name_abbreviateds: str) -> None:
+def seed_program(
+    white_label: WhiteLabel, *name_abbreviateds: str, base_program: str | None = None, active: bool = False
+) -> None:
     """Create one or more Programs (with required Translation FKs) so the
     join-table read path can resolve `program__name_abbreviated=name`. Thin
-    wrapper around the canonical `Program.objects.new_program` manager method."""
+    wrapper around the canonical `Program.objects.new_program` manager method.
+
+    `new_program` leaves `base_program` unset, so pass `base_program=` when the code
+    under test resolves variants structurally (e.g. `has_base_benefit`). It also creates
+    the program switched off; pass `active=True` when the code under test reads only
+    live programs (e.g. the SSI derive)."""
     for name in name_abbreviateds:
-        Program.objects.new_program(white_label.code, name)
+        program = Program.objects.new_program(white_label.code, name)
+        if base_program is not None or active:
+            if base_program is not None:
+                program.base_program = base_program
+            program.active = active
+            program.save()
+
+
+def _set_default_text(translation, text: str) -> None:
+    """Write a parler Translation's text in the DEFAULT language, explicitly.
+
+    `Translation.objects.add_translation` creates a row per supported language and
+    leaves parler's active language on whichever it wrote last (currently 'ht'), so
+    assigning `.text` straight after it silently lands in that language instead of
+    English — and the assistant context, which resolves through the screen language
+    then falls back to `settings.LANGUAGE_CODE`, reads back "".
+    """
+    translation.set_current_language(settings.LANGUAGE_CODE)
+    translation.text = text
+    translation.save()
+
+
+def seed_document(program: Program, external_name: str, text: str) -> Document:
+    """Attach a Document to `program` with its `text` translation filled in.
+
+    `Document.objects.new_document` creates the three Translation rows with text="",
+    which the assistant context treats as "no value" — so callers that want the
+    document to actually appear have to set the text. This does both.
+
+    `link_url` and `link_text` are deliberately left blank: the assistant must never
+    receive a document URL, and a test asserting that is stronger when the row it's
+    reading from has one. Pass them explicitly on the returned object when a test
+    needs them populated.
+    """
+    document = Document.objects.new_document(program.white_label.code, external_name)
+    _set_default_text(document.text, text)
+    program.documents.add(document)
+    return document
+
+
+def seed_warning(
+    program: Program,
+    calculator: str,
+    message: str,
+    *,
+    external_name: str | None = None,
+    county_names: tuple[str, ...] = (),
+) -> WarningMessage:
+    """Attach a WarningMessage driven by `calculator` to `program`.
+
+    Same translation caveat as `seed_document`. `county_names` creates the County rows
+    and links them, which is how `WarningCalculator.county_eligible` is gated — an
+    empty tuple means "all counties", matching the model's `county_names` property.
+    """
+    registered = not unknown_warning_calculator(calculator)
+    warning = WarningMessage.objects.new_warning(
+        program.white_label.code, calculator if registered else "_show", external_name=external_name or calculator
+    )
+    if not registered:
+        # A warning whose calculator was renamed or removed in code after the row was saved. Saving
+        # refuses an unknown name now, so the row is put in that state directly.
+        WarningMessage.objects.filter(pk=warning.pk).update(calculator=calculator)
+        warning.refresh_from_db()
+    _set_default_text(warning.message, message)
+    for county_name in county_names:
+        county, _ = County.objects.get_or_create(white_label=program.white_label, name=county_name)
+        warning.counties.add(county)
+    warning.programs.add(program)
+    return warning
+
+
+def seed_urgent_need(
+    white_label: WhiteLabel,
+    external_name: str,
+    *,
+    category: str,
+    category_type: str = "Food Resources",
+    name: str = "",
+    description: str = "",
+    link: str = "",
+    phone_number: str = "",
+    county_names: tuple[str, ...] = (),
+    expense_types: tuple[str, ...] = (),
+    functions: tuple[str, ...] = (),
+    active: bool = True,
+) -> UrgentNeed:
+    """Create an active UrgentNeed in `category`, with its translations filled in.
+
+    `category` is the `UrgentNeedCategory.name` the immediate-needs step writes
+    (`"food"`, `"housing"`, ...) — the same string `NEED_CATEGORY_FIELDS` keys on.
+    `category_type` is the display grouping the card shows above the name; it is a
+    different model (`UrgentNeedType`) and defaults to something plausible so callers
+    that don't care about the heading can ignore it.
+
+    `UrgentNeed.objects.new_urgent_need` creates every translation as
+    BLANK_TRANSLATION_PLACEHOLDER (or "" for `notification_message`), which both
+    consumers treat as "no value", so anything a test wants to read back has to be
+    written here.
+    """
+    need = UrgentNeed.objects.new_urgent_need(white_label.code, external_name, phone_number)
+    need.active = active
+
+    need_type, _ = UrgentNeedType.objects.get_or_create(
+        white_label=white_label,
+        external_name=category_type,
+        defaults={"name": Translation.objects.add_translation(f"urgent_need_type.{category_type}-name")},
+    )
+    _set_default_text(need_type.name, category_type)
+    need.category_type = need_type
+    need.save()
+
+    short, _ = UrgentNeedCategory.objects.get_or_create(name=category)
+    need.type_short.add(short)
+
+    for field, text in (("name", name), ("description", description), ("link", link)):
+        if text:
+            _set_default_text(getattr(need, field), text)
+
+    for county_name in county_names:
+        county, _ = County.objects.get_or_create(white_label=white_label, name=county_name)
+        need.counties.add(county)
+
+    for expense_type in expense_types:
+        expense, _ = ExpenseType.objects.get_or_create(name=expense_type)
+        need.required_expense_types.add(expense)
+
+    for function_name in functions:
+        function, _ = UrgentNeedFunction.objects.get_or_create(name=function_name)
+        need.functions.add(function)
+
+    return need
+
+
+def seed_navigator(
+    program: Program,
+    external_name: str,
+    *,
+    name: str = "",
+    description: str = "",
+    email: str = "",
+    link: str = "",
+    phone_number: str = "",
+    county_names: tuple[str, ...] = (),
+    language_codes: tuple[str, ...] = (),
+    eligibility_programs: tuple[Program, ...] = (),
+    order: int = 999,
+    assistant_notes: str = "",
+) -> Navigator:
+    """Attach a Navigator to `program` through the ordered through table, with its
+    translations filled in.
+
+    `Navigator.objects.new_navigator` creates every translation as
+    BLANK_TRANSLATION_PLACEHOLDER, which both the results view and the assistant treat
+    as "no value", so anything a test wants to read back has to be written here. The
+    link goes through `ProgramNavigator` (not the legacy `programs` M2M) because that is
+    the table both consumers read.
+    """
+    navigator = Navigator.objects.new_navigator(program.white_label.code, external_name, phone_number or None)
+    for field, text in (("name", name), ("description", description), ("email", email), ("assistance_link", link)):
+        if text:
+            _set_default_text(getattr(navigator, field), text)
+    if assistant_notes:
+        navigator.assistant_notes = assistant_notes
+        navigator.save(update_fields=["assistant_notes"])
+
+    for county_name in county_names:
+        county, _ = County.objects.get_or_create(white_label=program.white_label, name=county_name)
+        navigator.counties.add(county)
+
+    for code in language_codes:
+        language, _ = NavigatorLanguage.objects.get_or_create(code=code)
+        navigator.languages.add(language)
+
+    for required in eligibility_programs:
+        navigator.eligibility_programs.add(required)
+
+    ProgramNavigator.objects.create(program=program, navigator=navigator, order=order)
+    return navigator

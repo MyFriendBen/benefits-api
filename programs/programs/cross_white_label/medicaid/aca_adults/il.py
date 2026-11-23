@@ -1,0 +1,65 @@
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
+from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIncomeCheckMixin
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
+
+
+class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
+    program_code = "il_aca_adults"
+    # PolicyEngine-backed, and a genuine dependency rather than a proxied income test:
+    # the rule is about whether Medicaid already covers this household, which is not
+    # reducible to a condition on the household's own facts. PE resolves it through a
+    # dozen category tests, so there is nothing to restate.
+    #
+    # The two sibling gates are mutual exclusion, not a shared threshold: ACA Adults is
+    # the leftover category for adults FamilyCare and Moms & Babies do not reach, so
+    # "not eligible for either" is the rule itself. Both siblings are custom calculators
+    # and are force-calculated, but each gates on il_medicaid in turn, so they resolve
+    # only when PolicyEngine answered.
+    gates_on = ("il_medicaid", "il_family_care", "il_moms_and_babies")
+    member_amount = 474 * 12  # $474/month
+    min_age = 19
+    max_age = 64
+    caretaker_roles = [
+        HEAD_OF_HOUSEHOLD_RELATIONSHIP,
+        "spouse",
+        "domesticPartner",
+        "parent",
+        "fosterParent",
+    ]
+    dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
+
+    def household_eligible(self, e: Eligibility):
+        # Must have base Medicaid eligibility
+        e.condition(self.program_eligible("il_medicaid"), messages.must_have_benefit("Medicaid"))
+
+        # Check income against 138% FPL (includes 5% disregard)
+        self.check_fpl_income(e, 1.38)
+
+        # Must NOT be eligible for FamilyCare
+        e.condition(not self.program_eligible("il_family_care"), messages.must_not_have_benefit("FamilyCare"))
+
+        # Must NOT be eligible for Moms & Babies
+        e.condition(not self.program_eligible("il_moms_and_babies"), messages.must_not_have_benefit("Moms & Babies"))
+
+    def member_eligible(self, e: MemberEligibility):
+        member = e.member
+
+        # Must be age 19-64
+        age = member.calc_age()
+        e.condition(age >= self.min_age and age <= self.max_age)
+
+        # Must NOT be pregnant
+        e.condition(not member.pregnant)
+
+        # Must NOT be a parent/caretaker of children
+        is_caretaker = member.relationship in self.caretaker_roles
+        has_children = (
+            self.screen.num_children(age_max=18, child_relationship=["child", "fosterChild", "stepChild", "grandChild"])
+            > 0
+        )
+
+        e.condition(not (is_caretaker and has_children))
+
+        # Must not have Medicaid
+        e.condition(not member.has_insurance("medicaid"))

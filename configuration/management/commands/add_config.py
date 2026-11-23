@@ -4,8 +4,8 @@ from django.db import transaction
 from configuration.models import (
     Configuration,
 )
-from configuration.white_labels import white_label_config
-from screener.models import NPSScore
+from configuration.white_labels import state_options, white_label_config
+from programs.allowed_values import legal_status_options, navigator_language_options
 import argparse
 
 
@@ -90,12 +90,31 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.results_survey, "active": True},
             )
 
+            # Save the state dropdown's options to database, derived from the white label registry
+            Configuration.objects.update_or_create(
+                name="state_options",
+                white_label=white_label,
+                defaults={"data": state_options(), "active": True},
+            )
+
             # Save override_text to database
             Configuration.objects.update_or_create(
                 name="override_text",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.override_text, "active": True},
             )
+
+            # The same for every white label: each is one definition in code that the screener reads
+            # instead of keeping its own copy.
+            for name, data in (
+                ("legal_status_options", legal_status_options()),
+                ("navigator_language_options", navigator_language_options()),
+            ):
+                Configuration.objects.update_or_create(
+                    name=name,
+                    white_label=white_label,
+                    defaults={"data": data, "active": True},
+                )
 
             if WhiteLabelData.is_default:
                 continue
@@ -191,6 +210,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.expense_options_by_category, "active": True},
             )
 
+            # Save energy_calculator_expense_options to database
+            Configuration.objects.update_or_create(
+                name="energy_calculator_expense_options",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.energy_calculator_expense_options, "active": True},
+            )
+
             # Save condition_options to database
             Configuration.objects.update_or_create(
                 name="condition_options",
@@ -203,13 +229,6 @@ class Command(BaseCommand):
                 name="counties_by_zipcode",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.counties_by_zipcode, "active": True},
-            )
-
-            # Save category_benefits to database
-            Configuration.objects.update_or_create(
-                name="category_benefits",
-                white_label=white_label,
-                defaults={"data": WhiteLabelData.category_benefits, "active": True},
             )
 
             # Save consent_to_contact to database

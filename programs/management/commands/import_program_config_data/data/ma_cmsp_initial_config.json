@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "ma"},
-    "program_category": {"external_name": "ma_health_care"},
+    "program_category": {"external_name": "health_care"},
     "program": {
         "name_abbreviated": "ma_cmsp",
         "year": "2026",

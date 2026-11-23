@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_family_planning_league",
+    "category_type": {
+      "external_name": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "NJ Family Planning League",
+      "description": "The NJ Family Planning League connects you to family planning clinics across New Jersey. No one is turned away for care. Use the locator, then call a clinic. Call 973-622-2425 during business hours.",
+      "link": "https://njfpl.org",
+      "warning": "",
+      "website_description": "Learn about family planning and sexual health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

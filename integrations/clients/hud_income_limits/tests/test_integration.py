@@ -2,8 +2,7 @@
 Integration tests for HUD API client.
 
 These tests use VCR to record/replay HTTP interactions:
-- In CI (PRs): Records new interactions only (VCR_MODE=new_episodes)
-- In CI (push to main): Re-records ALL cassettes to verify API interface (VCR_MODE=all)
+- In CI (PRs, staging and production deploys): Replays cassettes only, never records (VCR_MODE=none)
 - Locally: Uses cassettes by default (VCR_MODE=once), records new ones if missing
 - Force re-record all: VCR_MODE=all pytest -m integration
 
@@ -15,14 +14,16 @@ Skip integration tests with: pytest -m "not integration"
 
 import time
 import pytest
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.core.cache import cache
+from benefits.tests.cache_override import LOCAL_CACHE
 
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from screener.models import Screen, WhiteLabel
 
 
 @pytest.mark.integration
+@override_settings(CACHES=LOCAL_CACHE)
 class TestHudIntegrationMTSP(TestCase):
     """Integration tests for MTSP (Multifamily Tax Subsidy Project) endpoint."""
 
@@ -147,6 +148,7 @@ class TestHudIntegrationMTSP(TestCase):
 
 
 @pytest.mark.integration
+@override_settings(CACHES=LOCAL_CACHE)
 class TestHudIntegrationStandardIL(TestCase):
     """Integration tests for Standard Section 8 Income Limits endpoint."""
 
@@ -292,6 +294,7 @@ class TestHudIntegrationStandardIL(TestCase):
 
 
 @pytest.mark.integration
+@override_settings(CACHES=LOCAL_CACHE)
 class TestHudIntegrationErrors(TestCase):
     """Integration tests for error conditions across both endpoints."""
 

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_task",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Trenton Area Soup Kitchen (TASK)",
+      "description": "The Trenton Area Soup Kitchen (TASK) serves meals with no questions asked. Walk in for lunch Monday to Saturday 10:30am-1pm, or dinner Monday to Thursday 3:30-5pm. Call 609-695-5456.",
+      "link": "https://trentonsoupkitchen.org/meal-service/",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

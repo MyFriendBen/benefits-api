@@ -1,0 +1,89 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "program_category": {
+    "external_name": "housing"
+  },
+  "program": {
+    "name_abbreviated": "il_hcv",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Housing Choice Voucher Program (Section 8)",
+    "description": "The Housing Choice Voucher Program helps households with low income pay rent. Local public housing agencies run the program. If you receive a voucher, you choose a home to rent, and your housing agency must approve it. The agency pays part of the rent directly to your landlord, and you pay the rest.\n\nRules and benefit amounts vary by local housing agency. Some agencies limit savings or property in ways this screener can't check. Others may accept households with higher income than this screener allows. It is still worth contacting your local agency even if your income seems too high here.\n\nAt least one person in your household must be a U.S. citizen or have an eligible immigration status. Households with members who do not have eligible status can still get help, but they receive less. The amount listed is an estimate. Your local housing agency will decide the actual amount.\n\nFar more households need vouchers than are available. Agencies serve some groups first, including people experiencing homelessness, working families, and veterans. They must also fill most openings with households that have the lowest incomes.\n\nTo apply, select \"Find your local housing agency\" and contact the agency serving your area.",
+    "description_short": "Help paying rent for households with low income",
+    "learn_more_link": "https://www.hud.gov/helping-americans/housing-choice-vouchers-tenants",
+    "apply_button_link": "https://www.hud.gov/contactus/public-housing-contacts",
+    "apply_button_description": "Find your local housing agency",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Help paying rent for households with low income",
+    "base_program": "section_8",
+    "value_format": "estimated_annual",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true,
+    "active": true,
+    "low_confidence": false
+  },
+  "documents": [
+    {
+      "external_name": "il_hcv_income_proof",
+      "text": "Proof of income, if requested (ex: pay stubs or benefit statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_hcv_us_status",
+      "text": "Proof of U.S. citizenship or eligible immigration status, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_hcv_ssn_proof",
+      "text": "Social Security card or other proof of Social Security number, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_benefit_proof"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "il_hud_housing_counseling",
+      "name": "HUD-Approved Housing Counseling",
+      "email": "housing.counseling@hud.gov",
+      "phone_number": "+18005694287",
+      "assistance_link": "https://www.hud.gov/stat/sfh/housing-counseling",
+      "description": "HUD-approved housing counselors can help with renting and other housing needs. This can help while you wait or if your local waiting list is closed.",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "il_211",
+      "name": "211 Illinois",
+      "email": "info@211illinois.org",
+      "assistance_link": "https://search.211illinois.org/",
+      "description": "211 Illinois helps you find local housing, food, utility, and other support. Call 211, text your ZIP code to 898211, or search online.",
+      "counties": [],
+      "languages": []
+    }
+  ],
+  "warning_messages": [
+    {
+      "external_name": "il_hcv_waitlist_closed",
+      "calculator": "_show",
+      "message": "The Chicago Housing Authority's Housing Choice Voucher waitlist is closed. It may reopen with as little as 10 days' notice. The agency's public housing and project-based voucher lists are open, and you can apply to them now. Other Illinois waitlists may be closed or have long waits. Check whether your area's list is open before you apply.",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}

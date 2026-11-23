@@ -1,4 +1,7 @@
+from programs.federal import filter_programs_by_name, visible_to_code
 from programs.models import Program, ProgramCategory, UrgentNeed, UrgentNeedType, Navigator
+from typing import Any
+
 from rest_framework import serializers
 from translations.serializers import ModelTranslationSerializer
 
@@ -6,7 +9,8 @@ from translations.serializers import ModelTranslationSerializer
 class NavigatorAPISerializer(serializers.ModelSerializer):
     class Meta:
         model = Navigator
-        fields = "__all__"
+        # Staff guidance for Benji (MFB-2364), not data for API clients.
+        exclude = ("assistant_notes",)
 
 
 class ProgramSerializerMeta:
@@ -54,8 +58,20 @@ class ProgramCategorySerializer(serializers.ModelSerializer):
         model = ProgramCategory
         fields = ("id", "name", "icon", "programs")
 
-    def get_programs(self, obj: ProgramCategory):
-        return ProgramSerializer(obj.programs.filter(active=True, show_on_current_benefits=True), many=True).data
+    def get_programs(self, obj: ProgramCategory) -> list[dict[str, Any]]:
+        # A shared category holds programs from every white label, so the
+        # requested white label has to be applied here too. Without it a
+        # category would list other states' programs.
+        programs = obj.programs.filter(active=True, show_on_current_benefits=True)
+
+        white_label = self.context.get("white_label")
+        if white_label is not None:
+            programs = filter_programs_by_name(
+                programs.filter(visible_to_code(white_label)).select_related("white_label"),
+                "current benefits categories",
+            )
+
+        return ProgramSerializer(programs, many=True).data
 
     def get_icon(self, obj: ProgramCategory):
         return obj.icon.name if obj.icon else "default"
@@ -81,8 +97,17 @@ class UrgentNeedTypeSerializer(serializers.ModelSerializer):
         model = UrgentNeedType
         fields = ("id", "name", "icon", "urgent_needs")
 
-    def get_urgent_needs(self, obj: UrgentNeedType):
-        return UrgentNeedSerializer(obj.urgent_needs.filter(active=True, show_on_current_benefits=True), many=True).data
+    def get_urgent_needs(self, obj: UrgentNeedType) -> list:
+        # A shared type holds urgent needs from every white label, so the
+        # requested white label has to be applied here too. Without it a type
+        # would list other states' urgent needs.
+        urgent_needs = obj.urgent_needs.filter(active=True, show_on_current_benefits=True)
+
+        white_label = self.context.get("white_label")
+        if white_label is not None:
+            urgent_needs = urgent_needs.filter(white_label__code=white_label)
+
+        return UrgentNeedSerializer(urgent_needs, many=True).data
 
 
 class HasBenefitsProgramSerializer(serializers.ModelSerializer):

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_urbanpromise",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "UrbanPromise After School (Camden)",
+      "description": "UrbanPromise After School in Camden is free for children in grades 1-8. It is first come, first served. Apply online. Open Monday to Thursday during the school year. Call 856-661-1700. It can take days to weeks.",
+      "link": "https://urbanpromiseusa.org/programs/afterschool/",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

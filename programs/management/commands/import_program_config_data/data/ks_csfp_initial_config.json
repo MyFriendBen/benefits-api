@@ -1,0 +1,118 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "food"
+  },
+  "program": {
+    "name_abbreviated": "ks_csfp",
+    "year": "2026",
+    "base_program": "csfp",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Commodity Supplemental Food Program (CSFP)",
+    "description": "The Commodity Supplemental Food Program is for people aged 60 and over. You get a free box of food each month. A box holds foods like cheese, milk, cereal, meat, fruit, vegetables, juice, and peanut butter or beans.\n\nA local food bank or community group packs your box. You pick it up at a distribution site. If you cannot leave home, someone can collect it for you, or your agency may be able to deliver it. CSFP does not pay cash. The dollar amount shown is based on the cost of the food and services provided.\n\nThe local agency makes the final decision. Tell them if you buy and cook your food separately from the people you live with. They may count only you. That means a lower income limit. They can also look at your income over the past year, not just this month. People in a nursing home cannot get CSFP.\n\nTo apply, find a local CSFP site. You will not need to prove your income. Once approved, you stay approved for three years. The agency checks in once a year.",
+    "description_short": "A free monthly box of food for people 60 and over",
+    "website_description": "A free monthly box of food for people 60 and over",
+    "learn_more_link": "https://www.dcf.ks.gov/services/ees/Pages/USDA-Commodity-Programs/CSFP/CSFP.aspx",
+    "apply_button_link": "https://www.dcf.ks.gov/services/ees/Pages/USDA-Commodity-Programs/CSFP/CSFP-FAQs.aspx",
+    "apply_button_description": "Find a Local Site",
+    "estimated_application_time": "10 - 15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "active": false
+  },
+  "warning_message": {
+    "external_name": "ks_csfp_waitlist",
+    "calculator": "_show",
+    "message": "Slots are limited, so you may be put on a waiting list. It's still worth applying. The agency will tell you within 10 days whether you are on the list. They will take your contact details so they can reach you when a spot opens. If you need food now, help is available.",
+    "link_text": "Find food while you wait",
+    "link_url": "https://kansasfoodsource.org/"
+  },
+  "documents": [
+    {
+      "external_name": "ks_csfp_identity_age",
+      "text": "Proof of identity and age (ex: driver's license, birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_csfp_residency",
+      "text": "Proof of where you live (ex: a utility bill or letter mailed to you)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_csfp_open_door",
+      "name": "United Methodist Open Door",
+      "email": "",
+      "phone_number": "+13162670511",
+      "description": "Runs CSFP for south-central Kansas from its Wichita site. Staff will complete the application with you.",
+      "assistance_link": "https://umopendoor.org/how-we-help/food-ministry/",
+      "counties": [
+        "Butler County",
+        "Chautauqua County",
+        "Cowley County",
+        "Harper County",
+        "Harvey County",
+        "Kingman County",
+        "Pratt County",
+        "Reno County",
+        "Sedgwick County",
+        "Stafford County",
+        "Sumner County"
+      ]
+    },
+    {
+      "external_name": "ks_csfp_kansas_food_bank",
+      "name": "Kansas Food Bank",
+      "email": "",
+      "phone_number": "+13162653663",
+      "description": "Runs CSFP across rural Kansas. Call to find out how to get a senior food box and where to collect it.",
+      "assistance_link": "https://kansasfoodbank.org/feeding-seniors/",
+      "counties": [
+        "Barber County",
+        "Barton County",
+        "Bourbon County",
+        "Cherokee County",
+        "Crawford County",
+        "Decatur County",
+        "Ellis County",
+        "Ellsworth County",
+        "Geary County",
+        "Graham County",
+        "Grant County",
+        "Hodgeman County",
+        "Kearny County",
+        "Kiowa County",
+        "Labette County",
+        "Lyon County",
+        "Marion County",
+        "Mitchell County",
+        "Montgomery County",
+        "Morris County",
+        "Osborne County",
+        "Pawnee County",
+        "Phillips County",
+        "Russell County",
+        "Saline County",
+        "Seward County",
+        "Sherman County",
+        "Thomas County"
+      ]
+    }
+  ]
+}

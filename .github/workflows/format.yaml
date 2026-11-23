@@ -4,12 +4,15 @@ on:
     branches: [main]
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   linter_name:
     name: runner / black formatter
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -38,7 +41,7 @@ jobs:
       - uses: psf/black@stable
         if: steps.check-files.outputs.skip != 'true'
         with:
-          # Pin to match black in requirements.txt so local and CI never drift.
+          # Pin to match black in requirements-dev.txt so local and CI never drift.
           version: "26.5.1"
           options: --check --verbose
           src: ${{ steps.changed-files.outputs.files }}

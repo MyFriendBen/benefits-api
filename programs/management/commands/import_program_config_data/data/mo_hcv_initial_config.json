@@ -1,0 +1,116 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "mo_hcv",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Housing Choice Voucher Program (Section 8)",
+    "description": "The Housing Choice Voucher (Section 8) program helps low-income households pay rent. You find your own place to live, and the program covers part of the cost each month.\n\nYour local housing authority pays its share straight to your landlord, and you pay the rest. You can use the voucher for a rental home that meets program and safety rules. How much help you get depends on your income, local payment rules, and the home you choose.\n\nWhere you sit on a waiting list is not simply first come, first served. Some housing authorities move households to the top of the list. Veterans and people who are homeless are common examples. Most openings usually go to households with the least income. So if your income is closer to the limit, you may wait longer.\n\nThis is an estimate. Your housing authority has the final say. It may check other rules too. These can include a background check, or limits on your savings or property. Extra rules may also apply if you are a student.\n\nTo apply, select \"Find your local housing authority.\"",
+    "description_short": "Help paying rent for low-income households",
+    "learn_more_link": "https://www.hud.gov/helping-americans/housing-choice-vouchers-tenants",
+    "apply_button_link": "https://www.hud.gov/contactus/public-housing-contacts",
+    "apply_button_description": "Find your local housing authority",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "has_calculator": true,
+    "value_format": "estimated_annual",
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": true,
+    "active": false,
+    "base_program": "section_8",
+    "website_description": "Help paying rent for low-income households"
+  },
+  "warning_message": {
+    "external_name": "mo_hcv_waitlist",
+    "calculator": "_show",
+    "message": "Missouri has dozens of local housing authorities, and each runs its own waiting list. Many are long or closed to new applicants, but lists can reopen with little notice. Ask your local housing authority whether its list is open, and apply to more than one if you can.",
+    "link_url": "https://www.211.org/get-help/housing-expenses",
+    "link_text": "Find housing help while you wait"
+  },
+  "documents": [
+    {
+      "external_name": "mo_hcv_id_proof",
+      "text": "Proof of identity for all household members (ex: driver's license, state ID, or passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_hcv_ssn",
+      "text": "Social Security cards for all household members",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_hcv_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_hcv_earned_income",
+      "text": "Proof of current earnings (ex: W-2 forms, pay stubs, or self-employment tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_hcv_unearned_income",
+      "text": "Proof of unearned income, if any (ex: child support, Social Security, unemployment, or pension)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_hcv_home",
+      "text": "Proof of home address (ex: lease or utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_hcv_birth_certificate",
+      "text": "Birth certificates or other proof of birth for all household members",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_hud_housing_counseling",
+      "name": "HUD-Approved Housing Counseling",
+      "email": "",
+      "phone_number": "+18005694287",
+      "assistance_link": "https://www.hud.gov/stat/sfh/housing-counseling",
+      "description": "HUD-approved housing counselors can help with renting and other housing needs. They can help while you wait, or if your local waiting list is closed.",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "mo_hcv_whole_person",
+      "name": "The Whole Person",
+      "email": "hello@thewholeperson.org",
+      "phone_number": "+18165610304",
+      "assistance_link": "https://thewholeperson.org/support-services/",
+      "description": "The Whole Person works with the Kansas City housing authority. Staff can help people with disabilities apply for a housing voucher.",
+      "counties": [
+        "Cass County",
+        "Clay County",
+        "Jackson County",
+        "Platte County",
+        "Ray County"
+      ],
+      "languages": []
+    }
+  ]
+}

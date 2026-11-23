@@ -1,1 +1,3 @@
-from .sheets import GoogleSheets, GoogleSheetsCache
+from .sheets import GoogleSheets
+
+__all__ = ["GoogleSheets"]

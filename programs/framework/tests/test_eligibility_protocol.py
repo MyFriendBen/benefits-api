@@ -1,0 +1,472 @@
+"""The eligibility protocol every calculator runs through.
+
+`Eligibility` accumulates a program's verdict, `MemberEligibility` a single member's,
+and `ProgramCalculator` orchestrates the two. A regression here moves dollar amounts
+for every program in every white label, and would surface as one program's test
+failing for reasons that look like that program's own bug.
+
+The calculators defined below are minimal stand-ins. They exist to exercise the
+orchestration, not to model any real benefit — so they need a real household, which is
+why these are `TestCase`. The cross-program gates on the same class read only
+`self.data` and are tested without a database in `test_program_eligible.py`.
+"""
+
+import datetime
+
+from django.test import TestCase
+
+from programs.framework.base import Eligibility, MemberEligibility, PaymentUnit, ProgramCalculator
+from programs.programs.testing_fixtures.payment_unit import assert_household_members_unpriced
+from programs.util import Dependencies, DependencyError
+from screener.models import HouseholdMember, Screen, WhiteLabel
+
+
+class MemberEligibilityTests(TestCase):
+    """A single member's verdict."""
+
+    def test_starts_eligible_with_no_value(self):
+        """The default is eligible: a calculator narrows, it does not admit."""
+        m = MemberEligibility(member=None)
+
+        self.assertTrue(m.eligible)
+        self.assertEqual(m.value, 0)
+
+    def test_a_failing_condition_makes_it_ineligible(self):
+        m = MemberEligibility(member=None)
+
+        m.condition(False)
+
+        self.assertFalse(m.eligible)
+
+    def test_a_passing_condition_leaves_it_eligible(self):
+        m = MemberEligibility(member=None)
+
+        m.condition(True)
+
+        self.assertTrue(m.eligible)
+
+    def test_eligibility_does_not_recover(self):
+        """Once a condition fails, a later passing one must not undo it."""
+        m = MemberEligibility(member=None)
+
+        m.condition(False)
+        m.condition(True)
+
+        self.assertFalse(m.eligible)
+
+
+class EligibilityConditionTests(TestCase):
+    """`condition()` drives both the verdict and the explanation shown to a user."""
+
+    def test_starts_eligible_with_no_messages(self):
+        e = Eligibility()
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.pass_messages, [])
+        self.assertEqual(e.fail_messages, [])
+
+    def test_a_failing_condition_with_a_message_records_it(self):
+        e = Eligibility()
+
+        e.condition(False, "must be over 18")
+
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.fail_messages, ["must be over 18"])
+        self.assertEqual(e.pass_messages, [])
+
+    def test_a_passing_condition_with_a_message_records_it(self):
+        e = Eligibility()
+
+        e.condition(True, "is a resident")
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.pass_messages, ["is a resident"])
+        self.assertEqual(e.fail_messages, [])
+
+    def test_a_failing_condition_without_a_message_is_silent(self):
+        """Eligibility drops with nothing to show the user.
+
+        Deliberate — some rules have no user-facing explanation — but it means a
+        household can be ineligible with an empty `fail_messages`, so a caller
+        cannot assume a reason exists.
+        """
+        e = Eligibility()
+
+        e.condition(False)
+
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.fail_messages, [])
+
+    def test_a_passing_condition_without_a_message_records_nothing(self):
+        e = Eligibility()
+
+        e.condition(True)
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.pass_messages, [])
+
+    def test_eligibility_does_not_recover(self):
+        e = Eligibility()
+
+        e.condition(False, "failed")
+        e.condition(True, "passed")
+
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.fail_messages, ["failed"])
+        self.assertEqual(e.pass_messages, ["passed"])
+
+    def test_failed_and_passed_can_be_called_directly(self):
+        """Calculators reach for these when the verdict is already known."""
+        e = Eligibility()
+
+        e.passed("first")
+        e.failed("second")
+
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.pass_messages, ["first"])
+        self.assertEqual(e.fail_messages, ["second"])
+
+
+class EligibilityValueTests(TestCase):
+    """`value` is the number a household sees, summed across household and members."""
+
+    def test_value_is_zero_by_default(self):
+        self.assertEqual(Eligibility().value, 0)
+
+    def test_value_is_the_household_amount_when_no_members_are_added(self):
+        e = Eligibility()
+        e.household_value = 1_200
+
+        self.assertEqual(e.value, 1_200)
+
+    def test_value_sums_the_household_and_every_stored_member(self):
+        e = Eligibility()
+        e.household_value = 100
+
+        for amount in (10, 20, 30):
+            m = MemberEligibility(member=None)
+            m.value = amount
+            e.add_member_eligibility(m)
+
+        self.assertEqual(e.value, 160)
+
+    def test_the_sum_does_not_filter_on_member_eligibility(self):
+        """`value` adds up what it was given.
+
+        The filtering happens earlier, in `ProgramCalculator.value()`, which assigns
+        an amount only to eligible members. A value set on an ineligible member is a
+        caller error, and this pins that the sum does not quietly absorb it.
+        """
+        e = Eligibility()
+        m = MemberEligibility(member=None)
+        m.condition(False)
+        m.value = 500
+        e.add_member_eligibility(m)
+
+        self.assertEqual(e.value, 500)
+
+    def test_add_member_eligibility_keeps_every_member(self):
+        """Eligible and ineligible members are both stored, because
+        `household_eligible` runs afterwards and reads them."""
+        e = Eligibility()
+        eligible, ineligible = MemberEligibility(None), MemberEligibility(None)
+        ineligible.condition(False)
+
+        e.add_member_eligibility(eligible)
+        e.add_member_eligibility(ineligible)
+
+        self.assertEqual(e.eligible_members, [eligible, ineligible])
+
+
+class EligibilityPaymentUnitTests(TestCase):
+    """`payment_unit` says who the benefit is paid for; it never hides a verdict."""
+
+    def test_defaults_to_the_member_unit(self):
+        self.assertEqual(Eligibility().payment_unit, PaymentUnit.MEMBER)
+
+    def test_a_household_unit_keeps_every_verdict(self):
+        e = Eligibility(payment_unit=PaymentUnit.HOUSEHOLD)
+        eligible, ineligible = MemberEligibility(None), MemberEligibility(None)
+        ineligible.condition(False)
+        e.add_member_eligibility(eligible)
+        e.add_member_eligibility(ineligible)
+
+        self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
+        self.assertEqual(e.eligible_members, [eligible, ineligible])
+
+
+class HouseholdMembersUnpricedTests(TestCase):
+    """The scenario fixtures' check: a household program's members carry no value."""
+
+    def _eligibility(self, payment_unit: PaymentUnit, member_value: int) -> Eligibility:
+        e = Eligibility(payment_unit=payment_unit)
+        member = MemberEligibility(None)
+        member.value = member_value
+        e.add_member_eligibility(member)
+        return e
+
+    def test_a_household_program_with_a_member_value_fails(self):
+        with self.assertRaisesMessage(AssertionError, "Priced is household-paid but gave members values [50]"):
+            assert_household_members_unpriced(self._eligibility(PaymentUnit.HOUSEHOLD, 50), "Priced")
+
+    def test_a_household_program_with_unpriced_members_passes(self):
+        assert_household_members_unpriced(self._eligibility(PaymentUnit.HOUSEHOLD, 0), "Unpriced")
+
+    def test_a_member_program_may_price_members(self):
+        assert_household_members_unpriced(self._eligibility(PaymentUnit.MEMBER, 50), "MemberPaid")
+
+
+class PaymentUnitDeclarationTests(TestCase):
+    """A calculator that prices members cannot say it pays the household.
+
+    `payment_unit` only tells the results API who the eligible party is; PolicyEngine
+    calculators still set member values from `member_value` regardless. A household
+    declaration on a class that prices members would hide paid members behind a
+    "Household" chip, which is how `MaCcdf` could silently drift under the SPM base.
+
+    A household class that sets `member_amount` is caught too: the custom path would drop the
+    amount and the PolicyEngine path would pay it. A value written inside `member_eligible` or
+    a replaced `value()` isn't visible on the class; `assert_household_members_unpriced`, run
+    by both scenario fixtures, catches those.
+    """
+
+    def test_household_calculators_do_not_price_members(self):
+        from integrations.clients.policyengine.registry import all_calculators
+        from programs.programs import calculators
+
+        offenders = [
+            calculator.__name__
+            for calculator in {**calculators, **all_calculators}.values()
+            if calculator.payment_unit == PaymentUnit.HOUSEHOLD
+            and (calculator.member_amount or calculator.member_value is not ProgramCalculator.member_value)
+        ]
+
+        self.assertEqual(offenders, [])
+
+
+class ProgramCalculatorTestCase(TestCase):
+    """A three-person household for the orchestration tests below."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
+
+    def setUp(self):
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, household_size=2, completed=False, is_test=True
+        )
+        HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", birth_year_month=datetime.date(1990, 1, 1)
+        )
+        HouseholdMember.objects.create(
+            screen=self.screen, relationship="child", birth_year_month=datetime.date(2018, 1, 1)
+        )
+
+    def calculator(self, cls, missing=()):
+        return cls(self.screen, None, {}, Dependencies(missing))
+
+
+class ProgramCalculatorEligibleTests(ProgramCalculatorTestCase):
+    """`eligible()` walks the members, then the household."""
+
+    def test_a_calculator_that_asserts_nothing_is_eligible(self):
+        class Everyone(ProgramCalculator):
+            pass
+
+        e = self.calculator(Everyone).eligible()
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(len(e.eligible_members), 2)
+
+    def test_the_household_is_ineligible_when_no_member_qualifies(self):
+        """A program with per-member rules needs at least one member to pass."""
+
+        class NoOne(ProgramCalculator):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(False)
+
+        e = self.calculator(NoOne).eligible()
+
+        self.assertFalse(e.eligible)
+
+    def test_one_qualifying_member_is_enough(self):
+        class OnlyChildren(ProgramCalculator):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(e.member.relationship == "child")
+
+        e = self.calculator(OnlyChildren).eligible()
+
+        self.assertTrue(e.eligible)
+        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
+
+    def test_household_eligible_runs_after_the_members(self):
+        """The ordering is load-bearing: a household rule may read member results."""
+        seen = []
+
+        class CountsEligibleMembers(ProgramCalculator):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(e.member.relationship == "child")
+
+            def household_eligible(self, e: Eligibility):
+                seen.extend(m.eligible for m in e.eligible_members)
+
+        self.calculator(CountsEligibleMembers).eligible()
+
+        self.assertEqual(seen, [False, True])
+
+    def test_a_failing_household_rule_overrides_eligible_members(self):
+        class HouseholdSaysNo(ProgramCalculator):
+            def household_eligible(self, e: Eligibility):
+                e.condition(False, "household rule")
+
+        e = self.calculator(HouseholdSaysNo).eligible()
+
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.fail_messages, ["household rule"])
+
+
+class ProgramCalculatorHouseholdUnitTests(ProgramCalculatorTestCase):
+    """A household-unit program evaluates its members but pays only the household."""
+
+    class HouseholdPaying(ProgramCalculator):
+        payment_unit = PaymentUnit.HOUSEHOLD
+        amount = 1_000
+        member_amount = 50
+
+    def test_the_default_unit_is_member(self):
+        class Plain(ProgramCalculator):
+            pass
+
+        e = self.calculator(Plain).eligible()
+
+        self.assertEqual(e.payment_unit, PaymentUnit.MEMBER)
+
+    def test_the_unit_is_carried_onto_the_eligibility(self):
+        e = self.calculator(self.HouseholdPaying).eligible()
+
+        self.assertEqual(e.payment_unit, PaymentUnit.HOUSEHOLD)
+
+    def test_members_are_still_evaluated(self):
+        class HouseholdChildrenOnly(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(e.member.relationship == "child")
+
+        e = self.calculator(HouseholdChildrenOnly).eligible()
+
+        self.assertTrue(e.eligible)
+        self.assertEqual([m.eligible for m in e.eligible_members], [False, True])
+
+    def test_a_member_rule_still_gates_the_household(self):
+        """The unit changes who is paid, not what is checked: a household program that
+        qualifies through a member-scoped rule still needs one member to pass."""
+
+        class HouseholdNoOne(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(False)
+
+        e = self.calculator(HouseholdNoOne).eligible()
+
+        self.assertFalse(e.eligible)
+
+    def test_household_eligible_can_still_read_the_members(self):
+        seen = []
+
+        class ReadsMembers(ProgramCalculatorHouseholdUnitTests.HouseholdPaying):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(e.member.relationship == "child")
+
+            def household_eligible(self, e: Eligibility):
+                seen.extend(m.eligible for m in e.eligible_members)
+
+        self.calculator(ReadsMembers).eligible()
+
+        self.assertEqual(seen, [False, True])
+
+    def test_only_the_household_is_paid(self):
+        """`member_amount` is ignored: the household's value is the whole value."""
+        calc = self.calculator(self.HouseholdPaying)
+        e = calc.eligible()
+
+        calc.value(e)
+
+        self.assertEqual(e.household_value, 1_000)
+        self.assertEqual([m.value for m in e.eligible_members], [0, 0])
+        self.assertEqual(e.value, 1_000)
+
+
+class ProgramCalculatorValueTests(ProgramCalculatorTestCase):
+    """`value()` fills in amounts, and only for an eligible household."""
+
+    class Paying(ProgramCalculator):
+        amount = 1_000
+        member_amount = 50
+
+    def test_an_eligible_household_gets_the_household_and_member_amounts(self):
+        calc = self.calculator(self.Paying)
+        e = calc.eligible()
+
+        calc.value(e)
+
+        self.assertEqual(e.household_value, 1_000)
+        self.assertEqual(e.value, 1_100)
+
+    def test_an_ineligible_household_is_left_at_zero(self):
+        """`value()` returns early, so nothing is computed for a household that
+        has already failed."""
+
+        class PayingButIneligible(ProgramCalculatorValueTests.Paying):
+            def household_eligible(self, e: Eligibility):
+                e.condition(False)
+
+        calc = self.calculator(PayingButIneligible)
+        e = calc.eligible()
+
+        calc.value(e)
+
+        self.assertEqual(e.household_value, 0)
+        self.assertEqual(e.value, 0)
+
+    def test_only_eligible_members_are_paid(self):
+        class PayingChildrenOnly(ProgramCalculatorValueTests.Paying):
+            def member_eligible(self, e: MemberEligibility):
+                e.condition(e.member.relationship == "child")
+
+        calc = self.calculator(PayingChildrenOnly)
+        e = calc.eligible()
+
+        calc.value(e)
+
+        self.assertEqual([m.value for m in e.eligible_members], [0, 50])
+        self.assertEqual(e.value, 1_050)
+
+
+class ProgramCalculatorCalcTests(ProgramCalculatorTestCase):
+    """`calc()` is the entry point: gate on dependencies, then eligibility and value."""
+
+    class NeedsAge(ProgramCalculator):
+        dependencies = ("age",)
+        amount = 400
+
+    def test_calc_returns_eligibility_with_the_value_applied(self):
+        e = self.calculator(self.NeedsAge).calc()
+
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 400)
+
+    def test_calc_raises_when_a_declared_dependency_is_missing(self):
+        """The program is skipped rather than reported at a wrong value."""
+        with self.assertRaises(DependencyError):
+            self.calculator(self.NeedsAge, missing=("age",)).calc()
+
+    def test_an_undeclared_missing_dependency_does_not_block(self):
+        calc = self.calculator(self.NeedsAge, missing=("income",))
+
+        self.assertTrue(calc.can_calc())
+
+    def test_a_calculator_declaring_nothing_can_always_calc(self):
+        class NeedsNothing(ProgramCalculator):
+            pass
+
+        calc = self.calculator(NeedsNothing, missing=("age", "income"))
+
+        self.assertTrue(calc.can_calc())

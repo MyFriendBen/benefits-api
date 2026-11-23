@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_north_porch",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "North Porch Women & Infants' Centers",
+      "description": "North Porch Women & Infants' Centers give baby supplies to families. You need a referral, but it can be a phone call from a social service agency, WIC or a local clergy member. You can visit every 2 months (6 times a year). Call 973-970-5215 for an appointment. Jersey City hours are Tuesday and Thursday 10am-1:30pm.",
+      "link": "https://northporch.org/locations-and-contacts/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County",
+      "Hudson County",
+      "Morris County",
+      "Passaic County",
+      "Warren County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

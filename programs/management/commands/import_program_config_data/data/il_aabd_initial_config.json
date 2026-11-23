@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "il"},
-    "program_category": {"external_name": "il_cash"},
+    "program_category": {"external_name": "cash"},
     "program": {
         "name_abbreviated": "il_aabd",
         "year": "2025",

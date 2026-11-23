@@ -1,0 +1,81 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "food"
+  },
+  "program": {
+    "name_abbreviated": "mo_csfp",
+    "year": "2026",
+    "base_program": "csfp",
+    "value_format": null,
+    "active": false,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Commodity Supplemental Food Program (CSFP)",
+    "description": "The Commodity Supplemental Food Program is for people aged 60 and over. You get a free box of food each month. A box holds foods like cheese, milk, cereal, meat, fruit, vegetables, juice, and peanut butter or beans.\n\nA local food bank or community group packs your box. You pick it up at a distribution site. If you cannot leave home, someone can collect it for you, or your agency may be able to deliver it. CSFP does not pay cash. The dollar amount shown is based on the cost of the food and services provided.\n\nThe local agency makes the final decision. Staff will check if you live in their area. Tell them if you buy and cook your food separately from the people you live with. They may count only you. That means a lower income limit. They can also look at your income over the past year, not just this month. People in a nursing home cannot get CSFP.\n\nTo apply, find a local CSFP site. You will not need to prove your income. Once approved, you stay approved for three years. The agency checks in once a year.",
+    "description_short": "A free monthly box of food for people 60 and over",
+    "learn_more_link": "https://health.mo.gov/food-nutrition/food-programs/commodity-supplemental-food-program",
+    "apply_button_link": "https://experience.arcgis.com/experience/ad4397b8435f48c690a9a283c8aaa6e3",
+    "apply_button_description": "Find a Local Site",
+    "estimated_application_time": "10 - 15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "A free monthly box of food for people 60 and over"
+  },
+  "warning_message": {
+    "external_name": "mo_csfp_waitlist",
+    "calculator": "_show",
+    "message": "Slots are limited, so you may be put on a waiting list. It's still worth applying. The agency will tell you within 10 days whether you are on the list. They will take your contact details so they can reach you when a spot opens. If you are homebound, tell the staff — homebound seniors are served first. If you need food now, help is available.",
+    "link_url": "https://feedingmissouri.org/get-help/",
+    "link_text": "Find food while you wait"
+  },
+  "documents": [
+    {
+      "external_name": "mo_csfp_age",
+      "text": "Proof of identity and age (ex: driver's license, birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_csfp_residency",
+      "text": "Proof of where you live (ex: a utility bill or letter mailed to you)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_csfp_aaa",
+      "name": "Missouri Association of Area Agencies on Aging (ma4)",
+      "email": "info@ma4web.org",
+      "description": "Area Agencies on Aging help older Missourians find services near them. They work with the food banks that run CSFP. If you cannot leave home, they can help you apply and get your food. Call to find your local agency.",
+      "assistance_link": "https://www.ma4web.org/find-local-agency/",
+      "phone_number": "+18002355503",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "mo_csfp_hunger_hotline",
+      "name": "USDA National Hunger Hotline",
+      "email": "",
+      "description": "A free USDA hotline that connects you with food banks, meal sites, and other food help near you. Call Monday–Friday, 8am–8pm ET. You can also text 914-342-7744.",
+      "assistance_link": "https://www.fna.usda.gov/national-hunger-hotline",
+      "phone_number": "+18663486479",
+      "counties": [],
+      "languages": [
+        "English"
+      ]
+    }
+  ]
+}

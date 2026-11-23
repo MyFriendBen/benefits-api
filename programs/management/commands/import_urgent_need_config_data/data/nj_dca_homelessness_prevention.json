@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_dca_homelessness_prevention",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "NJ DCA Office of Homelessness Prevention",
+      "description": "The NJ DCA Office of Homelessness Prevention helps people who are homeless or at risk. Call or email, and they will route you to your county access point. Call 609-376-0811.",
+      "link": "https://www.nj.gov/dca/dhcr/offices/dhcrohp.shtml",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

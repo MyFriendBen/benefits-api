@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_poison_control",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "NJ Poison Control Center (NJPIES)",
+      "description": "NJ Poison Control answers poison and medication questions for all ages in all languages. Call, text or chat any time, day or night. Call 1-800-222-1222.",
+      "link": "https://www.njpies.org",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

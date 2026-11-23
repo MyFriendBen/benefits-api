@@ -1,13 +1,13 @@
 {
     "white_label": {"code": "tx"},
     "program_category": {
-        "external_name": "tx_healthcare",
+        "external_name": "health_care",
         "name": "Healthcare",
         "icon": "health_care"
     },
     "program": {
         "name_abbreviated": "tx_aca",
-        "year": "2025",
+        "year": "2026",
         "legal_status_required": ["citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
         "name": "ACA Premium Tax Credit",
         "description_short": "Health insurance marketplace and premium tax credit.",

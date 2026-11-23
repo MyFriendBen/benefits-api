@@ -46,5 +46,7 @@
       </a>
     </div>
   </div>
-{% if error_message %} {% include "error.html" %} {% endif %}
+{% if error_message and error_lang == lang %}
+<p class="help is-danger is-size-6">{{ error_message }}</p>
+{% endif %}
 </span>

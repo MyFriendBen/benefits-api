@@ -2,10 +2,13 @@
 Unit tests for Configuration app serializers.
 """
 
+import re
 from unittest.mock import MagicMock, patch
-from django.test import TestCase
+from urllib.parse import urlparse
+from django.test import SimpleTestCase, TestCase
 from configuration.models import Configuration
 from configuration.serializers import ConfigurationSerializer
+from configuration.white_labels import state_options, white_label_config
 from screener.models import WhiteLabel
 from screener.feature_flags import FeatureFlagConfig
 
@@ -150,3 +153,358 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
 
         # Should return default value
         self.assertFalse(feature_flags["frontend_flag"])
+
+
+class TestLegalLinkConfiguration(SimpleTestCase):
+    """
+    Asserts every white label's effective privacy policy and consent links are real URLs, so an
+    empty or relative value fails CI instead of shipping a dead link.
+    """
+
+    LEGAL_LINK_KEYS = ("privacy_policy", "consent_to_contact")
+
+    def test_legal_links_are_populated_urls(self):
+        """Every locale must map to a real URL, not an empty or relative value."""
+        for code, white_label_data in white_label_config.items():
+            for key in self.LEGAL_LINK_KEYS:
+                links = getattr(white_label_data, key)
+
+                with self.subTest(white_label=code, key=key):
+                    self.assertIn(
+                        "en-us",
+                        links,
+                        f'White label "{code}" is missing the "en-us" fallback for {key}. The frontend '
+                        "falls back to en-us for every locale without its own translated page.",
+                    )
+
+                for locale, link in links.items():
+                    # Parse rather than string-match the prefix: "https://" and
+                    # "https:///privacy-policy/" both start with the scheme but name no host,
+                    # so they reach the browser as dead links just like the empty string did.
+                    parsed = urlparse(link)
+
+                    with self.subTest(white_label=code, key=key, locale=locale):
+                        self.assertTrue(
+                            parsed.scheme == "https" and bool(parsed.netloc),
+                            f'White label "{code}" has a {key} link for "{locale}" that is not an '
+                            f"absolute https URL: {link!r}. An empty string here renders as a link "
+                            "with an empty href.",
+                        )
+
+
+class TestFooterPhoneConfiguration(SimpleTestCase):
+    """
+    Asserts every referrer footer phone number is dialable. The frontend builds the tel: link from
+    the value's digits, so a typo'd number would display and dial wrong with no other check.
+    """
+
+    def test_footer_phones_are_dialable_us_numbers(self) -> None:
+        """Each non-empty footerPhone must hold 10 digits, or 11 starting with the country code 1."""
+        for code, white_label_data in white_label_config.items():
+            footer_phones = white_label_data.referrer_data.get("footerPhone", {})
+
+            for referrer, phone in footer_phones.items():
+                if phone == "":
+                    continue
+
+                digits = re.sub(r"\D", "", phone)
+
+                with self.subTest(white_label=code, referrer=referrer):
+                    self.assertTrue(
+                        len(digits) == 10 or (len(digits) == 11 and digits.startswith("1")),
+                        f'White label "{code}" has a footerPhone for "{referrer}" that is not a US '
+                        f"phone number: {phone!r}.",
+                    )
+
+
+class TestStateOptionsConfiguration(SimpleTestCase):
+    """Guards the state dropdown's derived catalog and the per-referrer overrides that select from it."""
+
+    # Pinned rather than re-derived from is_state/publicly_launched: computing the expectation with
+    # the same predicate state_options() filters on would only restate the implementation. A new
+    # state has to be added here deliberately, which is the point — that edit is where someone
+    # decides whether it belongs in the public dropdown yet.
+    EXPECTED_CATALOG = {
+        "co": True,
+        "il": True,
+        "ks": True,
+        "ma": True,
+        "mo": True,
+        "nc": True,
+        "nj": True,
+        "tx": True,
+        "wa": True,
+    }
+
+    def test_catalog_matches_the_expected_states(self):
+        """The dropdown offers exactly these states, with exactly these launched flags."""
+        catalog = state_options()
+        codes = [state["code"] for state in catalog]
+
+        self.assertEqual(len(codes), len(set(codes)), f"The catalog repeats a state: {codes}.")
+        self.assertEqual(
+            {state["code"]: state["public"] for state in catalog},
+            self.EXPECTED_CATALOG,
+            "The state dropdown's contents changed. If that was intended, update EXPECTED_CATALOG; "
+            'a state added with "publicly_launched" unset is offered only by link and to referrers '
+            "that name it.",
+        )
+
+        for state in catalog:
+            with self.subTest(white_label=state["code"]):
+                self.assertTrue(state["name"], f'White label "{state["code"]}" has no state name to display.')
+
+    def test_catalog_excludes_non_state_white_labels(self):
+        """A sub-brand like "cesn" routes to a state screener but is not itself a state choice."""
+        codes = {state["code"] for state in state_options()}
+
+        for code, white_label_data in white_label_config.items():
+            if white_label_data.is_state and not white_label_data.is_default:
+                continue
+
+            with self.subTest(white_label=code):
+                self.assertNotIn(
+                    code,
+                    codes,
+                    f'White label "{code}" is not a state screener but is offered as a state.',
+                )
+
+    def test_default_white_label_declares_state_options(self):
+        """
+        The "_default" config backs the state-agnostic /select-state route, so it stays the
+        generic every-public-state list. A partner narrowing the dropdown belongs in the config
+        for the state path it is handed out under, where the screener actually reads it.
+        """
+        state_options_config = white_label_config["_default"].referrer_data.get("stateOptions")
+
+        self.assertIsNotNone(state_options_config, '"_default" must declare "stateOptions".')
+        self.assertEqual(
+            state_options_config,
+            {"default": []},
+            '"_default" should offer every publicly launched state and nothing partner-specific. '
+            f"Found {state_options_config!r}; move any referrer entry to that referrer's state "
+            "config.",
+        )
+
+    def test_multi_state_referrers_are_configured_in_every_state_they_offer(self):
+        """
+        A referrer whose dropdown offers several states is handed out under each of those state
+        paths, and each path loads its own config. Configuring it in only one of them leaves the
+        others on generic branding with an unscoped dropdown.
+        """
+        branding_keys = ("theme", "logoSource", "logoClass")
+
+        for code, white_label_data in white_label_config.items():
+            for referrer, states in white_label_data.referrer_data.get("stateOptions", {}).items():
+                if referrer == "default" or len(states) < 2:
+                    continue
+
+                for state in states:
+                    # The code is unvalidated referrer config, so indexing it directly would raise
+                    # a bare KeyError naming neither the referrer nor the white label it came from
+                    # — and this test runs before the one written to diagnose exactly that typo.
+                    if state not in white_label_config:
+                        with self.subTest(referrer=referrer, configured_in=code, offered_state=state):
+                            self.fail(
+                                f'"{referrer}" in white label "{code}" offers "{state}", which is '
+                                "not a white label at all."
+                            )
+                        continue
+
+                    state_referrer_data = white_label_config[state].referrer_data
+                    offered_by_state = state_referrer_data.get("stateOptions", {})
+
+                    with self.subTest(referrer=referrer, configured_in=code, offered_state=state):
+                        self.assertIn(
+                            referrer,
+                            offered_by_state,
+                            f'"{referrer}" is configured in white label "{code}" and offers '
+                            f'"{state}", but white label "{state}" has no "{referrer}" entry for '
+                            '"stateOptions", so entering from that path falls back to the '
+                            "publicly launched states.",
+                        )
+                        # Membership has to match, or the dropdown contradicts itself depending on
+                        # which state's screener the referrer was entered from. Order is free,
+                        # since a state may reasonably list itself first.
+                        self.assertCountEqual(
+                            offered_by_state[referrer],
+                            states,
+                            f'"{referrer}" offers {sorted(states)} in white label "{code}" but '
+                            f'{sorted(offered_by_state[referrer])} in white label "{state}".',
+                        )
+
+                    for key in branding_keys:
+                        with self.subTest(referrer=referrer, configured_in=code, missing_from=state, key=key):
+                            self.assertIn(
+                                referrer,
+                                state_referrer_data.get(key, {}),
+                                f'"{referrer}" is configured in white label "{code}" and offers '
+                                f'"{state}", but white label "{state}" has no "{referrer}" entry '
+                                f'for "{key}".',
+                            )
+
+    def test_referrer_overrides_name_states_in_the_catalog(self):
+        """An override naming a state outside the catalog would render an empty dropdown."""
+        codes = {state["code"] for state in state_options()}
+
+        for code, white_label_data in white_label_config.items():
+            for referrer, states in white_label_data.referrer_data.get("stateOptions", {}).items():
+                for state in states:
+                    with self.subTest(white_label=code, referrer=referrer, state=state):
+                        self.assertIn(
+                            state,
+                            codes,
+                            f'"{referrer}" in white label "{code}" offers "{state}", which the state '
+                            "dropdown has no entry for.",
+                        )
+
+
+class TestNj211ReferrerConfiguration(SimpleTestCase):
+    """
+    Guards the 2-1-1 New Jersey overlay. Each assertion is a way the overlay breaks without any
+    error: a referrer's list replaces the default, so a dropped entry or a missing default shows
+    up only as wrong branding on the page.
+    """
+
+    REFERRER = "211nj"
+
+    def setUp(self) -> None:
+        self.referrer_data = white_label_config["nj"].referrer_data
+
+    def test_is_logo_only(self) -> None:
+        """No theme, no custom step directory: the standard sign-up step stays, with no custom colors."""
+        for key in ("theme", "stepDirectory"):
+            with self.subTest(key=key):
+                self.assertNotIn(self.REFERRER, self.referrer_data.get(key, {}))
+
+    def test_logo_points_at_the_lockup(self) -> None:
+        self.assertEqual(self.referrer_data["logoSource"][self.REFERRER], "NJ211_MFBLogo")
+        self.assertEqual(self.referrer_data["logoClass"][self.REFERRER], "nj211-logo-size")
+        self.assertEqual(self.referrer_data["logoAlt"][self.REFERRER]["id"], "referrerHook.logoAlts.211nj")
+        self.assertIn("2-1-1 New Jersey", self.referrer_data["logoAlt"][self.REFERRER]["defaultMessage"])
+
+    def test_other_nj_referrers_keep_the_default_branding(self) -> None:
+        """Overriding a key replaces base's dict, so each override must still carry its default."""
+        self.assertEqual(self.referrer_data["logoSource"]["default"], "MFB_Logo")
+        self.assertEqual(self.referrer_data["logoClass"]["default"], "logo")
+        self.assertEqual(self.referrer_data["logoAlt"]["default"]["id"], "referrerHook.logoAlts.default")
+        self.assertEqual(self.referrer_data["stateName"]["default"], "New Jersey")
+
+    def test_ui_options_repeat_the_default_and_add_a_white_header(self) -> None:
+        """Without the repeat, 211nj users would get the Immediate Help tab the rest of NJ hides."""
+        default = self.referrer_data["uiOptions"]["default"]
+        overlay = self.referrer_data["uiOptions"][self.REFERRER]
+
+        self.assertIn("no_results_more_help", default)
+        for option in default:
+            with self.subTest(option=option):
+                self.assertIn(option, overlay)
+        self.assertIn("white_header", overlay)
+
+    def test_state_label_is_cleared_under_the_lockup(self) -> None:
+        """The lockup already says "New Jersey", so the header's state label would repeat it."""
+        self.assertEqual(self.referrer_data["stateName"][self.REFERRER], "")
+
+    def test_share_link_keeps_the_referrer(self) -> None:
+        """A share link without the referrer silently drops the branding."""
+        self.assertEqual(
+            self.referrer_data["shareLink"][self.REFERRER],
+            "https://screener.myfriendben.org/nj/step-1?referrer=211nj",
+        )
+
+
+class TestPublicChargeRuleConfiguration(SimpleTestCase):
+    """
+    Asserts every white label's public charge rule carries both a link and a visible label. The
+    frontend renders the anchor as <a href={link}>{text}</a>, so a config with a link but no text
+    ships an invisible, unclickable link rather than failing loudly.
+    """
+
+    def test_public_charge_rule_has_link_and_text(self):
+        """Every live white label needs both an absolute link and the label the anchor renders."""
+        for code, white_label_data in white_label_config.items():
+            # The base class holds the empty placeholder every white label overrides, and
+            # "_default" is never served to the frontend, so neither has copy of its own.
+            if white_label_data.is_default:
+                continue
+
+            public_charge_rule = white_label_data.public_charge_rule
+
+            with self.subTest(white_label=code):
+                # The disclaimer step renders <a href={link}>{text}</a> with no emptiness check,
+                # so an unset value here reaches the browser as a broken anchor either way.
+                link = public_charge_rule.get("link", "")
+                parsed = urlparse(link)
+                self.assertTrue(
+                    parsed.scheme == "https" and bool(parsed.netloc),
+                    f'White label "{code}" has a public charge link that is not an absolute '
+                    f"https URL: {link!r}. The disclaimer step renders the anchor "
+                    "unconditionally, so an empty value ships an anchor with an empty href.",
+                )
+
+                text = public_charge_rule.get("text")
+                self.assertIsInstance(
+                    text,
+                    dict,
+                    f'White label "{code}" is missing a dict "text" for its public charge link. '
+                    "The frontend renders the anchor with no children, so nothing is visible "
+                    "to click.",
+                )
+                self.assertTrue(
+                    text.get("_label") and text.get("_default_message"),
+                    f'White label "{code}" has a public charge "text" missing "_label" or '
+                    '"_default_message". The frontend only converts an object carrying both '
+                    "into a FormattedMessage; an empty _label renders as a FormattedMessage "
+                    "with an empty id.",
+                )
+
+
+class TestMoreHelpOptionsConfiguration(SimpleTestCase):
+    """
+    Asserts every Immediate Help resource has a translatable name, no repeated labels, and an https link
+    when it has one.
+    """
+
+    def test_more_help_options_are_well_formed(self) -> None:
+        """Each resource needs a translatable name; phone and description are optional but must be translatable too."""
+        for code, white_label_data in white_label_config.items():
+            options = white_label_data.more_help_options.get("moreHelpOptions", [])
+            seen_labels: set[str] = set()
+
+            for index, option in enumerate(options):
+                with self.subTest(white_label=code, index=index):
+                    for key in ("name", "phone", "description"):
+                        field = option.get(key)
+                        # Only the name is required; the card skips a missing phone or description.
+                        if field is None and key != "name":
+                            continue
+
+                        self.assertIsInstance(
+                            field,
+                            dict,
+                            f'White label "{code}" has an Immediate Help resource whose {key} is not a dict '
+                            "with _label and _default_message.",
+                        )
+                        self.assertTrue(
+                            field.get("_label") and field.get("_default_message"),
+                            f'White label "{code}" has an Immediate Help resource {key} missing "_label" or '
+                            '"_default_message". The frontend would render the raw object instead of text.',
+                        )
+
+                        label = field["_label"]
+                        self.assertNotIn(
+                            label,
+                            seen_labels,
+                            f'White label "{code}" repeats the Immediate Help label {label!r}. Both entries '
+                            "would show the same translated text.",
+                        )
+                        seen_labels.add(label)
+
+                    link = option.get("link")
+                    if link is not None:
+                        parsed = urlparse(link)
+                        self.assertTrue(
+                            parsed.scheme == "https" and bool(parsed.netloc),
+                            f'White label "{code}" has an Immediate Help link that is not an absolute https URL: '
+                            f"{link!r}.",
+                        )

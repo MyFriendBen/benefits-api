@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_hoboken_shelter",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "The Hoboken Shelter",
+      "description": "The Hoboken Shelter offers food and is open to the public. No eligibility rules are published. Walk in any day, 7am-9pm. Call 201-656-5069.",
+      "link": "https://www.hobokenshelter.org",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hudson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,6 +1,6 @@
 {
     "white_label": {"code": "ma"},
-    "program_category": {"external_name": "ma_housing", "name": "Housing", "icon": "housing"},
+    "program_category": {"external_name": "housing", "name": "Housing", "icon": "housing"},
     "program": {
         "name_abbreviated": "ma_middle_income_rental",
         "year": "2025",

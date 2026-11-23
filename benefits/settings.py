@@ -21,6 +21,11 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
+from benefits.cache_config import redis_pool_kwargs
+from benefits.celery_config import BROKER_POOL_LIMIT, BROKER_SOCKET_TIMEOUT, broker_use_ssl
+from benefits.sentry_scrub import scrub_event
+from benefits.throttle_config import throttle_rate
+
 EXTRA_LANG_INFO = {
     "am": {
         "bidi": False,
@@ -81,10 +86,44 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "EXCEPTION_HANDLER": "benefits.views.drf_exception_handler",
+    # The one proxy in front of the app is Heroku's router (api.myfriendben.org is a
+    # herokudns CNAME, no CDN), which appends the connecting IP to X-Forwarded-For.
+    # With this unset, throttles keyed on the whole header, so a client sending its
+    # own X-Forwarded-For got a fresh budget per request. 1 means "the last entry",
+    # the one the router wrote. For a client that sends no such header, this is the
+    # same IP as before. Revisit if a CDN or another proxy is put in front.
+    "NUM_PROXIES": 1,
     "DEFAULT_THROTTLE_RATES": {
         "nps": "3/hour",  # Limit NPS submissions to prevent abuse
         "rem": "30/hour",  # Limit REM impact proxy requests to protect the upstream API key
         "places": "200/hour",  # Limit Places Autocomplete proxy requests per IP
+        # Benbot proxies to a paid LLM and holds a worker for up to AI_SERVICE_TIMEOUT
+        # (60s) per message, on AllowAny endpoints. Generous enough for a real
+        # conversation, tight enough to bound cost and worker exhaustion.
+        "assistant_start": "30/hour",
+        # Reads are cheap and frequent (the widget opens on nearly every results page).
+        "assistant_history": "120/hour",
+        "assistant_message": "120/hour",
+        # Ratings are one UPDATE each, but every assistant bubble carries the buttons
+        # and changing or clearing a rating is another call, so a normal conversation
+        # spends multiples of its message count here.
+        "assistant_rating": "240/hour",
+        # Save My Results (MessageViewSet) makes MyFriendBen send an email or a text
+        # to any address the caller supplies. Per IP: far above any one household,
+        # since one public IP can be a navigator office, a library or a mobile
+        # carrier's NAT; the daily ceiling is what bounds a script on one address.
+        # Per phone: a typo fix goes to a different number, so these only bound
+        # repeats to one number. How the four work together is in
+        # screener.throttles.SaveResultsRateThrottle.
+        #
+        # Each can be changed per environment without a deploy, e.g. looser on
+        # staging where QA texts one phone repeatedly:
+        #   heroku config:set MESSAGE_PHONE_RATE=50/hour MESSAGE_PHONE_DAY_RATE=200/day
+        # A blank or unreadable value falls back to the default here.
+        "message_ip": throttle_rate("MESSAGE_IP_RATE", "100/hour"),
+        "message_ip_day": throttle_rate("MESSAGE_IP_DAY_RATE", "500/day"),
+        "message_phone": throttle_rate("MESSAGE_PHONE_RATE", "5/hour"),
+        "message_phone_day": throttle_rate("MESSAGE_PHONE_DAY_RATE", "10/day"),
     },
 }
 
@@ -120,6 +159,8 @@ INSTALLED_APPS = [
     "configuration.apps.ConfigurationConfig",
     "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
+    # Retained only so migration 0005 (DeleteModel) applies in every environment;
+    # the app has no models, views, or commands. Remove once 0005 is deployed everywhere.
     "validations.apps.ValidationsConfig",
     "integrations.apps.IntegrationsConfig",
     "rest_framework",
@@ -311,51 +352,67 @@ if config("SENTRY_DSN", None) is not None:
     sentry_sdk.init(
         dsn=config("SENTRY_DSN"),
         integrations=[DjangoIntegration()],
-        environment="dev" if DEBUG else "production",
+        # Staging and production both run with DEBUG off, so without SENTRY_ENVIRONMENT
+        # they report as one environment and an alert rule cannot tell them apart
+        # (docs/BENJI_SMS_WORKER.md). Set SENTRY_ENVIRONMENT=staging on the staging app.
+        environment=config("SENTRY_ENVIRONMENT", default="dev" if DEBUG else "production"),
+        before_send=scrub_event,
     )
 
 django_heroku.settings(locals())
 
 # Cache Configuration
-# Multiple cache backends for different use cases
-# Heroku Redis automatically sets REDIS_URL when the add-on is provisioned
+# Uses Redis in production (REDIS_URL is set automatically by the Heroku Redis add-on).
+# Falls back to in-memory cache for local development when REDIS_URL is not set.
 REDIS_URL = config("REDIS_URL", default=None)
 
-# Always provide both cache backends
-CACHES = {
-    "default": {
-        # Use in-memory cache for Parler translations by default
-        # This avoids Redis connection issues and keeps translations fast
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "parler-translations",
-        "TIMEOUT": 300,
-        "OPTIONS": {
-            "MAX_ENTRIES": 10000,
-        },
-    },
-}
-
-# Add Redis cache backend if REDIS_URL is available
-if REDIS_URL:  # pragma: no cover
-    CACHES["redis"] = {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            # Connection pool settings (good for production with multiple dynos)
-            "CONNECTION_POOL_KWARGS": {
-                "max_connections": 50,
-                "retry_on_timeout": True,
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": redis_pool_kwargs(REDIS_URL),
+                # Translation payloads dominate this cache and compress ~3.5x,
+                # which matters against a 25MB Redis shared with every other
+                # cache in the app.
+                "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+                "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
+                "SOCKET_TIMEOUT": 5,  # seconds
+                # If Redis is down, treat it as a cache miss instead of raising —
+                # callers (including Parler) fall through to their source of truth
+                # rather than crashing the page.
+                "IGNORE_EXCEPTIONS": True,
             },
-            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
-            "SOCKET_TIMEOUT": 5,  # seconds
+            "KEY_PREFIX": "benefits",
+            "TIMEOUT": 300,
         },
-        "KEY_PREFIX": "benefits",  # Namespace for all cache keys
-        "TIMEOUT": 300,  # Default timeout: 5 minutes
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "parler-translations",
+            "TIMEOUT": 300,
+            "OPTIONS": {
+                "MAX_ENTRIES": 10000,
+            },
+        },
     }
 
-# Configure Parler to use the default (LocMemCache) backend
-PARLER_CACHE_BACKEND = "default"
+# Parler caches each translation row individually. Nothing reads those entries --
+# /api/translations/ is served from the per-language aggregate built in
+# translations.models -- so they would add ~156k keys to a 25MB Redis for no
+# benefit, and writing them is what made a cold rebuild unserveable.
+PARLER_ENABLE_CACHING = False
+
+# IGNORE_EXCEPTIONS above keeps a Redis outage from taking the site down, but it
+# also hides hard misconfiguration (a bad URL or a rejected cert looks exactly
+# like a cache miss). Log what it swallows so those surface instead of showing
+# up only as latency.
+DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
+
 
 # UNFOLD SETTINGS
 UNFOLD = {
@@ -420,11 +477,90 @@ UNFOLD = {
 REWIRING_AMERICA_API_KEY = config("REWIRING_AMERICA_API_KEY", default="")
 GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
 
+# Twilio for Benji SMS (integrations.services.communications.benji_sms). Save My Results
+# (integrations.services.communications.message) still reads the same env vars itself.
+TWILIO_SID = config("TWILIO_SID", default="")
+TWILIO_TOKEN = config("TWILIO_TOKEN", default="")
+TWILIO_PHONE_NUMBER = config("TWILIO_PHONE_NUMBER", default="")
+
+# Benji SMS kill switch (MFB-2433), raw. benji_sms.outbound_enabled() parses it
+# fail-closed: only true/1/yes/on means on; missing or anything else is off.
+BENJI_SMS_OUTBOUND_ENABLED = config("BENJI_SMS_OUTBOUND_ENABLED", default="")
+
+# Benji SMS phone-hash key (MFB-2435), one per environment, also kept in the password
+# manager. benji_sms_hash.phone_hash() refuses to run without it. Rotating it orphans
+# every binding, which expires every SMS conversation: a deliberate operation, never
+# routine. Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+BENJI_SMS_HASH_KEY = config("BENJI_SMS_HASH_KEY", default="")
+
+# Celery (MFB-2436), for the Benji SMS worker. Runbook: docs/BENJI_SMS_WORKER.md.
+#
+# The broker is its own Redis add-on, attached as CELERY_BROKER, never the cache's
+# REDIS_URL (see benefits/celery_config.py). Empty means none is attached: the enqueue
+# helpers in screener/tasks.py then refuse with BrokerNotConfigured, instead of Celery
+# trying its default broker on localhost and failing with an error that does not say why.
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="")
+# Eager runs a task in-process at the call, so local work needs no broker or worker.
+# On by default when DEBUG is, and in tests (pytest.ini). A developer running a real
+# worker locally sets CELERY_TASK_ALWAYS_EAGER=False.
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=DEBUG, cast=bool)
+# Off, so an eager job behaves as it would on a worker: retried, then dead-lettered,
+# with the failure on the result rather than raised at the call. Propagating raises
+# before Celery runs the retry or the task's on_failure, which would skip both.
+CELERY_TASK_EAGER_PROPAGATES = False
+CELERY_BROKER_USE_SSL = broker_use_ssl(CELERY_BROKER_URL)
+CELERY_BROKER_POOL_LIMIT = BROKER_POOL_LIMIT
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    # With late acks, a job whose worker vanished without handing it back (a crash, a
+    # SIGKILL) is handed out again once this many seconds pass unacknowledged. A reply
+    # that turns up an hour later (Celery's default) is worse than none, so it is short.
+    # It must stay above the longest a fetched job can sit unacknowledged, or a slow job
+    # runs twice while still running: a retry is fetched at once and held through its
+    # countdown, may then wait up to one attempt for a free child, then runs its own
+    # attempt. That is about 5 + 95 + 95 s (screener/tasks.py); 300 leaves room for
+    # several retries fetched together and for kombu's coarse restore cadence.
+    "visibility_timeout": 300,
+    "socket_timeout": BROKER_SOCKET_TIMEOUT,
+    "socket_connect_timeout": BROKER_SOCKET_TIMEOUT,
+}
+# Publishing retries briefly, then raises: the inbound webhook enqueues, and Twilio
+# should get an error it can retry rather than a request held open on a dead broker.
+CELERY_TASK_PUBLISH_RETRY_POLICY = {
+    "max_retries": 2,
+    "interval_start": 0,
+    "interval_step": 0.5,
+    "interval_max": 1,
+}
+CELERY_TASK_DEFAULT_QUEUE = "benji_sms"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+# At least once, not at most once: a job is acknowledged after it runs, and handed out
+# again if the worker is lost mid-job (a dyno restart). Duplicates are the turn's to
+# absorb (screener/tasks.py); a lost reply is not recoverable.
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+# One job per worker child at a time, so a slow turn never holds others hostage.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# Heroku stops a dyno by sending SIGTERM to every process in it, then SIGKILL 30s later.
+# Celery's pool children would exit on that SIGTERM mid-job, so the Procfile sets
+# REMAP_SIGTERM=SIGQUIT: the children ignore it and the main process runs a cold
+# shutdown, which first gives running jobs this long to finish, then hands the rest
+# back to the broker (late acks) for the next worker.
+CELERY_WORKER_SOFT_SHUTDOWN_TIMEOUT = 25  # seconds, inside Heroku's 30
+# Results are off by default; only the ping that benji_sms_worker_check waits on keeps
+# one, briefly, on the broker.
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL or None
+CELERY_REDIS_BACKEND_USE_SSL = broker_use_ssl(CELERY_BROKER_URL)
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_RESULT_EXPIRES = 600  # seconds
+
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields
 GRAPH_MODELS = {
     "output": "./_mfb_uml.png",
     "group_models": True,
-    "app_labels": ["screener", "programs", "configuration", "validations", "authentication"],
+    "app_labels": ["screener", "programs", "configuration", "authentication"],
     "exclude_models": ["Translation"],
 }

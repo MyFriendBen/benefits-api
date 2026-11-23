@@ -17,6 +17,65 @@ pytest
 pytest --cov --cov-report=html
 ```
 
+The suite runs in parallel by default (`-n auto` in `pytest.ini`), which takes it from
+roughly three minutes to under one. Two things follow from that:
+
+- **Recording drops back to one process automatically.** `VCR_MODE=all`,
+  `VCR_MODE=new_episodes`, and any run with `PE_RECORD=1` may write cassettes, and
+  parallel workers would issue duplicate live API calls and race to write the same file.
+  `conftest.py` detects these and disables the fan-out, so the recording commands below
+  need no extra flags.
+- **`once` is downgraded to `none` inside a worker.** `once` is write-protected only
+  after a cassette has been loaded, so a *missing* cassette lets it record live — and two
+  workers hitting the same missing cassette would both call the API and race to write it.
+  A parallel run that has not opted into recording therefore replays strictly instead:
+  a missing cassette fails rather than being recorded. Serial runs keep `once` as-is, so
+  `pytest -n 0` still reports the "cassette missing, recorded it" behaviour if you want
+  it.
+- **Each worker gets its own Redis database** when `REDIS_URL` is set, because
+  `clear_cache` issues FLUSHDB and would otherwise wipe other workers' entries mid-test.
+  Workers are numbered *above* the database `REDIS_URL` names, leaving that one to serial
+  runs and to `benefits/tests/test_redis_backend.py`, which uses its own key prefix there. Pointing
+  `REDIS_URL` at a higher database leaves fewer to hand out.
+  `pytest.ini` therefore caps the fan-out with `--maxprocesses 14`, which is what keeps
+  `-n auto` safe on a large machine: it counts *logical* cores here (xdist prefers
+  physical via `psutil`, which is not installed). Raising the cap past 15 fails with a
+  message naming the limit rather than letting workers share a database.
+
+Pass `-n 0` to force a serial run when debugging test interdependence.
+
+### Split Across CI Jobs
+
+PR validation also splits the suite across 3 parallel jobs with
+[pytest-split](https://github.com/jerry-git/pytest-split), each of which still fans out
+with xdist. The groups are balanced by a `.test_durations` file, a record of how long each
+test took. It isn't committed; CI keeps it current on its own:
+
+1. **Every merge to main**, the staging deploy runs the whole suite with
+   `--store-durations --clean-durations` and saves the resulting `.test_durations` to the
+   GitHub Actions cache as `test-durations-<commit sha>`.
+2. **Every PR run** starts with a "Resolve test durations" job that restores the newest of
+   those entries, once, and passes the file to all 3 test groups as an artifact. The groups
+   must split the suite by the identical file — two different files cut it in different
+   places, leaving some tests in two groups and some in none — so no group restores its
+   own, and a group that can't download the shared file fails instead of guessing. Each
+   group logs the file's sha256, so you can confirm they match.
+3. **With nothing cached** — before the first staging deploy, or after an entry goes 7
+   days unused and is evicted — the resolve job hands out an empty record, and pytest-split
+   divides the tests evenly by count: less balanced, but still consistent.
+
+The file only steers how the work is divided: a test missing from it — such as one the
+PR itself adds — is still run, and counted at the average duration until a staging deploy
+records it.
+
+To run one group locally the way CI does, record durations first (or skip that and get an
+even split by count):
+
+```bash
+pytest --store-durations --clean-durations
+pytest --splits 3 --group 1
+```
+
 ### Unit Tests Only
 ```bash
 # Skip integration tests
@@ -50,10 +109,13 @@ Controlled by the `VCR_MODE` environment variable:
 
 | Environment | VCR_MODE | Behavior | API Calls |
 |------------|----------|----------|-----------|
-| **PRs** | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
-| **Push to main** | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. | ✅ Yes (overwrites everything) |
-| **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** | Only if entire cassette file missing |
+| **PRs** (`pr-validation`) | `none` | **Read-only:** Replays only. A request with no matching cassette fails the build rather than being recorded live, so a PR cannot pass by reaching a real API. | ❌ No (never records) |
+| **Push to main** (`deploy-staging`) | `none` | Same as PRs: replay-only, parallel. Every commit here already passed the PR gate. | ❌ No (never records) |
+| **Release** (`deploy-production`) | `none` | Same as PRs: replay-only, run against the release tag. Deploy is blocked unless it passes. | ❌ No (never records) |
+| **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** In a parallel run (the default) this is downgraded to `none`, so a missing cassette fails instead of recording. | Only if entire cassette file missing, and only when running serially |
 | **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
+
+Re-recording in CI is never committed — no workflow commits cassettes — and every CI job runs `none`, so CI never refreshes what's in the repo and never reaches a live API.
 
 ### Running Integration Tests Locally
 
@@ -85,19 +147,248 @@ pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHud
 
 ---
 
+## PolicyEngine Spec-Scenario Tests
+
+Every program calculator gets tests that mirror its `spec.md` **Test Scenarios** 1:1 — one test per scenario, asserting eligibility *and* benefit value. Custom (MFB) calculators get plain unit tests, because the rules and amounts are our code. PolicyEngine calculators get the same assertions wrapped as VCR integration tests: the answer comes from PolicyEngine, so we record it once and replay it forever after.
+
+Helpers live in `programs/programs/testing_fixtures/pe_integration.py`; the harness itself is covered by `programs/framework/tests/test_pe_integration_harness.py`. Nothing in the helpers is coupled to `spec.md` — they run a calculator and hand back an `Eligibility`; mirroring Test Scenarios is a convention of the callers.
+
+The harness sits in `framework/` rather than with the PolicyEngine client because it builds `Screen`s and runs calculators. `integrations/clients/policyengine/` is the wire layer only — the POST, the token cache, version resolution — and holds no cassettes.
+
+**State variants share one contract test.** A state's subclass of a federal calculator
+(`CoLifeline`, `TxSnap`) keeps its base's inputs and sends its own state code;
+`programs/framework/tests/test_state_variant_contract.py` asserts that over the registry.
+Test what the state *adds* beside the variant, not the inheritance.
+
+**A program's own tests and cassettes live next to the program**, not here: `programs/programs/{state}/{program}/tests/` with a `cassettes/` directory beside them. `conftest.py` derives `cassette_library_dir` from each test file's own directory, so a test and its cassettes always travel together.
+
+### Writing one
+
+```python
+import pytest
+from programs.programs.testing_fixtures.pe_integration import (
+    PeIntegrationTestCase, add_income, add_member, calc_pe_program, make_program, make_screen,
+    screener_value,
+)
+
+@pytest.mark.integration          # applies VCR (the base class carries this too)
+class TestTxHeadStart(PeIntegrationTestCase):
+    # Records and replays at PE_TEST_VERSION. No pe_version needed.
+
+    def test_scenario_1_single_parent_child_age_3_under_income_limit(self):
+        screen = make_screen(screen_id=1, white_label_code="tx", state_code="TX",
+                             household_size=2, zipcode="78701", county="Travis County")
+        parent = add_member(screen, member_id=1, relationship="headOfHousehold", age=34)
+        add_income(parent, amount=1_496)
+        add_member(screen, member_id=2, relationship="child", age=3)
+        program = make_program("tx", "tx_head_start", year="2025")
+
+        eligibility = calc_pe_program(screen, TxHeadStart, program)
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(screener_value(eligibility), 12_076)
+```
+
+Three rules make a PolicyEngine cassette replayable — the helpers enforce them, don't work around them:
+
+1. **Assign explicit primary keys.** The request keys `household.people` by member id and the *response* is keyed the same way, so a cassette recorded under different auto-increment pks can neither be matched nor read.
+2. **Pin the model version.** Every test case records at `PE_TEST_VERSION` (`pe_integration.py`) unless it overrides `pe_version`, and an override must set `pe_version_reason`. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
+3. **Assert the truncated value** with `screener_value(...)`. PolicyEngine returns fractional dollars; the API truncates before serving, so whole dollars are what the spec and the user see.
+
+**Build each scenario at the program's recorded year.** `calc_pe_program` fails a scenario whose `Program.year` differs from the edition `programs/vintage.py` records for that program, since `year` is the PolicyEngine request period and a test at another year asserts values no household is shown. A scenario that deliberately runs another year — one proving the calculator reads year-specific parameters — passes `off_vintage` saying why. Programs with no entry in `programs/vintage.py` aren't checked.
+
+### Recording and verifying
+
+Run these with `pytest`, **not** `manage.py test` — VCR is a pytest fixture, so under the Django runner these tests would hit PolicyEngine live on every run.
+
+```bash
+# 1. Record (needs POLICY_ENGINE_CLIENT_ID / POLICY_ENGINE_CLIENT_SECRET)
+PE_RECORD=1 VCR_MODE=once venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -v
+
+# 2. Prove it replays with no network
+VCR_MODE=none venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -q
+
+# 3. Commit the cassettes with the tests
+git add programs/programs/white_labels/mo/pts/tests/
+```
+
+`PE_RECORD=1` (with credentials) is the only way a PolicyEngine test reaches the network. Without it the harness patches the token fetch to return a placeholder (`pe_integration.py::stub_pe_token_for_replay`), and its cassettes open in `none` whatever `VCR_MODE` says (`conftest.py::cassette_record_mode`): a missing cassette or a changed body fails as "no match" instead of sending the placeholder live. So an ordinary `pytest` never authenticates or calls PolicyEngine, even on a machine with credentials in `.env`, and never overwrites or evicts a real token cached in Redis. Recording runs in one process, so it fetches one real token and caches it in the Redis database `REDIS_URL` names, where it lasts ~30 days. PolicyEngine limits how many are minted per month, so don't flush that database needlessly.
+
+The pinned version must be one PolicyEngine currently serves — it rejects exact versions other than what `current`/`frontier` resolve to:
+
+```bash
+curl -s https://household.api.policyengine.org/versions/us
+```
+
+### Refreshing after PolicyEngine moves
+
+A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: bump `PE_TEST_VERSION`, delete the affected cassettes, re-run step 1, and review the value diff. A module that can't move yet keeps its cassettes by overriding `pe_version` with its old version and a `pe_version_reason`; delete both once it is re-recorded. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
+
+Re-recording and adopting a new PolicyEngine version are always the same act: PolicyEngine serves only what `current`/`frontier` currently resolve to, and returns `422 unsupported_version` for anything else. A cassette can never be refreshed at its original pin.
+
+Because of that, these tests **skip under `VCR_MODE=all`** (which never replays and would re-run every scenario against a version PolicyEngine may no longer serve). Live drift detection belongs in a scheduled job that bumps the pin deliberately, not in a deploy.
+
+Anything a *failing* test records is discarded on teardown — the cassette is restored, or removed if the test created it — so a bad recording can't leave an error response behind to replay forever. If a recording attempt fails, fix the cause and re-run. (Note that VCR's own `record_on_exception` cannot do this from inside a fixture: pytest never throws a test failure into a fixture generator, so `Cassette.__exit__` sees a clean exit. `conftest.py` tracks the outcome itself via `pytest_runtest_makereport`.)
+
+---
+
+## Custom (MFB) Calculator Tests
+
+A custom calculator computes locally, so its tests need no cassette and no network — a
+household, a `Program` row, and an assertion. `programs/programs/testing_fixtures/custom_calculator.py`
+supplies a base test case, paralleling `pe_integration.py` on the PolicyEngine side. Both
+build households with the same builders, from `testing_fixtures/households.py`.
+
+### The base test case
+
+`CustomCalculatorTestCase` creates the white label, the FPL year and the `Program` row in
+`setUpTestData`, so a test states only the household:
+
+```python
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
+from programs.programs.white_labels.co.myprogram.calculator import MyProgram
+
+
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    program_code = "co_my_program"
+    white_label_code = "co"
+    state_code = "CO"
+
+    def test_eligible_household(self):
+        screen = self.make_screen(household_size=2, county="Denver County")
+        add_income(self.add_member(screen), 1_500)
+
+        eligibility = self.calculate(screen)
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(eligibility.value, 1_200)
+```
+
+`calculate()` runs `calc()`, so it raises `DependencyError` when the calculator declares a
+dependency the screen does not supply — pass `missing=("income_amount",)` to assert that a
+program is skipped rather than valued wrongly. It returns the `Eligibility` alone; a few
+older suites define a local `calculate()` returning `(calculator, eligibility)`, so check
+before migrating a file that has its own helper of the same name.
+
+To assert on one step instead of the final result, `make_calculator()` returns the
+calculator without running it — `eligible()` for the household and member rules alone, or a
+program-specific method:
+
+```python
+calculator = self.make_calculator(screen)
+
+self.assertTrue(calculator.eligible().eligible)
+self.assertEqual(calculator.income_limit_125(), 31_000)
+```
+
+### Skipping the program row
+
+`setUpTestData` builds a real `Program` row, because a calculator doing a percent-of-poverty
+test reads `self.program.year`. That row costs a `Translation` per translated field per
+language, so a calculator that never touches `self.program` should opt out:
+
+```python
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    needs_program_row = False        # self.program is a Mock
+```
+
+Most existing custom tests are in this group — they stand up a `Mock()` program today.
+
+### Proving the stored `age` is unused
+
+The `age` column is being retired in favour of `calc_age()` / `fraction_age()`. A calculator
+that reads age only through those sets `stores_age = False`: members are then saved with a
+null `age`, as they will be once the column is dropped, so a stray `member.age` fails in the
+calculator's own tests instead of in production.
+
+```python
+class TestMyProgram(CustomCalculatorTestCase):
+    calculator_class = MyProgram
+    stores_age = False
+```
+
+### HUD income limits
+
+`self.hud_ami(...)` stubs the HUD client for this calculator's module. `limit` is a number,
+a dict keyed by AMI band (`{"60%": 60_000}`), or a callable; `payment_standard` is the
+monthly SAFMR/FMR in dollars a voucher calculator reads. A lookup the test did not supply
+fails the test on exit — it cannot raise in place, because the voucher calculators catch
+every exception and report $0.
+
+### When to use this fixture, and when to mock instead
+
+Two strategies coexist deliberately. Measured over ten identical tests:
+
+| | per test | when |
+| -- | -- | -- |
+| mock the `Screen` outright | ~1ms | the calculator reads a handful of attributes and no related rows |
+| this fixture, `needs_program_row = False` | ~3ms | the calculator walks `household_members`, income streams, or insurance |
+| this fixture with a real `Program` | ~33ms | the calculator reads `program.year` for an FPL or SMI limit |
+
+The cost is the `Program` row, not the fixture: it writes a `Translation` per translated
+field per language. Between the first two rows the difference is single-digit
+milliseconds, so prefer the fixture whenever a test would otherwise hand-assemble a
+`Screen` and its members — a real household that raises the way production raises is
+worth 2ms.
+
+Around 50 test modules mock the `Screen` and never touch the database. Those are correct
+as they stand: their calculators take a few scalars, and rewriting them against the
+database would make them slower without making them stronger. Migrate a file when it is
+already building a DB household by hand, not on principle.
+
+### The builders
+
+| builder | what it makes |
+| -- | -- |
+| `make_screen(white_label_code, state_code, household_size=…, zipcode=…, county=…)` | the household. `household_size` drives FPL and SMI lookups and is **not** derived from the members added afterwards |
+| `add_member(screen, relationship, age, **kwargs)` | a member, with an uninsured `Insurance` record — the relation is non-null, so a calculator reading `member.insurance` raises without it. The age is written as a `birth_year_month`; pass `birth_year_month` instead (with `age=None`) when a scenario turns on a calendar date, and pin `reference_date` so it does not drift. Both at once must agree. Condition checkboxes (`student`, `pregnant`, `disabled`, …) default to False, as the screener sends them; `TestMatchesTheScreener` holds the fixture to a screener-shaped payload |
+| `set_age(member, age)` | changes an existing member's age. Never assign `member.age` directly — `calc_age()` reads the birth month, which would still say the old age |
+| `add_income(member, amount, income_type="wages", frequency="monthly")` | an income stream, stated as the scenario states it — `calc_gross_income` annualizes by frequency. Sets `has_income`, as the screener does |
+| `add_expense(member, amount, expense_type="rent")` | an expense, for programs that net it out of income |
+| `add_insurance(member, medicaid=True, none=False)` | replaces the member's insurance. Name only what the scenario needs |
+| `make_program(white_label_code, name_abbreviated, year)` | the `Program` row. A calculator reading `self.program.year.period` fails on an unsaved one |
+
+`pe_integration.make_screen`/`add_member` are these same builders with the primary key
+required, and with `screener_defaults=False`: the committed cassettes were recorded from
+members without the checkbox defaults, birth month or `Insurance` row, and the request
+body they match on changes with any of them. Turning the defaults on for PolicyEngine
+tests means re-recording their cassettes.
+
+### Gating on another program
+
+A calculator that reads another program's result calls `self.program_eligible("co_medicaid")`,
+which raises `DependencyError` when the upstream has not been calculated. Pass the upstream's
+verdict through `calculate()`:
+
+```python
+upstream = Eligibility()
+upstream.condition(True)
+
+eligibility = self.calculate(screen, data={"co_medicaid": upstream})
+```
+
+Omitting it asserts the other half of the contract — that an uncalculated upstream raises
+rather than resolving to "not eligible."
+
+---
+
 ## Cassette Management
 
 ### Cassette Storage
 
-Cassettes are stored in `cassettes/` directories next to test files:
+Cassettes are stored in `cassettes/` directories next to test files, named `<TestClass>.<test_name>.yaml`:
 ```
 integrations/clients/hud_income_limits/tests/
 ├── test_integration.py
 └── cassettes/
-    ├── test_real_api_call_cook_county_il.yaml
-    ├── test_real_api_call_denver_county_co.yaml
+    ├── TestHudIntegrationMTSP.test_real_api_call_cook_county_il.yaml
+    ├── TestHudIntegrationMTSP.test_real_api_call_denver_county_co.yaml
     └── ...
 ```
+
+The class prefix matters: without it, two identically-named methods in different classes in the same module share one cassette and silently replay each other's recording.
 
 ### When to Update Cassettes
 
@@ -133,27 +424,33 @@ git diff integrations/**/cassettes/*.yaml
 
 ## CI/CD Testing Strategy
 
-### Pull Requests (VCR_MODE=new_episodes)
+### Pull Requests (VCR_MODE=none)
 ```yaml
-- Records new interactions only
-- Replays existing cassettes
-- Fast feedback for existing tests
-- Only makes API calls for new test scenarios
-- Requires HUD_API_TOKEN secret
+- Replays existing cassettes only
+- Never records; no API calls, no credentials needed
+- A request with no matching cassette fails the build
+- Runs in parallel (-n auto)
 ```
 
-**If new tests added**: New cassettes will be recorded automatically in CI.
+**If new tests added**: record their cassettes locally and commit them. CI will not record
+on your behalf — a missing cassette is a build failure, which is the point: it keeps a PR
+from passing against a live API.
 
-### Push to Main (VCR_MODE=all)
-```yaml
-- Re-records ALL cassettes
-- Makes real API calls for every test
-- Validates actual API integrations
-- Ensures API interface hasn't changed
-- Requires HUD_API_TOKEN secret
-```
+### Push to Main (VCR_MODE=none)
 
-**Purpose**: Catch API breaking changes and verify cassettes are up-to-date before merging to main.
+`deploy-staging` runs the same strict playback as PR validation. Every commit reaching
+main has already passed that gate, so there is nothing left to record.
+
+### Release / Production Deploy (VCR_MODE=none)
+
+`deploy-production` runs the same strict playback against the release tag, and `deploy`
+needs it to pass. It does not record: the private PolicyEngine API serves only `current`
+and `frontier`, so re-recording pinned cassettes on a release would 422 rather than gate
+anything. `HUD_API_TOKEN` must be set — the job fails if it is empty, since an unset token
+silently skips the HUD integration tests.
+
+No CI job reaches a live API. Live PolicyEngine re-runs belong in a scheduled, non-blocking
+drift job that bumps the pin deliberately.
 
 ---
 

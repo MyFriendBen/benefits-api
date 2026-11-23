@@ -1,0 +1,479 @@
+"""
+One screen, more than one PolicyEngine request.
+
+Programs on a screen share one payload, so two that want different values for the same input
+cannot both be served by it. That used to raise out of payload assembly uncaught and 500
+`/api/eligibility/{id}`, losing every program's results over one program's disagreement
+`calc_pe_eligibility` now sends one request per group of programs that agree and merges the
+results, so a disagreement costs a round trip instead of the response.
+"""
+
+import datetime
+import re
+from unittest.mock import MagicMock, patch
+
+from django.test import TestCase, override_settings
+
+import programs.framework.pe_dependencies as dependency
+from benefits.tests.cache_override import LOCAL_CACHE
+from integrations.clients.policyengine import policy_engine as pe
+from integrations.external_api_status import POLICY_ENGINE, get_external_api_failures, track_external_api_failures
+from programs.framework.pe_dependencies.base import ConflictingDependencyError, Member, SpmUnit
+from programs.framework.pe_dependencies.payload import build_pe_input
+from screener.models import HouseholdMember, Screen, WhiteLabel
+
+PERIOD = "2026"
+
+
+class FortyYearOld(Member):
+    field = "age"
+
+    def value(self):
+        return 40
+
+
+class FortyOneYearOld(Member):
+    field = "age"
+
+    def value(self):
+        return 41
+
+
+class FortyTwoYearOld(Member):
+    field = "age"
+
+    def value(self):
+        return 42
+
+
+class NeedsVersionOne(SpmUnit):
+    """A fake output that needs PolicyEngine 1.0.0 or later. Like `snap_if_takes_up`, it is dropped when the
+    version is unknown."""
+
+    field = "needs_version_one"
+    min_pe_version = (1, 0, 0)
+
+
+def sent_payloads(log):
+    """Fake engine that records the payload it was handed. Constructed once per request, so
+    the log is the request count as well as the request bodies."""
+
+    class _Engine:
+        method_name = "Fake Policy Engine API"
+
+        def __init__(self, data):
+            log.append(data)
+            self.request_payload = data
+            self.response_json = {"result": {}}
+
+    return _Engine
+
+
+@override_settings(CACHES=LOCAL_CACHE)
+class PeBucketTestBase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+
+    def setUp(self):
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Cole County",
+            household_size=1,
+            completed=False,
+        )
+        # Explicit pk. The conflict message addresses the slot as ``people/<member id>``,
+        # and an auto-assigned id eventually lands on one containing "40" or "41" -- 407, say
+        # -- which makes the redaction assertion below fail on a sequence value rather than
+        # on anything the message actually leaked. Sequences are not reset between tests, so
+        # which id this gets depends on how many rows the rest of the suite created first.
+        self.head = HouseholdMember.objects.create(id=9, screen=self.screen, relationship="headOfHousehold", age=40)
+        self.head_id = str(self.head.id)
+
+    def calculator(self, inputs, period=PERIOD):
+        calc = MagicMock()
+        calc.can_calc.return_value = True
+        calc.pe_inputs = list(inputs)
+        calc.pe_outputs = []
+        calc.pe_monthly_outputs = []
+        calc.pe_period = period
+        return calc
+
+    def run_reported(self, calculators):
+        """Run the bucket loop and hand back both reporting channels for inspection."""
+        log = []
+        with patch.object(pe, "pe_engine", sent_payloads(log)), patch.object(
+            pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")
+        ), patch.object(pe, "capture_message") as capture_message, patch.object(pe, "logger") as logger:
+            result = pe.calc_pe_eligibility(self.screen, calculators)
+
+        warnings = [c for c in capture_message.call_args_list if c.kwargs.get("level") == "warning"]
+        return result, log, warnings, logger
+
+    def run_eligibility(self, calculators, max_buckets=None):
+        """Run the real payload build and bucket loop against a fake engine.
+
+        `all_eligibility` is faked to report whichever programs it was handed, which is how
+        these assert that each request answered the right programs.
+        """
+        log = []
+        patches = [
+            patch.object(pe, "pe_engine", sent_payloads(log)),
+            patch.object(pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")),
+            patch.object(pe, "capture_message"),
+        ]
+        if max_buckets is not None:
+            patches.append(
+                patch.object(
+                    pe,
+                    "build_pe_input",
+                    side_effect=lambda *args, **kwargs: build_pe_input(*args, **{**kwargs, "max_buckets": max_buckets}),
+                )
+            )
+
+        for p in patches:
+            p.start()
+        self.addCleanup(lambda: [p.stop() for p in patches])
+
+        return pe.calc_pe_eligibility(self.screen, calculators), log
+
+    def ages(self, payload):
+        return payload["household"]["people"][self.head_id]["age"]
+
+
+class TestEveryLossReportsToTheResultsBanner(PeBucketTestBase):
+    """`external_api_failures` drives the results-page banner telling the household their
+    list may be short. It used to be signalled from one site -- the `except Exception` in
+    `_run_bucket` -- so a transport failure reported and four other ways of losing a program
+    did not. `calc_pe_eligibility` now derives it from which programs came back.
+    """
+
+    def run_tracked(self, calculators, **kwargs):
+        with track_external_api_failures():
+            result, log = self.run_eligibility(calculators, **kwargs)
+            failures = get_external_api_failures()
+
+        return result, log, failures
+
+    def run_with_resolved_version(self, version):
+        """Run one normal program and one gated program. `version` is what `/versions/us` gives."""
+        gated = self.calculator([FortyYearOld])
+        gated.pe_outputs = [NeedsVersionOne]
+
+        with patch.object(pe.pe_versions, "resolve_unpinned_comparable_version", return_value=version) as resolve:
+            result, _, failures = self.run_tracked({"healthy": self.calculator([FortyYearOld]), "gated": gated})
+
+        resolve.assert_called_once()
+        return result, failures
+
+    def test_a_full_result_reports_nothing(self):
+        result, _, failures = self.run_tracked({"only": self.calculator([FortyYearOld])})
+
+        self.assertEqual(sorted(result["eligibility"]), ["only"])
+        self.assertEqual(failures, [])
+
+    def test_a_split_screen_answering_everything_reports_nothing(self):
+        """An extra request is a cost, not a failure: every program still got an answer."""
+        result, log, failures = self.run_tracked(
+            {"first": self.calculator([FortyYearOld]), "second": self.calculator([FortyOneYearOld])}
+        )
+
+        self.assertEqual(len(log), 2)
+        self.assertEqual(failures, [])
+
+    def test_a_program_dropped_for_contradicting_itself_reports(self):
+        """Previously silent: the drop happens in payload assembly, nowhere near
+        `_run_bucket`'s handler."""
+        result, _, failures = self.run_tracked(
+            {
+                "healthy": self.calculator([FortyYearOld]),
+                "contradicts_itself": self.calculator([FortyYearOld, FortyOneYearOld]),
+            }
+        )
+
+        self.assertEqual(sorted(result["eligibility"]), ["healthy"])
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_a_bucket_abandoned_on_the_time_budget_reports(self):
+        """Previously silent: the loop `break`s before any request is attempted."""
+        with patch.object(pe, "PE_BUCKET_TIME_BUDGET_SECONDS", -1):
+            result, _, failures = self.run_tracked(
+                {"first": self.calculator([FortyYearOld]), "second": self.calculator([FortyOneYearOld])}
+            )
+
+        self.assertEqual(sorted(result["eligibility"]), ["first"])
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_payload_assembly_failing_outright_reports(self):
+        """The worst previously-silent case: `ConflictingDependencyError` returns an empty
+        result, so the household loses *every* PolicyEngine program and used to be told
+        nothing."""
+        with track_external_api_failures():
+            with patch.object(pe, "build_pe_input", side_effect=ConflictingDependencyError("people/9", "age", 40, 41)):
+                with patch.object(pe, "capture_message"), patch.object(pe, "capture_exception"):
+                    result = pe.calc_pe_eligibility(self.screen, {"only": self.calculator([FortyYearOld])})
+            failures = get_external_api_failures()
+
+        self.assertEqual(result["eligibility"], {})
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_a_program_dropped_before_the_intended_set_does_not_report(self):
+        """`can_calc` failing is a missing screener answer, not a PolicyEngine failure. The
+        household is not told their results are short because of a question they skipped."""
+        uncalculable = self.calculator([FortyOneYearOld])
+        uncalculable.can_calc.return_value = False
+
+        result, _, failures = self.run_tracked(
+            {"answerable": self.calculator([FortyYearOld]), "uncalculable": uncalculable}
+        )
+
+        self.assertEqual(sorted(result["eligibility"]), ["answerable"])
+        self.assertEqual(failures, [])
+
+    def test_a_program_dropped_because_versions_us_failed_reports(self):
+        """If `/versions/us` fails, the version is unknown, so the gated program is dropped.
+        The household must still see the banner."""
+        result, failures = self.run_with_resolved_version(None)
+
+        self.assertEqual(sorted(result["eligibility"]), ["healthy"])
+        self.assertEqual(failures, [POLICY_ENGINE])
+
+    def test_a_resolved_version_keeps_the_gated_program_and_reports_nothing(self):
+        """If `/versions/us` works, the gated program is kept and no banner is shown."""
+        result, failures = self.run_with_resolved_version(NeedsVersionOne.min_pe_version)
+
+        self.assertEqual(sorted(result["eligibility"]), ["gated", "healthy"])
+        self.assertEqual(failures, [])
+
+
+class TestProgramsThatAgree(PeBucketTestBase):
+    def test_one_request_answers_every_program(self):
+        result, log = self.run_eligibility({"a": self.calculator([FortyYearOld]), "b": self.calculator([FortyYearOld])})
+
+        self.assertEqual(len(log), 1)
+        self.assertEqual(sorted(result["eligibility"]), ["a", "b"])
+
+    def test_the_response_shape_is_unchanged(self):
+        """Every screen returns this shape; only a split screen adds to it."""
+        result, _ = self.run_eligibility({"a": self.calculator([FortyYearOld])})
+
+        self.assertEqual(sorted(result["_pe_data"]), ["request", "response"])
+
+
+class TestProgramsThatDisagree(PeBucketTestBase):
+    def setUp(self):
+        super().setUp()
+        self.result, self.log = self.run_eligibility(
+            {
+                "agrees_one": self.calculator([FortyYearOld]),
+                "disagrees": self.calculator([FortyOneYearOld]),
+                "agrees_two": self.calculator([FortyYearOld]),
+            }
+        )
+
+    def test_every_program_still_gets_a_result(self):
+        """The regression this exists for: one program's disagreement used to cost all of
+        them their results."""
+        self.assertEqual(sorted(self.result["eligibility"]), ["agrees_one", "agrees_two", "disagrees"])
+
+    def test_it_took_two_requests(self):
+        self.assertEqual(len(self.log), 2)
+
+    def test_each_request_carried_the_value_its_programs_wanted(self):
+        self.assertEqual([self.ages(payload) for payload in self.log], [{PERIOD: 40}, {PERIOD: 41}])
+
+    def test_the_extra_request_is_reported_for_admins(self):
+        self.assertEqual(len(self.result["_pe_data"]["additional_requests"]), 1)
+        self.assertEqual(self.ages(self.result["_pe_data"]["request"]), {PERIOD: 40})
+        self.assertEqual(self.ages(self.result["_pe_data"]["additional_requests"][0]["request"]), {PERIOD: 41})
+
+
+class TestTheDisagreementIsReported(PeBucketTestBase):
+    def warning_message(self):
+        log = []
+        with patch.object(pe, "pe_engine", sent_payloads(log)), patch.object(
+            pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")
+        ), patch.object(pe, "capture_message") as capture_message:
+            pe.calc_pe_eligibility(
+                self.screen,
+                {
+                    "wants_forty": self.calculator([FortyYearOld]),
+                    "wants_forty_one": self.calculator([FortyOneYearOld]),
+                },
+            )
+
+        warnings = [c for c in capture_message.call_args_list if c.kwargs.get("level") == "warning"]
+        self.assertEqual(len(warnings), 1)
+        return warnings[0].args[0]
+
+    def test_it_names_the_slot_the_split_and_the_programs(self):
+        message = self.warning_message()
+
+        for expected in ("age", "wants_forty", "wants_forty_one", "2 request"):
+            self.assertIn(expected, message)
+
+    def test_it_does_not_send_the_household_values_to_sentry(self):
+        """A conflicting slot holds screener data about a real household. What disagreed is
+        actionable; what the household reported is not, and Sentry has no scrubbing
+        configured.
+
+        Matched on word boundaries, not as bare substrings. The message names the slot as
+        `<unit>/<sub_unit>`, and `sub_unit` is a HouseholdMember primary key — so a plain
+        `assertNotIn("41", ...)` also fires on `people/417`, which is an id and not a
+        household value. That made the test a function of whatever the id sequence
+        happened to reach: it passed locally and failed in CI on the same commit, for any
+        branch whose fixtures shifted the sequence. `\\b41\\b` still catches a real leak,
+        including `41` and `41.0` rendered into the values position.
+        """
+        message = self.warning_message()
+
+        self.assertIsNone(re.search(r"\b40\b", message), message)
+        self.assertIsNone(re.search(r"\b41\b", message), message)
+
+
+class TestPastTheRequestLimit(PeBucketTestBase):
+    def test_the_unserved_program_has_no_result(self):
+        """Bounded splitting means some screen shapes lose a program. It is reported absent,
+        which the caller already handles, rather than answered with a value it did not ask
+        for."""
+        result, log = self.run_eligibility(
+            {
+                "a": self.calculator([FortyYearOld]),
+                "b": self.calculator([FortyOneYearOld]),
+                "c": self.calculator([FortyTwoYearOld]),
+            },
+            max_buckets=2,
+        )
+
+        self.assertEqual(len(log), 2)
+        self.assertEqual(sorted(result["eligibility"]), ["a", "b"])
+
+
+class TestAnExpectedDisagreementIsNotAnAlert(PeBucketTestBase):
+    """`mo_pts` against every other Missouri program. The two age bases disagree by design
+    and on a large recurring share of MO traffic, so a Sentry warning per screen would be a
+    permanently-firing issue burying the disagreements that mean something. It still splits,
+    still answers both programs, and still gets recorded -- in the log."""
+
+    def setUp(self):
+        super().setUp()
+        # The claim year sits years ahead of the screening date so the two bases disagree
+        # whichever month the suite runs in. Pinning a birth month would agree every December.
+        self.head.birth_year_month = datetime.date(1961, 6, 1)
+        self.head.save()
+
+    def test_the_two_age_bases_are_logged_rather_than_captured(self):
+        result, log, warnings, logger = self.run_reported(
+            {
+                "screening_date_age": self.calculator([dependency.member.AgeDependency], period="2030"),
+                "claim_year_age": self.calculator([dependency.member.AgeAtEndOfClaimYearDependency], period="2030"),
+            }
+        )
+
+        self.assertEqual(len(log), 2)
+        self.assertEqual(sorted(result["eligibility"]), ["claim_year_age", "screening_date_age"])
+        self.assertEqual(warnings, [])
+        self.assertEqual(logger.info.call_count, 1)
+
+    def test_an_unrecognised_disagreement_still_raises(self):
+        _, _, warnings, logger = self.run_reported(
+            {"wants_forty": self.calculator([FortyYearOld]), "wants_forty_one": self.calculator([FortyOneYearOld])}
+        )
+
+        self.assertEqual(len(warnings), 1)
+        self.assertEqual(logger.info.call_count, 0)
+
+
+class TestAProgramThatContradictsItself(PeBucketTestBase):
+    """One program declaring two dependencies that write one field with different values. No
+    payload can serve it, so it is dropped -- where forcing it into a bucket of its own would
+    raise out of payload assembly and cost every PolicyEngine program on the screen."""
+
+    def test_it_is_dropped_and_every_other_program_still_answers(self):
+        result, log, warnings, _ = self.run_reported(
+            {
+                "healthy": self.calculator([FortyYearOld]),
+                "contradicts_itself": self.calculator([FortyYearOld, FortyOneYearOld]),
+            }
+        )
+
+        self.assertEqual(len(log), 1)
+        self.assertEqual(sorted(result["eligibility"]), ["healthy"])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("contradicts_itself", warnings[0].args[0])
+
+
+class TestTheTimeBudget(PeBucketTestBase):
+    """MAX_PAYLOAD_BUCKETS bounds how many requests a split costs; the budget bounds how long
+    they take. Three slow-but-not-failing PolicyEngine calls outlast the gunicorn worker
+    timeout, and a killed worker loses the whole response -- including the custom calculators
+    that never needed PolicyEngine, which is worse than the degraded result splitting buys."""
+
+    def spent_budget(self):
+        return patch.object(pe, "PE_BUCKET_TIME_BUDGET_SECONDS", -1)
+
+    def test_the_first_request_always_goes_out(self):
+        """It is what an unsplit screen would have sent, so a spent budget must not cost a
+        screen the results it would have had without splitting."""
+        with self.spent_budget():
+            result, log = self.run_eligibility({"only": self.calculator([FortyYearOld])})
+
+        self.assertEqual(len(log), 1)
+        self.assertEqual(sorted(result["eligibility"]), ["only"])
+
+    def test_a_later_request_is_abandoned_once_the_budget_is_spent(self):
+        with self.spent_budget():
+            result, log = self.run_eligibility(
+                {"first": self.calculator([FortyYearOld]), "second": self.calculator([FortyOneYearOld])}
+            )
+
+        self.assertEqual(len(log), 1)
+        self.assertEqual(sorted(result["eligibility"]), ["first"])
+
+    def test_the_abandoned_programs_are_named(self):
+        with self.spent_budget():
+            _, _, warnings, _ = self.run_reported(
+                {"first": self.calculator([FortyYearOld]), "second": self.calculator([FortyOneYearOld])}
+            )
+
+        deadline = [c for c in warnings if "out of time" in c.args[0]]
+        self.assertEqual(len(deadline), 1)
+        self.assertIn("second", deadline[0].args[0])
+
+    def test_a_split_screen_within_budget_sends_both(self):
+        result, log = self.run_eligibility(
+            {"first": self.calculator([FortyYearOld]), "second": self.calculator([FortyOneYearOld])}
+        )
+
+        self.assertEqual(len(log), 2)
+        self.assertEqual(sorted(result["eligibility"]), ["first", "second"])
+
+
+class TestOneRequestFailing(PeBucketTestBase):
+    def test_the_other_request_still_returns(self):
+        """Contained per request: PolicyEngine failing the second call no longer costs the
+        first call's programs their results."""
+        log = []
+        engine = sent_payloads(log)
+
+        class _FailsTheSecond(engine):
+            def __init__(self, data):
+                super().__init__(data)
+                if len(log) == 2:
+                    raise RuntimeError("boom")
+
+        with patch.object(pe, "pe_engine", _FailsTheSecond), patch.object(
+            pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")
+        ), patch.object(pe, "capture_message"), patch.object(pe, "capture_exception"), patch.object(
+            pe, "record_external_api_failure"
+        ):
+            result = pe.calc_pe_eligibility(
+                self.screen,
+                {
+                    "served": self.calculator([FortyYearOld]),
+                    "unserved": self.calculator([FortyOneYearOld]),
+                },
+            )
+
+        self.assertEqual(sorted(result["eligibility"]), ["served"])

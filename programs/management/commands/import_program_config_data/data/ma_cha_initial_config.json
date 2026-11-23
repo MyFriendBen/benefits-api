@@ -1,7 +1,7 @@
 {
     "white_label": {"code": "ma"},
     "program_category": {
-        "external_name": "ma_housing",
+        "external_name": "housing",
         "name": "Housing",
         "icon": "housing"
     },

@@ -3,16 +3,15 @@
     "code": "tx"
   },
   "program_category": {
-    "external_name": "tx_healthcare"
+    "external_name": "health_care"
   },
   "program": {
     "name_abbreviated": "tx_medicare_savings_program",
-    "year": "2025",
+    "year": "2026",
     "legal_status_required": [
       "citizen",
       "gc_5plus",
       "gc_5less",
-      "refugee",
       "otherWithWorkPermission"
     ],
     "name": "Medicare Savings Program (MSP)",

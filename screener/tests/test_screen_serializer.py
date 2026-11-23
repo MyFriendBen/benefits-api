@@ -7,9 +7,11 @@ a white-label-scoped Program lookup. These cover `_write_current_benefits()` (th
 shared helper) directly and the serializer `create()` / `update()` paths end to end.
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 
-from programs.models import Program
+from configuration.models import Configuration
 from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Insurance, Screen, WhiteLabel
 from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.tests.helpers import seed_program
@@ -70,7 +72,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_injects_ssi_from_income_without_tile(self):
         """sSI income implies SSI even when the user didn't tick the SSI tile."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -85,7 +87,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_income_wins_over_explicit_deselect(self):
         """An explicit deselect can't remove SSI when sSI income is present (OR semantics)."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -100,15 +102,23 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_no_ssi_without_income_or_tile(self):
         """No SSI tile and no sSI income → SSI is not written."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)
 
         _write_current_benefits(self.screen, ["snap"])
 
         self.assertEqual(self._benefit_names(self.screen), {"snap"})
 
     def test_new_path_derived_ssi_variant_not_in_other_wl(self):
-        """Derived SSI variants for other WLs (e.g. wa_ssi) aren't written to this WL."""
-        seed_program(self.white_label, "ssi")  # this WL only offers "ssi"
+        """Another WL's SSI variant isn't written to this one.
+
+        The derive reads `base_program` scoped to the screen's white label, so
+        `wa_ssi` is never a candidate here. It used to come from a hardcoded name
+        list and rely on the resolve below to drop it — that list also omitted
+        `ks_ssi` and `mo_ssi`, which is the bug this now avoids.
+        """
+        seed_program(self.white_label, "ssi", base_program="ssi", active=True)  # this WL only offers "ssi"
+        other_wl = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
+        seed_program(other_wl, "wa_ssi", base_program="ssi", active=True)
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -118,7 +128,6 @@ class WriteCurrentBenefitsTests(TestCase):
 
         _write_current_benefits(self.screen, [])
 
-        # Only the variant this WL offers is written; tx_ssi / wa_ssi / cesn_ssi are dropped.
         self.assertEqual(self._benefit_names(self.screen), {"ssi"})
 
 
@@ -398,3 +407,188 @@ class CurrentBenefitsNameLengthTests(TestCase):
         serializer = ScreenSerializer(data=self._payload(["a" * (NAME_ABBREVIATED_MAX_LENGTH + 1)]))
         self.assertFalse(serializer.is_valid())
         self.assertIn("current_benefits", serializer.errors)
+
+
+class LocationValidationTests(TestCase):
+    """`ScreenSerializer._validate_location`: the ZIP/county gate on write.
+
+    API clients can submit values the browser's crosswalk-built dropdown never would,
+    most often a county missing its " County" suffix, which exact-match consumers
+    silently fail to match.
+    """
+
+    ZIP_MAP = {
+        "67202": {"Sedgwick County": "Sedgwick County"},
+        "66044": {"Douglas County": "Douglas County"},
+    }
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        self._set_crosswalk(self.white_label, self.ZIP_MAP)
+
+    def _set_crosswalk(self, white_label, mapping):
+        Configuration.objects.create(white_label=white_label, name="counties_by_zipcode", data=mapping, active=True)
+
+    def _payload(self, **extra):
+        payload = {
+            "white_label": self.white_label.code,
+            "household_members": [],
+            "expenses": [],
+            "current_benefits": [],
+        }
+        payload.update(extra)
+        return payload
+
+    def _errors(self, **extra):
+        serializer = ScreenSerializer(data=self._payload(**extra))
+        self.assertFalse(serializer.is_valid())
+        return serializer.errors
+
+    def test_valid_zip_and_county_pass(self):
+        serializer = ScreenSerializer(data=self._payload(zipcode="67202", county="Sedgwick County"))
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_bare_county_name_is_rejected_and_the_suffix_is_suggested(self):
+        """The observed production failure: "Sedgwick" instead of "Sedgwick County"."""
+        errors = self._errors(zipcode="67202", county="Sedgwick")
+
+        self.assertIn("county", errors)
+        self.assertIn("Sedgwick County", str(errors["county"]))
+
+    def test_unknown_county_is_rejected_without_a_suggestion(self):
+        errors = self._errors(zipcode="67202", county="Nowhere County")
+
+        self.assertIn("county", errors)
+        self.assertNotIn("Did you mean", str(errors["county"]))
+
+    def test_blank_county_is_allowed(self):
+        """Colorado's `counties_from_screen` reads a null county as "expand the ZIP to
+        every county it covers", so requiring one would change eligibility there."""
+        serializer = ScreenSerializer(data=self._payload(zipcode="67202", county=""))
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_omitted_county_is_allowed(self):
+        serializer = ScreenSerializer(data=self._payload(zipcode="67202"))
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_zip_outside_the_white_label_is_rejected(self):
+        errors = self._errors(zipcode="99999")
+
+        self.assertIn("zipcode", errors)
+
+    def test_county_is_validated_loosely_not_against_the_submitted_zip(self):
+        """Deliberate: any county in the white label passes, even paired with a ZIP
+        that does not cover it. Tightening to per-ZIP would also mean correcting the
+        spec.md scenarios that pair a ZIP with a mismatched county; pinned so that
+        change is a choice."""
+        serializer = ScreenSerializer(data=self._payload(zipcode="67202", county="Douglas County"))
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_county_from_another_white_label_is_rejected(self):
+        other = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        self._set_crosswalk(other, {"63101": {"St. Louis City": "St. Louis City"}})
+
+        errors = self._errors(zipcode="67202", county="St. Louis City")
+
+        self.assertIn("county", errors)
+
+    def test_a_white_label_with_no_crosswalk_skips_validation(self):
+        """Mirrors `_get_valid_county_names` returning None: with nothing to validate
+        against, blocking every write would be worse than allowing one."""
+        bare = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        payload = self._payload(white_label=bare.code, zipcode="00000", county="Not A Real County")
+
+        serializer = ScreenSerializer(data=payload)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_municipality_names_pass_where_the_crosswalk_holds_them(self):
+        """MA stores municipalities in `Screen.county`, with no " County" suffix. The
+        check is membership in this white label's own crosswalk, so that needs no
+        special case — but it does mean the rule cannot be "require the suffix"."""
+        ma = WhiteLabel.objects.create(name="Massachusetts", code="ma", state_code="MA")
+        self._set_crosswalk(ma, {"02119": {"Boston": "Boston"}})
+
+        serializer = ScreenSerializer(data=self._payload(white_label=ma.code, zipcode="02119", county="Boston"))
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_ambiguous_bare_name_suggests_every_match(self):
+        """A bare "St. Louis" matches both jurisdictions; offer both, in a stable order."""
+        mo = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        self._set_crosswalk(
+            mo,
+            {
+                "63101": {"St. Louis City": "St. Louis City"},
+                "63105": {"St. Louis County": "St. Louis County"},
+            },
+        )
+
+        errors = self._errors(white_label=mo.code, zipcode="63101", county="St. Louis")
+
+        self.assertIn("Did you mean 'St. Louis City' or 'St. Louis County'?", str(errors["county"]))
+
+    def test_case_only_mismatch_is_suggested(self):
+        errors = self._errors(zipcode="67202", county="sedgwick county")
+
+        self.assertIn("Did you mean 'Sedgwick County'?", str(errors["county"]))
+
+    def test_malformed_crosswalk_skips_validation_and_reports_it(self):
+        bad = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self._set_crosswalk(bad, ["not", "a", "dict"])
+        payload = self._payload(white_label=bad.code, zipcode="00000", county="Nowhere County")
+
+        with patch("screener.serializers.capture_message") as capture:
+            serializer = ScreenSerializer(data=payload)
+            self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        capture.assert_called_once()
+
+    def test_validation_can_be_disabled_for_replaying_stored_screens(self):
+        serializer = ScreenSerializer(data=self._payload(zipcode="67202", county="Sedgwick"), validate_location=False)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+
+class HouseholdSizeRangeTests(TestCase):
+    """The API accepts the household sizes every client offers, 1 through 8, and no others.
+
+    The screener, the CO tax-credit app and the family-affordability app all cap at 8, and
+    HUD's income limit tables stop there too.
+    """
+
+    def setUp(self) -> None:
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def serializer(self, household_size: int | None) -> ScreenSerializer:
+        return ScreenSerializer(
+            data={
+                "white_label": self.white_label.code,
+                "household_members": [],
+                "expenses": [],
+                "current_benefits": [],
+                "household_size": household_size,
+            }
+        )
+
+    def test_one_through_eight_are_accepted(self) -> None:
+        for size in (1, Screen.MAX_HOUSEHOLD_SIZE):
+            with self.subTest(size=size):
+                serializer = self.serializer(size)
+                self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_unanswered_is_accepted(self) -> None:
+        """The screener sends null until the household-size step is answered."""
+        serializer = self.serializer(None)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_outside_one_through_eight_is_rejected(self) -> None:
+        for size in (0, -1, Screen.MAX_HOUSEHOLD_SIZE + 1):
+            with self.subTest(size=size):
+                serializer = self.serializer(size)
+                self.assertFalse(serializer.is_valid())
+                self.assertIn("household_size", serializer.errors)

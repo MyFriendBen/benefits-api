@@ -15,6 +15,15 @@ For detailed documentation on how to configure each section, see:
 class ConfigurationData:
     is_default = False
 
+    # Whether this white label is a state screener the state dropdown can offer.
+    is_state = True
+
+    # Whether this state appears in the public state dropdown, as opposed to being reachable only
+    # by link. Opt in, so a state under construction cannot reach the public dropdown by omission:
+    # a launched state missing from the dropdown is reported quickly, while a pre-launch state
+    # exposed there sends real users into an unfinished screener.
+    publicly_launched = False
+
     @classmethod
     def get_white_label(self) -> WhiteLabel:
         raise NotImplemented()
@@ -25,19 +34,17 @@ class ConfigurationData:
     # Banner messages displayed at top of screener (optional)
     banner_messages = []
 
-    # Link to public charge information for your state
+    # Public charge information. The disclaimer step renders this as <a href={link}>{text}</a>
+    # unconditionally, so every white label must set both keys in its own config; "text" is
+    # deliberately absent here so a white label that forgets it fails the config test rather
+    # than shipping an anchor with an empty label.
     public_charge_rule = {"link": ""}
 
-    # Resources shown at bottom of results page (e.g., 2-1-1, state help lines)
-    more_help_options = {
-        "moreHelpOptions": [
-            {
-                "name": {"_default_message": "", "_label": ""},
-                "link": "",
-                "phone": {"_default_message": "", "_label": ""},
-            },
-        ]
-    }
+    # Resources shown on the Immediate Help tab (e.g., 2-1-1, state help lines). Empty by
+    # default rather than a placeholder entry: this now renders as a permanent tab (was
+    # previously only reachable via a button), so a placeholder with blank name/link would
+    # show an empty resource card to anyone on a white label that doesn't override this.
+    more_help_options = {"moreHelpOptions": []}
 
     # Urgent needs shown in "acuteHHConditions" step (customize or set to {} if not used)
     acute_condition_options = {
@@ -102,6 +109,13 @@ class ConfigurationData:
             "text": {
                 "_label": "acuteConditionOptions.legalServices",
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
+            },
+        },
+        "medicalExpensesAndDebt": {
+            "icon": {"_icon": "Medical_expenses_and_debt", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.medicalExpensesAndDebt",
+                "_default_message": "Medical Expenses & Debt",
             },
         },
     }
@@ -215,7 +229,17 @@ class ConfigurationData:
                 "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
             },
             "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
-            "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
+            # Two adjacent options so the screener can tell the household's own TANF grant from
+            # any other cash aid. `cashAssistance` is the TANF field (PE excludes it from TANF's
+            # own gates); `cashAssistanceOther` is ordinary countable unearned income.
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistanceTanf",
+                "_default_message": "Cash Assistance - TANF",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther",
+                "_default_message": "Cash Assistance - Other",
+            },
             "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
             "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         },
@@ -370,6 +394,10 @@ class ConfigurationData:
         },
     }
 
+    # The utility expenses the energy calculator asks about, as option cards. Only a white label that
+    # runs the energy calculator sets them (see cesn.py); any screen may carry one.
+    energy_calculator_expense_options = {}
+
     # Household member condition options
     condition_options = {
         "you": {
@@ -408,6 +436,13 @@ class ConfigurationData:
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
                 },
             },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
+                },
+            },
         },
         "them": {
             "student": {
@@ -434,7 +469,10 @@ class ConfigurationData:
             "disabled": {
                 "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "conditionOptions.disabled",
+                    # Distinct label from the "you" page: Translation.label is globally
+                    # unique, so sharing one label makes both pages render whichever
+                    # pronoun that single row happens to hold.
+                    "_label": "conditionOptions.disabled.them",
                     "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
                 },
             },
@@ -445,6 +483,13 @@ class ConfigurationData:
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
                 },
             },
+            "fosterCare": {
+                "icon": {"_icon": "FosterCare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.fosterCare",
+                    "_default_message": "Ever in foster care, even briefly",
+                },
+            },
         },
     }
 
@@ -452,28 +497,16 @@ class ConfigurationData:
     # Example: {"80202": {"Denver County": "Denver County"}}
     counties_by_zipcode = {}
 
-    # ==================================================================================
-    # CATEGORY BENEFITS - Step 10: "Do you already have any benefits?"
-    # ==================================================================================
-    # Override this in your white label config with benefits available in your state.
-    # For detailed documentation on structure and naming conventions, see:
-    #     configuration/white_labels/_template.py (search for "category_benefits")
-    #     configuration/white_labels/README.md
-    # ==================================================================================
-    # Base default is empty; each white label overrides with its own benefits.
-    # For the expected structure and naming conventions, see:
-    #     configuration/white_labels/_template.py (search for "category_benefits")
-    #     configuration/white_labels/README.md
-    category_benefits = {}
-
     # Links to consent/terms pages, keyed by language code.
     consent_to_contact = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/terms-and-conditions/",
+        "es": "https://www.myfriendben.org/terminos-condiciones/",
     }
 
     # Links to privacy policy, keyed by language code.
     privacy_policy = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/privacy-policy/",
+        "es": "https://www.myfriendben.org/privacidad/",
     }
 
     # Configuration for branding, logos, steps, and UI options
@@ -516,12 +549,17 @@ class ConfigurationData:
             ],
         },
         "uiOptions": {"default": []},
+        # State codes this referrer's dropdown offers; empty means every publicly launched state.
+        "stateOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": ""},
+        # Partner phone number shown in a referrer's branded footer, formatted for display; the
+        # frontend builds the tel: link from its digits. Empty hides the footer's phone link.
+        "footerPhone": {"default": ""},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. You can find other support matched to your needs in the Additional Resources tab. If you need help right away, go to the Immediate Help tab",
             },
         },
     }

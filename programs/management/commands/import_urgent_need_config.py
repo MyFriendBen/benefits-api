@@ -2,6 +2,7 @@ import argparse
 import json
 from typing import Any
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from programs.models import (
@@ -14,7 +15,7 @@ from programs.models import (
     UrgentNeedFunction,
     UrgentNeedType,
 )
-from programs.programs.urgent_needs import urgent_need_functions
+from programs.urgent_needs import urgent_need_functions
 from screener.models import WhiteLabel
 from programs.management.commands._translation_utils import TranslationImportMixin
 from translations.models import Translation
@@ -104,9 +105,13 @@ class Command(TranslationImportMixin, BaseCommand):
 
         # --- REAL EXECUTION VALIDATION ---
         if existing_need and not override:
+            # Nothing in the config is applied on this path. Say so plainly rather than
+            # letting a skip read as a completed import.
             self.stdout.write(
                 self.style.WARNING(
-                    f"Urgent Need '{external_name}' already exists (ID: {existing_need.id}). "
+                    f"⊘ Skipped: Urgent Need '{external_name}' already exists (ID: {existing_need.id}). "
+                    f"Nothing in this config was applied — its counties, functions and translations "
+                    f"were not read.\n"
                     f"Use --override to delete and recreate it."
                 )
             )
@@ -280,7 +285,7 @@ class Command(TranslationImportMixin, BaseCommand):
             need.year = fpl
 
         # Category type (UrgentNeedType)
-        category_type = self._get_or_create_category_type(white_label, config["category_type"])
+        category_type = self._get_or_create_category_type(config["category_type"])
         need.category_type = category_type
 
         # type_short categories
@@ -301,40 +306,63 @@ class Command(TranslationImportMixin, BaseCommand):
         # Translations for need
         self._import_need_translations(need, translations)
 
-        # Optional translation for category type name
-        if name := config.get("category_type", {}).get("name"):
+        return need
+
+    def _get_or_create_category_type(self, config: dict[str, Any]) -> UrgentNeedType:
+        """
+        Resolve the config's category type, creating a shared one if it doesn't exist.
+
+        Types are shared across white labels, so an existing type is used as it is: a
+        config can't rename, re-icon or re-scope it, since that would relabel the section
+        for every white label using it. A config whose `name` or `icon` disagrees with the
+        existing type fails instead. Edit a shared type in the admin.
+        """
+        external_name = config["external_name"]
+        name = config.get("name")
+        icon_name = config.get("icon")
+
+        category_type = UrgentNeedType.objects.filter(external_name=external_name).first()
+
+        if category_type is None:
+            # A type created without a name renders as a blank section header.
+            if not name:
+                raise CommandError(
+                    f"Category type '{external_name}' does not exist. Use the external_name of an existing "
+                    f"type, or supply 'name' (and 'icon') to create a new shared type."
+                )
+
+            if icon_name:
+                CategoryIconName.objects.get_or_create(name=icon_name)
+
+            category_type = UrgentNeedType.objects.new_urgent_need_type(
+                white_label=None,
+                external_name=external_name,
+                icon=icon_name,
+            )
             self._bulk_update_entity_translations(
                 category_type,
                 {"name": name},
                 "category_type",
                 UrgentNeedType.objects.translated_fields,
             )
+            self.stdout.write(f"  Created shared category type: {external_name}")
+            return category_type
 
-        return need
+        mismatches = []
+        if name:
+            english = category_type.name.get_lang(settings.LANGUAGE_CODE)
+            current_name = english.text if english else ""
+            if name != current_name:
+                mismatches.append(f"name '{name}' (existing: '{current_name}')")
+        if icon_name and icon_name != category_type.icon_name:
+            mismatches.append(f"icon '{icon_name}' (existing: '{category_type.icon_name}')")
 
-    def _get_or_create_category_type(self, white_label: WhiteLabel, config: dict[str, Any]) -> UrgentNeedType:
-        external_name = config["external_name"]
-        icon_name = config.get("icon")
-
-        category_type = UrgentNeedType.objects.filter(external_name=external_name).first()
-        if not category_type:
-            # Ensure icon exists if provided, manager expects string name
-            if icon_name:
-                CategoryIconName.objects.get_or_create(name=icon_name)
-
-            category_type = UrgentNeedType.objects.new_urgent_need_type(
-                white_label=white_label.code,
-                external_name=external_name,
-                icon=icon_name,  # pass string name
+        if mismatches:
+            raise CommandError(
+                f"Category type '{external_name}' already exists, and a config can't change an existing type: "
+                f"{'; '.join(mismatches)}. Remove 'name'/'icon' from the config, or edit the type in the admin."
             )
-        else:
-            # Ensure icon set if provided
-            if icon_name:
-                icon, _ = CategoryIconName.objects.get_or_create(name=icon_name)
-                category_type.icon = icon
-            category_type.white_label = white_label
 
-        category_type.save()
         return category_type
 
     def _set_categories(self, need: UrgentNeed, categories: list[str]) -> None:

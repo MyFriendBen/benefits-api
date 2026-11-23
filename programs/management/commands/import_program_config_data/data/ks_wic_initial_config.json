@@ -1,0 +1,88 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "food"
+  },
+  "program": {
+    "name_abbreviated": "ks_wic",
+    "year": "2026",
+    "base_program": "wic",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Women, Infants, and Children (WIC)",
+    "description": "WIC helps pregnant women, new moms, babies, and kids under 5 get free healthy food and nutrition support.\n\nYou'll get a WIC card to buy healthy foods like milk, eggs, fruits, and vegetables at stores that take WIC. You'll also get nutrition education, breastfeeding support, and health referrals.\n\nAt your certification appointment, WIC staff will look at your diet, health history, and current health to see if you need extra nutrition support.\n\nTo get started, fill out the online pre-application. A local WIC clinic will then contact you to set up your appointment.",
+    "description_short": "Free healthy food and nutrition support for moms, babies, and young kids",
+    "learn_more_link": "https://www.kdhe.ks.gov/1000/Nutrition-WIC-Services",
+    "apply_button_link": "https://www.kswic.com/PreAppPortal",
+    "apply_button_description": "Start Pre-Application",
+    "estimated_application_time": "5 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "website_description": "Free healthy food and nutrition support for moms, babies, and young kids",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_child_birth_certificate",
+      "text": "Child's birth certificate or proof of age",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_home",
+      "text": "Proof of Kansas residency (ex: lease, utility bill, or piece of mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_income_proof",
+      "text": "Proof of household income (ex: pay stubs, tax return, benefit award letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_wic_adjunctive_proof",
+      "text": "Proof of SNAP, Medicaid, TANF, or FDPIR benefits, if applicable (waives the income check)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_sedgwick_county_wic",
+      "name": "Sedgwick County WIC Program",
+      "counties": [
+        "Sedgwick County"
+      ],
+      "phone_number": "+13166607444",
+      "email": "",
+      "assistance_link": "https://www.sedgwickcounty.org/health/services/women-infants-and-children-wic/",
+      "description": "Runs WIC clinics in Sedgwick County, Kansas, with locations in Wichita. Call the WIC Call Center at (316) 660-7444 to schedule an appointment or ask about eligibility."
+    },
+    {
+      "external_name": "ks_wic_state_office",
+      "name": "Kansas WIC State Office",
+      "phone_number": "+17852963683",
+      "email": "KDHE.WICProgram@ks.gov",
+      "assistance_link": "https://www.kdhe.ks.gov/1000/Nutrition-WIC-Services",
+      "description": "Kansas WIC can help you find a local WIC clinic and answer questions about WIC services."
+    }
+  ]
+}

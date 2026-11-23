@@ -1,7 +1,7 @@
 {
     "white_label": {"code": "tx"},
     "program_category": {
-        "external_name": "tx_child_care",
+        "external_name": "child_care",
         "name": "Child Care",
         "icon": "child_care"
     },

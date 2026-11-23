@@ -1,11 +1,19 @@
+from typing import Optional
+
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from django.contrib.auth.admin import GroupAdmin
+from django.contrib.auth.admin import GroupAdmin, UserAdmin
+from django.db.models import Model, Q
+from django.http import HttpRequest
 from django.core.exceptions import PermissionDenied
 from rest_framework.authtoken.models import TokenProxy
 from rest_framework.authtoken.admin import TokenAdmin
 from unfold.admin import ModelAdmin, forms
+from programs.federal import FEDERAL_WHITE_LABEL
 from .models import User
+
+# Program pickers that may offer federal programs; see `_set_select_queryset`.
+FEDERAL_REFERENCE_FIELDS = frozenset({"remove_programs", "required_programs", "excludes_programs"})
 
 
 class SecureAdmin(ModelAdmin):
@@ -68,7 +76,9 @@ class SecureAdmin(ModelAdmin):
 
         return form
 
-    def _set_select_queryset(self, field_name: str, field: forms.ModelMultipleChoiceField, obj, request):
+    def _set_select_queryset(
+        self, field_name: str, field: forms.ModelMultipleChoiceField, obj: Optional[Model], request: HttpRequest
+    ) -> None:
         user: User = request.user
 
         # filter the white label field
@@ -78,13 +88,26 @@ class SecureAdmin(ModelAdmin):
             field.queryset = field.queryset.filter(id__in=user.white_labels.all())
             return
 
-        # filter the selects to only the ones that the user has access to
+        # filter the selects to only the ones that the user has access to.
+        # A related row with a null white_label is shared across white labels
+        # (see ProgramCategory), so it stays selectable for every white label
+        # rather than being filtered out by these scoping rules.
         if hasattr(field.queryset.model, "white_label"):
+            shared = Q(white_label__isnull=True)
+            # Federal programs are shown to every white label, so a white label's rows may point
+            # at one where the link only *references* it: a referrer hiding it, or a program
+            # requiring or excluding it. Fields that attach state content to a program stay
+            # scoped here, or that content would follow the federal program into every other
+            # white label (a translation override's `program`). Navigators and warnings show only
+            # in their own state on a federal program, so their admins widen their pickers.
+            if field_name in FEDERAL_REFERENCE_FIELDS:
+                shared |= Q(white_label__code=FEDERAL_WHITE_LABEL)
+
             if not self._is_superuser(request):
-                field.queryset = field.queryset.filter(white_label__in=user.white_labels.all())
+                field.queryset = field.queryset.filter(Q(white_label__in=user.white_labels.all()) | shared)
 
             if obj is not None:
-                field.queryset = field.queryset.filter(white_label=obj.white_label)
+                field.queryset = field.queryset.filter(Q(white_label=obj.white_label) | shared)
 
     # remove the history view for non super users
     def history_view(self, request, object_id, extra_context=None):
@@ -106,12 +129,42 @@ class SecureAdmin(ModelAdmin):
         return request.user.is_superuser
 
 
-class CustomUserAdmin(SecureAdmin):
-    search_fields = ("email",)
-    ordering = ("email_or_cell", "email")
+# UserAdmin supplies the password-hashing forms (UserCreationForm/UserChangeForm) and
+# renders the stored hash as a read-only field with a link to the change-password view.
+# Without it the password renders as a plain editable CharField and whatever is submitted
+# is saved unhashed, locking the account out.
+class CustomUserAdmin(SecureAdmin, UserAdmin):
+    search_fields = ("email_or_cell", "email", "first_name", "last_name")
+    ordering = ("email_or_cell",)
     filter_horizontal = ["white_labels", "user_permissions"]
 
     list_display = ("email_or_cell", "is_staff")
+
+    # UserAdmin's default fieldsets reference the "username" field, which this model
+    # replaces with email_or_cell, so they are declared explicitly.
+    fieldsets = (
+        (None, {"fields": ("email_or_cell", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "email", "cell", "language_code")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "white_labels",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        ("Contact preferences", {"fields": ("tcpa_consent", "explicit_tcpa_consent", "send_offers", "send_updates")}),
+        # external_id is the HubSpot contact ID, used when debugging CRM sync.
+        ("Integrations", {"fields": ("external_id",)}),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+    )
+
+    add_fieldsets = ((None, {"classes": ("wide",), "fields": ("email_or_cell", "password1", "password2")}),)
 
 
 class CustomGroupAdmin(SecureAdmin, GroupAdmin):

@@ -7,13 +7,16 @@ class MaConfigurationData(ConfigurationData):
     def get_white_label(self) -> WhiteLabel:
         return WhiteLabel.objects.get(code="ma")
 
+    # Live in production and offered in the public state dropdown.
+    publicly_launched = True
+
     state = {"name": "Massachusetts"}
 
     public_charge_rule = {
-        "link": "https://www.mass.gov/info-details/information-about-the-public-charge-rule-and-how-it-may-impact-you#information-about-the-public-charge-rule-",
+        "link": "https://miracoalition.org/news/public-charge-rule-new-community-update-july-2026/",
         "text": {
             "_label": "landingPage.publicChargeLinkMA",
-            "_default_message": "Massachusetts Department of Health and Human Services",
+            "_default_message": "MIRA Coalition's public charge update",
         },
     }
 
@@ -107,6 +110,13 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "medicalExpensesAndDebt": {
+            "icon": {"_icon": "Medical_expenses_and_debt", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.medicalExpensesAndDebt",
+                "_default_message": "Medical Expenses & Debt",
+            },
+        },
         "veteranServices": {
             "icon": {"_icon": "Military", "_classname": "option-card-icon"},
             "text": {
@@ -175,9 +185,15 @@ class MaConfigurationData(ConfigurationData):
         **ConfigurationData.income_options_by_category,
         "government": {
             **ConfigurationData.income_options_by_category["government"],
+            # EAEDC is not TANF, and the old single label named both — so the split has to name
+            # each side or the ambiguity survives the rename.
             "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance.ma",
-                "_default_message": "Government Cash Assistance (including TAFDC and EAEDC)",
+                "_label": "incomeOptions.cashAssistanceTanf.ma",
+                "_default_message": "Cash Assistance - TAFDC",
+            },
+            "cashAssistanceOther": {
+                "_label": "incomeOptions.cashAssistanceOther.ma",
+                "_default_message": "Cash Assistance - Other (including EAEDC)",
             },
             "stateDisability": {
                 "_label": "incomeOptions.stateDisability.ma",
@@ -292,83 +308,6 @@ class MaConfigurationData(ConfigurationData):
             "subsidizedRent": {
                 "_label": "expenseOptions.subsidizedRent",
                 "_default_message": "Rent (Public / Subsidized Housing)",
-            },
-        },
-    }
-
-    condition_options = {
-        "you": {
-            "student": {
-                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.student",
-                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
-                },
-            },
-            "pregnant": {
-                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.pregnant",
-                    "_default_message": "Pregnant",
-                },
-            },
-            "blindOrVisuallyImpaired": {
-                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.blindOrVisuallyImpaired",
-                    "_default_message": "Blind or visually impaired",
-                },
-            },
-            "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.disabled",
-                    "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
-                },
-            },
-            "longTermDisability": {
-                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.longTermDisability",
-                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
-                },
-            },
-        },
-        "them": {
-            "student": {
-                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.student",
-                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
-                },
-            },
-            "pregnant": {
-                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.pregnant",
-                    "_default_message": "Pregnant",
-                },
-            },
-            "blindOrVisuallyImpaired": {
-                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.blindOrVisuallyImpaired",
-                    "_default_message": "Blind or visually impaired",
-                },
-            },
-            "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.disabled.them",
-                    "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
-                },
-            },
-            "longTermDisability": {
-                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "conditionOptions.longTermDisability",
-                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
-                },
             },
         },
     }
@@ -1116,328 +1055,6 @@ class MaConfigurationData(ConfigurationData):
         "05544": {"Andover": "Andover"},
     }
 
-    category_benefits = {
-        "cash": {
-            "benefits": {
-                "tanf": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ma_tanf",
-                        "_default_message": "Transitional Aid to Families with Dependent Children (TAFDC): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ma_tanf_desc",
-                        "_default_message": "Cash assistance and work support",
-                    },
-                },
-                "ma_eaedc": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ma_eaedc",
-                        "_default_message": "Emergency Aid to Elderly, Disabled and Children (EAEDC): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ma_eaedc_desc",
-                        "_default_message": "Cash assistance",
-                    },
-                },
-                "ssi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssi",
-                        "_default_message": "Supplemental Security Income (SSI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssi_desc",
-                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
-                    },
-                },
-                "ma_ssp": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ma_ssp",
-                        "_default_message": "Massachusetts State Supplement Program (SSP): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ma_ssp_desc",
-                        "_default_message": "State cash assistance for people with disabilities or 65 years of age or older",
-                    },
-                },
-                "ssdi": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.ssdi",
-                        "_default_message": "Social Security Disability Insurance (SSDI): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.ssdi_desc",
-                        "_default_message": "Social security benefit for people with disabilities",
-                    },
-                },
-                "trump_account": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.trump_account",
-                        "_default_message": '530A ("Trump") Accounts: ',
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.trump_account_desc",
-                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
-                    },
-                },
-            },
-            "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
-        },
-        "foodAndNutrition": {
-            "benefits": {
-                "snap": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.snap",
-                        "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.snap_desc",
-                        "_default_message": "Food assistance",
-                    },
-                },
-                "wic": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.wic",
-                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.wic_desc",
-                        "_default_message": "Food and breastfeeding assistance",
-                    },
-                },
-                "nslp": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.nslp",
-                        "_default_message": "National School Lunch Program: ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.nslp_desc",
-                        "_default_message": "Free school meals",
-                    },
-                },
-                "csfp": {
-                    "name": {
-                        "_label": "foodAndNutritionBenefits.csfp",
-                        "_default_message": "Commodity Supplemental Food Program: ",
-                    },
-                    "description": {
-                        "_label": "foodAndNutritionBenefits.csfp_desc",
-                        "_default_message": "Food support for people 60 years of age or older",
-                    },
-                },
-            },
-            "category_name": {"_label": "foodAndNutrition", "_default_message": "Food and Nutrition"},
-        },
-        "childCare": {
-            "benefits": {
-                "ccdf": {
-                    "name": {
-                        "_label": "childCareBenefits.ma_ccfa",
-                        "_default_message": "Child Care Financial Assistance Program (CCFA): ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.ma_ccfa_desc",
-                        "_default_message": "Help with child care costs",
-                    },
-                },
-                "head_start": {
-                    "name": {
-                        "_label": "childCareBenefits.ma_head_start",
-                        "_default_message": "Head Start: ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.ma_head_start_desc",
-                        "_default_message": "Free child care and family support for families with children ages 3 to 5",
-                    },
-                },
-                "early_head_start": {
-                    "name": {
-                        "_label": "childCareBenefits.ma_early_head_start",
-                        "_default_message": "Early Head Start: ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.ma_early_head_start_desc",
-                        "_default_message": "Free child care and family support for families with infants and toddlers under age 3",
-                    },
-                },
-                "ma_dhsp_afterschool": {
-                    "name": {
-                        "_label": "childCareBenefits.ma_dhsp_afterschool",
-                        "_default_message": "DHSP Afterschool Programs Lottery (K-8): ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.ma_dhsp_afterschool_desc",
-                        "_default_message": "Affordable afterschool care for Cambridge children K-8",
-                    },
-                },
-                "ma_cpp": {
-                    "name": {
-                        "_label": "childCareBenefits.ma_cpp",
-                        "_default_message": "Cambridge Preschool Program (CPP): ",
-                    },
-                    "description": {
-                        "_label": "childCareBenefits.ma_cpp_desc",
-                        "_default_message": "Free preschool for Cambridge children age 3-4",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "childCareYouthAndEducation",
-                "_default_message": "Child Care, Youth, and Education",
-            },
-        },
-        "housingAndUtilities": {
-            "benefits": {
-                "lifeline": {
-                    "name": {"_label": "housingAndUtilities.lifeline", "_default_message": "Lifeline: "},
-                    "description": {
-                        "_label": "housingAndUtilities.lifeline_desc",
-                        "_default_message": "Phone or internet discount",
-                    },
-                },
-                "ma_heap": {
-                    "name": {
-                        "_label": "housingAndUtilities.ma_heap",
-                        "_default_message": "Home Energy Assistance Program (HEAP): ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.ma_heap_desc",
-                        "_default_message": "Help with energy costs (seasonal)",
-                    },
-                },
-                "ma_homebridge": {
-                    "name": {
-                        "_label": "housingAndUtilities.ma_homebridge",
-                        "_default_message": "Cambridge HomeBridge Program: ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.ma_homebridge_desc",
-                        "_default_message": "First-time homebuyer assistance for Cambridge residents",
-                    },
-                },
-                "ma_middle_income_rental": {
-                    "name": {
-                        "_label": "housingAndUtilities.ma_middle_income_rental",
-                        "_default_message": "Middle-Income Rental Program: ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.ma_middle_income_rental_desc",
-                        "_default_message": "Income-restricted rental apartments in Cambridge",
-                    },
-                },
-                "section_8": {
-                    "name": {
-                        "_label": "housingAndUtilities.section_8",
-                        "_default_message": "Housing Choice Voucher: ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.section_8_desc",
-                        "_default_message": "Rent Subsidy (formerly Section 8)",
-                    },
-                },
-            },
-            "category_name": {"_label": "housingAndUtilities", "_default_message": "Housing and Utilities"},
-        },
-        "transportation": {
-            "benefits": {
-                "ma_mbta": {
-                    "name": {
-                        "_label": "transportationBenefits.ma_mbta",
-                        "_default_message": "MBTA Reduced Fare Program: ",
-                    },
-                    "description": {
-                        "_label": "transportationBenefits.ma_mbta_desc",
-                        "_default_message": "Discounted MBTA fares",
-                    },
-                },
-                "ma_door_to_door": {
-                    "name": {
-                        "_label": "transportationBenefits.ma_door_to_door",
-                        "_default_message": "Door2Door Transportation (SCM): ",
-                    },
-                    "description": {
-                        "_label": "transportationBenefits.ma_door_to_door_desc",
-                        "_default_message": "On-demand transportation for Cambridge seniors and people with mobility impairments",
-                    },
-                },
-                "ma_taxi_discount": {
-                    "name": {
-                        "_label": "transportationBenefits.ma_taxi_discount",
-                        "_default_message": "Cambridge Taxi Discount Coupon Program: ",
-                    },
-                    "description": {
-                        "_label": "transportationBenefits.ma_taxi_discount_desc",
-                        "_default_message": "Discounted taxi coupons for Cambridge seniors and people with disabilities",
-                    },
-                },
-            },
-            "category_name": {"_label": "transportation", "_default_message": "Transportation"},
-        },
-        "healthCare": {
-            "benefits": {
-                "aca": {
-                    "name": {
-                        "_label": "healthCareBenefits.aca.ma",
-                        "_default_message": "Massachusetts Health Connector/Premium Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.aca_desc.ma",
-                        "_default_message": "Health insurance marketplace premium tax credit",
-                    },
-                },
-                "ma_cmsp": {
-                    "name": {
-                        "_label": "healthCareBenefits.ma_cmsp",
-                        "_default_message": "Children's Medical Security Plan (CMSP): ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.ma_cmsp_desc",
-                        "_default_message": "Low-cost health coverage for uninsured children under 19",
-                    },
-                },
-            },
-            "category_name": {"_label": "healthCare", "_default_message": "Health Care"},
-        },
-        "taxCredits": {
-            "benefits": {
-                "eitc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.eitc",
-                        "_default_message": "Earned Income Tax Credit (EITC): ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.eitc_desc",
-                        "_default_message": "Federal tax credit - earned income",
-                    },
-                },
-                "ctc": {
-                    "name": {"_label": "taxCreditBenefits.ctc", "_default_message": "Child Tax Credit (CTC): "},
-                    "description": {"_label": "taxCreditBenefits.ctc_desc", "_default_message": "Federal tax credit"},
-                },
-                "ma_maeitc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.ma_maeitc",
-                        "_default_message": "Massachusetts Earned Income Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.ma_maeitc_desc",
-                        "_default_message": "State tax credit - earned income",
-                    },
-                },
-                "ma_macfc": {
-                    "name": {
-                        "_label": "taxCreditBenefits.ma_macftc",
-                        "_default_message": "Massachusetts Child and Family Tax Credit: ",
-                    },
-                    "description": {
-                        "_label": "taxCreditBenefits.ma_macftc_desc",
-                        "_default_message": "State tax credit",
-                    },
-                },
-            },
-            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
-        },
-    }
-
     consent_to_contact = {
         "en-us": "https://www.myfriendben.org/terms-and-conditions/",
         "es": "https://www.myfriendben.org/terminos-condiciones/",
@@ -1449,10 +1066,12 @@ class MaConfigurationData(ConfigurationData):
     }
 
     # Inherit base referrer_data (favicon, uiOptions, etc.) and override only the
-    # keys MA customizes. MA keeps its own noResultMessage (smart-quote variant).
+    # keys MA customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
         "theme": {"default": "default"},
+        # Overrides the base's empty list so the results page omits the Immediate Help tab.
+        "uiOptions": {"default": ["no_results_more_help"]},
         "logoSource": {
             "default": "MFB_MALogo",
         },
@@ -1480,12 +1099,6 @@ class MaConfigurationData(ConfigurationData):
                 "referralSource",
                 "signUpInfo",
             ],
-        },
-        "noResultMessage": {
-            "default": {
-                "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the “Near-Term Benefits” tab. For additional resources, please click the 'More Help' button below to get the resources you’re looking for.",
-            },
         },
         "defaultLanguage": {"default": "en-us"},
     }

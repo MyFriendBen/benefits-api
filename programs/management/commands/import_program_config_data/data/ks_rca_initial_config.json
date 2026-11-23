@@ -1,0 +1,54 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "cash"
+  },
+  "program": {
+    "name_abbreviated": "ks_rca",
+    "year": "2026",
+    "legal_status_required": [
+      "refugee",
+      "otherWithWorkPermission",
+      "gc_5plus",
+      "gc_5less"
+    ],
+    "name": "Refugee Cash Assistance (RCA)",
+    "description": "Refugee Cash Assistance (RCA) gives monthly cash to refugees and other newcomers.\n\nIn Kansas, RCA is run by the Kansas Office for Refugees (KSOR). You may get RCA for up to 8 months. The 8 months start on the date you became eligible for refugee benefits, if that date is on or after January 1, 2026. KSOR will also review your income when deciding if you qualify.\n\nKansas does not publish its RCA payment amounts. The amount shown here is an estimate based on Kansas TANF payments. Your actual payment may be different.\n\nSelect \"Contact Local Agency\" to find a Kansas agency you can call about applying.",
+    "description_short": "Monthly cash help for refugees and other newcomers",
+    "website_description": "Monthly cash help for refugees and other newcomers",
+    "learn_more_link": "https://refugeewelcome.org/resources/refugee-cash-assistance-rca/",
+    "apply_button_link": "https://refugeewelcome.org/state-resources/kansas/#tab-key-state-contacts",
+    "apply_button_description": "Contact Local Agency",
+    "estimated_application_time": "10 - 15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "active": false,
+    "low_confidence": false,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_orr_immigration_status",
+      "text": "Proof of your eligible immigration status (ex: I-94, work permit, green card)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_ksor",
+      "name": "Kansas Office for Refugees (KSOR)",
+      "email": "",
+      "phone_number": "+13162016072",
+      "description": "KSOR coordinates refugee services in Kansas. They can help you connect with the right local agency for Refugee Cash Assistance.",
+      "assistance_link": "https://www.ksor.org/contact/",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}

@@ -1,11 +1,16 @@
 import logging
+from typing import Any
 from datetime import date
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
+from configuration.models import Configuration
+from programs.framework.base import PaymentUnit
+from programs.federal import FEDERAL_WHITE_LABEL, filter_programs_by_name, visible_to
 from programs.models import Program, WarningMessage
+from screener.allowed_values import ACUTE_OPTION_FIELDS, needs_fields, needs_selected, unaccepted_values
 from screener.models import (
     CurrentBenefit,
     EnergyCalculatorMember,
@@ -23,7 +28,6 @@ from screener.models import (
 from authentication.serializers import UserOffersSerializer
 from rest_framework import serializers
 from translations.serializers import TranslationSerializer
-from validations.serializers import ValidationSerializer
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -100,7 +104,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         data["birth_year_month"] = birth_year_month
 
         if "age" not in data or data["age"] is None:
-            # No reference_date needed - member is being created, no screen/validations exist yet
+            # No reference_date needed - member is being created, no screen exists yet
             data["age"] = HouseholdMember.age_from_date(birth_year_month)
 
         return data
@@ -124,6 +128,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "visually_impaired",
             "disabled",
             "long_term_disability",
+            "was_in_foster_care",
             "veteran",
             "medicaid",
             "disability_medicaid",
@@ -138,11 +143,11 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-# SSI program variants across white labels. An sSI income stream implies SSI
-# receipt regardless of whether the user ticked the tile, so all variants are
-# listed here; the WL-scoped resolve in `_write_current_benefits()` drops the
-# ones a given white label doesn't offer (e.g. `wa_ssi` on a CO screen).
-_SSI_BENEFIT_NAMES = frozenset({"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"})
+# Matched by `base_program`, not a list of `name_abbreviated`s: the hardcoded
+# {"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"} this replaced missed `ks_ssi` and
+# `mo_ssi`, so KS and MO derived no row at all.
+_SSI_BASE_PROGRAM = "ssi"
+_SSI_INCOME_TYPE = "sSI"
 
 
 def _derived_current_benefit_names(screen: Screen) -> set[str]:
@@ -158,10 +163,25 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     `ma_mass_health` compounds are deliberately NOT here — those are member-level
     insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
     flow through `current_benefits`. Add new derivable compounds here as they appear.
+
+    Already scoped to the programs this screen's white label sees (its own plus the
+    federal ones), so every name returned resolves in `_write_current_benefits()` —
+    unlike the hardcoded set this replaced, which relied on that resolve to drop the
+    variants a white label doesn't ship.
     """
     derived: set[str] = set()
-    if screen.calc_gross_income("yearly", ("sSI",)) > 0:
-        derived |= _SSI_BENEFIT_NAMES
+    if screen.calc_gross_income("yearly", (_SSI_INCOME_TYPE,)) > 0:
+        # An empty result is normal, not a config gap: `_default`,
+        # `co_tax_calculator` and `dbg_wl` ship no SSI program at all.
+        # Active rows only: an inactive row is either a federal program not launched yet
+        # or a state row the federal program replaced, and neither is shown anywhere.
+        derived |= set(
+            Program.objects.filter(
+                visible_to(screen.white_label),
+                base_program=_SSI_BASE_PROGRAM,
+                active=True,
+            ).values_list("name_abbreviated", flat=True)
+        )
     return derived
 
 
@@ -170,12 +190,12 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
     Write the CurrentBenefit join table for `screen`, replacing any existing rows.
 
     `current_benefits` is a list of `name_abbreviated` strings (e.g. ["tx_snap",
-    "tanf"]). Each is resolved to a Program via the (white_label, name_abbreviated)
-    lookup and written directly; a name the current WL doesn't offer is silently
-    skipped. Names derivable from screen state (currently SSI, via an sSI income
-    stream) are OR'd in via `_derived_current_benefit_names()` so the join table
-    reflects benefits the household demonstrably receives even when the tile wasn't
-    ticked.
+    "tanf"]). Each is resolved to one Program among the white label's own and the
+    federal ones (the federal row winning a shared name) and written directly; a name
+    the current WL doesn't offer is silently skipped. Names derivable from screen
+    state (currently SSI, via an sSI income stream) are OR'd in via
+    `_derived_current_benefit_names()` so the join table reflects benefits the
+    household demonstrably receives even when the tile wasn't ticked.
 
     Uses select_for_update() inside a transaction to serialize concurrent PATCH
     requests on the same screen and prevent races on the delete+bulk_create. The
@@ -190,10 +210,16 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
         # screen's white label; silently drop any this WL doesn't offer.
         requested = set(current_benefits)
         derived = _derived_current_benefit_names(screen)
-        resolved = Program.objects.filter(
-            white_label=screen.white_label,
-            name_abbreviated__in=requested | derived,
-        ).values_list("id", "name_abbreviated")
+        resolved = [
+            (program.id, program.name_abbreviated)
+            for program in filter_programs_by_name(
+                Program.objects.filter(
+                    visible_to(screen.white_label),
+                    name_abbreviated__in=requested | derived,
+                ).select_related("white_label"),
+                "current benefits write",
+            )
+        ]
         program_ids_to_write = [program_id for program_id, _ in resolved]
 
         # A *frontend-requested* name with no Program in this WL is dropped
@@ -251,6 +277,17 @@ class ScreenSerializer(serializers.ModelSerializer):
         write_only=True,
         max_length=256,
     )
+    # The household needs, as the option keys the step offers (`acute_condition_options`), so the
+    # screener never needs to know the `needs_*` columns they're saved to. A list sets each listed
+    # need and clears the rest; an absent or null value leaves the columns alone. Read the same way.
+    # The `needs_*` fields stay writable for screeners released before this field existed.
+    acute_needs = serializers.ListField(
+        child=serializers.ChoiceField(choices=sorted(ACUTE_OPTION_FIELDS)),
+        required=False,
+        allow_null=True,
+        write_only=True,
+        max_length=len(ACUTE_OPTION_FIELDS),
+    )
 
     class Meta:
         model = Screen
@@ -263,7 +300,6 @@ class ScreenSerializer(serializers.ModelSerializer):
             "is_test_data",
             "start_date",
             "submission_date",
-            "frozen",
             "agree_to_tos",
             "is_13_or_older",
             "zipcode",
@@ -282,6 +318,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "external_id",
             "request_language_code",
             "current_benefits",
+            "acute_needs",
             "has_benefits",
             "needs_food",
             "needs_baby_supplies",
@@ -297,6 +334,11 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_veteran_services",
             "needs_disability_resources",
             "needs_aging_resources",
+            "needs_homeless_services",
+            "needs_free_low_cost_medical_care",
+            "needs_transportation",
+            "needs_medical_expenses_and_debt",
+            "needs_drug_alcohol_use",
             "utm_id",
             "utm_source",
             "utm_medium",
@@ -308,7 +350,6 @@ class ScreenSerializer(serializers.ModelSerializer):
             "id",
             "uuid",
             "submision_date",
-            "frozen",
             "last_email_request_date",
             "completed",
             "user",
@@ -329,14 +370,83 @@ class ScreenSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop("force", False)
+        # Off only for replaying stored screens (`pull_screen`), which predate the checks.
+        self.validate_location = kwargs.pop("validate_location", True)
+        self.validate_values = kwargs.pop("validate_values", True)
         super().__init__(*args, **kwargs)
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         white_label_code = attrs.pop("white_label")["code"]
+        # `federal` holds the programs shown to every other white label, and no screener serves
+        # it yet: a screen under it has no state, counties or configuration. Test screens may
+        # use it to see federal programs on their own. `is_test` is create-only, so an update
+        # reads it from the saved screen.
+        is_test = self.instance.is_test if self.instance is not None else attrs.get("is_test", False)
+        if white_label_code == FEDERAL_WHITE_LABEL and not is_test:
+            raise serializers.ValidationError(
+                {"white_label": f"'{FEDERAL_WHITE_LABEL}' only takes test screens: send \"is_test\": true."}
+            )
         white_label = WhiteLabel.objects.get(code=white_label_code)
         attrs["white_label"] = white_label
 
+        self._validate_location(attrs, white_label)
+
+        # An unknown relationship, income or expense type saves fine but matches nothing a
+        # calculator looks for, so the household quietly loses programs. Refuse it instead.
+        unaccepted = unaccepted_values(attrs, self.instance) if self.validate_values else {}
+        if unaccepted:
+            raise serializers.ValidationError(unaccepted)
+
         return attrs
+
+    def _validate_location(self, attrs, white_label: WhiteLabel):
+        """Reject a ZIP or county this white label's crosswalk cannot produce.
+
+        The browser builds its ZIP gate and county dropdown from the crosswalk; API
+        clients have no such guard, and a bare name like "Sedgwick" for "Sedgwick County"
+        silently misses every exact-match county consumer (urgent needs, warnings,
+        hardcoded calculator lists) instead of erroring.
+
+        The county is checked against the white label's full county set, not the
+        submitted ZIP's candidates. A blank county is allowed: Colorado's
+        `counties_from_screen` expands a null county to every county the ZIP covers.
+        """
+        zipcode, county = attrs.get("zipcode"), attrs.get("county")
+        if not (self.validate_location and (zipcode or county)):
+            return
+
+        try:
+            counties_by_zip = Configuration.counties_by_zipcode(white_label)
+        except ValueError as e:
+            # Don't block every screen write on a bad config row, but don't fail open quietly either.
+            # warning, not error: Sentry turns logger.error into a second event.
+            logger.warning("Skipping location validation for %s: %s", white_label.code, e)
+            capture_message(f"Skipping location validation for {white_label.code}: {e}", level="error")
+            return
+        if not counties_by_zip:
+            return
+
+        if zipcode and zipcode not in counties_by_zip:
+            raise serializers.ValidationError(
+                {"zipcode": f"'{zipcode}' is not a ZIP code the {white_label.code} screener serves."}
+            )
+
+        valid = {name for counties in counties_by_zip.values() for name in counties}
+        if county and county not in valid:
+            raise serializers.ValidationError({"county": self._county_error(county, valid, white_label)})
+
+    @staticmethod
+    def _county_error(county: str, valid: set[str], white_label: WhiteLabel) -> str:
+        """Name the likely fix: usually a dropped suffix, sometimes only casing.
+
+        Lists every match, sorted, so an ambiguous name ("St. Louis") offers both options.
+        """
+        message = f"'{county}' is not a county the {white_label.code} screener sends."
+        needle = county.casefold()
+        matches = sorted(c for c in valid if c.casefold() == needle or c.casefold().startswith(f"{needle} "))
+        if matches:
+            message += f" Did you mean {' or '.join(repr(m) for m in matches)}?"
+        return message
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -346,6 +456,7 @@ class ScreenSerializer(serializers.ModelSerializer):
         # instance's current-benefits caches after writing, so this reflects the
         # committed rows even on a write request.
         data["current_benefits"] = sorted(cb.program.name_abbreviated for cb in instance.current_benefits.all())
+        data["acute_needs"] = needs_selected(instance)
         return data
 
     def create(self, validated_data):
@@ -355,6 +466,7 @@ class ScreenSerializer(serializers.ModelSerializer):
         # Not a Screen column — pop before the create() and write separately.
         # Absent (non-frontend clients) is treated as no current benefits.
         current_benefits = validated_data.pop("current_benefits", [])
+        validated_data.update(needs_fields(validated_data.pop("acute_needs", None)))
         screen = Screen.objects.create(**validated_data, completed=False)
         screen.set_screen_is_test()
         for member in household_members:
@@ -379,15 +491,13 @@ class ScreenSerializer(serializers.ModelSerializer):
         return screen
 
     def update(self, instance, validated_data):
-        if instance.frozen:
-            return instance
-
         household_members = validated_data.pop("household_members")
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
         # Not a Screen column — pop before the bulk .update() and write separately.
         # Absent (non-frontend clients) is treated as no current benefits.
         current_benefits = validated_data.pop("current_benefits", [])
+        validated_data.update(needs_fields(validated_data.pop("acute_needs", None)))
 
         # don't update create only fields
         for field in self.Meta.create_only_fields:
@@ -484,6 +594,7 @@ class EligibilitySerializer(serializers.Serializer):
     estimated_application_time = TranslationSerializer()
     legal_status_required = serializers.ListField()
     eligible = serializers.BooleanField()
+    payment_unit = serializers.ChoiceField(choices=[unit.value for unit in PaymentUnit])
     members = MemberEligibilitySerializer(many=True)
     failed_tests = serializers.ListField()
     passed_tests = serializers.ListField()
@@ -549,7 +660,6 @@ class ResultsSerializer(serializers.Serializer):
     screen_id = serializers.CharField()
     default_language = serializers.CharField()
     missing_programs = serializers.BooleanField()
-    validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
     # Ids of external APIs (e.g. "policy_engine") that failed while computing these

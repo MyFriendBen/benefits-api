@@ -5,8 +5,13 @@ from sys import stdin
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from integrations.clients.google_translate import Translate
-from translations.models import Translation
+from integrations.clients.google_translate import (
+    Translate,
+    TranslationIntegrityError,
+    is_auto_translatable,
+    unsupported_reason,
+)
+from translations.models import Translation, _invalidate_translation_cache
 
 
 class Command(BaseCommand):
@@ -84,6 +89,36 @@ class Command(BaseCommand):
             ),
         )
 
+    def _clear_rows(self, pairs, by_text):
+        """
+        Delete the non-English rows named by `pairs` so those languages fall back to English.
+
+        Deleting rather than blanking is load-bearing. `_build_translation_data` picks the
+        English fallback on key *presence*, not emptiness:
+
+            label: (texts[lang] if lang in texts else texts.get(default_lang))
+
+        so a row holding "" is served as empty text and the UI renders nothing at all -
+        strictly worse than the English it was meant to fall back to.
+
+        Returns (cleared_count, preserved_labels). Rows a human has edited are never
+        deleted; they are reported instead.
+        """
+        cleared = 0
+        preserved: list[str] = []
+        for text, lang in pairs:
+            for translation_obj in by_text.get(text, []):
+                row = translation_obj.translations.filter(language_code=lang).first()
+                if row is None:
+                    continue
+                if row.edited:
+                    # Never destroy a human's work to make room for a fallback.
+                    preserved.append(f"{translation_obj.label} [{lang}]")
+                    continue
+                row.delete()
+                cleared += 1
+        return cleared, preserved
+
     def _load_data(self, options):
         try:
             data = json.load(options["data"])
@@ -156,6 +191,17 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write(f"Auto-translate target languages: {target_languages}")
+            not_translatable = {
+                label: unsupported_reason(text) for label, text in data.items() if not is_auto_translatable(text)
+            }
+            if not_translatable:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"{len(not_translatable)} label(s) will get English rows only, not auto-translated:"
+                    )
+                )
+                for label, reason in not_translatable.items():
+                    self.stdout.write(self.style.WARNING(f"  ! {label} - it {reason}"))
 
         if dry_run:
             self.stdout.write(self.style.NOTICE("\nDry run — no changes written, no translation API calls made."))
@@ -186,6 +232,57 @@ class Command(BaseCommand):
             if text and text.strip():
                 by_text.setdefault(text, []).append(translation_obj)
 
+        # Strings we refuse to machine-translate (ICU plural/select) are reported and
+        # skipped rather than aborting the batch, so their English rows still save and the
+        # label exists.
+        #
+        # Skipping the translate step is NOT enough to get an English fallback, though.
+        # add_translation creates a row for every configured language, and the non-English
+        # ones start empty - so a refused string ends up with 17 blank rows, which
+        # _build_translation_data serves as empty text rather than falling back. Measured on
+        # staging: a refused ICU label had 18 rows and served '' for es, zh-hans and ar.
+        # The blank rows are therefore cleared, exactly as they are for a failed integrity
+        # check further down.
+        refused = {}
+        refused_pairs: list[tuple[str, str]] = []
+        for text in list(by_text):
+            reason = unsupported_reason(text)
+            if reason is not None:
+                refused[text] = reason
+                del by_text[text]
+
+        if refused:
+            self.stdout.write(
+                self.style.WARNING(f"\nSkipping auto-translate for {len(refused)} string(s) - English rows saved:")
+            )
+            for text, reason in refused.items():
+                labels = sorted(label for label, value in data.items() if value == text)
+                self.stdout.write(self.style.WARNING(f"  ! {', '.join(labels)}"))
+                self.stdout.write(f"      {text!r}")
+                self.stdout.write(f"      it {reason}")
+                refused_pairs.extend((text, lang) for lang in target_languages)
+
+            # by_text no longer holds the refused strings, so rebuild the mapping the
+            # clearing helper needs from the objects created above.
+            refused_by_text: dict[str, list] = {}
+            for translation_obj, text in translation_objects:
+                if text in refused:
+                    refused_by_text.setdefault(text, []).append(translation_obj)
+
+            cleared, preserved = self._clear_rows(refused_pairs, refused_by_text)
+            if cleared:
+                _invalidate_translation_cache()
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Cleared {cleared} blank row(s) so these fall back to English rather than "
+                        f"rendering empty."
+                    )
+                )
+            if preserved:
+                self.stdout.write(
+                    self.style.WARNING(f"  Kept {len(preserved)} manually-edited row(s): {', '.join(preserved)}")
+                )
+
         unique_texts = list(by_text.keys())
         if not unique_texts:
             self.stdout.write(self.style.SUCCESS("No non-empty English text to translate."))
@@ -193,9 +290,57 @@ class Command(BaseCommand):
 
         try:
             # "__all__" expands to every configured non-default language inside the client.
-            results = translate.bulk_translate(["__all__"], unique_texts)
+            # strict=False so one language mangling a placeholder does not cost us the
+            # other sixteen. Failed pairs are reported below, and any pre-existing row
+            # for them is cleared so the label falls back to English rather than
+            # keeping a stale corrupted value.
+            results = translate.bulk_translate(["__all__"], unique_texts, strict=False)
+        except TranslationIntegrityError as e:
+            # Backstop only: refused strings are filtered out above with the same
+            # predicate bulk_translate uses, and strict=False suppresses per-language
+            # integrity raises, so this should be unreachable. If it does fire, some
+            # languages may already have been written before the failure.
+            raise CommandError(
+                f"A string was refused by the translation integrity guard. English rows were saved and "
+                f"some languages may already have been written. The string needs a human translation "
+                f"rather than a re-run. Error: {e}"
+            )
         except Exception as e:
             raise CommandError(f"Translation API call failed; English rows were saved. Re-run to retry. Error: {e}")
+
+        integrity_failures = getattr(translate, "last_integrity_failures", [])
+        if integrity_failures:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"\n{len(integrity_failures)} (string, language) pair(s) came back with altered "
+                    f"placeholders and were NOT written - those languages fall back to English:"
+                )
+            )
+            for text, lang, detail in integrity_failures:
+                labels = sorted(label for label, value in data.items() if value == text)
+                self.stdout.write(self.style.WARNING(f"  ! {', '.join(labels)} [{lang}]"))
+                self.stdout.write(f"      {detail}")
+
+            # Skipping the write is only "falls back to English" for a brand-new label.
+            # Re-translating an already-corrupted key is the main use of this command, and
+            # there the old bad row is still sitting in the DB - leaving it would mean the
+            # guard reports a problem while the corruption stays live. Delete the row so
+            # the API's key-presence fallback serves English instead. Deleting rather than
+            # blanking matters: an empty row is served as empty text, not fallen back on.
+            cleared, preserved = self._clear_rows([(text, lang) for text, lang, _detail in integrity_failures], by_text)
+
+            if cleared:
+                _invalidate_translation_cache()
+                self.stdout.write(
+                    self.style.WARNING(f"  Cleared {cleared} stale row(s) so those languages fall back to English.")
+                )
+            if preserved:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Kept {len(preserved)} manually-edited row(s) despite the failure: "
+                        f"{', '.join(preserved)}"
+                    )
+                )
 
         translated_records = 0
         langs_written = set()

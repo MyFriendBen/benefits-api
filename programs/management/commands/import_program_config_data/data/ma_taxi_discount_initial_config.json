@@ -1,7 +1,7 @@
 {
     "white_label": {"code": "ma"},
     "program_category": {
-        "external_name": "ma_transportation"
+        "external_name": "transportation"
     },
     "program": {
         "name_abbreviated": "ma_taxi_discount",

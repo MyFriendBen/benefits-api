@@ -1,0 +1,54 @@
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.programs.shared.income import fpl_income_limit
+
+
+class IlCommoditySupplementalFoodProgram(ProgramCalculator):
+    program_code = "il_csfp"
+    dependencies = ["age", "county", "income_amount", "income_frequency", "household_size"]
+    eligible_counties = [
+        "Alexander",
+        "Clinton",
+        "Cook",
+        "Edwards",
+        "Franklin",
+        "Hamilton",
+        "Hardin",
+        "Jackson",
+        "Jersey",
+        "Johnson",
+        "Madison",
+        "Massac",
+        "Perry",
+        "Pope",
+        "Pulaski",
+        "Randolph",
+        "Richland",
+        "Saline",
+        "St. Clair",
+        "Union",
+        "Wabash",
+        "Washington",
+        "White",
+        "Williamson",
+    ]
+    minimum_age = 60
+    fpl_percent = 1.50
+    member_amount = 50 * 12  # $50/month - estimated value of food package
+
+    def household_eligible(self, e: Eligibility):
+        # 1. eligible county
+        e.condition(self.screen.county in self.eligible_counties)
+
+        # 2. income eligible
+        gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        income_limit = fpl_income_limit(self.program.year, self.screen.household_size, self.fpl_percent)
+        e.condition(gross_income <= income_limit)
+
+    def member_eligible(self, e: MemberEligibility):
+        member = e.member
+
+        # 3. age eligible
+        e.condition(member.calc_age() >= self.minimum_age)
+
+    def member_value(self, _):
+        return self.member_amount

@@ -3,13 +3,14 @@
     "code": "ks"
   },
   "program_category": {
-    "external_name": "ks_tax",
+    "external_name": "tax_credit",
     "name": "Tax Credits",
     "icon": "tax_credit",
     "tax_category": true
   },
   "program": {
     "name_abbreviated": "ks_cdcc",
+    "base_program": "cdcc",
     "year": "2026",
     "legal_status_required": [
       "citizen",

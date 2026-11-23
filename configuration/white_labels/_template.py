@@ -40,24 +40,28 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
 
     # TODO: Set your state/region name
+    # TODO: Flip to True only when the state is ready for the public dropdown. Until then it stays
+    # reachable by direct link and by any referrer that names it in "stateOptions".
+    publicly_launched = False
+
     state = {"name": "{{name}}"}
 
     # Banner messages (optional - uncomment if needed)
     # banner_messages = []
 
-    # TODO: Add public charge information link
-    public_charge_rule = {"link": ""}
-
-    # TODO: Add help resources shown when user clicks "More Help" button at bottom of results
-    more_help_options = {
-        "moreHelpOptions": [
-            {
-                "name": {"_default_message": "", "_label": ""},
-                "link": "",
-                "phone": {"_default_message": "", "_label": ""},
-            },
-        ]
+    # TODO: Add public charge information. Both keys are required: "text" is the visible link
+    # label, and the disclaimer step renders an empty anchor without it. The label suffix is the
+    # uppercased code (e.g. "landingPage.publicChargeLinkTX" for code "tx").
+    public_charge_rule = {
+        "link": "",
+        "text": {
+            "_label": "landingPage.publicChargeLink{{code_capitalize}}",
+            "_default_message": "",
+        },
     }
+
+    # TODO: Add help resources shown on the "Immediate Help" tab of the results page
+    more_help_options = {"moreHelpOptions": []}
 
     # ==========================================================================================
     # ACUTE CONDITION OPTIONS - Usually inherited as is from ConfigurationData
@@ -193,6 +197,9 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     },
     # }
 
+    # energy_calculator_expense_options: the utility expenses the energy calculator asks about, as
+    # option cards. Only a white label that runs the energy calculator sets it (see cesn.py).
+
     # ==========================================================================================
     # CONDITION OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================
@@ -231,91 +238,23 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # TODO: Add your state's zip code to county mappings
     counties_by_zipcode = {}
 
-    # ==========================================================================================
-    # CATEGORY BENEFITS - Always customized
-    # ==========================================================================================
-    # Shown in "Additional Resources" step when users indicate they already receive benefits.
-    # Selected benefits are filtered from results.
-    #
-    # CRITICAL NAMING CONVENTION - THE DICTIONARY KEY MUST MATCH THE PROGRAM name_abbreviated:
-    #
-    # The benefit key (e.g., "snap", "leap", "tanf") determines:
-    #   1. Frontend field: formData.benefits.{key}
-    #   2. Backend write: updateScreen.ts sends current_benefits: [array of keys]
-    #   3. Database write: serializer stores a CurrentBenefit row per key
-    #      (screener_current_benefits join table: screen_id + program_id)
-    #   4. Backend read: Screen.has_benefit(name_abbreviated) checks screen.current_benefits
-    #
-    # WORKFLOW EXAMPLE FOR "SNAP":
-    #   1. Config key: "snap" (this file)
-    #   2. User checks "SNAP" checkbox in "Additional Resources" step
-    #   3. Frontend stores: formData.benefits.snap = true
-    #   4. updateScreen.ts sends: current_benefits: ["snap"]
-    #   5. Serializer creates: CurrentBenefit(screen=screen, program=Program(name_abbreviated="snap"))
-    #   6. Program registered with name_abbreviated = "snap" (or "co_snap", etc.)
-    #   7. has_benefit("snap") checks screen.current_benefits for a matching name_abbreviated
-    #   8. Results serialization: "already_has": True
-    #   9. Frontend filters: SNAP program hidden from results
-    #
-    # IMPORTANT - MULTIPLE PROGRAMS, SAME BENEFIT:
-    #   Multiple programs can check the same benefit. For example:
-    #   - Regular screener program: name_abbreviated = "snap"
-    #   - State variant program: name_abbreviated = "co_snap"
-    #
-    #   Each is looked up independently by has_benefit() — no mapping needed.
-    #   A user who selected "snap" will have a CurrentBenefit row for the snap
-    #   program; has_benefit("co_snap") checks for co_snap separately.
-    #
-    # STEPS TO ADD A NEW BENEFIT:
-    #   1. Add benefit key here matching the program's name_abbreviated (e.g., "my_benefit")
-    #   2. Add mapping in updateScreen.ts: include "my_benefit" in the current_benefits array
-    #   3. Ensure the Program row exists with name_abbreviated = "my_benefit"
-    #   4. Screen.has_benefit("my_benefit") works automatically via the CurrentBenefit relation
-    #
-    # Structure:
-    #   {
-    #       "categoryKey": {                          # Arbitrary category identifier
-    #           "category_name": { ... },             # Category display name
-    #           "benefits": {
-    #               "benefit_key": {                  # ← THIS KEY IS CRITICAL!
-    #                   "name": { ... },              # Benefit display name
-    #                   "description": { ... }        # Brief description
-    #               }
-    #           }
-    #       }
-    #   }
-    #
-    # See existing white labels for examples:
-    #   - co.py (lines ~1928-2265)
-    #   - il.py
-    # ==========================================================================================
-
-    # TODO: Add benefits available in your state, organized by category
-    category_benefits = {
-        "your_category_key": {
-            "benefits": {
-                "your_benefit_key": {  # ← This key is critical! Must match has_* field name
-                    "name": {"_label": "", "_default_message": ""},
-                    "description": {"_label": "", "_default_message": ""},
-                },
-            },
-            "category_name": {"_label": "", "_default_message": ""},
-        },
-    }
 
     # ==========================================================================================
-    # CONSENT & PRIVACY - Always needed for production
+    # CONSENT & PRIVACY - Usually inherited
     # ==========================================================================================
 
-    # TODO: Add consent/terms links for each language
-    consent_to_contact = {
-        "en-us": "",
-    }
-
-    # TODO: Add privacy policy links for each language
-    privacy_policy = {
-        "en-us": "",
-    }
+    # consent_to_contact and privacy_policy are inherited from base.py, which points at the
+    # generic MyFriendBen terms and privacy pages (en-us and es). Leave them out unless this
+    # white label has its own policy pages, then override with a key per translated page:
+    # consent_to_contact = {
+    #     "en-us": "https://example.org/terms-and-conditions/",
+    #     "es": "https://example.org/terminos-condiciones/",
+    # }
+    #
+    # privacy_policy = {
+    #     "en-us": "https://example.org/privacy-policy/",
+    #     "es": "https://example.org/privacidad/",
+    # }
 
     # ==========================================================================================
     # REFERRER DATA - Always customized
@@ -326,7 +265,8 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #
     # theme: CSS theme name (usually "default")
     #   - Used to apply custom styling/themes
-    #   - Available themes: "default", "twoOneOne", "twoOneOneNC", "nc_lanc"
+    #   - The available names are the keys of `themes` in the frontend's
+    #     src/Assets/styleController.ts; an unlisted name silently falls back to "default"
     #
     # logoSource: Logo filename from public/locales folder
     #   - Displayed in header throughout screener
@@ -351,7 +291,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # stepDirectory: Defines the screener flow (ORDER MATTERS!)
     #   - Array of step names that appear in order
     #   - householdSize and householdData MUST be consecutive
-    #   - "hasBenefits" shows category_benefits from above
+    #   - "hasBenefits" lists Programs with show_in_has_benefits_step=True (database-driven)
     #   - "acuteHHConditions" is the Additional Resources step
     #   - Can have multiple directories keyed by path for different flows
     #
@@ -361,8 +301,15 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     * "211nc" - Enable 2-1-1 North Carolina specific branding
     #     * "lanc" - Enable LANC specific branding
     #     * "nc_show_211_link" - Show 2-1-1 link in NC
-    #     * "white_multi_select_tile_icon" - White icons on multi-select tiles
     #     * "dont_show_category_values" - Hide dollar amounts on category headings
+    #
+    # stateOptions: State codes this referrer's "What is your state?" dropdown offers
+    #   - Empty list = every publicly launched state (see publicly_launched below)
+    #   - A non-empty list may name states that are not public yet, e.g.
+    #     {"uwgkc": ["ks", "mo"]} for a referrer serving both sides of the KS/MO line
+    #   - The dropdown reads whichever config is loaded, so a referrer reachable from more than
+    #     one state path needs the same entry in each of those states' configs. Keep partner
+    #     entries out of "_default", which stays the generic every-public-state list
     #
     # noResultMessage: Message shown when user has no eligible programs
     #   - Format: {"_label": "translation.key", "_default_message": "Message text"}
@@ -394,7 +341,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
                 "householdData",
                 "hasExpenses",
                 "householdAssets",
-                "hasBenefits",  # Shows category_benefits
+                "hasBenefits",  # Programs with show_in_has_benefits_step=True
                 "acuteHHConditions",  # Additional Resources step
                 "referralSource",
                 "signUpInfo",
@@ -404,7 +351,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. You can find other support matched to your needs in the Additional Resources tab. If you need help right away, go to the Immediate Help tab",
             },
         },
         "defaultLanguage": {"default": "en-us"},
