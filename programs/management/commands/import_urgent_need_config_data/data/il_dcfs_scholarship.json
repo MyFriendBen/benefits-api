@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_dcfs_scholarship",
+    "category_type": {
+      "external_name": "education_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "DCFS Scholarship",
+      "description": "The Illinois DCFS Scholarship helps current and former foster youth pay for college. It covers tuition and mandatory fees at Illinois public colleges and universities for 5 years, and it also includes a monthly grant and a Medicaid card. You may qualify if you have an open DCFS case, your DCFS case closed through adoption or guardianship, or you aged out of care at 18 or older. Selection is competitive and is based on your school record, activities, 3 recommendation letters, and an essay. Apply with Form CFS 438. DCFS also offers a tuition and fee waiver that does not depend on winning the scholarship.",
+      "link": "https://dcfs.illinois.gov/brighter-futures/growing-minds/post-secondary-education-services.html",
+      "warning": "Applications are only open January 1 to March 31 each year. If you are seeing this after March 31, come back in January to apply.",
+      "website_description": "College scholarship for current and former Illinois foster youth.",
+      "notification_message": ""
+    },
+    "functions": [
+      "il_dcfs_scholarship"
+    ],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
