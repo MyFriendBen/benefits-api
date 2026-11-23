@@ -186,7 +186,7 @@ class TestValue(MfbTanfTestCase):
     def test_monthly_benefit_made_annual_and_rounded_half_up(self):
         calculator = self.make_calculator(self.household(("child", 5)))
         for monthly, annual in ((Decimal("139.50"), 1_674), (Decimal("10.0417"), 121), (Decimal("10.0416"), 120)):
-            with self.subTest(monthly=monthly):
+            with self.subTest(monthly=str(monthly)):
                 calculator.benefit_amount = lambda monthly=monthly: monthly
                 self.assertEqual(calculator.household_value(), annual)
 
