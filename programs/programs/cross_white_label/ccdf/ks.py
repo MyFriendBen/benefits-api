@@ -175,8 +175,8 @@ class KsCcap(ProgramCalculator):
     of 20 hours a week at or above the federal minimum wage.
 
     A plain ``ProgramCalculator`` rather than a subclass of this family's ``Ccdf``
-    base: that base wraps PolicyEngine's ``is_ccdf_eligible``, and this program is
-    implemented from Kansas sources.
+    base in ``base.py``: it was implemented from Kansas sources before that base
+    existed, and has not moved onto it yet.
 
     The value is an **MFB-owned estimate, not an amount DCF publishes**. Kansas sets
     the benefit from its own maximum hourly rate rather than from what the family

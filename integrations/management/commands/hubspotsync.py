@@ -24,9 +24,7 @@ class Command(BaseCommand):
         if len(status["failed"]) > 0:
             self.stdout.write(self.style.WARNING("Failed to sync %s users." % len(status["failed"])))
             for message in status["failed"]:
-                self.stdout.write(
-                    self.style.SUCCESS("Successfully synced user %s with contact %s." % (message[0], message[1]))
-                )
+                self.stdout.write(self.style.WARNING("Failed to sync user %s: %s" % (message[0], message[1])))
 
     # MFB allows users to sign up to receive benefits updates or offers. If they do
     # so PII is temporarily stored against their user record. This cron function
@@ -61,8 +59,10 @@ class Command(BaseCommand):
                     hubspot_id = hubspot.add()
                     user.anonomize(hubspot_id)
                     status["completed"].append((user.id, hubspot_id))
-                except Exception:
-                    status["failed"].append((user.id, hubspot_id))
+                except Exception as e:
+                    # Record only the exception type. HubSpot's error text can include the
+                    # rejected value (for example an email address), which must not reach output.
+                    status["failed"].append((user.id, type(e).__name__))
 
             # Delay to prevent hitting rate limit of 100 req per 10 seconds
             time.sleep(0.2)
