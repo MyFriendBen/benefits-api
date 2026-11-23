@@ -44,8 +44,9 @@ eitc_inputs = [
 # exercises it yet. Every field reaches PE the same way, so leaving one out keeps the same
 # silent-drop bug for it that including the others fixes.
 #
-# Not here: workers' compensation. PolicyEngine's TANF source list does not name it, so
-# sending it would be inert — see each state's spec for the disclosed treatment.
+# Not here: workers' compensation. The federal TANF source list does not name it, but some
+# state lists do (Missouri's), so a state calculator whose list counts it sends
+# `WorkersCompensationDependency` itself — see each state's spec for its treatment.
 tanf_income = [
     *irs_gross_income,
     member.ChildSupportReceivedDependency,
@@ -57,20 +58,20 @@ tanf_income = [
 # The dependencies covering PolicyEngine's
 # `gov.states.ma.eec.ccfa.income.countable_income.sources` that the screener collects, a
 # wider base than the federal CCDF test this replaced, which read no benefit income at all.
-# Veterans' benefits, military retirement pay and dividend/interest income are deliberately
-# absent: the first already counts through `pension_income`, the second the screener never
-# asks for, and CCFA exempts the capital gains our single `investment` stream becomes.
+# Social Security, SSI and child support received are not sent: Massachusetts stopped counting
+# them on 2023-10-01, and PolicyEngine 2.5.0 dropped them from the list. Military retirement pay
+# and dividend/interest income are absent too: the screener never asks for the first, and CCFA
+# exempts the capital gains our single `investment` stream becomes.
+# Veterans' benefits are a known overcount. CCFA excludes veterans disability, but our `veteran`
+# income stream rides `PensionIncomeDependency` into `taxable_pension_income`, which counts.
 ma_ccfa_income = [
     member.EmploymentIncomeDependency,
     member.SelfEmploymentIncomeDependency,
     member.RentalIncomeDependency,
     member.PensionIncomeDependency,
-    member.SocialSecurityIncomeDependency,
     member.UnemploymentIncomeDependency,
     member.WorkersCompensationDependency,
     member.AlimonyIncomeDependency,
-    member.ChildSupportReceivedDependency,
-    member.Ssi,
 ]
 
 # PolicyEngine's actual-receipt contract: countable income and categorical eligibility follow

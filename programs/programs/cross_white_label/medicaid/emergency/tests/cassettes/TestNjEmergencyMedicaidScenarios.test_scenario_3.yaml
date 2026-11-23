@@ -14,7 +14,7 @@ interactions:
       "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf": {"2026": null},
       "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
       "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
-      "marital_units": {}}, "version": "2.94.7"}'
+      "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -23,7 +23,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1210'
+      - '1212'
       Content-Type:
       - application/json
       User-Agent:
@@ -47,27 +47,27 @@ interactions:
         {"2026": "NJ"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf": {"2026":
         0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
         false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-        false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.94.7",
+        false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version": "2.116.16",
         "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1324'
+      - '1326'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 21:15:47 GMT
+      - Thu, 19 Nov 2026 18:41:46 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-e28bc2a55b08dfac24cd8423eba68962-0c2dc18b52c84d3e-00
+      - 00-dcee004b861a0ed63f0ef4316c7adbdb-9b508424cfa4062f-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - e28bc2a55b08dfac24cd8423eba68962/5708666278476412158
+      - dcee004b861a0ed63f0ef4316c7adbdb
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -75,7 +75,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - a63b6c64-3985-4881-a505-06f268bc591e
+      - 7b30c3e7-6b4e-4cf7-9b6c-b11e4e6b8e70
       x-policyengine-route-channel:
       - current
     status:

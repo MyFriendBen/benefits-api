@@ -49,8 +49,9 @@ runs:
     - name: Setup Python and Django
       uses: ./.github/actions/setup-python-django
 
-    # pytest builds its own database without migrations (--nomigrations), so this only
-    # proves the migrations apply and the system checks pass -- once per run is enough.
+    # pytest builds its own database without migrations (--nomigrations), so this is the
+    # only place migrations are checked: none missing, none conflicting, all applying, and
+    # the system checks passing. Once per run is enough.
     - name: Django checks and migrations
       if: inputs.run-django-checks == 'true'
       uses: ./.github/actions/run-django-checks

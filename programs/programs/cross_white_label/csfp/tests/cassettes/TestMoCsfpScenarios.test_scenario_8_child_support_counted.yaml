@@ -5,7 +5,7 @@ interactions:
       {"family": {"members": ["801"]}}, "households": {"household": {"members": ["801"],
       "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["801"],
       "school_meal_countable_income": {"2026": 24600.0}}}, "marital_units": {}}, "version":
-      "2.94.7"}'
+      "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -14,7 +14,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '435'
+      - '437'
       Content-Type:
       - application/json
       User-Agent:
@@ -29,26 +29,26 @@ interactions:
         ["801"]}}, "households": {"household": {"members": ["801"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["801"], "school_meal_countable_income":
         {"2026": 24600.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.94.7", "data_version": null, "dataset": null}}'
+        "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '534'
+      - '536'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Tue, 17 Nov 2026 21:14:37 GMT
+      - Thu, 19 Nov 2026 18:40:45 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-d753045757644ca9779e59780a397985-82c08f41ec3238e6-00
+      - 00-16710c9633c098f9bfd1fb6472f3053b-97a0f43c2d313210-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - d753045757644ca9779e59780a397985/661791305772765381
+      - 16710c9633c098f9bfd1fb6472f3053b
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -56,7 +56,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - caffa1cb-6c2b-4870-81f2-6fe69fd54976
+      - af4141ee-39dd-4e7e-b224-adeaac88bb94
       x-policyengine-route-channel:
       - current
     status:

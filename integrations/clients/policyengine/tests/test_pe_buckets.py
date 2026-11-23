@@ -103,7 +103,7 @@ class PeBucketTestBase(TestCase):
     def run_reported(self, calculators):
         """Run the bucket loop and hand back both reporting channels for inspection."""
         log = []
-        with patch.object(pe, "pe_engines", [sent_payloads(log)]), patch.object(
+        with patch.object(pe, "pe_engine", sent_payloads(log)), patch.object(
             pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")
         ), patch.object(pe, "capture_message") as capture_message, patch.object(pe, "logger") as logger:
             result = pe.calc_pe_eligibility(self.screen, calculators)
@@ -119,7 +119,7 @@ class PeBucketTestBase(TestCase):
         """
         log = []
         patches = [
-            patch.object(pe, "pe_engines", [sent_payloads(log)]),
+            patch.object(pe, "pe_engine", sent_payloads(log)),
             patch.object(pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")),
             patch.object(pe, "capture_message"),
         ]
@@ -292,7 +292,7 @@ class TestProgramsThatDisagree(PeBucketTestBase):
 class TestTheDisagreementIsReported(PeBucketTestBase):
     def warning_message(self):
         log = []
-        with patch.object(pe, "pe_engines", [sent_payloads(log)]), patch.object(
+        with patch.object(pe, "pe_engine", sent_payloads(log)), patch.object(
             pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")
         ), patch.object(pe, "capture_message") as capture_message:
             pe.calc_pe_eligibility(
@@ -463,7 +463,7 @@ class TestOneRequestFailing(PeBucketTestBase):
                 if len(log) == 2:
                     raise RuntimeError("boom")
 
-        with patch.object(pe, "pe_engines", [_FailsTheSecond]), patch.object(
+        with patch.object(pe, "pe_engine", _FailsTheSecond), patch.object(
             pe, "all_eligibility", side_effect=lambda sim, programs: dict.fromkeys(programs, "ok")
         ), patch.object(pe, "capture_message"), patch.object(pe, "capture_exception"), patch.object(
             pe, "record_external_api_failure"
