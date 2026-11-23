@@ -68,7 +68,7 @@ class NjCcap(Ccdf):
         return parent.student_full_time is True or parent.student_job_training_program is True
 
     def payment_rate(self, child: HouseholdMember) -> Decimal:
-        months = age_in_months(child)
+        months = age_in_months(child, self.screen.get_reference_date())
         rate = self.payment_rates[0][1]
         for first_month, band_rate in self.payment_rates:
             if months >= first_month:

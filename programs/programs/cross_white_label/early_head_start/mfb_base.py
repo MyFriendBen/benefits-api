@@ -61,7 +61,9 @@ class MfbEarlyHeadStart(HeadStartEligibility, abstract=True):
         return super()._in_foster_care(member) and self._is_under_three(member)
 
     def member_value(self, member: HouseholdMember) -> int:
-        weekly_price = self._weekly_price(age_in_months(member) if self._is_under_three(member) else 0)
+        weekly_price = self._weekly_price(
+            age_in_months(member, self.screen.get_reference_date()) if self._is_under_three(member) else 0
+        )
         annual = weekly_price * self.program_weeks
 
         return int(annual.quantize(Decimal("1"), rounding=ROUND_HALF_UP))

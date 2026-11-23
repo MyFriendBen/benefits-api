@@ -1,11 +1,13 @@
 """A member's age at finer than whole years."""
 
+from datetime import date
+
 from screener.models import HouseholdMember
 
 
-def age_in_months(member: HouseholdMember) -> int:
+def age_in_months(member: HouseholdMember, reference_date: date) -> int:
     """
-    Whole months since the birth month on the screen's reference date, counting the birth
+    Whole months since the birth month on ``reference_date``, counting the birth
     month as month 0. A member with no birth month falls back to the stored age at the start
     of that year of life.
     """
@@ -13,5 +15,4 @@ def age_in_months(member: HouseholdMember) -> int:
     if birth_year_month is None:
         return (member.calc_age() or 0) * 12
 
-    today = member.screen.get_reference_date()
-    return (today.year - birth_year_month.year) * 12 + today.month - birth_year_month.month
+    return (reference_date.year - birth_year_month.year) * 12 + reference_date.month - birth_year_month.month
