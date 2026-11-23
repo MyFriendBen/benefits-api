@@ -34,7 +34,9 @@ class NcTanf(Tanf):
     * Gifts do not count, as before. WF-114 excludes only gifts for specific special occasions, which
       the screener cannot distinguish.
     * Someone who reports their own SSI amount is treated as an SSI recipient. A household that only
-      ticks the SSI tile names no member, so no one is excluded.
+      ticks the SSI tile names no member, so no one is excluded. PolicyEngine removes the recipient
+      from the Work First unit, not only their income, so the value is for the remaining members: a
+      parent on SSI with one child returns the grant for a unit of 1, not a unit of 2.
     """
 
     program_code = "nc_tanf"
