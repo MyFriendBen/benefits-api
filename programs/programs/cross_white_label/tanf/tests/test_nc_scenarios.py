@@ -1,12 +1,12 @@
 """
 Cassette-backed scenarios for NC Work First.
 
-``NcTanf`` sends each member's income and reads PolicyEngine's ``nc_tanf``. PE derives NC's
-countable income itself, and since 2.74.1 that applies three rules these tests pin: 27.5% of
-gross earnings is excluded, children's earnings are not counted, and a family whose payment
-falls under $25 a month is not eligible. PE applies none of them if ``NcTanf`` sends
-``nc_tanf_countable_earned_income`` or ``nc_tanf_countable_gross_unearned_income``, so a
-regression that re-adds either input fails here.
+``NcTanf`` sends each member's earned income and our own unearned total, and reads PolicyEngine's
+``nc_tanf``. PE derives NC's countable earned income itself, and since 2.74.1 that applies three rules
+these tests pin: 27.5% of gross earnings is excluded, children's earnings are not counted, and a family
+whose payment falls under $25 a month is not eligible. PE applies none of them if ``NcTanf`` sends
+``nc_tanf_countable_earned_income``, so a regression that adds that input fails here. Sending the
+unearned total must not switch the exclusions off either; the earnings scenarios below would fail if it did.
 
 There is no NC TANF spec yet (it comes with the move off PolicyEngine), so the expected values
 are worked from PE's NC parameters, not from a spec:

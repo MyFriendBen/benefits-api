@@ -17,9 +17,9 @@ per calculator rather than per route:
   its own source list.
 * CO, IL and MA compute countable unearned income themselves and pass a total, excluding
   only ``cashAssistance``. The new type falls into ``"unearned"`` automatically.
-* NC sends each member's income and lets PolicyEngine derive countable income, which it must
-  to get PE's exclusions. PE's NC unearned sources omit General Assistance, so NC is
-  a documented exemption below rather than a state that counts the income.
+* NC sends its own unearned total (``NcTanfCountableGrossUnearnedIncomeDependency``) that
+  deliberately leaves ``cashAssistanceOther`` out: WF-114 lists General Assistance as not
+  counted. NC is a documented exemption below, not a state that counts the income.
 
 What this asserts, and what it does not: each calculator's own inputs are evaluated against a
 household reporting the income, so this pins where the money lands *in the payload we send*
@@ -46,9 +46,8 @@ ANNUAL_AMOUNT = MONTHLY_AMOUNT * 12
 # to NOT count it, so the exemption fails if the state's behavior changes in either direction.
 NOT_COUNTED = {
     "nc_tanf": (
-        "PolicyEngine's nc/ncdhhs/tanf/income/unearned.yaml omits General Assistance, per the "
-        "Work First WF-114 income chart, and NC must let PE derive countable income to get its "
-        "exclusions. Before that, NC's own total counted it."
+        "WF-114, NC's Work First income chart, lists General Assistance as not counted, and NC's own "
+        "unearned total leaves cashAssistanceOther out."
     ),
 }
 
