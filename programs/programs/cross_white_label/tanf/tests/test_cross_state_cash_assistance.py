@@ -18,7 +18,7 @@ per calculator rather than per route:
 * CO, IL and MA compute countable unearned income themselves and pass a total, excluding
   only ``cashAssistance``. The new type falls into ``"unearned"`` automatically.
 * NC sends each member's income and lets PolicyEngine derive countable income, which it must
-  to get PE's exclusions (MFB-2463). PE's NC unearned sources omit General Assistance, so NC is
+  to get PE's exclusions. PE's NC unearned sources omit General Assistance, so NC is
   a documented exemption below rather than a state that counts the income.
 
 What this asserts, and what it does not: each calculator's own inputs are evaluated against a
@@ -48,7 +48,7 @@ NOT_COUNTED = {
     "nc_tanf": (
         "PolicyEngine's nc/ncdhhs/tanf/income/unearned.yaml omits General Assistance, per the "
         "Work First WF-114 income chart, and NC must let PE derive countable income to get its "
-        "exclusions (MFB-2463). Before that, NC's own total counted it."
+        "exclusions. Before that, NC's own total counted it."
     ),
 }
 

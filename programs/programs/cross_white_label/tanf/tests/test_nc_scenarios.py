@@ -1,5 +1,5 @@
 """
-Cassette-backed scenarios for NC Work First (MFB-2463).
+Cassette-backed scenarios for NC Work First.
 
 ``NcTanf`` sends each member's income and reads PolicyEngine's ``nc_tanf``. PE derives NC's
 countable income itself, and since 2.74.1 that applies three rules these tests pin: 27.5% of

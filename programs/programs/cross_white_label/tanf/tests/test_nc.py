@@ -1,4 +1,4 @@
-"""NC Work First input tests (MFB-2463)."""
+"""NC Work First input tests."""
 
 from django.test import SimpleTestCase
 
