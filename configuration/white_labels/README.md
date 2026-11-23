@@ -83,7 +83,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
    ```python
    class TxHubSpotIntegration(HubSpotIntegration):
        STATE = "TX"
-       OWNER_ID = "80630223"  # Get the correct owner ID from HubSpot
+       OWNER_ID = "168560325"  # Get the correct owner ID from HubSpot
    ```
 
    Then register it in the `CMS_INTEGRATIONS` dictionary:
