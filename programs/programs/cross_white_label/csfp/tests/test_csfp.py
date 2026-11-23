@@ -10,3 +10,8 @@ class TestCsfpWiring(SimpleTestCase):
     def test_pe_inputs_includes_age(self):
         """CSFP is for people 60 and over; without age, no member is old enough to qualify."""
         self.assertIn(dependency.member.AgeDependency, CommoditySupplementalFoodProgram.pe_inputs)
+
+    def test_pe_inputs_includes_v2_income_but_not_the_tx_one(self):
+        """The TX-only variable belongs to TxCsfp; other states must not send it."""
+        self.assertIn(dependency.spm.CsfpCountableIncomeV2Dependency, CommoditySupplementalFoodProgram.pe_inputs)
+        self.assertNotIn(dependency.spm.TxDtaCsfpCountableIncomeDependency, CommoditySupplementalFoodProgram.pe_inputs)

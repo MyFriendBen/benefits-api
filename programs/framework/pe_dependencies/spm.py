@@ -585,6 +585,34 @@ class CsfpCountableIncomeDependency(SpmUnit):
         return self.screen.calc_gross_income("yearly", ["all"])
 
 
+class CsfpCountableIncomeV2Dependency(CsfpCountableIncomeDependency):
+    """
+    PE's ``csfp_countable_income``, the variable CSFP reads its income from as of PE 2.145.6.
+
+    Before 2.145.6 PE read CSFP income from ``school_meal_countable_income``, which
+    ``CsfpCountableIncomeDependency`` still sends. From 2.145.6 PE ignores that field for CSFP
+    and computes its own income unless this is sent. The value is identical to the old one, so
+    CSFP results do not move across PE's switch.
+
+    The floor matters: the variable does not exist before 2.145.6, and an unknown variable
+    400s the whole request.
+    """
+
+    field = "csfp_countable_income"
+    min_pe_version = (2, 145, 6)
+
+
+class TxDtaCsfpCountableIncomeDependency(CsfpCountableIncomeDependency):
+    """
+    PE's ``tx_dta_csfp_countable_income``, which Texas's CSFP reads its income from as of PE
+    2.145.6 (the federal ``csfp_countable_income`` covers every other state). Same value and
+    same version floor as ``CsfpCountableIncomeV2Dependency``.
+    """
+
+    field = "tx_dta_csfp_countable_income"
+    min_pe_version = (2, 145, 6)
+
+
 class AssetsDependency(SpmUnit):
     field = "spm_unit_assets"
 
