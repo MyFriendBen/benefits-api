@@ -43,7 +43,7 @@ grpcio==1.66.2
 grpcio-status==1.66.2
 gunicorn==23.0.0
 httplib2==0.32.0
-hubspot-api-client==9.0.0
+hubspot-api-client==10.0.0
 idna==3.15
 inflection==0.5.1
 iniconfig==1.1.1
