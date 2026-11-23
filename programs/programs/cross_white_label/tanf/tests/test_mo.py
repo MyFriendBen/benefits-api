@@ -42,6 +42,12 @@ class TestMoTanfWiring(TestCase):
         for income_dep in dependency.tanf_income:
             self.assertIn(income_dep, MoTanf.pe_inputs)
 
+    def test_pe_inputs_includes_workers_compensation(self) -> None:
+        """Missouri's unearned-income source list counts it; sent beside tanf_income, which
+        Kansas shares and whose list does not."""
+        self.assertIn(dependency.member.WorkersCompensationDependency, MoTanf.pe_inputs)
+        self.assertNotIn(dependency.member.WorkersCompensationDependency, dependency.tanf_income)
+
     def test_pe_inputs_includes_child_support(self):
         self.assertIn(dependency.member.ChildSupportReceivedDependency, MoTanf.pe_inputs)
 

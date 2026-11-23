@@ -44,8 +44,9 @@ eitc_inputs = [
 # exercises it yet. Every field reaches PE the same way, so leaving one out keeps the same
 # silent-drop bug for it that including the others fixes.
 #
-# Not here: workers' compensation. PolicyEngine's TANF source list does not name it, so
-# sending it would be inert — see each state's spec for the disclosed treatment.
+# Not here: workers' compensation. The federal TANF source list does not name it, but some
+# state lists do (Missouri's), so a state calculator whose list counts it sends
+# `WorkersCompensationDependency` itself — see each state's spec for its treatment.
 tanf_income = [
     *irs_gross_income,
     member.ChildSupportReceivedDependency,
