@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_bishop_francis_center",
+    "category_type": {
+      "external_name": "civil_legal_needs"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Catholic Charities Bishop Francis Center (Immigration, Newark)",
+      "description": "The Catholic Charities Bishop Francis Center in Newark gives immigration legal help. There is no income threshold, and services are low cost or pro bono. Walk in to the helpdesk Monday to Thursday 9am-4pm. Call 973-733-3516.",
+      "link": "https://ccannj.org/immigration-and-refugee/",
+      "warning": "",
+      "website_description": "Learn about free or low-cost legal help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

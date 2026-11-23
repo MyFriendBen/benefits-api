@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_cathedral_kitchen",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Cathedral Kitchen (Camden)",
+      "description": "Cathedral Kitchen in Camden serves meals and offers groceries to every guest. No application is needed. Dining is Monday to Friday 3:15-5pm and Saturday 12-1pm. Call 856-964-6771.",
+      "link": "https://cathedralkitchen.org",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

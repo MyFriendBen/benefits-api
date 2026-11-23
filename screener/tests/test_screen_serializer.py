@@ -12,7 +12,6 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from configuration.models import Configuration
-from programs.models import Program
 from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Insurance, Screen, WhiteLabel
 from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.tests.helpers import seed_program

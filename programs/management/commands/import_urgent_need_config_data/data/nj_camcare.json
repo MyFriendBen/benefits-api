@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_camcare",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "CAMcare Health Corporation (Camden)",
+      "description": "CAMcare Health Corporation in Camden offers health care to people with or without insurance. No insurance? No problem. Walk-ins are welcome. Open Monday to Friday 8am-5pm and Saturday 9am-1pm. Call 856-583-2400.",
+      "link": "https://www.camcare.net",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

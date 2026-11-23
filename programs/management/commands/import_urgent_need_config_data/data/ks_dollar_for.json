@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_dollar_for",
     "category_type": {
-      "external_name": "ks_medical_expenses_and_debt",
-      "name": "Medical Expenses & Debt",
-      "icon": "medical_expenses_and_debt"
+      "external_name": "medical_expenses_and_debt"
     },
     "type_short": [
       "medical expenses and debt"

@@ -127,3 +127,30 @@ class TestRedisBackend(SimpleTestCase):
 
         self.assertLess(len(raw), 100_000)
         self.assertEqual(self.cache.get("compressible"), highly_compressible)
+
+    def test_counters_increment_atomically_despite_compression(self):
+        """The Save My Results throttle counts with add + incr (Redis INCRBY). That
+        only works if django_redis stores small ints raw, not pickled and zlibbed."""
+        self.assertTrue(self.cache.add("counter", 0, 60))
+        self.assertFalse(self.cache.add("counter", 0, 60))
+
+        self.assertEqual(self.cache.incr("counter"), 1)
+        self.assertEqual(self.cache.incr("counter", 1), 2)
+        self.assertEqual(self.cache.incr("counter", -1), 1)
+        self.assertEqual(self.cache.get("counter"), 1)
+
+    def test_save_results_throttle_counts_on_redis(self):
+        from unittest import mock
+
+        from screener.throttles import RateWindow
+
+        with (
+            mock.patch.object(RateWindow, "cache", self.cache),
+            mock.patch.object(RateWindow, "THROTTLE_RATES", {"scope": "2/hour"}),
+        ):
+            reserved = [RateWindow("scope", "ident").reserve() for _ in range(3)]
+            RateWindow("scope", "ident").release()
+            after_release = RateWindow("scope", "ident").reserve()
+
+        self.assertEqual(reserved, [True, True, False])
+        self.assertTrue(after_release)

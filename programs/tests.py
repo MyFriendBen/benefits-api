@@ -342,6 +342,50 @@ class SwitchKsMo211ReferrersMigrationTests(TestCase):
         self.assertFalse(Referrer.objects.exists())
 
 
+class Add211njReferrerMigrationTests(TestCase):
+    """Covers migration 0208's RunPython, which --nomigrations skips."""
+
+    def setUp(self) -> None:
+        self.migration = import_module("programs.migrations.0208_add_211nj_referrer")
+        self.schema_editor = SimpleNamespace(connection=connection)
+        self.nj, _ = WhiteLabel.objects.get_or_create(code="nj", defaults={"name": "New Jersey", "state_code": "NJ"})
+
+    def test_adds_a_hidden_partner_referrer(self) -> None:
+        """Hidden until launch so an unlaunched partner isn't offered to every NJ user."""
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        referrer = Referrer.objects.get(white_label=self.nj, referrer_code="211nj")
+        self.assertEqual(referrer.name, "2-1-1 New Jersey")
+        self.assertTrue(referrer.is_partner)
+        self.assertFalse(referrer.show_in_dropdown)
+
+    def test_is_idempotent(self) -> None:
+        self.migration.add_referrer(global_apps, self.schema_editor)
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        self.assertEqual(Referrer.objects.filter(white_label=self.nj, referrer_code="211nj").count(), 1)
+
+    def test_keeps_an_existing_row_untouched(self) -> None:
+        """An admin edit, such as flipping show_in_dropdown at launch, must survive a re-run."""
+        Referrer.objects.create(
+            white_label=self.nj, referrer_code="211nj", name="Admin name", show_in_dropdown=True, is_partner=True
+        )
+
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        referrer = Referrer.objects.get(white_label=self.nj, referrer_code="211nj")
+        self.assertEqual(referrer.name, "Admin name")
+        self.assertTrue(referrer.show_in_dropdown)
+
+    def test_skips_a_database_without_the_white_label(self) -> None:
+        Referrer.objects.all().delete()
+        WhiteLabel.objects.filter(code="nj").delete()
+
+        self.migration.add_referrer(global_apps, self.schema_editor)
+
+        self.assertFalse(Referrer.objects.exists())
+
+
 class NavigatorEmailNoAutoMigrationTests(TestCase):
     """Covers migration 0197's RunPython, which --nomigrations skips."""
 

@@ -1,4 +1,4 @@
-from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
 
 

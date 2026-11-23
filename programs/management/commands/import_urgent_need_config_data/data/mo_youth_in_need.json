@@ -5,9 +5,7 @@
   "need": {
     "external_name": "mo_youth_in_need",
     "category_type": {
-      "external_name": "mo_child_development",
-      "name": "Child's development",
-      "icon": "child_development"
+      "external_name": "child_development"
     },
     "type_short": [
       "child dev"

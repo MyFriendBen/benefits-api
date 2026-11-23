@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_njhmfa_foreclosure",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "NJHMFA Foreclosure Prevention counseling",
+      "description": "NJHMFA's foreclosure prevention counseling is free, with no income test. It is for owners who live in a 1-4 unit home that is in or near default. Call 1-800-654-6873 to be matched to a county counselor. It can take days to 2 weeks.",
+      "link": "https://www.nj.gov/dca/hmfa/homeowners/foreclosure-prevention",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

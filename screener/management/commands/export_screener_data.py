@@ -399,6 +399,7 @@ class Command(BaseCommand):
             "screen.needs_free_low_cost_medical_care": "User indicated need for free/low-cost medical care",
             "screen.needs_transportation": "User indicated need for transportation assistance",
             "screen.needs_medical_expenses_and_debt": "User indicated need for help with medical expenses or debt",
+            "screen.needs_drug_alcohol_use": "User indicated need for drug or alcohol use support",
             # Screen fields - UTM tracking
             "screen.utm_id": "UTM tracking: unique identifier",
             "screen.utm_source": "UTM tracking: traffic source",

@@ -5,7 +5,7 @@ from configuration.models import (
     Configuration,
 )
 from configuration.white_labels import state_options, white_label_config
-from screener.models import NPSScore
+from programs.allowed_values import legal_status_options, navigator_language_options
 import argparse
 
 
@@ -104,6 +104,18 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.override_text, "active": True},
             )
 
+            # The same for every white label: each is one definition in code that the screener reads
+            # instead of keeping its own copy.
+            for name, data in (
+                ("legal_status_options", legal_status_options()),
+                ("navigator_language_options", navigator_language_options()),
+            ):
+                Configuration.objects.update_or_create(
+                    name=name,
+                    white_label=white_label,
+                    defaults={"data": data, "active": True},
+                )
+
             if WhiteLabelData.is_default:
                 continue
 
@@ -196,6 +208,13 @@ class Command(BaseCommand):
                 name="expense_options_by_category",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.expense_options_by_category, "active": True},
+            )
+
+            # Save energy_calculator_expense_options to database
+            Configuration.objects.update_or_create(
+                name="energy_calculator_expense_options",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.energy_calculator_expense_options, "active": True},
             )
 
             # Save condition_options to database

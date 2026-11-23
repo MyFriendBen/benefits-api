@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_dcr_housing_hotline",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "NJ Division on Civil Rights Housing Hotline",
+      "description": "The NJ Division on Civil Rights Housing Hotline helps anyone facing housing discrimination, including based on source of income or a criminal record. You have 180 days to file. Call 866-405-3050, or use the online NJBIAS portal.",
+      "link": "https://www.njoag.gov/about/divisions-and-offices/division-on-civil-rights-home/priorities/housing-discrimination/",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

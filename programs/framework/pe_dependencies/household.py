@@ -44,6 +44,10 @@ class MoStateCodeDependency(StateCode):
     state = "MO"
 
 
+class NjStateCodeDependency(StateCode):
+    state = "NJ"
+
+
 class CountyDependency(Household):
     field: ClassVar[str] = "county_str"
     dependencies: ClassVar[list[str]] = ["county"]
@@ -108,6 +112,10 @@ class TxCountyDependency(CountyDependency):
 
 class KsCountyDependency(CountyDependency):
     state_dependency_class = KsStateCodeDependency
+
+
+class NjCountyDependency(CountyDependency):
+    state_dependency_class = NjStateCodeDependency
 
 
 class MoCountyDependency(CountyDependency):

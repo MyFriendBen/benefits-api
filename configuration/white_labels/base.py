@@ -394,6 +394,10 @@ class ConfigurationData:
         },
     }
 
+    # The utility expenses the energy calculator asks about, as option cards. Only a white label that
+    # runs the energy calculator sets them (see cesn.py); any screen may carry one.
+    energy_calculator_expense_options = {}
+
     # Household member condition options
     condition_options = {
         "you": {

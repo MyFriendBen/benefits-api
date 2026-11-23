@@ -5,12 +5,13 @@ NJ SUN Bucks (``NjSunBucks``): NJ's values, and one test per Test Scenario in th
 The federal rules are tested against stand-in states in ``test_base.py``; these run the spec's
 households end to end through real screener rows.
 
-Scenarios 1-5, 8, 10-14 and 19 report SNAP, TANF, Head Start or school meals as a current benefit. NJ
+Scenarios 1-5, 8, 10-14 and 19-21 report SNAP, TANF, Head Start or school meals as a current benefit. NJ
 has no Program row for some of them yet, so the tests seed a stand-in row with the right
 ``base_program`` so the rule is covered once the screener can send it.
 """
 
 from datetime import date
+from typing import Optional
 
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility
@@ -22,6 +23,8 @@ from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
 VALUE_PER_CHILD = 120
+# 17 on the tests' 2026-10-15, but 16 on July 1, 2026, inside the school-age window.
+BORN_OCTOBER_2009 = date(2009, 10, 1)
 
 
 class NjSunBucksTestCase(CustomCalculatorTestCase):
@@ -31,13 +34,20 @@ class NjSunBucksTestCase(CustomCalculatorTestCase):
     fpl_year = "2026"
     default_zipcode = "07102"
     default_county = "Essex County"
-    # Scenarios 10-13 date birth months against the July 2025 - August 2026 window.
+    # Screened on 2026-10-15, so the window is July 1, 2026 - August 31, 2027 (scenarios 10-13).
     reference_date = date(2026, 10, 15)
 
-    def household(self, size: int, head_wages: int = 0, head_age: int = 35) -> Screen:
-        """A screen of `size` whose head earns `head_wages` a year. The test adds the rest."""
+    def household(self, size: int, head_wages: int = 0, head_age: int = 35, head_born: Optional[date] = None) -> Screen:
+        """
+        A screen of `size` whose head earns `head_wages` a year. The test adds the rest.
+
+        `head_born` pins the head's birth month, for a head whose school age depends on the window.
+        """
         screen = self.make_screen(household_size=size)
-        self.add_member(screen, "headOfHousehold", head_age, yearly_income=head_wages)
+        if head_born is None:
+            self.add_member(screen, "headOfHousehold", head_age, yearly_income=head_wages)
+        else:
+            self.add_member(screen, "headOfHousehold", None, yearly_income=head_wages, birth_year_month=head_born)
 
         return screen
 
@@ -73,7 +83,7 @@ class TestNjValues(NjSunBucksTestCase):
 
     def test_school_ages(self):
         self.assertEqual((NjSunBucks.min_school_age, NjSunBucks.max_school_age), (6, 16))
-        self.assertEqual(NjSunBucks.school_age_window, (date(2025, 7, 1), date(2026, 8, 31)))
+        self.assertEqual(NjSunBucks.school_age_window, ((7, 1), (8, 31)))
 
     def test_enrolls_snap_tanf_and_foster_children_automatically(self):
         self.assertEqual(NjSunBucks.enrolled_automatically, (SNAP, TANF, FOSTER_CHILD))
@@ -173,21 +183,54 @@ class TestEnrolledAutomatically(NjSunBucksTestCase):
 
 class TestSchoolAgeWindow(NjSunBucksTestCase):
     def test_scenario_10_turning_6_in_the_windows_last_month(self):
-        self.assert_eligible(self.calculate(self.child_born(date(2020, 8, 1))))
+        self.assert_eligible(self.calculate(self.child_born(date(2021, 8, 1))))
 
     def test_scenario_11_one_month_too_young(self):
-        self.assert_ineligible(self.calculate(self.child_born(date(2020, 9, 1))))
+        self.assert_ineligible(self.calculate(self.child_born(date(2021, 9, 1))))
 
     def test_scenario_12_16_on_the_windows_first_day(self):
-        self.assert_eligible(self.calculate(self.child_born(date(2008, 8, 1))))
+        self.assert_eligible(self.calculate(self.child_born(date(2009, 8, 1))))
 
     def test_scenario_13_already_17_on_the_windows_first_day(self):
-        self.assert_ineligible(self.calculate(self.child_born(date(2008, 7, 1))))
+        self.assert_ineligible(self.calculate(self.child_born(date(2009, 7, 1))))
+
+
+class RolloverTestCase(NjSunBucksTestCase):
+    """Scenarios 20 and 21: the same household on the window's last day and the day after."""
+
+    def teen_and_young_child(self) -> Screen:
+        """A Head Start household over the income limit: a child born August 2009 and one born September 2021."""
+        screen = self.household(3, head_wages=200_000, head_age=45)
+        self.add_member(screen, "child", None, birth_year_month=date(2009, 8, 1))
+        self.add_member(screen, "child", None, birth_year_month=date(2021, 9, 1))
+        self.receive(screen, "head_start")
+
+        return screen
+
+
+class TestScenario20OnTheWindowsLastDay(RolloverTestCase):
+    reference_date = date(2027, 8, 31)
+
+    def test_scenario_20_window_still_open(self):
+        eligibility = self.calculate(self.teen_and_young_child())
+
+        self.assert_eligible(eligibility)
+        self.assertEqual([m.value for m in eligibility.eligible_members], [0, 120, 0])
+
+
+class TestScenario21TheDayAfter(RolloverTestCase):
+    reference_date = date(2027, 9, 1)
+
+    def test_scenario_21_window_rolled_over(self):
+        eligibility = self.calculate(self.teen_and_young_child())
+
+        self.assert_eligible(eligibility)
+        self.assertEqual([m.value for m in eligibility.eligible_members], [0, 0, 120])
 
 
 class TestSchoolMealsAndIncome(NjSunBucksTestCase):
     def test_scenario_14_child_certified_for_school_meals(self):
-        screen = self.household(1, head_wages=40_000, head_age=17)
+        screen = self.household(1, head_wages=40_000, head_born=BORN_OCTOBER_2009)
         self.receive(screen, "nslp")
 
         eligibility = self.calculate(screen)
@@ -207,12 +250,12 @@ class TestSchoolMealsAndIncome(NjSunBucksTestCase):
         self.assertEqual([m.value for m in eligibility.eligible_members], [0, 0, 120])
 
     def test_scenario_15_well_under_the_income_limit(self):
-        screen = self.household(1, head_wages=20_000, head_age=17)
+        screen = self.household(1, head_wages=20_000, head_born=BORN_OCTOBER_2009)
 
         self.assert_eligible(self.calculate(screen))
 
     def test_scenario_16_at_the_income_limit(self):
-        screen = self.household(1, head_wages=29_526, head_age=17)
+        screen = self.household(1, head_wages=29_526, head_born=BORN_OCTOBER_2009)
 
         eligibility = self.calculate(screen)
 
@@ -220,7 +263,7 @@ class TestSchoolMealsAndIncome(NjSunBucksTestCase):
         self.assertEqual(eligibility.pass_messages, [messages.income(29_526, 29_526)])
 
     def test_scenario_17_one_dollar_over_the_income_limit(self):
-        screen = self.household(1, head_wages=29_527, head_age=17)
+        screen = self.household(1, head_wages=29_527, head_born=BORN_OCTOBER_2009)
 
         eligibility = self.calculate(screen)
 

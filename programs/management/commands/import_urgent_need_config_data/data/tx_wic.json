@@ -3,9 +3,7 @@
   "need": {
     "external_name": "tx_wic",
     "category_type": {
-      "external_name": "tx_food_or_groceries",
-      "name": "Food or groceries",
-      "icon": "food_groceries"
+      "external_name": "food_or_groceries"
     },
     "type_short": ["food"],
     "translations": {

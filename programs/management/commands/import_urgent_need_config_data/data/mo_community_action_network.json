@@ -5,9 +5,7 @@
   "need": {
     "external_name": "mo_community_action_network",
     "category_type": {
-      "external_name": "mo_managing_housing_costs",
-      "name": "Managing housing costs",
-      "icon": "managing_housing"
+      "external_name": "managing_housing_costs"
     },
     "type_short": [
       "housing"

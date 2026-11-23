@@ -2,23 +2,21 @@ interactions:
 - request:
     body: '{"household": {"people": {"73011": {"employment_income": {"2026": 30000},
       "self_employment_income": {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income":
-      {"2026": 0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
-      0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "child_support_received":
-      {"2026": 0}, "ssi": {"2026": null}, "age": {"2026": 35}, "is_tax_unit_dependent":
+      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "workers_compensation":
+      {"2026": 0}, "alimony_income": {"2026": 0}, "age": {"2026": 35}, "is_tax_unit_dependent":
       {"2026": false}, "is_disabled": {"2026": null}, "weekly_hours_worked_before_lsr":
       {"2026": 41.666666666666664}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child":
       {"2026": null}}, "73012": {"employment_income": {"2026": 0}, "self_employment_income":
       {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
-      0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026": 0},
-      "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "child_support_received":
-      {"2026": 0}, "ssi": {"2026": null}, "age": {"2026": 2}, "is_tax_unit_dependent":
+      0}, "unemployment_compensation": {"2026": 0}, "workers_compensation": {"2026":
+      0}, "alimony_income": {"2026": 0}, "age": {"2026": 2}, "is_tax_unit_dependent":
       {"2026": true}, "is_disabled": {"2026": null}, "weekly_hours_worked_before_lsr":
       {"2026": 0}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child": {"2026":
       null}}}, "tax_units": {"main_tax_unit": {"members": ["73011", "73012"]}}, "families":
       {"family": {"members": ["73011", "73012"]}}, "households": {"household": {"members":
       ["73011", "73012"], "state_code": {"2026": "MA"}}}, "spm_units": {"spm_unit":
       {"members": ["73011", "73012"], "spm_unit_assets": {"2026": 0}, "ma_ccfa_eligible":
-      {"2026": null}}}, "marital_units": {}}, "version": "2.72.5"}'
+      {"2026": null}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -27,55 +25,53 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1574'
+      - '1388'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
     body:
       string: '{"status": "ok", "message": null, "result": {"people": {"73011": {"employment_income":
         {"2026": 30000}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
-        0}, "taxable_pension_income": {"2026": 0}, "social_security": {"2026": 0},
-        "unemployment_compensation": {"2026": 0}, "workers_compensation": {"2026":
-        0}, "alimony_income": {"2026": 0}, "child_support_received": {"2026": 0},
-        "ssi": {"2026": 0.0}, "age": {"2026": 35}, "is_tax_unit_dependent": {"2026":
-        false}, "is_disabled": {"2026": false}, "weekly_hours_worked_before_lsr":
-        {"2026": 41.666666666666664}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child":
-        {"2026": false}}, "73012": {"employment_income": {"2026": 0}, "self_employment_income":
-        {"2026": 0}, "rental_income": {"2026": 0}, "taxable_pension_income": {"2026":
-        0}, "social_security": {"2026": 0}, "unemployment_compensation": {"2026":
-        0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "child_support_received":
-        {"2026": 0}, "ssi": {"2026": 0.0}, "age": {"2026": 2}, "is_tax_unit_dependent":
-        {"2026": true}, "is_disabled": {"2026": false}, "weekly_hours_worked_before_lsr":
-        {"2026": 0}, "is_pregnant": {"2026": false}, "ma_ccfa_eligible_child": {"2026":
-        true}}}, "tax_units": {"main_tax_unit": {"members": ["73011", "73012"]}},
-        "families": {"family": {"members": ["73011", "73012"]}}, "households": {"household":
-        {"members": ["73011", "73012"], "state_code": {"2026": "MA"}}}, "spm_units":
-        {"spm_unit": {"members": ["73011", "73012"], "spm_unit_assets": {"2026": 0},
-        "ma_ccfa_eligible": {"2026": true}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
+        0}, "taxable_pension_income": {"2026": 0}, "unemployment_compensation": {"2026":
+        0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "age":
+        {"2026": 35}, "is_tax_unit_dependent": {"2026": false}, "is_disabled": {"2026":
+        false}, "weekly_hours_worked_before_lsr": {"2026": 41.666666666666664}, "is_pregnant":
+        {"2026": false}, "ma_ccfa_eligible_child": {"2026": false}}, "73012": {"employment_income":
+        {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
+        0}, "taxable_pension_income": {"2026": 0}, "unemployment_compensation": {"2026":
+        0}, "workers_compensation": {"2026": 0}, "alimony_income": {"2026": 0}, "age":
+        {"2026": 2}, "is_tax_unit_dependent": {"2026": true}, "is_disabled": {"2026":
+        false}, "weekly_hours_worked_before_lsr": {"2026": 0}, "is_pregnant": {"2026":
+        false}, "ma_ccfa_eligible_child": {"2026": true}}}, "tax_units": {"main_tax_unit":
+        {"members": ["73011", "73012"]}}, "families": {"family": {"members": ["73011",
+        "73012"]}}, "households": {"household": {"members": ["73011", "73012"], "state_code":
+        {"2026": "MA"}}}, "spm_units": {"spm_unit": {"members": ["73011", "73012"],
+        "spm_unit_assets": {"2026": 0}, "ma_ccfa_eligible": {"2026": true}}}, "marital_units":
+        {}}, "policyengine_bundle": {"model_version": "2.116.16", "data_version":
+        null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1675'
+      - '1491'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:23:24 GMT
+      - Thu, 19 Nov 2026 18:39:32 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-330e4cbc8d6cd0ea119c0a7370daa318-3fbf276835a50f21-00
+      - 00-d1aa69bbd3a7bb73bf998a1a16a13b0b-dd28bbdd9920cbc0-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 330e4cbc8d6cd0ea119c0a7370daa318
+      - d1aa69bbd3a7bb73bf998a1a16a13b0b
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -83,7 +79,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - c6b00977-dc98-48f5-912c-b664e9a01d09
+      - 003baaea-cede-43e8-ab79-df3cd6e1b02f
       x-policyengine-route-channel:
       - current
     status:

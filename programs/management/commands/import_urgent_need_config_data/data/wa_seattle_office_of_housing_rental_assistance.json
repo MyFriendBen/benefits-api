@@ -3,9 +3,7 @@
   "need": {
     "external_name": "wa_seattle_office_of_housing_rental_assistance",
     "category_type": {
-      "external_name": "wa_housing_rent_utilities",
-      "name": "Help with managing your mortgage, rent, or utilities",
-      "icon": "managing_housing"
+      "external_name": "managing_housing_costs"
     },
     "type_short": ["housing"],
     "functions": [],

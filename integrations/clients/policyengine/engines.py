@@ -125,4 +125,7 @@ class PrivateApiSim(Sim):
         return self.data[unit][sub_unit]["members"]
 
 
-pe_engines: list[Sim] = [PrivateApiSim]
+#: The one engine eligibility is computed with. Deliberately no fallback: the public
+#: api.policyengine.org ignores the request `version`, so a second engine would silently
+#: compute against a different model than the one we resolve and pin.
+pe_engine: type[Sim] = PrivateApiSim

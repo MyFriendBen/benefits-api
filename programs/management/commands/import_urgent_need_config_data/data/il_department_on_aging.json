@@ -3,9 +3,7 @@
   "need": {
     "external_name": "il_department_on_aging",
     "category_type": {
-      "external_name": "il_aging_resources",
-      "name": "Aging community resources",
-      "icon": "aging"
+      "external_name": "aging_resources"
     },
     "type_short": ["aging resources"],
     "functions": [],

@@ -49,7 +49,18 @@ class NcConfigurationData(ConfigurationData):
                     "_default_message": "Dial 2-1-1 or 1-888-892-1162",
                     "_label": "moreHelp.nc_resource_phone1",
                 },
-            }
+            },
+            {
+                "name": {
+                    "_default_message": "988 Suicide & Crisis Lifeline",
+                    "_label": "moreHelp.nc_988_name",
+                },
+                "link": "https://988lifeline.org",
+                "phone": {
+                    "_default_message": "Call or text 988",
+                    "_label": "moreHelp.nc_988_phone",
+                },
+            },
         ]
     }
 
@@ -136,6 +147,13 @@ class NcConfigurationData(ConfigurationData):
             "text": {
                 "_label": "acuteConditionOptions.medicalExpensesAndDebt",
                 "_default_message": "Medical Expenses & Debt",
+            },
+        },
+        "drugAlcoholUse": {
+            "icon": {"_icon": "Drug_alcohol_use", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.drugAlcoholUse",
+                "_default_message": "Help with drug or alcohol use",
             },
         },
     }
@@ -1827,6 +1845,7 @@ class NcConfigurationData(ConfigurationData):
         "defaultLanguage": {
             "default": "en-us",
             "hfed": "es",
+            "punc": "es",
         },
         "footerPhone": {
             "default": "",

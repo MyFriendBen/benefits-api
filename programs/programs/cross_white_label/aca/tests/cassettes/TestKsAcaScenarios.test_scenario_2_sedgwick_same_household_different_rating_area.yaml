@@ -15,7 +15,7 @@ interactions:
       "SEDGWICK_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1"], "tanf":
       {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
       {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.72.5"}'
+      {"2026": false}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -24,11 +24,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1258'
+      - '1260'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -49,26 +49,26 @@ interactions:
         {"members": ["1"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false},
         "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026": false},
         "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.72.5", "data_version": null, "dataset": null}}'
+        {"model_version": "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1362'
+      - '1364'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Thu, 05 Nov 2026 18:23:12 GMT
+      - Thu, 19 Nov 2026 18:39:20 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-2642cff518e060a88310cb050a12d7f4-144a0919d2b0a21b-00
+      - 00-a980e088a60f3773c15a3cba394681d9-e90b53c7e942bc0d-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 2642cff518e060a88310cb050a12d7f4
+      - a980e088a60f3773c15a3cba394681d9
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -76,7 +76,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 59d312ec-7e06-441b-8f16-c65213878a72
+      - 310d3b2f-87fa-4aa1-89a9-cab5cbfb3cf8
       x-policyengine-route-channel:
       - current
     status:

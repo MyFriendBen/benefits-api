@@ -30,13 +30,18 @@ from programs.programs.testing_fixtures.pe_integration import (
 )
 from screener.models import Expense
 from programs.programs.white_labels.mo.pts.calculator import MoPts
-from programs.framework.pe_dependencies import member
+
+PE_VERSION = "2.72.5"
+PE_VERSION_REASON = "Values change at PolicyEngine 2.94.7. Held here until the change is reconciled with the spec; then remove PE_VERSION and this reason and re-record."
 
 CLAIM_YEAR = 2025
 
 
 class MoPtsScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is Cole County, ZIP 65101."""
+
+    pe_version = PE_VERSION
+    pe_version_reason = PE_VERSION_REASON
 
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0

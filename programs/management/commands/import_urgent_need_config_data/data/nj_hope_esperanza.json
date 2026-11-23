@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_hope_esperanza",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Hope & Esperanza Community Health Center (Newark)",
+      "description": "Hope & Esperanza Community Health Center in Newark welcomes everyone, regardless of ability to pay. Walk-ins and urgent care are available. Open Monday to Thursday 9am-6pm. Call 973-433-9773.",
+      "link": "https://hechealth.org/",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

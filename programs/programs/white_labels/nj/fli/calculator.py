@@ -3,6 +3,7 @@ from typing import Optional
 from programs.framework.base import MemberEligibility
 from programs.programs.white_labels.nj.paid_leave import NjPaidLeave
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class NjFli(NjPaidLeave):
@@ -30,7 +31,7 @@ class NjFli(NjPaidLeave):
     bonding_avg_days = 69
     care_avg_days = 45
 
-    bonding_parents = ("headOfHousehold", "spouse", "domesticPartner")
+    bonding_parents = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner")
     bonding_children = ("child", "stepChild", "fosterChild")
 
     dependencies = [

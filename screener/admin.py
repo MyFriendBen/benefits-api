@@ -1,7 +1,21 @@
+import uuid
+from typing import Optional
+
 from django.contrib import admin
+from django.db.models import Model, Q, QuerySet
+from django.http import HttpRequest
 from django.urls import reverse
 from authentication.admin import SecureAdmin
-from .models import AssistantConversation, AssistantMessage, WhiteLabel
+from .models import (
+    AssistantConversation,
+    AssistantMessage,
+    BenjiSmsBinding,
+    BenjiSmsDeadLetter,
+    BenjiSmsDelivery,
+    BenjiSmsPhone,
+    BenjiSmsStrangerReply,
+    WhiteLabel,
+)
 
 
 class WhiteLabelAdmin(SecureAdmin):
@@ -134,33 +148,64 @@ class AssistantMessageInline(admin.TabularInline):
         return False
 
 
-class AssistantConversationAdmin(SecureAdmin):
-    """Read-only view of Benji transcripts. Superusers only.
+class SuperuserReadOnlyAdmin(SecureAdmin):
+    """Read-only and superuser-only, stated outright rather than inherited.
 
-    Deliberately read-only in every direction. mfb-ai-service is the writer for these
-    tables (see screener/models.AssistantConversation) and reconciles nothing with the
-    admin, so a hand-edit here would silently diverge from what the assistant's own
-    prompt is built from — and editing a transcript after the fact is not a thing we
-    should be able to do at all.
+    For tables tenant staff must not see at all: Benji transcripts and the SMS tables.
+    Every permission is answered here, because SecureAdmin's white-label scoping is
+    the wrong tool for them in two different ways:
 
-    Superuser-only is enforced EXPLICITLY below rather than left to SecureAdmin's
-    white-label scoping, which cannot work for this model and fails loudly if relied
-    on. `SecureAdmin._model_has_white_label()` tests `hasattr(self.model,
-    "white_label")`, and that is True even though `white_label` here is a plain
-    CharField holding the white label *code*: Django gives every concrete field a
-    `DeferredAttribute` class descriptor. So the base class takes its scoping branch
-    and runs `filter(white_label__in=request.user.white_labels.all())`, comparing a
-    varchar column against a subquery of integer primary keys — `ProgrammingError:
-    operator does not exist: character varying = bigint`, a 500 on the changelist for
-    every non-superuser staff member. These rows hold free-text household PII, so the
-    correct behavior is to be invisible to tenant staff, and that is now stated as
-    code instead of inferred from a base-class side effect.
+    - For `AssistantConversation` it fails loudly. `SecureAdmin._model_has_white_label()`
+      tests `hasattr(self.model, "white_label")`, which is True even though that
+      `white_label` is a plain CharField holding the white label *code*: Django gives
+      every concrete field a `DeferredAttribute` class descriptor. So the base class
+      runs `filter(white_label__in=request.user.white_labels.all())`, comparing a
+      varchar column against a subquery of integer primary keys: `ProgrammingError:
+      operator does not exist: character varying = bigint`, a 500 on the changelist
+      for every non-superuser staff member.
+    - For `BenjiSmsBinding`, whose `white_label` is a real FK, it would quietly work,
+      and show a white label's bindings to that white label's staff.
+
+    Read-only in every direction: each of these tables has one writer (ai-service for
+    transcripts, benefits-api's SMS code for the rest), and a hand-edit would silently
+    diverge from what was said or texted.
     """
 
     always_can_view = False
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        if not self._is_superuser(request):
+            return self.model._default_manager.none()
+        # SecureAdmin's superuser branch returns the queryset unfiltered.
+        return super().get_queryset(request)
+
+    def has_module_permission(self, request: HttpRequest) -> bool:
+        # Keeps the section out of the admin nav for tenant staff entirely.
+        return self._is_superuser(request)
+
+    def has_view_permission(self, request: HttpRequest, obj: Optional[Model] = None) -> bool:
+        return self._is_superuser(request)
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_change_permission(self, request: HttpRequest, obj: Optional[Model] = None) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj: Optional[Model] = None) -> bool:
+        # Benji history is retained indefinitely and deliberately (see
+        # screener/models.py), so there is no routine reason to delete from here, and a
+        # click that quietly destroys a household's transcript should not be one
+        # keystroke away. A deletion request is a deliberate, scripted operation.
+        return False
+
+
+class AssistantConversationAdmin(SuperuserReadOnlyAdmin):
+    """Read-only view of Benji transcripts. Superusers only (see the base class)."""
+
     inlines = (AssistantMessageInline,)
-    list_display = ("conversation_id", "screen_uuid", "white_label", "status", "mode", "updated_at")
-    list_filter = ("white_label", "status", "mode")
+    list_display = ("conversation_id", "screen_uuid", "white_label", "channel", "status", "mode", "updated_at")
+    list_filter = ("white_label", "channel", "status", "mode")
     search_fields = ("conversation_id", "screen_uuid")
     ordering = ("-updated_at",)
     readonly_fields = (
@@ -170,45 +215,132 @@ class AssistantConversationAdmin(SecureAdmin):
         "locale",
         "mode",
         "prompt_version",
+        "channel",
         "status",
         "context",
         "created_at",
         "updated_at",
     )
 
-    def get_queryset(self, request):
-        """Superusers only. Never fall through to SecureAdmin's white-label filter.
-
-        That filter would compare this model's `white_label` CharField against a
-        queryset of WhiteLabel primary keys and raise a database type error (see the
-        class docstring). Returning an empty queryset is also what we actually want
-        for non-superusers, so this both fixes the 500 and makes the intent explicit.
-        """
-        if not self._is_superuser(request):
-            return self.model._default_manager.none()
-        # SecureAdmin's superuser branch returns the queryset unfiltered, so this is
-        # the ordinary path once the non-superuser case is handled above.
-        return super().get_queryset(request)
-
-    def has_module_permission(self, request):
-        # Keep the section out of the admin nav for tenant staff entirely — the base
-        # class would show it, because _model_has_white_label() is True here.
-        return self._is_superuser(request)
-
-    def has_view_permission(self, request, obj=None):
-        return self._is_superuser(request)
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        # History is retained indefinitely and deliberately (see screener/models.py),
-        # so there is no routine reason to delete from here — and a click that quietly
-        # destroys a household's transcript should not be one keystroke away.
-        return False
-
 
 admin.site.register(AssistantConversation, AssistantConversationAdmin)
+
+
+# Benji SMS (MFB-2435).
+#
+# NO SEARCH BY PHONE HASH, and none by phone number. Admin search is a GET, so the
+# term lands in the URL: in router logs, browser history, and the request data Sentry
+# attaches to any error on the page. The privacy companion keeps the hash out of all
+# of those. A lookup by number is `manage.py find_benji_sms_phone`, which reads the
+# number from a hidden prompt.
+#
+# The searches that remain are exact lookups on uuids and Twilio SIDs, written out in
+# get_search_results: the `=` prefix in search_fields means iexact, which Postgres runs
+# as UPPER(col) = UPPER(%s) and cannot answer from the column's index.
+
+
+class BenjiSmsPhoneAdmin(SuperuserReadOnlyAdmin):
+    list_display = ("id", "revoked_at", "shared_until", "created_at")
+    ordering = ("-created_at",)
+    # phone_hash is shown on the detail page as an opaque value, never in the list.
+    readonly_fields = ("phone_hash", "revoked_at", "shared_until", "created_at")
+
+
+class BenjiSmsBindingAdmin(SuperuserReadOnlyAdmin):
+    list_display = ("id", "phone", "screen", "white_label", "status", "consented_at", "created_at")
+    list_filter = ("status", "white_label")
+    list_select_related = ("phone", "white_label", "conversation")
+    # Only so the admin renders the search box: get_search_results replaces the lookup.
+    search_fields = ("conversation__screen_uuid",)
+    search_help_text = "An exact screen uuid or conversation id."
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "phone",
+        "screen",
+        "white_label",
+        "conversation",
+        "status",
+        "consented_at",
+        "consent_version",
+        "created_at",
+        "last_inbound_at",
+    )
+
+    @admin.display(description="Screen", ordering="conversation__screen_uuid")
+    def screen(self, obj: BenjiSmsBinding) -> uuid.UUID:
+        return obj.conversation.screen_uuid
+
+    def get_search_results(self, request: HttpRequest, queryset: QuerySet, search_term: str) -> tuple[QuerySet, bool]:
+        term = search_term.strip()
+        if not term:
+            return queryset, False
+        try:
+            value = uuid.UUID(term)
+        except ValueError:
+            return queryset.none(), False
+        return queryset.filter(Q(conversation__screen_uuid=value) | Q(conversation_id=value)), False
+
+
+class BenjiSmsDeliveryAdmin(SuperuserReadOnlyAdmin):
+    list_display = ("id", "kind", "delivery_status", "delivery_error_code", "segments", "sent_at", "status_at")
+    list_filter = ("kind", "delivery_status")
+    # Only so the admin renders the search box: get_search_results replaces the lookup.
+    search_fields = ("outbound_sid",)
+    search_help_text = "An exact inbound or outbound Twilio message SID."
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "kind",
+        "message",
+        "binding",
+        "inbound_sid",
+        "outbound_sid",
+        "delivery_status",
+        "delivery_error_code",
+        "segments",
+        "remainder_text",
+        "created_at",
+        "sent_at",
+        "status_at",
+    )
+
+    def get_search_results(self, request: HttpRequest, queryset: QuerySet, search_term: str) -> tuple[QuerySet, bool]:
+        term = search_term.strip()
+        if not term:
+            return queryset, False
+        return queryset.filter(Q(inbound_sid=term) | Q(outbound_sid=term)), False
+
+
+class BenjiSmsStrangerReplyAdmin(SuperuserReadOnlyAdmin):
+    list_display = ("id", "replied_at")
+    ordering = ("-replied_at",)
+    readonly_fields = ("phone_hash", "replied_at")
+
+
+class BenjiSmsDeadLetterAdmin(SuperuserReadOnlyAdmin):
+    """Jobs that failed every attempt (MFB-2436). Ids and error classes only."""
+
+    list_display = ("id", "task_name", "attempts", "error_type", "conversation", "created_at")
+    list_filter = ("task_name", "error_type")
+    # Only so the admin renders the search box: get_search_results replaces the lookup.
+    search_fields = ("task_id",)
+    search_help_text = "An exact Celery task id, conversation id or inbound Twilio message SID."
+    ordering = ("-created_at",)
+    readonly_fields = ("task_name", "task_id", "conversation", "inbound_sid", "attempts", "error_type", "created_at")
+
+    def get_search_results(self, request: HttpRequest, queryset: QuerySet, search_term: str) -> tuple[QuerySet, bool]:
+        term = search_term.strip()
+        if not term:
+            return queryset, False
+        lookup = Q(task_id=term) | Q(inbound_sid=term)
+        try:
+            lookup |= Q(conversation_id=uuid.UUID(term))
+        except ValueError:
+            pass
+        return queryset.filter(lookup), False
+
+
+admin.site.register(BenjiSmsPhone, BenjiSmsPhoneAdmin)
+admin.site.register(BenjiSmsBinding, BenjiSmsBindingAdmin)
+admin.site.register(BenjiSmsDelivery, BenjiSmsDeliveryAdmin)
+admin.site.register(BenjiSmsStrangerReply, BenjiSmsStrangerReplyAdmin)
+admin.site.register(BenjiSmsDeadLetter, BenjiSmsDeadLetterAdmin)

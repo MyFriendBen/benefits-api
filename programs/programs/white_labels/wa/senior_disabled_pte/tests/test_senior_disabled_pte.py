@@ -4,7 +4,6 @@ from unittest.mock import Mock
 
 from programs.programs.white_labels.wa.senior_disabled_pte.calculator import WaSeniorDisabledPte
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.pe_dependencies import member
 from screener.models import HouseholdMember
 
 
@@ -13,6 +12,7 @@ def make_member(age=70, long_term_disability=False, disabled=False, veteran=Fals
     member.calc_age = Mock(return_value=age)
     member.birth_year = birth_year
     member.age_at_end_of_year = lambda year: HouseholdMember.age_at_end_of_year(member, year)
+    member.born_after = lambda year: HouseholdMember.born_after(member, year)
     member.long_term_disability = long_term_disability
     member.disabled = disabled
     member.veteran = veteran

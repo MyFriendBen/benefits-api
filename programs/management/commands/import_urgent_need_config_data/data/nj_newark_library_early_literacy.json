@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_newark_library_early_literacy",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Newark Public Library Early Literacy",
+      "description": "The Newark Public Library offers free early literacy programs for children by age (0-5 and 3-18), with supplies provided. Walk in and register on the spot. Hours vary by branch. Call 973-733-7797.",
+      "link": "https://www.npl.org/kids-place/",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_pess_centers",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "County psychiatric emergency screening (PESS) centers",
+      "description": "Every New Jersey county has a psychiatric emergency screening center (PESS), open 24 hours a day by law. Anyone of any age can go, with or without insurance. Call your county's center for phone support and to confirm walk-ins are available. Phone numbers vary by county.",
+      "link": "https://www.nj.gov/humanservices/dmhas/documents/pdf/MH_Screening_Centers.pdf",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

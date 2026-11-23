@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 from programs.framework.base import Eligibility, MemberEligibility
 from programs.programs.white_labels.il.silver_access.calculator import IlSilverAccess
-from programs.framework.pe_dependencies import member
 
 
 def make_insurance(none=False, private=False, medicaid=False, medicare=False, employer=False, va=False):

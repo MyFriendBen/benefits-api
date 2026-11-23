@@ -9,10 +9,8 @@ Tests verify:
 - Correct value calculation ($2,000 per eligible member)
 """
 
-from unittest.mock import Mock
 
 from programs.programs.cross_white_label.medicaid.emergency.il import IlEmergencyMedicaid
-from programs.framework.pe_dependencies import member
 
 # Named constants for test values
 EMERGENCY_MEDICAID_VALUE = 2_000  # Average ER visit cost

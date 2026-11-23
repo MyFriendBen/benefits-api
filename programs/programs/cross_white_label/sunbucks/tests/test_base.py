@@ -30,7 +30,7 @@ class StateSunBucks(SunBucks):
 
 class WindowedStateSunBucks(StateSunBucks):
     program_code = "test_windowed_sunbucks"
-    school_age_window = (date(2025, 7, 1), date(2026, 8, 31))
+    school_age_window = ((7, 1), (8, 31))
 
 
 class AutoEnrollingStateSunBucks(StateSunBucks):
@@ -53,11 +53,13 @@ def make_calculator(
     base_benefits: tuple = (),
     household_size: int = 3,
     cls: type = StateSunBucks,
+    reference_date: date = date(2026, 10, 15),
 ) -> SunBucks:
     def gross_income(frequency: str, types: list) -> float:
         return float(cash_assistance if types == [TANF_INCOME_TYPE] else income)
 
     screen = Mock()
+    screen.get_reference_date.return_value = reference_date
     screen.household_size = household_size
     screen.calc_gross_income.side_effect = gross_income
     screen.has_base_benefit.side_effect = lambda program: program in base_benefits
@@ -123,7 +125,10 @@ class TestSchoolAge(SimpleTestCase):
 
 
 class TestSchoolAgeWindow(SimpleTestCase):
-    """A state's window: school age at some point between its first and last day."""
+    """A state's window: school age at some point between its first and last day.
+
+    Screened on 2026-10-15, so the window is July 1, 2026 - August 31, 2027.
+    """
 
     def eligible_born(self, birth_year_month: Optional[date], age: Optional[int] = 30) -> bool:
         member = make_member(age=age, birth_year_month=birth_year_month)
@@ -131,20 +136,37 @@ class TestSchoolAgeWindow(SimpleTestCase):
         return run(calculator).eligible_members[0].eligible
 
     def test_reaching_min_age_on_the_last_day_is_eligible(self):
-        self.assertTrue(self.eligible_born(date(2021, 8, 1)))
+        self.assertTrue(self.eligible_born(date(2022, 8, 1)))
 
     def test_reaching_min_age_after_the_last_day_is_ineligible(self):
-        self.assertFalse(self.eligible_born(date(2021, 9, 1)))
+        self.assertFalse(self.eligible_born(date(2022, 9, 1)))
 
     def test_max_age_on_the_first_day_is_eligible(self):
-        self.assertTrue(self.eligible_born(date(2007, 8, 1)))
+        self.assertTrue(self.eligible_born(date(2008, 8, 1)))
 
     def test_past_max_age_on_the_first_day_is_ineligible(self):
-        self.assertFalse(self.eligible_born(date(2007, 7, 1)))
+        self.assertFalse(self.eligible_born(date(2008, 7, 1)))
 
     def test_no_birth_month_falls_back_to_age_today(self):
         self.assertTrue(self.eligible_born(None, age=10))
         self.assertFalse(self.eligible_born(None, age=18))
+
+
+class TestSchoolAgeWindowDates(SimpleTestCase):
+    """The window's year comes from the screen's date: the next window that hasn't closed."""
+
+    def window_on(self, reference_date: date) -> tuple[date, date]:
+        calculator = make_calculator(cls=WindowedStateSunBucks, reference_date=reference_date)
+        return calculator._school_age_window_dates(WindowedStateSunBucks.school_age_window)
+
+    def test_before_the_last_day_uses_this_years_window(self):
+        self.assertEqual(self.window_on(date(2027, 3, 15)), (date(2026, 7, 1), date(2027, 8, 31)))
+
+    def test_on_the_last_day_the_window_is_still_open(self):
+        self.assertEqual(self.window_on(date(2027, 8, 31)), (date(2026, 7, 1), date(2027, 8, 31)))
+
+    def test_the_day_after_the_last_day_rolls_to_next_years_window(self):
+        self.assertEqual(self.window_on(date(2027, 9, 1)), (date(2027, 7, 1), date(2028, 8, 31)))
 
 
 class TestEnrolledAutomatically(SimpleTestCase):

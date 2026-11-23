@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_norwescap_pantry_finder",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Norwescap pantry finder",
+      "description": "Norwescap's pantry finder helps people in Hunterdon, Sussex and Warren counties find a partner food pantry. All are welcome. Use the map, then walk in. Call 908-454-4322, Monday to Thursday 8am-3pm and Friday 9am-2pm.",
+      "link": "https://norwescap.org/programs/find-food-near-you/",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hunterdon County",
+      "Sussex County",
+      "Warren County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

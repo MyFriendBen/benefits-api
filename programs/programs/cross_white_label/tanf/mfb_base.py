@@ -6,6 +6,7 @@ from typing import ClassVar, Optional
 import programs.framework.eligibility_messages as messages
 from programs.framework.base import Eligibility, ProgramCalculator
 from screener.models import HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 MONTHS_PER_YEAR = 12
 
@@ -59,7 +60,7 @@ class MfbTanf(ProgramCalculator, abstract=True):
 
     minor_child_age = 18
     # The relationships an 18-year-old can't hold and still be someone's minor child.
-    adult_relationships = ("headOfHousehold", "spouse", "domesticPartner")
+    adult_relationships = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner")
 
     dependencies = [
         "age",
