@@ -130,7 +130,7 @@ class HubSpotIntegration(CmsIntegration):
 
 class CoHubSpotIntegration(HubSpotIntegration):
     STATE = "CO"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class NcHubSpotIntegration(HubSpotIntegration):
@@ -140,37 +140,37 @@ class NcHubSpotIntegration(HubSpotIntegration):
 
 class MaHubSpotIntegration(HubSpotIntegration):
     STATE = "MA"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class IlHubSpotIntegration(HubSpotIntegration):
     STATE = "IL"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class TxHubSpotIntegration(HubSpotIntegration):
     STATE = "TX"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class WaHubSpotIntegration(HubSpotIntegration):
     STATE = "WA"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class KsHubSpotIntegration(HubSpotIntegration):
     STATE = "KS"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class MoHubSpotIntegration(HubSpotIntegration):
     STATE = "MO"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class NjHubSpotIntegration(HubSpotIntegration):
     STATE = "NJ"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 CMS_INTEGRATIONS = {
