@@ -38,7 +38,6 @@ class HubSpotIntegration(CmsIntegration):
             "firstname": self.user.first_name,
             "lastname": self.user.last_name,
             "email": self.user.email,
-            "phone": str(self.user.cell),
             "states": self.STATE,
             "send_offers": self.user.send_offers,
             "explicit_tcpa_consent": self.user.explicit_tcpa_consent,
@@ -46,6 +45,11 @@ class HubSpotIntegration(CmsIntegration):
             "hs_language": self.user.language_code,
             "hubspot_owner_id": self.OWNER_ID,
         }
+
+        # str(None) is the literal "None", which HubSpot stored as a phone number. Leave the
+        # property out when there is no cell, which also keeps an existing number on update.
+        if self.user.cell:
+            contact["phone"] = str(self.user.cell)
 
         if self.screen:
             contact["uuid"] = str(self.screen.uuid)

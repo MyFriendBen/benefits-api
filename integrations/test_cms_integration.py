@@ -10,8 +10,8 @@ from screener.models import Screen
 
 
 class TestHubSpotContactData(SimpleTestCase):
-    def _contact_data(self, referrer_code: Optional[str]) -> dict:
-        user = User(first_name="Test", last_name="User", email="test@example.com", send_offers=True)
+    def _contact_data(self, referrer_code: Optional[str] = None, cell: Optional[str] = None) -> dict:
+        user = User(first_name="Test", last_name="User", email="test@example.com", cell=cell, send_offers=True)
         screen = Screen(referrer_code=referrer_code)
         return TxHubSpotIntegration(user, screen)._hubspot_contact_data()
 
@@ -32,3 +32,13 @@ class TestHubSpotContactData(SimpleTestCase):
 
         self.assertEqual(contact["states"], "TX")
         self.assertIn("uuid", contact)
+
+    def test_sends_phone_when_present(self) -> None:
+        self.assertEqual(self._contact_data(cell="+12145551234")["phone"], "+12145551234")
+
+    def test_omits_phone_when_no_cell(self) -> None:
+        # str(None) would send the literal "None" as the phone number.
+        contact = self._contact_data(cell=None)
+
+        self.assertNotIn("phone", contact)
+        self.assertNotIn("None", contact.values())
