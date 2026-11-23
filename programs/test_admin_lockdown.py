@@ -54,11 +54,13 @@ class ProgramPageTests(LockdownBase):
         editable = [f for f in self.admin.get_fields(self.request(), self.locked) if f not in readonly]
 
         self.assertEqual(editable, ["active"])
+        self.assertEqual(self.admin.get_fields(self.request(), self.locked)[0], "active")
         self.assertIn("name_abbreviated", readonly)
         self.assertIn("legal_status_required", readonly)
 
     def test_an_unlocked_program_is_unchanged(self) -> None:
         self.assertEqual(self.admin.get_readonly_fields(self.request(), self.unlocked), [])
+        self.assertEqual(self.admin.get_fields(self.request(), self.unlocked), ProgramAdmin.fields)
 
     def test_a_locked_federal_program_keeps_the_deactivation_confirmation(self) -> None:
         self.federal_program.active = True
@@ -70,6 +72,9 @@ class ProgramPageTests(LockdownBase):
         editable = [f for f in self.admin.get_fields(self.request(), self.federal_program) if f not in readonly]
 
         self.assertEqual(editable, ["active", "confirm_federal_deactivation"])
+        self.assertEqual(
+            self.admin.get_fields(self.request(), self.federal_program)[:2], ["active", "confirm_federal_deactivation"]
+        )
 
     def test_navigators_and_documents_are_off_the_program_page(self) -> None:
         self.assertNotIn("documents", self.admin.get_fields(self.request(), self.unlocked))
@@ -187,6 +192,19 @@ class TranslationEditorTests(LockdownBase):
 
         self.assertContains(response, "imported from its spec")
         self.assertEqual(Translation.objects.get(pk=self.locked.name.id).get_lang("en-us").text, before)
+
+    def test_a_refused_english_edit_keeps_the_language_forms_and_shows_why_on_english(self) -> None:
+        response = self.edit(self.locked, "en-us", "Renamed in the editor")
+
+        # The page swaps the response in for every language form, so they all have to come back.
+        self.assertTemplateUsed(response, "edit/langs.html")
+        page = response.content.decode()
+        self.assertIn('id="languages"', page)
+        self.assertIn('id="en-us"', page)
+        self.assertIn('id="es"', page)
+        self.assertEqual(page.count("imported from its spec"), 1)
+        self.assertLess(page.index('id="en-us"'), page.index("imported from its spec"))
+        self.assertLess(page.index("imported from its spec"), page.index('id="es"'))
 
     def test_a_locked_programs_other_languages_stay_editable(self) -> None:
         self.edit(self.locked, "es", "Nombre corregido")
