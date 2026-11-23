@@ -1,6 +1,6 @@
 from screener.models import HouseholdMember
 from .base import SpmUnit
-from .receipt import TANF_INCOME_TYPE, screen_reports_snap, screen_reports_tanf
+from .receipt import TANF_INCOME_TYPE, member_reports_ssi_amount, screen_reports_snap, screen_reports_tanf
 
 
 class ChildCareDependency(SpmUnit):
@@ -377,19 +377,26 @@ class CoTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
         return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
 
 
-class NcTanfCountableEarnedIncomeDependency(SpmUnit):
-    field = "nc_tanf_countable_earned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.screen.calc_gross_income("yearly", ["earned"]))
-
-
 class NcTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
+    """
+    NC Work First's countable gross unearned income, as ``nc_tanf_countable_gross_unearned_income``.
+
+    Sent in place of PolicyEngine's own total because PE's NC list of unearned sources omits
+    several types WF-114 counts (investment, retirement withdrawals, workers' compensation). WF-114
+    counts all income except the exceptions it lists, so this counts every income stream except:
+
+    * earned income, which PE reads from ``employment_income`` and ``self_employment_income`` so its
+      exclusions apply: wages, self-employment, and rental, boarder and roomer income
+    * types WF-114 does not count, or that the household's own grant or a non-countable program
+      supplies: ``sSI``, ``cashAssistance`` (the household's own grant), ``cashAssistanceOther``
+      (General Assistance is "No"), ``gifts`` and ``cOSDisability``
+    * everything a member who reports their own SSI amount receives: WF-114 excludes SSI recipients
+      from the budget unit and counts none of their income
+
+    Sending this does not switch off PE's earned-income exclusions, which live in the separate
+    ``nc_tanf_countable_earned_income`` variable. Child support counts in full for every household.
+    """
+
     field = "nc_tanf_countable_gross_unearned_income"
     dependencies = (
         "income_type",
@@ -397,12 +404,18 @@ class NcTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
         "income_frequency",
     )
 
+    # Counted as earned income through PE, so excluded here.
+    EARNED_THROUGH_PE = ("rental", "boarder")
+    NOT_COUNTED = ("sSI", "gifts", "cashAssistance", "cashAssistanceOther", "cOSDisability")
+
     def value(self):
-        return int(
-            self.screen.calc_gross_income(
-                "yearly", ["unearned"], exclude=["sSI", "gifts", "cashAssistance", "cOSDisability"]
-            )
-        )
+        excluded = [*self.EARNED_THROUGH_PE, *self.NOT_COUNTED]
+        total = 0
+        for member in self.screen.household_members.all():
+            if member_reports_ssi_amount(member):
+                continue
+            total += member.calc_gross_income("yearly", ["unearned"], exclude=excluded)
+        return int(total)
 
 
 class IlTanfCountableEarnedIncomeDependency(SpmUnit):
