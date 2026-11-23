@@ -50,6 +50,11 @@ class HubSpotIntegration(CmsIntegration):
         if self.screen:
             contact["uuid"] = str(self.screen.uuid)
 
+            # Only send a referrer when there is one: HubSpot treats an empty string as
+            # a value, so sending "" on the conflict-update path would blank an existing code.
+            if self.screen.referrer_code:
+                contact["mfb_referrer_code"] = self.screen.referrer_code
+
         return contact
 
     def _hubspot_send_offers_data(self):
