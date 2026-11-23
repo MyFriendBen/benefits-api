@@ -804,6 +804,22 @@ class SelfEmploymentIncomeDependency(IncomeDependency):
     income_types = ["selfEmployment"]
 
 
+class SelfEmploymentWithRentalAndBoarderIncomeDependency(IncomeDependency):
+    """
+    Self-employment, rental, boarder and roomer income, all as PolicyEngine's
+    ``self_employment_income``.
+
+    For Work First, which counts rental, boarder and roomer income as *earned* (WF-114:
+    "Rental income (treat as self-employment income)"; "Boarders", "Roomers": Earned). PolicyEngine's
+    earned-income exclusions apply only to ``employment_income`` and ``self_employment_income``,
+    so this is how that money reaches them. Do not pair it with ``SelfEmploymentIncomeDependency``:
+    both write the same field and a program declaring both with different values is dropped.
+    """
+
+    field = "self_employment_income"
+    income_types = ["selfEmployment", "rental", "boarder"]
+
+
 class RentalIncomeDependency(IncomeDependency):
     field = "rental_income"
     income_types = ["rental"]
