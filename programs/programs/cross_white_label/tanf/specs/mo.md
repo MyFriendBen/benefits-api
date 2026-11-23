@@ -474,7 +474,7 @@ TA is paid at regular monthly intervals.
 - [ ] 27. The new-spouse income disregard is an accepted PE limitation (AC 23) — a new spouse's income is counted at every gate like any other member's; no data-gap default applies to it.
 - [ ] 28. A household passing the resource test under Criterion 7 isn't denied by a stricter flat resource check, when the new-spouse resource disregard (Step 7) or the SSI/SP/SAB aggregate-resource default (Criterion 4 / AC 24) is active. Committed inclusive default, no executable scenario — MFB cannot verify marriage timing or isolate the SSI member's share of the aggregate.
 - [ ] 29. No NPCR-specific branch exists in the shipped result (AC 20) — a qualifying caretaker's household returns PolicyEngine's single answer, whether or not Missouri's rule would have offered an election.
-- [ ] 30. Income-source treatment matches Criterion 8's table, except `rental`, which is counted as unearned rather than earned — a disclosed limitation, see Criterion 8 and MFB-1700 (no executable scenario
+- [ ] 30. Income-source treatment matches Criterion 8's table, except `rental`, which is counted as unearned rather than earned — a disclosed limitation, see Criterion 8 and MFB-1700 (no executable scenario for `rental`). `workersComp` is counted in full as unearned income (Scenario 35).
 
 **Accepted PolicyEngine divergences**
 
