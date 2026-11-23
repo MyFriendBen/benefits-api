@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ma"
+  },
+  "need": {
+    "external_name": "ma_boston_saves",
+    "category_type": {
+      "external_name": "savings"
+    },
+    "type_short": [
+      "savings"
+    ],
+    "translations": {
+      "name": "Boston Saves",
+      "description": "The City of Boston opens a college and career savings account for your child at a Boston Public Schools (BPS) district school. You don't need to sign up. Charter, private, and other-district students don't get accounts. The City adds $50 when your child starts kindergarten (K2). Your family can earn more. You can earn $25 by linking a savings, checking, 529, or Boston Saves custodial account. You can earn $5 each quarter if the balance in your linked account grows by at least $25. Children in K2 through 3rd grade can earn $5 every three months for reading. Children in 4th through 8th grade can earn $5 every three months for exploring careers. Students in 9th through 12th grade can earn $15 every three months for learning about money. Your child can use the money for college or job training once they turn 18 and finish high school or earn a GED or HiSET. Students with disabilities have other ways to use it. Money in your child's Boston Saves account does not affect your public benefits. Money in your own linked account may affect your benefits. A Boston Saves custodial account does not affect your benefits. To see your child's account, log in to the Savings Center with their 10-digit state student ID (SASID). Questions? Email bostonsaves@boston.gov.",
+      "link": "https://www.boston.gov/departments/schools/boston-saves",
+      "warning": "",
+      "website_description": "A college and career savings account the City opens for your Boston Public Schools student",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Boston"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
