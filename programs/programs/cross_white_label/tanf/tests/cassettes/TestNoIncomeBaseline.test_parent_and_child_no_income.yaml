@@ -20,7 +20,7 @@ interactions:
       "NC"}}}, "spm_units": {"spm_unit": {"members": ["101", "102"], "tanf": {"2026":
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-      false}, "nc_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.94.7"}'
+      false}, "nc_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -29,7 +29,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1719'
+      - '1721'
       Content-Type:
       - application/json
       User-Agent:
@@ -60,26 +60,26 @@ interactions:
         "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
         "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false},
         "nc_tanf": {"2026": 2832.0}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
+        {"model_version": "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1818'
+      - '1820'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Wed, 18 Nov 2026 20:55:41 GMT
+      - Mon, 23 Nov 2026 19:53:09 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-80aa47f1e8b54add09c01e9f257ff149-0b71b33c3c26376f-00
+      - 00-7a248ba6291ca8fd3c2a152a70087f12-2181ca7d05596404-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 80aa47f1e8b54add09c01e9f257ff149
+      - 7a248ba6291ca8fd3c2a152a70087f12;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -87,7 +87,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 63c9287b-86cd-47d0-b971-1b851b6155cb
+      - 5d0fadf9-2564-411a-9f5f-ad0d8ba85b8f
       x-policyengine-route-channel:
       - current
     status:

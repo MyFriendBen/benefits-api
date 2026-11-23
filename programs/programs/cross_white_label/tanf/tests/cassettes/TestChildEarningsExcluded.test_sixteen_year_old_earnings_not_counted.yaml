@@ -20,7 +20,7 @@ interactions:
       "NC"}}}, "spm_units": {"spm_unit": {"members": ["301", "302"], "tanf": {"2026":
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-      false}, "nc_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.94.7"}'
+      false}, "nc_tanf": {"2026": null}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -29,7 +29,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1722'
+      - '1724'
       Content-Type:
       - application/json
       User-Agent:
@@ -60,26 +60,26 @@ interactions:
         "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
         "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false},
         "nc_tanf": {"2026": 2832.0}}}, "marital_units": {}}, "policyengine_bundle":
-        {"model_version": "2.94.7", "data_version": null, "dataset": null}}'
+        {"model_version": "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1821'
+      - '1823'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Wed, 18 Nov 2026 20:55:44 GMT
+      - Mon, 23 Nov 2026 19:53:11 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-e26a91a00ea7992d30d518ae77c3dd44-c29f64e39cb16f4d-01
+      - 00-f3e0906526b8f27f423bd142685ef953-b01661880357e912-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - e26a91a00ea7992d30d518ae77c3dd44;o=1
+      - f3e0906526b8f27f423bd142685ef953
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -87,7 +87,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 58278509-e49b-489e-ba33-f138e532da37
+      - 614f1d9c-6513-4e50-ab25-16f9769d17b9
       x-policyengine-route-channel:
       - current
     status:
