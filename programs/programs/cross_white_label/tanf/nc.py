@@ -11,7 +11,7 @@ class NcTanf(Tanf):
     Income is sent per person and PE derives ``nc_tanf_countable_earned_income`` and
     ``nc_tanf_countable_gross_unearned_income`` itself. That is what applies its exclusions
     for children's earnings, SSI recipients' income and 27.5% of gross earnings: PE skips them
-    whenever those two aggregates are sent, so do not send them (MFB-2463).
+    whenever those two aggregates are sent, so do not send them.
 
     Child support received counts in full unless the household already receives Work First, which
     PE reads from the receipt contract.
