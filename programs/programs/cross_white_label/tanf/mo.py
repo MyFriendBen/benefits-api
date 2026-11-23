@@ -30,6 +30,10 @@ class MoTanf(Tanf):
     NC send pre-aggregated state countable-income variables and would double-count. Per person
     so PE can run each earner's disregard separately and apply the student exclusions to the
     right member.
+
+    ``WorkersCompensationDependency`` is sent beside ``tanf_income`` rather than in it:
+    Missouri's unearned-income source list counts workers' compensation, but the federal
+    and Kansas lists do not, and Kansas shares ``tanf_income``.
     """
 
     program_code = "mo_tanf"
@@ -47,6 +51,7 @@ class MoTanf(Tanf):
         dependency.member.CareExpensesDependency,
         dependency.member.IsIncapableOfSelfCareDependency,
         *dependency.tanf_income,
+        dependency.member.WorkersCompensationDependency,
     ]
 
     pe_outputs = [dependency.spm.MoTanf]
