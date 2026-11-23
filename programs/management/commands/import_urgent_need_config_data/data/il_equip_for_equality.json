@@ -3,9 +3,7 @@
   "need": {
     "external_name": "il_equip_for_equality",
     "category_type": {
-      "external_name": "il_disability_resources",
-      "name": "Disability resources",
-      "icon": "disability"
+      "external_name": "disability_resources"
     },
     "type_short": ["disability resources"],
     "functions": [],

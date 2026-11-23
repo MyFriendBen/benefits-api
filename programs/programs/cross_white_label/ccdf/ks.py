@@ -5,6 +5,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
 from screener.models import EARNED_INCOME_TYPES, HouseholdMember
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 # Appendix C-18a provider rate county groupings. Group #3 is every county not named
 # here. C-18/C-18a print "Greely" and "Pottawatomi"; the KS white label's spellings
@@ -246,7 +247,7 @@ class KsCcap(ProgramCalculator):
     # KEESM 4410 puts the head and their spouse or partner on the case. Any other
     # adult -- a grandparent, an adult sibling, a roommate -- counts toward family
     # size and is never activity-tested.
-    tested_relationships = ("headOfHousehold", "spouse", "domesticPartner")
+    tested_relationships = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner")
 
     def member_eligible(self, e: MemberEligibility):
         e.condition(self.is_eligible_child(e.member))

@@ -1,0 +1,29 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_family_success_centers",
+    "category_type": {
+      "external_name": "child_development"
+    },
+    "type_short": [
+      "baby supplies",
+      "child dev"
+    ],
+    "translations": {
+      "name": "NJ Family Success Centers",
+      "description": "Family Success Centers are free, walk-in centers run by the NJ Department of Children and Families, with at least one in every county. There are no eligibility requirements. Many have diapers, formula and baby items, but stock varies, so call ahead. Call 211 or use the locator to find your nearest center.",
+      "link": "https://www.nj.gov/dcf/divisions-offices/dfcp/fsc.shtml",
+      "warning": "",
+      "website_description": "Learn about help for parents and children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

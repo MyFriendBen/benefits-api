@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_jerseyclicks",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "JerseyClicks (NJ State Library) career prep",
+      "description": "JerseyClicks gives free career prep tools to all New Jersey residents through participating library websites. Use it online 24/7. Call 609-278-2640.",
+      "link": "https://www.njstatelib.org/services_for_libraries/statewide_services/jerseyclicks/",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

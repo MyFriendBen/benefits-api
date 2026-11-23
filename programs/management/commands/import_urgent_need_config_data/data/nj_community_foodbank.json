@@ -1,0 +1,40 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_community_foodbank",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Community FoodBank of New Jersey",
+      "description": "Community FoodBank of New Jersey works with food pantries across 11 counties. There are no eligibility rules. An ID is helpful but not required. Use their locator to find a pantry, then walk in. Hours vary by pantry. Call 908-838-4831.",
+      "link": "https://cfbnj.org/findfood",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Bergen County",
+      "Essex County",
+      "Hudson County",
+      "Middlesex County",
+      "Morris County",
+      "Passaic County",
+      "Somerset County",
+      "Union County",
+      "Atlantic County",
+      "Cape May County",
+      "Cumberland County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

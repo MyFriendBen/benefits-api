@@ -1,6 +1,7 @@
 from programs.framework.base import ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
 from typing import ClassVar
+from programs.programs.shared.income import fpl_income_limit
 
 
 class WaLiheap(ProgramCalculator):
@@ -26,7 +27,7 @@ class WaLiheap(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        income_limit = fpl_income_limit(self.program.year, self.screen.household_size, self.fpl_percent)
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
     def household_value(self) -> int:

@@ -140,6 +140,12 @@ class HudIncomeClient:
             # summary both render this area name identically; matched by exact
             # string equality against `area_name` as the HUD FMR API returns it.
             "St. Louis, MO-IL HUD Metro FMR Area",
+            # New Jersey (NJ HCV). Philadelphia-Camden-Wilmington covers Burlington,
+            # Camden, Gloucester and Salem counties.
+            "Bergen-Passaic, NJ HUD Metro FMR Area",
+            "Jersey City, NJ HUD Metro FMR Area",
+            "Monmouth-Ocean, NJ HUD Metro FMR Area",
+            "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD MSA",
         }
     )
 

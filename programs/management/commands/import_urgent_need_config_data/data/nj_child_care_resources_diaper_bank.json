@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_child_care_resources_diaper_bank",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Child Care Resources diaper bank (Monmouth)",
+      "description": "Child Care Resources runs a diaper bank for Monmouth County families. A community organization must fill out a Diaper Bank Client Referral Form for you, and then you contact the bank. Call 732-918-9901 during business hours.",
+      "link": "https://ccrnj.org/diaper-bank-at-child-care-resources/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Monmouth County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

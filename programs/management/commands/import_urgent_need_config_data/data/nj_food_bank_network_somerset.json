@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_food_bank_network_somerset",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Food Bank Network of Somerset County",
+      "description": "The Food Bank Network of Somerset County only requires that you live in Somerset County. Diapers are available, so ask staff. Bring a photo ID and register on your first visit. Walk in Monday to Friday 9am-2:30pm. Call 732-560-1813.",
+      "link": "https://somersetfoodbank.org/need-help/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Somerset County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

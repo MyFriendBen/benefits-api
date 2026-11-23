@@ -1,5 +1,6 @@
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.income import fpl_income_limit
 
 
 class MaYouthworks(ProgramCalculator):
@@ -57,5 +58,5 @@ class MaYouthworks(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # Family gross income must not exceed 200% of the (2025) Federal Poverty Guidelines.
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        income_limit = fpl_income_limit(self.program.year, self.screen.household_size, self.fpl_percent)
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))

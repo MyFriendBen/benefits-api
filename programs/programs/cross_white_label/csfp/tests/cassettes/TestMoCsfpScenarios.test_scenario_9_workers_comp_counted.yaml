@@ -5,7 +5,7 @@ interactions:
       {"family": {"members": ["901"]}}, "households": {"household": {"members": ["901"],
       "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["901"],
       "school_meal_countable_income": {"2026": 24600.0}}}, "marital_units": {}}, "version":
-      "2.53.1"}'
+      "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -14,11 +14,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '435'
+      - '437'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -29,26 +29,26 @@ interactions:
         ["901"]}}, "households": {"household": {"members": ["901"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["901"], "school_meal_countable_income":
         {"2026": 24600.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.53.1", "data_version": null, "dataset": null}}'
+        "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '534'
+      - '536'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:09:51 GMT
+      - Thu, 19 Nov 2026 18:40:47 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-aaaf60a9ccfe7afef8651c5f9ddeef66-41de16ff38b001a9-00
+      - 00-fa1cfcebbde591e65530b417795b77fa-795c3b32901cb216-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - aaaf60a9ccfe7afef8651c5f9ddeef66
+      - fa1cfcebbde591e65530b417795b77fa;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -56,7 +56,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 721a991c-92c2-42ad-90e5-5b7a953ab0bd
+      - 0733e389-7cb6-4773-afa3-e3dad2f1e44e
       x-policyengine-route-channel:
       - current
     status:

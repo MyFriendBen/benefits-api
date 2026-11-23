@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_homefront_diaper_resource_center",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "HomeFront Diaper Resource Center",
+      "description": "HomeFront's Diaper Resource Center gives out 50 diapers per child per month. No eligibility rules are published. Walk in at Choice Market on Monday 10am-2pm, Tuesday 2-6pm or Thursday 10am-2pm. Call 609-989-9417.",
+      "link": "https://www.homefrontnj.org/Basic-Necessities",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

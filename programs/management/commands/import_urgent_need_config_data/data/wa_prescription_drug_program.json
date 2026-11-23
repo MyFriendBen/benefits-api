@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "need": {
+    "external_name": "wa_prescription_drug_program",
+    "category_type": {
+      "external_name": "medical_expenses_and_debt"
+    },
+    "type_short": [
+      "medical expenses and debt"
+    ],
+    "translations": {
+      "name": "Washington Prescription Drug Program",
+      "description": "A free discount card that helps any Washington resident save on prescription drugs. You can save up to 60% on generic drugs and up to 20% on brand-name drugs. There are no fees, and no income or insurance requirements.",
+      "link": "https://www.hca.wa.gov/about-hca/programs-and-initiatives/prescription-drug-program",
+      "warning": "",
+      "website_description": "Get the free prescription discount card.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

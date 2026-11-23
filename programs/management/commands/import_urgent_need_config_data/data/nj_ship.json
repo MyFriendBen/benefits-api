@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_ship",
+    "category_type": {
+      "external_name": "medical_expenses_and_debt"
+    },
+    "type_short": [
+      "medical expenses and debt"
+    ],
+    "translations": {
+      "name": "NJ State Health Insurance Assistance Program (SHIP)",
+      "description": "The NJ State Health Insurance Assistance Program (SHIP) helps people with Medicare. There is no income test, and you must be a New Jersey Medicare beneficiary. Call 1-800-792-8820, Monday to Friday 8:30am-4:30pm.",
+      "link": "https://www.nj.gov/humanservices/doas/services/q-z/ship/index.shtml",
+      "warning": "",
+      "website_description": "Learn about help with medical bills and prescriptions.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

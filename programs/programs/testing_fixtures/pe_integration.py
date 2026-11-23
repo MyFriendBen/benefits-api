@@ -48,6 +48,7 @@ from conftest import PE_CAPTURE_DIR_ENV_VAR, pe_may_record, vcr_record_mode
 from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
+from programs.programs.testing_fixtures.payment_unit import assert_household_members_unpriced
 from programs.util import Dependencies
 from programs.vintage import PROGRAM_VINTAGE
 from programs.programs.testing_fixtures import households
@@ -65,7 +66,7 @@ TEST_PE_TOKEN = "pe-integration-test-token"
 # The PolicyEngine version every PeIntegrationTestCase records and replays at unless it
 # overrides ``pe_version``. Adopting a new version is a bump here plus a re-record of every
 # module that doesn't override. Must be one PolicyEngine currently serves (see docs/TESTING.md).
-PE_TEST_VERSION = "2.53.1"
+PE_TEST_VERSION = "2.116.16"
 
 # Used by the record_and_diff management command. The override replaces every test case's
 # pe_version for the run, so the whole suite can be recorded at a new version without editing any
@@ -235,6 +236,7 @@ def calc_pe_program(
         raise
 
     capture_result(eligible=bool(eligibility.eligible), value=math.trunc(eligibility.value))
+    assert_household_members_unpriced(eligibility, calculator_class.__name__)
 
     return eligibility
 

@@ -5,20 +5,20 @@ The subject and body are built server-side by MessageUser from white-label
 config labels, so the language is chosen here rather than by the caller's copy.
 """
 
-import json
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
+from benefits.tests.cache_override import LOCAL_CACHE
 from screener.models import Screen, WhiteLabel
 from screener.views import MessageViewSet
 
 
 class FakeRequest:
-    """Minimal stand-in: MessageViewSet.create reads request.body directly."""
+    """Minimal stand-in: MessageViewSet.create reads only the parsed `request.data`."""
 
     def __init__(self, payload: dict):
-        self.body = json.dumps(payload).encode()
+        self.data = payload
 
 
 class TestMessageLanguage(TestCase):
@@ -78,8 +78,13 @@ class TestMessageLanguage(TestCase):
         self.assertEqual(MessageViewSet._message_language({}, screen), "en-us")
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestMessageViewThreadsLanguage(TestCase):
-    """The resolved language has to actually reach MessageUser."""
+    """The resolved language has to actually reach MessageUser.
+
+    A sent text is recorded against the number's throttle budget, which is a cache
+    write, so the cache is pinned to this process.
+    """
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
@@ -108,7 +113,7 @@ class TestMessageViewThreadsLanguage(TestCase):
         MessageViewSet().create(request)
 
         mock_message_user.assert_called_once_with(self.screen, "vi")
-        mock_message_user.return_value.text.assert_called_once_with("+13035551234", send_tests=True)
+        mock_message_user.return_value.send_text.assert_called_once_with("+13035551234", send_tests=True)
 
     @patch("screener.views.MessageUser")
     def test_omitted_language_keeps_the_previous_behavior(self, mock_message_user):

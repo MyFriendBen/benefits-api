@@ -1,6 +1,7 @@
 from programs.framework.base import MemberEligibility
 from programs.programs.cross_white_label.msp.base_mfb import MedicareSavings
 from typing import ClassVar
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class MedicareSavingsNC(MedicareSavings):
@@ -173,7 +174,7 @@ class MedicareSavingsNC(MedicareSavings):
         """Return parent(s) of the member. Excludes SSI recipients when exclude_ssi is True."""
         household = list(self.screen.household_members.all())
         parent_relationships = (
-            ("headOfHousehold", "spouse", "domesticPartner")
+            (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner")
             if member.relationship in ("child", "fosterChild")
             else ("parent", "fosterParent")
         )

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_crisis_receiving_center",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "NJ Crisis Receiving & Stabilization Center (Rutgers UBHC, Newark)",
+      "description": "The NJ Crisis Receiving & Stabilization Center (Rutgers UBHC) in Newark helps adults 18 and older who are in crisis, regardless of insurance or ability to pay. Open 24/7. Walk in, there is no wrong door.",
+      "link": "https://www.nj.gov/humanservices/news/pressreleases/2026/approved/20260331.shtml",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Essex County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

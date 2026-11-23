@@ -4,7 +4,6 @@ from unittest.mock import Mock, patch
 from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.wa.hcv.calculator import WaHcv
 from programs.framework.base import ProgramCalculator, Eligibility
-from programs.framework.pe_dependencies import member
 
 
 def make_member(

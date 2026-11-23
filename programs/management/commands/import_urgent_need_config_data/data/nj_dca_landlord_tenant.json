@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_dca_landlord_tenant",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "NJ DCA Landlord/Tenant Information Service",
+      "description": "The NJ Department of Community Affairs Landlord/Tenant Information Service answers questions from both tenants and landlords. There are no eligibility rules. Call 609-292-4080 or email.",
+      "link": "https://www.nj.gov/dca/home/landlord-tenant.shtml",
+      "warning": "",
+      "website_description": "Learn about housing and utility help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

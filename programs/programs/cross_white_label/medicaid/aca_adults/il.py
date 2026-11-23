@@ -1,6 +1,7 @@
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 import programs.framework.eligibility_messages as messages
 from programs.programs.white_labels.il.medicaid_fpl_mixin import IlMedicaidFplIncomeCheckMixin
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
@@ -20,7 +21,7 @@ class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     min_age = 19
     max_age = 64
     caretaker_roles = [
-        "headOfHousehold",
+        HEAD_OF_HOUSEHOLD_RELATIONSHIP,
         "spouse",
         "domesticPartner",
         "parent",

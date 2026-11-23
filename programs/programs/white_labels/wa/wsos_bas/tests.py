@@ -1,4 +1,4 @@
-from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_income
+from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
 from programs.programs.white_labels.wa.wsos_bas.calculator import WaWsosBas
 from screener.models import HouseholdMember, IncomeStream
 

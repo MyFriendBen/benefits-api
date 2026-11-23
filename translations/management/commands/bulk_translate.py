@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from django.db.models import Q, OuterRef, Exists
 from translations.models import Translation
 from integrations.clients.google_translate import Translate, is_auto_translatable, unsupported_reason
 
@@ -31,14 +30,12 @@ class Command(BaseCommand):
         print(f"Total translations: {len(translations)}")
 
         # Count how many need translation using a single query
-        from django.db.models import Q, OuterRef, Exists
+        from django.db.models import OuterRef, Exists
 
         # Check which translations don't have a record for this language
         lang_exists = Translation.objects.filter(pk=OuterRef("pk"), translations__language_code=lang)
 
         # Debug the filtering - check translations that have English text
-        from django.db.models import Exists
-
         # Find translations that have English text
         has_en_text = Translation.objects.filter(
             translations__language_code=settings.LANGUAGE_CODE,

@@ -5,7 +5,6 @@ Unit tests for MaMbta MBTA service area filtering.
 from django.test import TestCase
 from unittest.mock import Mock, MagicMock
 from programs.programs.white_labels.ma.mbta.calculator import MaMbta
-from programs.framework.pe_dependencies import member
 
 
 class TestMaMbta(TestCase):

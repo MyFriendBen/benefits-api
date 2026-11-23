@@ -1,3 +1,5 @@
+from typing import Any, Optional
+
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.conf import settings
@@ -9,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework import views
 from django import forms
 from django.http import (
+    HttpRequest,
     HttpResponseBadRequest,
     HttpResponse,
     HttpResponseNotFound,
@@ -17,6 +20,7 @@ from django.http import (
 from django.db.models import ProtectedError, Q
 from django.db import models
 from sentry_sdk import capture_exception
+from programs.allowed_values import warning_calculator_choices
 from programs.models import (
     County,
     Program,
@@ -189,10 +193,56 @@ def has_translation_access(translation: Translation, user: User) -> bool:
 
     # only allow acces if the user can access all the models it is attached to
     for reverse in reverse_instances:
-        if reverse.instance.white_label.id not in allowed_white_labels:
+        white_label = reverse.instance.white_label
+
+        # A null white_label means the row is shared across white labels, so
+        # any white label admin may edit it, matching SharedRowAdminMixin.
+        if white_label is None:
+            if not allowed_white_labels.exists():
+                return False
+            continue
+
+        if white_label.id not in allowed_white_labels:
             return False
 
     return True
+
+
+def spec_locked_program(translation: Translation) -> Optional[Program]:
+    """The program this translation belongs to, if it was imported from its v2 spec.
+
+    Its English text comes from the spec, so the editor refuses to change it there; other
+    languages stay editable, since the spec holds English only.
+    """
+    for reverse_instance in translation.get_reverse_instances():
+        instance = reverse_instance.instance
+        if isinstance(instance, Program) and instance.imported_from_spec:
+            return instance
+    return None
+
+
+def spec_locked_message(program: Program) -> str:
+    return (
+        f"'{program.name_abbreviated}' is imported from its spec in program-ops, so its English "
+        "text is changed in the spec and imported. Other languages can still be edited here."
+    )
+
+
+def spec_locked_response(request: HttpRequest, program: Program) -> HttpResponse:
+    return render(request, "error.html", {"error_message": spec_locked_message(program)})
+
+
+def languages_context(translation: Translation) -> dict[str, Any]:
+    """What `edit/langs.html` needs: one form per language, in `settings.LANGUAGES` order, and when each
+    language was last changed."""
+    updated_dates = {}
+    for record in translation.history.all().order_by("history_date"):
+        if record.changed_text:
+            updated_dates[record.affected_language] = record.history_date
+
+    texts = {t.language_code: t.text for t in translation.translations.all()}
+    forms = {lang_code: TranslationForm({"text": texts.get(lang_code, "")}) for lang_code, _ in settings.LANGUAGES}
+    return {"translation": translation, "langs": forms, "updated_dates": updated_dates}
 
 
 @login_required(login_url="/admin/login")
@@ -250,6 +300,9 @@ def translation_view(request, id=0):
             }
             return render(request, "edit/label_form.html", context)
     elif request.method == "DELETE":
+        locked = spec_locked_program(translation)
+        if locked is not None:
+            return spec_locked_response(request, locked)
         try:
             translation.delete()
         except ProtectedError:
@@ -279,6 +332,15 @@ def edit_translation(request, id=0, lang="en-us"):
         excluded_langs = request.POST.getlist("excluded_languages", [])
 
         languages = [l for l in Translate.languages if l not in excluded_langs]
+
+        if lang == settings.LANGUAGE_CODE:
+            locked = spec_locked_program(translation)
+            if locked is not None:
+                # The page swaps this into the language forms, so re-render them with the message on
+                # the English one; a bare error line would replace every form on the page.
+                context = languages_context(translation)
+                context.update(error_lang=lang, error_message=spec_locked_message(locked))
+                return render(request, "edit/langs.html", context)
 
         if form.is_valid():
             text = form["text"].value()
@@ -315,26 +377,7 @@ def edit_translation(request, id=0, lang="en-us"):
                                 continue
                             Translation.objects.edit_translation_by_id(id, language, translated_text, False)
 
-            parent = Translation.objects.get(pk=id)
-            all_history = parent.history.all().order_by("history_date")
-            updated_dates = {}
-            for record in all_history:
-                if record.changed_text:
-                    updated_dates[record.affected_language] = record.history_date
-
-            # sorted in the order of settings.LANGUAGES
-            forms = {
-                lang_code: TranslationForm(
-                    {"text": next((t.text for t in parent.translations.all() if t.language_code == lang_code), "")}
-                )
-                for lang_code, _ in settings.LANGUAGES
-            }
-            context = {
-                "translation": parent,
-                "langs": forms,
-                "updated_dates": updated_dates,
-            }
-            return render(request, "edit/langs.html", context)
+            return render(request, "edit/langs.html", languages_context(Translation.objects.get(pk=id)))
 
 
 def get_white_label_choices():
@@ -568,7 +611,9 @@ class WarningMessageTranslationAdmin(TranslationAdminViews):
 
     class Form(WhiteLabelForm):
         external_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
-        calculator_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
+        calculator_name = forms.ChoiceField(
+            choices=warning_calculator_choices, widget=forms.Select(attrs={"class": "input"})
+        )
 
     Model = WarningMessage
 
@@ -716,11 +761,20 @@ class UrgentNeedTypeTranslationAdmin(TranslationAdminViews):
         external_name = forms.CharField(max_length=120, widget=forms.TextInput(attrs={"class": "input"}))
         icon = forms.ChoiceField(choices=get_urgent_need_icon_choices, widget=forms.Select(attrs={"class": "input"}))
 
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+
+            # Leaving the white label blank creates a shared type, which urgent
+            # needs in any white label can use.
+            white_label = self.fields["white_label"]
+            white_label.required = False
+            white_label.choices = [("", "Shared (all white labels)"), *white_label.choices]
+
     Model = UrgentNeedType
 
     def _new_object(self, form: Form) -> models.Model:
         return self.Model.objects.new_urgent_need_type(
-            form["white_label"].value(), form["external_name"].value(), form["icon"].value()
+            form["white_label"].value() or None, form["external_name"].value(), form["icon"].value()
         )
 
     def _filter_query_set(self, request):

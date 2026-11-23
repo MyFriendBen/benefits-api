@@ -1,5 +1,6 @@
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.residency import lives_in
 
 
 class MaTaxiDiscount(ProgramCalculator):
@@ -29,7 +30,7 @@ class MaTaxiDiscount(ProgramCalculator):
     def household_eligible(self, e: Eligibility) -> None:
         # Location check - must be Cambridge resident
         # (MA stores city name in county field, see MFB-548)
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = lives_in(self.screen, self.eligible_city)
         e.condition(is_cambridge, messages.location())
 
     def member_eligible(self, e: MemberEligibility) -> None:

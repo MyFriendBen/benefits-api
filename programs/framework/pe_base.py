@@ -1,8 +1,8 @@
 from programs.models import Program
 from programs.framework.pe_dependencies.constants import ALL_TAX_UNITS
-from programs.util import Dependencies, DependencyError
+from programs.util import Dependencies
 from screener.models import HouseholdMember, Screen
-from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, PaymentUnit, ProgramCalculator
 from .pe_dependencies.base import PolicyEngineScreenInput
 from typing import List
 from integrations.clients.policyengine.engines import Sim
@@ -63,9 +63,20 @@ class PolicyEngineCalulator(ProgramCalculator):
         return int(self.get_variable())
 
     def calc(self) -> Eligibility:
-        if not self.can_calc():
-            raise DependencyError()
+        """Read this program's result out of the PolicyEngine response.
 
+        Overrides the base implementation to skip its `self.value(eligibility)` step:
+        PolicyEngine already returns the value, so `eligible()` has it and there is nothing
+        left to compute.
+
+        Deliberately unguarded. The base class raises `DependencyError` here when
+        `can_calc()` is False; this class does not, because nothing can reach it in that
+        state — `calc_pe_eligibility` filters on `can_calc()` before building a payload, and
+        the test fixture asserts it (`programs/programs/testing_fixtures/pe_integration.py`).
+        A guard that cannot fire is not free here: one raise inside `all_eligibility` costs
+        *every* PolicyEngine program on the screen its result, so a dead guard trades a
+        precise failure for a screen-wide one.
+        """
         eligibility = self.eligible()
 
         return eligibility
@@ -73,7 +84,14 @@ class PolicyEngineCalulator(ProgramCalculator):
     @property
     def pe_period(self) -> str:
         if self.program.year is None:
-            raise Exception(f"the period is not configured for: {self.pe_name}")
+            # Should be unreachable: `calc_pe_eligibility` drops a program with no
+            # `FederalPoveryLimit` before building a payload. Kept so that if a row reaches
+            # here anyway (another caller, a direct DB write) the failure names its cause
+            # instead of surfacing as an AttributeError on None.
+            raise Exception(
+                f"{self.program.name_abbreviated} has no FederalPoveryLimit, so there is no "
+                f"period to request {self.pe_name} at."
+            )
 
         return self.program.year.period
 
@@ -141,10 +159,15 @@ class PolicyEngineCalulator(ProgramCalculator):
 class PolicyEngineSpmCalulator(PolicyEngineCalulator):
     pe_category = "spm_units"
     pe_sub_category = "spm_unit"
+    # PolicyEngine values an SPM unit as a whole. A subclass that prices members itself
+    # (`MaCcdf`) declares `PaymentUnit.MEMBER` instead.
+    payment_unit = PaymentUnit.HOUSEHOLD
 
 
 class PolicyEngineTaxUnitCalulator(PolicyEngineCalulator):
     pe_category = "tax_units"
+    # The credit is the return's, summed across the household's tax units.
+    payment_unit = PaymentUnit.HOUSEHOLD
 
     def household_value(self):
         total = 0

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_hja_insurance_enrollment",
+    "category_type": {
+      "external_name": "medical_expenses_and_debt"
+    },
+    "type_short": [
+      "medical expenses and debt"
+    ],
+    "translations": {
+      "name": "Henry J. Austin Health Center - Insurance Enrollment Help",
+      "description": "Henry J. Austin Health Center in Trenton helps people enroll in health insurance. No eligibility rules are published for the enrollment help itself. Call Henry J. Austin at 609-278-5900, Monday to Friday 8am-4pm.",
+      "link": "https://henryjaustin.org/medicaid-changes",
+      "warning": "",
+      "website_description": "Learn about help with medical bills and prescriptions.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

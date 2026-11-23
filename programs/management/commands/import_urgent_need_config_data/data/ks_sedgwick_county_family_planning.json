@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_sedgwick_county_family_planning",
     "category_type": {
-      "external_name": "ks_family_planning",
-      "name": "Family planning",
-      "icon": "family_planning"
+      "external_name": "family_planning"
     },
     "type_short": [
       "family planning"

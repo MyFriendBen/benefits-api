@@ -23,7 +23,6 @@ from programs.programs.cross_white_label.lifeline.base import Lifeline
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.cross_white_label.tanf.ks import KsTanf
-from programs.programs.cross_white_label.wic.base import Wic
 from programs.programs.cross_white_label.msp.base import Msp
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
@@ -88,20 +87,6 @@ class TestReceiptContractBundle(TestCase):
         for dep in (member.SsiIfTakesUp, spm.SnapIfTakesUp, spm.TanfIfTakesUp):
             self.assertEqual(dep.min_pe_version, (1, 779, 3), dep.field)
 
-    def test_wic_stays_on_the_ungated_output(self):
-        """
-        WIC is not switched to `wic_if_takes_up`, because for our payloads the two are the same
-        number: `wic` is `wic_if_takes_up` gated on `takes_up_wic_if_eligible`, which defaults
-        True and which we never send. `receives_wic` is measurably inert, so it is not wired
-        either — there is no WIC suppression for a would-be output to route around.
-
-        Staying ungated keeps WIC out of `_drop_unreadable_programs` below the version floor.
-        """
-        self.assertEqual(member.Wic.min_pe_version, ())
-        sent_fields = {dep.field for dep in receipt_contract}
-        self.assertNotIn("takes_up_wic_if_eligible", sent_fields)
-        self.assertNotIn("receives_wic", sent_fields)
-
 
 class TestProgramsReadWouldBeOutputs(TestCase):
     """
@@ -109,8 +94,7 @@ class TestProgramsReadWouldBeOutputs(TestCase):
     receipt-gated field its take-up flag zeroes out.
 
     That means `*_if_takes_up` for SNAP and TANF. SSI is computed in our own code and reads
-    no PolicyEngine output. WIC is the exception: we send no WIC take-up flag, so its plain
-    output is already the would-be value.
+    no PolicyEngine output.
     """
 
     def test_snap(self):
@@ -120,13 +104,6 @@ class TestProgramsReadWouldBeOutputs(TestCase):
     def test_tanf(self):
         self.assertEqual(Tanf.pe_name, "tanf_if_takes_up")
         self.assertEqual(Tanf.pe_outputs, [spm.TanfIfTakesUp])
-
-    def test_wic_reads_the_ungated_output(self):
-        """The exception: `wic` is already the would-be value, since `takes_up_wic_if_eligible`
-        is never sent and holds at its True default. See
-        `test_wic_stays_on_the_ungated_output`."""
-        self.assertEqual(Wic.pe_name, "wic")
-        self.assertIn(member.Wic, Wic.pe_outputs)
 
 
 class TestAdoptingCalculators(TestCase):
@@ -152,10 +129,6 @@ class TestAdoptingCalculators(TestCase):
     def test_head_start_and_early_head_start(self):
         self._assert_adopts(HeadStart)
         self._assert_adopts(EarlyHeadStart)
-
-    def test_wic(self):
-        """WIC's adjunct test reads SNAP/TANF receipt."""
-        self._assert_adopts(Wic)
 
     def test_medicaid_and_msp(self):
         """medicaid_category and msp_category both have SSI-recipient pathways."""

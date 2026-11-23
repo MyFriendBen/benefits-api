@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_evas_community_kitchen",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Eva's Community Kitchen (Paterson)",
+      "description": "Eva's Community Kitchen in Paterson welcomes everyone for breakfast and lunch. Walk in. Breakfast is at 8:30am Monday to Friday, and lunch is at 12pm daily. Call 973-523-6220.",
+      "link": "https://www.evasvillage.org/communitykitchen.html",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Passaic County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

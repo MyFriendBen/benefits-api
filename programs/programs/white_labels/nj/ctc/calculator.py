@@ -57,10 +57,8 @@ class NjCtc(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
         age = member.age_at_end_of_year(self.tax_year)
+        # None for a child born after the tax year, who wasn't the filer's child that year.
         e.condition(age is not None and age < self.child_age_limit)
-        # `age_at_end_of_year` reads a child born after the tax year as 0, but they weren't
-        # the filer's child that year.
-        e.condition(member.birth_year is None or member.birth_year <= self.tax_year)
         e.condition(self._is_dependent(member))
 
     def member_value(self, member: HouseholdMember) -> int:

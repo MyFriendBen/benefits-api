@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_moms_helping_moms",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Moms Helping Moms Foundation partner network",
+      "description": "Moms Helping Moms supplies about 95 partner agencies instead of giving to families directly. Call a partner agency near you from their county list. Each partner sets its own rules and hours.",
+      "link": "https://momshelpingmoms.org/need-diapers/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

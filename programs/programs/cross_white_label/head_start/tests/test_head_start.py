@@ -1,10 +1,8 @@
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase, add_expense, add_income
 from programs.programs.cross_white_label.head_start.nc import NCHeadStart
-from programs.models import Program, FederalPoveryLimit
 from unittest.mock import patch
 from datetime import date
 from typing import ClassVar
-from programs.framework.pe_dependencies import member
 
 
 class TestNCHeadStart(CustomCalculatorTestCase):

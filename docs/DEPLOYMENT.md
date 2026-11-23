@@ -20,7 +20,7 @@ Our deployment workflows use **composite actions** to maintain DRY (Don't Repeat
 All composite actions are located in `.github/actions/`:
 
 1. **setup-python-django** - Sets up Python 3.12 with pip caching and installs dependencies from `requirements.txt`
-2. **run-django-checks** - Runs Django system checks and database migrations
+2. **run-django-checks** - Runs Django system checks, fails on missing or conflicting migrations (`python manage.py check_migrations`), and applies the migrations
 3. **deploy-to-heroku** - Installs Heroku CLI and deploys using `akhileshns/heroku-deploy@v3.14.15`
 4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config)
 5. **slack-notify** - Sends deployment notifications with status (success/failure/in-progress/completed-with-warnings)
@@ -91,7 +91,7 @@ gh pr create --base main --title "Add new feature" --fill
 1. **PR Validation workflow runs** (`.github/workflows/pr-validation.yaml`)
 2. **Tests execute** with VCR `new_episodes` mode (uses cached API responses)
 3. **Code coverage uploaded** to Codecov for review
-4. **Status checks must pass** before PR can be merged
+4. **Status checks must pass** before PR can be merged (see [Review & Merge](#4-review--merge))
 
 **Workflow file**: [`.github/workflows/pr-validation.yaml`](../.github/workflows/pr-validation.yaml)
 
@@ -108,7 +108,11 @@ gh run view <RUN_ID> --log
 ### 4. Review & Merge
 
 - Get approval from team members
-- Merge PR (squash, merge commit, or rebase based on team preference)
+- The branch must be **up to date with `main`**, with `Run Tests with Coverage` and
+  `Check Formatting / runner / black formatter` passing on that latest commit. If `main` moved since
+  the last run, click **Update branch** on the PR (or merge `main` in locally) and wait for CI to pass again.
+  This is what catches two PRs that each pass alone but break together, such as two migrations on one parent.
+- Squash and merge (the only merge method enabled)
 - **Automatic deployment to Staging happens immediately**
 
 ### 5. Test on Staging
@@ -438,7 +442,7 @@ If your deployment included database migrations:
 - Consider the data compatibility when rolling back code
 - Test rollback scenarios in staging first
 
-**Migration conflicts cannot be resolved on Heroku** (read-only slug). All migration issues must be fixed locally:
+**Migration conflicts cannot be resolved on Heroku** (read-only slug). PR validation fails on a missing or conflicting migration (run `python manage.py check_migrations` locally to check first), so most are caught before merging; any that reach a deploy must be fixed locally:
 1. Pull the latest code
 2. Resolve conflicts with `python manage.py makemigrations --merge`
 3. Commit and push changes
@@ -828,7 +832,7 @@ If you need to regenerate the `TRANSLATIONS_REPO_TOKEN`:
 
 ### Before Merging to Main (Staging)
 - [ ] Code reviewed and approved
-- [ ] Tests passing
+- [ ] Branch up to date with `main`, and tests and formatting passing on that commit
 - [ ] No merge conflicts
 - [ ] Migration files reviewed (if any)
 - [ ] Dependencies updated (if needed)

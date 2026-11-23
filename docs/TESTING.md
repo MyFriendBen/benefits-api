@@ -44,6 +44,38 @@ roughly three minutes to under one. Two things follow from that:
 
 Pass `-n 0` to force a serial run when debugging test interdependence.
 
+### Split Across CI Jobs
+
+PR validation also splits the suite across 3 parallel jobs with
+[pytest-split](https://github.com/jerry-git/pytest-split), each of which still fans out
+with xdist. The groups are balanced by a `.test_durations` file, a record of how long each
+test took. It isn't committed; CI keeps it current on its own:
+
+1. **Every merge to main**, the staging deploy runs the whole suite with
+   `--store-durations --clean-durations` and saves the resulting `.test_durations` to the
+   GitHub Actions cache as `test-durations-<commit sha>`.
+2. **Every PR run** starts with a "Resolve test durations" job that restores the newest of
+   those entries, once, and passes the file to all 3 test groups as an artifact. The groups
+   must split the suite by the identical file — two different files cut it in different
+   places, leaving some tests in two groups and some in none — so no group restores its
+   own, and a group that can't download the shared file fails instead of guessing. Each
+   group logs the file's sha256, so you can confirm they match.
+3. **With nothing cached** — before the first staging deploy, or after an entry goes 7
+   days unused and is evicted — the resolve job hands out an empty record, and pytest-split
+   divides the tests evenly by count: less balanced, but still consistent.
+
+The file only steers how the work is divided: a test missing from it — such as one the
+PR itself adds — is still run, and counted at the average duration until a staging deploy
+records it.
+
+To run one group locally the way CI does, record durations first (or skip that and get an
+even split by count):
+
+```bash
+pytest --store-durations --clean-durations
+pytest --splits 3 --group 1
+```
+
 ### Unit Tests Only
 ```bash
 # Skip integration tests

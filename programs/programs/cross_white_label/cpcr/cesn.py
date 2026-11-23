@@ -17,7 +17,7 @@ class EnergyCalculatorPropertyCreditRebate(PropertyCreditRebate):
         member = e.member
 
         # not a dependent
-        e.condition(not member.is_dependent())
+        e.condition(not member.is_dependent(self.tax_year))
 
         # other conditions
         return super().member_eligible(e)

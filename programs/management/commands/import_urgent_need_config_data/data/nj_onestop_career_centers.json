@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_onestop_career_centers",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "NJDOL One-Stop Career Centers",
+      "description": "NJDOL One-Stop Career Centers help with job search and training. No eligibility rules are published for core services. Walk in Monday to Friday 8:30am-4:30pm. Find your county's center on the website.",
+      "link": "https://www.nj.gov/labor/career-services/contact-us/one-stops/index.shtml",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

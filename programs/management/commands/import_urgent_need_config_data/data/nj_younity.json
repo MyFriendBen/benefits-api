@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_younity",
+    "category_type": {
+      "external_name": "civil_legal_needs"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "YOUnity (formerly Womanspace, Trenton)",
+      "description": "YOUnity (formerly Womanspace) in Trenton supports survivors of domestic and sexual violence. There is no income test. Call the 24-hour hotline at 609-394-9000.",
+      "link": "https://www.younitynj.org/",
+      "warning": "",
+      "website_description": "Learn about free or low-cost legal help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Mercer County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

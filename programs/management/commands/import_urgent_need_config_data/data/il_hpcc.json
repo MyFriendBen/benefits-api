@@ -5,7 +5,7 @@
   "need": {
     "external_name": "il_hpcc",
     "category_type": {
-      "external_name": "il_managing_housing_costs"
+      "external_name": "managing_housing_costs"
     },
     "type_short": [
       "housing"
