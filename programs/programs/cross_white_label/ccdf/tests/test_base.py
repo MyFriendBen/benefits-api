@@ -9,7 +9,7 @@ scenarios run end to end in ``test_nj.py``.
 from datetime import date
 from decimal import Decimal
 
-from programs.framework.base import PaymentUnit, ProgramCalculator
+from programs.framework.base import Eligibility, PaymentUnit, ProgramCalculator
 from programs.framework.registry import build
 from programs.programs.cross_white_label.ccdf.base import CHILD_RELATIONSHIPS, Ccdf
 from programs.programs.testing_fixtures.custom_calculator import CustomCalculatorTestCase
@@ -75,7 +75,7 @@ class CcdfTestCase(CustomCalculatorTestCase):
         self.add_member(screen, relationship, child_age)
         return screen
 
-    def calculate_as(self, cls: type, screen: Screen):
+    def calculate_as(self, cls: type, screen: Screen) -> Eligibility:
         return cls(screen, self.program, {}, Dependencies(())).calc()
 
 
