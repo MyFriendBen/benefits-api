@@ -446,7 +446,7 @@ class TestFullRetirementAgeTable(FederalSsdiTestCase):
             date(1960, 6, 1): 67 * 12,
         }
         for birth_year_month, months in cases.items():
-            with self.subTest(birth_year_month=birth_year_month):
+            with self.subTest(birth_year_month=str(birth_year_month)):
                 self.assertEqual(FederalSsdi.full_retirement_age_months(birth_year_month), months)
 
     def test_a_january_birth_takes_the_previous_years_row(self) -> None:
