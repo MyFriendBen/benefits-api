@@ -30,20 +30,20 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
 
     # --- class attributes ---
 
-    def test_program_code_matches_record(self):
+    def test_program_code_matches_record(self) -> None:
         self.assertEqual(TxTuitionWaiver.program_code, "tx_tuition_waiver")
 
-    def test_valued_per_member_at_the_sentinel(self):
+    def test_valued_per_member_at_the_sentinel(self) -> None:
         self.assertEqual(TxTuitionWaiver.payment_unit, PaymentUnit.MEMBER)
         self.assertEqual(TxTuitionWaiver.member_amount, 1)
         self.assertEqual(TxTuitionWaiver.amount, 0)
 
-    def test_dependencies(self):
+    def test_dependencies(self) -> None:
         self.assertEqual(TxTuitionWaiver.dependencies, ["relationship"])
 
     # --- spec §8 scenarios ---
 
-    def test_scenario_1_17_year_old_who_reports_foster_care(self):
+    def test_scenario_1_17_year_old_who_reports_foster_care(self) -> None:
         """No minimum age: a 17-year-old who ticks the foster-care tile is shown the waiver."""
         screen = self.screen_of(1)
         self.add_member(screen, "headOfHousehold", 17, was_in_foster_care=True)
@@ -53,7 +53,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 1)
 
-    def test_scenario_2_young_adult_never_in_foster_care(self):
+    def test_scenario_2_young_adult_never_in_foster_care(self) -> None:
         screen = self.screen_of(1)
         self.add_member(screen, "headOfHousehold", 19, monthly_income=1_200, was_in_foster_care=False)
 
@@ -62,7 +62,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertFalse(e.eligible)
         self.assertEqual(e.value, 0)
 
-    def test_scenario_3_former_foster_youth_aged_30(self):
+    def test_scenario_3_former_foster_youth_aged_30(self) -> None:
         """No age-27 cutoff: the enrollment deadline is a data gap, not an age limit."""
         screen = self.screen_of(1)
         self.add_member(screen, "headOfHousehold", 30, monthly_income=2_000, was_in_foster_care=True)
@@ -72,7 +72,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 1)
 
-    def test_scenario_4_only_a_younger_member_was_in_foster_care(self):
+    def test_scenario_4_only_a_younger_member_was_in_foster_care(self) -> None:
         """Evaluated per member, not on the head of household."""
         screen = self.screen_of(2)
         self.add_member(screen, "headOfHousehold", 45, monthly_income=3_500, was_in_foster_care=False)
@@ -85,7 +85,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertEqual(self.member_values(e), [0, 1])
         self.assertEqual(e.value, 1)
 
-    def test_scenario_5_foster_child_by_relationship_tile_not_ticked(self):
+    def test_scenario_5_foster_child_by_relationship_tile_not_ticked(self) -> None:
         """The relationship alone qualifies; both signals aren't required."""
         screen = self.screen_of(2)
         self.add_member(screen, "headOfHousehold", 45, monthly_income=3_500, was_in_foster_care=False)
@@ -97,7 +97,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertEqual(self.eligible_flags(e), [False, True])
         self.assertEqual(e.value, 1)
 
-    def test_scenario_6_foster_parent_and_roommate_are_not_counted(self):
+    def test_scenario_6_foster_parent_and_roommate_are_not_counted(self) -> None:
         """Only the head of household is a foster youth; the foster parent and roommate aren't."""
         screen = self.screen_of(3)
         self.add_member(screen, "headOfHousehold", 19, monthly_income=1_200, was_in_foster_care=True)
@@ -110,7 +110,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertEqual(self.eligible_flags(e), [True, False, False])
         self.assertEqual(e.value, 1)
 
-    def test_scenario_7_head_lists_a_foster_parent_tile_not_ticked(self):
+    def test_scenario_7_head_lists_a_foster_parent_tile_not_ticked(self) -> None:
         """A head of household who lists a foster parent counts, without the tile."""
         screen = self.screen_of(2)
         self.add_member(screen, "headOfHousehold", 18, monthly_income=900, was_in_foster_care=False)
@@ -124,7 +124,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
 
     # --- edges beyond the scenarios ---
 
-    def test_each_eligible_member_gets_the_sentinel(self):
+    def test_each_eligible_member_gets_the_sentinel(self) -> None:
         screen = self.screen_of(3)
         self.add_member(screen, "headOfHousehold", 24, was_in_foster_care=True)
         self.add_member(screen, "fosterChild", 15, was_in_foster_care=False)
@@ -135,7 +135,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertEqual(self.member_values(e), [1, 1, 1])
         self.assertEqual(e.value, 3)
 
-    def test_foster_parent_branch_qualifies_only_the_head(self):
+    def test_foster_parent_branch_qualifies_only_the_head(self) -> None:
         """Relationships are relative to the head, so a listed foster parent says nothing about a roommate.
 
         Neither member ticked the tile, so the head qualifies through this branch alone.
@@ -150,7 +150,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
         self.assertEqual(self.eligible_flags(e), [True, False, False])
         self.assertEqual(e.value, 1)
 
-    def test_unanswered_foster_care_tile_reads_as_no(self):
+    def test_unanswered_foster_care_tile_reads_as_no(self) -> None:
         """The tile isn't a reported-missing field, so a null answer must not qualify anyone."""
         screen = self.screen_of(1)
         self.add_member(screen, "headOfHousehold", 19, was_in_foster_care=None)
@@ -159,7 +159,7 @@ class TestTxTuitionWaiver(CustomCalculatorTestCase):
 
         self.assertFalse(e.eligible)
 
-    def test_missing_relationship_skips_the_program(self):
+    def test_missing_relationship_skips_the_program(self) -> None:
         screen = self.screen_of(1)
         self.add_member(screen, "headOfHousehold", 19, was_in_foster_care=True)
 
