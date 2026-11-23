@@ -1,8 +1,11 @@
 """Tests for the contact payload that HubSpotIntegration sends to HubSpot."""
 
+import json
 from typing import Optional
+from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
+from hubspot.crm.contacts.exceptions import ApiException
 
 from authentication.models import User
 from integrations.services.cms_integration import TxHubSpotIntegration
@@ -42,3 +45,33 @@ class TestHubSpotContactData(SimpleTestCase):
 
         self.assertNotIn("phone", contact)
         self.assertNotIn("None", contact.values())
+
+
+class TestHubSpotAddOwner(SimpleTestCase):
+    def _integration(self) -> TxHubSpotIntegration:
+        user = User(first_name="Test", last_name="User", email="test@example.com", send_offers=True)
+        return TxHubSpotIntegration(user, Screen())
+
+    def test_new_contact_is_created_with_the_state_owner(self) -> None:
+        integration = self._integration()
+
+        with patch.object(integration, "_create_contact", return_value=MagicMock(id="123")) as create:
+            integration.add()
+
+        self.assertEqual(create.call_args.args[0]["hubspot_owner_id"], TxHubSpotIntegration.OWNER_ID)
+
+    def test_conflict_update_does_not_overwrite_the_existing_owner(self) -> None:
+        integration = self._integration()
+        conflict = ApiException(status=409, reason="Conflict")
+        conflict.body = json.dumps({"category": "CONFLICT", "message": "Contact already exists. Existing ID: 456"})
+
+        with (
+            patch.object(integration, "_create_contact", side_effect=conflict),
+            patch.object(integration, "_update_contact") as update,
+        ):
+            contact_id = integration.add()
+
+        self.assertEqual(contact_id, "456")
+        update_data = update.call_args.args[1]
+        self.assertNotIn("hubspot_owner_id", update_data)
+        self.assertEqual(update_data["email"], "test@example.com")

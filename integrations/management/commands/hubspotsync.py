@@ -60,7 +60,9 @@ class Command(BaseCommand):
                     user.anonomize(hubspot_id)
                     status["completed"].append((user.id, hubspot_id))
                 except Exception as e:
-                    status["failed"].append((user.id, str(e)))
+                    # Record only the exception type. HubSpot's error text can include the
+                    # rejected value (for example an email address), which must not reach output.
+                    status["failed"].append((user.id, type(e).__name__))
 
             # Delay to prevent hitting rate limit of 100 req per 10 seconds
             time.sleep(0.2)

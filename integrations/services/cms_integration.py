@@ -82,7 +82,10 @@ class HubSpotIntegration(CmsIntegration):
             http_body = json.loads(e.body)
             if http_body.get("category") == "CONFLICT":
                 contact_id = self._get_conflict_contact_id(e)
-                self._update_contact(contact_id, data)
+                # The owner is only a default for new contacts. Leave it off the update so a
+                # repeat sign-up does not take back a contact someone has since reassigned.
+                update_data = {k: v for k, v in data.items() if k != "hubspot_owner_id"}
+                self._update_contact(contact_id, update_data)
             else:
                 raise e
 
