@@ -488,6 +488,57 @@ class TestSchoolMealsAndCsfpIncome(PayloadConflictTestBase):
         self.assertEqual(plan.unexpected_conflicts, [])
 
 
+class TestCsfpNewIncomeVariablesAreVersionGated(PayloadConflictTestBase):
+    """PE 2.145.6 reads CSFP income from `csfp_countable_income` (TX: `tx_dta_...`). They are
+    sent from that version with the old field's value, and never below it, where an unknown
+    variable would 400 the request."""
+
+    def setUp(self):
+        super().setUp()
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="workersComp", amount=250, frequency="monthly"
+        )
+
+    def spm_unit(self, comparable_version):
+        plan = build_pe_input(
+            self.screen,
+            [
+                fake_program(
+                    "tx_csfp",
+                    [
+                        dependency.spm.CsfpCountableIncomeDependency,
+                        dependency.spm.CsfpCountableIncomeV2Dependency,
+                        dependency.spm.TxDtaCsfpCountableIncomeDependency,
+                    ],
+                )
+            ],
+            resolved_version=("current", comparable_version),
+        )
+        self.assertEqual(plan.unexpected_conflicts, [])
+        self.assertEqual(len(plan.buckets), 1)
+        return plan.payload["household"]["spm_units"]["spm_unit"]
+
+    def test_not_sent_below_2_145_6(self):
+        unit = self.spm_unit((2, 116, 16))
+
+        self.assertNotIn("csfp_countable_income", unit)
+        self.assertNotIn("tx_dta_csfp_countable_income", unit)
+        self.assertEqual(unit["school_meal_countable_income"], {PERIOD: 3000})
+
+    def test_not_sent_when_the_version_is_unresolvable(self):
+        unit = self.spm_unit(None)
+
+        self.assertNotIn("csfp_countable_income", unit)
+        self.assertNotIn("tx_dta_csfp_countable_income", unit)
+
+    def test_sent_from_2_145_6_with_the_old_fields_value(self):
+        unit = self.spm_unit((2, 145, 6))
+
+        self.assertEqual(unit["csfp_countable_income"], {PERIOD: 3000})
+        self.assertEqual(unit["tx_dta_csfp_countable_income"], {PERIOD: 3000})
+        self.assertEqual(unit["school_meal_countable_income"], {PERIOD: 3000})
+
+
 class TestTheWriteInvariant(PayloadConflictTestBase):
     """`_values_for` is the assertion that partitioning worked. It is unreachable through
     `build_pe_input`; a raise from it would mean the partition handed one request two values

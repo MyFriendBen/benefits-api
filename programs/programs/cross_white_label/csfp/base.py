@@ -20,5 +20,7 @@ class CommoditySupplementalFoodProgram(PolicyEngineMembersCalculator):
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.spm.CsfpCountableIncomeDependency,
+        # PE 2.145.6+ reads CSFP income from this instead; gated by min_pe_version.
+        dependency.spm.CsfpCountableIncomeV2Dependency,
     ]
     pe_outputs = [dependency.member.CommoditySupplementalFoodProgram]
