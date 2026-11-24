@@ -181,10 +181,7 @@ class TestNjMedicaidClass(SimpleTestCase):
 
 
 class TestNjMedicaidScenarios(PeIntegrationTestCase):
-    """The NJ spec's Test Scenarios, at PolicyEngine ``pe_version``."""
-
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
+    """The NJ spec's Test Scenarios, at this module's PolicyEngine pin (``PE_VERSION``)."""
 
     def member_values(self, number: int) -> dict[int, float]:
         """Each eligible member's annual value for one scenario's household."""

@@ -1,4 +1,4 @@
-"""Tests for the pure parts of record_and_diff: the scenario diff and the override rewrite."""
+"""Tests for the pure parts of record_and_diff: the scenario diff, the override rewrite and the pin check."""
 
 import ast
 import importlib.util
@@ -27,13 +27,17 @@ from programs.management.commands.record_and_diff import (
     Outcome,
     add_override,
     adopt,
+    class_level_pins,
     classify_scenario,
     diff_captures,
     format_rewrite,
     load_capture,
     module_classes,
+    pe_test_files,
     remove_override,
+    require_module_level_pins,
     resolve_version,
+    unreadable_module_pins,
 )
 
 
@@ -219,6 +223,45 @@ class TestAdopt(SimpleTestCase):
 
         write_text.assert_not_called()
 
+    def _adopt_one(self, source: str, target: str) -> tuple[dict[str, list[str]], str, Path]:
+        """Adopt ``target`` for one unchanged module written with ``source``; return the result and its file."""
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            module = root_path / MODULE
+            module.parent.mkdir(parents=True)
+            module.write_text(source)
+            recorded = root_path / "recorded" / Path(MODULE).parent / "cassettes"
+            recorded.mkdir(parents=True)
+            (recorded / "TestA.test_one.yaml").write_text("recorded at the target")
+            diff = {"target_version": target, "modules": {MODULE: {"status": UNCHANGED}}}
+
+            with patch(f"{adopt.__module__}.REPO_ROOT", root_path):
+                result = adopt(diff, root_path / "recorded", target)
+
+            copied = module.parent / "cassettes" / "TestA.test_one.yaml"
+            return result, module.read_text(), copied if copied.exists() else Path()
+
+    def test_keeps_a_pin_newer_than_the_target(self) -> None:
+        source = (
+            'PE_VERSION = "2.145.6"\nPE_VERSION_REASON = "frontier input"\n\n\n'
+            "class TestA(PeIntegrationTestCase):\n    pass\n"
+        )
+
+        result, after, copied = self._adopt_one(source, "2.130.0")
+
+        self.assertEqual(result["ahead"], [MODULE])
+        self.assertEqual(result["adopted"], [])
+        self.assertEqual(after, source)
+        self.assertEqual(copied, Path())
+
+    @skipUnless(importlib.util.find_spec("black"), "black isn't installed")
+    def test_removes_a_pin_older_than_the_target(self) -> None:
+        result, after, copied = self._adopt_one(OVERRIDDEN, "2.130.0")
+
+        self.assertEqual(result["adopted"], [MODULE])
+        self.assertNotIn("PE_VERSION", after)
+        self.assertNotEqual(copied, Path())
+
 
 class TestFormatRewrite(SimpleTestCase):
     # black is in requirements-dev.txt, which CI's test step doesn't install.
@@ -246,22 +289,17 @@ YEAR = "2026"
 class TestA(PeIntegrationTestCase):
     """Class docstring."""
 
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
-
     def test_one(self):
         pass
 
 
 class TestB(PeIntegrationTestCase):
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
     screen_id = 1
 '''
 
 
 class TestOverrideRewrite(SimpleTestCase):
-    def test_remove_strips_the_pin_reason_and_class_attributes(self) -> None:
+    def test_remove_strips_the_pin_and_its_reason(self) -> None:
         source = remove_override(OVERRIDDEN)
 
         self.assertNotIn("PE_VERSION", source)
@@ -278,27 +316,81 @@ class TestOverrideRewrite(SimpleTestCase):
         ast.parse(pinned)
         self.assertIn('PE_VERSION = "2.9.0"', pinned)
         self.assertIn('PE_VERSION_REASON = "held for review"', pinned)
-        self.assertEqual(pinned.count("    pe_version = PE_VERSION\n"), 2)
-        self.assertEqual(pinned.count("    pe_version_reason = PE_VERSION_REASON\n"), 2)
-        # The docstring stays the first statement of the class.
-        class_a = next(node for node in ast.parse(pinned).body if getattr(node, "name", "") == "TestA")
-        self.assertEqual(ast.get_docstring(class_a), "Class docstring.")
+        self.assertEqual(class_level_pins(pinned), [])
         self.assertNotIn("PE_VERSION", remove_override(pinned))
 
-    def test_add_puts_attributes_above_a_decorated_first_method(self) -> None:
-        source = (
-            "from harness import PeIntegrationTestCase\n"
-            "from unittest.mock import patch\n\n\n"
-            "class TestA(PeIntegrationTestCase):\n"
-            "    @patch('x.y')\n"
-            "    def test_one(self, y):\n"
-            "        pass\n"
-        )
+    def test_add_leaves_the_classes_alone(self) -> None:
+        bare = remove_override(OVERRIDDEN)
 
-        pinned = add_override(source, "2.9.0", "held for review")
+        pinned = add_override(bare, "2.9.0", "held for review")
 
-        ast.parse(pinned)
-        self.assertIn("    pe_version_reason = PE_VERSION_REASON\n    @patch('x.y')\n    def test_one", pinned)
+        self.assertEqual(pinned.split("class TestA")[1], bare.split("class TestA")[1])
 
     def test_module_classes(self) -> None:
         self.assertEqual(module_classes(OVERRIDDEN), ["TestA", "TestB"])
+
+
+class TestClassLevelPins(SimpleTestCase):
+    def test_module_constants_are_not_class_level_pins(self) -> None:
+        self.assertEqual(class_level_pins(OVERRIDDEN), [])
+
+    def test_finds_hardcoded_and_constant_class_pins(self) -> None:
+        source = (
+            "PE_VERSION = '2.9.0'\n\n\n"
+            "class TestA(PeIntegrationTestCase):\n"
+            "    pe_version = '2.145.6'\n"
+            "    pe_version_reason: str = 'frontier'\n\n\n"
+            "class TestB(PeIntegrationTestCase):\n"
+            "    pe_version = PE_VERSION\n"
+        )
+
+        self.assertEqual(
+            class_level_pins(source),
+            ["TestA.pe_version (line 5)", "TestA.pe_version_reason (line 6)", "TestB.pe_version (line 10)"],
+        )
+
+    def test_require_names_each_offending_module(self) -> None:
+        sources = {
+            "a/test_a.py": "class TestA(PeIntegrationTestCase):\n    pe_version = '2.145.6'\n",
+            "b/test_b.py": OVERRIDDEN,
+        }
+
+        with patch.object(Path, "read_text", lambda path: sources[str(path.relative_to(REPO_ROOT))]):
+            with self.assertRaisesMessage(CommandError, "a/test_a.py: TestA.pe_version (line 2) sets") as raised:
+                require_module_level_pins(list(sources))
+
+        self.assertNotIn("b/test_b.py", str(raised.exception))
+
+    def test_the_rewritable_layout_is_readable(self) -> None:
+        self.assertEqual(unreadable_module_pins(OVERRIDDEN), [])
+        self.assertEqual(unreadable_module_pins('PE_VERSION = "2.9.0"\nPE_VERSION_REASON = "held"\n'), [])
+
+    def test_flags_module_pins_adoption_cannot_rewrite(self) -> None:
+        cases = {
+            'PE_VERSION: str = "2.94.7"\n': "PE_VERSION (line 1) isn't in the form",
+            'PE_VERSION = "2.94.7"  # held\n': "PE_VERSION (line 1) isn't in the form",
+            'PE_VERSION = "2.9.0"\nPE_VERSION_REASON: str = "held"\n': "PE_VERSION_REASON (line 2) isn't in the form",
+            'PE_VERSION_REASON = "a" + "b"\n': "PE_VERSION_REASON (line 1) isn't in the form",
+            "from elsewhere import PE_VERSION\n": "PE_VERSION is imported (line 1)",
+            'PE_VERSION = "2.9.0"\nPE_VERSION = "2.10.0"\n': "PE_VERSION is set twice (line 2)",
+            'if True:\n    PE_VERSION = "2.94.7"\n': "PE_VERSION is set inside a block (line 2)",
+            "try:\n    from elsewhere import PE_VERSION_REASON\nexcept ImportError:\n    pass\n": (
+                "PE_VERSION_REASON is imported inside a block (line 2)"
+            ),
+        }
+
+        for source, problem in cases.items():
+            with self.subTest(source=source):
+                found = unreadable_module_pins(source)
+                self.assertEqual(len(found), 1)
+                self.assertIn(problem, found[0])
+
+    def test_require_names_an_unreadable_module_pin(self) -> None:
+        sources = {"a/test_a.py": 'PE_VERSION = "2.94.7"  # held\n'}
+
+        with patch.object(Path, "read_text", lambda path: sources[str(path.relative_to(REPO_ROOT))]):
+            with self.assertRaisesMessage(CommandError, "a/test_a.py: PE_VERSION (line 1)"):
+                require_module_level_pins(list(sources))
+
+    def test_require_passes_the_repo_as_committed(self) -> None:
+        require_module_level_pins(pe_test_files())

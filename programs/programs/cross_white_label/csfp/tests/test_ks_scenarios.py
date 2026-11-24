@@ -24,6 +24,12 @@ from programs.programs.testing_fixtures.pe_integration import (
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
+PE_VERSION = "2.145.6"
+PE_VERSION_REASON = (
+    "Recorded at PolicyEngine frontier so the csfp_countable_income input, sent from 2.145.6, is "
+    "exercised. Remove PE_VERSION and this reason once PE_TEST_VERSION reaches 2.145.6."
+)
+
 YEAR = "2026"
 
 # gov.usda.csfp.amount for 2026, per qualifying individual.
@@ -42,13 +48,6 @@ CURRENT_BENEFIT_ROWS = {
 
 @pytest.mark.integration
 class TestKsCsfpScenarios(PeIntegrationTestCase):
-    # Recorded at PE's frontier so the new csfp_countable_income input is exercised.
-    pe_version = "2.145.6"
-    pe_version_reason = (
-        "MFB-2564: verify CSFP sends csfp_countable_income at the version PE switches to; "
-        "drop both lines once the suite pin reaches 2.145.6"
-    )
-
     def build(self, screen_id, household_size, location=SEDGWICK):
         zipcode, county = location
         # make_screen creates the white label; make_program looks it up, so it runs second.

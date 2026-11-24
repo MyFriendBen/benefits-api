@@ -40,9 +40,6 @@ CLAIM_YEAR = 2025
 class MoPtsScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is Cole County, ZIP 65101."""
 
-    pe_version = PE_VERSION
-    pe_version_reason = PE_VERSION_REASON
-
     # Distinct per subclass so each scenario's cassette pins its own household.
     screen_id = 0
     tax_year = "2025"
