@@ -14,5 +14,6 @@ class TxCsfp(CommoditySupplementalFoodProgram):
 
     pe_inputs = [
         *CommoditySupplementalFoodProgram.pe_inputs,
+        dependency.spm.TxDtaCsfpCountableIncomeDependency,
         dependency.household.TxStateCodeDependency,
     ]
