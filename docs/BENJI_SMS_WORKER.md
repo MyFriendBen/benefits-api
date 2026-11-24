@@ -18,12 +18,26 @@ lands in MFB-2440.
 | Broker alarms | `manage.py check_benji_sms_broker`, run by Heroku Scheduler |
 | End-to-end check | `manage.py benji_sms_worker_check [--fail]` |
 
-**One queue, one job.** Everything runs on the `benji_sms` queue. `screener.benji_sms_turn`
-is the job. `screener.benji_sms_ping` is a probe that runs under the same policy so the
-check proves the path a turn takes.
+**One queue, two jobs.** Everything runs on the `benji_sms` queue.
+`screener.benji_sms_turn` answers one inbound text. `screener.benji_sms_delete_media`
+deletes the pictures of one inbound MMS at Twilio (MFB-2439): images are never kept, so
+the inbound webhook queues it for every text that carries media, whoever sent it. It is
+not behind the kill switch or the flag, and it is safe to run twice. A dead letter from it
+means that job could not confirm the deletion: check the message's media at Twilio and
+delete any that remains. A replayed webhook queues a second deletion, which may already
+have done it.
+
+For a stranger's picture (a number with no conversation) the dead letter keeps no SID,
+by design: nothing ties it to a phone. To find the message, filter Twilio's Messaging
+logs for inbound messages with media to our number around the dead letter's
+`created_at`, delete any media that remains, and record what was done on the incident
+ticket rather than in the dead letter. `screener.benji_sms_ping` is a probe that runs under
+the same policy so the check proves the path a job takes. The webhook that queues both
+jobs is described in [BENJI_SMS_INBOUND.md](BENJI_SMS_INBOUND.md).
 
 **Payloads carry ids only:** the conversation id and the inbound Twilio `MessageSid`.
-Never message text, the phone number or its hash. `enqueue_turn` refuses anything else.
+Never message text, the phone number or its hash. `enqueue_turn` and
+`enqueue_media_deletion` refuse anything else.
 
 **At least once.** Jobs are acknowledged after they run, so a turn can run twice and has
 to absorb that (MFB-2440: the SID goes to ai-service as `client_message_id`). A job comes

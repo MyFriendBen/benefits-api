@@ -19,7 +19,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from twilio.request_validator import RequestValidator
 
-# The inbound webhook arrives with MFB-2439; it should live at this path.
+# The inbound webhook (screener/benji_sms_inbound.py, MFB-2439).
 DEFAULT_PATH = "/api/assistant/sms/inbound/"
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0"})
 # 555-01xx numbers are reserved for fiction, so a fake sender is never a real person.

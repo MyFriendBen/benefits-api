@@ -1,8 +1,9 @@
 """Sentry `before_send` hook that keeps personal data out of events.
 
-Four things are covered: CESN street addresses (with the Google Places API key), the
-phone number or email sent to Save My Results (MFB-2437), Celery job arguments, and
-Twilio message SIDs (both for the Benji SMS worker, MFB-2436).
+Five things are covered: CESN street addresses (with the Google Places API key), the
+phone number or email sent to Save My Results (MFB-2437), Celery job arguments and
+Twilio message SIDs (both for the Benji SMS worker, MFB-2436), and the texts Twilio
+posts to the Benji SMS webhooks (MFB-2439).
 
 The CESN Calculate Impact page sends an address to two proxies: Places autocomplete
 (forwarded to Google with our `key`) and REM impact (forwarded to Rewiring America). Our
@@ -19,6 +20,12 @@ as the address endpoints, and their exception messages have anything shaped like
 phone number or an email address replaced: Twilio's error for a rejected number quotes
 the number, and a mail provider's can quote the address. Error codes are short enough
 to survive.
+
+Benji SMS webhooks: Twilio posts each inbound text as a form whose fields are the
+sender's phone number and the message text, and the view's locals hold both. A request
+that fails the signature check becomes a Sentry event like any other error response, and
+it may be a real text posted while our token is wrong. Events from those URLs get the
+same treatment as Save My Results.
 
 Celery jobs: Sentry's Celery integration switches itself on once Celery is installed, and
 every event raised inside a job carries the job's arguments (`extra["celery-job"]`) and the
@@ -41,6 +48,9 @@ from typing import Any
 
 ADDRESS_ENDPOINT_RE = re.compile(r"/api/(places/autocomplete|screener-options/[^/]+/rem-impact)/?$")
 CONTACT_ENDPOINT_RE = re.compile(r"/api/messages/?$")
+# The Benji SMS webhooks Twilio posts to: inbound and its fallback (MFB-2439), and
+# whatever joins them under this path (the status callback, MFB-2441).
+SMS_WEBHOOK_ENDPOINT_RE = re.compile(r"/api/assistant/sms/")
 # Nine or more digits, allowing the usual punctuation between them: long enough to
 # leave Twilio error codes (five digits) and HTTP statuses alone.
 PHONE_LIKE_RE = re.compile(r"\+?\d(?:[\s().-]*\d){8,}")
@@ -136,7 +146,8 @@ def scrub_event(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]:
 
     request = event.get("request")
     url = _strip_query(request.get("url")) if isinstance(request, dict) else None
-    if not url or not (ADDRESS_ENDPOINT_RE.search(url) or CONTACT_ENDPOINT_RE.search(url)):
+    carries_contact = bool(url) and bool(CONTACT_ENDPOINT_RE.search(url) or SMS_WEBHOOK_ENDPOINT_RE.search(url))
+    if not url or not (ADDRESS_ENDPOINT_RE.search(url) or carries_contact):
         return event
 
     request["url"] = _strip_query(request.get("url"))
@@ -144,6 +155,6 @@ def scrub_event(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]:
     request.pop("data", None)
     _drop_frame_vars(event)
     _strip_httplib_queries(event)
-    if CONTACT_ENDPOINT_RE.search(url):
+    if carries_contact:
         _redact_contact_messages(event)
     return event
