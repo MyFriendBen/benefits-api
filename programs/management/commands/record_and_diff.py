@@ -14,11 +14,14 @@ measured step rather than a manual one:
 4. **Adopt** (``--adopt`` only). Move ``PE_TEST_VERSION`` to the target, copy in the new
    cassettes of every unchanged module, and hold every changed or erroring module at the version
    it was on by giving it module-level ``PE_VERSION`` / ``PE_VERSION_REASON``. Held modules are left for a person to
-   reconcile with their spec. Refuses to adopt when every module errored: that points at the run
+   reconcile with their spec. A module pinned ahead of the target (say at ``frontier`` while
+   adopting ``current``) is left as it is, pin and cassettes. Refuses to adopt when every module errored: that points at the run
    (credentials, the PolicyEngine API), not at PolicyEngine's values.
 
-Those module constants are the only pin layout this reads and rewrites, so the command refuses to
-start while any test class sets ``pe_version`` itself (the harness rejects that too).
+Those module constants, each on the exact line ``OVERRIDE_PATTERN`` and ``remove_override`` match,
+are the only pin layout this reads and rewrites. The command refuses to start while any module pins
+another way: a test class setting ``pe_version`` (which the harness also rejects), an annotated or
+commented constant, or one imported from elsewhere.
 
 Run from the benefits-api root. Recording needs ``POLICY_ENGINE_CLIENT_ID`` and
 ``POLICY_ENGINE_CLIENT_SECRET`` in the environment or ``.env``, and a local Redis::
@@ -46,7 +49,12 @@ import requests
 from decouple import config
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
-from integrations.clients.policyengine.versions import ALIASES, PE_VERSIONS_URL, is_valid_version_number
+from integrations.clients.policyengine.versions import (
+    ALIASES,
+    PE_VERSIONS_URL,
+    is_valid_version_number,
+    to_comparable_pe_version,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PE_INTEGRATION = REPO_ROOT / "programs" / "programs" / "testing_fixtures" / "pe_integration.py"
@@ -353,18 +361,74 @@ def class_level_pins(source: str) -> list[str]:
     return found
 
 
+PIN_CONSTANTS = ("PE_VERSION", "PE_VERSION_REASON")
+
+
+def unreadable_module_pins(source: str) -> list[str]:
+    """Every module-level ``PE_VERSION`` / ``PE_VERSION_REASON`` binding adoption can't find or remove.
+
+    The harness honours any binding of those names, but ``OVERRIDE_PATTERN`` and ``remove_override``
+    match exact lines: ``PE_VERSION = "<version>"`` alone on its line, and ``PE_VERSION_REASON = ``
+    followed by a string on one line or in parentheses closing on a line of its own. Anything else
+    (an annotation, a trailing comment, an import, a second binding) would survive an adoption.
+    """
+    lines = source.splitlines()
+    found = []
+    seen: set[str] = set()
+    for node in ast.parse(source).body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            for alias in node.names:
+                name = alias.asname or alias.name
+                if name in PIN_CONSTANTS:
+                    found.append(f"{name} is imported (line {node.lineno}); set it in this module")
+            continue
+
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
+            targets = [node.target]
+        else:
+            continue
+
+        for target in targets:
+            if not (isinstance(target, ast.Name) and target.id in PIN_CONSTANTS):
+                continue
+            name = target.id
+            if name in seen:
+                found.append(f"{name} is set twice (line {node.lineno})")
+                continue
+            seen.add(name)
+
+            first = lines[node.lineno - 1]
+            if name == "PE_VERSION":
+                readable = node.end_lineno == node.lineno and OVERRIDE_PATTERN.fullmatch(first) is not None
+            else:
+                plain = isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.value, ast.Constant)
+                one_line = node.end_lineno == node.lineno and first.startswith(f"{name} = ")
+                parenthesized = first == f"{name} = (" and lines[(node.end_lineno or node.lineno) - 1] == ")"
+                readable = plain and (one_line or parenthesized)
+            if not readable:
+                found.append(f"{name} (line {node.lineno}) isn't in the form adoption rewrites")
+
+    return found
+
+
 def require_module_level_pins(files: list[str]) -> None:
-    """Refuse to start while any PolicyEngine test module pins a version in a class body."""
+    """Refuse to start while any PolicyEngine test module pins a version in a way adoption can't rewrite."""
     offenders = []
     for module in files:
-        pins = class_level_pins((REPO_ROOT / module).read_text())
-        if pins:
-            offenders.append(f"{module}: {', '.join(pins)}")
+        source = (REPO_ROOT / module).read_text()
+        problems = [f"{pin} sets a class-level pin" for pin in class_level_pins(source)] + unreadable_module_pins(
+            source
+        )
+        if problems:
+            offenders.append(f"{module}: {'; '.join(problems)}")
 
     if offenders:
         raise CommandError(
-            "These test classes pin a PolicyEngine version themselves, which adoption can't see or remove. "
-            "Move each pin to module-level PE_VERSION and PE_VERSION_REASON, then rerun:\n  " + "\n  ".join(offenders)
+            "These modules pin a PolicyEngine version in a way adoption can't see or remove. Pin only with "
+            'module-level PE_VERSION = "<version>" and PE_VERSION_REASON = "<why>" (no annotation, no trailing '
+            "comment), then rerun:\n  " + "\n  ".join(offenders)
         )
 
 
@@ -445,7 +509,8 @@ def adopt(diff: dict[str, Any], cassette_root: Path, previous_pin: str) -> dict[
             "PolicyEngine API) rather than at PolicyEngine's values. Nothing was adopted; see recorded.log."
         )
 
-    result: dict[str, list[str]] = {"adopted": [], "held": []}
+    result: dict[str, list[str]] = {"adopted": [], "held": [], "ahead": []}
+    comparable_target = to_comparable_pe_version(target)
     rewrites: dict[Path, str] = {}
 
     if target != previous_pin:
@@ -456,7 +521,16 @@ def adopt(diff: dict[str, Any], cassette_root: Path, previous_pin: str) -> dict[
     for module, info in sorted(modules.items()):
         path = REPO_ROOT / module
         source = path.read_text()
-        overridden = OVERRIDE_PATTERN.search(source) is not None
+        pin = OVERRIDE_PATTERN.search(source)
+        overridden = pin is not None
+
+        # A pin newer than the target was set on purpose to test inputs the target doesn't have yet.
+        # Unchanged values here only mean the target ignores those inputs, so moving the module back
+        # would quietly drop that coverage. It catches up once the suite pin reaches it.
+        pinned_at = to_comparable_pe_version(pin["version"]) if pin else None
+        if pinned_at and comparable_target and pinned_at > comparable_target:
+            result["ahead"].append(module)
+            continue
 
         if info["status"] == UNCHANGED:
             if overridden:

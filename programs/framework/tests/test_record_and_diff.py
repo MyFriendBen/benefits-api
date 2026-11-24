@@ -37,6 +37,7 @@ from programs.management.commands.record_and_diff import (
     remove_override,
     require_module_level_pins,
     resolve_version,
+    unreadable_module_pins,
 )
 
 
@@ -222,6 +223,45 @@ class TestAdopt(SimpleTestCase):
 
         write_text.assert_not_called()
 
+    def _adopt_one(self, source: str, target: str) -> tuple[dict[str, list[str]], str, Path]:
+        """Adopt ``target`` for one unchanged module written with ``source``; return the result and its file."""
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            module = root_path / MODULE
+            module.parent.mkdir(parents=True)
+            module.write_text(source)
+            recorded = root_path / "recorded" / Path(MODULE).parent / "cassettes"
+            recorded.mkdir(parents=True)
+            (recorded / "TestA.test_one.yaml").write_text("recorded at the target")
+            diff = {"target_version": target, "modules": {MODULE: {"status": UNCHANGED}}}
+
+            with patch(f"{adopt.__module__}.REPO_ROOT", root_path):
+                result = adopt(diff, root_path / "recorded", target)
+
+            copied = module.parent / "cassettes" / "TestA.test_one.yaml"
+            return result, module.read_text(), copied if copied.exists() else Path()
+
+    def test_keeps_a_pin_newer_than_the_target(self) -> None:
+        source = (
+            'PE_VERSION = "2.145.6"\nPE_VERSION_REASON = "frontier input"\n\n\n'
+            "class TestA(PeIntegrationTestCase):\n    pass\n"
+        )
+
+        result, after, copied = self._adopt_one(source, "2.130.0")
+
+        self.assertEqual(result["ahead"], [MODULE])
+        self.assertEqual(result["adopted"], [])
+        self.assertEqual(after, source)
+        self.assertEqual(copied, Path())
+
+    @skipUnless(importlib.util.find_spec("black"), "black isn't installed")
+    def test_removes_a_pin_older_than_the_target(self) -> None:
+        result, after, copied = self._adopt_one(OVERRIDDEN, "2.130.0")
+
+        self.assertEqual(result["adopted"], [MODULE])
+        self.assertNotIn("PE_VERSION", after)
+        self.assertNotEqual(copied, Path())
+
 
 class TestFormatRewrite(SimpleTestCase):
     # black is in requirements-dev.txt, which CI's test step doesn't install.
@@ -316,10 +356,37 @@ class TestClassLevelPins(SimpleTestCase):
         }
 
         with patch.object(Path, "read_text", lambda path: sources[str(path.relative_to(REPO_ROOT))]):
-            with self.assertRaisesMessage(CommandError, "a/test_a.py: TestA.pe_version (line 2)") as raised:
+            with self.assertRaisesMessage(CommandError, "a/test_a.py: TestA.pe_version (line 2) sets") as raised:
                 require_module_level_pins(list(sources))
 
         self.assertNotIn("b/test_b.py", str(raised.exception))
+
+    def test_the_rewritable_layout_is_readable(self) -> None:
+        self.assertEqual(unreadable_module_pins(OVERRIDDEN), [])
+        self.assertEqual(unreadable_module_pins('PE_VERSION = "2.9.0"\nPE_VERSION_REASON = "held"\n'), [])
+
+    def test_flags_module_pins_adoption_cannot_rewrite(self) -> None:
+        cases = {
+            'PE_VERSION: str = "2.94.7"\n': "PE_VERSION (line 1) isn't in the form",
+            'PE_VERSION = "2.94.7"  # held\n': "PE_VERSION (line 1) isn't in the form",
+            'PE_VERSION = "2.9.0"\nPE_VERSION_REASON: str = "held"\n': "PE_VERSION_REASON (line 2) isn't in the form",
+            'PE_VERSION_REASON = "a" + "b"\n': "PE_VERSION_REASON (line 1) isn't in the form",
+            "from elsewhere import PE_VERSION\n": "PE_VERSION is imported (line 1)",
+            'PE_VERSION = "2.9.0"\nPE_VERSION = "2.10.0"\n': "PE_VERSION is set twice (line 2)",
+        }
+
+        for source, problem in cases.items():
+            with self.subTest(source=source):
+                found = unreadable_module_pins(source)
+                self.assertEqual(len(found), 1)
+                self.assertIn(problem, found[0])
+
+    def test_require_names_an_unreadable_module_pin(self) -> None:
+        sources = {"a/test_a.py": 'PE_VERSION = "2.94.7"  # held\n'}
+
+        with patch.object(Path, "read_text", lambda path: sources[str(path.relative_to(REPO_ROOT))]):
+            with self.assertRaisesMessage(CommandError, "a/test_a.py: PE_VERSION (line 1)"):
+                require_module_level_pins(list(sources))
 
     def test_require_passes_the_repo_as_committed(self) -> None:
         require_module_level_pins(pe_test_files())
