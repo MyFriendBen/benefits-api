@@ -370,12 +370,14 @@ def unreadable_module_pins(source: str) -> list[str]:
     The harness honours any binding of those names, but ``OVERRIDE_PATTERN`` and ``remove_override``
     match exact lines: ``PE_VERSION = "<version>"`` alone on its line, and ``PE_VERSION_REASON = ``
     followed by a string on one line or in parentheses closing on a line of its own. Anything else
-    (an annotation, a trailing comment, an import, a second binding) would survive an adoption.
+    (an annotation, a trailing comment, an import, a second binding, a binding inside a block)
+    would survive an adoption.
     """
+    tree = ast.parse(source)
     lines = source.splitlines()
     found = []
     seen: set[str] = set()
-    for node in ast.parse(source).body:
+    for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             for alias in node.names:
                 name = alias.asname or alias.name
@@ -409,6 +411,15 @@ def unreadable_module_pins(source: str) -> list[str]:
                 readable = plain and (one_line or parenthesized)
             if not readable:
                 found.append(f"{name} (line {node.lineno}) isn't in the form adoption rewrites")
+
+    # Any other binding sits inside a block (if, try, with, a function...), which the line rewrites miss.
+    simple = (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.Import, ast.ImportFrom)
+    for block in (node for node in tree.body if not isinstance(node, simple)):
+        for child in ast.walk(block):
+            if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store) and child.id in PIN_CONSTANTS:
+                found.append(f"{child.id} is set inside a block (line {child.lineno}); set it at module level")
+            elif isinstance(child, ast.alias) and (child.asname or child.name) in PIN_CONSTANTS:
+                found.append(f"{child.asname or child.name} is imported inside a block (line {child.lineno})")
 
     return found
 

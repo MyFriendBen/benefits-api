@@ -373,6 +373,10 @@ class TestClassLevelPins(SimpleTestCase):
             'PE_VERSION_REASON = "a" + "b"\n': "PE_VERSION_REASON (line 1) isn't in the form",
             "from elsewhere import PE_VERSION\n": "PE_VERSION is imported (line 1)",
             'PE_VERSION = "2.9.0"\nPE_VERSION = "2.10.0"\n': "PE_VERSION is set twice (line 2)",
+            'if True:\n    PE_VERSION = "2.94.7"\n': "PE_VERSION is set inside a block (line 2)",
+            "try:\n    from elsewhere import PE_VERSION_REASON\nexcept ImportError:\n    pass\n": (
+                "PE_VERSION_REASON is imported inside a block (line 2)"
+            ),
         }
 
         for source, problem in cases.items():
