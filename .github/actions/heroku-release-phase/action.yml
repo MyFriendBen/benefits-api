@@ -1,0 +1,68 @@
+name: 'Wait for Heroku Release Phase'
+description: >-
+  Waits for the release phase (bin/release.sh: migrate, sync_fpl_values, sync_feature_flags,
+  add_config) of the release this deploy created, and fails if it failed. Heroku boots no dyno on a
+  release until its release phase succeeds, so a failure here means the previous release is still serving.
+
+inputs:
+  heroku-api-key:
+    description: 'Heroku API key'
+    required: true
+  heroku-app-name:
+    description: 'Heroku application name'
+    required: true
+  timeout-seconds:
+    description: 'How long to wait for the release phase to finish'
+    required: false
+    default: '1200'
+
+outputs:
+  release-version:
+    description: 'The Heroku release version this deploy created'
+    value: ${{ steps.wait.outputs.version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Wait for the release phase
+      id: wait
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+        APP: ${{ inputs.heroku-app-name }}
+        TIMEOUT: ${{ inputs.timeout-seconds }}
+      run: |
+        # A git deploy's release is described "Deploy <first 8 characters of the SHA>". Matching on it
+        # finds this deploy's release even if a config var change created another one meanwhile.
+        DESCRIPTION="Deploy $(git rev-parse HEAD | cut -c1-8)"
+        echo "Waiting for the release described '${DESCRIPTION}' on ${APP}..."
+
+        DEADLINE=$(( $(date +%s) + TIMEOUT ))
+        while true; do
+          RELEASE=$(heroku releases -a "$APP" -n 10 --json \
+            | jq -c --arg d "$DESCRIPTION" '[.[] | select(.description == $d)] | first // empty')
+
+          if [ -n "$RELEASE" ]; then
+            VERSION=$(echo "$RELEASE" | jq -r '.version')
+            STATUS=$(echo "$RELEASE" | jq -r '.status')
+            echo "Release v${VERSION}: ${STATUS}"
+
+            if [ "$STATUS" = "succeeded" ]; then
+              echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+              heroku releases:output "$VERSION" -a "$APP" || true
+              exit 0
+            fi
+            if [ "$STATUS" = "failed" ]; then
+              echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+              echo "::error::The release phase of v${VERSION} failed. Heroku did not deploy it; the previous release is still serving."
+              heroku releases:output "$VERSION" -a "$APP" || true
+              exit 1
+            fi
+          fi
+
+          if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+            echo "::error::No finished release '${DESCRIPTION}' after ${TIMEOUT}s. Check: heroku releases -a ${APP}"
+            exit 1
+          fi
+          sleep 10
+        done

@@ -22,9 +22,10 @@ All composite actions are located in `.github/actions/`:
 1. **setup-python-django** - Sets up Python 3.12 with pip caching and installs dependencies from `requirements.txt`
 2. **run-django-checks** - Runs Django system checks, fails on missing or conflicting migrations (`python manage.py check_migrations`), and applies the migrations
 3. **deploy-to-heroku** - Installs Heroku CLI and deploys using `akhileshns/heroku-deploy@v3.14.15`
-4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config)
-5. **slack-notify** - Sends deployment notifications with status (success/failure/in-progress/completed-with-warnings)
-6. **run-tests** - Configurable test execution with VCR modes and optional Codecov upload
+4. **heroku-release-phase** - Waits for the Heroku release phase of this deploy's release (`bin/release.sh`: migrations, FPL and feature-flag syncs, `add_config`) and fails if it failed. See [Release phase](#release-phase-migrations-and-config-run-before-the-new-code)
+5. **heroku-vintage-audit** - Reports program FPL vintages that disagree with `programs/vintage.py` (report-only)
+6. **slack-notify** - Sends deployment notifications with status (success/failure/in-progress/completed-with-warnings)
+7. **run-tests** - Configurable test execution with VCR modes and optional Codecov upload
 
 ### Benefits
 
@@ -135,8 +136,8 @@ gh workflow view "Deploy to Staging"
 1. **Tests run** - Full test suite with pytest (VCR `new_episodes` mode - uses cached API responses)
 2. **Linting checks** - Code formatting validated with Black (line-length = 120)
 3. **Code deploys to Heroku Staging** (only if tests pass)
-4. Database migrations run (`python manage.py migrate`)
-5. Configurations are added (`python manage.py add_config --all`)
+4. **Release phase** runs `bin/release.sh` on the new code: migrations, FPL and feature-flag syncs, `add_config --all`. The new code takes traffic only if it succeeds ([Release phase](#release-phase-migrations-and-config-run-before-the-new-code))
+5. Program vintage audit (report-only)
 6. Slack notification sent on failure only
 
 **Important**: Deployment will NOT proceed if tests or linting fail. Fix the issues and push again.
@@ -212,8 +213,8 @@ When you create a draft release, the following automated process begins:
 #### Stage 2: Production Deployment (runs when you manually publish)
 1. **You click "Publish release"** in GitHub UI (after reviewing test results)
 2. **Code deployment** - Exact code from the release tag is deployed to Heroku Production (30-minute timeout)
-3. **Database migrations** - `python manage.py migrate`
-4. **Configuration updates** - `python manage.py add_config --all`
+3. **Release phase** - `bin/release.sh` runs on the new code before it takes traffic: migrations, FPL and feature-flag syncs, `add_config --all`. If any of it fails, Heroku doesn't deploy the release, the previous release keeps serving, and the workflow fails ([Release phase](#release-phase-migrations-and-config-run-before-the-new-code))
+4. **Program vintage audit** and **PolicyEngine version pin check**
 5. **Sync translations** - Export from production → Validate JSON → Save to `mfb-translations` repo → Import to staging
 6. **Slack notifications** - Status updates sent to team at each stage (in-progress, success/warnings, or failure)
 
@@ -425,6 +426,34 @@ gh pr merge --squash
 ### Future Improvement: Feature Flags
 
 **Planned Enhancement**: We plan to implement feature flagging to ensure `main` is always production-ready. This will eliminate Scenario 2 by allowing incomplete features to be merged to `main` behind feature flags, ensuring emergency hotfixes can always follow the standard workflow.
+
+---
+
+## Release phase: migrations and config run before the new code
+
+The `Procfile`'s `release: bash bin/release.sh` runs on every new release, on the new code, in a one-off dyno:
+
+1. `python manage.py migrate --noinput`
+2. `python manage.py sync_fpl_values`
+3. `python manage.py sync_feature_flags`
+4. `python manage.py add_config --all`
+
+Heroku boots no dyno on a release until its release phase succeeds. So the new code never serves a request before its migrations and config are in place, and the deploy workflows wait for it (the **Wait for release phase** step).
+
+**If it fails**, Heroku doesn't deploy the release: the previous release keeps serving, Heroku sends an email, and the workflow fails with the output. A broken `add_config` fails the release too. Fix the code and deploy again, or run `heroku releases:retry -a <app>` if the cause was external. See the output with `heroku releases:output <version> -a <app>`.
+
+**Migrations must work with the code that's already live.** The release phase runs while the previous release is still serving (and with preboot, old and new code overlap for up to 3 minutes after it). So:
+
+- Add new columns as nullable, or with a database default.
+- Don't rename or drop a column the live code still reads in the same release. Stop reading it in one release, then drop it in a later one.
+- Data migrations must leave data the live code can still use.
+
+**Heroku also runs the release phase on**:
+
+- **Config var changes** (`heroku config:set`). Every command is idempotent, so this re-runs them harmlessly, but the change takes about a minute longer to apply. If the release phase fails, the config var stays changed but the release isn't deployed.
+- **Rollbacks** (`heroku rollback`). The old code's `bin/release.sh` runs. Its `migrate` leaves newer migrations applied (it doesn't reverse them), and its `add_config` writes the old config back.
+
+The release phase has a 1-hour timeout that can't be extended. A data migration that walks a large table needs to fit in it.
 
 ---
 

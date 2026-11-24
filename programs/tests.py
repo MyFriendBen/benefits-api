@@ -120,8 +120,8 @@ class FederalPovertyLimitValueTests(TestCase):
     These verify that sync_fpl_values() produces a table matching get_limit().
     They deliberately do NOT claim to catch a given environment drifting out of
     sync -- CI builds a fresh database and syncs it here, so it can never observe
-    prod's state. Keeping prod current is the deploy hook's job (see the Sync FPL
-    values step in .github/actions/heroku-migrations), with
+    prod's state. Keeping prod current is the deploy's job (`sync_fpl_values` in
+    bin/release.sh, Heroku's release phase), with
     `sync_fpl_values --dry-run` available as a drift check that exits non-zero.
 
     setUp syncs rather than relying on migration 0173: pytest.ini runs with
