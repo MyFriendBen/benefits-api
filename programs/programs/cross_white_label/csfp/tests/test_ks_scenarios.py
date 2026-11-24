@@ -42,6 +42,13 @@ CURRENT_BENEFIT_ROWS = {
 
 @pytest.mark.integration
 class TestKsCsfpScenarios(PeIntegrationTestCase):
+    # Recorded at PE's frontier so the new csfp_countable_income input is exercised.
+    pe_version = "2.145.6"
+    pe_version_reason = (
+        "MFB-2564: verify CSFP sends csfp_countable_income at the version PE switches to; "
+        "drop both lines once the suite pin reaches 2.145.6"
+    )
+
     def build(self, screen_id, household_size, location=SEDGWICK):
         zipcode, county = location
         # make_screen creates the white label; make_program looks it up, so it runs second.

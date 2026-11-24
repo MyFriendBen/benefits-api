@@ -4,8 +4,8 @@ interactions:
       {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["1701"]}}, "families":
       {"family": {"members": ["1701"]}}, "households": {"household": {"members": ["1701"],
       "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1701"],
-      "school_meal_countable_income": {"2026": 18000.0}}}, "marital_units": {}}, "version":
-      "2.116.16"}'
+      "school_meal_countable_income": {"2026": 18000.0}, "csfp_countable_income":
+      {"2026": 18000.0}}}, "marital_units": {}}, "version": "2.145.6"}'
     headers:
       Accept:
       - '*/*'
@@ -14,7 +14,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '442'
+      - '485'
       Content-Type:
       - application/json
       User-Agent:
@@ -28,27 +28,28 @@ interactions:
         {"main_tax_unit": {"members": ["1701"]}}, "families": {"family": {"members":
         ["1701"]}}, "households": {"household": {"members": ["1701"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1701"], "school_meal_countable_income":
-        {"2026": 18000.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.116.16", "data_version": null, "dataset": null}}'
+        {"2026": 18000.0}, "csfp_countable_income": {"2026": 18000.0}}}, "marital_units":
+        {}}, "policyengine_bundle": {"model_version": "2.145.6", "data_version": null,
+        "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '543'
+      - '586'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Thu, 19 Nov 2026 18:40:36 GMT
+      - Mon, 23 Nov 2026 23:57:27 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-f2e819e3abe47e0fd05d71d767aa84ef-1b060995853cb609-01
+      - 00-04e50dcaf101f02cbb2a8393f6b69d1d-38798ce936a63c01-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - f2e819e3abe47e0fd05d71d767aa84ef;o=1
+      - 04e50dcaf101f02cbb2a8393f6b69d1d
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -56,9 +57,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 57214028-a05d-4f14-8840-ced43392dc7d
+      - 51ef1e4f-712d-472c-9a86-bc8af8dfdb03
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK
