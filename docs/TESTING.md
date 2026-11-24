@@ -222,7 +222,7 @@ curl -s https://household.api.policyengine.org/versions/us
 
 ### Refreshing after PolicyEngine moves
 
-A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: bump `PE_TEST_VERSION`, delete the affected cassettes, re-run step 1, and review the value diff. A module that can't move yet keeps its cassettes by setting module-level `PE_VERSION` to its old version and `PE_VERSION_REASON` to why; delete both once it is re-recorded. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
+A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: bump `PE_TEST_VERSION`, delete the affected cassettes, re-run step 1, and review the value diff. A module that can't move yet keeps its cassettes by setting module-level `PE_VERSION` to its old version and `PE_VERSION_REASON` to why. When it can move, delete both *before* re-recording it, so step 1 records at the bumped `PE_TEST_VERSION` rather than the old pin. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
 
 Re-recording and adopting a new PolicyEngine version are always the same act: PolicyEngine serves only what `current`/`frontier` currently resolve to, and returns `422 unsupported_version` for anything else. A cassette can never be refreshed at its original pin.
 
