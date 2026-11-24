@@ -1,6 +1,15 @@
 """Sentry `before_send` hook that keeps personal data out of events.
 
-Four things are covered: CESN street addresses (with the Google Places API key), the
+Request bodies are never sent, on any endpoint (MFB-2554). Every DRF error response becomes a
+Sentry event (`benefits.views.drf_exception_handler`), and Sentry's Django integration attaches
+the request body to it: the name, email and cell from the sign-up endpoint, household details
+from the screen endpoints. Two layers keep them out. `SENTRY_PRIVACY_OPTIONS` sets the SDK's
+`max_request_body_size` to "never", so the body is not read into the event at all, and
+`scrub_event` drops `request.data` from every event as a backstop. Nothing attaches a body
+implicitly, so one needed for debugging has to be opted in by the code that raises it, for
+example with `sentry_sdk.set_context`, one endpoint at a time.
+
+Four more things are covered: CESN street addresses (with the Google Places API key), the
 phone number or email sent to Save My Results (MFB-2437), Celery job arguments, and
 Twilio message SIDs (both for the Benji SMS worker, MFB-2436).
 
@@ -135,15 +144,24 @@ def scrub_event(event: dict[str, Any], _hint: dict[str, Any]) -> dict[str, Any]:
         _strip_celery_job(event)
 
     request = event.get("request")
+    if isinstance(request, dict):
+        request.pop("data", None)
     url = _strip_query(request.get("url")) if isinstance(request, dict) else None
     if not url or not (ADDRESS_ENDPOINT_RE.search(url) or CONTACT_ENDPOINT_RE.search(url)):
         return event
 
     request["url"] = _strip_query(request.get("url"))
     request.pop("query_string", None)
-    request.pop("data", None)
     _drop_frame_vars(event)
     _strip_httplib_queries(event)
     if CONTACT_ENDPOINT_RE.search(url):
         _redact_contact_messages(event)
     return event
+
+
+# The privacy-relevant `sentry_sdk.init` options, shared by settings and the tests that send
+# real events through the SDK so the tests exercise the configuration production runs.
+SENTRY_PRIVACY_OPTIONS: dict[str, Any] = {
+    "before_send": scrub_event,
+    "max_request_body_size": "never",
+}
