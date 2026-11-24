@@ -85,7 +85,7 @@ KNOWN_DISCREPANCIES: dict[int, str] = {}
 
 
 class TestNjEmergencyMedicaidScenarios(PeIntegrationTestCase):
-    """The NJ spec's Test Scenarios, with NJ Medicaid at PolicyEngine ``pe_version``."""
+    """The NJ spec's Test Scenarios, with NJ Medicaid at the suite's PolicyEngine version (``PE_TEST_VERSION``)."""
 
     def run_scenario(self, number: int) -> Eligibility:
         (zipcode, county), members = SCENARIOS[number]

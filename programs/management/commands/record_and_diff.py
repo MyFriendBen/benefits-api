@@ -13,9 +13,12 @@ measured step rather than a manual one:
    eligibility and values match the baseline.
 4. **Adopt** (``--adopt`` only). Move ``PE_TEST_VERSION`` to the target, copy in the new
    cassettes of every unchanged module, and hold every changed or erroring module at the version
-   it was on by giving it a ``pe_version`` override. Held modules are left for a person to
+   it was on by giving it module-level ``PE_VERSION`` / ``PE_VERSION_REASON``. Held modules are left for a person to
    reconcile with their spec. Refuses to adopt when every module errored: that points at the run
    (credentials, the PolicyEngine API), not at PolicyEngine's values.
+
+Those module constants are the only pin layout this reads and rewrites, so the command refuses to
+start while any test class sets ``pe_version`` itself (the harness rejects that too).
 
 Run from the benefits-api root. Recording needs ``POLICY_ENGINE_CLIENT_ID`` and
 ``POLICY_ENGINE_CLIENT_SECRET`` in the environment or ``.env``, and a local Redis::
@@ -330,12 +333,45 @@ def module_classes(source: str) -> list[str]:
     return [node.name for node in ast.parse(source).body if isinstance(node, ast.ClassDef)]
 
 
+def class_level_pins(source: str) -> list[str]:
+    """Every class attribute in a module that pins a PolicyEngine version, as ``Class.attr (line N)``.
+
+    The harness reads a pin only from module-level ``PE_VERSION`` / ``PE_VERSION_REASON``, and those
+    are all ``remove_override`` and ``add_override`` touch. A class-level ``pe_version`` would
+    survive an adoption and stop matching its newly copied cassettes.
+    """
+    found = []
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, ast.ClassDef):
+            continue
+        for statement in node.body:
+            targets = statement.targets if isinstance(statement, ast.Assign) else [getattr(statement, "target", None)]
+            for target in targets:
+                if isinstance(target, ast.Name) and target.id in ("pe_version", "pe_version_reason"):
+                    found.append(f"{node.name}.{target.id} (line {statement.lineno})")
+
+    return found
+
+
+def require_module_level_pins(files: list[str]) -> None:
+    """Refuse to start while any PolicyEngine test module pins a version in a class body."""
+    offenders = []
+    for module in files:
+        pins = class_level_pins((REPO_ROOT / module).read_text())
+        if pins:
+            offenders.append(f"{module}: {', '.join(pins)}")
+
+    if offenders:
+        raise CommandError(
+            "These test classes pin a PolicyEngine version themselves, which adoption can't see or remove. "
+            "Move each pin to module-level PE_VERSION and PE_VERSION_REASON, then rerun:\n  " + "\n  ".join(offenders)
+        )
+
+
 def remove_override(source: str) -> str:
-    """Strip a module's ``PE_VERSION`` pin, its reason, and the class attributes using them."""
+    """Strip a module's ``PE_VERSION`` pin and its reason."""
     source = OVERRIDE_PATTERN.sub("", source, count=1)
     source = re.sub(r"^PE_VERSION_REASON = (\(\n(?:.*\n)*?\)|.*)\n", "", source, count=1, flags=re.M)
-    source = re.sub(r"^[ \t]+pe_version = PE_VERSION\n", "", source, flags=re.M)
-    source = re.sub(r"^[ \t]+pe_version_reason = PE_VERSION_REASON\n", "", source, flags=re.M)
 
     return source
 
@@ -343,38 +379,15 @@ def remove_override(source: str) -> str:
 def add_override(source: str, version: str, reason: str) -> str:
     """Pin a module to ``version`` with ``reason``, in the layout ``remove_override`` undoes.
 
-    The constants go after the module's imports; the class attributes go at the top of the body
-    of every class that subclasses PeIntegrationTestCase directly, after its docstring if any.
+    The constants go after the module's imports. The harness reads them for every test class in
+    the module, so no class is edited.
     """
     tree = ast.parse(source)
     lines = source.splitlines(keepends=True)
-    insertions: list[tuple[int, str]] = []
 
     imports = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom))]
     after_imports = max((node.end_lineno or node.lineno) for node in imports) if imports else 0
-    insertions.append(
-        (after_imports, f"\nPE_VERSION = {json.dumps(version)}\nPE_VERSION_REASON = {json.dumps(reason)}\n")
-    )
-
-    for node in tree.body:
-        if not isinstance(node, ast.ClassDef):
-            continue
-        if not any(isinstance(base, ast.Name) and base.id == "PeIntegrationTestCase" for base in node.bases):
-            continue
-
-        first = node.body[0]
-        has_docstring = (
-            isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str)
-        )
-        # A decorated statement's lineno is its def line, below its decorators.
-        decorators = getattr(first, "decorator_list", [])
-        starts_at = min([first.lineno, *(decorator.lineno for decorator in decorators)])
-        anchor = first.end_lineno if has_docstring else starts_at - 1
-        indent = " " * first.col_offset
-        insertions.append((anchor, f"{indent}pe_version = PE_VERSION\n{indent}pe_version_reason = PE_VERSION_REASON\n"))
-
-    for line_number, text in sorted(insertions, reverse=True):
-        lines.insert(line_number, text)
+    lines.insert(after_imports, f"\nPE_VERSION = {json.dumps(version)}\nPE_VERSION_REASON = {json.dumps(reason)}\n")
 
     return "".join(lines)
 
@@ -487,6 +500,8 @@ class Command(BaseCommand):
         out_dir: Path = options["out"].resolve()
         out_dir.mkdir(parents=True, exist_ok=True)
         files = pe_test_files()
+        # Before the hour-long passes: a class-level pin would fail every one of its replays anyway.
+        require_module_level_pins(files)
         previous_pin = suite_pin()
 
         if options["baseline"]:
