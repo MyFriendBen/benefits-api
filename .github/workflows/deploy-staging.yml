@@ -103,18 +103,19 @@ jobs:
           echo "message=$(git log -1 --pretty=%B | head -n 1)" >> $GITHUB_OUTPUT
           echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
 
-      - name: Run database migrations
+      # Migrations, FPL and feature-flag syncs and add_config run in Heroku's release phase
+      # (bin/release.sh), before the new code takes traffic. This waits for it.
+      - name: Wait for release phase
         if: success()
-        id: migrations
-        uses: ./.github/actions/heroku-migrations
+        id: release_phase
+        uses: ./.github/actions/heroku-release-phase
         with:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_STAGING_APP_NAME }}
 
-      - name: Add configurations
+      - name: Audit program vintages
         if: success()
-        id: config
-        uses: ./.github/actions/heroku-config
+        uses: ./.github/actions/heroku-vintage-audit
         with:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_STAGING_APP_NAME }}

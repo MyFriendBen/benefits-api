@@ -159,25 +159,27 @@ jobs:
           release-url: ${{ github.event.release.html_url }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
 
-      - name: Run database migrations
+      # Migrations, FPL and feature-flag syncs and add_config run in Heroku's release phase
+      # (bin/release.sh), before the new code takes traffic. This waits for it; if it failed,
+      # Heroku did not deploy the release and the previous one is still serving.
+      - name: Wait for release phase
         if: success()
-        id: migrations
-        uses: ./.github/actions/heroku-migrations
+        id: release_phase
+        uses: ./.github/actions/heroku-release-phase
         with:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
 
-      - name: Add configurations
+      - name: Audit program vintages
         if: success()
-        id: config
-        uses: ./.github/actions/heroku-config
+        uses: ./.github/actions/heroku-vintage-audit
         with:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
 
       # The pin lives in the prod DB, not the repo, so this has to run against prod. It runs
-      # on the new slug (the command ships with it), after migrations and config so a failing
-      # check can't skip them; it still fails the release and triggers the failure alert. Fails
+      # on the new slug (the command ships with it), after the release phase so a failing
+      # check can't skip it; it still fails the release and triggers the failure alert. Fails
       # when an explicit pin is not a version PolicyEngine serves (current or frontier); a PE
       # outage only warns. The scheduled pe-version-pin-check workflow catches drift between
       # deploys.
@@ -254,11 +256,10 @@ jobs:
         if: ${{ !failure() }}
         id: final_status
         run: |
-          MIGRATIONS_STATUS="${{ steps.migrations.outcome }}"
-          CONFIG_STATUS="${{ steps.config.outcome }}"
+          RELEASE_PHASE_STATUS="${{ steps.release_phase.outcome }}"
           SYNC_TRANSLATIONS_STATUS="${{ steps.sync_translations.outcome }}"
 
-          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
+          if [ "$RELEASE_PHASE_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
             echo "status=success" >> $GITHUB_OUTPUT
           else
             echo "status=completed-with-warnings" >> $GITHUB_OUTPUT
@@ -273,8 +274,9 @@ jobs:
           environment: production
           release-tag: ${{ steps.release_info.outputs.tag }}
           release-url: ${{ github.event.release.html_url }}
-          migrations-status: ${{ steps.migrations.outcome }}
-          config-status: ${{ steps.config.outcome }}
+          # The release phase runs both migrations and add_config, so both rows report it.
+          migrations-status: ${{ steps.release_phase.outcome }}
+          config-status: ${{ steps.release_phase.outcome }}
           sync-translations-status: ${{ steps.sync_translations.outcome }}
 
       - name: Send deployment failure notification to Slack
