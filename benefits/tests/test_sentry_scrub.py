@@ -22,7 +22,7 @@ from django.db import close_old_connections
 from rest_framework.authtoken.models import Token
 
 from authentication.models import User
-from benefits.sentry_scrub import scrub_event
+from benefits.sentry_scrub import SENTRY_PRIVACY_OPTIONS, scrub_event
 from benefits.tests.cache_override import LOCAL_CACHE
 from screener.models import Screen, WhiteLabel
 from screener.throttles import RateWindow
@@ -39,6 +39,8 @@ PLACES_URL = "https://api.example/api/places/autocomplete/"
 REM_URL = "https://api.example/api/screener-options/cesn/rem-impact/"
 MESSAGES_URL = "https://api.example/api/messages/"
 FAKE_PHONE = "+13035550142"
+FAKE_NAME = "Invented Person"
+FAKE_EMAIL = "invented.person@example.com"
 
 
 def _event(url: str) -> dict[str, Any]:
@@ -102,7 +104,9 @@ class ScrubEventTest(TestCase):
 
         self.assertEqual(value, "HTTP 400 error: The 'To' number [contact] is not valid (21211); bounced [contact]")
 
-    def test_leaves_other_endpoints_alone(self) -> None:
+    def test_leaves_other_endpoints_alone_apart_from_the_body(self) -> None:
+        # The address and contact scrubbing is for those endpoints only. The request body is
+        # dropped everywhere (MFB-2554), and is the one thing that changes on any other.
         for url in (
             "https://api.example/api/eligibility/1",
             "https://api.example/api/messages/extra/",
@@ -111,6 +115,7 @@ class ScrubEventTest(TestCase):
         ):
             event = _event(url)
             expected = json.loads(json.dumps(event))
+            del expected["request"]["data"]
             self.assertEqual(scrub_event(event, {}), expected, url)
 
     def test_celery_job_extra_loses_args_and_kwargs(self) -> None:
@@ -165,6 +170,49 @@ class ScrubEventTest(TestCase):
         event = {"message": "SMS sent; SM123; " + "SM" + "AB" * 16 + "; CA" + "0" * 32}
         self.assertEqual(scrub_event(event, {}), event)
 
+    def test_drops_the_request_body_on_every_endpoint(self) -> None:
+        # MFB-2554: not only the address and contact endpoints. The sign-up and screen
+        # endpoints carry names, emails and household details.
+        screen = "11111111-2222-3333-4444-555555555555"
+        for url in (
+            f"https://api.example/api/users/{screen}/",
+            "https://api.example/api/screens/",
+            f"https://api.example/api/screens/{screen}/current-benefits/",
+            "https://api.example/api/eligibility/" + screen,
+            PLACES_URL,
+            MESSAGES_URL,
+        ):
+            with self.subTest(url=url):
+                event = {
+                    "request": {"url": url, "method": "PUT", "data": {"first_name": FAKE_NAME, "email": FAKE_EMAIL}}
+                }
+                scrubbed = scrub_event(event, {})
+                self.assertNotIn("data", scrubbed["request"])
+                self.assertNotIn(FAKE_EMAIL, json.dumps(scrubbed))
+
+    def test_keeps_the_rest_of_the_request_on_other_endpoints(self) -> None:
+        # Only the body goes. The URL, method and headers are what make an event debuggable.
+        event = {
+            "request": {
+                "url": "https://api.example/api/screens/",
+                "method": "POST",
+                "query_string": "a=1",
+                "headers": {"Content-Type": "application/json"},
+                "data": {"household_size": 3},
+            }
+        }
+        request = scrub_event(event, {})["request"]
+        self.assertEqual(request["url"], "https://api.example/api/screens/")
+        self.assertEqual(request["method"], "POST")
+        self.assertEqual(request["query_string"], "a=1")
+        self.assertEqual(request["headers"], {"Content-Type": "application/json"})
+        self.assertNotIn("data", request)
+
+    def test_a_body_that_is_already_a_placeholder_is_dropped_too(self) -> None:
+        # With max_request_body_size "never" the SDK leaves an empty value behind rather than no key.
+        event = {"request": {"url": "https://api.example/api/screens/", "data": ""}}
+        self.assertNotIn("data", scrub_event(event, {})["request"])
+
     def test_event_without_request_is_unchanged(self) -> None:
         event = {"message": "background job failed"}
         self.assertEqual(scrub_event(event, {}), {"message": "background job failed"})
@@ -193,7 +241,8 @@ class _MalformedUpstream(BaseHTTPRequestHandler):
 
 
 @contextmanager
-def _recording_sentry() -> Iterator[list[dict[str, Any]]]:
+def _recording_sentry(**overrides: Any) -> Iterator[list[dict[str, Any]]]:
+    """Init the SDK with the privacy options settings uses; `overrides` swap one out to test a layer alone."""
     global_scope = sentry_sdk.Scope.get_global_scope()
     previous = global_scope.client
     _RecordingTransport.events = []
@@ -201,7 +250,7 @@ def _recording_sentry() -> Iterator[list[dict[str, Any]]]:
         dsn="https://public@example.invalid/1",
         integrations=[DjangoIntegration()],
         transport=_RecordingTransport,
-        before_send=scrub_event,
+        **{**SENTRY_PRIVACY_OPTIONS, **overrides},
     )
     try:
         yield _RecordingTransport.events
@@ -355,3 +404,81 @@ class MessageEndpointEventTest(TestCase):
 
         self.assertTrue(status.startswith("429"), status)
         self.assertEqual(events, [])
+
+
+@override_settings(CACHES=LOCAL_CACHE, ALLOWED_HOSTS=["*"])
+class RequestBodyEventTest(TestCase):
+    """A DRF error on any endpoint reports without the request body (MFB-2554).
+
+    Goes through the WSGI app, as the other event tests do, so Sentry's own integration
+    attaches the body the way it does in production. The endpoint is not special: it is
+    not an address or contact endpoint, and its refusal is a plain serializer error, which
+    `benefits.views.drf_exception_handler` turns into an event.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.app = get_wsgi_application()
+
+    def setUp(self) -> None:
+        for signal in (request_started, request_finished):
+            signal.disconnect(close_old_connections)
+            self.addCleanup(signal.connect, close_old_connections)
+
+        white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(white_label=white_label, zipcode="78701", household_size=1, completed=True)
+        user = User.objects.create_user(email_or_cell="frontend@example.com", password="password")
+        user.user_permissions.add(Permission.objects.get(codename="change_screen", content_type__app_label="screener"))
+        self.token = Token.objects.create(user=user).key
+
+    def _patch_with_invalid_toggle(self) -> str:
+        """PATCH the current-benefits toggle with a value the serializer refuses, plus personal data."""
+        body = {"name_abbreviated": "snap", "has": "maybe", "first_name": FAKE_NAME, "email": FAKE_EMAIL}
+        raw = json.dumps(body).encode()
+        environ: dict[str, Any] = {
+            "REQUEST_METHOD": "PATCH",
+            "PATH_INFO": f"/api/screens/{self.screen.uuid}/current-benefits/",
+            "CONTENT_TYPE": "application/json",
+            "CONTENT_LENGTH": str(len(raw)),
+            "HTTP_AUTHORIZATION": f"Token {self.token}",
+            "wsgi.input": BytesIO(raw),
+        }
+        setup_testing_defaults(environ)
+        statuses: list[str] = []
+        b"".join(self.app(environ, lambda s, _h, *_a: statuses.append(s)))
+        return statuses[0]
+
+    def _assert_reported_without_body(self, events: list[dict[str, Any]], status: str) -> None:
+        self.assertTrue(status.startswith("400"), status)
+        self.assertTrue(events, "expected the 400 to reach Sentry")
+        blob = json.dumps(events)
+        for leaked in (FAKE_NAME, FAKE_EMAIL):
+            self.assertNotIn(leaked, blob)
+
+    def test_the_test_can_see_a_leak(self) -> None:
+        # Control: with both layers off, the body is in the event. Without this the tests
+        # below would also pass if the request never carried a body into Sentry at all.
+        with _recording_sentry(before_send=None, max_request_body_size="always") as events:
+            status = self._patch_with_invalid_toggle()
+
+        self.assertTrue(status.startswith("400"), status)
+        self.assertIn(FAKE_EMAIL, json.dumps(events))
+
+    def test_production_options_keep_the_body_out(self) -> None:
+        with _recording_sentry() as events:
+            status = self._patch_with_invalid_toggle()
+
+        self._assert_reported_without_body(events, status)
+
+    def test_the_sdk_option_alone_keeps_the_body_out(self) -> None:
+        with _recording_sentry(before_send=None) as events:
+            status = self._patch_with_invalid_toggle()
+
+        self._assert_reported_without_body(events, status)
+
+    def test_the_scrubber_alone_keeps_the_body_out(self) -> None:
+        with _recording_sentry(max_request_body_size="always") as events:
+            status = self._patch_with_invalid_toggle()
+
+        self._assert_reported_without_body(events, status)

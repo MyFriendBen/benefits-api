@@ -23,7 +23,7 @@ from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
 from benefits.cache_config import redis_pool_kwargs
 from benefits.celery_config import BROKER_POOL_LIMIT, BROKER_SOCKET_TIMEOUT, broker_use_ssl
-from benefits.sentry_scrub import scrub_event
+from benefits.sentry_scrub import SENTRY_PRIVACY_OPTIONS
 from benefits.throttle_config import throttle_rate
 
 EXTRA_LANG_INFO = {
@@ -356,7 +356,7 @@ if config("SENTRY_DSN", None) is not None:
         # they report as one environment and an alert rule cannot tell them apart
         # (docs/BENJI_SMS_WORKER.md). Set SENTRY_ENVIRONMENT=staging on the staging app.
         environment=config("SENTRY_ENVIRONMENT", default="dev" if DEBUG else "production"),
-        before_send=scrub_event,
+        **SENTRY_PRIVACY_OPTIONS,
     )
 
 django_heroku.settings(locals())
