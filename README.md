@@ -87,3 +87,34 @@ control, not just hidden UI.
 Run mfb-ai-service on `:8080` in stub mode (no AI key needed), leave the tokens
 blank on both sides, point `AI_SERVICE_URL` at it, and enable the `benbot` flag
 for your local white label to exercise the full chain.
+
+## Redis in local development
+
+Set `REDIS_URL` in your `.env` to a loopback address (e.g.
+`redis://127.0.0.1:6379/0`) and `manage.py runserver` will auto-start a
+small, local `redis-server` so your development environment mirrors
+Heroku's cache behavior. Leaving `REDIS_URL` unset is still the default and
+gives you an in-memory cache — nothing is started and nothing is required.
+
+What it starts: a 25 MB `redis-server` with `allkeys-lru` eviction and no
+persistence (no AOF, no RDB saves), bound to loopback only. On Linux/macOS it
+looks for `redis-server` on `PATH`; on Windows it tries a native binary
+(Memurai or a native `redis-server.exe` build) first and falls back to WSL if
+available.
+
+It only engages when `DEBUG = True`, `REDIS_URL` targets loopback, and
+nothing is already listening on that port — if Redis is already running
+(locally installed, a system service, etc.) it's left alone.
+
+It keeps running after you stop the dev server with Ctrl-C (daemonized on
+Linux/macOS, detached into its own process group on Windows), so repeated
+`runserver` restarts don't spawn duplicate instances. Stop it with:
+
+```sh
+redis-cli -p <port> shutdown
+# or, when Redis was started inside WSL:
+wsl -- redis-cli -p <port> shutdown
+```
+
+Opt out per invocation with `--no-redis`, or persistently by setting
+`AUTO_START_REDIS=false` in your `.env` or shell environment.
