@@ -138,6 +138,13 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "Aging Community Resources",
             },
         },
+        "savings": {
+            "icon": {"_icon": "Savings", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.savings",
+                "_default_message": "Saving for college",
+            },
+        },
     }
 
     sign_up_options = {

@@ -55,6 +55,15 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
         ),
         scope="both",  # frontend renders the widget; backend gates the proxy endpoints
     ),
+    "benji_sms": FeatureFlagConfig(
+        label="Benji over SMS",
+        description=(
+            "Offer Benji by text message from the results page, and let benefits-api send "
+            "Benji SMS for this white label's screens. Dark-launch gate: off until launch. "
+            "Sends also need the BENJI_SMS_OUTBOUND_ENABLED config var."
+        ),
+        scope="both",  # frontend shows the on-ramp; backend checks it before every per-screen send
+    ),
     "share_popup": FeatureFlagConfig(
         label="Share Popup",
         description="Show a popup in results that lets users share MyFriendBen with friends via email, SMS, or link.",

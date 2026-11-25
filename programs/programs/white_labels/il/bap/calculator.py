@@ -1,6 +1,5 @@
 from programs.framework.base import ProgramCalculator, Eligibility
 from programs.programs.white_labels.il.transportation_mixin import IlTransportationMixin
-import programs.framework.eligibility_messages as messages
 
 
 class IlBenefitAccess(IlTransportationMixin, ProgramCalculator):

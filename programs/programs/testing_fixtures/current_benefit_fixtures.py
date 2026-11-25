@@ -12,6 +12,15 @@ from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
 
+def receive_federal_benefit(screen: Screen, name_abbreviated: str, base_program: str) -> None:
+    """Record that ``screen`` receives a program on the federal white label, which every
+    white label sees."""
+    federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+    seed_program(federal, name_abbreviated, base_program=base_program)
+    _write_current_benefits(screen, [name_abbreviated])
+    screen.invalidate_current_benefits_cache()
+
+
 class ReceivesBenefitTestCase(TestCase):
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")

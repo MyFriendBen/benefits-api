@@ -688,6 +688,8 @@ class RecordSync:
                 self._plan_row(plan, spec, entry, row, baseline, fresh=False)
             if spec is NAVIGATOR:
                 self._plan_federal_navigator_owner(plan, entry, row, baseline)
+            elif spec is WARNING and is_reference(entry):
+                self._note_state_row_on_federal(plan, spec, entry["external_name"], row)
             if not new_row and not is_reference(entry):
                 others = self._other_programs(row, spec, program)
                 if others and any(change.key.startswith(f"{spec.kind}:{name}.") for change in plan.changes):
@@ -734,7 +736,7 @@ class RecordSync:
 
         On a federal program a navigator's white label decides who sees it: one on `federal` shows
         in every state, a state's only to that state's screens
-        (`screener.navigators.filter_by_white_label`). A navigator this record owns is meant for
+        (`programs.federal.serves_screen`). A navigator this record owns is meant for
         every state and is moved to `federal`; that leaves the state programs still linking it
         unchanged, since they don't filter by white label. One it only references keeps its white
         label, such as a state's WIC clinics on federal WIC, and the plan notes which state sees
@@ -751,12 +753,14 @@ class RecordSync:
         # A row this run creates is created on the record's white label (`_create_row`).
         owner = FEDERAL_WHITE_LABEL if row is None else row.white_label.code
         if is_reference(entry):
-            if owner != FEDERAL_WHITE_LABEL:
-                plan.notes.append(
-                    f"navigator '{name}' is on the '{owner}' white label, so on this federal program only "
-                    f"screens in the same state as '{owner}' see it. To show it in every state, own it in this "
-                    f"record (give its fields), which moves it to '{FEDERAL_WHITE_LABEL}'."
-                )
+            self._note_state_row_on_federal(
+                plan,
+                NAVIGATOR,
+                name,
+                row,
+                f" To show it in every state, own it in this record (give its fields), which moves it to "
+                f"'{FEDERAL_WHITE_LABEL}'.",
+            )
             return
         key = f"navigator:{name}.white_label"
         self._add(
@@ -768,6 +772,26 @@ class RecordSync:
             0,
             baseline,
             fresh=key not in (baseline or {}),
+        )
+
+    def _note_state_row_on_federal(
+        self, plan: RecordPlan, spec: EntitySpec, name: str, row: Any, remedy: str = ""
+    ) -> None:
+        """On a federal record, note a referenced navigator or warning that only one state sees.
+
+        On a federal program a state's row shows only to screens in that state
+        (`programs.federal.serves_screen`), which is how a state's WIC clinics and WIC warning stay
+        on federal WIC. The note makes that visible in the dry run, so a national row a state
+        happened to import first shows up too. A row this run creates is on `federal` already.
+        """
+        if self.white_label.code != FEDERAL_WHITE_LABEL or row is None:
+            return
+        owner = row.white_label.code
+        if owner == FEDERAL_WHITE_LABEL:
+            return
+        plan.notes.append(
+            f"{spec.kind} '{name}' is on the '{owner}' white label, so on this federal program only screens in "
+            f"the same state as '{owner}' see it.{remedy}"
         )
 
     def _plan_row(
@@ -977,10 +1001,12 @@ class RecordSync:
     def _legal_statuses(self, codes: list[str]) -> list[LegalStatus]:
         statuses = []
         for code in codes:
-            status = LegalStatus.objects.filter(status=code).first()
-            if status is None:
-                raise CommandError(f"legal status '{code}' doesn't exist")
-            statuses.append(status)
+            # A known label is created if this environment doesn't have its row yet: the admin
+            # can't add legal statuses, so an import is how a missing one arrives.
+            try:
+                statuses.append(LegalStatus.for_label(code))
+            except ValueError as e:
+                raise CommandError(str(e)) from None
         return statuses
 
     def _programs(self, keys: list[str]) -> list[Program]:
@@ -1047,7 +1073,10 @@ class RecordSync:
         if field_name == "counties":
             row.counties.set(self._counties(spec, row, values))
         elif field_name == "languages":
-            row.languages.set([NavigatorLanguage.objects.get_or_create(code=code)[0] for code in values])
+            try:
+                row.languages.set([NavigatorLanguage.for_code(code) for code in values])
+            except ValueError as e:
+                raise CommandError(f"{spec.kind} '{row.external_name}': {e}") from None
         elif field_name == "legal_statuses":
             row.legal_statuses.set(self._legal_statuses(values))
         else:

@@ -5,6 +5,7 @@ from typing import ClassVar
 
 from programs.framework.base import MemberEligibility
 from programs.programs.cross_white_label.head_start.eligibility import HeadStartEligibility
+from programs.programs.shared.age import age_in_months
 from screener.models import HouseholdMember
 
 
@@ -60,7 +61,9 @@ class MfbEarlyHeadStart(HeadStartEligibility, abstract=True):
         return super()._in_foster_care(member) and self._is_under_three(member)
 
     def member_value(self, member: HouseholdMember) -> int:
-        weekly_price = self._weekly_price(self._age_in_months(member) if self._is_under_three(member) else 0)
+        weekly_price = self._weekly_price(
+            age_in_months(member, self.screen.get_reference_date()) if self._is_under_three(member) else 0
+        )
         annual = weekly_price * self.program_weeks
 
         return int(annual.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
@@ -73,15 +76,3 @@ class MfbEarlyHeadStart(HeadStartEligibility, abstract=True):
                 price = band_price
 
         return price
-
-    def _age_in_months(self, member: HouseholdMember) -> int:
-        """
-        Whole months since the birth month, counting the birth month as month 0. A member
-        with no birth month falls back to the stored age at the start of that year of life.
-        """
-        birth_year_month = member.birth_year_month
-        if birth_year_month is None:
-            return (member.calc_age() or 0) * 12
-
-        today = self.screen.get_reference_date()
-        return (today.year - birth_year_month.year) * 12 + today.month - birth_year_month.month

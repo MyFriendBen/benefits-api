@@ -18,11 +18,14 @@ from django.utils import timezone
 from authentication.models import User
 from screener.admin import AssistantConversationAdmin
 from screener.models import AssistantConversation, AssistantMessage, WhiteLabel
+from screener.tests.assistant_helpers import make_conversation, make_message
 
 # Migration 0163 turns the message foreign key into a database-level ON DELETE
 # CASCADE. Imported by name because the module starts with a digit, so the plain
 # `import` statement cannot reach it.
 MIGRATION_0163 = importlib.import_module("screener.migrations.0163_assistant_message_db_cascade")
+# Migration 0170 keeps a database-level DEFAULT on `channel`; same import reason.
+MIGRATION_0170 = importlib.import_module("screener.migrations.0170_assistant_conversation_channel")
 
 # Kept as a named constant rather than inlined into cursor.execute(): a multiline
 # string as the sole argument to a call is formatted one way by black 24 (split onto
@@ -34,34 +37,20 @@ SELECT confdeltype FROM pg_constraint
 WHERE conrelid = 'screener_assistantmessage'::regclass AND contype = 'f'
 """
 
-
-def make_conversation(**overrides) -> AssistantConversation:
-    defaults = {
-        "conversation_id": uuid.uuid4(),
-        "screen_uuid": uuid.uuid4(),
-        "white_label": "co",
-        "locale": "en-US",
-        "mode": "live",
-        "prompt_version": "test-1",
-        "context": {"household": {"size": 3}, "eligible_programs": []},
-    }
-    return AssistantConversation.objects.create(**{**defaults, **overrides})
-
-
-def make_message(conversation: AssistantConversation, seq: int, **overrides) -> AssistantMessage:
-    defaults = {
-        "message_id": uuid.uuid4(),
-        "conversation": conversation,
-        "seq": seq,
-        "role": "user",
-        "text": "hello",
-    }
-    return AssistantMessage.objects.create(**{**defaults, **overrides})
+# The INSERT ai-service ran before it knew about `channel` (store_postgres.py at
+# ai-service d3f3477), minus the columns that have defaults or are nullable.
+INSERT_WITHOUT_CHANNEL_SQL = """
+INSERT INTO screener_assistantconversation
+    (conversation_id, screen_uuid, status, context, created_at, updated_at)
+VALUES (%s, %s, 'active', '{}', %s, %s)
+"""
 
 
 class TestAssistantConversationConstraints(TestCase):
     def test_one_active_conversation_per_screen(self):
         """The per-screen idempotency ai-service's API documents, enforced in the DB.
+
+        Per screen AND channel; both of these are web conversations.
 
         `POST /v1/conversations` is "find the active conversation for this screen, else
         create one" — a read-then-write race that two tabs or a retry can lose.
@@ -72,6 +61,41 @@ class TestAssistantConversationConstraints(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 make_conversation(screen_uuid=screen_uuid)
+
+    def test_web_and_sms_conversations_coexist_on_one_screen(self):
+        """The constraint is per channel since MFB-2432.
+
+        A texted conversation is its own row on the same screen as the web one
+        (MFB-1916 proposal v2, decision 3), so both being active is the intended
+        state, not a lost race.
+        """
+        screen_uuid = uuid.uuid4()
+        make_conversation(screen_uuid=screen_uuid, channel="web")
+        make_conversation(screen_uuid=screen_uuid, channel="sms")
+
+        self.assertEqual(
+            set(
+                AssistantConversation.objects.filter(screen_uuid=screen_uuid, status="active").values_list(
+                    "channel", flat=True
+                )
+            ),
+            {"web", "sms"},
+        )
+
+    def test_one_active_sms_conversation_per_screen(self):
+        """Per channel still means one: the SMS side gets the same race protection."""
+        screen_uuid = uuid.uuid4()
+        make_conversation(screen_uuid=screen_uuid, channel="sms")
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                make_conversation(screen_uuid=screen_uuid, channel="sms")
+
+    def test_channel_outside_the_vocabulary_is_rejected(self):
+        """ai-service writes with raw SQL, so the model's choices never see its inserts."""
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                make_conversation(channel="email")
 
     def test_closed_conversations_do_not_block_a_new_one(self):
         """The constraint is partial for a reason: history must be able to accumulate.
@@ -167,6 +191,122 @@ class TestAssistantConversationConstraints(TestCase):
         stored = AssistantConversation.objects.get(pk=conversation.pk)
         self.assertEqual(stored.created_at, stamp)
         self.assertEqual(stored.updated_at, stamp)
+
+
+class TestChannelDatabaseDefault(TestCase):
+    """Migration 0170's DEFAULT 'web', which is what makes its deploy order safe.
+
+    benefits-api migrates before ai-service learns the column exists, and until then
+    ai-service's raw-SQL INSERT names no channel. Without a database-level default that
+    insert fails on NOT NULL and nobody can start a conversation.
+
+    As with 0163 below, the migration's SQL has to be applied here: pytest runs with
+    `--nomigrations`, so the test schema comes from the models, and Django 4.2 cannot
+    express a database default in a model. A plain `TestCase` is enough, unlike 0163:
+    the ALTER runs before any insert, and the test transaction rolls it back.
+    """
+
+    def _insert_without_channel(self) -> uuid.UUID:
+        conversation_id = uuid.uuid4()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                INSERT_WITHOUT_CHANNEL_SQL,
+                [conversation_id, uuid.uuid4(), timezone.now(), timezone.now()],
+            )
+        return conversation_id
+
+    def test_the_test_database_starts_without_the_default(self):
+        """Guards against the test below passing without the migration's SQL."""
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self._insert_without_channel()
+
+    def test_an_insert_that_names_no_channel_is_a_web_conversation(self):
+        with connection.cursor() as cursor:
+            cursor.execute(MIGRATION_0170._SET_DB_DEFAULT)
+
+        conversation_id = self._insert_without_channel()
+
+        self.assertEqual(AssistantConversation.objects.get(conversation_id=conversation_id).channel, "web")
+
+
+class TestRollbackGuard(TestCase):
+    """Reversing 0170 is refused, with instructions, while a non-web conversation is active.
+
+    Without the guard the reverse dies on a duplicate key while re-creating the old
+    one-active-per-screen index, or, on a screen with only an SMS conversation, succeeds
+    and lets the previous ai-service resume the texts as the widget's conversation.
+    """
+
+    def _guard(self) -> None:
+        MIGRATION_0170._refuse_rollback_while_non_web_is_active(None, connection.schema_editor())
+
+    def test_rollback_is_refused_while_a_screen_has_web_and_sms_active(self):
+        screen_uuid = uuid.uuid4()
+        make_conversation(screen_uuid=screen_uuid, channel="web")
+        sms = make_conversation(screen_uuid=screen_uuid, channel="sms")
+
+        with self.assertRaisesMessage(RuntimeError, str(sms.conversation_id)):
+            self._guard()
+
+    def test_rollback_is_refused_for_an_active_sms_conversation_on_its_own(self):
+        """The old index would build, but the old ai-service would show the texts in the widget."""
+        make_conversation(channel="sms")
+
+        with self.assertRaises(RuntimeError):
+            self._guard()
+
+    def test_rollback_is_allowed_once_the_sms_conversation_is_closed(self):
+        screen_uuid = uuid.uuid4()
+        make_conversation(screen_uuid=screen_uuid, channel="web")
+        make_conversation(screen_uuid=screen_uuid, channel="sms", status="closed")
+
+        self._guard()
+
+
+class TestChannelSurvivesRollback(TestCase):
+    """Reversing 0170 drops `channel`; re-applying it must not relabel texts as web.
+
+    The column itself can't be dropped and re-added inside a test, so this runs the
+    two statements that carry the value across: the stash the reverse runs before the
+    column goes, and the restore the forward runs after it is back (when every row has
+    just been backfilled with the default, simulated here by setting it to 'web').
+    """
+
+    def _run(self, sql: str) -> None:
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+
+    def test_a_closed_sms_conversation_is_still_sms_after_rollback_and_reapply(self):
+        sms = make_conversation(channel="sms", status="closed")
+        web = make_conversation(channel="web")
+
+        self._run(MIGRATION_0170._STASH_CHANNEL)
+        AssistantConversation.objects.filter(pk=sms.pk).update(channel="web")  # the re-applied default
+        self._run(MIGRATION_0170._RESTORE_CHANNEL)
+
+        sms.refresh_from_db()
+        web.refresh_from_db()
+        self.assertEqual(sms.channel, "sms")
+        self.assertEqual(web.channel, "web")
+
+    def test_the_stash_leaves_no_trace_in_the_context(self):
+        sms = make_conversation(channel="sms", status="closed")
+        original = dict(sms.context)
+
+        self._run(MIGRATION_0170._STASH_CHANNEL)
+        self._run(MIGRATION_0170._RESTORE_CHANNEL)
+
+        sms.refresh_from_db()
+        self.assertEqual(sms.context, original)
+
+    def test_the_forward_restore_is_a_no_op_on_a_first_migration(self):
+        web = make_conversation(channel="web")
+
+        self._run(MIGRATION_0170._RESTORE_CHANNEL)
+
+        web.refresh_from_db()
+        self.assertEqual(web.channel, "web")
 
 
 class TestDatabaseLevelCascade(TransactionTestCase):

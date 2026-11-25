@@ -97,6 +97,21 @@ class CesnConfigurationData(ConfigurationData):
 
     expense_options_by_category = {}
 
+    energy_calculator_expense_options = {
+        "heating": {
+            "icon": {"_icon": "Heating", "_classname": "option-card-icon"},
+            "text": {"_label": "energyCalculator.expenses.heating", "_default_message": "Heating"},
+        },
+        "cooling": {
+            "icon": {"_icon": "Cooling", "_classname": "option-card-icon"},
+            "text": {"_label": "energyCalculator.expenses.cooling", "_default_message": "Cooling"},
+        },
+        "electricity": {
+            "icon": {"_icon": "Electricity", "_classname": "option-card-icon"},
+            "text": {"_label": "energyCalculator.expenses.electricity", "_default_message": "Electricity"},
+        },
+    }
+
     condition_options = {
         "you": {
             "survivingSpouse": {
@@ -1971,7 +1986,6 @@ class CesnConfigurationData(ConfigurationData):
                 "no_zipcode_change_state",
                 "no_confirmation_return_zipcode",
                 "white_header",
-                "white_multi_select_tile_icon",
                 "dont_show_category_values",
                 "logo_landing_page_link",
                 "no_lets_get_started",

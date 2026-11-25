@@ -601,6 +601,30 @@ class TestCsfpCountableIncomeDependency(TestCase):
     def test_zero_without_income(self):
         self.assertEqual(spm.CsfpCountableIncomeDependency(self.screen, None, {}).value(), 0)
 
+    def test_v2_inputs_send_the_same_value_as_the_old_field_from_2_145_6(self):
+        """PE 2.145.6 reads CSFP income from new variables; sending the old field's value keeps
+        results unchanged. Below the floor the new variables don't exist and would 400."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1800, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="workersComp", amount=250, frequency="monthly"
+        )
+        old = spm.CsfpCountableIncomeDependency(self.screen, None, {}).value()
+
+        for Dep, field in (
+            (spm.CsfpCountableIncomeV2Dependency, "csfp_countable_income"),
+            (spm.TxDtaCsfpCountableIncomeDependency, "tx_dta_csfp_countable_income"),
+        ):
+            self.assertEqual(Dep.field, field)
+            self.assertEqual(Dep.min_pe_version, (2, 145, 6))
+            self.assertEqual(Dep.max_pe_version, ())
+            self.assertEqual(Dep.dependencies, ("income_amount", "income_frequency"))
+            self.assertEqual(Dep(self.screen, None, {}).value(), old)
+
+    def test_old_field_stays_ungated(self):
+        self.assertEqual(spm.CsfpCountableIncomeDependency.min_pe_version, ())
+
     def test_declares_the_income_fields_it_reads(self):
         self.assertEqual(spm.CsfpCountableIncomeDependency.dependencies, ("income_amount", "income_frequency"))
 

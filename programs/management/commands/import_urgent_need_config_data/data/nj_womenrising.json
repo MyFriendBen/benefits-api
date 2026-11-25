@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_womenrising",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "WomenRising Workforce Development (Jersey City)",
+      "description": "WomenRising Workforce Development in Jersey City helps women with job training. No income test is published. Contact them by phone or email, Monday to Friday 9:30am-4:30pm. Call 201-333-5700 ext. 560. It can take days to weeks.",
+      "link": "https://www.womenrising.org/workforce-development",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Hudson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

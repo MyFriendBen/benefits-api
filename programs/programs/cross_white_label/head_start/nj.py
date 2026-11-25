@@ -14,8 +14,8 @@ class NjHeadStart(MfbHeadStart):
       preschool at a licensed center ($292.30/week, effective April 1, 2026) over the
       34 weeks that 1,020 annual hours make at that table's 30-hour full-time week.
 
-    NJ has no SNAP, TANF or SSI calculator yet, so ``gates_on_any`` stays empty and public
-    assistance is read only from reported benefits and income.
+    Public assistance also counts a household eligible for ``federal_ssi``, ``nj_snap`` or
+    ``nj_tanf``, which NJ households see, as well as one that reports any of them.
 
     The spec is ``programs/cross_white_label/head_start/nj/head_start_nj_spec.md`` in
     program-ops.
@@ -27,3 +27,4 @@ class NjHeadStart(MfbHeadStart):
     compulsory_school_age = 6
     weekly_price = 292.30
     program_weeks = 34
+    gates_on_any = ("federal_ssi", "nj_snap", "nj_tanf")

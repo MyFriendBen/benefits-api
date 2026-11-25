@@ -9,10 +9,11 @@ interactions:
       {"members": ["1301"]}}, "families": {"family": {"members": ["1301"]}}, "households":
       {"household": {"members": ["1301"], "state_code": {"2026": "KS"}, "county_str":
       {"2026": "ALLEN_COUNTY_KS"}}}, "spm_units": {"spm_unit": {"members": ["1301"],
-      "school_meal_countable_income": {"2026": 16800.0}, "spm_unit_cash_assets": {"2026":
-      0}, "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
-      {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
-      {"2026": false}}}, "marital_units": {}}, "version": "2.53.1"}'
+      "school_meal_countable_income": {"2026": 16800.0}, "csfp_countable_income":
+      {"2026": 16800.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": null},
+      "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
+      "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
+      "marital_units": {}}, "version": "2.145.6"}'
     headers:
       Accept:
       - '*/*'
@@ -21,11 +22,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1051'
+      - '1096'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -40,30 +41,30 @@ interactions:
         ["1301"]}}, "households": {"household": {"members": ["1301"], "state_code":
         {"2026": "KS"}, "county_str": {"2026": "ALLEN_COUNTY_KS"}}}, "spm_units":
         {"spm_unit": {"members": ["1301"], "school_meal_countable_income": {"2026":
-        16800.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": 0.0}, "receives_tanf":
-        {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
-        {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
-        {}}, "policyengine_bundle": {"model_version": "2.53.1", "data_version": null,
-        "dataset": null}}'
+        16800.0}, "csfp_countable_income": {"2026": 16800.0}, "spm_unit_cash_assets":
+        {"2026": 0}, "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+        {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+        {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
+        "2.145.6", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '1149'
+      - '1194'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:08:44 GMT
+      - Mon, 23 Nov 2026 23:56:47 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-cff1594377d54e3fe970bd7ba6b88b0b-bd127b675f2ef36e-00
+      - 00-7ccac35b7ee1505ca68cdf4f0be3dfdd-86371b115067fec5-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - cff1594377d54e3fe970bd7ba6b88b0b
+      - 7ccac35b7ee1505ca68cdf4f0be3dfdd
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -71,9 +72,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 9d3e9753-4002-4976-a104-5d2bfa97a4e4
+      - 1a7b237e-fe7a-41fb-9870-7f2056d79be7
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK

@@ -1,0 +1,31 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_fulfill",
+    "category_type": {
+      "external_name": "food_or_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Fulfill (Monmouth and Ocean food bank)",
+      "description": "Fulfill is the food bank for Monmouth and Ocean counties. No eligibility rules are published. Use their locator or call to find a pantry near you. Call 732-918-2600.",
+      "link": "https://fulfillnj.org/get-help/locate-a-pantry-or-soup-kitchen/",
+      "warning": "",
+      "website_description": "Find out how to get food help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Monmouth County",
+      "Ocean County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -15,6 +15,7 @@ diagnosed special need (``TestDisabledChildAgeThreshold``), which is the only wa
 reach the top of the age table.
 """
 
+from programs.framework.base import PaymentUnit
 from programs.programs.cross_white_label.ccdf.ma import MaCcdf
 from programs.programs.testing_fixtures.pe_integration import (
     PeIntegrationTestCase,
@@ -25,6 +26,7 @@ from programs.programs.testing_fixtures.pe_integration import (
     make_screen,
     screener_value,
 )
+from programs.programs.testing_fixtures.households import birth_year_month_for_age
 
 #: The period ``ma_ccdf`` is configured for. It decides which CCFA income limit applies:
 #: PolicyEngine holds the new-applicant limit at 50% of SMI before 2026-01-01 and 85%
@@ -88,12 +90,42 @@ class TestValueByAge(MaCcfaTestCase):
         self.assertEqual(screener_value(result), 21_125)
 
     def test_preschooler_under_four_and_a_half(self):
+        """A stated age with no birth month is read as exactly 4.0.
+
+        The screener always sends a birth month, so production prices a four-year-old by
+        their fractional age instead. The two tests below cover that, one either side of
+        the 4.5 split.
+        """
         screen = self.build(2)
         self.add_parent(screen)
         self.add_child(screen, 4)
         result = self.run_ccfa(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(screener_value(result), 16_572)
+
+    def test_four_and_two_months_is_paid_the_preschool_rate(self) -> None:
+        self.assert_four_year_old_paid(months_past_fourth_birthday=2, cost=16_572)
+
+    def test_four_and_eight_months_is_paid_the_school_age_rate(self) -> None:
+        """Still stated as age 4, but past the 4.5 split, so a tier lower."""
+        self.assert_four_year_old_paid(months_past_fourth_birthday=8, cost=12_632)
+
+    def assert_four_year_old_paid(self, months_past_fourth_birthday: int, cost: int) -> None:
+        """Price a child the screener reports as 4, who turned 4 ``months_past_fourth_birthday`` months ago.
+
+        The birth month is counted back from the screening date rather than fixed, so
+        ``calc_age()`` reads 4 whenever the suite runs: PolicyEngine is sent the same age
+        and the cassette keeps matching. Only ``fraction_age()``, which prices the child,
+        sees the extra months.
+        """
+        screen = self.build(2)
+        self.add_parent(screen)
+        birth_year_month = birth_year_month_for_age(4 + months_past_fourth_birthday / 12, screen.get_reference_date())
+        child = self.add_child(screen, 4, birth_year_month=birth_year_month)
+        self.assertEqual(child.calc_age(), 4)
+        result = self.run_ccfa(screen)
+        self.assertTrue(result.eligible)
+        self.assertEqual(screener_value(result), cost)
 
     def test_school_age(self):
         screen = self.build(2)
@@ -104,7 +136,8 @@ class TestValueByAge(MaCcfaTestCase):
         self.assertEqual(screener_value(result), 12_632)
 
     def test_two_children_are_paid_separately(self):
-        """The unit boolean gates; the per-child boolean picks who is paid."""
+        """The unit boolean gates; the per-child boolean picks who is paid. So the children,
+        not the household, are the eligible party, whatever the SPM base says."""
         screen = self.build(3)
         self.add_parent(screen)
         self.add_child(screen, 1, offset=2)
@@ -112,6 +145,9 @@ class TestValueByAge(MaCcfaTestCase):
         result = self.run_ccfa(screen)
         self.assertTrue(result.eligible)
         self.assertEqual(screener_value(result), 23_191 + 12_632)
+        self.assertEqual(result.payment_unit, PaymentUnit.MEMBER)
+        self.assertEqual(result.household_value, 0)
+        self.assertEqual([m.value for m in result.eligible_members], [0, 23_191, 12_632])
 
 
 class TestIncomeLimit(MaCcfaTestCase):
@@ -142,11 +178,7 @@ class TestIncomeLimit(MaCcfaTestCase):
         streams, so a household living on them read as having no income at all. CCFA
         names its own sources and unemployment compensation is one of them.
 
-        Unemployment rather than Social Security on purpose. Both counted when this was
-        written, but PolicyEngine 2.5.0 excludes Social Security from CCFA countable
-        income per EEC policy, so a Social Security household asserts opposite answers
-        either side of that release. Unemployment is counted by both, which keeps this
-        scenario about the federal-to-state widening rather than about a version.
+        Not Social Security: Massachusetts stopped counting it for CCFA, so it isn't sent.
         """
         screen = self.build(2)
         self.add_parent(screen, wages=96_000, income_type="unemployment")
@@ -159,9 +191,9 @@ class TestIncomeLimit(MaCcfaTestCase):
 class TestAssetLimit(MaCcfaTestCase):
     """$1,000,000, asserted either side rather than on it.
 
-    PolicyEngine 1.824.6 denies a household holding exactly $1,000,000 and 2.5.0 allows
-    it, so the boundary itself answers differently depending on the model version. These
-    two sit above and below it, where every served version agrees.
+    PolicyEngine has allowed a household holding exactly $1,000,000 since 2.5.0 (measured
+    again at 2.94.7 and 2.116.16); versions before it denied one. These two sit above and
+    below the limit, where every version agrees.
     """
 
     screen_id = 7303

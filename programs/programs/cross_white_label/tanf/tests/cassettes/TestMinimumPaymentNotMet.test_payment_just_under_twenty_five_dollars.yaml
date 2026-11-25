@@ -1,0 +1,83 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"501": {"age": {"2026": 30}, "is_full_time_college_student":
+      {"2026": false}, "is_in_secondary_school": {"2026": false}, "ssi": {"2026":
+      null}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026":
+      false}, "employment_income": {"2026": 6996}, "self_employment_income": {"2026":
+      0}}, "502": {"age": {"2026": 8}, "is_full_time_college_student": {"2026": false},
+      "is_in_secondary_school": {"2026": false}, "ssi": {"2026": null}, "receives_ssi":
+      {"2026": false}, "takes_up_ssi_if_eligible": {"2026": false}, "employment_income":
+      {"2026": 0}, "self_employment_income": {"2026": 0}}}, "tax_units": {"main_tax_unit":
+      {"members": ["501", "502"]}}, "families": {"family": {"members": ["501", "502"]}},
+      "households": {"household": {"members": ["501", "502"], "state_code": {"2026":
+      "NC"}}}, "spm_units": {"spm_unit": {"members": ["501", "502"], "tanf": {"2026":
+      null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
+      false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
+      false}, "nc_tanf_countable_gross_unearned_income": {"2026": 0}, "nc_tanf": {"2026":
+      null}}}, "marital_units": {}}, "version": "2.116.16"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1190'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.33.0
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"501": {"age":
+        {"2026": 30}, "is_full_time_college_student": {"2026": false}, "is_in_secondary_school":
+        {"2026": false}, "ssi": {"2026": 0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible":
+        {"2026": false}, "employment_income": {"2026": 6996}, "self_employment_income":
+        {"2026": 0}}, "502": {"age": {"2026": 8}, "is_full_time_college_student":
+        {"2026": false}, "is_in_secondary_school": {"2026": false}, "ssi": {"2026":
+        0.0}, "receives_ssi": {"2026": false}, "takes_up_ssi_if_eligible": {"2026":
+        false}, "employment_income": {"2026": 0}, "self_employment_income": {"2026":
+        0}}}, "tax_units": {"main_tax_unit": {"members": ["501", "502"]}}, "families":
+        {"family": {"members": ["501", "502"]}}, "households": {"household": {"members":
+        ["501", "502"], "state_code": {"2026": "NC"}}}, "spm_units": {"spm_unit":
+        {"members": ["501", "502"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026":
+        false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap": {"2026":
+        false}, "takes_up_snap_if_eligible": {"2026": false}, "nc_tanf_countable_gross_unearned_income":
+        {"2026": 0}, "nc_tanf": {"2026": 0.0}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "2.116.16", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Content-Length:
+      - '1286'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 23 Nov 2026 20:24:33 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-c6c7327851de588718de36ca72a8b6bc-dec379a700a420ef-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - c6c7327851de588718de36ca72a8b6bc
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - fbb6c7b4-2b14-48ca-9429-10297388758c
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

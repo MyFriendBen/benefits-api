@@ -13,6 +13,8 @@ body and so breaks this test with a body mismatch — that is a signal about the
 change, not about the harness. Re-record after reviewing the new body.
 """
 
+import sys
+import types
 import unittest
 from unittest import mock
 
@@ -28,6 +30,7 @@ from programs.programs.testing_fixtures.pe_integration import (
     PE_TEST_VERSION,
     TEST_PE_TOKEN,
     PeIntegrationTestCase,
+    check_no_class_level_pin,
     check_pe_version_pin,
     check_program_vintage,
     add_income,
@@ -35,6 +38,7 @@ from programs.programs.testing_fixtures.pe_integration import (
     calc_pe_program,
     make_program,
     make_screen,
+    module_pe_pin,
     screener_value,
     stub_pe_token_for_replay,
 )
@@ -81,15 +85,72 @@ class TestCheckPeVersionPin(SimpleTestCase):
         check_pe_version_pin("TestSomething", "1.0.0", "recorded before the suite-wide pin")
 
     def test_an_override_without_a_reason_fails(self) -> None:
-        with self.assertRaisesMessage(AssertionError, "Set pe_version_reason"):
+        with self.assertRaisesMessage(AssertionError, "Set PE_VERSION_REASON"):
             check_pe_version_pin("TestSomething", "1.0.0", "  ")
 
     def test_an_empty_pin_fails(self) -> None:
-        with self.assertRaisesMessage(AssertionError, "must set pe_version"):
+        with self.assertRaisesMessage(AssertionError, "must set PE_VERSION"):
             check_pe_version_pin("TestSomething", "", "")
 
-    def test_the_default_pin_is_the_suite_pin(self) -> None:
-        self.assertEqual(PeIntegrationTestCase.pe_version, PE_TEST_VERSION)
+
+def _test_class_in_module(module_name: str, namespace: dict[str, object], **pins: str) -> type:
+    """A PeIntegrationTestCase subclass defined in a stand-in module carrying ``pins`` as its globals."""
+    module = types.ModuleType(module_name)
+    for name, value in pins.items():
+        setattr(module, name, value)
+    sys.modules[module_name] = module
+
+    return type("TestSomething", (PeIntegrationTestCase,), {"__module__": module_name, **namespace})
+
+
+class TestModulePePin(SimpleTestCase):
+    """A pin is read from the test class's module, never from the class."""
+
+    def tearDown(self) -> None:
+        sys.modules.pop("pin_fixture", None)
+
+    def test_an_unpinned_module_follows_the_suite_pin(self) -> None:
+        test_class = _test_class_in_module("pin_fixture", {})
+
+        self.assertEqual(module_pe_pin(test_class), (PE_TEST_VERSION, ""))
+
+    def test_reads_the_module_constants(self) -> None:
+        test_class = _test_class_in_module("pin_fixture", {}, PE_VERSION="2.9.0", PE_VERSION_REASON="held for review")
+
+        self.assertEqual(module_pe_pin(test_class), ("2.9.0", "held for review"))
+
+
+class TestCheckNoClassLevelPin(SimpleTestCase):
+    """Only module-level pins are allowed, because they are the only ones record_and_diff can rewrite."""
+
+    def tearDown(self) -> None:
+        sys.modules.pop("pin_fixture", None)
+
+    def test_a_class_without_a_pin_passes(self) -> None:
+        check_no_class_level_pin(_test_class_in_module("pin_fixture", {}, PE_VERSION="2.9.0"))
+
+    def test_a_hardcoded_class_pin_fails(self) -> None:
+        test_class = _test_class_in_module("pin_fixture", {"pe_version": "2.9.0", "pe_version_reason": "held"})
+
+        with self.assertRaisesMessage(AssertionError, "TestSomething sets pe_version and pe_version_reason"):
+            check_no_class_level_pin(test_class)
+
+    def test_a_class_reading_the_module_constant_fails_too(self) -> None:
+        test_class = _test_class_in_module("pin_fixture", {"pe_version": "2.9.0"}, PE_VERSION="2.9.0")
+
+        with self.assertRaisesMessage(AssertionError, "Pin with module-level PE_VERSION"):
+            check_no_class_level_pin(test_class)
+
+    def test_a_pin_on_an_intermediate_base_class_fails(self) -> None:
+        base = _test_class_in_module("pin_fixture", {"pe_version_reason": "held"})
+        leaf = type("TestLeaf", (base,), {"__module__": "pin_fixture"})
+
+        with self.assertRaisesMessage(AssertionError, "TestSomething sets pe_version_reason"):
+            check_no_class_level_pin(leaf)
+
+    def test_the_base_class_sets_no_pin(self) -> None:
+        for name in ("pe_version", "pe_version_reason"):
+            self.assertFalse(hasattr(PeIntegrationTestCase, name))
 
 
 class TestCheckProgramVintage(TestCase):

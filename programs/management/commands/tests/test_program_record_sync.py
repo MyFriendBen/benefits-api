@@ -23,10 +23,12 @@ from programs.models import (
     FederalPoveryLimit,
     LegalStatus,
     Navigator,
+    NavigatorLanguage,
     Program,
     ProgramCategory,
     ProgramRecordImport,
     ProgramNavigator,
+    WarningMessage,
 )
 from screener.models import WhiteLabel
 from translations.models import Translation
@@ -732,6 +734,40 @@ class RecordSyncTestCase(RecordSyncBase):
 
         self.assertIn("unknown program key 'has_calculcator'", output)
 
+    def test_an_unknown_navigator_language_fails_its_record_and_creates_no_row(self) -> None:
+        self.record["navigators"][0]["languages"] = ["en"]
+
+        output = self.import_record()
+
+        self.assertIn("navigator language 'en' isn't one the screener shows", output)
+        self.assertRegex(output, r"Failed:\s+1")
+        self.assertFalse(NavigatorLanguage.objects.filter(code="en").exists())
+
+    def test_a_known_legal_status_without_a_row_is_created(self) -> None:
+        self.record["program"]["legal_status_required"] = ["citizen", "gc_5plus"]
+
+        self.import_record()
+
+        self.assertEqual(
+            sorted(self.program().legal_status_required.values_list("status", flat=True)), ["citizen", "gc_5plus"]
+        )
+
+    def test_an_unknown_legal_status_fails_its_record(self) -> None:
+        self.record["program"]["legal_status_required"] = ["gc_under5"]
+
+        output = self.import_record()
+
+        self.assertIn("legal status 'gc_under5' isn't a label the screener knows", output)
+        self.assertRegex(output, r"Failed:\s+1")
+
+    def test_a_known_navigator_language_imports(self) -> None:
+        self.record["navigators"][0]["languages"] = ["en-us", "es"]
+
+        self.import_record()
+
+        navigator = Navigator.objects.get(external_name=f"{PROGRAM}_nav_a")
+        self.assertEqual(sorted(navigator.languages.values_list("code", flat=True)), ["en-us", "es"])
+
     def test_two_records_owning_one_row_fail_the_run(self) -> None:
         self.write(self.record)
         other = make_record(OTHER)
@@ -859,6 +895,47 @@ class FederalNavigatorOwnerTestCase(RecordSyncBase):
         output = self.run_import()
 
         self.assertFalse(self.records_failed, output)
+        self.assertNotIn("so on this federal program only", output)
+
+    def reference_warning(self, owner: str) -> WarningMessage:
+        warning = WarningMessage.objects.new_warning(owner, "_show", "state_wic_warning")
+        self.federal_record["warning_messages"] = [
+            self.federal_record.pop("warning_message"),
+            {"external_name": "state_wic_warning"},
+        ]
+        self.write(self.federal_record, program=FEDERAL_PROGRAM)
+        return warning
+
+    def test_a_state_warning_the_federal_record_references_is_linked_with_a_note(self) -> None:
+        """A state's own warning on a federal program, e.g. a state's WIC notice once its WIC row retires."""
+        warning = self.reference_warning("co")
+
+        output = self.run_import()
+
+        self.assertFalse(self.records_failed, output)
+        warning.refresh_from_db()
+        self.assertEqual(warning.white_label.code, "co")
+        self.assertIn(self.federal_program(), warning.programs.all())
+        self.assertIn(
+            "warning 'state_wic_warning' is on the 'co' white label, so on this federal program only screens in the "
+            "same state as 'co' see it.",
+            output,
+        )
+        self.assertNotIn("own it in this record", output)
+        second = self.run_import()
+        self.assertIn("Matches the record", second)
+        self.assertIn("warning 'state_wic_warning' is on the 'co' white label", second)
+
+    def test_a_federal_warning_the_federal_record_references_gets_no_note(self) -> None:
+        WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        warning = self.reference_warning("federal")
+
+        output = self.run_import()
+
+        self.assertFalse(self.records_failed, output)
+        warning.refresh_from_db()
+        self.assertEqual(warning.white_label.code, "federal")
+        self.assertIn(self.federal_program(), warning.programs.all())
         self.assertNotIn("so on this federal program only", output)
 
     def export(self, white_label: str, program: str, path: Path) -> dict[str, Any]:

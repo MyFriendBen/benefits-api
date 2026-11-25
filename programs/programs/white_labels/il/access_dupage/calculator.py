@@ -1,5 +1,6 @@
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from programs.programs.shared.income import fpl_income_limit
 
 
 class IlAccessDuPage(ProgramCalculator):
@@ -52,7 +53,7 @@ class IlAccessDuPage(ProgramCalculator):
 
         # Household income at or below 250% FPL
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        income_limit = fpl_income_limit(self.program.year, self.screen.household_size, self.fpl_percent)
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
     def member_eligible(self, e: MemberEligibility):

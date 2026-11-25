@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_ihwap",
+    "category_type": {
+      "external_name": "managing_housing_costs"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Illinois Home Weatherization Assistance Program (IHWAP)",
+      "description": "IHWAP helps lower-income households use less energy and spend less on utility bills. It pays for home energy upgrades and for health and safety repairs. You may qualify if your household income is at or below 200% of the federal poverty level. Your local community action agency takes applications.",
+      "link": "https://dceo.illinois.gov/communityservices/homeweatherization.html",
+      "warning": "",
+      "website_description": "Find your local agency and apply for free home energy upgrades.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

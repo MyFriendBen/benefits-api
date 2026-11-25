@@ -14,32 +14,16 @@ from pathlib import Path
 
 from django.test import SimpleTestCase
 
+from programs.allowed_values import USER_SELECTED_LEGAL_STATUSES, LegalStatusLabel
+
 DATA_DIR = Path(__file__).resolve().parent.parent / "import_program_config_data" / "data"
 
-# The labels the frontend understands, from `CitizenLabels` in
-# benefits-calculator/src/Components/Results/Filter/citizenshipFilterConfig.tsx. The six
-# user-selected statuses are the filter buttons; the rest are derived from household data. A label
-# outside this set is dropped on import (LegalStatus.DoesNotExist) and silently never matches.
-USER_SELECTED = {
-    "citizen",
-    "non_citizen",
-    "gc_5plus",
-    "gc_5less",
-    "refugee",
-    "otherWithWorkPermission",
-}
-CALCULATED = {
-    "gc_18plus_no5",
-    "gc_under18_no5",
-    "otherHealthCarePregnant",
-    "otherHealthCareUnder19",
-    "otherHealthCareUnder21",
-    "notPregnantOrUnder19ForOmniSalud",
-    "notPregnantOrUnder19ForEmergencyMedicaid",
-    "notPregnantForMassHealthLimited",
-    "notPregnantOrChildForMassHealthLimited",
-}
-KNOWN_LABELS = USER_SELECTED | CALCULATED
+# The labels the screener understands (`programs/allowed_values.py`, which mirrors `CitizenLabels` in the
+# screener's citizenshipFilterConfig.tsx). The six user-selected statuses are the filter buttons; the
+# rest are derived from household data. A label outside this set matches no household.
+USER_SELECTED = {str(label) for label in USER_SELECTED_LEGAL_STATUSES}
+KNOWN_LABELS = set(LegalStatusLabel.values)
+CALCULATED = KNOWN_LABELS - USER_SELECTED
 
 # Programs pinned to the exact statuses each should declare — plus wa_fap, which the wa_snap edit
 # has to stay disjoint from. Pinning the whole set is what stops a later config pass from quietly
@@ -254,6 +238,7 @@ class MigrationLabelsTest(SimpleTestCase):
         super().setUpClass()
         cls.bar = cls._migration("0168", "fix_five_year_bar_legal_statuses")
         cls.mo_snap = cls._migration("0169", "drop_refugee_from_mo_snap")
+        cls.lawful_health_care = cls._migration("0205", "add_lawful_health_care_legal_statuses")
 
     def test_every_label_named_in_a_migration_is_known(self):
         named = {self.mo_snap.STATUS} | set(self.bar.SEEDABLE)
@@ -261,6 +246,14 @@ class MigrationLabelsTest(SimpleTestCase):
             named |= set(to_add) | set(to_remove)
 
         self.assertEqual(named - KNOWN_LABELS, set())
+
+    def test_every_label_0205_seeds_is_a_calculated_label_the_frontend_defines(self):
+        """
+        Every label seeded by 0205 must be defined as a calculated label in the frontend, or it
+        would never match. User-selected statuses must not be seeded here because reversing 0205
+        would delete their LegalStatus records and remove their assignments from every program.
+        """
+        self.assertEqual(set(self.lawful_health_care.SEEDABLE) - CALCULATED, set())
 
     def test_every_label_a_migration_adds_may_be_seeded(self):
         """

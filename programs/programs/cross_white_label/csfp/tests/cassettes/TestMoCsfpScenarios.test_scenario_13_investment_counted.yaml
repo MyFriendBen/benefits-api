@@ -4,8 +4,8 @@ interactions:
       {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["1301"]}}, "families":
       {"family": {"members": ["1301"]}}, "households": {"household": {"members": ["1301"],
       "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1301"],
-      "school_meal_countable_income": {"2026": 24600.0}}}, "marital_units": {}}, "version":
-      "2.53.1"}'
+      "school_meal_countable_income": {"2026": 24600.0}, "csfp_countable_income":
+      {"2026": 24600.0}}}, "marital_units": {}}, "version": "2.145.6"}'
     headers:
       Accept:
       - '*/*'
@@ -14,11 +14,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '440'
+      - '485'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -28,27 +28,28 @@ interactions:
         {"main_tax_unit": {"members": ["1301"]}}, "families": {"family": {"members":
         ["1301"]}}, "households": {"household": {"members": ["1301"], "state_code":
         {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members": ["1301"], "school_meal_countable_income":
-        {"2026": 24600.0}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.53.1", "data_version": null, "dataset": null}}'
+        {"2026": 24600.0}, "csfp_countable_income": {"2026": 24600.0}}}, "marital_units":
+        {}}, "policyengine_bundle": {"model_version": "2.145.6", "data_version": null,
+        "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
-      - '539'
+      - '584'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:09:30 GMT
+      - Mon, 23 Nov 2026 23:57:23 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-1eab0dd18c44e081c665ae51e33af523-fac3c71408aedb3f-00
+      - 00-65da9372d295a4330a43075d423054a5-3d7f7acce395429a-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 1eab0dd18c44e081c665ae51e33af523
+      - 65da9372d295a4330a43075d423054a5
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -56,9 +57,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 74c96b35-da1b-4b01-804d-49c433644992
+      - 4bf7d1db-c435-4240-87da-ad2928ded48e
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK

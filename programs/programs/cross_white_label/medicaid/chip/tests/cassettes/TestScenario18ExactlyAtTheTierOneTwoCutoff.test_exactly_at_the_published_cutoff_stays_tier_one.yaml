@@ -21,7 +21,7 @@ interactions:
       "MO"}}}, "spm_units": {"spm_unit": {"members": ["1801", "1802"], "tanf": {"2026":
       null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026":
       false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026":
-      false}}}, "marital_units": {}}, "version": "2.53.1"}'
+      false}}}, "marital_units": {}}, "version": "2.116.16"}'
     headers:
       Accept:
       - '*/*'
@@ -30,11 +30,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1763'
+      - '1765'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -61,26 +61,26 @@ interactions:
         "1802"], "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
         {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
         {"2026": false}}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
-        "2.53.1", "data_version": null, "dataset": null}}'
+        "2.116.16", "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1865'
+      - '1867'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:10:38 GMT
+      - Thu, 19 Nov 2026 18:41:33 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-0475400ee93f9c3a81bf417ccd7534b0-1403e888981dfd4c-00
+      - 00-d8b590682ac979d921bf080cc1ba7aaf-ae4bab7bd71cb350-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 0475400ee93f9c3a81bf417ccd7534b0
+      - d8b590682ac979d921bf080cc1ba7aaf;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -88,7 +88,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - c168dbfc-14bf-4b75-a02b-91c9ba47d965
+      - f1cd4496-83c0-45b6-ba69-2a3fdcd25d9b
       x-policyengine-route-channel:
       - current
     status:

@@ -31,10 +31,10 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from benefits.tests.cache_override import LOCAL_CACHE
-from programs.models import FederalPoveryLimit, LegalStatus, Program, Referrer, TranslationOverride
+from programs.models import FederalPoveryLimit, LegalStatus, NavigatorLanguage, Program, Referrer, TranslationOverride
 from configuration.models import Configuration
+from screener.allowed_values import ACUTE_OPTION_FIELDS
 from screener.assistant import (
-    ACUTE_OPTION_FIELDS,
     CONTEXT_PREFETCH,
     AssistantMessageRateThrottle,
     AssistantStartRateThrottle,
@@ -551,6 +551,40 @@ class BuildContextTests(TestCase):
         two = query_count(2)
 
         self.assertEqual(two, one, f"{one} -> {two} queries for 1 -> 2 programs with the warning")
+
+    def test_federal_program_warnings_are_those_of_the_screens_state(self):
+        """On a federal program, each state sees its own warnings and the federal ones, as the page
+        does: another white label in the same state counts, another state doesn't."""
+        federal, _ = WhiteLabel.objects.get_or_create(code="federal", defaults={"name": "Federal"})
+        WhiteLabel.objects.create(name="Test State Energy", code="test_energy", state_code="TS")
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        seed_program(federal, "federal_wic_test")
+        self.add_snapshot_row("federal_wic_test")
+        program = Program.objects.get(name_abbreviated="federal_wic_test")
+        for code in ("federal", "test", "test_energy", "other"):
+            warning = seed_warning(program, "_show", f"Warning from {code}.", external_name=f"warning_{code}")
+            warning.white_label = WhiteLabel.objects.get(code=code)
+            warning.save()
+
+        context = self.context()
+
+        self.assertEqual(
+            context["eligible_programs"][0]["warnings"],
+            ["Warning from federal.", "Warning from test.", "Warning from test_energy."],
+        )
+
+    def test_state_program_warning_owned_by_another_white_label_is_still_included(self):
+        """Only federal programs are filtered by white label: a state program keeps a warning
+        another white label owns, as the page does."""
+        WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
+        self.add_snapshot_row("lifeline")
+        warning = seed_warning(self.programs["lifeline"], "_show", "Enroll in SNAP first.")
+        warning.white_label = WhiteLabel.objects.get(code="other")
+        warning.save()
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["warnings"], ["Enroll in SNAP first."])
 
     def test_warnings_key_is_omitted_when_the_program_has_none(self):
         self.add_snapshot_row("snap")
@@ -1606,14 +1640,22 @@ class NavigatorsTests(TestCase):
         with mock.patch("screener.assistant.capture_message"):
             self.assertNotIn("link", self.navigators()[0])
 
-    def test_languages_are_forwarded_as_the_card_labels_and_unknown_codes_are_dropped(self):
-        """The card renders a badge only for codes in `allNavigatorLanguages`; the junk
-        production rows carry ("Spanish", "english") renders nothing there, so it
-        reaches Benji as nothing too. What is forwarded is the badge's words, not the
-        code, so ai-service needs no table of its own to drift from this one."""
-        seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("Spanish", "es", "english", "ALL"))
+    def test_languages_are_forwarded_as_the_card_labels(self):
+        """What is forwarded is the badge's words, not the code, so ai-service needs no
+        table of its own to drift from this one."""
+        seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("es", "ALL"))
 
         self.assertEqual(self.navigators()[0]["languages"], ["Spanish", "all languages"])
+
+    def test_an_unknown_language_code_is_dropped_rather_than_raising(self):
+        """Saving refuses an unknown code, but a bulk update or raw SQL bypasses that check.
+        A stray code renders nothing on the card, so it reaches Benji as nothing too, and
+        the context is still built."""
+        navigator = seed_navigator(self.programs["snap"], "help", name="Help", language_codes=("es",))
+        stray = NavigatorLanguage.objects.bulk_create([NavigatorLanguage(code="english")])[0]
+        navigator.languages.add(stray)
+
+        self.assertEqual(self.navigators()[0]["languages"], ["Spanish"])
 
     def test_over_long_description_is_clipped_and_reported(self):
         seed_navigator(self.programs["snap"], "help", name="Help", description="x" * (MAX_PROMPT_TEXT_LEN + 50))
@@ -2010,10 +2052,10 @@ class UnselectedNeedCategoriesTests(TestCase):
         self.assertNotIn("funeral", " ".join(self.categories()).lower())
 
     def test_every_live_config_key_maps_to_a_screen_field(self):
-        """The mapping this asserts lives twice — here and in benefits-calculator's
-        `updateScreen.ts`, which is what actually writes these columns. A category added
-        to the config without a column here would silently never be offered, so the drift
-        fails a test instead."""
+        """The live config's categories all map to a Screen field through
+        `ACUTE_OPTION_FIELDS` (screener/allowed_values.py). A category added to the config
+        without a column there would silently never be offered, so the drift fails a test
+        instead."""
         unmapped = [key for key in self.OPTIONS if key not in ACUTE_OPTION_FIELDS]
 
         self.assertEqual(unmapped, [])
@@ -2152,6 +2194,14 @@ class AssistantStartViewTests(APITestCase):
 
         eligible = payload["context"]["eligible_programs"]
         self.assertEqual(sorted(p["external_name"] for p in eligible), ["snap", "wic"])
+
+    def test_names_the_web_channel(self):
+        """MFB-2432: a screen can also hold an SMS conversation; this route only ever means web."""
+        self.assertEqual(self._post({})["channel"], "web")
+
+    def test_channel_in_the_request_body_is_ignored(self):
+        """Taking it from the body would let a browser open or resume the SMS conversation."""
+        self.assertEqual(self._post({"channel": "sms"})["channel"], "web")
 
     def test_supported_locale_from_the_request_is_forwarded_lowercased(self):
         self.assertEqual(self._post({"locale": "PT-BR"})["locale"], "pt-br")
@@ -2336,7 +2386,7 @@ class AssistantHistoryViewTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(request.call_args.args[0], "GET")
         self.assertTrue(request.call_args.args[1].endswith("/v1/conversations"))
-        self.assertEqual(request.call_args.kwargs["params"], {"screen_uuid": str(self.screen.uuid)})
+        self.assertEqual(request.call_args.kwargs["params"], {"screen_uuid": str(self.screen.uuid), "channel": "web"})
 
     def test_sends_no_request_body(self):
         """A GET carrying a JSON body is not handled predictably by every intermediary,
@@ -2481,6 +2531,11 @@ class AssistantMessageViewTests(APITestCase):
 
         self.assertEqual(payload["screen_uuid"], str(self.screen.uuid))
 
+    def test_names_the_web_channel_even_when_the_body_says_otherwise(self):
+        """ai-service refuses a message whose channel doesn't match its conversation, so a
+        web request can't write into the screen's SMS conversation (MFB-2432)."""
+        self.assertEqual(self._post({"text": "hi", "channel": "sms"})["channel"], "web")
+
     def test_screen_uuid_comes_from_the_url_not_the_request_body(self):
         """Taking it from the body would hand the check straight back to the caller."""
         payload = self._post({"text": "hi", "screen_uuid": str(uuid.uuid4())})
@@ -2550,6 +2605,25 @@ class AssistantMessageRatingViewTests(APITestCase):
         if reason is not None:
             body["reason"] = reason
         return self.client.put(self._url(**kwargs), body, format="json")
+
+    def test_a_texted_reply_cannot_be_rated_from_the_widget(self):
+        """SMS rows keep NULL ratings (MFB-1916 decision 9), even on the same screen (MFB-2432)."""
+        sms = AssistantConversation.objects.create(
+            conversation_id=uuid.uuid4(),
+            screen_uuid=self.screen.uuid,
+            white_label=self.white_label.code,
+            prompt_version="v5",
+            channel="sms",
+        )
+        texted = AssistantMessage.objects.create(
+            message_id=uuid.uuid4(), conversation=sms, seq=1, role="assistant", text="Bring your ID."
+        )
+
+        response = self._put(1, message=texted, conversation=sms)
+
+        self.assertEqual(response.status_code, 404)
+        texted.refresh_from_db()
+        self.assertIsNone(texted.rating)
 
     # --- the happy path: set, change, clear ---
 

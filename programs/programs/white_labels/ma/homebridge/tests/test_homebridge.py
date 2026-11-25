@@ -10,7 +10,7 @@ homebuyer assistance program, including:
 """
 
 from django.test import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from programs.programs.testing_fixtures.custom_calculator import hud_ami
 from programs.programs.white_labels.ma.homebridge.calculator import MaHomeBridge

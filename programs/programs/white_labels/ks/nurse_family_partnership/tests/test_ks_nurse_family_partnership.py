@@ -24,7 +24,6 @@ and in spec.md):
 
 from programs.programs.white_labels.ks.nurse_family_partnership.calculator import KsNurseFamilyPartnership
 from screener.serializers import _write_current_benefits
-from programs.framework.pe_dependencies import member
 
 EXPECTED_VALUE = 6_000 / 2.5  # $2,400/year
 

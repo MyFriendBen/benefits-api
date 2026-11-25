@@ -44,6 +44,38 @@ roughly three minutes to under one. Two things follow from that:
 
 Pass `-n 0` to force a serial run when debugging test interdependence.
 
+### Split Across CI Jobs
+
+PR validation also splits the suite across 3 parallel jobs with
+[pytest-split](https://github.com/jerry-git/pytest-split), each of which still fans out
+with xdist. The groups are balanced by a `.test_durations` file, a record of how long each
+test took. It isn't committed; CI keeps it current on its own:
+
+1. **Every merge to main**, the staging deploy runs the whole suite with
+   `--store-durations --clean-durations` and saves the resulting `.test_durations` to the
+   GitHub Actions cache as `test-durations-<commit sha>`.
+2. **Every PR run** starts with a "Resolve test durations" job that restores the newest of
+   those entries, once, and passes the file to all 3 test groups as an artifact. The groups
+   must split the suite by the identical file — two different files cut it in different
+   places, leaving some tests in two groups and some in none — so no group restores its
+   own, and a group that can't download the shared file fails instead of guessing. Each
+   group logs the file's sha256, so you can confirm they match.
+3. **With nothing cached** — before the first staging deploy, or after an entry goes 7
+   days unused and is evicted — the resolve job hands out an empty record, and pytest-split
+   divides the tests evenly by count: less balanced, but still consistent.
+
+The file only steers how the work is divided: a test missing from it — such as one the
+PR itself adds — is still run, and counted at the average duration until a staging deploy
+records it.
+
+To run one group locally the way CI does, record durations first (or skip that and get an
+even split by count):
+
+```bash
+pytest --store-durations --clean-durations
+pytest --splits 3 --group 1
+```
+
 ### Unit Tests Only
 ```bash
 # Skip integration tests
@@ -141,7 +173,7 @@ from programs.programs.testing_fixtures.pe_integration import (
 
 @pytest.mark.integration          # applies VCR (the base class carries this too)
 class TestTxHeadStart(PeIntegrationTestCase):
-    # Records and replays at PE_TEST_VERSION. No pe_version needed.
+    # Records and replays at PE_TEST_VERSION. No pin needed.
 
     def test_scenario_1_single_parent_child_age_3_under_income_limit(self):
         screen = make_screen(screen_id=1, white_label_code="tx", state_code="TX",
@@ -160,7 +192,7 @@ class TestTxHeadStart(PeIntegrationTestCase):
 Three rules make a PolicyEngine cassette replayable — the helpers enforce them, don't work around them:
 
 1. **Assign explicit primary keys.** The request keys `household.people` by member id and the *response* is keyed the same way, so a cassette recorded under different auto-increment pks can neither be matched nor read.
-2. **Pin the model version.** Every test case records at `PE_TEST_VERSION` (`pe_integration.py`) unless it overrides `pe_version`, and an override must set `pe_version_reason`. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
+2. **Pin the model version.** Every test case records at `PE_TEST_VERSION` (`pe_integration.py`). A module that must run at another version sets module-level `PE_VERSION` and `PE_VERSION_REASON`, which cover every test class in it. A test class never sets `pe_version` itself: `record_and_diff` only reads and rewrites the module constants, so the harness fails a class-level pin. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
 3. **Assert the truncated value** with `screener_value(...)`. PolicyEngine returns fractional dollars; the API truncates before serving, so whole dollars are what the spec and the user see.
 
 **Build each scenario at the program's recorded year.** `calc_pe_program` fails a scenario whose `Program.year` differs from the edition `programs/vintage.py` records for that program, since `year` is the PolicyEngine request period and a test at another year asserts values no household is shown. A scenario that deliberately runs another year — one proving the calculator reads year-specific parameters — passes `off_vintage` saying why. Programs with no entry in `programs/vintage.py` aren't checked.
@@ -190,7 +222,7 @@ curl -s https://household.api.policyengine.org/versions/us
 
 ### Refreshing after PolicyEngine moves
 
-A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: bump `PE_TEST_VERSION`, delete the affected cassettes, re-run step 1, and review the value diff. A module that can't move yet keeps its cassettes by overriding `pe_version` with its old version and a `pe_version_reason`; delete both once it is re-recorded. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
+A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: bump `PE_TEST_VERSION`, delete the affected cassettes, re-run step 1, and review the value diff. A module that can't move yet keeps its cassettes by setting module-level `PE_VERSION` to its old version and `PE_VERSION_REASON` to why. When it can move, delete both *before* re-recording it, so step 1 records at the bumped `PE_TEST_VERSION` rather than the old pin. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
 
 Re-recording and adopting a new PolicyEngine version are always the same act: PolicyEngine serves only what `current`/`frontier` currently resolve to, and returns `422 unsupported_version` for anything else. A cassette can never be refreshed at its original pin.
 

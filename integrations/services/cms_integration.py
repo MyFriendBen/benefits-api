@@ -38,7 +38,6 @@ class HubSpotIntegration(CmsIntegration):
             "firstname": self.user.first_name,
             "lastname": self.user.last_name,
             "email": self.user.email,
-            "phone": str(self.user.cell),
             "states": self.STATE,
             "send_offers": self.user.send_offers,
             "explicit_tcpa_consent": self.user.explicit_tcpa_consent,
@@ -47,8 +46,18 @@ class HubSpotIntegration(CmsIntegration):
             "hubspot_owner_id": self.OWNER_ID,
         }
 
+        # str(None) is the literal "None", which HubSpot stored as a phone number. Leave the
+        # property out when there is no cell, which also keeps an existing number on update.
+        if self.user.cell:
+            contact["phone"] = str(self.user.cell)
+
         if self.screen:
             contact["uuid"] = str(self.screen.uuid)
+
+            # Only send a referrer when there is one: HubSpot treats an empty string as
+            # a value, so sending "" on the conflict-update path would blank an existing code.
+            if self.screen.referrer_code:
+                contact["mfb_referrer_code"] = self.screen.referrer_code
 
         return contact
 
@@ -73,7 +82,10 @@ class HubSpotIntegration(CmsIntegration):
             http_body = json.loads(e.body)
             if http_body.get("category") == "CONFLICT":
                 contact_id = self._get_conflict_contact_id(e)
-                self._update_contact(contact_id, data)
+                # The owner is only a default for new contacts. Leave it off the update so a
+                # repeat sign-up does not take back a contact someone has since reassigned.
+                update_data = {k: v for k, v in data.items() if k != "hubspot_owner_id"}
+                self._update_contact(contact_id, update_data)
             else:
                 raise e
 
@@ -125,7 +137,7 @@ class HubSpotIntegration(CmsIntegration):
 
 class CoHubSpotIntegration(HubSpotIntegration):
     STATE = "CO"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class NcHubSpotIntegration(HubSpotIntegration):
@@ -135,37 +147,37 @@ class NcHubSpotIntegration(HubSpotIntegration):
 
 class MaHubSpotIntegration(HubSpotIntegration):
     STATE = "MA"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class IlHubSpotIntegration(HubSpotIntegration):
     STATE = "IL"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class TxHubSpotIntegration(HubSpotIntegration):
     STATE = "TX"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class WaHubSpotIntegration(HubSpotIntegration):
     STATE = "WA"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class KsHubSpotIntegration(HubSpotIntegration):
     STATE = "KS"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class MoHubSpotIntegration(HubSpotIntegration):
     STATE = "MO"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 class NjHubSpotIntegration(HubSpotIntegration):
     STATE = "NJ"
-    OWNER_ID = "80630223"  # Josh's owner ID
+    OWNER_ID = "168560325"  # Julie's owner ID
 
 
 CMS_INTEGRATIONS = {

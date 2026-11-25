@@ -24,6 +24,12 @@ from programs.programs.testing_fixtures.pe_integration import (
 from screener.serializers import _write_current_benefits
 from screener.tests.helpers import seed_program
 
+PE_VERSION = "2.145.6"
+PE_VERSION_REASON = (
+    "Recorded at PolicyEngine frontier so the csfp_countable_income input, sent from 2.145.6, is "
+    "exercised. Remove PE_VERSION and this reason once PE_TEST_VERSION reaches 2.145.6."
+)
+
 YEAR = "2026"
 
 # gov.usda.csfp.amount for 2026, per qualifying individual.

@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_njpca_fqhc_locator",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "NJPCA community health center (FQHC) locator",
+      "description": "Use the NJPCA locator to find a community health center (FQHC) near you. Health centers serve you no matter what you can pay. A sliding fee lowers your cost instead of denying care. The locator is online 24/7.",
+      "link": "https://www.njpca.org/locate-center/",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

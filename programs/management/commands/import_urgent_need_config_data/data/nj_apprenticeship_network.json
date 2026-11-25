@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_apprenticeship_network",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "NJ Apprenticeship Network finder",
+      "description": "The NJ Apprenticeship Network finder helps you find an apprenticeship. No eligibility rules are published for the finder. Use the online form or email apprenticeships@dol.nj.gov.",
+      "link": "https://www.nj.gov/labor/career-services/apprenticeship/findaprogram.shtml",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

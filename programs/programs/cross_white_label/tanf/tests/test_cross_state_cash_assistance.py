@@ -15,8 +15,11 @@ per calculator rather than per route:
 
 * KS, MO, TX and WA send ``NonTanfCashAssistanceIncomeDependency`` and let PolicyEngine sum
   its own source list.
-* CO, IL, NC and MA compute countable unearned income themselves and pass a total, excluding
+* CO, IL and MA compute countable unearned income themselves and pass a total, excluding
   only ``cashAssistance``. The new type falls into ``"unearned"`` automatically.
+* NC sends its own unearned total (``NcTanfCountableGrossUnearnedIncomeDependency``) that
+  deliberately leaves ``cashAssistanceOther`` out: WF-114 lists General Assistance as not
+  counted. NC is a documented exemption below, not a state that counts the income.
 
 What this asserts, and what it does not: each calculator's own inputs are evaluated against a
 household reporting the income, so this pins where the money lands *in the payload we send*
@@ -37,6 +40,16 @@ from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
 MONTHLY_AMOUNT = 400
 ANNUAL_AMOUNT = MONTHLY_AMOUNT * 12
+
+
+# States that deliberately do not count ``cashAssistanceOther``, mapped to why. Each is asserted
+# to NOT count it, so the exemption fails if the state's behavior changes in either direction.
+NOT_COUNTED = {
+    "nc_tanf": (
+        "WF-114, NC's Work First income chart, lists General Assistance as not counted, and NC's own "
+        "unearned total leaves cashAssistanceOther out."
+    ),
+}
 
 
 def _tanf_calculators() -> dict[str, type]:
@@ -124,6 +137,20 @@ class TestNonTanfCashAssistanceReachesEveryState(TanfCashAssistanceSplitTestCase
                     for field in after
                     if after[field] - before.get(field, 0) >= ANNUAL_AMOUNT
                 }
+                if slug in NOT_COUNTED:
+                    # Any increase at all, not just a full-amount one: a state counting only part
+                    # of the income would otherwise slip past the threshold above.
+                    increased = {
+                        field: after[field] - before.get(field, 0)
+                        for field in after
+                        if after[field] - before.get(field, 0) > 0
+                    }
+                    self.assertFalse(
+                        increased,
+                        f"{slug} is exempt ({NOT_COUNTED[slug]}) but now sends cashAssistanceOther as "
+                        f"{increased}; remove it from NOT_COUNTED",
+                    )
+                    continue
                 self.assertTrue(
                     moved,
                     f"{slug} does not count cashAssistanceOther anywhere: {before} -> {after}",

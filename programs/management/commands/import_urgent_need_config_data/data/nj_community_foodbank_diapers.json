@@ -1,0 +1,40 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_community_foodbank_diapers",
+    "category_type": {
+      "external_name": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Community FoodBank of NJ - diapers",
+      "description": "Community FoodBank of New Jersey pantries give out diapers. No eligibility rules are published. Walk in or call ahead, since hours vary by pantry. Call 908-355-3663.",
+      "link": "https://cfbnj.org/find-free-diapers-in-nj/",
+      "warning": "",
+      "website_description": "Learn how to get diapers and baby supplies.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Bergen County",
+      "Essex County",
+      "Hudson County",
+      "Middlesex County",
+      "Morris County",
+      "Passaic County",
+      "Somerset County",
+      "Union County",
+      "Atlantic County",
+      "Cape May County",
+      "Cumberland County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

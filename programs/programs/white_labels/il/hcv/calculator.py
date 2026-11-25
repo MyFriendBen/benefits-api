@@ -5,6 +5,7 @@ from types import MappingProxyType
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class IlHcv(ProgramCalculator):
     #: Head, co-head or spouse — the members who are never dependents, and whose age
     #: or disability makes the household an elderly or disabled family (24 CFR 5.403).
     #: MFB has no co-head, so ``domesticPartner`` stands in for one.
-    HEAD_RELATIONSHIPS = ("headOfHousehold", "spouse", "domesticPartner")
+    HEAD_RELATIONSHIPS = (HEAD_OF_HOUSEHOLD_RELATIONSHIP, "spouse", "domesticPartner")
 
     #: Income types excluded from annual income for every member, whoever receives
     #: them: workers' compensation, per 24 CFR 5.609(b)(5).

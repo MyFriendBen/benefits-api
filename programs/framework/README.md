@@ -9,6 +9,10 @@ Only code that every calculator needs, regardless of white label or engine.
 - If all of a file's consumers are in one white label, it belongs to that white label.
 - If they span some white labels but not all, it belongs to whatever groups them —
   usually a family under `cross_white_label/`.
+- A small rule that unrelated calculators each need (an FPL income limit, a residency
+  check, who files a tax return) is an atomic function in `programs/programs/shared/`,
+  tested on its own. Calculators call it from their own method, so one white label can
+  override the method without forking the rule.
 
 ## Contents
 

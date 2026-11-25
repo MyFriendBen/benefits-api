@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_helmets_to_hardhats",
+    "category_type": {
+      "external_name": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "NJ Helmets to Hardhats",
+      "description": "NJ Helmets to Hardhats is for veterans, transitioning active duty members, and Guard and Reserve members with honorable service. Register online, then get counseling. Call 732-499-0100. It can take days to 2 weeks.",
+      "link": "https://www.njbctc.org/nj-h2h/",
+      "warning": "",
+      "website_description": "Find help with jobs and training.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -8,11 +8,9 @@ Eligibility requirements:
   4. Member is not pregnant, is 12 or older, and is the head of household or their spouse
 
 Notes:
-  - The income limit is sized with `household_size + len(e.eligible_members)`, and
-    `eligible_members` holds EVERY member rather than only the eligible ones, so the
-    FPL lookup lands at roughly double the true household size. That is a known bug
-    tracked separately; the tests below deliberately pin the current behaviour so the
-    suite stays green, and are flagged where they do so.
+  - The income limit is sized with `household_size` plus the number of household
+    members who are eligible themselves (non-pregnant head or spouse aged 12+), not
+    `len(e.eligible_members)`, which holds every member whether eligible or not.
   - The income limit is derived by the real `FederalPoveryLimit.get_limit`, not by a
     copy of it. `get_limit` is pure arithmetic over `as_dict()`, which reads the offline
     `_FPL_DEFAULTS` literal, so it needs neither the database nor the network — an
@@ -28,7 +26,6 @@ from programs.framework.base import Eligibility, MemberEligibility, ProgramCalcu
 from programs.programs.cross_white_label.family_planning.co import FamilyPlanningServices
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
-from programs.framework.pe_dependencies import member
 
 # Unsaved on purpose: `get_limit` only reads `self.period` and the cached FPL table.
 FPL_2025 = FederalPoveryLimit(year="2025", period="2025")
@@ -161,10 +158,9 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
     """
     Yearly income must be strictly below 265% FPL, excluding cash assistance.
 
-    The FPL size used is `household_size + len(e.eligible_members)`. `eligible_members`
-    contains every member, not just the eligible ones, so these boundaries are wider
-    than the program's real limits. That is a known bug tracked separately; the
-    assertions below pin current behaviour and must be updated when it is fixed.
+    The FPL size used is `household_size` plus the number of eligible members, so a
+    1-person household with one eligible member is measured against the 2-person FPL:
+    int(2.65 * 21,150) == 56,047.
     """
 
     def _run(self, household_size, household_income, member_count=1):
@@ -177,7 +173,6 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
         self.assertTrue(self._run(1, 10_000))
 
     def test_income_one_dollar_below_the_limit_is_eligible(self):
-        # known bug: size is 1 + 1 = 2, so int(2.65 * 21,150) == 56,047
         self.assertTrue(self._run(1, 56_046))
 
     def test_income_exactly_at_the_limit_is_ineligible(self):
@@ -198,21 +193,29 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
             "yearly", ["all"], exclude=["cashAssistance", "cashAssistanceOther", "nurturingFutures"]
         )
 
-    def test_income_limit_is_sized_using_every_member_not_just_eligible_ones(self):
-        # Known bug. All three members are counted even though none of the
-        # MemberEligibility objects have been evaluated, so a 3-person household is
-        # measured against the 6-person FPL: int(2.65 * 43,150) == 114,347.
+    def test_income_limit_adds_eligible_members_to_household_size(self):
+        # a 3-person household with 3 eligible members uses the 6-person FPL
         calc = make_calculator(household_size=3, household_income=100_000)
-        calc.household_eligible(eligibility_with_members(3))
+        e = eligibility_with_members(3)
+        calc.household_eligible(e)
         calc.program.year.get_limit.assert_called_once_with(6)
 
-    def test_ineligible_member_still_widens_the_income_limit(self):
-        # Known bug. Once fixed, only genuinely eligible members should count.
+    def test_ineligible_members_do_not_change_the_income_limit(self):
         calc = make_calculator(household_size=2, household_income=0)
         e = Eligibility()
         for _ in range(2):
             me = MemberEligibility(make_member())
             me.eligible = False
+            e.add_member_eligibility(me)
+        calc.household_eligible(e)
+        calc.program.year.get_limit.assert_called_once_with(2)
+
+    def test_only_eligible_members_are_counted_in_a_mixed_household(self):
+        calc = make_calculator(household_size=3, household_income=0)
+        e = Eligibility()
+        for eligible in (True, False, False):
+            me = MemberEligibility(make_member())
+            me.eligible = eligible
             e.add_member_eligibility(me)
         calc.household_eligible(e)
         calc.program.year.get_limit.assert_called_once_with(4)

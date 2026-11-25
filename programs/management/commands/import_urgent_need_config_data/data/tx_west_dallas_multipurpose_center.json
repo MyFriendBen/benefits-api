@@ -3,9 +3,7 @@
   "need": {
     "external_name": "tx_west_dallas_multipurpose_center",
     "category_type": {
-      "external_name": "tx_managing_housing_cost",
-      "name": "Managing Housing Cost",
-      "icon": "housing"
+      "external_name": "managing_housing_costs"
     },
     "type_short": ["housing"],
     "translations": {

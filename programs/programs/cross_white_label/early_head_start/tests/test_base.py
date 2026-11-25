@@ -5,7 +5,7 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import irs_gross_income, member, receipt_contract, spm
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
-from programs.programs.cross_white_label.test_helpers import registered_subclasses, state_codes
+from programs.programs.cross_white_label.test_helpers import state_codes
 
 
 class TestFederalEarlyHeadStart(TestCase):

@@ -7,7 +7,6 @@ from unittest.mock import Mock
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from django.test import TestCase
 from programs.framework.pe_dependencies import member as member_dependency
-from programs.framework.pe_dependencies import member
 
 IBCCP_SCREENING_VALUE = 400
 

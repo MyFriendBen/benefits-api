@@ -30,7 +30,9 @@ from programs.programs.testing_fixtures.pe_integration import (
 )
 from screener.models import Expense
 from programs.programs.white_labels.mo.pts.calculator import MoPts
-from programs.framework.pe_dependencies import member
+
+PE_VERSION = "2.72.5"
+PE_VERSION_REASON = "Values change at PolicyEngine 2.94.7. Held here until the change is reconciled with the spec; then remove PE_VERSION and this reason and re-record."
 
 CLAIM_YEAR = 2025
 

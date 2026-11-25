@@ -57,14 +57,12 @@ YEAR = "2026"
 class MoTanfScenarioTestCase(PeIntegrationTestCase):
     """Shared household builder. Every scenario is St. Louis City, ZIP 63101."""
 
-    # Distinct per subclass so each scenario's cassette pins its own household.
+    # Distinct per subclass so each scenario's cassette pins its own household. Set to the
+    # scenario number.
     #
-    # This is a cassette-identity token, not the scenario number, and the two stopped matching
-    # at MFB-1790. It seeds member primary keys (``screen_id * 100 + offset``) that are part of
-    # the recorded request body, so changing it invalidates the cassette — and re-recording is
-    # only possible at a PolicyEngine version still being served, which these cassettes' pin no
-    # longer is. So the renumbering that removed Scenarios 11 and 12 renamed the classes and
-    # left every ``screen_id`` where it was. Keep them frozen until MFB-1846 re-records.
+    # It seeds member primary keys (``screen_id * 100 + offset``) that are part of the recorded
+    # request body, so changing it invalidates the cassette: renumbering scenarios means
+    # re-recording every one whose number moved.
     screen_id = 0
 
     def build(self, household_size, household_assets=0, on_tanf=False):
@@ -281,15 +279,9 @@ class TestScenario11SsiChildPayeeOnly(MoTanfScenarioTestCase):
 
     Unskipped by MFB-1693: HouseholdMember.is_dependent()'s qualifying-child path no longer
     tests income/support, so the SSI child stays in the main tax unit and PolicyEngine's
-    caretaker test sees its dependent child, returning the spec's $136/month.
+    caretaker test sees its dependent child, returning the spec's $136/month."""
 
-    Pinned separately from the rest of this module: the module's ``1.815.1`` pin is no longer
-    served (422 unsupported_version), and this scenario didn't exist as a passing cassette to
-    carry forward, so it's recorded fresh at the version current when MFB-1693 landed rather
-    than waiting on MFB-1846 to re-pin the whole file."""
-
-    pe_version = "2.53.1"
-    screen_id = 13
+    screen_id = 11
 
     def test_payee_only_unit(self):
         screen = self.build(2)
@@ -303,7 +295,7 @@ class TestScenario11SsiChildPayeeOnly(MoTanfScenarioTestCase):
 class TestScenario12LargerHousehold(MoTanfScenarioTestCase):
     """Size-5 payment standard → $388/month."""
 
-    screen_id = 14
+    screen_id = 12
 
     def test_size_five_no_income(self):
         screen = self.build(5)
@@ -319,7 +311,7 @@ class TestScenario12LargerHousehold(MoTanfScenarioTestCase):
 class TestScenario13NonQualifyingSiblingExcluded(MoTanfScenarioTestCase):
     """A 19-year-old is excluded on age alone, leaving a size-2 unit → $234/month."""
 
-    screen_id = 15
+    screen_id = 13
 
     def test_nineteen_year_old_dropped_from_headcount(self):
         screen = self.build(3)
@@ -333,7 +325,7 @@ class TestScenario13NonQualifyingSiblingExcluded(MoTanfScenarioTestCase):
 class TestScenario14PregnancyAloneDoesNotQualify(MoTanfScenarioTestCase):
     """RSMo 208.040 grants TA on behalf of a dependent child; pregnancy alone does not."""
 
-    screen_id = 16
+    screen_id = 14
 
     def test_pregnant_with_no_child(self):
         screen = self.build(1)
@@ -345,7 +337,7 @@ class TestScenario14PregnancyAloneDoesNotQualify(MoTanfScenarioTestCase):
 class TestScenario15ChildcareBelowCap(MoTanfScenarioTestCase):
     """$100 actual cost deducts in full, under the $175 cap → $214/month."""
 
-    screen_id = 17
+    screen_id = 15
 
     def test_actual_cost_below_the_cap(self):
         screen = self.build(2)
@@ -360,7 +352,7 @@ class TestScenario15ChildcareBelowCap(MoTanfScenarioTestCase):
 class TestScenario16ChildcareCapped(MoTanfScenarioTestCase):
     """$300 actual cost is capped at $175 → $109/month."""
 
-    screen_id = 18
+    screen_id = 16
 
     def test_cap_binds(self):
         screen = self.build(2)
@@ -375,7 +367,7 @@ class TestScenario16ChildcareCapped(MoTanfScenarioTestCase):
 class TestScenario17MinimumPaymentFloorBoundary(MoTanfScenarioTestCase):
     """A deficit of exactly $10 still pays → $10/month."""
 
-    screen_id = 19
+    screen_id = 17
 
     def test_deficit_exactly_at_the_floor(self):
         screen = self.build(2)
@@ -390,7 +382,7 @@ class TestScenario18MinimumPaymentFloorOverBoundary(MoTanfScenarioTestCase):
     """Accepted PE divergence (AC 31): a $9.33 deficit is below Missouri's $10 floor, so
     PolicyEngine suppresses the payment to $0, which is reported as not eligible."""
 
-    screen_id = 20
+    screen_id = 18
 
     def test_deficit_below_the_floor(self):
         screen = self.build(2)
@@ -407,12 +399,9 @@ class TestScenario19ChildStudentEarningsExcluded(MoTanfScenarioTestCase):
 
     Unskipped by MFB-1693: the student child's own earnings no longer eject them from
     the qualifying-child path (student under 24 + eligible relationship is sufficient),
-    so they remain in the main tax unit and PolicyEngine returns the spec's $234/month.
+    so they remain in the main tax unit and PolicyEngine returns the spec's $234/month."""
 
-    Pinned separately from the rest of this module — see TestScenario11SsiChildPayeeOnly."""
-
-    pe_version = "2.53.1"
-    screen_id = 21
+    screen_id = 19
 
     def test_student_child_earnings_excluded(self):
         screen = self.build(2)
@@ -426,7 +415,7 @@ class TestScenario19ChildStudentEarningsExcluded(MoTanfScenarioTestCase):
 class TestScenario20TwoEarners(MoTanfScenarioTestCase):
     """The disregard runs per earner, not against combined earnings → $168/month."""
 
-    screen_id = 22
+    screen_id = 20
 
     def test_each_earner_disregarded_separately(self):
         screen = self.build(4)
@@ -443,7 +432,7 @@ class TestScenario20TwoEarners(MoTanfScenarioTestCase):
 class TestScenario21UnearnedIncome(MoTanfScenarioTestCase):
     """Unearned income gets no earned-income disregard → $34/month."""
 
-    screen_id = 23
+    screen_id = 21
 
     def test_unemployment_counts_in_full(self):
         screen = self.build(2)
@@ -457,7 +446,7 @@ class TestScenario21UnearnedIncome(MoTanfScenarioTestCase):
 class TestScenario22SizeEightPaymentStandard(MoTanfScenarioTestCase):
     """Size-8 payment standard → $514/month."""
 
-    screen_id = 24
+    screen_id = 22
 
     def test_size_eight(self):
         screen = self.build(8)
@@ -471,7 +460,7 @@ class TestScenario22SizeEightPaymentStandard(MoTanfScenarioTestCase):
 class TestScenario23IncapacitatedCareDeduction(MoTanfScenarioTestCase):
     """A reported dependentCare cost deducts at the $175 incapacitated-person tier."""
 
-    screen_id = 25
+    screen_id = 23
 
     def test_dependent_care_deducted(self):
         screen = self.build(3)
@@ -488,7 +477,7 @@ class TestScenario24NoDependentCareReported(MoTanfScenarioTestCase):
     """No deduction is invented from a disability flag alone, so the same household with
     no reported cost is denied."""
 
-    screen_id = 26
+    screen_id = 24
 
     def test_disability_flag_alone_deducts_nothing(self):
         screen = self.build(3)
@@ -503,7 +492,7 @@ class TestScenario24NoDependentCareReported(MoTanfScenarioTestCase):
 class TestScenario25UnderTwoChildcareCap(MoTanfScenarioTestCase):
     """A child under 2 uses the $200 cap, not $175 → $134/month."""
 
-    screen_id = 27
+    screen_id = 25
 
     def test_under_two_cap(self):
         screen = self.build(2)
@@ -518,7 +507,7 @@ class TestScenario25UnderTwoChildcareCap(MoTanfScenarioTestCase):
 class TestScenario26SelfEmploymentIsNetProfit(MoTanfScenarioTestCase):
     """Reported self-employment is net profit and runs the same sequence as wages."""
 
-    screen_id = 28
+    screen_id = 26
 
     def test_self_employment_matches_wages(self):
         screen = self.build(2)
@@ -532,7 +521,7 @@ class TestScenario26SelfEmploymentIsNetProfit(MoTanfScenarioTestCase):
 class TestScenario27AggregateChildcareCap(MoTanfScenarioTestCase):
     """Per-child caps sum ($200 under-2 + $175 age-2-plus = $375), not one flat cap."""
 
-    screen_id = 29
+    screen_id = 27
 
     def test_caps_sum_across_children(self):
         screen = self.build(3)
@@ -548,7 +537,7 @@ class TestScenario27AggregateChildcareCap(MoTanfScenarioTestCase):
 class TestScenario28ChildSupportReceived(MoTanfScenarioTestCase):
     """Child support counts as unearned income at the reported amount → $203/month."""
 
-    screen_id = 30
+    screen_id = 28
 
     def test_child_support_counts(self):
         screen = self.build(2, on_tanf=True)
@@ -563,7 +552,7 @@ class TestScenario29OwnGrantExcluded(MoTanfScenarioTestCase):
     """A current recipient's own TA grant is excluded from its own recalculation, so the
     result matches a recipient reporting no income → $234/month."""
 
-    screen_id = 31
+    screen_id = 29
 
     def test_own_cash_assistance_excluded(self):
         screen = self.build(2, on_tanf=True)
@@ -578,7 +567,7 @@ class TestScenario30Gate1EqualityBoundary(MoTanfScenarioTestCase):
     """Accepted PE divergence (AC 31): strict regulation fails Gate 1 at exactly the
     Gross Max; PolicyEngine's formula-based ceiling passes it."""
 
-    screen_id = 32
+    screen_id = 30
 
     def test_gross_income_equals_the_gross_max(self):
         screen = self.build(2, on_tanf=True)
@@ -593,7 +582,7 @@ class TestScenario30Gate1EqualityBoundary(MoTanfScenarioTestCase):
 class TestScenario31Gate2DeniesAfterRetry(MoTanfScenarioTestCase):
     """Gate 2 denies on its own even after the (9)(C)2) $30-plus-⅓ retry."""
 
-    screen_id = 33
+    screen_id = 31
 
     def test_gate_two_independently_denies(self):
         screen = self.build(4)
@@ -616,7 +605,7 @@ class TestScenario32SsiSpouseExcluded(MoTanfScenarioTestCase):
     Missouri's NPCR rule, which PolicyEngine does not model (AC 20).
     """
 
-    screen_id = 34
+    screen_id = 32
 
     def test_ssi_spouse_excluded_from_the_unit(self):
         screen = self.build(4)
@@ -637,7 +626,7 @@ class TestScenario33GenericCashAssistanceCounts(MoTanfScenarioTestCase):
     picks, not by the Current Benefits tile.
     """
 
-    screen_id = 35
+    screen_id = 33
 
     def test_cash_assistance_counts_when_not_on_tanf(self):
         screen = self.build(2)
@@ -656,10 +645,29 @@ class TestScenario34AgeEighteenDependentChild(MoTanfScenarioTestCase):
     0, no grant.
     """
 
-    screen_id = 36
+    screen_id = 34
 
     def test_eighteen_year_old_keeps_the_caretaker_in_the_unit(self):
         screen = self.build(2)
         self.add_person(screen, 1, "headOfHousehold", 1996)
         self.add_person(screen, 2, "child", 2008)
         self.assert_result(screen, True, 2_809)
+
+
+@pytest.mark.integration
+class TestScenario35WorkersCompensationCounts(MoTanfScenarioTestCase):
+    """Workers' compensation is unearned income counted in full → $34/month.
+
+    Scenario 21's household with workers' compensation in place of unemployment, so the two
+    must agree. Without the workers' compensation input PolicyEngine never sees the $200 and
+    pays the full $234 payment standard.
+    """
+
+    screen_id = 35
+
+    def test_workers_compensation_counts_in_full(self) -> None:
+        screen = self.build(2)
+        head = self.add_person(screen, 1, "headOfHousehold", 1996)
+        add_income(head, amount=200, income_type="workersComp")
+        self.add_person(screen, 2, "child", 2020)
+        self.assert_result(screen, True, 409)

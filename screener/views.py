@@ -1,4 +1,3 @@
-import hashlib
 import requests
 from collections.abc import Mapping
 from typing import Any, Optional
@@ -9,7 +8,6 @@ from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from integrations.clients.policyengine import versions as pe_versions
-from programs.models import Referrer
 from integrations.clients.policyengine.registry import all_calculators
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
@@ -24,8 +22,9 @@ from screener.models import (
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
-from rest_framework import viewsets, views, status, mixins, throttling
-from rest_framework.exceptions import NotFound
+from rest_framework import viewsets, views, status, mixins
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.parsers import JSONParser
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -43,6 +42,19 @@ from screener.serializers import (
     RemImpactSerializer,
     CurrentBenefitToggleSerializer,
 )
+
+# Throttles live in screener/throttles.py so `assistant.py` can use them without
+# importing this module. HashedIPAnonRateThrottle is re-exported for existing
+# `screener.views` references.
+from screener.throttles import (  # noqa: F401
+    HashedIPAnonRateThrottle,
+    NPSRateThrottle,
+    PlacesRateThrottle,
+    RemRateThrottle,
+    SaveResultsRateThrottle,
+    save_results_phone,
+)
+from integrations.services.communications.benji_sms_hash import InvalidPhoneNumber
 from integrations.clients.policyengine.policy_engine import PEData, calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies, UnregisteredCalculatorError, UpstreamAbsentError
@@ -52,7 +64,6 @@ from programs.models import (
     Document,
     Navigator,
     ProgramCategory,
-    UrgentNeedType,
     Program,
     Referrer,
     WarningMessage,
@@ -290,24 +301,61 @@ class EligibilityTranslationView(views.APIView):
         return Response(results)
 
 
+class AnyContentTypeJSONParser(JSONParser):
+    """Reads the body as JSON whatever Content-Type the caller declared.
+
+    The message endpoint parsed `request.body` as JSON regardless of Content-Type
+    before it was throttled. The phone throttles need the parsed body too, so the
+    endpoint now goes through DRF's parsing, and this keeps it accepting the same
+    requests it did.
+    """
+
+    media_type = "*/*"
+
+
 class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
     API endpoint that logs messages sent.
+
+    Throttled per IP and per phone number: it makes MyFriendBen send to any address
+    the caller supplies, behind a token that ships in the frontend bundle. The rules
+    are in `SaveResultsRateThrottle`; the rates are in `DEFAULT_THROTTLE_RATES`.
     """
 
     queryset = Message.objects.all().order_by("-sent")
     serializer_class = MessageSerializer
     permission_classes = [permissions.DjangoModelPermissions]
+    parser_classes = [AnyContentTypeJSONParser]
+    throttle_classes = [SaveResultsRateThrottle]
 
-    def create(self, request):
-        body = json.loads(request.body.decode())
-        screen = Screen.objects.get(uuid=body["screen"])
+    def create(self, request: Request) -> Response:
+        # `request.data`, the same parse the throttle reads, so the number it checks
+        # is the number sent to.
+        body = request.data
+        if not isinstance(body, Mapping):
+            raise ValidationError("Expected a JSON object.")
+        try:
+            phone = save_results_phone(body)
+        except InvalidPhoneNumber:
+            raise ValidationError({"phone": "Not a phone number."}) from None
 
-        message = MessageUser(screen, self._message_language(body, screen))
-        if "email" in body:
-            message.email(body["email"], send_tests=True)
-        if "phone" in body:
-            message.text(body["phone"], send_tests=True)
+        # The throttle took a slot from the number's budget. It is given back unless
+        # Twilio accepts the text, so a request that fails first (an unknown screen,
+        # a failed email, Twilio refusing) doesn't spend it, and one that fails after
+        # (logging) still does, because the text went out.
+        text_sent = False
+        try:
+            screen = Screen.objects.get(uuid=body["screen"])
+
+            message = MessageUser(screen, self._message_language(body, screen))
+            if "email" in body:
+                message.email(body["email"], send_tests=True)
+            if phone is not None:
+                text_sent = message.send_text(phone, send_tests=True)
+                message.log("textScreen")
+        finally:
+            if not text_sent:
+                SaveResultsRateThrottle.release_text(request)
 
         return Response({}, status=status.HTTP_201_CREATED)
 
@@ -429,8 +477,15 @@ CALC_ORDER = (
     # ks_rca is defined as the program for refugees TANF cannot reach, so it gates on
     # ks_tanf strictly and needs it resolved first.
     "ks_tanf",
-    # Early Head Start reads SSI eligibility as public assistance.
+    # NJ Head Start and Early Head Start read SSI, SNAP and TANF eligibility as public assistance.
     "federal_ssi",
+    "nj_snap",
+    "nj_tanf",
+    # NJ's ACA Premium Tax Credit reads who NJ FamilyCare's Medicaid and CHIP would cover.
+    # NJ Medicaid is on the federal Medicaid base, not `Medicaid`, so the derived block above
+    # doesn't list it.
+    "nj_medicaid",
+    "nj_chip",
 )
 
 
@@ -475,6 +530,7 @@ def eligibility_results(
             Prefetch("documents", queryset=Document.objects.order_by("id")),
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
             "warning_messages",
+            "warning_messages__white_label",
             "warning_messages__counties",
             "warning_messages__legal_statuses",
             *translations_prefetch_name("warning_messages__", WarningMessage.objects.translated_fields),
@@ -737,6 +793,7 @@ def eligibility_results(
                     "legal_status_required": legal_status,
                     "estimated_value_override": program_translations.get_translation("estimated_value"),
                     "eligible": eligibility.eligible,
+                    "payment_unit": eligibility.payment_unit,
                     "members": member_data,
                     "failed_tests": eligibility.fail_messages,
                     "passed_tests": eligibility.pass_messages,
@@ -797,6 +854,9 @@ def eligibility_results(
     ProgramEligibilitySnapshot.objects.bulk_create(program_snapshots)
     snapshot.had_error = False
     snapshot.dropped_programs = dropped_programs
+    # Persists the `external_api_failures` signal the response sends the frontend. Callers
+    # that don't open a tracking context (the validation harness) always record False.
+    snapshot.had_external_api_failure = bool(get_external_api_failures())
     snapshot.save()
 
     eligible_programs = []
@@ -932,16 +992,6 @@ def urgent_need_results(screen: Screen, data):
     ]
 
 
-# Throttles now live in screener/throttles.py so `assistant.py` can use the base class
-# without importing this module. Re-exported here for any existing references.
-from .throttles import (  # noqa: E402  (kept next to its former definition site)
-    HashedIPAnonRateThrottle,
-    NPSRateThrottle,
-    PlacesRateThrottle,
-    RemRateThrottle,
-)
-
-
 class NPSScoreView(views.APIView):
     """
     API endpoint for submitting NPS (Net Promoter Score) feedback.
@@ -1060,20 +1110,15 @@ class RemImpactView(views.APIView):
     and returns only the total cost delta (bill impact) and total emissions delta
     that the frontend needs to render the Calculate Impact results view.
 
-    POST takes the address in the JSON body so it stays out of request URLs, which
-    Heroku's router logs and Sentry captures. GET is kept until every frontend sends POST.
+    POST only: the address travels in the JSON body so it stays out of request URLs,
+    which Heroku's router logs and Sentry capture.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
 
-    def get(self, request, **_kwargs) -> Response:
-        return self._impact(request.query_params)
-
-    def post(self, request, **_kwargs) -> Response:
-        return self._impact(request.data)
-
-    def _impact(self, params: Any) -> Response:
+    def post(self, request: Request, **_kwargs: Any) -> Response:
+        params = request.data
         upgrade = _str_param(params, "upgrade")
         address = _str_param(params, "address")
         heating_fuel = _str_param(params, "heating_fuel")
@@ -1137,20 +1182,14 @@ class PlacesAutocompleteView(views.APIView):
     keeping the API key server-side. Returns US street address predictions
     restricted to street-level addresses.
 
-    POST takes the typed text in the JSON body for the same reason as RemImpactView.
+    POST only, with the typed text in the JSON body, for the same reason as RemImpactView.
     """
 
     permission_classes = [permissions.AllowAny]
     throttle_classes = [PlacesRateThrottle]
 
-    def get(self, request, **_kwargs) -> Response:
-        return self._autocomplete(request.query_params)
-
-    def post(self, request, **_kwargs) -> Response:
-        return self._autocomplete(request.data)
-
-    def _autocomplete(self, params: Any) -> Response:
-        input_text = _str_param(params, "input")
+    def post(self, request: Request, **_kwargs: Any) -> Response:
+        input_text = _str_param(request.data, "input")
 
         if not input_text:
             return Response([], status=status.HTTP_200_OK)

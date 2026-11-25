@@ -224,6 +224,20 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="DOE effective-date lag: the 200% column in force is the prior year's guideline",
         source="DOE Weatherization Program Notice 25-3",
     ),
+    ("nj", "nj_medicaid"): Vintage(
+        edition="2026",
+        basis=Basis.COVERAGE_YEAR,
+        status=Status.CONFIRMED,
+        rule="coverage year; NJ's 2026 income standards chart (Medicaid Communication 26-03) uses the 2026 guideline",
+        source="program-ops cross_white_label/medicaid/nj/medicaid_nj_spec.md",
+    ),
+    ("nj", "nj_aca_ptc"): Vintage(
+        edition="2026",
+        basis=Basis.TABLE_EDITION,
+        status=Status.CONFIRMED,
+        rule="the guideline in effect when open enrollment for coverage year 2027 opened on November 1, 2026: the 2026 guideline",
+        source="program-ops cross_white_label/aca/base/aca_base_spec.md (income_fpl_band)",
+    ),
     ("nj", "nj_cover_all_kids"): Vintage(
         edition="2026",
         basis=Basis.TABLE_EDITION,
@@ -340,6 +354,15 @@ PROGRAM_VINTAGE: dict[tuple[str, str], Vintage] = {
         rule="WIC's 185% limits are the reduced-price meal guidelines, set from the current HHS "
         "guideline each July 1; the 2026 guideline runs July 2026 to June 2027",
         source="program-ops federal_wic_spec.md section 4 income_limit, 91 FR 23050",
+    ),
+    ("federal", "federal_pell_grant"): Vintage(
+        edition="2026",
+        basis=Basis.TABLE_EDITION,
+        status=Status.DEFERRED,
+        rule="the 2026-27 award year compares 2024 income with the 2024 guideline; the screener "
+        "tests current income, so the current-year guideline is used instead",
+        source="program-ops federal_pell_grant_spec.md section 4 need_based_award "
+        "(poverty_guideline_year), 2026-27 SAI and Pell Grant Eligibility Guide",
     ),
     ("il", "il_msp"): Vintage(
         edition="2026",

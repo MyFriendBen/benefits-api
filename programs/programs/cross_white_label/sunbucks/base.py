@@ -8,6 +8,9 @@ from programs.framework.base import Eligibility, MemberEligibility, ProgramCalcu
 from programs.framework.pe_dependencies.receipt import screen_reports_snap, screen_reports_tanf
 from screener.models import HouseholdMember
 
+# A day of the year, as (month, day).
+MonthDay = tuple[int, int]
+
 # What a state can enroll a child through automatically, with no application.
 SNAP = "snap"
 TANF = "tanf"
@@ -50,15 +53,18 @@ class SunBucks(ProgramCalculator, abstract=True):
     Each state sets:
 
     - ``min_school_age`` and ``max_school_age``: the compulsory school ages, inclusive
-    - ``school_age_window``: the first and last day a child must be school age at some point
-      between. Leave it unset to test the child's age today.
+    - ``school_age_window``: the first and last day, as (month, day), of the yearly window a
+      child must be school age at some point within: a school year and the summer after it, so
+      the first day falls in the year before the last. The year comes from the screen's date:
+      the window used is the next one that hasn't closed, so it rolls over the day after its
+      last day. Leave it unset to test the child's age today.
     - ``enrolled_automatically``: SNAP, plus TANF or foster children where the state's own
       sources say it enrolls them with no application
     """
 
     min_school_age: ClassVar[int]
     max_school_age: ClassVar[int]
-    school_age_window: ClassVar[Optional[tuple[date, date]]] = None
+    school_age_window: ClassVar[Optional[tuple[MonthDay, MonthDay]]] = None
     enrolled_automatically: ClassVar[tuple[str, ...]] = (SNAP,)
 
     # 91 FR 17932: 185% of the poverty guideline, rounded up to the next whole dollar.
@@ -92,11 +98,26 @@ class SunBucks(ProgramCalculator, abstract=True):
             age = member.calc_age()
             return age is not None and self.min_school_age <= age <= self.max_school_age
 
-        first_day, last_day = self.school_age_window
+        first_day, last_day = self._school_age_window_dates(self.school_age_window)
         return (
             HouseholdMember.age_from_date(member.birth_year_month, last_day) >= self.min_school_age
             and HouseholdMember.age_from_date(member.birth_year_month, first_day) <= self.max_school_age
         )
+
+    def _school_age_window_dates(self, window: tuple[MonthDay, MonthDay]) -> tuple[date, date]:
+        """
+        The dates of the next window that hasn't closed by the screen's date: its last day is
+        this year's or, once that has passed, next year's, and its first day is in the year
+        before that.
+        """
+        (first_month, first_day), (last_month, last_day) = window
+        today = self.screen.get_reference_date()
+
+        last = date(today.year, last_month, last_day)
+        if last < today:
+            last = date(today.year + 1, last_month, last_day)
+
+        return date(last.year - 1, first_month, first_day), last
 
     def household_eligible(self, e: Eligibility) -> None:
         enrolled_through = self._household_enrolled_through()

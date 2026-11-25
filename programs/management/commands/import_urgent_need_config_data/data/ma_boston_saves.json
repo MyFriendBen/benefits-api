@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ma"
+  },
+  "need": {
+    "external_name": "ma_boston_saves",
+    "category_type": {
+      "external_name": "savings"
+    },
+    "type_short": [
+      "savings"
+    ],
+    "translations": {
+      "name": "Boston Saves",
+      "description": "Boston Saves gives Boston Public Schools students a savings account for college or career training. The City of Boston opens the account for your child automatically. You do not need to sign up and money can be added to the count by completing certain tasks.  Your child can use the money for college or job training. They can access the money once they finish high school or earn a GED or HiSET. Students with disabilities have other ways to access and use the money. Questions? Email bostonsaves@boston.gov.",
+      "link": "https://www.boston.gov/departments/schools/boston-saves",
+      "warning": "",
+      "website_description": "A college and career savings account the City opens for your Boston Public Schools student",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Boston"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

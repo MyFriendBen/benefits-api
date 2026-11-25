@@ -5,9 +5,7 @@
   "need": {
     "external_name": "ks_food_source",
     "category_type": {
-      "external_name": "ks_food_or_groceries",
-      "name": "Food or groceries",
-      "icon": "food_groceries"
+      "external_name": "food_or_groceries"
     },
     "type_short": [
       "food"

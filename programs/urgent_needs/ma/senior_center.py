@@ -1,4 +1,5 @@
 from ..base import UrgentNeedFunction
+from programs.programs.shared.residency import lives_in
 
 
 class CambridgeSeniorCenter(UrgentNeedFunction):
@@ -19,6 +20,6 @@ class CambridgeSeniorCenter(UrgentNeedFunction):
 
         # Condition 1:  Cambridge residents age 60+.
         is_senior = self.screen.num_adults(age_max=self.min_age) > 0
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = lives_in(self.screen, self.eligible_city)
 
         return is_senior and is_cambridge

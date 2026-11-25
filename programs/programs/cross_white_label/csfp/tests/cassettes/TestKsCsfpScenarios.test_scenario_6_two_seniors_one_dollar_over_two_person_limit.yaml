@@ -15,10 +15,11 @@ interactions:
       ["601", "602"]}}, "households": {"household": {"members": ["601", "602"], "state_code":
       {"2026": "KS"}, "county_str": {"2026": "SEDGWICK_COUNTY_KS"}}}, "spm_units":
       {"spm_unit": {"members": ["601", "602"], "school_meal_countable_income": {"2026":
-      32472.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": null}, "receives_tanf":
-      {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false}, "receives_snap":
-      {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}}, "marital_units":
-      {"601-602": {"members": ["601", "602"]}}}, "version": "2.53.1"}'
+      32472.0}, "csfp_countable_income": {"2026": 32472.0}, "spm_unit_cash_assets":
+      {"2026": 0}, "tanf": {"2026": null}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+      {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+      {"2026": false}}}, "marital_units": {"601-602": {"members": ["601", "602"]}}},
+      "version": "2.145.6"}'
     headers:
       Accept:
       - '*/*'
@@ -27,11 +28,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1547'
+      - '1592'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -51,30 +52,31 @@ interactions:
         ["601", "602"]}}, "households": {"household": {"members": ["601", "602"],
         "state_code": {"2026": "KS"}, "county_str": {"2026": "SEDGWICK_COUNTY_KS"}}},
         "spm_units": {"spm_unit": {"members": ["601", "602"], "school_meal_countable_income":
-        {"2026": 32472.0}, "spm_unit_cash_assets": {"2026": 0}, "tanf": {"2026": 0.0},
-        "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible": {"2026": false},
-        "receives_snap": {"2026": false}, "takes_up_snap_if_eligible": {"2026": false}}},
-        "marital_units": {"601-602": {"members": ["601", "602"]}}}, "policyengine_bundle":
-        {"model_version": "2.53.1", "data_version": null, "dataset": null}}'
+        {"2026": 32472.0}, "csfp_countable_income": {"2026": 32472.0}, "spm_unit_cash_assets":
+        {"2026": 0}, "tanf": {"2026": 0.0}, "receives_tanf": {"2026": false}, "takes_up_tanf_if_eligible":
+        {"2026": false}, "receives_snap": {"2026": false}, "takes_up_snap_if_eligible":
+        {"2026": false}}}, "marital_units": {"601-602": {"members": ["601", "602"]}}},
+        "policyengine_bundle": {"model_version": "2.145.6", "data_version": null,
+        "dataset": null}}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000
       Content-Length:
-      - '1645'
+      - '1690'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:09:07 GMT
+      - Mon, 23 Nov 2026 23:57:11 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-9569dca30ac032121a8f5f915980f563-11bc86ed89179536-00
+      - 00-47fdd4ac839be7cce1e4cd602220ed8a-4933d66430419b39-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 9569dca30ac032121a8f5f915980f563
+      - 47fdd4ac839be7cce1e4cd602220ed8a
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -82,9 +84,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - e205b08d-ff98-4972-b48f-f9f2ac95901a
+      - f1ba3165-b08c-4ebb-a6b5-9301a037af7a
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK

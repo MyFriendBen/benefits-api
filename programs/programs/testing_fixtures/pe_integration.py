@@ -37,6 +37,7 @@ rather than fail a release. Re-recording is always also the act of adopting a ne
 import json
 import math
 import os
+import sys
 from typing import Optional
 from unittest.mock import patch
 
@@ -48,6 +49,7 @@ from conftest import PE_CAPTURE_DIR_ENV_VAR, pe_may_record, vcr_record_mode
 from configuration.models import PolicyEngineConfig
 from programs.models import Program
 from programs.framework.base import Eligibility
+from programs.programs.testing_fixtures.payment_unit import assert_household_members_unpriced
 from programs.util import Dependencies
 from programs.vintage import PROGRAM_VINTAGE
 from programs.programs.testing_fixtures import households
@@ -62,35 +64,72 @@ from programs.framework.pe_dependencies.payload import pe_input
 # replays regardless of the token, and conftest redacts the Authorization header from cassettes.
 TEST_PE_TOKEN = "pe-integration-test-token"
 
-# The PolicyEngine version every PeIntegrationTestCase records and replays at unless it
-# overrides ``pe_version``. Adopting a new version is a bump here plus a re-record of every
-# module that doesn't override. Must be one PolicyEngine currently serves (see docs/TESTING.md).
-PE_TEST_VERSION = "2.53.1"
+# The PolicyEngine version every PeIntegrationTestCase records and replays at unless its module
+# sets ``PE_VERSION`` (see module_pe_pin). Adopting a new version is a bump here plus a re-record of
+# every module that doesn't pin. Must be one PolicyEngine currently serves (see docs/TESTING.md).
+PE_TEST_VERSION = "2.116.16"
 
 # Used by the record_and_diff management command. The override replaces every test case's
-# pe_version for the run, so the whole suite can be recorded at a new version without editing any
+# version for the run, so the whole suite can be recorded at a new version without editing any
 # module. The capture directory (PE_CAPTURE_DIR_ENV_VAR, from conftest) collects each scenario's
 # outcome (see capture_result).
 PE_VERSION_OVERRIDE_ENV_VAR = "PE_VERSION_OVERRIDE"
 
 
+# Names a test class must not set. A pin lives only in its module's PE_VERSION / PE_VERSION_REASON.
+CLASS_LEVEL_PIN_ATTRIBUTES = ("pe_version", "pe_version_reason")
+
+
+def module_pe_pin(test_class: type) -> tuple[str, str]:
+    """The PolicyEngine version a test class records and replays at, and the reason it differs.
+
+    A module that can't follow ``PE_TEST_VERSION`` sets module-level ``PE_VERSION`` and
+    ``PE_VERSION_REASON``, which pin every test class in it. That is the only layout
+    ``record_and_diff`` reads and rewrites, so it is the only one the harness accepts.
+    """
+    module = sys.modules[test_class.__module__]
+    return getattr(module, "PE_VERSION", PE_TEST_VERSION), getattr(module, "PE_VERSION_REASON", "")
+
+
+def check_no_class_level_pin(test_class: type) -> None:
+    """Fail a test class that pins its PolicyEngine version itself rather than through its module.
+
+    ``record_and_diff --adopt`` finds a pin by its module-level ``PE_VERSION`` line and removes it
+    the same way. A class-level ``pe_version`` is invisible to it: adoption copies in cassettes
+    recorded at the new version, leaves the class on the old one, and every scenario then fails
+    to match.
+    """
+    for klass in test_class.__mro__:
+        if klass is PeIntegrationTestCase:
+            return
+
+        set_here = [name for name in CLASS_LEVEL_PIN_ATTRIBUTES if name in vars(klass)]
+        if set_here:
+            raise AssertionError(
+                f"{klass.__name__} sets {' and '.join(set_here)}. Pin with module-level PE_VERSION and "
+                "PE_VERSION_REASON instead: record_and_diff only reads and rewrites those, so a class-level "
+                "pin survives an adoption and its cassettes stop matching."
+            )
+
+
 def check_pe_version_pin(test_name: str, pe_version: str, pe_version_reason: str) -> None:
-    """Fail a test class whose pin is missing, or departs from the suite pin without saying why.
+    """Fail a test class whose pin is empty, or departs from the suite pin without saying why.
 
     A module still on an older version can't simply follow ``PE_TEST_VERSION``: the version is
     part of the request body VCR matches on, so its cassettes replay only at the version they
-    were recorded at. Overriding is therefore allowed, but has to carry a reason, so that every
-    module behind the suite pin is a deliberate, visible exception rather than a forgotten one.
+    were recorded at. Pinning is therefore allowed, but has to carry a reason, so that every
+    module off the suite pin is a deliberate, visible exception rather than a forgotten one.
     """
     if not pe_version:
         raise AssertionError(
-            f"{test_name} must set pe_version to the exact PolicyEngine version its cassettes were recorded at."
+            f"{test_name}'s module must set PE_VERSION to the exact PolicyEngine version its cassettes were "
+            "recorded at."
         )
 
     if pe_version != PE_TEST_VERSION and not pe_version_reason.strip():
         raise AssertionError(
             f"{test_name} pins PolicyEngine {pe_version} instead of the suite pin {PE_TEST_VERSION}. "
-            "Set pe_version_reason to say why, or re-record its cassettes at the suite pin."
+            "Set PE_VERSION_REASON to say why, or re-record its cassettes at the suite pin."
         )
 
 
@@ -115,7 +154,7 @@ def _forces_live_recording() -> bool:
     work here: these cassettes pin an exact model version, and PolicyEngine serves only what
     ``current``/``frontier`` currently resolve to — once it promotes past the pin, the same
     request returns 422 ``unsupported_version``. Refreshing a cassette is therefore a
-    deliberate act (bump ``pe_version``, re-record, review the value diff — see
+    deliberate act (move the pin, re-record, review the value diff — see
     docs/TESTING.md), never something a CI run should attempt on its own.
     """
     return vcr_record_mode() == "all"
@@ -235,6 +274,7 @@ def calc_pe_program(
         raise
 
     capture_result(eligible=bool(eligibility.eligible), value=math.trunc(eligibility.value))
+    assert_household_members_unpriced(eligibility, calculator_class.__name__)
 
     return eligibility
 
@@ -298,9 +338,10 @@ def screener_value(eligibility: Eligibility) -> int:
 class PeIntegrationTestCase(TestCase):
     """Base class for a program's PolicyEngine tests.
 
-    Cassettes are recorded at ``PE_TEST_VERSION`` by default. A subclass whose cassettes were
-    recorded at another version overrides ``pe_version`` and says why in
-    ``pe_version_reason``; changing either version means re-recording.
+    Cassettes are recorded at ``PE_TEST_VERSION`` by default. A module whose cassettes were
+    recorded at another version sets module-level ``PE_VERSION`` and says why in
+    ``PE_VERSION_REASON``; subclasses never set the version themselves (see module_pe_pin).
+    Changing either version means re-recording.
     """
 
     # Applies VCR to every subclass. Carried here rather than left to each subclass to
@@ -309,23 +350,19 @@ class PeIntegrationTestCase(TestCase):
     # that looks like a program bug. Subclasses may still decorate themselves — marks compose.
     pytestmark = [pytest.mark.integration, pytest.mark.pe_cassette]
 
-    # Exact MAJOR.MINOR.PATCH the cassettes in this module were recorded against.
-    pe_version: str = PE_TEST_VERSION
-
-    # Required whenever pe_version differs from PE_TEST_VERSION.
-    pe_version_reason: str = ""
-
     def setUp(self) -> None:
         super().setUp()
 
-        check_pe_version_pin(type(self).__name__, self.pe_version, self.pe_version_reason)
+        check_no_class_level_pin(type(self))
+        pe_version, pe_version_reason = module_pe_pin(type(self))
+        check_pe_version_pin(type(self).__name__, pe_version, pe_version_reason)
 
         if _forces_live_recording():
             self.skipTest(
                 f"VCR_MODE=all re-records live, but these cassettes pin PolicyEngine "
-                f"{self.pe_version}, which PolicyEngine stops serving once it promotes past it "
+                f"{pe_version}, which PolicyEngine stops serving once it promotes past it "
                 "(422 unsupported_version). Refresh cassettes deliberately — see docs/TESTING.md."
             )
 
-        pin_pe_version(os.getenv(PE_VERSION_OVERRIDE_ENV_VAR) or self.pe_version)
+        pin_pe_version(os.getenv(PE_VERSION_OVERRIDE_ENV_VAR) or pe_version)
         stub_pe_token_for_replay(self)

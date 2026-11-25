@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_camcare_behavioral_health",
+    "category_type": {
+      "external_name": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "CAMcare Health - Behavioral Health",
+      "description": "CAMcare Health in Camden offers behavioral health care. No insurance? No problem. Walk-ins are welcome. Open Monday to Friday 8am-5pm (Monday and Wednesday until 8pm) and Saturday 9am-1pm. Call 856-583-2400.",
+      "link": "https://www.camcare.net/behaviroal-health",
+      "warning": "",
+      "website_description": "Find mental health and substance use support.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Camden County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

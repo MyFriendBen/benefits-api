@@ -169,8 +169,7 @@ class KsCcapTestCase(TestCase):
 
 class TestClassAttributes(KsCcapTestCase):
     def test_is_a_plain_program_calculator(self):
-        # Deliberately not a subclass of this family's `Ccdf` base, which wraps
-        # PolicyEngine's `is_ccdf_eligible`.
+        # Not yet moved onto this family's `Ccdf` base in `base.py`.
         self.assertTrue(issubclass(KsCcap, ProgramCalculator))
 
     def test_registered_under_ks_ccap(self):

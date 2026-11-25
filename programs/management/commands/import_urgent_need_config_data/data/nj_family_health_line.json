@@ -1,0 +1,29 @@
+{
+  "white_label": {
+    "code": "nj"
+  },
+  "need": {
+    "external_name": "nj_family_health_line",
+    "category_type": {
+      "external_name": "free_low_cost_health_care"
+    },
+    "type_short": [
+      "family planning",
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "NJ Family Health Line",
+      "description": "The NJ Family Health Line is free and gives information and referrals, in about 140 languages. Call 1-800-328-3838, Monday to Friday 8am-6pm.",
+      "link": "https://www.nj.gov/health/fhs/primarycare/family-health-line",
+      "warning": "",
+      "website_description": "Learn about free or low-cost health care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

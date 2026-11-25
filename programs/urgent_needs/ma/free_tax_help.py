@@ -1,4 +1,5 @@
 from ..base import UrgentNeedFunction
+from programs.programs.shared.residency import lives_in
 
 
 class FreeTaxHelp(UrgentNeedFunction):
@@ -15,7 +16,7 @@ class FreeTaxHelp(UrgentNeedFunction):
 
     def eligible(self) -> bool:
         # Condition 1: Cambridge residents
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = lives_in(self.screen, self.eligible_city)
 
         # Condition 2: Income-based eligibility
         income = self.screen.calc_gross_income("yearly", ["all"])

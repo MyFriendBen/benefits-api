@@ -1,6 +1,6 @@
 from integrations.services.income_limits import ami
 from programs.co_county_zips import counties_from_screen
-from programs.framework.base import Eligibility, ProgramCalculator, MemberEligibility
+from programs.framework.base import Eligibility, ProgramCalculator
 import programs.framework.eligibility_messages as messages
 
 

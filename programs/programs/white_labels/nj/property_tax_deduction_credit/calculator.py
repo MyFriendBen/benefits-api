@@ -1,7 +1,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 from functools import cached_property
 
-from programs.framework.base import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, PaymentUnit, ProgramCalculator
 from programs.programs.white_labels.nj.income_tax import (
     EXCLUDED_INCOME_TYPES,
     TABLE_A,
@@ -42,6 +42,8 @@ class NjPropertyTaxDeductionCredit(ProgramCalculator):
     """
 
     program_code = "nj_property_tax_deduction_credit"
+    # Spec section 7: one deduction or credit on the filers' NJ-1040.
+    payment_unit = PaymentUnit.HOUSEHOLD
 
     filing_threshold_joint = 20_000
     filing_threshold_single = 10_000
@@ -106,7 +108,8 @@ class NjPropertyTaxDeductionCredit(ProgramCalculator):
 
     @cached_property
     def _dependent_count(self) -> int:
-        return sum(1 for m in self.screen.household_members.all() if m.is_dependent())
+        """Members who are dependents in the tax year, judged by their age at its end."""
+        return sum(1 for m in self.screen.household_members.all() if m.is_dependent(self.tax_year))
 
     @cached_property
     def _property_tax_paid(self) -> Decimal:

@@ -3,6 +3,7 @@
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from screener.models import HouseholdMember
 import programs.framework.pe_dependencies as dependency
+from screener.allowed_values import HEAD_OF_HOUSEHOLD_RELATIONSHIP
 
 
 class TxMedicaidForParentsAndCaretakers(Medicaid):
@@ -35,7 +36,7 @@ class TxMedicaidForParentsAndCaretakers(Medicaid):
     # the head has relationship="headOfHousehold", and we're assuming that
     # they're an adult.
     caretaker_relationships = [
-        "headOfHousehold",
+        HEAD_OF_HOUSEHOLD_RELATIONSHIP,
         "spouse",
         "domesticPartner",
         "parent",

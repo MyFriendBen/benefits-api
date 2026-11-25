@@ -5,8 +5,9 @@ interactions:
       {"2026": null}}}, "tax_units": {"main_tax_unit": {"members": ["401", "402"]}},
       "families": {"family": {"members": ["401", "402"]}}, "households": {"household":
       {"members": ["401", "402"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit":
-      {"members": ["401", "402"], "school_meal_countable_income": {"2026": 18000.0}}},
-      "marital_units": {"401-402": {"members": ["401", "402"]}}}, "version": "2.53.1"}'
+      {"members": ["401", "402"], "school_meal_countable_income": {"2026": 18000.0},
+      "csfp_countable_income": {"2026": 18000.0}}}, "marital_units": {"401-402": {"members":
+      ["401", "402"]}}}, "version": "2.145.6"}'
     headers:
       Accept:
       - '*/*'
@@ -15,11 +16,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '586'
+      - '631'
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.32.4
+      - python-requests/2.33.0
     method: POST
     uri: https://household.api.policyengine.org/us/calculate
   response:
@@ -30,28 +31,29 @@ interactions:
         "tax_units": {"main_tax_unit": {"members": ["401", "402"]}}, "families": {"family":
         {"members": ["401", "402"]}}, "households": {"household": {"members": ["401",
         "402"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
-        ["401", "402"], "school_meal_countable_income": {"2026": 18000.0}}}, "marital_units":
-        {"401-402": {"members": ["401", "402"]}}}, "policyengine_bundle": {"model_version":
-        "2.53.1", "data_version": null, "dataset": null}}'
+        ["401", "402"], "school_meal_countable_income": {"2026": 18000.0}, "csfp_countable_income":
+        {"2026": 18000.0}}}, "marital_units": {"401-402": {"members": ["401", "402"]}}},
+        "policyengine_bundle": {"model_version": "2.145.6", "data_version": null,
+        "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Length:
-      - '688'
+      - '733'
       access-control-allow-origin:
       - '*'
       content-type:
       - application/json
       date:
-      - Mon, 02 Nov 2026 19:09:43 GMT
+      - Mon, 23 Nov 2026 23:57:30 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-d92d172cbaeb3b17fed6541df741f461-7e0768669c07713a-00
+      - 00-3af8651d8ea84991984a0f323ac376fe-7702afe6e3785af5-00
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - d92d172cbaeb3b17fed6541df741f461
+      - 3af8651d8ea84991984a0f323ac376fe
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -59,9 +61,9 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 4f579928-acd1-4d18-b3dd-690edd702aac
+      - b10ad03c-5197-42af-b829-e41d71002563
       x-policyengine-route-channel:
-      - current
+      - frontier
     status:
       code: 200
       message: OK
