@@ -57,3 +57,14 @@ class SetYearTypeCommandTests(TestCase):
     def test_neither_all_nor_programs_is_rejected(self):
         with self.assertRaises(CommandError):
             call_command("set_year_type", "calendar_year")
+
+    def test_prior_tax_year_updates_year_type_and_leaves_year_fk_for_roll_command(self):
+        # prior_tax_year doesn't point at a sentinel; the year FK is managed by
+        # roll_program_years after the type is set.
+        call_command("set_year_type", "prior_tax_year", "--programs", "co_snap")
+        self.co_snap.refresh_from_db()
+        self.assertEqual(self.co_snap.year_type, "prior_tax_year")
+        self.assertIsNone(self.co_snap.year_id)
+
+    def test_prior_tax_year_is_accepted_as_choice(self):
+        call_command("set_year_type", "prior_tax_year", "--dry-run", "--all")
